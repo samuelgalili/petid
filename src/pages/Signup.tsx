@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SignupForm } from "@/components/SignupForm";
+import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 
 const Signup = () => {
@@ -31,6 +32,8 @@ const Signup = () => {
         </CardHeader>
         <CardContent>
           <SignupForm />
+          
+          <SocialAuthButtons redirectTo="/add-pet" />
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
             כבר יש לך חשבון?{" "}
