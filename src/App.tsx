@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import AddPet from "./pages/AddPet";
 import Home from "./pages/Home";
@@ -25,12 +26,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/auth" replace />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/add-pet" element={<AddPet />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/tracker" element={<Tracker />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/chat" element={<NotFound />} />
-          <Route path="/adoption" element={<NotFound />} />
+          <Route path="/add-pet" element={<ProtectedRoute><AddPet /></ProtectedRoute>} />
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/tracker" element={<ProtectedRoute><Tracker /></ProtectedRoute>} />
+          <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+          <Route path="/adoption" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
