@@ -1,80 +1,102 @@
-import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun } from "lucide-react";
+import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import BottomNav from "@/components/BottomNav";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { t, language, setLanguage, direction } = useLanguage();
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [location, setLocation] = useState(true);
 
   const settingsSections = [
     {
-      title: "חשבון",
+      title: t("settings.account"),
       items: [
         {
           icon: User,
-          label: "פרופיל אישי",
-          description: "ערוך את הפרטים האישיים שלך",
+          label: t("settings.profile"),
+          description: t("settings.profileDesc"),
           action: () => navigate("/profile"),
           type: "link",
         },
       ],
     },
     {
-      title: "העדפות",
+      title: t("settings.preferences"),
       items: [
         {
           icon: Bell,
-          label: "התראות",
-          description: "קבל עדכונים על חיית המחמד שלך",
+          label: t("settings.notifications"),
+          description: t("settings.notificationsDesc"),
           action: () => setNotifications(!notifications),
           type: "toggle",
           value: notifications,
         },
         {
           icon: darkMode ? Moon : Sun,
-          label: "מצב כהה",
-          description: "שנה את מראה האפליקציה",
+          label: t("settings.darkMode"),
+          description: t("settings.darkModeDesc"),
           action: () => setDarkMode(!darkMode),
           type: "toggle",
           value: darkMode,
         },
         {
           icon: Globe,
-          label: "מיקום",
-          description: "אפשר שירותי מיקום",
+          label: t("settings.location"),
+          description: t("settings.locationDesc"),
           action: () => setLocation(!location),
           type: "toggle",
           value: location,
         },
+        {
+          icon: Languages,
+          label: t("settings.language"),
+          description: t("settings.languageDesc"),
+          type: "select",
+          value: language,
+          options: [
+            { value: "he", label: t("languages.he") },
+            { value: "en", label: t("languages.en") },
+            { value: "ar", label: t("languages.ar") },
+          ],
+          action: (value: string) => setLanguage(value as "he" | "en" | "ar"),
+        },
       ],
     },
     {
-      title: "פרטיות ואבטחה",
+      title: t("settings.privacySecurity"),
       items: [
         {
           icon: Lock,
-          label: "פרטיות",
-          description: "נהל את ההגדרות שלך",
+          label: t("settings.privacy"),
+          description: t("settings.privacyDesc"),
           action: () => {},
           type: "link",
         },
       ],
     },
     {
-      title: "מידע",
+      title: t("settings.info"),
       items: [
         {
           icon: Info,
-          label: "אודות",
-          description: "גרסה 1.0.0",
+          label: t("settings.about"),
+          description: t("settings.aboutDesc"),
           action: () => {},
           type: "link",
         },
@@ -83,7 +105,7 @@ const Settings = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20 animate-fade-in" dir="rtl">
+    <div className="min-h-screen bg-background pb-20 animate-fade-in" dir={direction}>
       {/* Header */}
       <div className="bg-background border-b border-border/50 p-6 sticky top-0 z-10 backdrop-blur-sm bg-background/95">
         <div className="flex items-center gap-4 animate-slide-up">
@@ -95,7 +117,7 @@ const Settings = () => {
           >
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold">הגדרות</h1>
+          <h1 className="text-xl font-bold">{t("settings.title")}</h1>
         </div>
       </div>
 
@@ -117,7 +139,7 @@ const Settings = () => {
               className="rounded-xl hover:bg-muted animate-press"
               onClick={() => navigate("/profile")}
             >
-              ערוך
+              {t("settings.edit")}
             </Button>
           </div>
         </Card>
@@ -162,6 +184,23 @@ const Settings = () => {
                           className="flex-shrink-0"
                         />
                       )}
+                      {item.type === "select" && (
+                        <Select
+                          value={item.value}
+                          onValueChange={item.action}
+                        >
+                          <SelectTrigger className="w-[130px] h-9 flex-shrink-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {item.options?.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       {item.type === "link" && (
                         <ChevronLeft className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                       )}
@@ -183,15 +222,15 @@ const Settings = () => {
               <LogOut className="w-5 h-5 text-destructive" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-sm text-destructive">התנתק</h3>
+              <h3 className="font-semibold text-sm text-destructive">{t("settings.logout")}</h3>
             </div>
           </div>
         </Card>
 
         {/* App Version */}
         <div className="text-center py-6 animate-fade-in" style={{ animationDelay: "400ms" }}>
-          <p className="text-xs text-muted-foreground">Pet Care App</p>
-          <p className="text-xs text-muted-foreground">גרסה 1.0.0</p>
+          <p className="text-xs text-muted-foreground">{t("settings.appName")}</p>
+          <p className="text-xs text-muted-foreground">{t("settings.version")}</p>
         </div>
       </div>
 
