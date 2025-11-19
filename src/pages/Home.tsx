@@ -2,9 +2,12 @@ import { Calendar, MapPin, Heart, Scissors, Menu, Bell } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 
 const Home = () => {
+  const navigate = useNavigate();
+
   const features = [
     {
       icon: Calendar,
@@ -22,7 +25,7 @@ const Home = () => {
       icon: Heart,
       label: "חניות חיות",
       color: "bg-purple text-purple-foreground",
-      path: "/experiences",
+      path: "/shop",
     },
     {
       icon: Scissors,
@@ -84,6 +87,7 @@ const Home = () => {
           return (
             <Card
               key={index}
+              onClick={() => navigate(feature.path)}
               className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform shadow-md`}
             >
               <div className="w-16 h-16 rounded-2xl bg-background/20 flex items-center justify-center">
