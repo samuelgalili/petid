@@ -13,8 +13,8 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-50 shadow-lg">
-      <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/98 backdrop-blur-sm border-t border-border z-50">
+      <div className="flex justify-around items-center h-16 max-w-md mx-auto px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -25,19 +25,19 @@ const BottomNav = () => {
               to={item.path}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 relative group",
-                isActive ? "text-coral" : "text-muted-foreground hover:text-foreground"
+                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               {isActive && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-coral rounded-full" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-foreground rounded-full" />
               )}
               <Icon className={cn(
-                "w-5 h-5 mb-1 transition-transform",
-                isActive ? "scale-110" : "group-hover:scale-105"
+                "w-[22px] h-[22px] mb-1 transition-transform",
+                isActive ? "" : "group-hover:scale-105"
               )} />
               <span className={cn(
-                "text-xs font-medium transition-all",
-                isActive ? "font-bold" : ""
+                "text-[11px] font-medium transition-all",
+                isActive ? "font-semibold" : ""
               )}>{item.label}</span>
             </Link>
           );
