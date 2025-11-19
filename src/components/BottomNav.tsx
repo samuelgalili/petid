@@ -1,4 +1,4 @@
-import { Home, Calendar, MapPin, Compass, Settings } from "lucide-react";
+import { Home, Calendar, MapPin, Compass, Heart } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,11 +6,11 @@ const BottomNav = () => {
   const location = useLocation();
 
   const navItems = [
-    { icon: Settings, label: "הגדרות", path: "/settings" },
-    { icon: Compass, label: "חוויות", path: "/experiences" },
-    { icon: MapPin, label: "גינות", path: "/parks" },
-    { icon: Calendar, label: "יומן", path: "/tracker" },
     { icon: Home, label: "בית", path: "/home" },
+    { icon: Calendar, label: "יומן", path: "/tracker" },
+    { icon: Compass, label: "צ'אט", path: "/chat" },
+    { icon: MapPin, label: "חנות", path: "/shop" },
+    { icon: Heart, label: "אימוץ", path: "/adoption" },
   ];
 
   return (
