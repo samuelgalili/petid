@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "@/components/LoginForm";
+import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 
 const Auth = () => {
@@ -30,6 +31,8 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <LoginForm />
+
+          <SocialAuthButtons redirectTo="/add-pet" />
 
           <div className="mt-6 space-y-3 text-center text-sm">
             <button
