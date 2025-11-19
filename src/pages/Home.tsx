@@ -14,24 +14,28 @@ const Home = () => {
       label: "יומן מעקב",
       color: "bg-blue text-blue-foreground",
       path: "/tracker",
+      external: false,
     },
     {
       icon: MapPin,
       label: "גינות כלבים",
       color: "bg-green text-green-foreground",
       path: "/parks",
+      external: false,
     },
     {
       icon: Heart,
       label: "חניות חיות",
       color: "bg-purple text-purple-foreground",
-      path: "/shop",
+      path: "https://petid.co.il/catalog-new/",
+      external: true,
     },
     {
       icon: Scissors,
       label: "טיפורים",
       color: "bg-pink text-pink-foreground",
       path: "/grooming",
+      external: false,
     },
   ];
 
@@ -84,10 +88,19 @@ const Home = () => {
       <div className="px-6 grid grid-cols-2 gap-4">
         {features.map((feature, index) => {
           const Icon = feature.icon;
+          
+          const handleClick = () => {
+            if (feature.external) {
+              window.open(feature.path, '_blank', 'noopener,noreferrer');
+            } else {
+              navigate(feature.path);
+            }
+          };
+          
           return (
             <Card
               key={index}
-              onClick={() => navigate(feature.path)}
+              onClick={handleClick}
               className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform shadow-md`}
             >
               <div className="w-16 h-16 rounded-2xl bg-background/20 flex items-center justify-center">
