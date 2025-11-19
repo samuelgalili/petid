@@ -89,18 +89,27 @@ const Home = () => {
         {features.map((feature, index) => {
           const Icon = feature.icon;
           
-          const handleClick = () => {
-            if (feature.external) {
-              window.open(feature.path, '_blank', 'noopener,noreferrer');
-            } else {
-              navigate(feature.path);
-            }
-          };
+          if (feature.external) {
+            return (
+              <a
+                key={index}
+                href={feature.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform shadow-md rounded-lg border bg-card text-card-foreground shadow-sm`}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-background/20 flex items-center justify-center">
+                  <Icon className="w-8 h-8" />
+                </div>
+                <span className="font-bold text-center">{feature.label}</span>
+              </a>
+            );
+          }
           
           return (
             <Card
               key={index}
-              onClick={handleClick}
+              onClick={() => navigate(feature.path)}
               className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform shadow-md`}
             >
               <div className="w-16 h-16 rounded-2xl bg-background/20 flex items-center justify-center">
