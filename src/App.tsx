@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
+import Signup from "./pages/Signup";
 import AddPet from "./pages/AddPet";
 import Home from "./pages/Home";
 import Tracker from "./pages/Tracker";
@@ -26,6 +27,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/auth" replace />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/add-pet" element={<ProtectedRoute><AddPet /></ProtectedRoute>} />
           <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/tracker" element={<ProtectedRoute><Tracker /></ProtectedRoute>} />
