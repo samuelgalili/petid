@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { signupSchema, type SignupFormData } from "@/lib/validators";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 
 interface FieldError {
   fullName?: string;
@@ -202,6 +203,7 @@ export const SignupForm = () => {
             {fieldErrors.password}
           </p>
         )}
+        <PasswordStrengthIndicator password={formData.password} />
       </div>
 
       <div className="space-y-2">
