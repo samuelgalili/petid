@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "@/components/LoginForm";
@@ -47,18 +47,12 @@ const Auth = () => {
 
             <div className="text-muted-foreground">
               אין לך חשבון?{" "}
-              <button
-                type="button"
-                onClick={() =>
-                  toast({
-                    title: "בקרוב",
-                    description: "עמוד הרשמה יתווסף בקרוב",
-                  })
-                }
+              <Link
+                to="/signup"
                 className="text-blue-600 hover:text-blue-700 hover:underline font-medium transition-colors"
               >
                 Create account
-              </button>
+              </Link>
             </div>
           </div>
         </CardContent>
