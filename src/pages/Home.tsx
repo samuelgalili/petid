@@ -40,47 +40,48 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="min-h-screen bg-background pb-20 animate-fade-in" dir="rtl">
       {/* Header */}
       <div className="bg-gradient-to-b from-muted to-background p-6 pb-8">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" size="icon" className="rounded-full">
+        <div className="flex items-center justify-between mb-6 animate-slide-up">
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted/50 animate-press">
             <Menu className="w-6 h-6" />
           </Button>
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-sm text-muted-foreground">שלום,</p>
-              <p className="font-bold">ישראל ישראלי</p>
+              <p className="font-bold text-lg">ישראל ישראלי</p>
             </div>
-            <Avatar className="w-12 h-12 border-2 border-background shadow-md">
+            <Avatar className="w-12 h-12 border-2 border-background shadow-md ring-2 ring-coral/20 hover:ring-coral/40 transition-all">
               <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" />
               <AvatarFallback>יי</AvatarFallback>
             </Avatar>
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted/50 animate-press relative">
             <Bell className="w-6 h-6" />
+            <span className="absolute top-1 left-1 w-2 h-2 bg-coral rounded-full animate-pulse" />
           </Button>
         </div>
 
         {/* Pet Avatars */}
-        <div className="flex justify-center gap-4 mb-4">
-          <Avatar className="w-20 h-20 border-4 border-background shadow-lg ring-2 ring-coral">
+        <div className="flex justify-center gap-4 mb-4 animate-scale-in">
+          <Avatar className="w-20 h-20 border-4 border-background shadow-lg ring-2 ring-coral cursor-pointer hover:scale-110 transition-transform animate-press">
             <AvatarImage src="https://images.unsplash.com/photo-1568572933382-74d440642117?w=200&h=200&fit=crop" />
             <AvatarFallback>🐕</AvatarFallback>
           </Avatar>
-          <Avatar className="w-20 h-20 border-4 border-background shadow-lg opacity-60">
+          <Avatar className="w-20 h-20 border-4 border-background shadow-lg opacity-60 hover:opacity-100 cursor-pointer hover:scale-105 transition-all animate-press">
             <AvatarImage src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=200&h=200&fit=crop" />
             <AvatarFallback>🐕</AvatarFallback>
           </Avatar>
-          <Avatar className="w-20 h-20 border-4 border-background shadow-lg opacity-60">
+          <Avatar className="w-20 h-20 border-4 border-background shadow-lg opacity-60 hover:opacity-100 cursor-pointer hover:scale-105 transition-all animate-press">
             <AvatarImage src="https://images.unsplash.com/photo-1560807707-8cc77767d783?w=200&h=200&fit=crop" />
             <AvatarFallback>🐕</AvatarFallback>
           </Avatar>
         </div>
 
-        <div className="text-center">
-          <h2 className="text-xl font-bold mb-1">הוקי ארביב</h2>
-          <p className="text-sm text-muted-foreground">גיל 1.5</p>
+        <div className="text-center animate-slide-up">
+          <h2 className="text-2xl font-bold mb-1">הוקי ארביב</h2>
+          <p className="text-sm text-muted-foreground font-medium">גיל 1.5</p>
         </div>
       </div>
 
@@ -96,9 +97,10 @@ const Home = () => {
                 href={feature.path}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform shadow-md rounded-lg border bg-card text-card-foreground shadow-sm`}
+                style={{ animationDelay: `${index * 100}ms` }}
+                className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 shadow-md hover:shadow-xl rounded-lg border bg-card text-card-foreground animate-scale-in`}
               >
-                <div className="w-16 h-16 rounded-2xl bg-background/20 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl bg-background/20 backdrop-blur-sm flex items-center justify-center transition-transform group-hover:scale-110">
                   <Icon className="w-8 h-8" />
                 </div>
                 <span className="font-bold text-center">{feature.label}</span>
@@ -110,9 +112,10 @@ const Home = () => {
             <Card
               key={index}
               onClick={() => navigate(feature.path)}
-              className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform shadow-md`}
+              style={{ animationDelay: `${index * 100}ms` }}
+              className={`${feature.color} p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 shadow-md hover:shadow-xl animate-scale-in group`}
             >
-              <div className="w-16 h-16 rounded-2xl bg-background/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-background/20 backdrop-blur-sm flex items-center justify-center transition-transform group-hover:scale-110">
                 <Icon className="w-8 h-8" />
               </div>
               <span className="font-bold text-center">{feature.label}</span>
