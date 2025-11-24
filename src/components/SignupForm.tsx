@@ -308,7 +308,7 @@ export const SignupForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-jakarta font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(96,165,250,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+        className="w-full h-12 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-jakarta font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
         disabled={loading}
         aria-busy={loading}
       >
