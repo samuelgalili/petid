@@ -44,17 +44,38 @@ const Auth = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4" 
-      dir="rtl" 
-      style={{ 
-        background: 'linear-gradient(135deg, hsl(174 43% 88%) 0%, hsl(180 40% 92%) 100%)' 
-      }}
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" 
+      dir="rtl"
     >
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ 
+          filter: 'brightness(0.7)',
+          zIndex: 0
+        }}
+      >
+        <source src="/videos/background-pup.mp4" type="video/mp4" />
+      </video>
+      
+      {/* Overlay for better readability */}
+      <div 
+        className="absolute inset-0" 
+        style={{ 
+          background: 'linear-gradient(135deg, rgba(94, 186, 176, 0.3) 0%, rgba(135, 201, 195, 0.3) 100%)',
+          zIndex: 1
+        }}
+      />
       <Card 
-        className="w-full max-w-[420px] border-0 overflow-hidden bg-[#FEFEFE]/95 backdrop-blur-sm" 
+        className="w-full max-w-[420px] border-0 overflow-hidden bg-[#FEFEFE]/95 backdrop-blur-sm relative" 
         style={{ 
           borderRadius: '32px',
-          boxShadow: '0 8px 32px rgba(93, 213, 200, 0.15)'
+          boxShadow: '0 8px 32px rgba(93, 213, 200, 0.15)',
+          zIndex: 2
         }}
       >
         <div className="pt-12 pb-12 px-6">
@@ -70,8 +91,8 @@ const Auth = () => {
             <div className="w-6 h-6" />
           </div>
 
-          {/* Logo with Animated Animals */}
-          <PetidLogo />
+          {/* Logo without Animals */}
+          <PetidLogo showAnimals={false} />
 
           {/* Login Form */}
           <div className="mb-4">
