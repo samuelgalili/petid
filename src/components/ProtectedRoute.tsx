@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useGuest } from "@/contexts/GuestContext";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -9,13 +10,14 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, loading } = useAuth();
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!loading && !isAuthenticated && !isGuest) {
       navigate("/auth");
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, isGuest, navigate]);
 
   if (loading) {
     return (
@@ -25,7 +27,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isGuest) {
     return null;
   }
 

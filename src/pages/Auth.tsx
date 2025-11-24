@@ -1,14 +1,18 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "@/components/LoginForm";
 import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
+import { useGuest } from "@/contexts/GuestContext";
+import { UserX } from "lucide-react";
 
 const Auth = () => {
   const { toast } = useToast();
   const { isAuthenticated, loading } = useAuth();
+  const { setGuestMode } = useGuest();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,6 +20,11 @@ const Auth = () => {
       navigate("/add-pet");
     }
   }, [isAuthenticated, loading, navigate]);
+
+  const handleGuestMode = () => {
+    setGuestMode(true);
+    navigate("/add-pet");
+  };
 
   if (loading) {
     return null;
@@ -57,6 +66,16 @@ const Auth = () => {
                 Create account
               </Link>
             </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleGuestMode}
+              className="w-full mt-4"
+            >
+              <UserX className="ml-2 h-4 w-4" />
+              המשך כאורח
+            </Button>
           </div>
         </CardContent>
       </Card>
