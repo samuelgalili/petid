@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { LoginForm } from "@/components/LoginForm";
 import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +11,6 @@ import { PetidLogo } from "@/components/PetidLogo";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Auth = () => {
-  const { toast } = useToast();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { setGuestMode } = useGuest();
   const navigate = useNavigate();
@@ -97,18 +95,12 @@ const Auth = () => {
 
               {/* Footer Links */}
               <div className="space-y-2 text-center text-sm">
-                <button
-                  type="button"
-                  onClick={() =>
-                    toast({
-                      title: "Coming Soon",
-                      description: "Password recovery feature will be added soon",
-                    })
-                  }
+                <Link
+                  to="/forgot-password"
                   className="text-white/90 hover:text-white hover:underline transition-colors block w-full"
                 >
-                  Forgot Password
-                </button>
+                  Forgot Password?
+                </Link>
 
                 <div className="text-white/90">
                   Don't have an account?{" "}
