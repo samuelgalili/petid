@@ -15,24 +15,8 @@ export const PetidLogo = ({ showAnimals = true, className = "" }: PetidLogoProps
       <div className="flex justify-center relative" style={{ marginBottom: showAnimals ? '2rem' : '1.5rem' }}>
         <motion.img
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: 1, 
-            scale: 1,
-            filter: [
-              'drop-shadow(0 0 3px rgba(254, 215, 102, 1)) drop-shadow(0 0 6px rgba(254, 215, 102, 1)) drop-shadow(0 0 8px rgba(251, 191, 36, 0.9))',
-              'drop-shadow(0 0 4px rgba(254, 215, 102, 1)) drop-shadow(0 0 8px rgba(254, 215, 102, 1)) drop-shadow(0 0 10px rgba(251, 191, 36, 0.9))',
-              'drop-shadow(0 0 3px rgba(254, 215, 102, 1)) drop-shadow(0 0 6px rgba(254, 215, 102, 1)) drop-shadow(0 0 8px rgba(251, 191, 36, 0.9))',
-            ]
-          }}
-          transition={{ 
-            opacity: { duration: 0.5, ease: "easeOut" },
-            scale: { duration: 0.5, ease: "easeOut" },
-            filter: { 
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }
-          }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           src={petidLogo}
           alt="PetID Logo"
           className="h-12 w-auto object-contain"
