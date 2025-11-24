@@ -56,9 +56,9 @@ const Signup = () => {
             className="w-full max-w-[420px] relative"
             style={{ zIndex: 2 }}
           >
-            <div className="pt-12 pb-12 px-6">
+            <div className="pt-6 pb-6 px-6">
               {/* Header with status icons */}
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center justify-between mb-3">
                 <div className="w-6 h-6">
                   <Menu className="w-5 h-5 text-white/80" />
                 </div>
@@ -70,8 +70,8 @@ const Signup = () => {
               </div>
 
               {/* Logo without Animals */}
-              <PetidLogo showAnimals={false} />
-          
+              <PetidLogo showAnimals={false} className="mb-4" />
+
               <div className="mb-6 text-center">
                 <h2 className="text-2xl font-bold text-white mb-3">Sign Up</h2>
                 <p className="text-sm text-white/90 leading-relaxed px-4">
@@ -83,7 +83,7 @@ const Signup = () => {
 
               <SocialAuthButtons redirectTo="/add-pet" />
 
-              <div className="mt-6 text-center text-sm text-white/90">
+              <div className="mt-4 text-center text-sm text-white/90">
                 Already have an account?{" "}
                 <Link
                   to="/auth"
@@ -97,7 +97,7 @@ const Signup = () => {
                 type="button"
                 variant="ghost"
                 onClick={handleGuestMode}
-                className="w-full mt-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                className="w-full mt-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
               >
                 <UserX className="ml-2 h-4 w-4" />
                 Continue as Guest

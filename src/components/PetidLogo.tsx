@@ -12,14 +12,14 @@ export const PetidLogo = ({ showAnimals = true, className = "" }: PetidLogoProps
   return (
     <div className={className}>
       {/* Logo */}
-      <div className="flex justify-center" style={{ marginBottom: showAnimals ? '2rem' : '3rem' }}>
+      <div className="flex justify-center" style={{ marginBottom: showAnimals ? '2rem' : '1.5rem' }}>
         <motion.img
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           src={petidLogo}
           alt="PetID Logo"
-          className="h-16 w-auto object-contain"
+          className="h-12 w-auto object-contain"
         />
       </div>
 
