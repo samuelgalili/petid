@@ -12,7 +12,7 @@ export const PetidLogo = ({ showAnimals = true, className = "" }: PetidLogoProps
   return (
     <div className={className}>
       {/* Logo */}
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center" style={{ marginBottom: showAnimals ? '2rem' : '3rem' }}>
         <motion.img
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
