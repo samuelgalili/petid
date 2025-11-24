@@ -79,7 +79,7 @@ const Auth = () => {
             <div className="text-center mb-5">
               <Link
                 to="/forgot-password"
-                className="text-white/90 hover:text-white text-sm hover:underline transition-colors"
+                className="inline-block px-4 py-2 text-white/95 bg-white/10 hover:bg-white/20 text-sm font-medium rounded-full border border-white/20 hover:border-white/30 shadow-[0_4px_15px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-all"
               >
                 Forgot your password?
               </Link>
