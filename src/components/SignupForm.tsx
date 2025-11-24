@@ -72,29 +72,29 @@ export const SignupForm = () => {
 
       if (error) {
         if (error.message.includes("already registered")) {
-          setGeneralError("אימייל זה כבר רשום במערכת. נסה להתחבר במקום.");
+          setGeneralError("This email is already registered. Try logging in instead.");
           setFieldErrors({ email: "Email already exists" });
         } else {
           setGeneralError(error.message);
         }
 
         toast({
-          title: "שגיאת הרשמה",
+          title: "Registration Error",
           description: error.message,
           variant: "destructive",
         });
       } else if (data.user) {
         toast({
-          title: "הרשמה הצליחה!",
-          description: "חשבון חדש נוצר בהצלחה",
+          title: "Registration Successful!",
+          description: "New account created successfully",
         });
         navigate("/add-pet");
       }
     } catch (error: any) {
-      setGeneralError("אירעה שגיאה בלתי צפויה. אנא נסה שוב מאוחר יותר.");
+      setGeneralError("An unexpected error occurred. Please try again later.");
       toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בלתי צפויה",
+        title: "Error",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -177,7 +177,7 @@ export const SignupForm = () => {
             id="password"
             name="password"
             type={showPassword ? "text" : "password"}
-            placeholder="לפחות 6 תווים, כולל אות גדולה, קטנה ומספר"
+            placeholder="At least 6 characters, including uppercase, lowercase & number"
             value={formData.password}
             onChange={(e) => {
               setFormData({ ...formData, password: e.target.value });
@@ -215,7 +215,7 @@ export const SignupForm = () => {
             id="confirmPassword"
             name="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
-            placeholder="הכנס את הסיסמה שוב"
+            placeholder="Re-enter password"
             value={formData.confirmPassword}
             onChange={(e) => {
               setFormData({ ...formData, confirmPassword: e.target.value });
@@ -252,7 +252,7 @@ export const SignupForm = () => {
         {loading ? (
           <>
             <Loader2 className="ml-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            <span>יוצר חשבון...</span>
+            <span>Creating Account...</span>
           </>
         ) : (
           "Create Account"

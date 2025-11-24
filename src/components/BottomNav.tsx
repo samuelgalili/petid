@@ -7,11 +7,11 @@ const BottomNav = () => {
   const location = useLocation();
 
   const navItems = [
-    { icon: Home, label: "בית", path: "/home" },
-    { icon: Calendar, label: "יומן", path: "/tracker" },
-    { icon: Bell, label: "עדכונים", path: "/feed" },
-    { icon: MapPin, label: "חנות", path: "/shop" },
-    { icon: Heart, label: "אימוץ", path: "/adoption" },
+    { icon: Home, label: "Home", path: "/home" },
+    { icon: Calendar, label: "Diary", path: "/tracker" },
+    { icon: Bell, label: "Updates", path: "/feed" },
+    { icon: MapPin, label: "Shop", path: "/shop" },
+    { icon: Heart, label: "Adopt", path: "/adoption" },
   ];
 
   return (

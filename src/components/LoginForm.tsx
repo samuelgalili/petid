@@ -63,30 +63,30 @@ export const LoginForm = () => {
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          setGeneralError("אימייל או סיסמה שגויים. אנא נסה שוב.");
+          setGeneralError("Invalid email or password. Please try again.");
         } else if (error.message.includes("Email not confirmed")) {
-          setGeneralError("אנא אשר את האימייל שלך לפני ההתחברות.");
+          setGeneralError("Please confirm your email before logging in.");
         } else {
           setGeneralError(error.message);
         }
         
         toast({
-          title: "שגיאת התחברות",
+          title: "Login Error",
           description: error.message,
           variant: "destructive",
         });
       } else if (data.session) {
         toast({
-          title: "התחברות הצליחה",
-          description: "ברוך הבא בחזרה!",
+          title: "Login Successful",
+          description: "Welcome back!",
         });
         navigate("/add-pet");
       }
     } catch (error: any) {
-      setGeneralError("אירעה שגיאה בלתי צפויה. אנא נסה שוב מאוחר יותר.");
+      setGeneralError("An unexpected error occurred. Please try again later.");
       toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בלתי צפויה",
+        title: "Error",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -145,7 +145,7 @@ export const LoginForm = () => {
           id="password"
           name="password"
           type="password"
-          placeholder="הכנס סיסמה (לפחות 6 תווים)"
+          placeholder="Enter password (at least 6 characters)"
           value={formData.password}
           onChange={(e) => {
             setFormData({ ...formData, password: e.target.value });
@@ -194,7 +194,7 @@ export const LoginForm = () => {
         {loading ? (
           <>
             <Loader2 className="ml-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            <span>מתחבר...</span>
+            <span>Signing In...</span>
           </>
         ) : (
           "Sign In"
