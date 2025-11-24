@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { useGuest } from "@/contexts/GuestContext";
 
 const AddPet = () => {
   const [loading, setLoading] = useState(false);
@@ -22,18 +23,19 @@ const AddPet = () => {
     is_neutered: "false",
   });
   const { petType, setPetType } = usePetPreference();
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session && !isGuest) {
         navigate("/auth");
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,6 +63,16 @@ const AddPet = () => {
     setLoading(true);
 
     try {
+      // For guest users, just show success and navigate
+      if (isGuest) {
+        toast({
+          title: "הצלחה!",
+          description: "חיית המחמד נוספה (מצב אורח - לא נשמר)",
+        });
+        navigate("/home");
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
