@@ -19,11 +19,11 @@ export const PetidLogo = ({ showAnimals = true, className = "" }: PetidLogoProps
             opacity: 1, 
             scale: 1,
             filter: [
-              'drop-shadow(0 0 20px rgba(96, 165, 250, 0.8)) drop-shadow(0 0 40px rgba(147, 51, 234, 0.6))',
-              'drop-shadow(0 0 25px rgba(147, 51, 234, 0.8)) drop-shadow(0 0 45px rgba(236, 72, 153, 0.6))',
-              'drop-shadow(0 0 20px rgba(236, 72, 153, 0.8)) drop-shadow(0 0 40px rgba(251, 191, 36, 0.6))',
-              'drop-shadow(0 0 25px rgba(251, 191, 36, 0.8)) drop-shadow(0 0 45px rgba(34, 197, 94, 0.6))',
-              'drop-shadow(0 0 20px rgba(34, 197, 94, 0.8)) drop-shadow(0 0 40px rgba(96, 165, 250, 0.6))',
+              'drop-shadow(0 0 3px rgba(96, 165, 250, 1)) drop-shadow(0 0 6px rgba(96, 165, 250, 0.8))',
+              'drop-shadow(0 0 3px rgba(147, 51, 234, 1)) drop-shadow(0 0 6px rgba(147, 51, 234, 0.8))',
+              'drop-shadow(0 0 3px rgba(236, 72, 153, 1)) drop-shadow(0 0 6px rgba(236, 72, 153, 0.8))',
+              'drop-shadow(0 0 3px rgba(251, 191, 36, 1)) drop-shadow(0 0 6px rgba(251, 191, 36, 0.8))',
+              'drop-shadow(0 0 3px rgba(34, 197, 94, 1)) drop-shadow(0 0 6px rgba(34, 197, 94, 0.8))',
             ]
           }}
           transition={{ 
