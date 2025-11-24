@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,11 +34,12 @@ export const LoginForm = () => {
     rememberMe: false,
   });
   const [showOTPInput, setShowOTPInput] = useState(false);
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
   const [generalError, setGeneralError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -51,6 +52,64 @@ export const LoginForm = () => {
       return () => clearTimeout(timer);
     }
   }, [resendCountdown]);
+
+  // Focus first OTP input when OTP screen shows
+  useEffect(() => {
+    if (showOTPInput && otpInputRefs.current[0]) {
+      otpInputRefs.current[0].focus();
+    }
+  }, [showOTPInput]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    // Only allow digits
+    const digit = value.replace(/\D/g, '').slice(-1);
+    
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (digit && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      if (!otp[index] && index > 0) {
+        // If current input is empty, move to previous input
+        otpInputRefs.current[index - 1]?.focus();
+      } else {
+        // Clear current input
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newOtp = [...otp];
+    
+    pastedData.split('').forEach((digit, index) => {
+      if (index < 6) {
+        newOtp[index] = digit;
+      }
+    });
+    
+    setOtp(newOtp);
+    
+    // Focus the next empty input or the last one
+    const nextEmptyIndex = newOtp.findIndex(d => !d);
+    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
+    otpInputRefs.current[focusIndex]?.focus();
+  };
 
   const validateForm = (): boolean => {
     try {
@@ -135,9 +194,10 @@ export const LoginForm = () => {
         await sendOTP();
       } else {
         // Verify OTP
+        const otpCode = otp.join('');
         const { error } = await supabase.auth.verifyOtp({
           phone: formData.phone,
-          token: otp,
+          token: otpCode,
           type: 'sms'
         });
 
@@ -273,44 +333,51 @@ export const LoginForm = () => {
           </div>
         </>
       ) : (
-        <div className="space-y-2">
-          <Label htmlFor="otp" className="text-sm font-jakarta font-medium text-gray-700">
+        <div className="space-y-3">
+          <Label className="text-sm font-jakarta font-medium text-gray-700 text-center block">
             Verification Code
           </Label>
-          <motion.div
-            animate={otp.length === 6 ? {
-              scale: [1, 1.02, 1],
-              borderColor: ["#e5e7eb", "#FBD66A", "#FBD66A"],
-            } : {}}
-            transition={{ duration: 0.3 }}
-          >
-            <Input
-              id="otp"
-              name="otp"
-              type="text"
-              placeholder="000000"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              disabled={loading}
-              maxLength={6}
-              className={`h-12 bg-gray-50/95 border-2 text-gray-900 placeholder:text-gray-400 focus:bg-white rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm text-center text-2xl tracking-widest ${
-                otp.length === 6 
-                  ? "border-[#FBD66A] bg-[#FBD66A]/10 focus:border-[#F4C542] focus:shadow-[0_8px_30px_rgba(251,214,106,0.4)]" 
-                  : "border-gray-200 focus:border-primary focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)]"
-              }`}
-              autoComplete="one-time-code"
-            />
-          </motion.div>
+          
+          <div className="flex justify-center gap-2">
+            {otp.map((digit, index) => (
+              <motion.input
+                key={index}
+                ref={(el) => (otpInputRefs.current[index] = el)}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                onPaste={index === 0 ? handleOtpPaste : undefined}
+                disabled={loading}
+                animate={otp.every(d => d) ? {
+                  scale: [1, 1.05, 1],
+                  borderColor: ["#e5e7eb", "#FBD66A", "#FBD66A"],
+                } : {}}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`w-12 h-14 text-center text-2xl font-bold bg-gray-50/95 border-2 text-gray-900 rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_25px_rgba(0,0,0,0.2)] backdrop-blur-sm focus:outline-none ${
+                  digit
+                    ? otp.every(d => d)
+                      ? "border-[#FBD66A] bg-[#FBD66A]/10 focus:border-[#F4C542] focus:shadow-[0_6px_25px_rgba(251,214,106,0.4)]"
+                      : "border-gray-300 bg-gray-100 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
+                    : "border-gray-200 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
+                }`}
+                autoComplete="one-time-code"
+              />
+            ))}
+          </div>
+
           <motion.p
             initial={{ opacity: 0.7 }}
-            animate={otp.length === 6 ? {
+            animate={otp.every(d => d) ? {
               opacity: [0.7, 1, 0.7],
               color: ["#6b7280", "#F4C542", "#6b7280"]
             } : { opacity: 0.7 }}
             transition={{ duration: 0.5 }}
             className="text-xs font-jakarta text-center"
           >
-            {otp.length === 6 ? "✓ Code complete! Click verify to continue" : "Enter the 6-digit code sent to your phone and email"}
+            {otp.every(d => d) ? "✓ Code complete! Click verify to continue" : "Enter the 6-digit code sent to your phone and email"}
           </motion.p>
         </div>
       )}
@@ -357,7 +424,7 @@ export const LoginForm = () => {
             type="button"
             onClick={() => {
               setShowOTPInput(false);
-              setOtp("");
+              setOtp(["", "", "", "", "", ""]);
               setGeneralError("");
               setResendCountdown(0);
             }}
