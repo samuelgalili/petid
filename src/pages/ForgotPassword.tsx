@@ -76,6 +76,21 @@ const ForgotPassword = () => {
         <source src="/videos/background-pup-story.mp4" type="video/mp4" />
       </video>
 
+      {/* Fixed Header with Back Button and Logo */}
+      <div className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link
+            to="/auth"
+            className="inline-flex items-center text-gray-900 hover:text-gray-700 transition-colors font-medium"
+          >
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            <span className="font-jakarta">Back</span>
+          </Link>
+          
+          <PetidLogo showAnimals={false} />
+        </div>
+      </div>
+
       {/* Content */}
       <AnimatePresence>
         {videoEnded && (
@@ -83,29 +98,16 @@ const ForgotPassword = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full max-w-[420px] relative"
+            className="w-full max-w-[420px] relative mt-24"
             style={{ zIndex: 2 }}
           >
             <div className="pt-6 pb-6 px-6">
-              {/* Back Button */}
-              <div className="mb-6">
-                <Link
-                  to="/auth"
-                  className="inline-flex items-center text-gray-700 hover:text-gray-900 transition-colors font-medium"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Login
-                </Link>
-              </div>
-
-              {/* Logo */}
-              <PetidLogo showAnimals={false} className="mb-8" />
 
               {!emailSent ? (
                 <>
                   <div className="mb-8 text-center">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">Reset Password</h2>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Reset Password</h2>
+                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
                       Enter your email address and we'll send you a link to reset your password
                     </p>
                   </div>
@@ -121,7 +123,7 @@ const ForgotPassword = () => {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="email" className="text-sm font-medium font-jakarta text-gray-700">
                         Email Address
                       </Label>
                       <Input
@@ -135,7 +137,7 @@ const ForgotPassword = () => {
                           setError("");
                         }}
                         disabled={loading}
-                        className="h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300"
+                        className="h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta"
                         autoComplete="email"
                         required
                       />
@@ -162,12 +164,12 @@ const ForgotPassword = () => {
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span className="text-gray-900">Sending...</span>
+                          <span className="text-gray-900 font-jakarta">Sending...</span>
                         </>
                       ) : (
                         <>
                           <Mail className="mr-2 h-4 w-4 text-gray-900" />
-                          <span className="text-gray-900">Send Reset Link</span>
+                          <span className="text-gray-900 font-jakarta">Send Reset Link</span>
                         </>
                       )}
                     </Button>
@@ -180,14 +182,14 @@ const ForgotPassword = () => {
                   </div>
                   
                   <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">Check Your Email</h2>
-                    <p className="text-sm text-gray-600 leading-relaxed">
+                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Check Your Email</h2>
+                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
                       We've sent a password reset link to<br />
                       <strong className="text-gray-900">{email}</strong>
                     </p>
                   </div>
 
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs font-jakarta text-gray-500">
                     Didn't receive the email? Check your spam folder or try again with a different email address.
                   </p>
 
@@ -204,7 +206,7 @@ const ForgotPassword = () => {
                       e.currentTarget.style.backgroundColor = "#FBD66A";
                     }}
                   >
-                    <span className="text-gray-900">Try Another Email</span>
+                    <span className="text-gray-900 font-jakarta">Try Another Email</span>
                   </Button>
                 </div>
               )}
