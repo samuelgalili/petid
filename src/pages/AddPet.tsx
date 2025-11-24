@@ -144,7 +144,7 @@ const AddPet = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full mb-4 shadow-premium animate-float">
             <PawPrint className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-playfair font-bold text-foreground mb-2">
+          <h1 className="text-4xl md:text-5xl font-jakarta font-bold text-foreground mb-2">
             הוסף חיית מחמד
           </h1>
           <p className="text-muted-foreground text-lg">
@@ -172,7 +172,7 @@ const AddPet = () => {
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] animate-shimmer" />
           
           <CardHeader className="text-center space-y-2 pb-6">
-            <CardTitle className="text-2xl font-playfair">
+            <CardTitle className="text-2xl font-jakarta font-bold">
               {currentStep === 1 && "בחר סוג חיית מחמד"}
               {currentStep === 2 && "פרטים בסיסיים"}
               {currentStep === 3 && "פרטים נוספים"}
