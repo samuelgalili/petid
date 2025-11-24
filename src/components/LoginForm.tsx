@@ -126,7 +126,7 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-gray-50 focus:border-gray-400 rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-sm hover:shadow-md ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
@@ -159,7 +159,7 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, password: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-gray-50 focus:border-gray-400 rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-gray-50 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-sm hover:shadow-md ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.password}
           aria-describedby={fieldErrors.password ? "password-error" : undefined}
           autoComplete="current-password"
@@ -199,7 +199,7 @@ export const LoginForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50"
+        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
         disabled={loading}
         aria-busy={loading}
       >
