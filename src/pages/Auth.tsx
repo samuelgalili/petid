@@ -54,7 +54,7 @@ const Auth = () => {
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
       >
-        <source src="/videos/background-pup-story.mp4#t=0,8" type="video/mp4" />
+        <source src="/videos/background-pup-story.mp4" type="video/mp4" />
       </video>
 
       {/* Content without Card background */}
