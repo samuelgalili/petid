@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +38,19 @@ export const LoginForm = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
   const [generalError, setGeneralError] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown(resendCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
 
   const validateForm = (): boolean => {
     try {
@@ -58,6 +69,57 @@ export const LoginForm = () => {
     }
   };
 
+  const sendOTP = async () => {
+    setLoading(true);
+    setGeneralError("");
+
+    try {
+      // Send OTP to phone
+      const { error: phoneError } = await supabase.auth.signInWithOtp({
+        phone: formData.phone,
+      });
+
+      if (phoneError) {
+        setGeneralError(phoneError.message);
+        toast({
+          title: "Error",
+          description: phoneError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return false;
+      }
+
+      // Also send OTP to email
+      const { error: emailError } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+      });
+
+      if (emailError) {
+        console.warn("Email OTP error:", emailError.message);
+      }
+
+      toast({
+        title: "Verification code sent!",
+        description: "Check your phone and email for the code.",
+      });
+
+      setShowOTPInput(true);
+      setResendCountdown(60);
+      setLoading(false);
+      return true;
+    } catch (error: any) {
+      setGeneralError("Failed to send verification code. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to send verification code",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError("");
@@ -70,38 +132,7 @@ export const LoginForm = () => {
 
     try {
       if (!showOTPInput) {
-        // Send OTP to phone
-        const { error: phoneError } = await supabase.auth.signInWithOtp({
-          phone: formData.phone,
-        });
-
-        if (phoneError) {
-          setGeneralError(phoneError.message);
-          toast({
-            title: "Error",
-            description: phoneError.message,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Also send OTP to email
-        const { error: emailError } = await supabase.auth.signInWithOtp({
-          email: formData.email,
-        });
-
-        if (emailError) {
-          console.warn("Email OTP error:", emailError.message);
-        }
-
-        toast({
-          title: "Verification code sent!",
-          description: "Check your phone and email for the code.",
-        });
-
-        setShowOTPInput(true);
-        setLoading(false);
+        await sendOTP();
       } else {
         // Verify OTP
         const { error } = await supabase.auth.verifyOtp({
@@ -283,18 +314,39 @@ export const LoginForm = () => {
       </Button>
 
       {showOTPInput && (
-        <button
-          type="button"
-          onClick={() => {
-            setShowOTPInput(false);
-            setOtp("");
-            setGeneralError("");
-          }}
-          className="w-full text-sm text-gray-700 hover:text-gray-900 font-jakarta transition-colors"
-          disabled={loading}
-        >
-          Change phone number
-        </button>
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async () => {
+              if (resendCountdown === 0) {
+                await sendOTP();
+              }
+            }}
+            disabled={loading || resendCountdown > 0}
+            className="w-full h-10 bg-gray-50/95 hover:bg-gray-100 text-gray-700 font-jakarta font-medium border-2 border-gray-200 rounded-xl transition-all disabled:opacity-50"
+          >
+            {resendCountdown > 0 ? (
+              `Resend code in ${resendCountdown}s`
+            ) : (
+              "Resend verification code"
+            )}
+          </Button>
+          
+          <button
+            type="button"
+            onClick={() => {
+              setShowOTPInput(false);
+              setOtp("");
+              setGeneralError("");
+              setResendCountdown(0);
+            }}
+            className="w-full text-sm text-gray-700 hover:text-gray-900 font-jakarta transition-colors"
+            disabled={loading}
+          >
+            Change phone number
+          </button>
+        </div>
       )}
     </form>
   );
