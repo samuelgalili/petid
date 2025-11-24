@@ -68,16 +68,10 @@ const Auth = () => {
             className="w-full max-w-[440px] relative"
             style={{ zIndex: 2 }}
           >
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/30">
               {/* Logo */}
-              <div className="mb-6">
+              <div className="mb-8">
                 <PetidLogo showAnimals={false} />
-              </div>
-
-              {/* Welcome Message */}
-              <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-                <p className="text-white/80 text-sm">Sign in to continue to your account</p>
               </div>
 
               {/* Login Form */}
@@ -89,7 +83,7 @@ const Auth = () => {
               <div className="text-center mb-5">
                 <Link
                   to="/forgot-password"
-                  className="text-white/90 hover:text-white text-sm hover:underline transition-colors"
+                  className="text-gray-600 hover:text-gray-900 text-sm hover:underline transition-colors"
                 >
                   Forgot your password?
                 </Link>
@@ -103,20 +97,20 @@ const Auth = () => {
               {/* Divider */}
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-white/20" />
+                  <span className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-transparent px-2 text-white/70">Or</span>
+                  <span className="bg-white px-2 text-gray-500">Or</span>
                 </div>
               </div>
 
               {/* Sign Up Link */}
               <div className="text-center mb-4">
-                <p className="text-white/80 text-sm">
+                <p className="text-gray-600 text-sm">
                   Don't have an account?{" "}
                   <Link
                     to="/signup"
-                    className="text-white font-semibold hover:underline transition-colors"
+                    className="text-gray-900 font-semibold hover:underline transition-colors"
                   >
                     Sign Up
                   </Link>
@@ -126,9 +120,9 @@ const Auth = () => {
               {/* Guest Mode */}
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={handleGuestMode}
-                className="w-full rounded-full bg-white/5 hover:bg-white/10 text-white border border-white/20 transition-all"
+                className="w-full rounded-full border-gray-300 hover:bg-gray-50 text-gray-700 transition-all"
               >
                 <UserX className="mr-2 h-4 w-4" />
                 Continue as Guest
