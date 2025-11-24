@@ -108,6 +108,13 @@ const ResetPassword = () => {
         <source src="/videos/background-pup-story.mp4" type="video/mp4" />
       </video>
 
+      {/* Fixed Header with Back Button and Logo */}
+      <div className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
+          <PetidLogo showAnimals={false} />
+        </div>
+      </div>
+
       {/* Content */}
       <AnimatePresence>
         {videoEnded && (
@@ -115,25 +122,23 @@ const ResetPassword = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full max-w-[420px] relative"
+            className="w-full max-w-[420px] relative mt-24"
             style={{ zIndex: 2 }}
           >
             <div className="pt-6 pb-6 px-6">
-              {/* Logo */}
-              <PetidLogo showAnimals={false} className="mb-6" />
 
               {!success ? (
                 <>
-                  <div className="mb-6 text-center">
-                    <h2 className="text-2xl font-bold text-white mb-3">Set New Password</h2>
-                    <p className="text-sm text-white/90 leading-relaxed px-4">
+                  <div className="mb-8 text-center">
+                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Set New Password</h2>
+                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
                       Enter your new password below
                     </p>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="password" className="text-sm font-medium text-white">
+                      <Label htmlFor="password" className="text-sm font-medium font-jakarta text-gray-700">
                         New Password
                       </Label>
                       <div className="relative">
@@ -148,7 +153,7 @@ const ResetPassword = () => {
                             setErrors({ ...errors, password: undefined });
                           }}
                           disabled={loading}
-                          className={`h-11 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${errors.password ? "border-red-500" : ""}`}
+                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.password ? "border-red-500" : ""}`}
                           autoComplete="new-password"
                         />
                         <button
@@ -161,7 +166,7 @@ const ResetPassword = () => {
                         </button>
                       </div>
                       {errors.password && (
-                        <p className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded">
+                        <p className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
                           {errors.password}
                         </p>
                       )}
@@ -169,7 +174,7 @@ const ResetPassword = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-sm font-medium text-white">
+                      <Label htmlFor="confirmPassword" className="text-sm font-medium font-jakarta text-gray-700">
                         Confirm New Password
                       </Label>
                       <div className="relative">
@@ -184,7 +189,7 @@ const ResetPassword = () => {
                             setErrors({ ...errors, confirmPassword: undefined });
                           }}
                           disabled={loading}
-                          className={`h-11 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${errors.confirmPassword ? "border-red-500" : ""}`}
+                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.confirmPassword ? "border-red-500" : ""}`}
                           autoComplete="new-password"
                         />
                         <button
@@ -197,7 +202,7 @@ const ResetPassword = () => {
                         </button>
                       </div>
                       {errors.confirmPassword && (
-                        <p className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded">
+                        <p className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
                           {errors.confirmPassword}
                         </p>
                       )}
@@ -205,29 +210,42 @@ const ResetPassword = () => {
 
                     <Button
                       type="submit"
-                      className="w-full h-11 bg-white/90 hover:bg-white text-gray-900 font-medium transition-colors backdrop-blur-sm"
+                      className="w-full h-12 font-medium font-jakarta transition-all"
+                      style={{
+                        backgroundColor: loading ? "#E0C050" : "#FBD66A",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.backgroundColor = "#F4C542";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.backgroundColor = "#FBD66A";
+                        }
+                      }}
                       disabled={loading}
                     >
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span>Updating Password...</span>
+                          <span className="text-gray-900">Updating Password...</span>
                         </>
                       ) : (
-                        "Update Password"
+                        <span className="text-gray-900">Update Password</span>
                       )}
                     </Button>
                   </form>
                 </>
               ) : (
                 <div className="text-center space-y-6">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-sm">
-                    <CheckCircle className="h-8 w-8 text-white" />
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle className="h-10 w-10 text-green-600" />
                   </div>
                   
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-3">Password Updated!</h2>
-                    <p className="text-sm text-white/90 leading-relaxed px-4">
+                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Password Updated!</h2>
+                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
                       Your password has been successfully updated.<br />
                       Redirecting to login...
                     </p>
