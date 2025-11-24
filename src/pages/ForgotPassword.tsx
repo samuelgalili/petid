@@ -88,10 +88,10 @@ const ForgotPassword = () => {
           >
             <div className="pt-6 pb-6 px-6">
               {/* Back Button */}
-              <div className="mb-4">
+              <div className="mb-6">
                 <Link
                   to="/auth"
-                  className="inline-flex items-center text-white/90 hover:text-white transition-colors"
+                  className="inline-flex items-center text-gray-700 hover:text-gray-900 transition-colors font-medium"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Login
@@ -99,21 +99,21 @@ const ForgotPassword = () => {
               </div>
 
               {/* Logo */}
-              <PetidLogo showAnimals={false} className="mb-6" />
+              <PetidLogo showAnimals={false} className="mb-8" />
 
               {!emailSent ? (
                 <>
-                  <div className="mb-6 text-center">
-                    <h2 className="text-2xl font-bold text-white mb-3">Reset Password</h2>
-                    <p className="text-sm text-white/90 leading-relaxed px-4">
+                  <div className="mb-8 text-center">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-3">Reset Password</h2>
+                    <p className="text-sm text-gray-600 leading-relaxed">
                       Enter your email address and we'll send you a link to reset your password
                     </p>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-5">
                     {error && (
                       <div
-                        className="p-3 text-sm text-red-600 bg-red-50/90 border border-red-200 rounded-lg backdrop-blur-sm"
+                        className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg"
                         role="alert"
                       >
                         {error}
@@ -121,7 +121,7 @@ const ForgotPassword = () => {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-white">
+                      <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                         Email Address
                       </Label>
                       <Input
@@ -135,7 +135,7 @@ const ForgotPassword = () => {
                           setError("");
                         }}
                         disabled={loading}
-                        className="h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white"
+                        className="h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300"
                         autoComplete="email"
                         required
                       />
@@ -143,18 +143,31 @@ const ForgotPassword = () => {
 
                     <Button
                       type="submit"
-                      className="w-full h-11 bg-white/90 hover:bg-white text-gray-900 font-medium transition-colors backdrop-blur-sm"
+                      className="w-full h-12 font-medium transition-all"
+                      style={{
+                        backgroundColor: loading ? "#E0C050" : "#FBD66A",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.backgroundColor = "#F4C542";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.backgroundColor = "#FBD66A";
+                        }
+                      }}
                       disabled={loading}
                     >
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span>Sending...</span>
+                          <span className="text-gray-900">Sending...</span>
                         </>
                       ) : (
                         <>
-                          <Mail className="mr-2 h-4 w-4" />
-                          <span>Send Reset Link</span>
+                          <Mail className="mr-2 h-4 w-4 text-gray-900" />
+                          <span className="text-gray-900">Send Reset Link</span>
                         </>
                       )}
                     </Button>
@@ -162,28 +175,36 @@ const ForgotPassword = () => {
                 </>
               ) : (
                 <div className="text-center space-y-6">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto backdrop-blur-sm">
-                    <Mail className="h-8 w-8 text-white" />
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                    <Mail className="h-10 w-10 text-gray-700" />
                   </div>
                   
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-3">Check Your Email</h2>
-                    <p className="text-sm text-white/90 leading-relaxed px-4">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-3">Check Your Email</h2>
+                    <p className="text-sm text-gray-600 leading-relaxed">
                       We've sent a password reset link to<br />
-                      <strong className="text-white">{email}</strong>
+                      <strong className="text-gray-900">{email}</strong>
                     </p>
                   </div>
 
-                  <p className="text-xs text-white/80 px-4">
+                  <p className="text-xs text-gray-500">
                     Didn't receive the email? Check your spam folder or try again with a different email address.
                   </p>
 
                   <Button
                     onClick={() => setEmailSent(false)}
-                    variant="ghost"
-                    className="w-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                    className="w-full h-12 font-medium transition-all"
+                    style={{
+                      backgroundColor: "#FBD66A",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#F4C542";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#FBD66A";
+                    }}
                   >
-                    Try Another Email
+                    <span className="text-gray-900">Try Another Email</span>
                   </Button>
                 </div>
               )}
