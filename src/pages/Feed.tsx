@@ -2,10 +2,51 @@ import { ArrowRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { FeedPageSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 
 const Feed = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
+  // Simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div 
+        className="min-h-screen pb-20" 
+        dir="rtl"
+        style={{ backgroundColor: '#F8F6F3' }}
+      >
+        <div className="bg-white px-5 py-4">
+          <div className="flex items-center justify-between max-w-md mx-auto">
+            <button 
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#F5F5F5' }}
+            >
+              <ArrowRight className="w-5 h-5" style={{ color: '#1A1A1A' }} />
+            </button>
+            
+            <h1 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
+              שתי עובדיות
+            </h1>
+            
+            <div className="w-10 h-10 rounded-full" style={{ backgroundColor: '#F5F5F5' }} />
+          </div>
+        </div>
+
+        <FeedPageSkeleton />
+        <BottomNav />
+      </div>
+    );
+  }
 
   return (
     <div 

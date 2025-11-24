@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,18 +8,27 @@ import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
 import { UserX, Menu } from "lucide-react";
+import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 
 const Auth = () => {
   const { toast } = useToast();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { setGuestMode } = useGuest();
   const navigate = useNavigate();
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
+    if (!authLoading && isAuthenticated) {
       navigate("/add-pet");
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleGuestMode = () => {
     console.log("Guest mode button clicked");
@@ -28,8 +37,8 @@ const Auth = () => {
     navigate("/add-pet");
   };
 
-  if (loading) {
-    return null;
+  if (authLoading || pageLoading) {
+    return <AuthLoadingSkeleton />;
   }
 
   return (
