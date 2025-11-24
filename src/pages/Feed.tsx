@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 
 const Feed = () => {
@@ -37,7 +38,10 @@ const Feed = () => {
       {/* Main Content */}
       <div className="px-5 pt-5 space-y-4 max-w-md mx-auto">
         {/* Top Stats Card */}
-        <div 
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
           className="rounded-[28px] p-6 relative overflow-hidden"
           style={{ 
             backgroundColor: '#F5F0E8',
@@ -116,11 +120,16 @@ const Feed = () => {
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* First Update Card - Dog with golden retriever */}
-        <div 
-          className="rounded-[28px] p-5 flex gap-4 relative overflow-hidden"
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="rounded-[28px] p-5 flex gap-4 relative overflow-hidden cursor-pointer"
           style={{ 
             backgroundColor: '#5EBAB0',
             boxShadow: '0 4px 16px rgba(94, 186, 176, 0.3)'
@@ -157,11 +166,16 @@ const Feed = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Second Update Card - Puppy */}
-        <div 
-          className="rounded-[28px] p-5 flex gap-4 relative overflow-hidden"
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="rounded-[28px] p-5 flex gap-4 relative overflow-hidden cursor-pointer"
           style={{ 
             backgroundColor: '#87C9C3',
             boxShadow: '0 4px 16px rgba(135, 201, 195, 0.3)'
@@ -192,7 +206,7 @@ const Feed = () => {
               כווט
             </button>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <BottomNav />
