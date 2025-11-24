@@ -121,7 +121,7 @@ export const SignupForm = () => {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
+        <Label htmlFor="fullName" className="text-sm font-medium text-white">
           Full Name
         </Label>
         <Input
@@ -135,7 +135,7 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, fullName: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-gray-300 rounded-xl transition-all ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.fullName}
           aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
           autoComplete="name"
@@ -145,7 +145,7 @@ export const SignupForm = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             id="fullName-error"
-            className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg"
+            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
             role="alert"
           >
             {fieldErrors.fullName}
@@ -154,7 +154,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+        <Label htmlFor="email" className="text-sm font-medium text-white">
           Email Address
         </Label>
         <Input
@@ -168,7 +168,7 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-gray-300 rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
@@ -178,7 +178,7 @@ export const SignupForm = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             id="email-error"
-            className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg"
+            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
             role="alert"
           >
             {fieldErrors.email}
@@ -187,7 +187,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+        <Label htmlFor="phone" className="text-sm font-medium text-white">
           Phone Number
         </Label>
         <Input
@@ -201,7 +201,7 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, phone: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-gray-300 rounded-xl transition-all ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.phone}
           aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
           autoComplete="tel"
@@ -211,7 +211,7 @@ export const SignupForm = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             id="phone-error"
-            className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg"
+            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
             role="alert"
           >
             {fieldErrors.phone}
@@ -220,7 +220,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+        <Label htmlFor="password" className="text-sm font-medium text-white">
           Password
         </Label>
         <div className="relative">
@@ -235,7 +235,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-gray-300 rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+            className={`h-12 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
             aria-invalid={!!fieldErrors.password}
             aria-describedby={fieldErrors.password ? "password-error" : undefined}
             autoComplete="new-password"
@@ -254,7 +254,7 @@ export const SignupForm = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             id="password-error"
-            className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg"
+            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
             role="alert"
           >
             {fieldErrors.password}
@@ -264,7 +264,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+        <Label htmlFor="confirmPassword" className="text-sm font-medium text-white">
           Confirm Password
         </Label>
         <div className="relative">
@@ -279,7 +279,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
             }}
             disabled={loading}
-            className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-gray-300 rounded-xl transition-all ${fieldErrors.confirmPassword ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+            className={`h-12 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.confirmPassword ? "border-red-400 focus-visible:ring-red-400" : ""}`}
             aria-invalid={!!fieldErrors.confirmPassword}
             aria-describedby={fieldErrors.confirmPassword ? "confirmPassword-error" : undefined}
             autoComplete="new-password"
@@ -298,7 +298,7 @@ export const SignupForm = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             id="confirmPassword-error"
-            className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg"
+            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
             role="alert"
           >
             {fieldErrors.confirmPassword}
@@ -308,7 +308,7 @@ export const SignupForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50"
+        className="w-full h-12 bg-white/90 hover:bg-white text-gray-900 font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 backdrop-blur-sm"
         disabled={loading}
         aria-busy={loading}
       >
