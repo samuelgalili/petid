@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
 import AddPet from "./pages/AddPet";
 import Home from "./pages/Home";
+import Feed from "./pages/Feed";
 import Tracker from "./pages/Tracker";
 import Shop from "./pages/Shop";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/add-pet" element={<ProtectedRoute><AddPet /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
             <Route path="/tracker" element={<ProtectedRoute><Tracker /></ProtectedRoute>} />
             <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
