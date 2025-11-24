@@ -12,6 +12,7 @@ import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicato
 interface FieldError {
   fullName?: string;
   email?: string;
+  phone?: string;
   password?: string;
   confirmPassword?: string;
 }
@@ -20,6 +21,7 @@ export const SignupForm = () => {
   const [formData, setFormData] = useState<SignupFormData>({
     fullName: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
   });
@@ -65,6 +67,7 @@ export const SignupForm = () => {
         options: {
           data: {
             full_name: formData.fullName,
+            phone: formData.phone,
           },
           emailRedirectTo: `${window.location.origin}/add-pet`,
         },
@@ -164,6 +167,33 @@ export const SignupForm = () => {
         {fieldErrors.email && (
           <p id="email-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
             {fieldErrors.email}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="phone" className="text-sm font-medium text-white">
+          Phone Number
+        </Label>
+        <Input
+          id="phone"
+          name="phone"
+          type="tel"
+          placeholder="1234567890"
+          value={formData.phone}
+          onChange={(e) => {
+            setFormData({ ...formData, phone: e.target.value });
+            setFieldErrors({ ...fieldErrors, phone: undefined });
+          }}
+          disabled={loading}
+          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          aria-invalid={!!fieldErrors.phone}
+          aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+          autoComplete="tel"
+        />
+        {fieldErrors.phone && (
+          <p id="phone-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
+            {fieldErrors.phone}
           </p>
         )}
       </div>

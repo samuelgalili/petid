@@ -12,12 +12,14 @@ import { useAuth } from "@/hooks/useAuth";
 interface FieldError {
   email?: string;
   password?: string;
+  phone?: string;
 }
 
 export const LoginForm = () => {
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
+    phone: "",
     rememberMe: false,
   });
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
@@ -164,6 +166,37 @@ export const LoginForm = () => {
             role="alert"
           >
             {fieldErrors.password}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="phone" className="text-sm font-medium text-white">
+          Phone Number (Optional)
+        </Label>
+        <Input
+          id="phone"
+          name="phone"
+          type="tel"
+          placeholder="1234567890"
+          value={formData.phone}
+          onChange={(e) => {
+            setFormData({ ...formData, phone: e.target.value });
+            setFieldErrors({ ...fieldErrors, phone: undefined });
+          }}
+          disabled={loading}
+          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          aria-invalid={!!fieldErrors.phone}
+          aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+          autoComplete="tel"
+        />
+        {fieldErrors.phone && (
+          <p
+            id="phone-error"
+            className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded"
+            role="alert"
+          >
+            {fieldErrors.phone}
           </p>
         )}
       </div>
