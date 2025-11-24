@@ -79,7 +79,7 @@ const Auth = () => {
             <div className="text-center mb-5">
               <Link
                 to="/forgot-password"
-                className="inline-block px-4 py-2 text-white/95 bg-white/10 hover:bg-white/20 text-sm font-medium rounded-full border border-white/20 hover:border-white/30 shadow-[0_4px_15px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-all"
+                className="inline-block px-4 py-2 text-gray-700 bg-white/10 hover:bg-white/20 text-sm font-jakarta font-medium rounded-full border border-white/20 hover:border-white/30 shadow-[0_4px_15px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-all"
               >
                 Forgot your password?
               </Link>
@@ -93,20 +93,20 @@ const Auth = () => {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/30" />
+                <span className="w-full border-t border-gray-400/30" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-transparent px-2 text-white/90">Or</span>
+                <span className="bg-transparent px-2 text-gray-700 font-jakarta">Or</span>
               </div>
             </div>
 
             {/* Sign Up Link */}
             <div className="text-center mb-4">
-              <p className="text-white/90 text-sm">
+              <p className="text-gray-700 text-sm font-jakarta">
                 Don't have an account?{" "}
                 <Link
                   to="/signup"
-                  className="text-white font-semibold hover:underline transition-colors"
+                  className="text-gray-900 font-semibold hover:underline transition-colors"
                 >
                   Sign Up
                 </Link>
@@ -118,7 +118,7 @@ const Auth = () => {
               type="button"
               variant="ghost"
               onClick={handleGuestMode}
-              className="w-full rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm"
+              className="w-full rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm font-jakarta font-semibold"
             >
               <UserX className="mr-2 h-4 w-4" />
               Continue as Guest
