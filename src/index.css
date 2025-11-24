@@ -8,57 +8,55 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 250 40% 98%;
-    --foreground: 240 20% 15%;
+    --background: 180 40% 96%;
+    --foreground: 0 0% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 20% 15%;
+    --card-foreground: 0 0% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 20% 15%;
+    --popover-foreground: 0 0% 20%;
 
-    --primary: 240 60% 45%;
+    --primary: 174 62% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 250 35% 96%;
-    --secondary-foreground: 240 20% 20%;
+    --secondary: 40 35% 94%;
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 250 30% 95%;
-    --muted-foreground: 240 10% 50%;
+    --muted: 174 25% 90%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 280 50% 55%;
+    --accent: 174 62% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 20% 88%;
-    --input: 240 15% 92%;
-    --ring: 240 60% 45%;
+    --border: 0 0% 90%;
+    --input: 0 0% 95%;
+    --ring: 174 62% 60%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
-    /* Premium colors */
-    --premium-gold: 45 90% 55%;
-    --premium-gold-light: 45 85% 92%;
-    --premium-purple: 260 55% 50%;
-    --premium-purple-light: 260 45% 95%;
-    --accent-subtle: 250 30% 94%;
-    --accent-hover: 240 35% 90%;
+    /* Pastel colors for categories */
+    --pastel-pink: 0 100% 95%;
+    --pastel-blue: 174 43% 88%;
+    --pastel-yellow: 48 100% 95%;
+    --pastel-purple: 248 100% 95%;
+    --pastel-green: 132 43% 93%;
+    --pastel-peach: 20 100% 94%;
     
     /* Gradients */
-    --gradient-premium: linear-gradient(135deg, hsl(240 60% 55%) 0%, hsl(280 50% 60%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(250 35% 98%) 100%);
-    --gradient-overlay: linear-gradient(135deg, hsla(240 60% 55% / 0.05) 0%, hsla(280 50% 60% / 0.05) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(174 62% 60%) 0%, hsl(174 52% 70%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(180 40% 98%) 0%, hsl(180 35% 96%) 100%);
     
     /* Animations & Transitions */
     --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    --shadow-soft: 0 2px 8px -2px rgba(99, 102, 241, 0.08);
-    --shadow-medium: 0 8px 24px -4px rgba(99, 102, 241, 0.12);
-    --shadow-large: 0 20px 40px -8px rgba(99, 102, 241, 0.15);
-    --shadow-premium: 0 10px 40px -10px rgba(139, 92, 246, 0.2);
+    --shadow-soft: 0 2px 8px -2px rgba(93, 213, 200, 0.15);
+    --shadow-medium: 0 8px 24px -4px rgba(93, 213, 200, 0.2);
+    --shadow-large: 0 20px 40px -8px rgba(93, 213, 200, 0.25);
 
     --sidebar-background: 0 0% 98%;
 
@@ -123,7 +121,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-heebo antialiased;
-    background: linear-gradient(180deg, hsl(250 40% 98%) 0%, hsl(250 35% 96%) 100%);
+    background: linear-gradient(180deg, hsl(180 40% 96%) 0%, hsl(180 35% 94%) 100%);
   }
   
   h1, h2, h3 {

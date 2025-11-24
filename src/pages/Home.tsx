@@ -10,32 +10,76 @@ const Home = () => {
 
   const features = [
     {
-      icon: Calendar,
-      label: "יומן מעקב",
-      description: "תיעוד פעילויות יומיות",
+      icon: "🦴",
+      label: "אתני ושטף",
+      description: "AMMI SPN",
       path: "/tracker",
       external: false,
+      color: "bg-[#FFE5E5]",
     },
     {
-      icon: MapPin,
-      label: "גינות כלבים",
-      description: "מצא גינה קרובה",
+      icon: "🧸",
+      label: "צעיר",
+      description: "LIYE SOON",
       path: "/parks",
       external: false,
+      color: "bg-[#D4F0ED]",
     },
     {
-      icon: Heart,
-      label: "חנות חיות",
-      description: "מוצרים ואביזרים",
-      path: "https://petid.co.il/catalog-new/",
-      external: true,
-    },
-    {
-      icon: Package,
-      label: "חוויות",
-      description: "הזמן שירותים",
+      icon: "🦴",
+      label: "חשבה",
+      description: "OROOUN",
       path: "/experiences",
       external: false,
+      color: "bg-[#F5F0E8]",
+    },
+    {
+      icon: "🦅",
+      label: "אודיקה",
+      description: "PRETECIOUS",
+      path: "/tracker",
+      external: false,
+      color: "bg-[#E8E5FF]",
+    },
+    {
+      icon: "🪞",
+      label: "מדריכה",
+      description: "FOR MIRROR",
+      path: "/parks",
+      external: false,
+      color: "bg-[#FFF9E5]",
+    },
+    {
+      icon: "🎾",
+      label: "דינה",
+      description: "FOR PA",
+      path: "/experiences",
+      external: false,
+      color: "bg-[#E5F5E8]",
+    },
+    {
+      icon: "🐾",
+      label: "מידעית",
+      description: "PAL MELA",
+      path: "/tracker",
+      external: false,
+      color: "bg-[#FFE5E5]",
+    },
+    {
+      icon: "🦴",
+      label: "שינותב",
+      description: "DELALEIDUO",
+      path: "/parks",
+      external: false,
+      color: "bg-[#D4F0ED]",
+    },
+    {
+      icon: "🎀",
+      label: "משטיע",
+      description: "MEEMINDES",
+      path: "https://petid.co.il/catalog-new/",
+      external: true,
+      color: "bg-[#FFE5E5]",
     },
   ];
 
@@ -91,10 +135,8 @@ const Home = () => {
       </div>
 
       {/* Feature Grid */}
-      <div className="px-6 pt-8 grid grid-cols-2 gap-4">
+      <div className="px-6 pt-8 grid grid-cols-3 gap-3">
         {features.map((feature, index) => {
-          const Icon = feature.icon;
-          
           if (feature.external) {
             return (
               <a
@@ -103,34 +145,36 @@ const Home = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ animationDelay: `${index * 50}ms` }}
-                className="group bg-card border border-border hover:border-foreground/20 rounded-2xl p-5 flex flex-col items-start gap-3 cursor-pointer hover:shadow-md active:scale-[0.98] transition-all duration-200 animate-scale-in"
+                className={`group ${feature.color} rounded-3xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-md active:scale-95 transition-all duration-200 animate-scale-in min-h-[120px] relative`}
               >
-                <div className="w-11 h-11 rounded-xl bg-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Icon className="w-5 h-5 text-background" />
+                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/40 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-white/60" />
                 </div>
-                <div className="text-right">
-                  <h3 className="font-bold text-base mb-0.5">{feature.label}</h3>
-                  <p className="text-xs text-muted-foreground">{feature.description}</p>
+                <div className="text-4xl mb-1">{feature.icon}</div>
+                <div className="text-center">
+                  <h3 className="font-bold text-sm mb-0">{feature.label}</h3>
+                  <p className="text-[10px] text-foreground/60 uppercase tracking-wide">{feature.description}</p>
                 </div>
               </a>
             );
           }
           
           return (
-            <Card
+            <div
               key={index}
               onClick={() => navigate(feature.path)}
               style={{ animationDelay: `${index * 50}ms` }}
-              className="group bg-card border border-border hover:border-foreground/20 rounded-2xl p-5 flex flex-col items-start gap-3 cursor-pointer hover:shadow-md active:scale-[0.98] transition-all duration-200 animate-scale-in"
+              className={`group ${feature.color} rounded-3xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-md active:scale-95 transition-all duration-200 animate-scale-in min-h-[120px] relative`}
             >
-              <div className="w-11 h-11 rounded-xl bg-foreground flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Icon className="w-5 h-5 text-background" />
+              <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/40 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-white/60" />
               </div>
-              <div className="text-right">
-                <h3 className="font-bold text-base mb-0.5">{feature.label}</h3>
-                <p className="text-xs text-muted-foreground">{feature.description}</p>
+              <div className="text-4xl mb-1">{feature.icon}</div>
+              <div className="text-center">
+                <h3 className="font-bold text-sm mb-0">{feature.label}</h3>
+                <p className="text-[10px] text-foreground/60 uppercase tracking-wide">{feature.description}</p>
               </div>
-            </Card>
+            </div>
           );
         })}
       </div>

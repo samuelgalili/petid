@@ -42,8 +42,6 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
-          subtle: "hsl(var(--accent-subtle))",
-          hover: "hsl(var(--accent-hover))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -53,11 +51,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        premium: {
-          gold: "hsl(var(--premium-gold))",
-          "gold-light": "hsl(var(--premium-gold-light))",
-          purple: "hsl(var(--premium-purple))",
-          "purple-light": "hsl(var(--premium-purple-light))",
+        pastel: {
+          pink: "hsl(var(--pastel-pink))",
+          blue: "hsl(var(--pastel-blue))",
+          yellow: "hsl(var(--pastel-yellow))",
+          purple: "hsl(var(--pastel-purple))",
+          green: "hsl(var(--pastel-green))",
+          peach: "hsl(var(--pastel-peach))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
