@@ -22,7 +22,9 @@ const Auth = () => {
   }, [isAuthenticated, loading, navigate]);
 
   const handleGuestMode = () => {
+    console.log("Guest mode button clicked");
     setGuestMode(true);
+    console.log("Guest mode set to true, navigating to /add-pet");
     navigate("/add-pet");
   };
 

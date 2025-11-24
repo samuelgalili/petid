@@ -13,11 +13,14 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const setGuestMode = (value: boolean) => {
+    console.log("setGuestMode called with:", value);
     setIsGuest(value);
     if (value) {
       localStorage.setItem("guestMode", "true");
+      console.log("Guest mode saved to localStorage");
     } else {
       localStorage.removeItem("guestMode");
+      console.log("Guest mode removed from localStorage");
     }
   };
 
