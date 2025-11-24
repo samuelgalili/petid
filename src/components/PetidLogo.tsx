@@ -19,9 +19,9 @@ export const PetidLogo = ({ showAnimals = true, className = "" }: PetidLogoProps
             opacity: 1, 
             scale: 1,
             filter: [
-              'drop-shadow(0 0 2px rgba(251, 191, 36, 1)) drop-shadow(0 0 4px rgba(251, 191, 36, 0.9))',
-              'drop-shadow(0 0 3px rgba(251, 191, 36, 1)) drop-shadow(0 0 6px rgba(251, 191, 36, 0.8))',
-              'drop-shadow(0 0 2px rgba(251, 191, 36, 1)) drop-shadow(0 0 4px rgba(251, 191, 36, 0.9))',
+              'drop-shadow(0 0 3px rgba(254, 215, 102, 1)) drop-shadow(0 0 6px rgba(254, 215, 102, 1)) drop-shadow(0 0 8px rgba(251, 191, 36, 0.9))',
+              'drop-shadow(0 0 4px rgba(254, 215, 102, 1)) drop-shadow(0 0 8px rgba(254, 215, 102, 1)) drop-shadow(0 0 10px rgba(251, 191, 36, 0.9))',
+              'drop-shadow(0 0 3px rgba(254, 215, 102, 1)) drop-shadow(0 0 6px rgba(254, 215, 102, 1)) drop-shadow(0 0 8px rgba(251, 191, 36, 0.9))',
             ]
           }}
           transition={{ 
