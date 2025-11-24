@@ -168,7 +168,7 @@ export const LoginForm = () => {
         )}
       </div>
 
-      <div className="flex items-center space-x-2 space-x-reverse">
+      <div className="flex items-center space-x-2">
         <Checkbox
           id="remember"
           checked={formData.rememberMe}
@@ -193,7 +193,7 @@ export const LoginForm = () => {
       >
         {loading ? (
           <>
-            <Loader2 className="ml-2 h-4 w-4 animate-spin" aria-hidden="true" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
             <span>Signing In...</span>
           </>
         ) : (

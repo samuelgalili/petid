@@ -5,7 +5,7 @@ export const AuthLoadingSkeleton = () => {
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4" 
-      dir="rtl" 
+      dir="ltr" 
       style={{ background: 'linear-gradient(135deg, hsl(174 43% 88%) 0%, hsl(180 40% 92%) 100%)' }}
     >
       <motion.div 

@@ -25,7 +25,7 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
       if (error) throw error;
     } catch (error: any) {
       toast({
-        title: "שגיאה",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -46,7 +46,7 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
       if (error) throw error;
     } catch (error: any) {
       toast({
-        title: "שגיאה",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -58,14 +58,11 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
     <>
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" style={{ borderColor: 'hsl(220 13% 91%)' }} />
+          <span className="w-full border-t border-white/20" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="px-3 font-medium" style={{ 
-            backgroundColor: '#FEFEFE',
-            color: 'hsl(220 9% 58%)'
-          }}>
-            או המשך עם
+          <span className="px-3 font-medium text-white/90">
+            Or continue with
           </span>
         </div>
       </div>

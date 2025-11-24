@@ -33,7 +33,7 @@ const Signup = () => {
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" 
-      dir="rtl"
+      dir="ltr"
     >
       {/* Background Video */}
       <video
@@ -99,7 +99,7 @@ const Signup = () => {
                 onClick={handleGuestMode}
                 className="w-full mt-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
               >
-                <UserX className="ml-2 h-4 w-4" />
+                <UserX className="mr-2 h-4 w-4" />
                 Continue as Guest
               </Button>
             </div>
