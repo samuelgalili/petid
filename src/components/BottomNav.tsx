@@ -1,5 +1,6 @@
 import { Home, Calendar, Bell, MapPin, Heart } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const BottomNav = () => {
@@ -30,12 +31,21 @@ const BottomNav = () => {
               )}
             >
               {isActive && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-foreground rounded-full" />
+                <motion.span 
+                  layoutId="activeIndicator"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-foreground rounded-full"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
               )}
-              <Icon className={cn(
-                "w-[22px] h-[22px] mb-1 transition-transform",
-                isActive ? "" : "group-hover:scale-105"
-              )} />
+              <motion.div
+                animate={{ scale: isActive ? 1.1 : 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <Icon className={cn(
+                  "w-[22px] h-[22px] mb-1 transition-transform",
+                  isActive ? "" : "group-hover:scale-105"
+                )} />
+              </motion.div>
               <span className={cn(
                 "text-[11px] font-medium transition-all",
                 isActive ? "font-semibold" : ""
