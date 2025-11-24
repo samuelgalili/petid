@@ -9,6 +9,7 @@ import { useGuest } from "@/contexts/GuestContext";
 import { UserX, Menu } from "lucide-react";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 import { PetidLogo } from "@/components/PetidLogo";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Auth = () => {
   const { toast } = useToast();
@@ -16,6 +17,7 @@ const Auth = () => {
   const { setGuestMode } = useGuest();
   const navigate = useNavigate();
   const [pageLoading, setPageLoading] = useState(true);
+  const [videoEnded, setVideoEnded] = useState(false);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -51,14 +53,23 @@ const Auth = () => {
         autoPlay
         muted
         playsInline
+        onEnded={() => setVideoEnded(true)}
         className="absolute inset-0 w-full h-full object-cover"
       >
         <source src="/videos/background-pup-story.mp4" type="video/mp4" />
       </video>
 
       {/* Content without Card background */}
-      <div className="w-full max-w-[420px] relative" style={{ zIndex: 2 }}>
-        <div className="pt-12 pb-12 px-6">
+      <AnimatePresence>
+        {videoEnded && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="w-full max-w-[420px] relative"
+            style={{ zIndex: 2 }}
+          >
+            <div className="pt-12 pb-12 px-6">
           {/* Header with status icons */}
           <div className="flex items-center justify-between mb-5">
             <div className="w-6 h-6">
@@ -120,7 +131,9 @@ const Auth = () => {
             </Button>
           </div>
         </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
