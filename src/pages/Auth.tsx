@@ -121,7 +121,7 @@ const Auth = () => {
               type="button"
               variant="ghost"
               onClick={handleGuestMode}
-              className="w-full rounded-full bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 transition-all"
+              className="w-full rounded-full bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 transition-all shadow-md hover:shadow-lg"
             >
               <UserX className="mr-2 h-4 w-4" />
               Continue as Guest
