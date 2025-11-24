@@ -103,10 +103,10 @@ export const SignupForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {generalError && (
         <div
-          className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg"
+          className="p-3 text-sm text-red-600 bg-red-50/90 border border-red-200 rounded-lg backdrop-blur-sm"
           role="alert"
           aria-live="assertive"
         >
@@ -115,7 +115,7 @@ export const SignupForm = () => {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="fullName" className="text-sm font-medium">
+        <Label htmlFor="fullName" className="text-sm font-medium text-white">
           Full Name
         </Label>
         <Input
@@ -129,20 +129,20 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, fullName: undefined });
           }}
           disabled={loading}
-          className={`h-11 ${fieldErrors.fullName ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.fullName ? "border-red-500 focus-visible:ring-red-500" : ""}`}
           aria-invalid={!!fieldErrors.fullName}
           aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
           autoComplete="name"
         />
         {fieldErrors.fullName && (
-          <p id="fullName-error" className="text-sm text-red-600" role="alert">
+          <p id="fullName-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
             {fieldErrors.fullName}
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium">
+        <Label htmlFor="email" className="text-sm font-medium text-white">
           Email
         </Label>
         <Input
@@ -156,20 +156,20 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-11 ${fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
         />
         {fieldErrors.email && (
-          <p id="email-error" className="text-sm text-red-600" role="alert">
+          <p id="email-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
             {fieldErrors.email}
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium">
+        <Label htmlFor="password" className="text-sm font-medium text-white">
           Password
         </Label>
         <div className="relative">
@@ -184,7 +184,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-11 pr-10 ${fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+            className={`h-11 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             aria-invalid={!!fieldErrors.password}
             aria-describedby={fieldErrors.password ? "password-error" : undefined}
             autoComplete="new-password"
@@ -192,14 +192,14 @@ export const SignupForm = () => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
         {fieldErrors.password && (
-          <p id="password-error" className="text-sm text-red-600" role="alert">
+          <p id="password-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
             {fieldErrors.password}
           </p>
         )}
@@ -207,7 +207,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword" className="text-sm font-medium">
+        <Label htmlFor="confirmPassword" className="text-sm font-medium text-white">
           Confirm Password
         </Label>
         <div className="relative">
@@ -222,7 +222,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
             }}
             disabled={loading}
-            className={`h-11 pr-10 ${fieldErrors.confirmPassword ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+            className={`h-11 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.confirmPassword ? "border-red-500 focus-visible:ring-red-500" : ""}`}
             aria-invalid={!!fieldErrors.confirmPassword}
             aria-describedby={fieldErrors.confirmPassword ? "confirmPassword-error" : undefined}
             autoComplete="new-password"
@@ -230,14 +230,14 @@ export const SignupForm = () => {
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900"
             aria-label={showConfirmPassword ? "Hide password" : "Show password"}
           >
             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
         {fieldErrors.confirmPassword && (
-          <p id="confirmPassword-error" className="text-sm text-red-600" role="alert">
+          <p id="confirmPassword-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
             {fieldErrors.confirmPassword}
           </p>
         )}
@@ -245,7 +245,7 @@ export const SignupForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+        className="w-full h-11 bg-white/90 hover:bg-white text-gray-900 font-medium transition-colors backdrop-blur-sm"
         disabled={loading}
         aria-busy={loading}
       >

@@ -86,7 +86,7 @@ const Auth = () => {
               <PetidLogo showAnimals={false} className="mb-4" />
 
               {/* Login Form */}
-              <div className="mb-3">
+              <div className="mb-4">
                 <LoginForm />
               </div>
 

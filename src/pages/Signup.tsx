@@ -72,7 +72,7 @@ const Signup = () => {
               {/* Logo without Animals */}
               <PetidLogo showAnimals={false} className="mb-4" />
 
-              <div className="mb-6 text-center">
+              <div className="mb-5 text-center">
                 <h2 className="text-2xl font-bold text-white mb-3">Sign Up</h2>
                 <p className="text-sm text-white/90 leading-relaxed px-4">
                   Create a new account and start<br />managing your pet's care

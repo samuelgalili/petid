@@ -95,10 +95,10 @@ export const LoginForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {generalError && (
         <div
-          className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg"
+          className="p-3 text-sm text-red-600 bg-red-50/90 border border-red-200 rounded-lg backdrop-blur-sm"
           role="alert"
           aria-live="assertive"
         >
@@ -107,7 +107,7 @@ export const LoginForm = () => {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium">
+        <Label htmlFor="email" className="text-sm font-medium text-white">
           Email
         </Label>
         <Input
@@ -121,7 +121,7 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-11 ${fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
@@ -129,7 +129,7 @@ export const LoginForm = () => {
         {fieldErrors.email && (
           <p
             id="email-error"
-            className="text-sm text-red-600"
+            className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded"
             role="alert"
           >
             {fieldErrors.email}
@@ -138,7 +138,7 @@ export const LoginForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium">
+        <Label htmlFor="password" className="text-sm font-medium text-white">
           Password
         </Label>
         <Input
@@ -152,7 +152,7 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, password: undefined });
           }}
           disabled={loading}
-          className={`h-11 ${fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
           aria-invalid={!!fieldErrors.password}
           aria-describedby={fieldErrors.password ? "password-error" : undefined}
           autoComplete="current-password"
@@ -160,7 +160,7 @@ export const LoginForm = () => {
         {fieldErrors.password && (
           <p
             id="password-error"
-            className="text-sm text-red-600"
+            className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded"
             role="alert"
           >
             {fieldErrors.password}
@@ -176,10 +176,11 @@ export const LoginForm = () => {
             setFormData({ ...formData, rememberMe: checked as boolean })
           }
           disabled={loading}
+          className="bg-white/90 border-white/30"
         />
         <Label
           htmlFor="remember"
-          className="text-sm font-normal cursor-pointer"
+          className="text-sm font-normal cursor-pointer text-white"
         >
           Remember me
         </Label>
@@ -187,7 +188,7 @@ export const LoginForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+        className="w-full h-11 bg-white/90 hover:bg-white text-gray-900 font-medium transition-colors backdrop-blur-sm"
         disabled={loading}
         aria-busy={loading}
       >
