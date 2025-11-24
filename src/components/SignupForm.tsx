@@ -64,6 +64,58 @@ export const SignupForm = () => {
     }
   }, [showOTPInput]);
 
+  // Auto-submit when all 6 digits are entered
+  useEffect(() => {
+    const verifyOtp = async () => {
+      if (otp.every(d => d) && showOTPInput && !loading) {
+        setLoading(true);
+        setGeneralError("");
+
+        try {
+          const otpCode = otp.join('');
+          const { error } = await supabase.auth.verifyOtp({
+            phone: formData.phone,
+            token: otpCode,
+            type: 'sms'
+          });
+
+          if (error) {
+            setGeneralError(error.message);
+            toast({
+              title: "Verification failed",
+              description: error.message,
+              variant: "destructive",
+            });
+            // Clear OTP on error
+            setOtp(["", "", "", "", "", ""]);
+            otpInputRefs.current[0]?.focus();
+            setLoading(false);
+            return;
+          }
+
+          toast({
+            title: "Account created successfully!",
+            description: "Welcome to Petid!",
+          });
+
+          navigate("/add-pet");
+        } catch (error: any) {
+          setGeneralError("An unexpected error occurred. Please try again.");
+          toast({
+            title: "Error",
+            description: "An unexpected error occurred",
+            variant: "destructive",
+          });
+          setOtp(["", "", "", "", "", ""]);
+          otpInputRefs.current[0]?.focus();
+          setLoading(false);
+        }
+      }
+    };
+
+    verifyOtp();
+  }, [otp, showOTPInput, loading]);
+
   const handleOtpChange = (index: number, value: string) => {
     // Only allow digits
     const digit = value.replace(/\D/g, '').slice(-1);
@@ -206,33 +258,8 @@ export const SignupForm = () => {
     try {
       if (!showOTPInput) {
         await sendOTP();
-      } else {
-        // Verify OTP
-        const otpCode = otp.join('');
-        const { error } = await supabase.auth.verifyOtp({
-          phone: formData.phone,
-          token: otpCode,
-          type: 'sms'
-        });
-
-        if (error) {
-          setGeneralError(error.message);
-          toast({
-            title: "Verification failed",
-            description: error.message,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-
-        toast({
-          title: "Account created successfully!",
-          description: "Welcome to Petid!",
-        });
-
-        navigate("/add-pet");
       }
+      // OTP verification is handled by auto-submit useEffect
     } catch (error: any) {
       setGeneralError("An unexpected error occurred. Please try again later.");
       toast({
@@ -409,23 +436,30 @@ export const SignupForm = () => {
         </div>
       )}
 
-      <Button
-        type="submit"
-        className="w-full h-12 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-jakarta font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
-        disabled={loading}
-        aria-busy={loading}
-      >
-        {loading ? (
-          <>
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-            <span>{showOTPInput ? "Verifying..." : "Sending code..."}</span>
-          </>
-        ) : showOTPInput ? (
-          "Verify Code"
-        ) : (
-          "Send Code"
-        )}
-      </Button>
+      {!showOTPInput && (
+        <Button
+          type="submit"
+          className="w-full h-12 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-jakarta font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+          disabled={loading}
+          aria-busy={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+              <span>Sending code...</span>
+            </>
+          ) : (
+            "Send Code"
+          )}
+        </Button>
+      )}
+
+      {showOTPInput && loading && (
+        <div className="flex items-center justify-center py-3">
+          <Loader2 className="h-6 w-6 animate-spin text-[#FBD66A]" aria-hidden="true" />
+          <span className="ml-2 text-sm font-jakarta text-gray-700">Verifying...</span>
+        </div>
+      )}
 
       {showOTPInput && (
         <div className="flex flex-col gap-2">
