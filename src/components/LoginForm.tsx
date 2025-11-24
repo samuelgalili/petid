@@ -277,21 +277,41 @@ export const LoginForm = () => {
           <Label htmlFor="otp" className="text-sm font-jakarta font-medium text-gray-700">
             Verification Code
           </Label>
-          <Input
-            id="otp"
-            name="otp"
-            type="text"
-            placeholder="000000"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            disabled={loading}
-            maxLength={6}
-            className="h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm text-center text-2xl tracking-widest"
-            autoComplete="one-time-code"
-          />
-          <p className="text-xs text-gray-600 font-jakarta text-center">
-            Enter the 6-digit code sent to your phone and email
-          </p>
+          <motion.div
+            animate={otp.length === 6 ? {
+              scale: [1, 1.02, 1],
+              borderColor: ["#e5e7eb", "#FBD66A", "#FBD66A"],
+            } : {}}
+            transition={{ duration: 0.3 }}
+          >
+            <Input
+              id="otp"
+              name="otp"
+              type="text"
+              placeholder="000000"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              disabled={loading}
+              maxLength={6}
+              className={`h-12 bg-gray-50/95 border-2 text-gray-900 placeholder:text-gray-400 focus:bg-white rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm text-center text-2xl tracking-widest ${
+                otp.length === 6 
+                  ? "border-[#FBD66A] bg-[#FBD66A]/10 focus:border-[#F4C542] focus:shadow-[0_8px_30px_rgba(251,214,106,0.4)]" 
+                  : "border-gray-200 focus:border-primary focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)]"
+              }`}
+              autoComplete="one-time-code"
+            />
+          </motion.div>
+          <motion.p
+            initial={{ opacity: 0.7 }}
+            animate={otp.length === 6 ? {
+              opacity: [0.7, 1, 0.7],
+              color: ["#6b7280", "#F4C542", "#6b7280"]
+            } : { opacity: 0.7 }}
+            transition={{ duration: 0.5 }}
+            className="text-xs font-jakarta text-center"
+          >
+            {otp.length === 6 ? "✓ Code complete! Click verify to continue" : "Enter the 6-digit code sent to your phone and email"}
+          </motion.p>
         </div>
       )}
 
