@@ -59,10 +59,10 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
     <>
       <div className="relative my-5">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/20" />
+          <span className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="px-3 font-medium text-white/70 bg-transparent">
+          <span className="px-3 font-medium text-gray-500 bg-white">
             Or continue with
           </span>
         </div>
@@ -76,9 +76,9 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-gray-50 hover:bg-gray-100 border border-gray-200"
         >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/90">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -98,7 +98,7 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
               />
             </svg>
           </div>
-          <span className="text-xs font-semibold text-white">Google</span>
+          <span className="text-xs font-semibold text-gray-700">Google</span>
         </motion.button>
 
         {/* Facebook Button */}
@@ -108,14 +108,14 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
           type="button"
           onClick={handleFacebookSignIn}
           disabled={loading}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-gray-50 hover:bg-gray-100 border border-gray-200"
         >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/90">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
             </svg>
           </div>
-          <span className="text-xs font-semibold text-white">Facebook</span>
+          <span className="text-xs font-semibold text-gray-700">Facebook</span>
         </motion.button>
 
         {/* Instagram Button */}
@@ -125,12 +125,12 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
           type="button"
           onClick={handleFacebookSignIn}
           disabled={loading}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-gray-50 hover:bg-gray-100 border border-gray-200"
         >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/90">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
             <Instagram className="w-5 h-5" style={{ color: '#E4405F' }} />
           </div>
-          <span className="text-xs font-semibold text-white">Instagram</span>
+          <span className="text-xs font-semibold text-gray-700">Instagram</span>
         </motion.button>
       </div>
     </>

@@ -112,7 +112,7 @@ export const LoginForm = () => {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium text-white/90">
+        <Label htmlFor="email" className="text-sm font-medium text-gray-700">
           Email Address
         </Label>
         <Input
@@ -126,7 +126,7 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-gray-300 rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
@@ -136,7 +136,7 @@ export const LoginForm = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             id="email-error"
-            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
+            className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg"
             role="alert"
           >
             {fieldErrors.email}
@@ -145,7 +145,7 @@ export const LoginForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium text-white/90">
+        <Label htmlFor="password" className="text-sm font-medium text-gray-700">
           Password
         </Label>
         <Input
@@ -159,7 +159,7 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, password: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-gray-300 rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.password}
           aria-describedby={fieldErrors.password ? "password-error" : undefined}
           autoComplete="current-password"
@@ -169,7 +169,7 @@ export const LoginForm = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             id="password-error"
-            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
+            className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg"
             role="alert"
           >
             {fieldErrors.password}
@@ -186,11 +186,11 @@ export const LoginForm = () => {
               setFormData({ ...formData, rememberMe: checked as boolean })
             }
             disabled={loading}
-            className="bg-white/90 border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
+            className="bg-white border-gray-300 data-[state=checked]:bg-gray-900 data-[state=checked]:text-white"
           />
           <Label
             htmlFor="remember"
-            className="text-sm font-normal cursor-pointer text-white/90"
+            className="text-sm font-normal cursor-pointer text-gray-600"
           >
             Remember me
           </Label>
@@ -199,7 +199,7 @@ export const LoginForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-12 bg-white hover:bg-white/90 text-gray-900 font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50"
+        className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50"
         disabled={loading}
         aria-busy={loading}
       >
