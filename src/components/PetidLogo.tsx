@@ -32,12 +32,7 @@ export const PetidLogo = ({ showAnimals = true, className = "" }: PetidLogoProps
           }}
           animate={{ 
             opacity: [1, 0.3, 1],
-            scale: [1, 0.95, 1],
-            filter: [
-              'drop-shadow(0 0 8px rgba(96, 165, 250, 0.8))',
-              'drop-shadow(0 0 2px rgba(96, 165, 250, 0.3))',
-              'drop-shadow(0 0 8px rgba(96, 165, 250, 0.8))'
-            ]
+            scale: [1, 0.95, 1]
           }}
           transition={{ 
             duration: 1.5,
