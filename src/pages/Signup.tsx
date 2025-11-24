@@ -5,7 +5,7 @@ import { SignupForm } from "@/components/SignupForm";
 import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
-import { UserX, Menu } from "lucide-react";
+import { UserX } from "lucide-react";
 import { PetidLogo } from "@/components/PetidLogo";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -46,58 +46,70 @@ const Signup = () => {
         <source src="/videos/background-pup-story.mp4" type="video/mp4" />
       </video>
 
-      {/* Content without Card background */}
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/50" style={{ zIndex: 1 }} />
+
+      {/* Content */}
       <AnimatePresence>
         {videoEnded && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full max-w-[420px] relative"
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-[440px] relative"
             style={{ zIndex: 2 }}
           >
-            <div className="pt-6 pb-6 px-6">
-              {/* Header with status icons */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-6 h-6">
-                  <Menu className="w-5 h-5 text-white/80" />
-                </div>
-                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30">
-                  <span className="text-xs font-medium text-white">AITEACN</span>
-                  <UserX className="w-3.5 h-3.5 text-white" />
-                </div>
-                <div className="w-6 h-6" />
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+              {/* Logo */}
+              <div className="mb-6">
+                <PetidLogo showAnimals={false} />
               </div>
 
-              {/* Logo without Animals */}
-              <PetidLogo showAnimals={false} className="mb-4" />
+              {/* Welcome Message */}
+              <div className="text-center mb-6">
+                <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+                <p className="text-white/80 text-sm">Join us and manage your pet's care</p>
+              </div>
 
-              <div className="mb-5 text-center">
-                <h2 className="text-2xl font-bold text-white mb-3">Sign Up</h2>
-                <p className="text-sm text-white/90 leading-relaxed px-4">
-                  Create a new account and start<br />managing your pet's care
+              {/* Signup Form */}
+              <div className="mb-5">
+                <SignupForm />
+              </div>
+
+              {/* Social Auth */}
+              <div className="mb-5">
+                <SocialAuthButtons redirectTo="/add-pet" />
+              </div>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-white/20" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-transparent px-2 text-white/70">Or</span>
+                </div>
+              </div>
+
+              {/* Sign In Link */}
+              <div className="text-center mb-4">
+                <p className="text-white/80 text-sm">
+                  Already have an account?{" "}
+                  <Link
+                    to="/auth"
+                    className="text-white font-semibold hover:underline transition-colors"
+                  >
+                    Sign In
+                  </Link>
                 </p>
               </div>
 
-              <SignupForm />
-
-              <SocialAuthButtons redirectTo="/add-pet" />
-
-              <div className="mt-4 text-center text-sm text-white/90">
-                Already have an account?{" "}
-                <Link
-                  to="/auth"
-                  className="hover:underline font-medium transition-colors text-white"
-                >
-                  Sign In
-                </Link>
-              </div>
-
+              {/* Guest Mode */}
               <Button
                 type="button"
                 variant="ghost"
                 onClick={handleGuestMode}
-                className="w-full mt-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm"
+                className="w-full rounded-full bg-white/5 hover:bg-white/10 text-white border border-white/20 transition-all"
               >
                 <UserX className="mr-2 h-4 w-4" />
                 Continue as Guest

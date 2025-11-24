@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { loginSchema, type LoginFormData } from "@/lib/validators";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -99,136 +100,113 @@ export const LoginForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {generalError && (
-        <div
-          className="p-3 text-sm text-red-600 bg-red-50/90 border border-red-200 rounded-lg backdrop-blur-sm"
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 text-sm text-red-100 bg-red-500/20 border border-red-300/30 rounded-xl backdrop-blur-sm"
           role="alert"
           aria-live="assertive"
         >
           {generalError}
-        </div>
+        </motion.div>
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium text-white">
-          Email
+        <Label htmlFor="email" className="text-sm font-medium text-white/90">
+          Email Address
         </Label>
         <Input
           id="email"
           name="email"
           type="email"
-          placeholder="example@email.com"
+          placeholder="your@email.com"
           value={formData.email}
           onChange={(e) => {
             setFormData({ ...formData, email: e.target.value });
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-12 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
         />
         {fieldErrors.email && (
-          <p
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
             id="email-error"
-            className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded"
+            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
             role="alert"
           >
             {fieldErrors.email}
-          </p>
+          </motion.p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium text-white">
+        <Label htmlFor="password" className="text-sm font-medium text-white/90">
           Password
         </Label>
         <Input
           id="password"
           name="password"
           type="password"
-          placeholder="Enter password (at least 6 characters)"
+          placeholder="Enter your password"
           value={formData.password}
           onChange={(e) => {
             setFormData({ ...formData, password: e.target.value });
             setFieldErrors({ ...fieldErrors, password: undefined });
           }}
           disabled={loading}
-          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-12 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.password}
           aria-describedby={fieldErrors.password ? "password-error" : undefined}
           autoComplete="current-password"
         />
         {fieldErrors.password && (
-          <p
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
             id="password-error"
-            className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded"
+            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
             role="alert"
           >
             {fieldErrors.password}
-          </p>
+          </motion.p>
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone" className="text-sm font-medium text-white">
-          Phone Number (Optional)
-        </Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          placeholder="1234567890"
-          value={formData.phone}
-          onChange={(e) => {
-            setFormData({ ...formData, phone: e.target.value });
-            setFieldErrors({ ...fieldErrors, phone: undefined });
-          }}
-          disabled={loading}
-          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-          aria-invalid={!!fieldErrors.phone}
-          aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-          autoComplete="tel"
-        />
-        {fieldErrors.phone && (
-          <p
-            id="phone-error"
-            className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded"
-            role="alert"
+      <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="remember"
+            checked={formData.rememberMe}
+            onCheckedChange={(checked) =>
+              setFormData({ ...formData, rememberMe: checked as boolean })
+            }
+            disabled={loading}
+            className="bg-white/90 border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-gray-900"
+          />
+          <Label
+            htmlFor="remember"
+            className="text-sm font-normal cursor-pointer text-white/90"
           >
-            {fieldErrors.phone}
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="remember"
-          checked={formData.rememberMe}
-          onCheckedChange={(checked) =>
-            setFormData({ ...formData, rememberMe: checked as boolean })
-          }
-          disabled={loading}
-          className="bg-white/90 border-white/30"
-        />
-        <Label
-          htmlFor="remember"
-          className="text-sm font-normal cursor-pointer text-white"
-        >
-          Remember me
-        </Label>
+            Remember me
+          </Label>
+        </div>
       </div>
 
       <Button
         type="submit"
-        className="w-full h-11 bg-white/90 hover:bg-white text-gray-900 font-medium transition-colors backdrop-blur-sm"
+        className="w-full h-12 bg-white hover:bg-white/90 text-gray-900 font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50"
         disabled={loading}
         aria-busy={loading}
       >
         {loading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            <span>Signing In...</span>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+            <span>Signing in...</span>
           </>
         ) : (
           "Sign In"

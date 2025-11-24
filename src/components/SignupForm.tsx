@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { motion } from "framer-motion";
 import { signupSchema, type SignupFormData } from "@/lib/validators";
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
@@ -108,17 +109,19 @@ export const SignupForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {generalError && (
-        <div
-          className="p-3 text-sm text-red-600 bg-red-50/90 border border-red-200 rounded-lg backdrop-blur-sm"
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 text-sm text-red-100 bg-red-500/20 border border-red-300/30 rounded-xl backdrop-blur-sm"
           role="alert"
           aria-live="assertive"
         >
           {generalError}
-        </div>
+        </motion.div>
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="fullName" className="text-sm font-medium text-white">
+        <Label htmlFor="fullName" className="text-sm font-medium text-white/90">
           Full Name
         </Label>
         <Input
@@ -132,47 +135,59 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, fullName: undefined });
           }}
           disabled={loading}
-          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.fullName ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-12 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.fullName}
           aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
           autoComplete="name"
         />
         {fieldErrors.fullName && (
-          <p id="fullName-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            id="fullName-error"
+            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
+            role="alert"
+          >
             {fieldErrors.fullName}
-          </p>
+          </motion.p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium text-white">
-          Email
+        <Label htmlFor="email" className="text-sm font-medium text-white/90">
+          Email Address
         </Label>
         <Input
           id="email"
           name="email"
           type="email"
-          placeholder="example@email.com"
+          placeholder="your@email.com"
           value={formData.email}
           onChange={(e) => {
             setFormData({ ...formData, email: e.target.value });
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-12 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
         />
         {fieldErrors.email && (
-          <p id="email-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            id="email-error"
+            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
+            role="alert"
+          >
             {fieldErrors.email}
-          </p>
+          </motion.p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="phone" className="text-sm font-medium text-white">
+        <Label htmlFor="phone" className="text-sm font-medium text-white/90">
           Phone Number
         </Label>
         <Input
@@ -186,20 +201,26 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, phone: undefined });
           }}
           disabled={loading}
-          className={`h-11 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+          className={`h-12 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.phone}
           aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
           autoComplete="tel"
         />
         {fieldErrors.phone && (
-          <p id="phone-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            id="phone-error"
+            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
+            role="alert"
+          >
             {fieldErrors.phone}
-          </p>
+          </motion.p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium text-white">
+        <Label htmlFor="password" className="text-sm font-medium text-white/90">
           Password
         </Label>
         <div className="relative">
@@ -207,14 +228,14 @@ export const SignupForm = () => {
             id="password"
             name="password"
             type={showPassword ? "text" : "password"}
-            placeholder="At least 6 characters, including uppercase, lowercase & number"
+            placeholder="Create a strong password"
             value={formData.password}
             onChange={(e) => {
               setFormData({ ...formData, password: e.target.value });
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-11 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.password ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+            className={`h-12 pr-10 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
             aria-invalid={!!fieldErrors.password}
             aria-describedby={fieldErrors.password ? "password-error" : undefined}
             autoComplete="new-password"
@@ -222,22 +243,28 @@ export const SignupForm = () => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
         {fieldErrors.password && (
-          <p id="password-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            id="password-error"
+            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
+            role="alert"
+          >
             {fieldErrors.password}
-          </p>
+          </motion.p>
         )}
         <PasswordStrengthIndicator password={formData.password} />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword" className="text-sm font-medium text-white">
+        <Label htmlFor="confirmPassword" className="text-sm font-medium text-white/90">
           Confirm Password
         </Label>
         <div className="relative">
@@ -245,14 +272,14 @@ export const SignupForm = () => {
             id="confirmPassword"
             name="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
-            placeholder="Re-enter password"
+            placeholder="Re-enter your password"
             value={formData.confirmPassword}
             onChange={(e) => {
               setFormData({ ...formData, confirmPassword: e.target.value });
               setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
             }}
             disabled={loading}
-            className={`h-11 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white ${fieldErrors.confirmPassword ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+            className={`h-12 pr-10 bg-white/95 backdrop-blur-sm border-white/40 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.confirmPassword ? "border-red-400 focus-visible:ring-red-400" : ""}`}
             aria-invalid={!!fieldErrors.confirmPassword}
             aria-describedby={fieldErrors.confirmPassword ? "confirmPassword-error" : undefined}
             autoComplete="new-password"
@@ -260,29 +287,35 @@ export const SignupForm = () => {
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors"
             aria-label={showConfirmPassword ? "Hide password" : "Show password"}
           >
             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
         {fieldErrors.confirmPassword && (
-          <p id="confirmPassword-error" className="text-sm text-red-100 bg-red-500/20 px-2 py-1 rounded" role="alert">
+          <motion.p
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            id="confirmPassword-error"
+            className="text-xs text-red-200 bg-red-500/20 px-3 py-1.5 rounded-lg"
+            role="alert"
+          >
             {fieldErrors.confirmPassword}
-          </p>
+          </motion.p>
         )}
       </div>
 
       <Button
         type="submit"
-        className="w-full h-11 bg-white/90 hover:bg-white text-gray-900 font-medium transition-colors backdrop-blur-sm"
+        className="w-full h-12 bg-white hover:bg-white/90 text-gray-900 font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50"
         disabled={loading}
         aria-busy={loading}
       >
         {loading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            <span>Creating Account...</span>
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+            <span>Creating account...</span>
           </>
         ) : (
           "Create Account"
