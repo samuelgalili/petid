@@ -76,7 +76,7 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white hover:bg-gray-50 border-2 border-gray-200 shadow-md hover:shadow-lg hover:scale-105"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white/95 hover:bg-gray-50 border-2 border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:scale-105 backdrop-blur-sm"
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -108,7 +108,7 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
           type="button"
           onClick={handleFacebookSignIn}
           disabled={loading}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white hover:bg-gray-50 border-2 border-gray-200 shadow-md hover:shadow-lg hover:scale-105"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white/95 hover:bg-gray-50 border-2 border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:scale-105 backdrop-blur-sm"
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
@@ -125,7 +125,7 @@ export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtons
           type="button"
           onClick={handleFacebookSignIn}
           disabled={loading}
-          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white hover:bg-gray-50 border-2 border-gray-200 shadow-md hover:shadow-lg hover:scale-105"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all bg-white/95 hover:bg-gray-50 border-2 border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:scale-105 backdrop-blur-sm"
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm">
             <Instagram className="w-5 h-5" style={{ color: '#E4405F' }} />

@@ -99,7 +99,7 @@ const Signup = () => {
               type="button"
               variant="ghost"
               onClick={handleGuestMode}
-              className="w-full rounded-full bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 transition-all shadow-md hover:shadow-lg"
+              className="w-full rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-all"
             >
               <UserX className="mr-2 h-4 w-4" />
               Continue as Guest
