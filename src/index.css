@@ -126,11 +126,11 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-heebo antialiased;
+    @apply bg-background text-foreground font-jakarta antialiased;
   }
   
-  h1, h2, h3 {
-    @apply font-playfair;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-jakarta font-bold;
   }
   
   html {
