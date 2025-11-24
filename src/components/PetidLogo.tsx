@@ -19,20 +19,18 @@ export const PetidLogo = ({ showAnimals = true, className = "" }: PetidLogoProps
             opacity: 1, 
             scale: 1,
             filter: [
-              'drop-shadow(0 0 3px rgba(96, 165, 250, 1)) drop-shadow(0 0 6px rgba(96, 165, 250, 0.8))',
-              'drop-shadow(0 0 3px rgba(147, 51, 234, 1)) drop-shadow(0 0 6px rgba(147, 51, 234, 0.8))',
-              'drop-shadow(0 0 3px rgba(236, 72, 153, 1)) drop-shadow(0 0 6px rgba(236, 72, 153, 0.8))',
+              'drop-shadow(0 0 2px rgba(251, 191, 36, 1)) drop-shadow(0 0 4px rgba(251, 191, 36, 0.9))',
               'drop-shadow(0 0 3px rgba(251, 191, 36, 1)) drop-shadow(0 0 6px rgba(251, 191, 36, 0.8))',
-              'drop-shadow(0 0 3px rgba(34, 197, 94, 1)) drop-shadow(0 0 6px rgba(34, 197, 94, 0.8))',
+              'drop-shadow(0 0 2px rgba(251, 191, 36, 1)) drop-shadow(0 0 4px rgba(251, 191, 36, 0.9))',
             ]
           }}
           transition={{ 
             opacity: { duration: 0.5, ease: "easeOut" },
             scale: { duration: 0.5, ease: "easeOut" },
             filter: { 
-              duration: 4,
+              duration: 3,
               repeat: Infinity,
-              ease: "linear"
+              ease: "easeInOut"
             }
           }}
           src={petidLogo}
