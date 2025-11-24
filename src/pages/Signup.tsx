@@ -29,17 +29,32 @@ const Signup = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-      <Card className="w-full max-w-md border shadow-sm">
-        <CardHeader className="text-center space-y-2 pb-6">
-          <CardTitle className="text-2xl font-semibold text-foreground">
-            הרשמה
-          </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
-            צור חשבון חדש כדי להתחיל
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen bg-gradient-to-b from-[#E8F5F4] to-[#F5F9F8] flex items-center justify-center p-4" dir="rtl">
+      <Card className="w-full max-w-md border-0 shadow-lg rounded-3xl overflow-hidden">
+        {/* Hero Image Section */}
+        <div className="relative bg-gradient-to-br from-[#E5F5E8] to-[#F0F9F3] pt-8 pb-6 px-6">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&h=400&fit=crop" 
+              alt="Pet" 
+              className="w-48 h-48 object-cover rounded-full shadow-lg"
+            />
+          </div>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-2">petiid</h1>
+            <p className="text-sm text-muted-foreground">חשבון צדיקה</p>
+          </div>
+        </div>
+
+        {/* Signup Form Section */}
+        <CardContent className="p-6 bg-white">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-center mb-2">הרשמה</h2>
+            <p className="text-sm text-center text-muted-foreground">
+              צור חשבון חדש והתחל לנהל את חיית המחמד שלך
+            </p>
+          </div>
+
           <SignupForm />
           
           <SocialAuthButtons redirectTo="/add-pet" />
@@ -48,9 +63,9 @@ const Signup = () => {
             כבר יש לך חשבון?{" "}
             <Link
               to="/auth"
-              className="text-blue-600 hover:text-blue-700 hover:underline font-medium transition-colors"
+              className="text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
             >
-              Sign In
+              התחבר
             </Link>
           </div>
 
@@ -58,7 +73,7 @@ const Signup = () => {
             type="button"
             variant="ghost"
             onClick={handleGuestMode}
-            className="w-full mt-4"
+            className="w-full mt-4 rounded-full"
           >
             <UserX className="ml-2 h-4 w-4" />
             המשך כאורח
