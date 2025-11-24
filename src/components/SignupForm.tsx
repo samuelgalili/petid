@@ -135,7 +135,7 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, fullName: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-gray-50 focus:border-gray-400 rounded-xl transition-all ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.fullName}
           aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
           autoComplete="name"
@@ -168,7 +168,7 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-gray-50 focus:border-gray-400 rounded-xl transition-all ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.email}
           aria-describedby={fieldErrors.email ? "email-error" : undefined}
           autoComplete="email"
@@ -201,7 +201,7 @@ export const SignupForm = () => {
             setFieldErrors({ ...fieldErrors, phone: undefined });
           }}
           disabled={loading}
-          className={`h-12 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+          className={`h-12 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-gray-50 focus:border-gray-400 rounded-xl transition-all ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           aria-invalid={!!fieldErrors.phone}
           aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
           autoComplete="tel"
@@ -235,7 +235,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-12 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+            className={`h-12 pr-10 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-gray-50 focus:border-gray-400 rounded-xl transition-all ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
             aria-invalid={!!fieldErrors.password}
             aria-describedby={fieldErrors.password ? "password-error" : undefined}
             autoComplete="new-password"
@@ -279,7 +279,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
             }}
             disabled={loading}
-            className={`h-12 pr-10 bg-white/90 backdrop-blur-sm border-white/30 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-white rounded-xl transition-all ${fieldErrors.confirmPassword ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+            className={`h-12 pr-10 bg-gray-100 border-gray-300 text-gray-900 placeholder:text-gray-500 focus:bg-gray-50 focus:border-gray-400 rounded-xl transition-all ${fieldErrors.confirmPassword ? "border-red-400 focus-visible:ring-red-400" : ""}`}
             aria-invalid={!!fieldErrors.confirmPassword}
             aria-describedby={fieldErrors.confirmPassword ? "confirmPassword-error" : undefined}
             autoComplete="new-password"
@@ -308,7 +308,7 @@ export const SignupForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-12 bg-white/90 hover:bg-white text-gray-900 font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 backdrop-blur-sm"
+        className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50"
         disabled={loading}
         aria-busy={loading}
       >
