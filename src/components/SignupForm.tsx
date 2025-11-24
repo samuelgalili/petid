@@ -1,42 +1,123 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { signupSchema, type SignupFormData } from "@/lib/validators";
 import { supabase } from "@/integrations/supabase/client";
-import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
+import { z } from "zod";
+
+const otpSignupSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, "Full name must be at least 2 characters")
+    .max(100, "Full name must be less than 100 characters")
+    .trim(),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Invalid email address"),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .regex(/^\+?[0-9]{10,15}$/, "Phone must be 10-15 digits with optional + prefix"),
+});
 
 interface FieldError {
   fullName?: string;
   email?: string;
   phone?: string;
-  password?: string;
-  confirmPassword?: string;
 }
 
 export const SignupForm = () => {
-  const [formData, setFormData] = useState<SignupFormData>({
+  const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phone: "",
-    password: "",
-    confirmPassword: "",
   });
+  const [showOTPInput, setShowOTPInput] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
   const [generalError, setGeneralError] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Countdown timer effect
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown(resendCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
+
+  // Focus first OTP input when OTP screen shows
+  useEffect(() => {
+    if (showOTPInput && otpInputRefs.current[0]) {
+      otpInputRefs.current[0].focus();
+    }
+  }, [showOTPInput]);
+
+  const handleOtpChange = (index: number, value: string) => {
+    // Only allow digits
+    const digit = value.replace(/\D/g, '').slice(-1);
+    
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (digit && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      if (!otp[index] && index > 0) {
+        // If current input is empty, move to previous input
+        otpInputRefs.current[index - 1]?.focus();
+      } else {
+        // Clear current input
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newOtp = [...otp];
+    
+    pastedData.split('').forEach((digit, index) => {
+      if (index < 6) {
+        newOtp[index] = digit;
+      }
+    });
+    
+    setOtp(newOtp);
+    
+    // Focus the next empty input or the last one
+    const nextEmptyIndex = newOtp.findIndex(d => !d);
+    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
+    otpInputRefs.current[focusIndex]?.focus();
+  };
+
   const validateForm = (): boolean => {
     try {
-      signupSchema.parse(formData);
+      otpSignupSchema.parse(formData);
       setFieldErrors({});
       setGeneralError("");
       return true;
@@ -51,47 +132,105 @@ export const SignupForm = () => {
     }
   };
 
+  const sendOTP = async () => {
+    setLoading(true);
+    setGeneralError("");
+
+    try {
+      // Send OTP to phone
+      const { error: phoneError } = await supabase.auth.signInWithOtp({
+        phone: formData.phone,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          },
+        },
+      });
+
+      if (phoneError) {
+        setGeneralError(phoneError.message);
+        toast({
+          title: "Error",
+          description: phoneError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return false;
+      }
+
+      // Also send OTP to email
+      const { error: emailError } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          },
+        },
+      });
+
+      if (emailError) {
+        console.warn("Email OTP error:", emailError.message);
+      }
+
+      toast({
+        title: "Verification code sent!",
+        description: "Check your phone and email for the code.",
+      });
+
+      setShowOTPInput(true);
+      setResendCountdown(60);
+      setLoading(false);
+      return true;
+    } catch (error: any) {
+      setGeneralError("Failed to send verification code. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to send verification code",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError("");
 
-    if (!validateForm()) {
+    if (!showOTPInput && !validateForm()) {
       return;
     }
 
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-            phone: formData.phone,
-          },
-          emailRedirectTo: `${window.location.origin}/add-pet`,
-        },
-      });
+      if (!showOTPInput) {
+        await sendOTP();
+      } else {
+        // Verify OTP
+        const otpCode = otp.join('');
+        const { error } = await supabase.auth.verifyOtp({
+          phone: formData.phone,
+          token: otpCode,
+          type: 'sms'
+        });
 
-      if (error) {
-        if (error.message.includes("already registered")) {
-          setGeneralError("This email is already registered. Try logging in instead.");
-          setFieldErrors({ email: "Email already exists" });
-        } else {
+        if (error) {
           setGeneralError(error.message);
+          toast({
+            title: "Verification failed",
+            description: error.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
         }
 
         toast({
-          title: "Registration Error",
-          description: error.message,
-          variant: "destructive",
+          title: "Account created successfully!",
+          description: "Welcome to Petid!",
         });
-      } else if (data.user) {
-        toast({
-          title: "Registration Successful!",
-          description: "New account created successfully",
-        });
+
         navigate("/add-pet");
       }
     } catch (error: any) {
@@ -101,7 +240,6 @@ export const SignupForm = () => {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -120,191 +258,156 @@ export const SignupForm = () => {
         </motion.div>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="fullName" className="text-sm font-jakarta font-medium text-gray-700">
-          Full Name
-        </Label>
-        <Input
-          id="fullName"
-          name="fullName"
-          type="text"
-          placeholder="John Doe"
-          value={formData.fullName}
-          onChange={(e) => {
-            setFormData({ ...formData, fullName: e.target.value });
-            setFieldErrors({ ...fieldErrors, fullName: undefined });
-          }}
-          disabled={loading}
-          className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-          aria-invalid={!!fieldErrors.fullName}
-          aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
-          autoComplete="name"
-        />
-        {fieldErrors.fullName && (
-          <motion.p
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            id="fullName-error"
-            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-            role="alert"
-          >
-            {fieldErrors.fullName}
-          </motion.p>
-        )}
-      </div>
+      {!showOTPInput ? (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="text-sm font-jakarta font-medium text-gray-700">
+              Full Name
+            </Label>
+            <Input
+              id="fullName"
+              name="fullName"
+              type="text"
+              placeholder="John Doe"
+              value={formData.fullName}
+              onChange={(e) => {
+                setFormData({ ...formData, fullName: e.target.value });
+                setFieldErrors({ ...fieldErrors, fullName: undefined });
+              }}
+              disabled={loading}
+              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+              aria-invalid={!!fieldErrors.fullName}
+              aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
+              autoComplete="name"
+            />
+            {fieldErrors.fullName && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                id="fullName-error"
+                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                role="alert"
+              >
+                {fieldErrors.fullName}
+              </motion.p>
+            )}
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
-          Email Address
-        </Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="your@email.com"
-          value={formData.email}
-          onChange={(e) => {
-            setFormData({ ...formData, email: e.target.value });
-            setFieldErrors({ ...fieldErrors, email: undefined });
-          }}
-          disabled={loading}
-          className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-          aria-invalid={!!fieldErrors.email}
-          aria-describedby={fieldErrors.email ? "email-error" : undefined}
-          autoComplete="email"
-        />
-        {fieldErrors.email && (
-          <motion.p
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            id="email-error"
-            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-            role="alert"
-          >
-            {fieldErrors.email}
-          </motion.p>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
+              Email Address
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                setFieldErrors({ ...fieldErrors, email: undefined });
+              }}
+              disabled={loading}
+              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+              aria-invalid={!!fieldErrors.email}
+              aria-describedby={fieldErrors.email ? "email-error" : undefined}
+              autoComplete="email"
+            />
+            {fieldErrors.email && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                id="email-error"
+                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                role="alert"
+              >
+                {fieldErrors.email}
+              </motion.p>
+            )}
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
-          Phone Number
-        </Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          placeholder="1234567890"
-          value={formData.phone}
-          onChange={(e) => {
-            setFormData({ ...formData, phone: e.target.value });
-            setFieldErrors({ ...fieldErrors, phone: undefined });
-          }}
-          disabled={loading}
-          className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-          aria-invalid={!!fieldErrors.phone}
-          aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-          autoComplete="tel"
-        />
-        {fieldErrors.phone && (
-          <motion.p
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            id="phone-error"
-            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-            role="alert"
-          >
-            {fieldErrors.phone}
-          </motion.p>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
+              Phone Number
+            </Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder="+1234567890"
+              value={formData.phone}
+              onChange={(e) => {
+                setFormData({ ...formData, phone: e.target.value });
+                setFieldErrors({ ...fieldErrors, phone: undefined });
+              }}
+              disabled={loading}
+              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+              aria-invalid={!!fieldErrors.phone}
+              aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+              autoComplete="tel"
+            />
+            {fieldErrors.phone && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                id="phone-error"
+                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                role="alert"
+              >
+                {fieldErrors.phone}
+              </motion.p>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="space-y-3">
+          <Label className="text-sm font-jakarta font-medium text-gray-700 text-center block">
+            Verification Code
+          </Label>
+          
+          <div className="flex justify-center gap-2">
+            {otp.map((digit, index) => (
+              <motion.input
+                key={index}
+                ref={(el) => (otpInputRefs.current[index] = el)}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                onPaste={index === 0 ? handleOtpPaste : undefined}
+                disabled={loading}
+                animate={otp.every(d => d) ? {
+                  scale: [1, 1.05, 1],
+                  borderColor: ["#e5e7eb", "#FBD66A", "#FBD66A"],
+                } : {}}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`w-12 h-14 text-center text-2xl font-bold bg-gray-50/95 border-2 text-gray-900 rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_25px_rgba(0,0,0,0.2)] backdrop-blur-sm focus:outline-none ${
+                  digit
+                    ? otp.every(d => d)
+                      ? "border-[#FBD66A] bg-[#FBD66A]/10 focus:border-[#F4C542] focus:shadow-[0_6px_25px_rgba(251,214,106,0.4)]"
+                      : "border-gray-300 bg-gray-100 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
+                    : "border-gray-200 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
+                }`}
+                autoComplete="one-time-code"
+              />
+            ))}
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-jakarta font-medium text-gray-700">
-          Password
-        </Label>
-        <div className="relative">
-          <Input
-            id="password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Create a strong password"
-            value={formData.password}
-            onChange={(e) => {
-              setFormData({ ...formData, password: e.target.value });
-              setFieldErrors({ ...fieldErrors, password: undefined });
-            }}
-            disabled={loading}
-            className={`h-12 pr-10 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.password ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-            aria-invalid={!!fieldErrors.password}
-            aria-describedby={fieldErrors.password ? "password-error" : undefined}
-            autoComplete="new-password"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors"
-            aria-label={showPassword ? "Hide password" : "Show password"}
+          <motion.p
+            initial={{ opacity: 0.7 }}
+            animate={otp.every(d => d) ? {
+              opacity: [0.7, 1, 0.7],
+              color: ["#6b7280", "#F4C542", "#6b7280"]
+            } : { opacity: 0.7 }}
+            transition={{ duration: 0.5 }}
+            className="text-xs font-jakarta text-center"
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
+            {otp.every(d => d) ? "✓ Code complete! Click verify to continue" : "Enter the 6-digit code sent to your phone and email"}
+          </motion.p>
         </div>
-        {fieldErrors.password && (
-          <motion.p
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            id="password-error"
-            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-            role="alert"
-          >
-            {fieldErrors.password}
-          </motion.p>
-        )}
-        <PasswordStrengthIndicator password={formData.password} />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword" className="text-sm font-jakarta font-medium text-gray-700">
-          Confirm Password
-        </Label>
-        <div className="relative">
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
-            placeholder="Re-enter your password"
-            value={formData.confirmPassword}
-            onChange={(e) => {
-              setFormData({ ...formData, confirmPassword: e.target.value });
-              setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
-            }}
-            disabled={loading}
-            className={`h-12 pr-10 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.confirmPassword ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-            aria-invalid={!!fieldErrors.confirmPassword}
-            aria-describedby={fieldErrors.confirmPassword ? "confirmPassword-error" : undefined}
-            autoComplete="new-password"
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors"
-            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-          >
-            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
-        {fieldErrors.confirmPassword && (
-          <motion.p
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            id="confirmPassword-error"
-            className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-            role="alert"
-          >
-            {fieldErrors.confirmPassword}
-          </motion.p>
-        )}
-      </div>
+      )}
 
       <Button
         type="submit"
@@ -315,12 +418,50 @@ export const SignupForm = () => {
         {loading ? (
           <>
             <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-            <span>Creating account...</span>
+            <span>{showOTPInput ? "Verifying..." : "Sending code..."}</span>
           </>
+        ) : showOTPInput ? (
+          "Verify Code"
         ) : (
-          "Create Account"
+          "Send Code"
         )}
       </Button>
+
+      {showOTPInput && (
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={async () => {
+              if (resendCountdown === 0) {
+                await sendOTP();
+              }
+            }}
+            disabled={loading || resendCountdown > 0}
+            className="w-full h-10 bg-gray-50/95 hover:bg-gray-100 text-gray-700 font-jakarta font-medium border-2 border-gray-200 rounded-xl transition-all disabled:opacity-50"
+          >
+            {resendCountdown > 0 ? (
+              `Resend code in ${resendCountdown}s`
+            ) : (
+              "Resend verification code"
+            )}
+          </Button>
+          
+          <button
+            type="button"
+            onClick={() => {
+              setShowOTPInput(false);
+              setOtp(["", "", "", "", "", ""]);
+              setGeneralError("");
+              setResendCountdown(0);
+            }}
+            className="w-full text-sm text-gray-700 hover:text-gray-900 font-jakarta transition-colors"
+            disabled={loading}
+          >
+            Change phone number
+          </button>
+        </div>
+      )}
     </form>
   );
 };
