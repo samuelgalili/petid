@@ -5,16 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
-const otpLoginSchema = z.object({
+const emailOtpSchema = z.object({
   email: z
     .string()
     .min(1, "Email is required")
     .email("Invalid email address"),
+  rememberMe: z.boolean().optional(),
+});
+
+const phoneOtpSchema = z.object({
   phone: z
     .string()
     .min(1, "Phone number is required")
@@ -28,6 +32,7 @@ interface FieldError {
 }
 
 export const LoginForm = () => {
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
@@ -61,14 +66,12 @@ export const LoginForm = () => {
   }, [showOTPInput]);
 
   const handleOtpChange = (index: number, value: string) => {
-    // Only allow digits
     const digit = value.replace(/\D/g, '').slice(-1);
     
     const newOtp = [...otp];
     newOtp[index] = digit;
     setOtp(newOtp);
 
-    // Auto-focus next input
     if (digit && index < 5) {
       otpInputRefs.current[index + 1]?.focus();
     }
@@ -77,10 +80,8 @@ export const LoginForm = () => {
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       if (!otp[index] && index > 0) {
-        // If current input is empty, move to previous input
         otpInputRefs.current[index - 1]?.focus();
       } else {
-        // Clear current input
         const newOtp = [...otp];
         newOtp[index] = "";
         setOtp(newOtp);
@@ -105,7 +106,6 @@ export const LoginForm = () => {
     
     setOtp(newOtp);
     
-    // Focus the next empty input or the last one
     const nextEmptyIndex = newOtp.findIndex(d => !d);
     const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
     otpInputRefs.current[focusIndex]?.focus();
@@ -113,7 +113,11 @@ export const LoginForm = () => {
 
   const validateForm = (): boolean => {
     try {
-      otpLoginSchema.parse(formData);
+      if (loginMethod === "email") {
+        emailOtpSchema.parse({ email: formData.email, rememberMe: formData.rememberMe });
+      } else {
+        phoneOtpSchema.parse({ phone: formData.phone, rememberMe: formData.rememberMe });
+      }
       setFieldErrors({});
       setGeneralError("");
       return true;
@@ -133,34 +137,41 @@ export const LoginForm = () => {
     setGeneralError("");
 
     try {
-      // Send OTP to phone
-      const { error: phoneError } = await supabase.auth.signInWithOtp({
-        phone: formData.phone,
-      });
-
-      if (phoneError) {
-        setGeneralError(phoneError.message);
-        toast({
-          title: "Error",
-          description: phoneError.message,
-          variant: "destructive",
+      if (loginMethod === "email") {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: formData.email,
         });
-        setLoading(false);
-        return false;
-      }
 
-      // Also send OTP to email
-      const { error: emailError } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-      });
+        if (error) {
+          setGeneralError(error.message);
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return false;
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: formData.phone,
+        });
 
-      if (emailError) {
-        console.warn("Email OTP error:", emailError.message);
+        if (error) {
+          setGeneralError(error.message);
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return false;
+        }
       }
 
       toast({
         title: "Verification code sent!",
-        description: "Check your phone and email for the code.",
+        description: `Check your ${loginMethod === "email" ? "email" : "phone"} for the code.`,
       });
 
       setShowOTPInput(true);
@@ -193,23 +204,42 @@ export const LoginForm = () => {
       if (!showOTPInput) {
         await sendOTP();
       } else {
-        // Verify OTP
         const otpCode = otp.join('');
-        const { error } = await supabase.auth.verifyOtp({
-          phone: formData.phone,
-          token: otpCode,
-          type: 'sms'
-        });
-
-        if (error) {
-          setGeneralError(error.message);
-          toast({
-            title: "Verification failed",
-            description: error.message,
-            variant: "destructive",
+        
+        if (loginMethod === "email") {
+          const { error } = await supabase.auth.verifyOtp({
+            email: formData.email,
+            token: otpCode,
+            type: 'email'
           });
-          setLoading(false);
-          return;
+
+          if (error) {
+            setGeneralError(error.message);
+            toast({
+              title: "Verification failed",
+              description: error.message,
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+        } else {
+          const { error } = await supabase.auth.verifyOtp({
+            phone: formData.phone,
+            token: otpCode,
+            type: 'sms'
+          });
+
+          if (error) {
+            setGeneralError(error.message);
+            toast({
+              title: "Verification failed",
+              description: error.message,
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
         }
 
         toast({
@@ -246,71 +276,109 @@ export const LoginForm = () => {
 
       {!showOTPInput ? (
         <>
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
-              Email Address
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="your@email.com"
-              value={formData.email}
-              onChange={(e) => {
-                setFormData({ ...formData, email: e.target.value });
-                setFieldErrors({ ...fieldErrors, email: undefined });
+          {/* Login Method Tabs */}
+          <div className="flex gap-2 p-1 bg-gray-100/80 rounded-xl backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMethod("email");
+                setFieldErrors({});
+                setGeneralError("");
               }}
-              disabled={loading}
-              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-              aria-invalid={!!fieldErrors.email}
-              aria-describedby={fieldErrors.email ? "email-error" : undefined}
-              autoComplete="email"
-            />
-            {fieldErrors.email && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                id="email-error"
-                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-                role="alert"
-              >
-                {fieldErrors.email}
-              </motion.p>
-            )}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-jakarta font-medium transition-all ${
+                loginMethod === "email"
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMethod("phone");
+                setFieldErrors({});
+                setGeneralError("");
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-jakarta font-medium transition-all ${
+                loginMethod === "phone"
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Phone className="h-4 w-4" />
+              Phone
+            </button>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
-              Phone Number
-            </Label>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              placeholder="+1234567890"
-              value={formData.phone}
-              onChange={(e) => {
-                setFormData({ ...formData, phone: e.target.value });
-                setFieldErrors({ ...fieldErrors, phone: undefined });
-              }}
-              disabled={loading}
-              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-              aria-invalid={!!fieldErrors.phone}
-              aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-              autoComplete="tel"
-            />
-            {fieldErrors.phone && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                id="phone-error"
-                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-                role="alert"
-              >
-                {fieldErrors.phone}
-              </motion.p>
-            )}
-          </div>
+          {loginMethod === "email" ? (
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="your@email.com"
+                value={formData.email}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  setFieldErrors({ ...fieldErrors, email: undefined });
+                }}
+                disabled={loading}
+                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                autoComplete="email"
+              />
+              {fieldErrors.email && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  id="email-error"
+                  className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                  role="alert"
+                >
+                  {fieldErrors.email}
+                </motion.p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
+                Phone Number
+              </Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+1234567890"
+                value={formData.phone}
+                onChange={(e) => {
+                  setFormData({ ...formData, phone: e.target.value });
+                  setFieldErrors({ ...fieldErrors, phone: undefined });
+                }}
+                disabled={loading}
+                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                aria-invalid={!!fieldErrors.phone}
+                aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+                autoComplete="tel"
+              />
+              {fieldErrors.phone && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  id="phone-error"
+                  className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                  role="alert"
+                >
+                  {fieldErrors.phone}
+                </motion.p>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-center space-x-2">
@@ -377,7 +445,7 @@ export const LoginForm = () => {
             transition={{ duration: 0.5 }}
             className="text-xs font-jakarta text-center"
           >
-            {otp.every(d => d) ? "✓ Code complete! Click verify to continue" : "Enter the 6-digit code sent to your phone and email"}
+            {otp.every(d => d) ? "✓ Code complete! Click verify to continue" : `Enter the 6-digit code sent to your ${loginMethod === "email" ? "email" : "phone"}`}
           </motion.p>
         </div>
       )}
@@ -431,7 +499,7 @@ export const LoginForm = () => {
             className="w-full text-sm text-gray-700 hover:text-gray-900 font-jakarta transition-colors"
             disabled={loading}
           >
-            Change phone number
+            Change {loginMethod === "email" ? "email" : "phone number"}
           </button>
         </div>
       )}
