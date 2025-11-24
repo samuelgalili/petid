@@ -74,20 +74,20 @@ const Signup = () => {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/30" />
+                <span className="w-full border-t border-gray-400/30" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-transparent px-2 text-white/90">Or</span>
+                <span className="bg-transparent px-2 text-gray-700 font-jakarta">Or</span>
               </div>
             </div>
 
             {/* Sign In Link */}
             <div className="text-center mb-4">
-              <p className="text-white/90 text-sm">
+              <p className="text-gray-700 text-sm font-jakarta">
                 Already have an account?{" "}
                 <Link
                   to="/auth"
-                  className="text-white font-semibold hover:underline transition-colors"
+                  className="text-gray-900 font-semibold hover:underline transition-colors"
                 >
                   Sign In
                 </Link>
@@ -95,11 +95,12 @@ const Signup = () => {
             </div>
 
             {/* Guest Mode */}
+            {/* Guest Mode */}
             <Button
               type="button"
               variant="ghost"
               onClick={handleGuestMode}
-              className="w-full rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-all"
+              className="w-full rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-all font-jakarta font-semibold"
             >
               <UserX className="mr-2 h-4 w-4" />
               Continue as Guest

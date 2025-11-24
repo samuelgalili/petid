@@ -121,7 +121,7 @@ export const SignupForm = () => {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="fullName" className="text-sm font-medium text-white">
+        <Label htmlFor="fullName" className="text-sm font-jakarta font-medium text-gray-700">
           Full Name
         </Label>
         <Input
@@ -154,7 +154,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-sm font-medium text-white">
+        <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
           Email Address
         </Label>
         <Input
@@ -187,7 +187,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="phone" className="text-sm font-medium text-white">
+        <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
           Phone Number
         </Label>
         <Input
@@ -220,7 +220,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-sm font-medium text-white">
+        <Label htmlFor="password" className="text-sm font-jakarta font-medium text-gray-700">
           Password
         </Label>
         <div className="relative">
@@ -264,7 +264,7 @@ export const SignupForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword" className="text-sm font-medium text-white">
+        <Label htmlFor="confirmPassword" className="text-sm font-jakarta font-medium text-gray-700">
           Confirm Password
         </Label>
         <div className="relative">
@@ -308,7 +308,7 @@ export const SignupForm = () => {
 
       <Button
         type="submit"
-        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(96,165,250,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+        className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-jakarta font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(96,165,250,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
         disabled={loading}
         aria-busy={loading}
       >
