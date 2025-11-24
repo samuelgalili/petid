@@ -6,16 +6,10 @@ export const loginSchema = z.object({
     .min(1, "Email is required")
     .email("Invalid email address")
     .max(255, "Email must be less than 255 characters"),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters")
-    .max(100, "Password must be less than 100 characters"),
   phone: z
     .string()
-    .optional()
-    .refine((val) => !val || /^[0-9]{10,15}$/.test(val), {
-      message: "Phone number must be 10-15 digits",
-    }),
+    .min(1, "Phone number is required")
+    .regex(/^\+?[0-9]{10,15}$/, "Phone number must be 10-15 digits with optional + prefix"),
   rememberMe: z.boolean().optional(),
 });
 
