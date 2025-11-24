@@ -7,6 +7,7 @@ import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
 import { UserX } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Signup = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -43,14 +44,47 @@ const Signup = () => {
             </div>
           </div>
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2 tracking-tight">petiid</h1>
-            <p className="text-base text-muted-foreground font-medium">חשבון צדיקה</p>
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="inline-flex items-center justify-center mb-2"
+            >
+              <h1 className="text-4xl font-bold tracking-tight relative" style={{ color: '#1A1A1A' }}>
+                Pet
+                <span className="relative inline-block">
+                  i
+                  <motion.span
+                    className="absolute"
+                    style={{
+                      top: '-8px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontSize: '20px',
+                    }}
+                    animate={{
+                      y: [0, -8, 0],
+                    }}
+                    transition={{
+                      duration: 1.2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      repeatDelay: 0.5
+                    }}
+                  >
+                    🐾
+                  </motion.span>
+                </span>
+                d
+              </h1>
+            </motion.div>
+            <p className="text-base text-muted-foreground font-medium">Pet Care Account</p>
           </div>
           
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-center mb-3">הרשמה</h2>
+            <h2 className="text-2xl font-bold text-center mb-3">Sign Up</h2>
             <p className="text-sm text-center text-muted-foreground leading-relaxed px-4">
-              צור חשבון חדש והתחל לנהל<br />את חיית המחמד שלך
+              Create a new account and start<br />managing your pet's care
             </p>
           </div>
 
@@ -59,12 +93,12 @@ const Signup = () => {
           <SocialAuthButtons redirectTo="/add-pet" />
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            כבר יש לך חשבון?{" "}
+            Already have an account?{" "}
             <Link
               to="/auth"
               className="text-primary hover:text-primary/80 hover:underline font-medium transition-colors"
             >
-              התחבר
+              Sign In
             </Link>
           </div>
 
@@ -75,7 +109,7 @@ const Signup = () => {
             className="w-full mt-4 rounded-full hover:bg-muted/50"
           >
             <UserX className="ml-2 h-4 w-4" />
-            המשך כאורח
+            Continue as Guest
           </Button>
         </div>
       </Card>

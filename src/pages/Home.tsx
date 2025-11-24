@@ -141,7 +141,7 @@ const Home = () => {
             <div className="relative">
               <input 
                 type="text" 
-                placeholder="חיפוש" 
+                placeholder="Search" 
                 className="w-full h-10 px-4 rounded-full bg-white border-0 text-sm text-center shadow-sm"
               />
             </div>
@@ -159,7 +159,7 @@ const Home = () => {
         {/* Membership Banner */}
         <div className="mb-4">
           <div className="bg-primary text-white rounded-2xl px-4 py-3 text-center font-semibold text-sm shadow-md">
-            מנוי שנתיית<br />Membership.yub
+            Annual Membership<br />Membership.yub
           </div>
         </div>
 

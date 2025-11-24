@@ -35,7 +35,7 @@ const Feed = () => {
             </button>
             
             <h1 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
-              שתי עובדיות
+              Recent Updates
             </h1>
             
             <div className="w-10 h-10 rounded-full" style={{ backgroundColor: '#F5F5F5' }} />
@@ -66,7 +66,7 @@ const Feed = () => {
           </button>
           
           <h1 className="text-lg font-bold" style={{ color: '#1A1A1A' }}>
-            שתי עובדיות
+            Recent Updates
           </h1>
           
           <Avatar className="w-10 h-10">
@@ -92,10 +92,10 @@ const Feed = () => {
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1 pr-3">
               <h2 className="text-xl font-bold mb-1.5 leading-tight" style={{ color: '#1A1A1A' }}>
-                ששל הולכתמיה<br />שייו הלולדרה
+                Your Pet's Health<br />Status Overview
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: '#666666' }}>
-                הגיעיף! נוגע בהליטובקה
+                Check important health metrics
               </p>
             </div>
             
@@ -121,7 +121,7 @@ const Feed = () => {
                 borderTopColor: '#5EBAB0'
               }} />
               <div className="w-full h-full flex items-center justify-center">
-                <span className="text-white font-bold text-base">עוד</span>
+                <span className="text-white font-bold text-base">More</span>
               </div>
             </div>
 
@@ -133,7 +133,7 @@ const Feed = () => {
                 <span className="text-white font-bold text-xl">7</span>
               </div>
               <span className="text-xs font-medium text-center" style={{ color: '#1A1A1A' }}>
-                כס כיטוס
+                Vaccines
               </span>
             </div>
 
@@ -145,7 +145,7 @@ const Feed = () => {
                 <span className="text-white font-bold text-2xl">?</span>
               </div>
               <span className="text-xs font-medium text-center" style={{ color: '#1A1A1A' }}>
-                חווח דפיוומק
+                Health Check
               </span>
             </div>
 
@@ -157,7 +157,7 @@ const Feed = () => {
                 <span className="text-4xl">🖌️</span>
               </div>
               <span className="text-xs font-medium text-center" style={{ color: '#1A1A1A' }}>
-                שיוק במייעת
+                Grooming
               </span>
             </div>
           </div>
@@ -187,10 +187,10 @@ const Feed = () => {
           <div className="flex-1 flex flex-col justify-between text-white min-h-[112px]">
             <div>
               <h3 className="text-base font-bold mb-1 leading-tight">
-                מיינינג מאססייייט שטייהד
+                Walking & Training Session
               </h3>
               <p className="text-sm opacity-95 leading-relaxed">
-                סַבון לי:ידניס פאוס<br />כַמִּי
+                Daily exercise routine<br />complete
               </p>
             </div>
             
@@ -199,10 +199,10 @@ const Feed = () => {
                 className="px-6 py-2 bg-white rounded-full text-sm font-bold transition-transform active:scale-95"
                 style={{ color: '#5EBAB0' }}
               >
-                לוחים בו
+                View Details
               </button>
               <div className="flex items-center gap-2">
-                <span className="text-sm opacity-95">נפיא שחייהד</span>
+                <span className="text-sm opacity-95">Today</span>
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#FFC857' }} />
               </div>
             </div>
@@ -233,10 +233,10 @@ const Feed = () => {
           <div className="flex-1 flex flex-col justify-between text-white min-h-[112px]">
             <div>
               <h3 className="text-base font-bold mb-1 leading-tight">
-                ביוטאס לקיים שכיוע
+                Upcoming Vet Appointment
               </h3>
               <p className="text-sm opacity-95 leading-relaxed">
-                קיטבוער ונעוט<br />הסכ
+                Annual checkup<br />scheduled
               </p>
             </div>
             
@@ -244,7 +244,7 @@ const Feed = () => {
               className="self-start px-6 py-2 bg-white rounded-full text-sm font-bold mt-2 transition-transform active:scale-95"
               style={{ color: '#5EBAB0' }}
             >
-              כווט
+              Book
             </button>
           </div>
         </motion.div>

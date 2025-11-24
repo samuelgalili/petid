@@ -81,7 +81,7 @@ const Auth = () => {
             }}
           >
             <p className="text-white text-sm font-semibold leading-tight">
-              מנוי שנתיית<br />Membership.yub
+              Annual Membership<br />Membership.yub
             </p>
           </div>
 
@@ -162,7 +162,7 @@ const Auth = () => {
                 color: 'hsl(220 9% 46%)'
               }}
             >
-              חשבון צדיקה
+              Pet Care Account
             </p>
           </div>
           
@@ -172,7 +172,7 @@ const Auth = () => {
               className="text-center mb-3 font-bold text-[#1A1A1A]"
               style={{ fontSize: '30px' }}
             >
-              ברוכים הבאים
+              Welcome
             </h2>
             <p 
               className="text-center leading-relaxed px-4"
@@ -183,7 +183,7 @@ const Auth = () => {
                 lineHeight: '1.6'
               }}
             >
-              פשוט שיח בגולה חיה אשראמבל<br />מיל וילדים מרליטה
+              Manage your pet's health, activities,<br />and care all in one place
             </p>
           </div>
 
@@ -205,7 +205,7 @@ const Auth = () => {
             }}
             onClick={() => navigate('/home')}
           >
-            COCOONT UUT
+            Get Started
           </Button>
 
           {/* Social Auth Buttons */}
@@ -215,11 +215,11 @@ const Auth = () => {
 
           {/* Page Indicators */}
           <div className="flex justify-center items-center gap-3 mt-8 mb-6">
-            <button className="text-xs font-medium text-[#1A1A1A]">סמא</button>
+            <button className="text-xs font-medium text-[#1A1A1A]">Home</button>
             <span className="text-xs text-muted-foreground">•</span>
-            <button className="text-xs font-medium text-muted-foreground">ה:יסטוס</button>
+            <button className="text-xs font-medium text-muted-foreground">History</button>
             <span className="text-xs text-muted-foreground">•</span>
-            <button className="text-xs font-medium text-muted-foreground">לחן</button>
+            <button className="text-xs font-medium text-muted-foreground">Profile</button>
           </div>
 
           {/* Footer Links */}
@@ -228,23 +228,23 @@ const Auth = () => {
               type="button"
               onClick={() =>
                 toast({
-                  title: "בקרוב",
-                  description: "פיצ'ר שחזור סיסמה יתווסף בקרוב",
+                  title: "Coming Soon",
+                  description: "Password recovery feature will be added soon",
                 })
               }
               className="text-muted-foreground hover:text-foreground hover:underline transition-colors"
             >
-              שכחתי סיסמה
+              Forgot Password
             </button>
 
             <div className="text-muted-foreground">
-              אין לך חשבון?{" "}
+              Don't have an account?{" "}
               <Link
                 to="/signup"
                 className="hover:underline font-medium transition-colors"
                 style={{ color: 'hsl(174 62% 60%)' }}
               >
-                צור חשבון
+                Sign Up
               </Link>
             </div>
 
@@ -255,7 +255,7 @@ const Auth = () => {
               className="w-full mt-2 rounded-full hover:bg-muted/50"
             >
               <UserX className="ml-2 h-4 w-4" />
-              המשך כאורח
+              Continue as Guest
             </Button>
           </div>
 
