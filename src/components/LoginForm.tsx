@@ -308,7 +308,7 @@ export const LoginForm = () => {
       {!showOTPInput ? (
         <>
           {/* Login Method Tabs */}
-          <div className="flex gap-2 p-1 bg-gray-100/80 rounded-xl backdrop-blur-sm">
+          <div className="flex gap-2 p-1 bg-gray-100/80 rounded-2xl backdrop-blur-sm">
             <button
               type="button"
               onClick={() => {
