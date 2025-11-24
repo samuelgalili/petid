@@ -9,6 +9,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
 import { UserX, Menu } from "lucide-react";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
+import { motion } from "framer-motion";
+import dogIcon from "@/assets/dog-icon.gif";
+import catIcon from "@/assets/cat-icon.gif";
 
 const Auth = () => {
   const { toast } = useToast();
@@ -82,30 +85,75 @@ const Auth = () => {
             </p>
           </div>
 
-          {/* Dog Image */}
-          <div className="flex justify-center mb-6">
-            <img 
-              src="https://images.unsplash.com/photo-1568572933382-74d440642117?w=500&h=500&fit=crop" 
-              alt="Pet" 
-              className="w-[230px] h-[230px] object-cover rounded-full"
-              style={{
-                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.1)'
-              }}
-            />
+          {/* Animated Pet Icons */}
+          <div className="flex justify-center items-center gap-8 mb-6">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <img 
+                src={dogIcon}
+                alt="Dog" 
+                className="w-[120px] h-[120px] object-contain"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <img 
+                src={catIcon}
+                alt="Cat" 
+                className="w-[120px] h-[120px] object-contain"
+              />
+            </motion.div>
           </div>
 
-          {/* Main Title */}
+          {/* Main Title with Animated Logo */}
           <div className="text-center mb-8">
-            <h1 
-              className="font-bold mb-2 text-[#1A1A1A]" 
-              style={{ 
-                fontSize: '38px',
-                fontWeight: '800',
-                letterSpacing: '-0.5px'
-              }}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="inline-flex items-center justify-center mb-2"
             >
-              petiid
-            </h1>
+              <h1 
+                className="font-bold text-[#1A1A1A] relative" 
+                style={{ 
+                  fontSize: '38px',
+                  fontWeight: '800',
+                  letterSpacing: '-0.5px'
+                }}
+              >
+                Pet
+                <span className="relative inline-block">
+                  i
+                  <motion.span
+                    className="absolute"
+                    style={{
+                      top: '-8px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontSize: '20px',
+                    }}
+                    animate={{
+                      y: [0, -8, 0],
+                    }}
+                    transition={{
+                      duration: 1.2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      repeatDelay: 0.5
+                    }}
+                  >
+                    🐾
+                  </motion.span>
+                </span>
+                d
+              </h1>
+            </motion.div>
             <p 
               className="font-medium"
               style={{
