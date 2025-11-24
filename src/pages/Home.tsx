@@ -1,10 +1,49 @@
 import { Menu, Bell, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { HomePageSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 
 const Home = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
+  // Simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-20" dir="rtl" style={{ background: 'hsl(48 67% 97%)' }}>
+        <div className="bg-[hsl(48_67%_97%)] border-b border-border/30 p-6 pb-6">
+          <div className="flex items-center justify-between mb-6">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Menu className="w-5 h-5" />
+            </Button>
+            <div className="flex-1 mx-4">
+              <div className="h-10 bg-white rounded-full" />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Bell className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <UserX className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <HomePageSkeleton />
+        <BottomNav />
+      </div>
+    );
+  }
 
   const features = [
     {
