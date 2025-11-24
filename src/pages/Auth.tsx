@@ -75,16 +75,6 @@ const Auth = () => {
               <LoginForm />
             </div>
 
-            {/* Forgot Password */}
-            <div className="text-center mb-5">
-              <Link
-                to="/forgot-password"
-                className="inline-block px-4 py-2 text-gray-700 bg-white/10 hover:bg-white/20 text-sm font-jakarta font-medium rounded-full border border-white/20 hover:border-white/30 shadow-[0_4px_15px_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] backdrop-blur-sm transition-all"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-
             {/* Social Auth */}
             <div className="mb-5">
               <SocialAuthButtons redirectTo="/add-pet" />
