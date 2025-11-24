@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         heebo: ['Heebo', 'sans-serif'],
+        playfair: ['Playfair Display', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -41,6 +42,8 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          subtle: "hsl(var(--accent-subtle))",
+          hover: "hsl(var(--accent-hover))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -49,6 +52,12 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        premium: {
+          gold: "hsl(var(--premium-gold))",
+          "gold-light": "hsl(var(--premium-gold-light))",
+          purple: "hsl(var(--premium-purple))",
+          "purple-light": "hsl(var(--premium-purple-light))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
