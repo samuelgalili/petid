@@ -61,6 +61,8 @@ import petVitaminsImg from "@/assets/products/pet-vitamins.jpg";
 import fleaTreatmentImg from "@/assets/products/flea-treatment.jpg";
 import petCollarImg from "@/assets/products/pet-collar.jpg";
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
+import petidLogo from "@/assets/petid-logo.png";
+import catIconGif from "@/assets/cat-icon.gif";
 
 // Product data - moved outside component for performance
 const products = [
@@ -800,43 +802,22 @@ const Home = () => {
                   {/* Decorative Circle - Top Left */}
                   <div className="absolute -top-8 -left-8 w-32 h-32 bg-[#E89B5A] rounded-full opacity-60"></div>
                   
-                  {/* "yellow" text at top center */}
-                  <div className="relative z-10 text-white text-2xl font-bold mb-8 text-center">
-                    yellow
+                  {/* Petid Logo at top center */}
+                  <div className="relative z-10 flex justify-center mb-8">
+                    <img src={petidLogo} alt="Petid" className="h-8 object-contain" />
                   </div>
 
-                  {/* White Dog Illustration - Bottom Left */}
+                  {/* Animated Cat - Bottom Left */}
                   <div className="absolute left-6 bottom-4 w-28 h-28">
-                    <svg viewBox="0 0 100 100" fill="white" className="w-full h-full">
-                      {/* Dog body */}
-                      <ellipse cx="50" cy="70" rx="28" ry="18" />
-                      {/* Dog head */}
-                      <circle cx="50" cy="45" r="22" />
-                      {/* Left ear */}
-                      <ellipse cx="33" cy="30" rx="10" ry="18" transform="rotate(-20 33 30)" />
-                      {/* Right ear */}
-                      <ellipse cx="67" cy="30" rx="10" ry="18" transform="rotate(20 67 30)" />
-                      {/* Left eye */}
-                      <circle cx="42" cy="42" r="3" fill="#333" />
-                      {/* Right eye */}
-                      <circle cx="58" cy="42" r="3" fill="#333" />
-                      {/* Nose */}
-                      <ellipse cx="50" cy="52" rx="4" ry="3" fill="#333" />
-                      {/* Mouth */}
-                      <path d="M 50 52 Q 45 58 40 56" stroke="#333" strokeWidth="2" fill="none" />
-                      <path d="M 50 52 Q 55 58 60 56" stroke="#333" strokeWidth="2" fill="none" />
-                      {/* Front legs */}
-                      <rect x="38" y="78" width="6" height="15" rx="3" />
-                      <rect x="56" y="78" width="6" height="15" rx="3" />
-                    </svg>
+                    <img src={catIconGif} alt="Cat" className="w-full h-full object-contain" />
                   </div>
 
                   {/* Wallet Amount - Right Side */}
                   <div className="relative z-10 text-right">
-                    <div className="text-white text-3xl font-bold mb-1">
+                    <div className="text-gray-900 text-3xl font-bold mb-1">
                       ₪{walletBalance.toFixed(2)}
                     </div>
-                    <div className="text-white/90 text-xs font-jakarta">
+                    <div className="text-gray-800 text-xs font-jakarta">
                       Savings from purchases
                     </div>
                   </div>
