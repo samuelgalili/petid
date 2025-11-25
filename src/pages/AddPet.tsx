@@ -628,12 +628,10 @@ const AddPet = () => {
                         <p className="text-xs text-gray-600 font-jakarta">
                           AI detected: "{formData.breed}"
                         </p>
-                        <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
-                          breedConfidence > 80 ? 'bg-green-100 text-green-700' :
-                          breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-orange-100 text-orange-700'
+                        <span className={`text-xl font-semibold ${
+                          breedConfident ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {breedConfidence}% confident
+                          {breedConfident ? '✓' : '✗'}
                         </span>
                       </div>
                     )}
@@ -850,12 +848,10 @@ const AddPet = () => {
                           <div className="flex items-center gap-2">
                             <p className="text-base font-jakarta font-semibold text-gray-900">{formData.breed}</p>
                             {breedConfidence !== null && (
-                              <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
-                                breedConfidence > 80 ? 'bg-green-100 text-green-700' :
-                                breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-orange-100 text-orange-700'
+                              <span className={`text-xl font-semibold ${
+                                breedConfident ? 'text-green-600' : 'text-red-600'
                               }`}>
-                                AI: {breedConfidence}%
+                                {breedConfident ? '✓' : '✗'}
                               </span>
                             )}
                           </div>
