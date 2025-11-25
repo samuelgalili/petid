@@ -163,11 +163,12 @@ const Home = () => {
 
   const products = [
     {
-      name: "Piedhu",
+      name: "Piedhu Premium",
       price: "₪207.84",
       image: "🐕",
       path: "/shop",
       color: "bg-[#B8E3D5]",
+      category: "intop-ribet", // Food & Treats
     },
     {
       name: "Premium Treats",
@@ -175,36 +176,70 @@ const Home = () => {
       image: "🦴",
       path: "/shop",
       color: "bg-[#F5E6D3]",
+      category: "intop-ribet", // Food & Treats
     },
     {
-      name: "Pet Bed",
+      name: "Pet Bed Deluxe",
       price: "₪208.12",
       image: "🛏️",
       path: "/shop",
       color: "bg-[#E8F5E8]",
+      category: "account-cater", // Accessories
     },
     {
-      name: "Reagor",
+      name: "Reagor Snacks",
       price: "₪101.72",
       image: "🍪",
       path: "/shop",
       color: "bg-[#FFE5E5]",
+      category: "intop-ribet", // Food & Treats
     },
     {
-      name: "Dog Toys",
+      name: "Dog Toys Set",
       price: "₪156.00",
       image: "🎾",
       path: "/shop",
       color: "bg-[#E8E5FF]",
+      category: "account-cater", // Accessories
     },
     {
-      name: "Cat Food",
+      name: "Cat Food Pro",
       price: "₪189.50",
       image: "🐱",
       path: "/shop",
       color: "bg-[#FFE8D6]",
+      category: "intop-ribet", // Food & Treats
+    },
+    {
+      name: "Pet Vitamins",
+      price: "₪145.00",
+      image: "💊",
+      path: "/shop",
+      color: "bg-[#FFE5F0]",
+      category: "deterrtn", // Healthcare
+    },
+    {
+      name: "Flea Treatment",
+      price: "₪225.00",
+      image: "🩺",
+      path: "/shop",
+      color: "bg-[#E5F5FF]",
+      category: "deterrtn", // Healthcare
+    },
+    {
+      name: "Pet Collar",
+      price: "₪89.99",
+      image: "🎀",
+      path: "/shop",
+      color: "bg-[#FFF0E5]",
+      category: "account-cater", // Accessories
     },
   ];
+
+  // Filter products based on active category
+  const filteredProducts = products.filter(
+    product => product.category === activeCategory
+  );
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in bg-white" dir="rtl">
@@ -324,50 +359,66 @@ const Home = () => {
       </div>
 
       {/* Product Grid with Staggered Animation */}
-      <div className="px-6 pt-6 pb-6 grid grid-cols-2 gap-4">
-        {products.map((product, index) => (
-          <motion.div
-            key={index}
-            onClick={() => navigate(product.path)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.08, duration: 0.4 }}
-            whileHover={{ scale: 1.03, y: -6 }}
-            whileTap={{ scale: 0.97 }}
-            className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
-          >
-            {/* Product Image */}
-            <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm">
-              <span className="text-6xl">{product.image}</span>
-            </div>
+      <div className="px-6 pt-6 pb-6">
+        {filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4">
+            {filteredProducts.map((product, index) => (
+              <motion.div
+                key={index}
+                onClick={() => navigate(product.path)}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08, duration: 0.4 }}
+                whileHover={{ scale: 1.03, y: -6 }}
+                whileTap={{ scale: 0.97 }}
+                className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
+              >
+                {/* Product Image */}
+                <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm">
+                  <span className="text-6xl">{product.image}</span>
+                </div>
 
-            {/* Product Info */}
-            <div className="flex-1 flex flex-col">
-              <h3 className="font-bold text-lg mb-2 text-gray-900 font-jakarta leading-tight">
-                {product.name}
-              </h3>
-              
-              {/* Price and Cart Button */}
-              <div className="flex items-center justify-between mt-auto">
-                <span className="text-sm font-semibold text-gray-700 font-jakarta">
-                  {product.price}
-                </span>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toast({ 
-                      title: "Added to cart", 
-                      description: `${product.name} added successfully` 
-                    });
-                  }}
-                  className="w-10 h-10 bg-gray-900 hover:bg-gray-800 rounded-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
-                >
-                  <ShoppingCart className="w-5 h-5 text-white" />
-                </button>
-              </div>
+                {/* Product Info */}
+                <div className="flex-1 flex flex-col">
+                  <h3 className="font-bold text-lg mb-2 text-gray-900 font-jakarta leading-tight">
+                    {product.name}
+                  </h3>
+                  
+                  {/* Price and Cart Button */}
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className="text-sm font-semibold text-gray-700 font-jakarta">
+                      {product.price}
+                    </span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toast({ 
+                          title: "Added to cart", 
+                          description: `${product.name} added successfully` 
+                        });
+                      }}
+                      className="w-10 h-10 bg-gray-900 hover:bg-gray-800 rounded-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+                    >
+                      <ShoppingCart className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-4xl">🔍</span>
             </div>
+            <h3 className="text-lg font-bold font-jakarta text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-600 font-jakarta text-sm">Try selecting a different category</p>
           </motion.div>
-        ))}
+        )}
       </div>
 
       {/* My Pets Section */}
