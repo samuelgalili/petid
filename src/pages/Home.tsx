@@ -23,6 +23,16 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Import product images
@@ -48,6 +58,7 @@ const Home = () => {
   const [selectedPetForEdit, setSelectedPetForEdit] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState({ name: "", breed: "" });
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const { toast } = useToast();
 
@@ -214,6 +225,56 @@ const Home = () => {
         description: `${editFormData.name}'s details have been saved`,
       });
 
+      setSelectedPetForEdit(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePet = async () => {
+    if (!selectedPetForEdit) return;
+
+    try {
+      // Delete the pet from the database
+      const { error } = await supabase
+        .from('pets')
+        .delete()
+        .eq('id', selectedPetForEdit.id);
+
+      if (error) throw error;
+
+      // Delete avatar from storage if exists
+      if (selectedPetForEdit.avatar_url) {
+        const fileName = selectedPetForEdit.avatar_url.split('/').pop();
+        if (fileName) {
+          await supabase.storage
+            .from('pet-avatars')
+            .remove([fileName]);
+        }
+      }
+
+      // Refresh pets list
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('pets')
+          .select('*')
+          .eq('user_id', user.id);
+        if (data) {
+          setPets(data);
+        }
+      }
+
+      toast({
+        title: "Pet Removed",
+        description: `${selectedPetForEdit.name} has been removed from your pets`,
+      });
+
+      setShowDeleteConfirm(false);
       setSelectedPetForEdit(null);
     } catch (error: any) {
       toast({
@@ -870,25 +931,61 @@ const Home = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div className="space-y-3 pt-4">
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedPetForEdit(null)}
+                    className="flex-1 h-12 rounded-xl font-jakarta font-bold border-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSavePetEdit}
+                    className="flex-1 h-12 rounded-xl font-jakarta font-bold bg-[#7DD3C0] hover:bg-[#6BC4AD] text-gray-900 shadow-md"
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+                
+                {/* Delete Button */}
                 <Button
-                  variant="outline"
-                  onClick={() => setSelectedPetForEdit(null)}
-                  className="flex-1 h-12 rounded-xl font-jakarta font-bold border-2"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full h-12 rounded-xl font-jakarta font-bold bg-red-500 hover:bg-red-600 text-white shadow-md"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSavePetEdit}
-                  className="flex-1 h-12 rounded-xl font-jakarta font-bold bg-[#7DD3C0] hover:bg-[#6BC4AD] text-gray-900 shadow-md"
-                >
-                  Save Changes
+                  Delete Pet
                 </Button>
               </div>
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="rounded-3xl max-w-[90vw] w-full mx-4">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-jakarta text-xl font-bold text-gray-900">
+              Delete {selectedPetForEdit?.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-jakarta text-gray-600 text-base">
+              Are you sure you want to remove {selectedPetForEdit?.name} from your pets? This action cannot be undone and will permanently delete all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto border-2">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePet}
+              className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete Pet
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BottomNav />
     </div>
