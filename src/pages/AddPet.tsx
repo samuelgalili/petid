@@ -30,6 +30,11 @@ const AddPet = () => {
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [breedConfident, setBreedConfident] = useState(true);
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
   const [showCalendar, setShowCalendar] = useState(false);
   const {
     petType,
@@ -201,6 +206,33 @@ const AddPet = () => {
     if (currentStep === 2) return formData.name.trim() !== "";
     return true;
   };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    // Swipe left = next step (if allowed)
+    if (isLeftSwipe && currentStep < 3 && canProceed()) {
+      setCurrentStep(prev => prev + 1);
+    }
+
+    // Swipe right = previous step
+    if (isRightSwipe && currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
   return <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in relative" dir="ltr">
       {/* Back Button */}
       <button
@@ -234,7 +266,7 @@ const AddPet = () => {
         </div>
 
         <div className="animate-scale-in">
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
               {/* Step 1: Pet Type Selection */}
               {currentStep === 1 && <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-8 md:gap-10 py-6">
