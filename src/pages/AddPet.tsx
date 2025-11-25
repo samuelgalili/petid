@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Sparkles, PawPrint } from "lucide-react";
@@ -163,12 +163,7 @@ const AddPet = () => {
             </div>)}
         </div>
 
-        <Card className="shadow-[0_20px_60px_rgba(0,0,0,0.12)] border-0 overflow-hidden animate-scale-in bg-card backdrop-blur-sm">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#FBD66A] via-[#F4C542] to-[#FBD66A]" />
-          
-          
-
-          <CardContent className="px-6 md:px-10 pb-10">
+        <div className="animate-scale-in">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Pet Type Selection */}
               {currentStep === 1 && <div className="space-y-6">
@@ -294,8 +289,7 @@ const AddPet = () => {
                   </Button>}
               </div>
             </form>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>;
 };
