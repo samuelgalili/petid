@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles, PawPrint } from "lucide-react";
+import { Loader2, Upload, Sparkles } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
+import { PetidLogo } from "@/components/PetidLogo";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 const AddPet = () => {
@@ -138,28 +139,32 @@ const AddPet = () => {
     if (currentStep === 2) return formData.name.trim() !== "";
     return true;
   };
-    return <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in" dir="ltr">
-      <div className="max-w-2xl mx-auto mt-4 md:mt-8">
-        {/* Header with Icon */}
-        <div className="text-center mb-10 animate-slide-up">
-          
-          <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-foreground mb-3 tracking-tight">
+  return <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in relative" dir="ltr">
+      {/* Fixed Header with Logo */}
+      <div className="fixed top-4 left-0 right-0 z-10 flex justify-center">
+        <PetidLogo showAnimals={false} />
+      </div>
+
+      <div className="max-w-[440px] mx-auto mt-24 md:mt-28">
+        {/* Header */}
+        <div className="text-center mb-8 animate-slide-up">
+          <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-gray-900 mb-2 tracking-tight">
             Add Your Pet
           </h1>
-          <p className="text-muted-foreground text-base md:text-lg font-jakarta font-normal max-w-md mx-auto">
+          <p className="text-gray-700 text-sm md:text-base font-jakarta font-normal max-w-md mx-auto">
             Let's create a special profile for your furry friend
           </p>
         </div>
 
         {/* Progress Steps */}
-        <div className="flex justify-center items-center gap-3 mb-16">
+        <div className="flex justify-center items-center gap-2 mb-12">
           {[1, 2, 3].map(step => <div key={step} className="flex items-center">
-              <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${step === currentStep ? "w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] shadow-[0_4px_20px_rgba(251,214,106,0.4)] scale-110" : step < currentStep ? "w-8 h-8 bg-[#F4C542] shadow-md" : "w-8 h-8 bg-muted"}`}>
-                {step < currentStep ? <Sparkles className="w-4 h-4 text-foreground" /> : <span className={`font-jakarta font-bold ${step === currentStep ? 'text-foreground text-sm' : 'text-muted-foreground text-xs'}`}>
+              <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${step === currentStep ? "w-9 h-9 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] shadow-[0_4px_20px_rgba(251,214,106,0.4)] scale-110" : step < currentStep ? "w-7 h-7 bg-[#F4C542] shadow-md" : "w-7 h-7 bg-gray-200"}`}>
+                {step < currentStep ? <Sparkles className="w-3.5 h-3.5 text-gray-900" /> : <span className={`font-jakarta font-bold ${step === currentStep ? 'text-gray-900 text-sm' : 'text-gray-500 text-xs'}`}>
                     {step}
                   </span>}
               </div>
-              {step < 3 && <div className={`w-8 h-1 mx-1 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-[#F4C542]' : 'bg-muted'}`} />}
+              {step < 3 && <div className={`w-6 h-0.5 mx-0.5 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-[#F4C542]' : 'bg-gray-200'}`} />}
             </div>)}
         </div>
 
@@ -167,82 +172,82 @@ const AddPet = () => {
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Pet Type Selection */}
               {currentStep === 1 && <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-12 md:gap-16 py-8">
+                  <div className="grid grid-cols-2 gap-8 md:gap-10 py-6">
                     <button type="button" onClick={() => {
                   setPetType("dog");
                   setCurrentStep(2);
-                }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
+                }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 focus:outline-none animate-fade-in" style={{
                   animationDelay: '100ms'
                 }}>
                       <div className="w-40 h-40 md:w-48 md:h-48 flex items-center justify-center animate-pulse-subtle">
-                        <img src={dogIcon} alt="Dog" className="w-full h-full object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
+                        <img src={dogIcon} alt="Dog" className="w-full h-full object-contain drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl" />
                       </div>
                     </button>
                     <button type="button" onClick={() => {
                   setPetType("cat");
                   setCurrentStep(2);
-                }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
+                }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 focus:outline-none animate-fade-in" style={{
                   animationDelay: '250ms'
                 }}>
                       <div className="w-36 h-36 md:w-44 md:h-44 flex items-center justify-center animate-pulse-subtle">
-                        <img src={catIcon} alt="Cat" className="w-full h-full object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
+                        <img src={catIcon} alt="Cat" className="w-full h-full object-contain drop-shadow-lg transition-all duration-300 group-hover:drop-shadow-2xl" />
                       </div>
                     </button>
                   </div>
                 </div>}
 
               {/* Step 2: Basic Info */}
-              {currentStep === 2 && <Card className="border-0 shadow-lg bg-card backdrop-blur-sm">
-                  <CardContent className="p-6 md:p-8 space-y-6 animate-fade-in">
+              {currentStep === 2 && <Card className="border-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-sm rounded-3xl">
+                  <CardContent className="p-6 space-y-5 animate-fade-in">
                   {/* Image Upload */}
-                  <div className="space-y-4">
-                    <Label htmlFor="image" className="text-base font-semibold font-jakarta text-foreground">Pet Photo</Label>
-                    <div className="flex flex-col items-center gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="image" className="text-sm font-semibold font-jakarta text-gray-900">Pet Photo</Label>
+                    <div className="flex flex-col items-center gap-4">
                       {imagePreview && <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                          <img src={imagePreview} alt="Preview" className="relative w-44 h-44 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300 group-hover:scale-105 group-hover:ring-[#FBD66A]/50" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                          <img src={imagePreview} alt="Preview" className="relative w-32 h-32 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 group-hover:scale-105 group-hover:ring-[#FBD66A]/50" />
                         </div>}
-                      <Label htmlFor="image" className="flex items-center gap-3 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-8 hover:border-[#FBD66A] hover:bg-gradient-to-br hover:from-[#FBD66A]/5 hover:to-[#F4C542]/5 transition-all duration-300 group w-full justify-center backdrop-blur-sm shadow-sm hover:shadow-lg">
-                        <Upload className="w-7 h-7 text-[#FBD66A] group-hover:scale-110 transition-transform" />
-                        <span className="font-semibold text-lg font-jakarta text-[#FBD66A]">{imagePreview ? "Change Photo" : "Upload Photo"}</span>
+                      <Label htmlFor="image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-6 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 transition-all duration-300 group w-full justify-center">
+                        <Upload className="w-5 h-5 text-[#FBD66A] group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-sm font-jakarta text-[#F4C542]">{imagePreview ? "Change Photo" : "Upload Photo"}</span>
                         <Input id="image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                       </Label>
                     </div>
                   </div>
 
                   {/* Name */}
-                  <div className="space-y-4">
-                    <Label htmlFor="name" className="text-base font-semibold font-jakarta text-foreground">
-                      Pet Name <span className="text-[#FBD66A]">*</span>
+                  <div className="space-y-3">
+                    <Label htmlFor="name" className="text-sm font-semibold font-jakarta text-gray-900">
+                      Pet Name <span className="text-[#F4C542]">*</span>
                     </Label>
                     <Input id="name" value={formData.name} onChange={e => setFormData({
                   ...formData,
                   name: e.target.value
-                })} placeholder="What's your pet's name?" required disabled={loading} className="h-14 text-base border-2 border-input text-foreground placeholder:text-muted-foreground focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta" />
+                })} placeholder="What's your pet's name?" required disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta" />
                   </div>
 
                   {/* Age */}
-                  <div className="space-y-4">
-                    <Label htmlFor="age" className="text-base font-semibold font-jakarta text-foreground">Age (in years)</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="age" className="text-sm font-semibold font-jakarta text-gray-900">Age (in years)</Label>
                     <Input id="age" type="number" min="0" value={formData.age} onChange={e => setFormData({
                   ...formData,
                   age: e.target.value
-                })} placeholder="How many years?" disabled={loading} className="h-14 text-base border-2 border-input text-foreground placeholder:text-muted-foreground focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta" />
+                })} placeholder="How many years?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta" />
                   </div>
                 </CardContent>
                 </Card>}
 
               {/* Step 3: Additional Info */}
-              {currentStep === 3 && <Card className="border-0 shadow-lg bg-card backdrop-blur-sm">
-                  <CardContent className="p-6 md:p-8 space-y-6 animate-fade-in">
+              {currentStep === 3 && <Card className="border-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-sm rounded-3xl">
+                  <CardContent className="p-6 space-y-5 animate-fade-in">
                   {/* Gender */}
-                  <div className="space-y-4">
-                    <Label htmlFor="gender" className="text-base font-semibold font-jakarta text-foreground">Gender</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="gender" className="text-sm font-semibold font-jakarta text-gray-900">Gender</Label>
                     <Select value={formData.gender} onValueChange={value => setFormData({
                   ...formData,
                   gender: value
                 })} disabled={loading}>
-                      <SelectTrigger className="h-14 text-base border-2 border-input text-foreground focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md backdrop-blur-sm font-jakarta">
+                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -253,22 +258,22 @@ const AddPet = () => {
                   </div>
 
                   {/* Breed */}
-                  <div className="space-y-4">
-                    <Label htmlFor="breed" className="text-base font-semibold font-jakarta text-foreground">Breed</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">Breed</Label>
                     <Input id="breed" value={formData.breed} onChange={e => setFormData({
                   ...formData,
                   breed: e.target.value
-                })} placeholder="What breed?" disabled={loading} className="h-14 text-base border-2 border-input text-foreground placeholder:text-muted-foreground focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta" />
+                })} placeholder="What breed?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta" />
                   </div>
 
                   {/* Neutered */}
-                  <div className="space-y-4">
-                    <Label htmlFor="neutered" className="text-base font-semibold font-jakarta text-foreground">Neutered/Spayed</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="neutered" className="text-sm font-semibold font-jakarta text-gray-900">Neutered/Spayed</Label>
                     <Select value={formData.is_neutered} onValueChange={value => setFormData({
                   ...formData,
                   is_neutered: value
                 })} disabled={loading}>
-                      <SelectTrigger className="h-14 text-base border-2 border-input text-foreground focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md backdrop-blur-sm font-jakarta">
+                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -281,17 +286,17 @@ const AddPet = () => {
                 </Card>}
 
               {/* Navigation Buttons */}
-              <div className="flex gap-4 pt-6">
-                {currentStep > 1 && <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={loading} className="flex-1 h-14 text-base border-2 border-input bg-background hover:bg-muted/20 hover:border-muted text-foreground rounded-xl transition-all font-jakarta font-semibold shadow-sm hover:shadow-lg">
+              <div className="flex gap-3 pt-6">
+                {currentStep > 1 && <Button type="button" variant="ghost" onClick={() => setCurrentStep(currentStep - 1)} disabled={loading} className="flex-1 h-12 text-sm rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] font-jakarta font-semibold">
                     Back
                   </Button>}
                 
-                {currentStep === 3 && <Button type="submit" disabled={loading} className="flex-1 h-14 text-base bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-foreground rounded-xl font-jakarta font-bold shadow-[0_8px_30px_rgba(251,214,106,0.35)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                {currentStep === 3 && <Button type="submit" disabled={loading} className="flex-1 h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
                     {loading ? <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
                       </> : <>
-                        <Sparkles className="mr-2 h-5 w-5" />
+                        <Sparkles className="mr-2 h-4 w-4" />
                         Add Pet
                       </>}
                   </Button>}
