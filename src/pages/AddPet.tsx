@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles } from "lucide-react";
+import { Loader2, Upload, Sparkles, ArrowLeft } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import dogIcon from "@/assets/dog-official.svg";
@@ -139,6 +139,14 @@ const AddPet = () => {
     return true;
   };
   return <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in relative" dir="ltr">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-4 left-4 z-10 w-10 h-10 rounded-full bg-white/95 hover:bg-gray-50 border-2 border-gray-200 shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] transition-all flex items-center justify-center group"
+      >
+        <ArrowLeft className="w-5 h-5 text-gray-900 group-hover:scale-110 transition-transform" />
+      </button>
+
       <div className="max-w-[440px] mx-auto mt-8 md:mt-12">
         {/* Header */}
         <div className="text-center mb-8 animate-slide-up">
