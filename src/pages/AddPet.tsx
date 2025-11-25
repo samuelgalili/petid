@@ -37,6 +37,7 @@ const AddPet = () => {
   const [isSwiping, setIsSwiping] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
+  const [showValidationError, setShowValidationError] = useState(false);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -252,15 +253,23 @@ const AddPet = () => {
     const isRightSwipe = distance < -minSwipeDistance;
 
     // Swipe left = next step (if allowed)
-    if (isLeftSwipe && currentStep < 3 && canProceed()) {
-      setSlideDirection('left');
-      setCurrentStep(prev => prev + 1);
+    if (isLeftSwipe && currentStep < 3) {
+      if (canProceed()) {
+        setSlideDirection('left');
+        setCurrentStep(prev => prev + 1);
+        setShowValidationError(false);
+      } else {
+        // Show validation error
+        setShowValidationError(true);
+        setTimeout(() => setShowValidationError(false), 2000);
+      }
     }
 
     // Swipe right = previous step
     if (isRightSwipe && currentStep > 1) {
       setSlideDirection('right');
       setCurrentStep(prev => prev - 1);
+      setShowValidationError(false);
     }
 
     setIsSwiping(false);
@@ -433,10 +442,26 @@ const AddPet = () => {
                     <Label htmlFor="name" className="text-sm font-semibold font-jakarta text-gray-900">
                       Pet Name <span className="text-[#F4C542]">*</span>
                     </Label>
-                    <Input id="name" value={formData.name} onChange={e => setFormData({
-                  ...formData,
-                  name: e.target.value
-                })} placeholder="What's your pet's name?" required disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" />
+                    <Input 
+                      id="name" 
+                      value={formData.name} 
+                      onChange={e => setFormData({
+                        ...formData,
+                        name: e.target.value
+                      })} 
+                      placeholder="What's your pet's name?" 
+                      required 
+                      disabled={loading} 
+                      className={cn(
+                        "h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
+                        showValidationError && formData.name.trim() === "" && "border-red-400 animate-pulse"
+                      )}
+                    />
+                    {showValidationError && formData.name.trim() === "" && (
+                      <p className="text-xs text-red-600 font-jakarta animate-fade-in">
+                        Pet name is required
+                      </p>
+                    )}
                   </div>
 
                   {/* Birth Date */}
@@ -473,7 +498,9 @@ const AddPet = () => {
 
                   {/* Breed */}
                   <div className="space-y-3">
-                    <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">Breed</Label>
+                    <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">
+                      Breed <span className="text-[#F4C542]">*</span>
+                    </Label>
                     {breedDetecting && (
                       <div className="flex items-center gap-2 text-xs text-[#F4C542] font-jakarta font-semibold animate-pulse">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -509,9 +536,12 @@ const AddPet = () => {
                         })} 
                         placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
                         disabled={loading || breedDetecting} 
-                        className={`h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)] ${
-                          breedDetecting ? 'border-[#FBD66A] animate-pulse pr-10' : 'border-gray-200'
-                        }`} 
+                        className={cn(
+                          "h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
+                          breedDetecting && "border-[#FBD66A] animate-pulse pr-10",
+                          !breedDetecting && "border-gray-200",
+                          showValidationError && formData.breed.trim() === "" && "border-red-400 animate-pulse"
+                        )}
                       />
                       {breedDetecting && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -519,6 +549,11 @@ const AddPet = () => {
                         </div>
                       )}
                     </div>
+                    {showValidationError && formData.breed.trim() === "" && (
+                      <p className="text-xs text-red-600 font-jakarta animate-fade-in">
+                        Breed is required - please upload a photo or enter manually
+                      </p>
+                    )}
                   </div>
                   </motion.div>
                 )}
