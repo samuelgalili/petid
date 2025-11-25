@@ -751,8 +751,6 @@ const Home = () => {
         </AnimatePresence>
       </div>
 
-      </div>
-
       {/* Edit Pet Sheet */}
       <Sheet open={!!selectedPetForEdit} onOpenChange={(open) => !open && setSelectedPetForEdit(null)}>
         <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
