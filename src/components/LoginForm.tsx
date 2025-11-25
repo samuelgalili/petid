@@ -22,7 +22,7 @@ interface FieldError {
   phone?: string;
 }
 export const LoginForm = () => {
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("phone");
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
