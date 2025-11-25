@@ -267,41 +267,8 @@ const Home = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-6 pb-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
-                <Menu className="w-5 h-5 text-gray-700" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem onClick={() => navigate("/order-history")}>
-                <Package className="w-4 h-4 mr-2" />
-                Order History
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/cart")}>
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Shopping Cart
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div className="flex-1 mx-4">
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Search" 
-                className="w-full h-10 px-4 rounded-full bg-gray-50 border-2 border-gray-200 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 text-sm text-center text-gray-900 placeholder:text-gray-500 font-jakarta transition-all shadow-sm focus:shadow-md"
-              />
-            </div>
-          </div>
+          {/* Left Side: User Icon + Notifications */}
           <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95"
-              onClick={() => toast({ title: "Notifications", description: "No new notifications" })}
-            >
-              <Bell className="w-5 h-5 text-gray-700" />
-            </Button>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -310,99 +277,169 @@ const Home = () => {
             >
               <UserX className="w-5 h-5 text-gray-700" />
             </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95"
+              onClick={() => toast({ title: "Notifications", description: "No new notifications" })}
+            >
+              <Bell className="w-5 h-5 text-gray-700" />
+            </Button>
           </div>
+          
+          {/* Center: Large Rounded Search Bar */}
+          <div className="flex-1 mx-4">
+            <div className="relative">
+              <input 
+                type="text" 
+                placeholder="Search products..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-12 px-6 rounded-full bg-gray-50 border-2 border-gray-200 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm focus:shadow-md hover:shadow-md"
+              />
+            </div>
+          </div>
+          
+          {/* Right Side: Hamburger Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95">
+                <Menu className="w-5 h-5 text-gray-700" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-white z-50">
+              <DropdownMenuItem onClick={() => navigate("/order-history")}>
+                <Package className="w-4 h-4 mr-2" />
+                Order History
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/cart")}>
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Shopping Cart
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <UserX className="w-4 h-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Membership Banner */}
-        <div className="mb-5">
-          <div className="bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-2xl px-4 py-3 text-center font-semibold text-sm shadow-[0_4px_20px_rgba(251,214,106,0.3)] font-jakarta">
-            Membership Club<br />
-            <span className="text-xs font-normal opacity-70">Premium Access</span>
+        {/* Membership Banner - Gold Rounded Rectangle */}
+        <motion.div 
+          className="mb-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#FBD66A] text-gray-900 rounded-2xl px-6 py-4 text-center font-bold shadow-[0_6px_25px_rgba(251,214,106,0.4)] font-jakarta relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent"></div>
+            <div className="relative z-10">
+              <div className="text-base mb-0.5">Membership Club</div>
+              <div className="text-xs font-medium opacity-80">Premium Access</div>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Primary Filter Buttons */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
-          <button 
-            onClick={() => setActiveFilter("int1-out")}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold font-jakarta whitespace-nowrap transition-all shadow-sm ${
-              activeFilter === "int1-out" 
-                ? "bg-white text-gray-900 border-2 border-gray-200" 
-                : "bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100"
-            }`}
-          >
-            New In
-          </button>
-          <button 
-            onClick={() => setActiveFilter("aget")}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold font-jakarta whitespace-nowrap transition-all shadow-sm ${
-              activeFilter === "aget" 
-                ? "bg-white text-gray-900 border-2 border-gray-200" 
-                : "bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100"
-            }`}
-          >
-            Best Sellers
-          </button>
-          <button 
+        {/* Primary Filter Pills with Soft Shadows */}
+        <div className="flex gap-2.5 overflow-x-auto pb-3 mb-5 scrollbar-hide">
+          <motion.button 
             onClick={() => setActiveFilter("account")}
-            className={`px-5 py-2.5 rounded-full text-sm font-semibold font-jakarta whitespace-nowrap transition-all shadow-md flex items-center gap-2 ${
+            whileTap={{ scale: 0.95 }}
+            className={`px-6 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
               activeFilter === "account" 
-                ? "bg-gray-900 text-white" 
-                : "bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100"
+                ? "bg-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
             }`}
           >
             <span>All Products</span>
             {activeFilter === "account" && (
-              <span className="text-xs">→</span>
+              <span className="text-sm">→</span>
             )}
-          </button>
-        </div>
-
-        {/* Category Filter Buttons */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
-          <button 
-            onClick={() => setActiveCategory("intop-ribet")}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
-              activeCategory === "intop-ribet" 
-                ? "bg-[#7DD3C0] text-gray-900" 
-                : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
+          </motion.button>
+          <motion.button 
+            onClick={() => setActiveFilter("aget")}
+            whileTap={{ scale: 0.95 }}
+            className={`px-6 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
+              activeFilter === "aget" 
+                ? "bg-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
             }`}
           >
-            <span>Food & Treats</span>
-            <span className="px-2 py-0.5 bg-white/50 rounded-full text-xs font-semibold">
-              {categoryCount("intop-ribet")}
-            </span>
-          </button>
-          <button 
+            Best Sellers
+          </motion.button>
+          <motion.button 
+            onClick={() => setActiveFilter("int1-out")}
+            whileTap={{ scale: 0.95 }}
+            className={`px-6 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
+              activeFilter === "int1-out" 
+                ? "bg-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+            }`}
+          >
+            New In
+          </motion.button>
+        </div>
+
+        {/* Secondary Category Filters with Product Count Badges */}
+        <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
+          <motion.button 
             onClick={() => setActiveCategory("account-cater")}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
+            whileTap={{ scale: 0.95 }}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
               activeCategory === "account-cater" 
-                ? "bg-[#7DD3C0] text-gray-900" 
-                : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
+                ? "bg-[#7DD3C0] text-gray-900 shadow-[0_4px_16px_rgba(125,211,192,0.3)]" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
             }`}
           >
             <span>Accessories</span>
-            <span className="px-2 py-0.5 bg-white/50 rounded-full text-xs font-semibold">
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeCategory === "account-cater" 
+                ? "bg-white/60 text-gray-900" 
+                : "bg-gray-100 text-gray-700"
+            }`}>
               {categoryCount("account-cater")}
             </span>
-          </button>
-          <button 
+          </motion.button>
+          <motion.button 
+            onClick={() => setActiveCategory("intop-ribet")}
+            whileTap={{ scale: 0.95 }}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeCategory === "intop-ribet" 
+                ? "bg-[#7DD3C0] text-gray-900 shadow-[0_4px_16px_rgba(125,211,192,0.3)]" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+            }`}
+          >
+            <span>Food & Treats</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeCategory === "intop-ribet" 
+                ? "bg-white/60 text-gray-900" 
+                : "bg-gray-100 text-gray-700"
+            }`}>
+              {categoryCount("intop-ribet")}
+            </span>
+          </motion.button>
+          <motion.button 
             onClick={() => setActiveCategory("deterrtn")}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
+            whileTap={{ scale: 0.95 }}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
               activeCategory === "deterrtn" 
-                ? "bg-[#7DD3C0] text-gray-900" 
-                : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
+                ? "bg-[#7DD3C0] text-gray-900 shadow-[0_4px_16px_rgba(125,211,192,0.3)]" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
             }`}
           >
             <span>Healthcare</span>
-            <span className="px-2 py-0.5 bg-white/50 rounded-full text-xs font-semibold">
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+              activeCategory === "deterrtn" 
+                ? "bg-white/60 text-gray-900" 
+                : "bg-gray-100 text-gray-700"
+            }`}>
               {categoryCount("deterrtn")}
             </span>
-          </button>
+          </motion.button>
         </div>
       </div>
 
-      {/* Product Grid with Smooth Transition Animation */}
+      {/* 2-Column Product Grid with Smooth Animations */}
       <div className="px-6 pt-6 pb-6">
         <AnimatePresence mode="wait">
           {filteredProducts.length > 0 ? (
@@ -411,27 +448,27 @@ const Home = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.35 }}
               className="grid grid-cols-2 gap-4"
             >
             {filteredProducts.map((product, index) => (
               <motion.div
                 key={`${activeCategory}-${index}`}
                 onClick={() => navigate('/product/' + index, { state: { product } })}
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                initial={{ opacity: 0, scale: 0.88, y: 25 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                exit={{ opacity: 0, scale: 0.88, y: -25 }}
                 transition={{ 
-                  delay: index * 0.05, 
-                  duration: 0.3,
-                  ease: "easeOut"
+                  delay: index * 0.06, 
+                  duration: 0.35,
+                  ease: [0.34, 1.56, 0.64, 1]
                 }}
-                whileHover={{ scale: 1.03, y: -6 }}
-                whileTap={{ scale: 0.97 }}
-                className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
+                whileHover={{ scale: 1.04, y: -8 }}
+                whileTap={{ scale: 0.96 }}
+                className={`${product.color} rounded-3xl p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_6px_24px_rgba(0,0,0,0.10)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.18)] border border-white/40`}
               >
-                {/* Product Image */}
-                <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm overflow-hidden">
+                {/* Product Image with White Backdrop */}
+                <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/50 rounded-2xl backdrop-blur-sm overflow-hidden shadow-inner">
                   <img 
                     src={product.image} 
                     alt={product.name}
@@ -441,16 +478,16 @@ const Home = () => {
 
                 {/* Product Info */}
                 <div className="flex-1 flex flex-col">
-                  <h3 className="font-bold text-lg mb-2 text-gray-900 font-jakarta leading-tight">
+                  <h3 className="font-bold text-base mb-2.5 text-gray-900 font-jakarta leading-snug line-clamp-2 min-h-[2.5rem]">
                     {product.name}
                   </h3>
                   
-                  {/* Price and Cart Button */}
-                  <div className="flex items-center justify-between mt-auto">
-                    <span className="text-sm font-semibold text-gray-700 font-jakarta">
+                  {/* Price and Dark Rounded Cart Button */}
+                  <div className="flex items-center justify-between mt-auto pt-2">
+                    <span className="text-base font-bold text-gray-900 font-jakarta">
                       {product.price}
                     </span>
-                    <button 
+                    <motion.button 
                       onClick={(e) => {
                         e.stopPropagation();
                         toast({ 
@@ -458,10 +495,12 @@ const Home = () => {
                           description: `${product.name} added successfully` 
                         });
                       }}
-                      className="w-10 h-10 bg-gray-900 hover:bg-gray-800 rounded-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+                      whileHover={{ scale: 1.12, rotate: 5 }}
+                      whileTap={{ scale: 0.92 }}
+                      className="w-11 h-11 bg-gray-900 hover:bg-gray-800 rounded-2xl flex items-center justify-center transition-all shadow-lg active:shadow-sm"
                     >
                       <ShoppingCart className="w-5 h-5 text-white" />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>
@@ -470,17 +509,16 @@ const Home = () => {
           ) : (
             <motion.div 
               key="empty-state"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="text-center py-12"
+              className="flex flex-col items-center justify-center py-16 text-center"
             >
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">🔍</span>
-            </div>
-            <h3 className="text-lg font-bold font-jakarta text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600 font-jakarta text-sm">Try selecting a different category</p>
+              <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <Package className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold font-jakarta text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-500 font-jakarta text-sm">Try selecting a different category</p>
             </motion.div>
           )}
         </AnimatePresence>
