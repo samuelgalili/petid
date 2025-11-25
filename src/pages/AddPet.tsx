@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Edit2, Menu, Check } from "lucide-react";
+import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Edit2 } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { format } from "date-fns";
@@ -38,7 +38,6 @@ const AddPet = () => {
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [showValidationError, setShowValidationError] = useState(false);
-  const [showStepMenu, setShowStepMenu] = useState(false);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -224,33 +223,6 @@ const AddPet = () => {
     if (currentStep === 2) return formData.name.trim() !== "" && formData.breed.trim() !== "";
     if (currentStep === 3) return true; // Gender and neutered are optional
     return true;
-  };
-
-  const canNavigateToStep = (targetStep: number) => {
-    if (targetStep === 1) return true;
-    if (targetStep === 2) return petType !== null;
-    if (targetStep === 3) return petType !== null && formData.name.trim() !== "" && formData.breed.trim() !== "";
-    if (targetStep === 4) return petType !== null && formData.name.trim() !== "" && formData.breed.trim() !== "";
-    return false;
-  };
-
-  const navigateToStep = (targetStep: number) => {
-    if (canNavigateToStep(targetStep)) {
-      setSlideDirection(targetStep > currentStep ? 'left' : 'right');
-      setCurrentStep(targetStep);
-      setShowStepMenu(false);
-      setShowValidationError(false);
-    }
-  };
-
-  const getStepTitle = (step: number) => {
-    switch (step) {
-      case 1: return "Pet Type";
-      case 2: return "Basic Info";
-      case 3: return "Details";
-      case 4: return "Review";
-      default: return "";
-    }
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -887,75 +859,6 @@ const AddPet = () => {
               </div>
             </form>
         </div>
-      </div>
-
-      {/* Floating Action Button - Step Navigator */}
-      <div className="fixed bottom-24 right-4 z-[100]">
-        {/* Step Menu */}
-        <AnimatePresence>
-          {showStepMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="absolute bottom-16 right-0 bg-white rounded-2xl shadow-2xl p-3 space-y-2 min-w-[180px] border-2 border-gray-100"
-            >
-              {[1, 2, 3, 4].map((step) => {
-                const isActive = step === currentStep;
-                const isCompleted = step < currentStep;
-                const canNavigate = canNavigateToStep(step);
-                
-                return (
-                  <button
-                    key={step}
-                    type="button"
-                    onClick={() => navigateToStep(step)}
-                    disabled={!canNavigate}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 font-jakarta text-sm font-semibold",
-                      isActive && "bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-gray-900 shadow-md",
-                      !isActive && canNavigate && "hover:bg-gray-50 text-gray-700",
-                      !canNavigate && "opacity-40 cursor-not-allowed text-gray-400"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-full transition-all",
-                      isActive && "bg-white/30",
-                      isCompleted && !isActive && "bg-green-100",
-                      !isCompleted && !isActive && "bg-gray-100"
-                    )}>
-                      {isCompleted ? (
-                        <Check className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <span className={cn(
-                          "font-bold text-xs",
-                          isActive && "text-gray-900",
-                          !isActive && "text-gray-500"
-                        )}>
-                          {step}
-                        </span>
-                      )}
-                    </div>
-                    <span className="flex-1 text-left">{getStepTitle(step)}</span>
-                  </button>
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* FAB Button */}
-        <button
-          type="button"
-          onClick={() => setShowStepMenu(!showStepMenu)}
-          className="w-14 h-14 rounded-full bg-gradient-to-r from-[#FBD66A] to-[#F4C542] shadow-[0_8px_30px_rgba(251,214,106,0.6)] hover:shadow-[0_12px_40px_rgba(251,214,106,0.8)] transition-all duration-300 hover:scale-110 flex items-center justify-center group"
-        >
-          {showStepMenu ? (
-            <ArrowRight className="w-6 h-6 text-gray-900 transform rotate-90 transition-transform" />
-          ) : (
-            <Menu className="w-6 h-6 text-gray-900 transition-transform group-hover:rotate-90" />
-          )}
-        </button>
       </div>
     </div>;
 };
