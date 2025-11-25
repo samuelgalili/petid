@@ -72,6 +72,10 @@ const Auth = () => {
             className="w-full max-w-[440px] relative px-4 mt-20"
             style={{ zIndex: 2 }}
           >
+            {/* Logo */}
+            <div className="mb-8">
+              <PetidLogo showAnimals={false} />
+            </div>
 
             {/* Login Form */}
             <div className="mb-5">
