@@ -311,17 +311,18 @@ const AddPet = () => {
         </div>
       )}
 
-      {/* Back Button - Always visible on all steps */}
-      <button
-        onClick={() => {
-          console.log('Back button clicked, current step:', currentStep);
-          navigate(-1);
-        }}
-        className="fixed top-4 left-4 z-[100] p-2 hover:bg-gray-100 rounded-full transition-all group bg-white shadow-lg"
-        style={{ display: 'block' }}
-      >
-        <ArrowLeft className="w-6 h-6 text-gray-900 group-hover:scale-110 transition-transform" />
-      </button>
+      {/* Back Button - Only visible on steps 2 and 3 */}
+      {currentStep > 1 && (
+        <button
+          onClick={() => {
+            console.log('Back button clicked, current step:', currentStep);
+            navigate(-1);
+          }}
+          className="fixed top-4 left-4 z-[100] p-2 hover:bg-gray-100 rounded-full transition-all group bg-white shadow-lg"
+        >
+          <ArrowLeft className="w-6 h-6 text-gray-900 group-hover:scale-110 transition-transform" />
+        </button>
+      )}
 
       <div className="max-w-[440px] mx-auto mt-8 md:mt-12">
         {/* Header */}
