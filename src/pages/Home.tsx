@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 
 // Import product images
 import dogFoodImg from "@/assets/products/dog-food.jpg";
@@ -59,8 +60,59 @@ const Home = () => {
   const [editFormData, setEditFormData] = useState({ name: "", breed: "" });
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
+
+  // Confetti effects
+  const triggerConfetti = () => {
+    const count = 200;
+    const defaults = {
+      origin: { y: 0.7 },
+      zIndex: 9999
+    };
+
+    function fire(particleRatio: number, opts: any) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio),
+      });
+    }
+
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+      colors: ['#7DD3C0', '#FBD66A', '#FFE8D6', '#E8F5E8']
+    });
+
+    fire(0.2, {
+      spread: 60,
+      colors: ['#6BC4AD', '#F4C542', '#FFE5F0', '#B8E3D5']
+    });
+
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8,
+      colors: ['#7DD3C0', '#FBD66A', '#FFE8D6']
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2,
+      colors: ['#6BC4AD', '#F4C542']
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+      colors: ['#7DD3C0', '#E8F5E8']
+    });
+  };
 
   // Fetch user's pets
   useEffect(() => {
@@ -96,6 +148,26 @@ const Home = () => {
       } else {
         console.log("Pets fetched:", data);
         if (data) {
+          // Detect newly added pets
+          const currentPetIds = new Set(data.map(p => p.id));
+          const previousPetIds = previousPetIdsRef.current;
+          
+          const newPetIds = new Set(
+            [...currentPetIds].filter(id => !previousPetIds.has(id))
+          );
+
+          if (newPetIds.size > 0 && previousPetIds.size > 0) {
+            // New pets were added (not initial load)
+            setNewlyAddedPetIds(newPetIds);
+            triggerConfetti();
+            
+            // Remove the "new" status after 3 seconds
+            setTimeout(() => {
+              setNewlyAddedPetIds(new Set());
+            }, 3000);
+          }
+
+          previousPetIdsRef.current = currentPetIds;
           setPets(data);
         }
       }
@@ -186,6 +258,9 @@ const Home = () => {
         description: `Updated breed: ${data.breed} (${data.confidence}% confidence)`
       });
 
+      // Trigger confetti for successful breed detection
+      triggerConfetti();
+
     } catch (error: any) {
       toast({
         title: "Error",
@@ -250,6 +325,9 @@ const Home = () => {
         title: "Pet Updated!",
         description: `${editFormData.name}'s details have been saved`,
       });
+
+      // Trigger confetti for successful pet update
+      triggerConfetti();
 
       setSelectedPetForEdit(null);
     } catch (error: any) {
@@ -539,12 +617,26 @@ const Home = () => {
             </div>
           ) : (
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {pets.map((pet, index) => (
+              {pets.map((pet, index) => {
+                const isNewPet = newlyAddedPetIds.has(pet.id);
+                
+                return (
                 <motion.div
                   key={pet.id}
                   initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.05 + index * 0.03 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: isNewPet ? [1, 1.15, 1] : 1,
+                  }}
+                  transition={{ 
+                    delay: 0.05 + index * 0.03,
+                    scale: isNewPet ? {
+                      duration: 0.6,
+                      repeat: 3,
+                      repeatType: "reverse",
+                      ease: "easeInOut"
+                    } : {}
+                  }}
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.92 }}
                   onTouchStart={() => handlePetLongPressStart(pet)}
@@ -553,13 +645,41 @@ const Home = () => {
                   onMouseUp={handlePetLongPressEnd}
                   onMouseLeave={handlePetLongPressEnd}
                   onClick={() => navigate(`/pet/${pet.id}`)}
-                  className="flex-shrink-0 cursor-pointer"
+                  className={`flex-shrink-0 cursor-pointer ${isNewPet ? 'relative' : ''}`}
                 >
-                  <div className="flex flex-col items-center">
-                    {/* Enhanced Circular Avatar with glow */}
+                  {isNewPet && (
+                    <motion.div
+                      className="absolute -inset-2 bg-gradient-to-r from-[#7DD3C0] via-[#FBD66A] to-[#7DD3C0] rounded-full blur-xl opacity-60 z-0"
+                      animate={{
+                        opacity: [0.6, 0.8, 0.6],
+                        scale: [1, 1.1, 1],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  )}
+                  <div className="flex flex-col items-center relative z-10">
+                    {/* Enhanced Circular Avatar with conditional glow */}
                     <div className="relative">
+                      {isNewPet && (
+                        <motion.div 
+                          className="absolute -inset-1 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-lg opacity-70"
+                          animate={{
+                            opacity: [0.7, 1, 0.7],
+                            scale: [1, 1.2, 1],
+                          }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-30 animate-pulse"></div>
-                      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_6px_20px_rgba(125,211,192,0.25)] overflow-hidden border-[3px] border-white ring-2 ring-[#7DD3C0]/20">
+                      <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_6px_20px_rgba(125,211,192,0.25)] overflow-hidden border-[3px] ${isNewPet ? 'border-[#FBD66A]' : 'border-white'} ring-2 ${isNewPet ? 'ring-[#FBD66A]/50' : 'ring-[#7DD3C0]/20'}`}>
                         {pet.avatar_url ? (
                           <img
                             src={pet.avatar_url}
@@ -579,7 +699,8 @@ const Home = () => {
                     </p>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
               
               {/* Enhanced Add Pet Button with glow */}
               <motion.div
@@ -831,6 +952,7 @@ const Home = () => {
                     <motion.button 
                       onClick={(e) => {
                         e.stopPropagation();
+                        triggerConfetti();
                         toast({ 
                           title: "Added to cart", 
                           description: `${product.name} added successfully` 
