@@ -1,4 +1,4 @@
-import { Menu, Bell, User, Camera, Loader2, History, Plus, ShoppingCart, Package, Search, Info, HelpCircle } from "lucide-react";
+import { Menu, Bell, User, Camera, Loader2, History, Plus, ShoppingCart, Package, Search, Info, HelpCircle, Wallet } from "lucide-react";
 import petidLogo from "@/assets/petid-logo.png";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Button } from "@/components/ui/button";
@@ -148,6 +148,7 @@ const Home = () => {
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
@@ -277,6 +278,30 @@ const Home = () => {
 
     fetchPets();
   }, [toast]);
+
+  // Fetch wallet balance (5% of total purchases)
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      // Fetch all completed orders
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('total')
+        .eq('user_id', user.id)
+        .in('status', ['delivered', 'shipped', 'processing']);
+
+      if (!error && orders) {
+        const totalPurchases = orders.reduce((sum, order) => sum + order.total, 0);
+        const cashback = totalPurchases * 0.05; // 5% cashback
+        setWalletBalance(cashback);
+      }
+    };
+
+    fetchWalletBalance();
+  }, []);
 
   const handleRedetectBreed = async (petId: string, petType: string, imageFile: File) => {
     setRedetectingPetId(petId);
@@ -825,7 +850,7 @@ const Home = () => {
           )}
         </motion.div>
 
-        {/* Enhanced Membership Banner with tooltip and shine effect */}
+        {/* Wallet Banner - Shows 5% cashback from purchases */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
@@ -835,29 +860,39 @@ const Home = () => {
               transition={{ delay: 0.2 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => toast({ 
-                title: "✨ Premium Membership", 
-                description: "Unlock exclusive benefits and special discounts!",
-                duration: 3000
-              })}
+              onClick={() => navigate('/order-history')}
               role="button"
               tabIndex={0}
-              aria-label="Learn more about membership"
+              aria-label="View wallet balance"
             >
-              <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#EAA831] text-gray-900 rounded-3xl px-7 py-5 text-center font-bold shadow-[0_8px_32px_rgba(251,214,106,0.45)] font-jakarta relative overflow-hidden border border-[#FFF5DC]/40">
+              <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#EAA831] text-gray-900 rounded-3xl px-7 py-6 shadow-[0_8px_32px_rgba(251,214,106,0.45)] font-jakarta relative overflow-hidden border border-[#FFF5DC]/40">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-white/10"></div>
                 <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"></div>
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="relative z-10">
-                  <div className="text-lg mb-1 font-extrabold tracking-wide drop-shadow-sm">✨ Membership Club</div>
-                  <div className="text-sm font-semibold opacity-90">Premium Access & Exclusive Deals</div>
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <span className="text-sm font-bold opacity-90">My Wallet</span>
+                    </div>
+                    <div className="text-3xl font-extrabold mb-1 drop-shadow-sm">
+                      ₪{walletBalance.toFixed(2)}
+                    </div>
+                    <div className="text-xs font-semibold opacity-80">5% Cashback Balance</div>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
+                    <div className="text-2xl font-extrabold text-gray-900">5%</div>
+                    <div className="text-xs font-bold opacity-80 whitespace-nowrap">Cashback</div>
+                  </div>
                 </div>
               </div>
             </motion.div>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p className="font-semibold">Premium Membership</p>
-            <p className="text-xs opacity-80">Click to learn more</p>
+            <p className="font-semibold">View Order History</p>
+            <p className="text-xs opacity-80">Earn 5% back on every purchase</p>
           </TooltipContent>
         </Tooltip>
 
