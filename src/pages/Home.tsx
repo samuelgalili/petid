@@ -846,6 +846,114 @@ const Home = () => {
           </div>
         </motion.div>
 
+        {/* Rewards Carousel Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mb-6 px-4"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">Exclusive Offers</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/rewards')}
+              className="text-primary hover:text-primary/80 font-jakarta text-sm font-bold"
+            >
+              View All →
+            </Button>
+          </div>
+          
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {/* Offer 1 - 20% Off Premium Food */}
+              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
+                <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
+                  <div>
+                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
+                      LIMITED TIME
+                    </span>
+                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">20% Off</h3>
+                    <p className="text-sm text-white/90 font-jakarta">Premium Pet Food</p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/shop')}
+                    className="bg-white text-orange-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-orange-50 transition-colors font-jakarta shadow-md"
+                  >
+                    Shop Now
+                  </Button>
+                </div>
+              </CarouselItem>
+
+              {/* Offer 2 - Free Shipping */}
+              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
+                <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
+                  <div>
+                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
+                      THIS WEEK
+                    </span>
+                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">Free Shipping</h3>
+                    <p className="text-sm text-white/90 font-jakarta">On orders over ₪199</p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/shop')}
+                    className="bg-white text-blue-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-blue-50 transition-colors font-jakarta shadow-md"
+                  >
+                    Shop Now
+                  </Button>
+                </div>
+              </CarouselItem>
+
+              {/* Offer 3 - Earn Double Points */}
+              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
+                <div className="bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
+                  <div>
+                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
+                      MEMBERS ONLY
+                    </span>
+                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">2x Points</h3>
+                    <p className="text-sm text-white/90 font-jakarta">Complete tasks today</p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/tasks')}
+                    className="bg-white text-purple-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-purple-50 transition-colors font-jakarta shadow-md"
+                  >
+                    Start Tasks
+                  </Button>
+                </div>
+              </CarouselItem>
+
+              {/* Offer 4 - New Arrivals */}
+              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
+                <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
+                  <div>
+                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
+                      NEW
+                    </span>
+                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">New Arrivals</h3>
+                    <p className="text-sm text-white/90 font-jakarta">Fresh toys & treats</p>
+                  </div>
+                  <Button
+                    onClick={() => navigate('/shop')}
+                    className="bg-white text-green-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-green-50 transition-colors font-jakarta shadow-md"
+                  >
+                    Explore
+                  </Button>
+                </div>
+              </CarouselItem>
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex -left-4" />
+            <CarouselNext className="hidden md:flex -right-4" />
+          </Carousel>
+        </motion.div>
+
         {/* Featured Products Carousel */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
