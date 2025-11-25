@@ -147,6 +147,8 @@ export type Database = {
       pets: {
         Row: {
           age: number | null
+          archived: boolean
+          archived_at: string | null
           avatar_url: string | null
           birth_date: string | null
           breed: string | null
@@ -162,6 +164,8 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          archived?: boolean
+          archived_at?: string | null
           avatar_url?: string | null
           birth_date?: string | null
           breed?: string | null
@@ -177,6 +181,8 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          archived?: boolean
+          archived_at?: string | null
           avatar_url?: string | null
           birth_date?: string | null
           breed?: string | null
