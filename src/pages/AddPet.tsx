@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Sparkles, PawPrint } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
+import dogIcon from "@/assets/dog-official.svg";
+import catIcon from "@/assets/cat-official.png";
 
 const AddPet = () => {
   const [loading, setLoading] = useState(false);
@@ -198,8 +200,8 @@ const AddPet = () => {
                           : "border-gray-200 hover:border-[#FBD66A]/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:scale-102"
                       }`}
                     >
-                      <div className="text-6xl mb-3 transition-transform duration-300 group-hover:scale-110">
-                        🐕
+                      <div className="mb-3 transition-transform duration-300 group-hover:scale-110 flex justify-center">
+                        <img src={dogIcon} alt="Dog" className="w-20 h-20 object-contain" />
                       </div>
                       <div className="font-semibold text-lg font-jakarta text-gray-900">Dog</div>
                       {petType === "dog" && (
@@ -217,8 +219,8 @@ const AddPet = () => {
                           : "border-gray-200 hover:border-[#FBD66A]/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:scale-102"
                       }`}
                     >
-                      <div className="text-6xl mb-3 transition-transform duration-300 group-hover:scale-110">
-                        🐈
+                      <div className="mb-3 transition-transform duration-300 group-hover:scale-110 flex justify-center">
+                        <img src={catIcon} alt="Cat" className="w-20 h-20 object-contain" />
                       </div>
                       <div className="font-semibold text-lg font-jakarta text-gray-900">Cat</div>
                       {petType === "cat" && (
