@@ -1,20 +1,26 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Shop = () => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("petid");
   const [selectedCategory, setSelectedCategory] = useState("קופונים והטבות");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedPetType, setSelectedPetType] = useState<"dog" | "cat">("dog");
   const [showCategories, setShowCategories] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const tabs = [
     { id: "petid", label: "Petid" },
@@ -134,7 +140,32 @@ const Shop = () => {
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
+    setQuantity(1);
   };
+
+  const handleAddToCart = () => {
+    if (!selectedProduct) return;
+
+    addToCart({
+      id: selectedProduct.id.toString(),
+      name: selectedProduct.name,
+      price: selectedProduct.price,
+      image: selectedProduct.image,
+      quantity: quantity,
+    });
+
+    toast({
+      title: "✅ נוסף לעגלה בהצלחה!",
+      description: `${selectedProduct.name} (${quantity} יח') נוסף לעגלה`,
+      duration: 3000,
+    });
+
+    setSelectedProduct(null);
+    setQuantity(1);
+  };
+
+  const increaseQuantity = () => setQuantity(prev => prev + 1);
+  const decreaseQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
   return (
     <div className="min-h-screen bg-white pb-20" dir="rtl">
@@ -407,58 +438,103 @@ const Shop = () => {
 
       {/* Product Details Sheet */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl bg-white">
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-white">
           {selectedProduct && (
-            <div className="flex flex-col h-full overflow-y-auto" dir="rtl">
-              {/* Petid Logo */}
-              <div className="flex justify-center pt-6 pb-6 sticky top-0 bg-white z-10">
-                <div className="bg-[#FFC107] px-8 py-2.5 rounded-xl shadow-lg">
-                  <span className="text-2xl font-bold text-gray-900 font-jakarta">Petid</span>
-                </div>
-              </div>
-
-              {/* Product Image */}
-              <div className="flex justify-center py-6">
-                <motion.img
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  src={selectedProduct.image}
-                  alt={selectedProduct.name}
-                  className="w-56 h-56 object-contain"
-                />
-              </div>
-
-              {/* Dotted Separator */}
-              <div className="border-t-2 border-dashed border-gray-300 my-4" />
-
-              {/* Product Details */}
-              <div className="text-center flex-1 px-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-3 font-jakarta">
-                  {selectedProduct.name}
-                </h2>
-                <p className="text-lg text-gray-600 mb-6 font-jakarta">
-                  {selectedProduct.description}
-                </p>
-
-                {/* Price */}
-                <div className="flex items-center justify-center gap-3 mb-8">
-                  <div className="text-5xl font-bold text-[#E91E63] font-jakarta">
-                    {selectedProduct.price}₪
+            <div className="flex flex-col h-full" dir="rtl">
+              <div className="flex-1 overflow-y-auto pb-32">
+                {/* Petid Logo */}
+                <div className="flex justify-center pt-6 pb-6 sticky top-0 bg-white z-10">
+                  <div className="bg-[#FFC107] px-8 py-2.5 rounded-xl shadow-lg">
+                    <span className="text-2xl font-bold text-gray-900 font-jakarta">Petid</span>
                   </div>
-                  {selectedProduct.originalPrice && (
-                    <div className="text-xl text-gray-400 line-through font-jakarta">
-                      {selectedProduct.originalPrice}₪
+                </div>
+
+                {/* Product Image */}
+                <div className="flex justify-center py-6">
+                  <motion.img
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    className="w-56 h-56 object-contain"
+                  />
+                </div>
+
+                {/* Dotted Separator */}
+                <div className="border-t-2 border-dashed border-gray-300 my-4" />
+
+                {/* Product Details */}
+                <div className="text-center px-6">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-3 font-jakarta">
+                    {selectedProduct.name}
+                  </h2>
+                  <p className="text-lg text-gray-600 mb-6 font-jakarta">
+                    {selectedProduct.description}
+                  </p>
+
+                  {/* Price */}
+                  <div className="flex items-center justify-center gap-3 mb-8">
+                    <div className="text-5xl font-bold text-[#E91E63] font-jakarta">
+                      {selectedProduct.price}₪
+                    </div>
+                    {selectedProduct.originalPrice && (
+                      <div className="text-xl text-gray-400 line-through font-jakarta">
+                        {selectedProduct.originalPrice}₪
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Terms */}
+                  {selectedProduct.terms && (
+                    <div className="text-sm text-gray-500 leading-relaxed bg-gray-50 p-4 rounded-2xl font-jakarta mb-6">
+                      {selectedProduct.terms}
                     </div>
                   )}
                 </div>
+              </div>
 
-                {/* Terms */}
-                {selectedProduct.terms && (
-                  <div className="text-sm text-gray-500 leading-relaxed bg-gray-50 p-4 rounded-2xl font-jakarta">
-                    {selectedProduct.terms}
+              {/* Fixed Bottom Section with Quantity and Add to Cart */}
+              <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 shadow-2xl z-50">
+                <div className="max-w-md mx-auto">
+                  {/* Quantity Selector */}
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <span className="text-base font-medium text-gray-700 font-jakarta">כמות:</span>
+                    <div className="flex items-center gap-3 bg-gray-100 rounded-full px-2 py-1">
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={decreaseQuantity}
+                        className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      >
+                        <Minus className="w-5 h-5 text-gray-700" />
+                      </motion.button>
+                      <span className="text-2xl font-bold text-gray-900 w-12 text-center font-jakarta">
+                        {quantity}
+                      </span>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={increaseQuantity}
+                        className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      >
+                        <Plus className="w-5 h-5 text-gray-700" />
+                      </motion.button>
+                    </div>
                   </div>
-                )}
+
+                  {/* Add to Cart Button */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      onClick={handleAddToCart}
+                      className="w-full h-14 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
+                    >
+                      <ShoppingCart className="w-6 h-6" />
+                      הוסף לעגלה - {(selectedProduct.price * quantity).toFixed(0)}₪
+                    </Button>
+                  </motion.div>
+                </div>
               </div>
             </div>
           )}
