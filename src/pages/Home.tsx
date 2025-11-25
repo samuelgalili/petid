@@ -1,4 +1,4 @@
-import { Menu, Bell, UserX, Camera, Loader2 } from "lucide-react";
+import { Menu, Bell, UserX, Camera, Loader2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -91,6 +91,14 @@ const Home = () => {
         .eq('id', petId);
 
       if (updateError) throw updateError;
+
+      // Save to breed detection history
+      await supabase.from('breed_detection_history').insert({
+        pet_id: petId,
+        breed: data.breed || null,
+        confidence: data.confidence || null,
+        avatar_url: publicUrl
+      });
 
       // Refresh pets list
       const { data: updatedPets } = await supabase
@@ -392,6 +400,14 @@ const Home = () => {
                       <p className="text-xs text-gray-500 font-jakarta mt-1 capitalize">{pet.gender}</p>
                     )}
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/breed-history/${pet.id}`)}
+                    className="self-center rounded-xl border-2 border-gray-200 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 text-gray-700 hover:text-gray-900"
+                  >
+                    <History className="w-4 h-4" />
+                  </Button>
                 </div>
               </Card>
             ))}

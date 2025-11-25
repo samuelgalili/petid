@@ -78,6 +78,12 @@ const AddPet = () => {
         setFormData(prev => ({ ...prev, breed: data.breed }));
         setBreedConfident(data.confident);
         setBreedConfidence(data.confidence || null);
+        
+        // Save to history if user is logged in
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && imagePreview) {
+          // We'll save to history after pet is created, storing data for now
+        }
       } else {
         setBreedConfident(false);
         setBreedConfidence(data.confidence || null);
@@ -151,6 +157,7 @@ const AddPet = () => {
       // Insert pet data
       // Insert pet data with birth date
       const {
+        data: petData,
         error: insertError
       } = await supabase.from("pets").insert({
         user_id: user.id,
@@ -162,8 +169,18 @@ const AddPet = () => {
         breed_confidence: breedConfidence,
         is_neutered: formData.is_neutered === "true",
         avatar_url: avatarUrl
-      });
+      }).select().single();
       if (insertError) throw insertError;
+
+      // Save initial breed detection to history if available
+      if (petData && formData.breed && breedConfidence !== null) {
+        await supabase.from("breed_detection_history").insert({
+          pet_id: petData.id,
+          breed: formData.breed,
+          confidence: breedConfidence,
+          avatar_url: avatarUrl
+        });
+      }
       toast({
         title: "Success!",
         description: "Pet added successfully"

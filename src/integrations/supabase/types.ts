@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      breed_detection_history: {
+        Row: {
+          avatar_url: string | null
+          breed: string | null
+          confidence: number | null
+          created_at: string
+          detected_at: string
+          id: string
+          pet_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          breed?: string | null
+          confidence?: number | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          pet_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          breed?: string | null
+          confidence?: number | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          pet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "breed_detection_history_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           age: number | null
