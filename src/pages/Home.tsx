@@ -559,7 +559,7 @@ const Home = () => {
           </div>
           
           {/* Right: User, Notifications, Search - Close together */}
-          <div className="flex gap-0 items-center -space-x-1">
+          <div className="flex items-center -space-x-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
