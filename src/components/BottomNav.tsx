@@ -1,4 +1,4 @@
-import { Home, Calendar, Bell, MapPin, ShoppingCart, Shield } from "lucide-react";
+import { Home, Target, ShieldCheck, Store, Heart } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -14,10 +14,10 @@ const BottomNav = () => {
 
   const navItems = [
     { icon: Home, label: "Home", path: "/home" },
-    { icon: Calendar, label: "Diary", path: "/tracker" },
-    { icon: Bell, label: "Updates", path: "/feed" },
-    { icon: ShoppingCart, label: "Cart", path: "/cart" },
-    ...(isAdmin ? [{ icon: Shield, label: "Admin", path: "/admin/dashboard" }] : [{ icon: MapPin, label: "Shop", path: "/shop" }]),
+    { icon: Target, label: "Tasks", path: "/tasks" },
+    { icon: ShieldCheck, label: "Insurance", path: "/insurance" },
+    { icon: Store, label: "Shop", path: "/shop" },
+    { icon: Heart, label: "Adoption", path: "/adoption" },
   ];
 
   return (
