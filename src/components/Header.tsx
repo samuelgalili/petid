@@ -18,10 +18,11 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { getTotalItems } = useCart();
+  const { getTotalItems, items, getSubtotal } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCartPreview, setShowCartPreview] = useState(false);
   
   const cartItemCount = getTotalItems();
 
@@ -65,40 +66,113 @@ export const Header = () => {
             
             {/* Right: Cart, User, Notifications, Search - Close together */}
             <div className="flex items-center -space-x-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all relative focus-visible-ring"
-                    onClick={() => navigate('/cart')}
-                    aria-label="Shopping cart"
-                  >
-                    <ShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                    <AnimatePresence mode="wait">
-                      {cartItemCount > 0 && (
-                        <motion.span
-                          key={cartItemCount}
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          transition={{ 
-                            type: "spring",
-                            stiffness: 500,
-                            damping: 25
+              <div 
+                className="relative"
+                onMouseEnter={() => setShowCartPreview(true)}
+                onMouseLeave={() => setShowCartPreview(false)}
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all relative focus-visible-ring"
+                      onClick={() => navigate('/cart')}
+                      aria-label="Shopping cart"
+                    >
+                      <ShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                      <AnimatePresence mode="wait">
+                        {cartItemCount > 0 && (
+                          <motion.span
+                            key={cartItemCount}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ 
+                              type: "spring",
+                              stiffness: 500,
+                              damping: 25
+                            }}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-[#FBD66A] text-gray-900 rounded-full text-xs font-bold flex items-center justify-center"
+                          >
+                            {cartItemCount > 9 ? '9+' : cartItemCount}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="font-semibold">Cart ({cartItemCount})</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Mini Cart Preview Dropdown */}
+                <AnimatePresence>
+                  {showCartPreview && cartItemCount > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+                    >
+                      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 className="font-bold text-gray-900 dark:text-white">Shopping Cart</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</p>
+                      </div>
+
+                      <div className="max-h-80 overflow-y-auto">
+                        {items.slice(0, 3).map((item) => (
+                          <div key={`${item.id}-${item.variant || ''}-${item.size || ''}`} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <div className="flex gap-3">
+                              <img 
+                                src={item.image} 
+                                alt={item.name}
+                                className="w-16 h-16 object-cover rounded-lg"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">{item.name}</h4>
+                                {item.variant && (
+                                  <p className="text-xs text-gray-600 dark:text-gray-400">{item.variant}</p>
+                                )}
+                                {item.size && (
+                                  <p className="text-xs text-gray-600 dark:text-gray-400">Size: {item.size}</p>
+                                )}
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-xs text-gray-600 dark:text-gray-400">Qty: {item.quantity}</span>
+                                  <span className="font-bold text-sm text-gray-900 dark:text-white">₪{(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {items.length > 3 && (
+                          <div className="p-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                            +{items.length - 3} more {items.length - 3 === 1 ? 'item' : 'items'}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-semibold text-gray-900 dark:text-white">Subtotal:</span>
+                          <span className="font-bold text-lg text-gray-900 dark:text-white">₪{getSubtotal().toFixed(2)}</span>
+                        </div>
+                        <Button 
+                          onClick={() => {
+                            setShowCartPreview(false);
+                            navigate('/cart');
                           }}
-                          className="absolute -top-1 -right-1 w-5 h-5 bg-[#FBD66A] text-gray-900 rounded-full text-xs font-bold flex items-center justify-center"
+                          className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-bold rounded-xl"
                         >
-                          {cartItemCount > 9 ? '9+' : cartItemCount}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="font-semibold">Cart ({cartItemCount})</p>
-                </TooltipContent>
-              </Tooltip>
+                          View Cart
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               <Tooltip>
                 <TooltipTrigger asChild>
