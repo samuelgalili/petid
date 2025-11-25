@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { usePoints } from "@/contexts/PointsContext";
 import confetti from "canvas-confetti";
 import {
   AlertDialog,
@@ -41,7 +42,7 @@ interface RedeemedReward extends Reward {
 
 const Rewards = () => {
   const { toast } = useToast();
-  const [totalPoints, setTotalPoints] = useState(1250);
+  const { totalPoints, deductPoints } = usePoints();
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [showRedeemDialog, setShowRedeemDialog] = useState(false);
 
@@ -159,7 +160,7 @@ const Rewards = () => {
     setShowRedeemDialog(true);
   };
 
-  const confirmRedemption = () => {
+  const confirmRedemption = async () => {
     if (!selectedReward) return;
 
     if (totalPoints < selectedReward.points) {
@@ -172,38 +173,43 @@ const Rewards = () => {
       return;
     }
 
-    // Deduct points
-    setTotalPoints((prev) => prev - selectedReward.points);
+    try {
+      // Deduct points
+      await deductPoints(selectedReward.points);
 
-    // Generate redemption code
-    const code = `${selectedReward.type.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      // Generate redemption code
+      const code = `${selectedReward.type.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-    // Add to redeemed rewards
-    const newRedemption: RedeemedReward = {
-      ...selectedReward,
-      redeemedAt: new Date().toISOString().split("T")[0],
-      code,
-      status: "active",
-      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    };
+      // Add to redeemed rewards
+      const newRedemption: RedeemedReward = {
+        ...selectedReward,
+        redeemedAt: new Date().toISOString().split("T")[0],
+        code,
+        status: "active",
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      };
 
-    setRedeemedRewards((prev) => [newRedemption, ...prev]);
+      setRedeemedRewards((prev) => [newRedemption, ...prev]);
 
-    // Trigger confetti
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#F4D35E", "#7DD3C0", "#FFE8D6", "#E8F5E8"],
-    });
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#F4D35E", "#7DD3C0", "#FFE8D6", "#E8F5E8"],
+      });
 
-    toast({
-      title: "Reward Redeemed! 🎉",
-      description: `Your code: ${code}`,
-    });
+      toast({
+        title: "Reward Redeemed! 🎉",
+        description: `Your code: ${code}`,
+      });
 
-    setShowRedeemDialog(false);
-    setSelectedReward(null);
+      setShowRedeemDialog(false);
+      setSelectedReward(null);
+    } catch (error) {
+      // Error already handled in context
+      setShowRedeemDialog(false);
+    }
   };
 
   const getStatusBadge = (status: RedeemedReward["status"]) => {

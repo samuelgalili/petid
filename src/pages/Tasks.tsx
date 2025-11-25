@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { usePoints } from "@/contexts/PointsContext";
 import confetti from "canvas-confetti";
 
 interface Task {
@@ -23,8 +24,8 @@ interface Task {
 
 const Tasks = () => {
   const { toast } = useToast();
+  const { totalPoints, addPoints } = usePoints();
   const [streak, setStreak] = useState(7);
-  const [totalPoints, setTotalPoints] = useState(1250);
 
   const [tasks, setTasks] = useState<Task[]>([
     {
@@ -110,29 +111,33 @@ const Tasks = () => {
   const dailyProgress = (dailyCompleted / dailyTasks.length) * 100;
   const weeklyProgress = (weeklyCompleted / weeklyTasks.length) * 100;
 
-  const handleCompleteTask = (taskId: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => {
-        if (task.id === taskId && !task.completed) {
-          setTotalPoints((prev) => prev + task.points);
-          
-          confetti({
-            particleCount: 50,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ["#F4D35E", "#E63946", "#7DD3C0"],
-          });
+  const handleCompleteTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.completed) return;
 
-          toast({
-            title: "Task Completed! 🎉",
-            description: `You earned ${task.points} points!`,
-          });
+    try {
+      await addPoints(task.points);
+      
+      setTasks((prevTasks) =>
+        prevTasks.map((t) => 
+          t.id === taskId ? { ...t, completed: true } : t
+        )
+      );
+      
+      confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#F4D35E", "#E63946", "#7DD3C0"],
+      });
 
-          return { ...task, completed: true };
-        }
-        return task;
-      })
-    );
+      toast({
+        title: "Task Completed! 🎉",
+        description: `You earned ${task.points} points!`,
+      });
+    } catch (error) {
+      // Error already handled in context
+    }
   };
 
   const getCategoryIcon = (category: string) => {
