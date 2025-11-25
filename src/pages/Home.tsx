@@ -1,5 +1,5 @@
 import { Menu, Bell, User, Camera, Loader2, History, Plus, ShoppingCart, Package, Search, Info, HelpCircle } from "lucide-react";
-import { PetidLogo } from "@/components/PetidLogo";
+import petidLogo from "@/assets/petid-logo.png";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -512,20 +512,64 @@ const Home = () => {
     <TooltipProvider delayDuration={200}>
     <div className="min-h-screen pb-20 animate-fade-in bg-white" dir="rtl">
       {/* Header - Fixed at Top */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b-2 border-gray-200 px-5 py-4 shadow-md z-40">
-        <div className="flex items-center justify-between gap-4">
-          {/* Right: User, Notifications, Search */}
-          <div className="flex gap-3 items-center">
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 px-4 py-3 shadow-sm z-40">
+        <div className="flex items-center justify-between">
+          {/* Left: Hamburger Menu */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring">
+                    <Menu className="w-5 h-5 text-gray-700" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 bg-white z-[9999] shadow-xl border border-gray-200 rounded-2xl p-2">
+                  <DropdownMenuItem onClick={() => navigate("/order-history")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <Package className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Order History</div>
+                      <div className="text-xs text-gray-500">View past orders</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/cart")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <ShoppingCart className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Shopping Cart</div>
+                      <div className="text-xs text-gray-500">View items</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <User className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Settings</div>
+                      <div className="text-xs text-gray-500">Manage account</div>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="font-semibold">Menu</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          {/* Center: Petid Logo */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <img src={petidLogo} alt="Petid" className="h-6 w-auto" />
+          </div>
+          
+          {/* Right: User, Notifications, Search - Close together */}
+          <div className="flex gap-1 items-center">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring w-11 h-11"
+                  className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring"
                   onClick={() => navigate('/settings')}
                   aria-label="User profile"
                 >
-                  <User className="w-6 h-6 text-gray-800" />
+                  <User className="w-5 h-5 text-gray-700" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -538,12 +582,12 @@ const Home = () => {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-full hover:bg-gray-100 transition-all relative focus-visible-ring w-11 h-11"
+                  className="rounded-full hover:bg-gray-100 transition-all relative focus-visible-ring"
                   onClick={() => toast({ title: "🔔 Notifications", description: "No new notifications" })}
                   aria-label="View notifications"
                 >
-                  <Bell className="w-6 h-6 text-gray-800" />
-                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-[#7DD3C0] rounded-full animate-pulse shadow-sm" />
+                  <Bell className="w-5 h-5 text-gray-700" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-[#7DD3C0] rounded-full animate-pulse" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -557,11 +601,11 @@ const Home = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring w-11 h-11"
+                    className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring"
                     onClick={() => setIsSearchOpen(true)}
                     aria-label="Open search"
                   >
-                    <Search className="w-6 h-6 text-gray-800" />
+                    <Search className="w-5 h-5 text-gray-700" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -569,9 +613,9 @@ const Home = () => {
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <div className="fixed left-4 right-20 top-4 z-50 animate-fade-in">
+              <div className="fixed left-4 right-16 top-3 z-50 animate-fade-in">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                   <input 
                     type="text" 
                     placeholder="Search products, pets, and more..." 
@@ -582,56 +626,12 @@ const Home = () => {
                     }}
                     autoFocus
                     aria-label="Search products"
-                    className="w-full h-14 pl-12 pr-4 rounded-2xl bg-white backdrop-blur-sm border-2 border-[#7DD3C0] text-base text-gray-900 placeholder:text-gray-500 font-jakarta transition-all shadow-xl focus-visible-ring"
+                    className="w-full h-12 pl-12 pr-4 rounded-2xl bg-white border-2 border-[#7DD3C0] text-sm text-gray-900 placeholder:text-gray-400 font-jakarta shadow-lg focus-visible-ring"
                   />
                 </div>
               </div>
             )}
           </div>
-          
-          {/* Center: Petid Logo */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <PetidLogo showAnimals={false} className="h-10" />
-          </div>
-          
-          {/* Left: Hamburger Menu */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring w-11 h-11">
-                    <Menu className="w-6 h-6 text-gray-800" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 bg-white z-[9999] shadow-2xl border-2 border-gray-200 rounded-2xl p-2">
-                  <DropdownMenuItem onClick={() => navigate("/order-history")} className="rounded-xl p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <Package className="w-5 h-5 mr-3 text-[#7DD3C0]" />
-                    <div>
-                      <div className="font-bold text-gray-900">Order History</div>
-                      <div className="text-xs text-gray-500">View past orders</div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/cart")} className="rounded-xl p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <ShoppingCart className="w-5 h-5 mr-3 text-[#7DD3C0]" />
-                    <div>
-                      <div className="font-bold text-gray-900">Shopping Cart</div>
-                      <div className="text-xs text-gray-500">View items</div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-xl p-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <User className="w-5 h-5 mr-3 text-[#7DD3C0]" />
-                    <div>
-                      <div className="font-bold text-gray-900">Settings</div>
-                      <div className="text-xs text-gray-500">Manage account</div>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p className="font-semibold">Menu</p>
-            </TooltipContent>
-          </Tooltip>
         </div>
       </div>
 
