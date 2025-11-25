@@ -137,6 +137,7 @@ const Home = () => {
   const [pets, setPets] = useState<any[]>([]);
   const [redetectingPetId, setRedetectingPetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("account");
   const [activeCategory, setActiveCategory] = useState("intop-ribet");
   const [selectedPetForEdit, setSelectedPetForEdit] = useState<any | null>(null);
@@ -551,22 +552,41 @@ const Home = () => {
             </TooltipContent>
           </Tooltip>
           
-          {/* Center: Enhanced Search Bar with Tooltip */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <input 
-              type="text" 
-              placeholder="Search products, pets, and more..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onClick={() => toast({ 
-                title: "🔍 Search Coming Soon", 
-                description: "We're building an amazing search experience for you!" 
-              })}
-              aria-label="Search products"
-              className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50/80 backdrop-blur-sm border-2 border-gray-200 focus:border-[#7DD3C0] focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm hover:shadow-md focus:shadow-lg focus-visible-ring"
-            />
-          </div>
+          {/* Center: Search Icon / Expanded Search Bar */}
+          {!isSearchOpen ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
+                  onClick={() => setIsSearchOpen(true)}
+                  aria-label="Open search"
+                >
+                  <Search className="w-5 h-5 text-gray-700" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="font-semibold">Search</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="flex-1 relative animate-fade-in">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <input 
+                type="text" 
+                placeholder="Search products, pets, and more..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onBlur={() => {
+                  if (!searchQuery) setIsSearchOpen(false);
+                }}
+                autoFocus
+                aria-label="Search products"
+                className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50/80 backdrop-blur-sm border-2 border-gray-200 focus:border-[#7DD3C0] focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm hover:shadow-md focus:shadow-lg focus-visible-ring"
+              />
+            </div>
+          )}
           
           {/* Right: Notifications + User Profile with Tooltips */}
           <div className="flex gap-2 flex-shrink-0">
