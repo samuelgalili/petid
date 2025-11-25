@@ -71,7 +71,9 @@ const Home = () => {
         const { data } = await supabase
           .from('pets')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('archived', false) // Only fetch non-archived pets
+          .order('created_at', { ascending: false });
         if (data) {
           setPets(data);
         }
@@ -150,7 +152,8 @@ const Home = () => {
       const { data: updatedPets } = await supabase
         .from('pets')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('archived', false);
 
       if (updatedPets) {
         setPets(updatedPets);
@@ -214,7 +217,8 @@ const Home = () => {
         const { data } = await supabase
           .from('pets')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('archived', false);
         if (data) {
           setPets(data);
         }
@@ -239,39 +243,33 @@ const Home = () => {
     if (!selectedPetForEdit) return;
 
     try {
-      // Delete the pet from the database
+      // Archive the pet instead of deleting it
       const { error } = await supabase
         .from('pets')
-        .delete()
+        .update({
+          archived: true,
+          archived_at: new Date().toISOString(),
+        })
         .eq('id', selectedPetForEdit.id);
 
       if (error) throw error;
 
-      // Delete avatar from storage if exists
-      if (selectedPetForEdit.avatar_url) {
-        const fileName = selectedPetForEdit.avatar_url.split('/').pop();
-        if (fileName) {
-          await supabase.storage
-            .from('pet-avatars')
-            .remove([fileName]);
-        }
-      }
-
-      // Refresh pets list
+      // Refresh pets list (will automatically exclude archived pets)
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
           .from('pets')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('archived', false);
         if (data) {
           setPets(data);
         }
       }
 
       toast({
-        title: "Pet Removed",
-        description: `${selectedPetForEdit.name} has been removed from your pets`,
+        title: "Pet Archived",
+        description: `${selectedPetForEdit.name} has been moved to archives. You can restore it anytime.`,
       });
 
       setShowDeleteConfirm(false);
@@ -584,14 +582,24 @@ const Home = () => {
           >
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-bold text-gray-900 font-jakarta">My Pets</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/add-pet')}
-                className="text-[#7DD3C0] hover:text-[#6BC4AD] hover:bg-[#7DD3C0]/10 font-jakarta text-sm font-semibold"
-              >
-                + Add Pet
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/archived-pets')}
+                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-jakarta text-xs font-semibold"
+                >
+                  Archived
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/add-pet')}
+                  className="text-[#7DD3C0] hover:text-[#6BC4AD] hover:bg-[#7DD3C0]/10 font-jakarta text-sm font-semibold"
+                >
+                  + Add Pet
+                </Button>
+              </div>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {pets.map((pet, index) => (
@@ -952,9 +960,9 @@ const Home = () => {
                 <Button
                   variant="destructive"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="w-full h-12 rounded-xl font-jakarta font-bold bg-red-500 hover:bg-red-600 text-white shadow-md"
+                  className="w-full h-12 rounded-xl font-jakarta font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-md"
                 >
-                  Delete Pet
+                  Archive Pet
                 </Button>
               </div>
             </div>
@@ -962,15 +970,15 @@ const Home = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Archive Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-3xl max-w-[90vw] w-full mx-4">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-jakarta text-xl font-bold text-gray-900">
-              Delete {selectedPetForEdit?.name}?
+              Archive {selectedPetForEdit?.name}?
             </AlertDialogTitle>
             <AlertDialogDescription className="font-jakarta text-gray-600 text-base">
-              Are you sure you want to remove {selectedPetForEdit?.name} from your pets? This action cannot be undone and will permanently delete all associated data.
+              {selectedPetForEdit?.name} will be moved to the archived section. You can restore your pet anytime from the Archived Pets page.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -979,9 +987,9 @@ const Home = () => {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeletePet}
-              className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white"
+              className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white"
             >
-              Delete Pet
+              Archive Pet
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
