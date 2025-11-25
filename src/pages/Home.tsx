@@ -52,6 +52,7 @@ import catFoodImg from "@/assets/products/cat-food.jpg";
 import petVitaminsImg from "@/assets/products/pet-vitamins.jpg";
 import fleaTreatmentImg from "@/assets/products/flea-treatment.jpg";
 import petCollarImg from "@/assets/products/pet-collar.jpg";
+import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 
 // Product data - moved outside component for performance
 const products = [
@@ -622,8 +623,8 @@ const Home = () => {
         >
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] flex items-center justify-center shadow-lg animate-pulse-subtle">
-                <span className="text-lg">🐾</span>
+              <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden border border-gray-100">
+                <img src={defaultPetAvatar} alt="My Pets" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h2 className="text-xl font-extrabold text-gray-900 font-jakarta bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text leading-none">My Pets</h2>
@@ -654,8 +655,8 @@ const Home = () => {
           {pets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
               <div className="relative mb-5">
-                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] flex items-center justify-center shadow-[0_8px_32px_rgba(125,211,192,0.3)] border-4 border-white">
-                  <span className="text-6xl">🐾</span>
+                <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center shadow-[0_8px_32px_rgba(125,211,192,0.3)] border-4 border-white overflow-hidden">
+                  <img src={defaultPetAvatar} alt="Add your first pet" className="w-full h-full object-cover" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full shadow-lg animate-pulse flex items-center justify-center">
                   <Plus className="w-5 h-5 text-white" />
