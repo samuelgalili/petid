@@ -1,4 +1,4 @@
-import { Menu, Bell, UserX, Camera, Loader2, History, Plus } from "lucide-react";
+import { Menu, Bell, UserX, Camera, Loader2, History, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -161,87 +161,48 @@ const Home = () => {
     );
   }
 
-  const features = [
+  const products = [
     {
-      icon: "🦴",
-      label: "אתני ושטף",
-      description: "AMMI SPN",
-      path: "/tracker",
-      external: false,
+      name: "Piedhu",
+      price: "₪207.84",
+      image: "🐕",
+      path: "/shop",
+      color: "bg-[#B8E3D5]",
+    },
+    {
+      name: "Premium Treats",
+      price: "₪307.00",
+      image: "🦴",
+      path: "/shop",
+      color: "bg-[#F5E6D3]",
+    },
+    {
+      name: "Pet Bed",
+      price: "₪208.12",
+      image: "🛏️",
+      path: "/shop",
+      color: "bg-[#E8F5E8]",
+    },
+    {
+      name: "Reagor",
+      price: "₪101.72",
+      image: "🍪",
+      path: "/shop",
       color: "bg-[#FFE5E5]",
-      dotColor: "#FFC4C4",
     },
     {
-      icon: "🧸",
-      label: "בצלין",
-      description: "LIYE SOON",
-      path: "/parks",
-      external: false,
-      color: "bg-[#D4F0ED]",
-      dotColor: "#9FE2DD",
-    },
-    {
-      icon: "🦴",
-      label: "חשבה",
-      description: "OROOUN",
-      path: "/experiences",
-      external: false,
-      color: "bg-[#F5F0E8]",
-      dotColor: "#E8DCC8",
-    },
-    {
-      icon: "🦅",
-      label: "אודיקה",
-      description: "PRETECIOUS",
-      path: "/tracker",
-      external: false,
+      name: "Dog Toys",
+      price: "₪156.00",
+      image: "🎾",
+      path: "/shop",
       color: "bg-[#E8E5FF]",
-      dotColor: "#C5BFFF",
     },
     {
-      icon: "🪞",
-      label: "מדריכה",
-      description: "FOR MIRROR",
-      path: "/parks",
-      external: false,
-      color: "bg-[#FFF9E5]",
-      dotColor: "#FFF0B8",
-    },
-    {
-      icon: "🎾",
-      label: "דינה",
-      description: "FOR PA",
-      path: "/experiences",
-      external: false,
-      color: "bg-[#E5F5E8]",
-      dotColor: "#C1E8C9",
-    },
-    {
-      icon: "🐾",
-      label: "מידעית",
-      description: "PAL MELA",
-      path: "/tracker",
-      external: false,
-      color: "bg-[#FFF5E5]",
-      dotColor: "#FFE5B8",
-    },
-    {
-      icon: "🦴",
-      label: "שינותב",
-      description: "DELALEIDUO",
-      path: "/parks",
-      external: false,
-      color: "bg-[#D4F0ED]",
-      dotColor: "#9FE2DD",
-    },
-    {
-      icon: "🎀",
-      label: "משטיע",
-      description: "MEEMINDES",
-      path: "https://petid.co.il/catalog-new/",
-      external: true,
-      color: "bg-[#FFE5E5]",
-      dotColor: "#FFC4C4",
+      name: "Cat Food",
+      price: "₪189.50",
+      image: "🐱",
+      path: "/shop",
+      color: "bg-[#FFE8D6]",
     },
   ];
 
@@ -362,53 +323,51 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Feature Grid with Staggered Animation */}
-      <div className="px-6 pt-6 pb-6 grid grid-cols-3 gap-4">
-        {features.map((feature, index) => {
-          if (feature.external) {
-            return (
-              <motion.a
-                key={index}
-                href={feature.path}
-                target="_blank"
-                rel="noopener noreferrer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.3 }}
-                whileHover={{ scale: 1.05, y: -4 }}
-                whileTap={{ scale: 0.95 }}
-                className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border-2 border-gray-100`}
-              >
-                <div className="absolute top-3 right-3 w-4 h-4 rounded-full transition-transform group-hover:scale-110" style={{ backgroundColor: feature.dotColor }} />
-                <div className="text-4xl mb-1 transition-transform group-hover:scale-110">{feature.icon}</div>
-                <div className="text-center">
-                  <h3 className="font-bold text-sm mb-0.5 leading-tight text-gray-900 font-jakarta">{feature.label}</h3>
-                  <p className="text-[9px] text-gray-500 uppercase tracking-wide font-semibold font-jakarta">{feature.description}</p>
-                </div>
-              </motion.a>
-            );
-          }
-          
-          return (
-            <motion.div
-              key={index}
-              onClick={() => navigate(feature.path)}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
-              whileHover={{ scale: 1.05, y: -4 }}
-              whileTap={{ scale: 0.95 }}
-              className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border-2 border-gray-100`}
-            >
-              <div className="absolute top-3 right-3 w-4 h-4 rounded-full transition-transform group-hover:scale-110" style={{ backgroundColor: feature.dotColor }} />
-              <div className="text-4xl mb-1 transition-transform group-hover:scale-110">{feature.icon}</div>
-              <div className="text-center">
-                <h3 className="font-bold text-sm mb-0.5 leading-tight text-gray-900 font-jakarta">{feature.label}</h3>
-                <p className="text-[9px] text-gray-500 uppercase tracking-wide font-semibold font-jakarta">{feature.description}</p>
+      {/* Product Grid with Staggered Animation */}
+      <div className="px-6 pt-6 pb-6 grid grid-cols-2 gap-4">
+        {products.map((product, index) => (
+          <motion.div
+            key={index}
+            onClick={() => navigate(product.path)}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.08, duration: 0.4 }}
+            whileHover={{ scale: 1.03, y: -6 }}
+            whileTap={{ scale: 0.97 }}
+            className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
+          >
+            {/* Product Image */}
+            <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm">
+              <span className="text-6xl">{product.image}</span>
+            </div>
+
+            {/* Product Info */}
+            <div className="flex-1 flex flex-col">
+              <h3 className="font-bold text-lg mb-2 text-gray-900 font-jakarta leading-tight">
+                {product.name}
+              </h3>
+              
+              {/* Price and Cart Button */}
+              <div className="flex items-center justify-between mt-auto">
+                <span className="text-sm font-semibold text-gray-700 font-jakarta">
+                  {product.price}
+                </span>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast({ 
+                      title: "Added to cart", 
+                      description: `${product.name} added successfully` 
+                    });
+                  }}
+                  className="w-10 h-10 bg-gray-900 hover:bg-gray-800 rounded-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 shadow-md"
+                >
+                  <ShoppingCart className="w-5 h-5 text-white" />
+                </button>
               </div>
-            </motion.div>
-          );
-        })}
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* My Pets Section */}
