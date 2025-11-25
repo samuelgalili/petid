@@ -252,6 +252,15 @@ const OrderConfirmation = () => {
             <Home className="w-5 h-5 mr-2" />
             Continue Shopping
           </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full border-2 border-gray-300 text-gray-900 hover:bg-gray-100 rounded-xl font-bold font-jakarta"
+            onClick={() => navigate("/order-history")}
+          >
+            <Package className="w-5 h-5 mr-2" />
+            View All Orders
+          </Button>
         </div>
       </div>
     </div>
