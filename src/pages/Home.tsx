@@ -53,6 +53,82 @@ import petVitaminsImg from "@/assets/products/pet-vitamins.jpg";
 import fleaTreatmentImg from "@/assets/products/flea-treatment.jpg";
 import petCollarImg from "@/assets/products/pet-collar.jpg";
 
+// Product data - moved outside component for performance
+const products = [
+  {
+    name: "Piedhu Premium",
+    price: "₪207.84",
+    image: dogFoodImg,
+    path: "/shop",
+    color: "bg-[#B8E3D5]",
+    category: "intop-ribet", // Food & Treats
+  },
+  {
+    name: "Premium Treats",
+    price: "₪307.00",
+    image: dogTreatsImg,
+    path: "/shop",
+    color: "bg-[#F5E6D3]",
+    category: "intop-ribet", // Food & Treats
+  },
+  {
+    name: "Pet Bed Deluxe",
+    price: "₪208.12",
+    image: petBedImg,
+    path: "/shop",
+    color: "bg-[#E8F5E8]",
+    category: "account-cater", // Accessories
+  },
+  {
+    name: "Reagor Snacks",
+    price: "₪101.72",
+    image: dogSnacksImg,
+    path: "/shop",
+    color: "bg-[#FFE5E5]",
+    category: "intop-ribet", // Food & Treats
+  },
+  {
+    name: "Dog Toys Set",
+    price: "₪156.00",
+    image: dogToysImg,
+    path: "/shop",
+    color: "bg-[#E8E5FF]",
+    category: "account-cater", // Accessories
+  },
+  {
+    name: "Cat Food Pro",
+    price: "₪189.50",
+    image: catFoodImg,
+    path: "/shop",
+    color: "bg-[#FFE8D6]",
+    category: "intop-ribet", // Food & Treats
+  },
+  {
+    name: "Pet Vitamins",
+    price: "₪145.00",
+    image: petVitaminsImg,
+    path: "/shop",
+    color: "bg-[#FFE5F0]",
+    category: "deterrtn", // Healthcare
+  },
+  {
+    name: "Flea Treatment",
+    price: "₪225.00",
+    image: fleaTreatmentImg,
+    path: "/shop",
+    color: "bg-[#E5F5FF]",
+    category: "deterrtn", // Healthcare
+  },
+  {
+    name: "Pet Collar",
+    price: "₪89.99",
+    image: petCollarImg,
+    path: "/shop",
+    color: "bg-[#FFF0E5]",
+    category: "account-cater", // Accessories
+  },
+];
+
 const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -119,6 +195,18 @@ const Home = () => {
       colors: ['#7DD3C0', '#E8F5E8']
     });
   }, []);
+
+  // Filter products based on active category - memoized
+  const filteredProducts = useMemo(() => 
+    products.filter(product => product.category === activeCategory),
+    [activeCategory]
+  );
+
+  // Calculate product counts per category - memoized
+  const categoryCount = useCallback((category: string) => 
+    products.filter(p => p.category === category).length,
+    []
+  );
 
   // Fetch user's pets
   useEffect(() => {
@@ -416,93 +504,6 @@ const Home = () => {
       </div>
     );
   }
-
-  const products = [
-    {
-      name: "Piedhu Premium",
-      price: "₪207.84",
-      image: dogFoodImg,
-      path: "/shop",
-      color: "bg-[#B8E3D5]",
-      category: "intop-ribet", // Food & Treats
-    },
-    {
-      name: "Premium Treats",
-      price: "₪307.00",
-      image: dogTreatsImg,
-      path: "/shop",
-      color: "bg-[#F5E6D3]",
-      category: "intop-ribet", // Food & Treats
-    },
-    {
-      name: "Pet Bed Deluxe",
-      price: "₪208.12",
-      image: petBedImg,
-      path: "/shop",
-      color: "bg-[#E8F5E8]",
-      category: "account-cater", // Accessories
-    },
-    {
-      name: "Reagor Snacks",
-      price: "₪101.72",
-      image: dogSnacksImg,
-      path: "/shop",
-      color: "bg-[#FFE5E5]",
-      category: "intop-ribet", // Food & Treats
-    },
-    {
-      name: "Dog Toys Set",
-      price: "₪156.00",
-      image: dogToysImg,
-      path: "/shop",
-      color: "bg-[#E8E5FF]",
-      category: "account-cater", // Accessories
-    },
-    {
-      name: "Cat Food Pro",
-      price: "₪189.50",
-      image: catFoodImg,
-      path: "/shop",
-      color: "bg-[#FFE8D6]",
-      category: "intop-ribet", // Food & Treats
-    },
-    {
-      name: "Pet Vitamins",
-      price: "₪145.00",
-      image: petVitaminsImg,
-      path: "/shop",
-      color: "bg-[#FFE5F0]",
-      category: "deterrtn", // Healthcare
-    },
-    {
-      name: "Flea Treatment",
-      price: "₪225.00",
-      image: fleaTreatmentImg,
-      path: "/shop",
-      color: "bg-[#E5F5FF]",
-      category: "deterrtn", // Healthcare
-    },
-    {
-      name: "Pet Collar",
-      price: "₪89.99",
-      image: petCollarImg,
-      path: "/shop",
-      color: "bg-[#FFF0E5]",
-      category: "account-cater", // Accessories
-    },
-  ];
-
-  // Filter products based on active category - memoized
-  const filteredProducts = useMemo(() => 
-    products.filter(product => product.category === activeCategory),
-    [activeCategory]
-  );
-
-  // Calculate product counts per category - memoized
-  const categoryCount = useCallback((category: string) => 
-    products.filter(p => p.category === category).length,
-    []
-  );
 
   return (
     <TooltipProvider delayDuration={200}>
