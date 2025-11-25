@@ -173,7 +173,7 @@ const AddPet = () => {
           <CardContent className="px-6 md:px-10 pb-10">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Pet Type Selection */}
-              {currentStep === 1 && <div className="space-y-6 animate-fade-in">
+              {currentStep === 1 && <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-8 md:gap-12">
                     <button 
                       type="button" 
@@ -181,7 +181,8 @@ const AddPet = () => {
                         setPetType("dog");
                         setCurrentStep(2);
                       }} 
-                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none"
+                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in"
+                      style={{ animationDelay: '100ms' }}
                     >
                       <img 
                         src={dogIcon} 
@@ -195,7 +196,8 @@ const AddPet = () => {
                         setPetType("cat");
                         setCurrentStep(2);
                       }} 
-                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none"
+                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in"
+                      style={{ animationDelay: '250ms' }}
                     >
                       <img 
                         src={catIcon} 
