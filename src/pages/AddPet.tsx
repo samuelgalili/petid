@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Sparkles } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
-import { PetidLogo } from "@/components/PetidLogo";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 const AddPet = () => {
@@ -140,12 +139,7 @@ const AddPet = () => {
     return true;
   };
   return <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in relative" dir="ltr">
-      {/* Fixed Header with Logo */}
-      <div className="fixed top-4 left-0 right-0 z-10 flex justify-center">
-        <PetidLogo showAnimals={false} />
-      </div>
-
-      <div className="max-w-[440px] mx-auto mt-24 md:mt-28">
+      <div className="max-w-[440px] mx-auto mt-8 md:mt-12">
         {/* Header */}
         <div className="text-center mb-8 animate-slide-up">
           <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-gray-900 mb-2 tracking-tight">
