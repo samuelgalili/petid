@@ -19,6 +19,7 @@ import Feed from "./pages/Feed";
 import Tracker from "./pages/Tracker";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
 import BreedHistory from "./pages/BreedHistory";
 import NotFound from "./pages/NotFound";
 
@@ -42,6 +43,7 @@ const AnimatedRoutes = () => {
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
         <Route path="/shop" element={<ProtectedRoute><PageTransition><Shop /></PageTransition></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProtectedRoute><PageTransition><ProductDetail /></PageTransition></ProtectedRoute>} />
+        <Route path="/cart" element={<ProtectedRoute><PageTransition><Cart /></PageTransition></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><NotFound /></PageTransition></ProtectedRoute>} />
         <Route path="/adoption" element={<ProtectedRoute><PageTransition><NotFound /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

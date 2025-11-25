@@ -1,17 +1,21 @@
-import { Home, Calendar, Bell, MapPin, Heart } from "lucide-react";
+import { Home, Calendar, Bell, MapPin, ShoppingCart } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/contexts/CartContext";
+import { Badge } from "@/components/ui/badge";
 
 const BottomNav = () => {
   const location = useLocation();
+  const { getTotalItems } = useCart();
+  const cartItemCount = getTotalItems();
 
   const navItems = [
     { icon: Home, label: "Home", path: "/home" },
     { icon: Calendar, label: "Diary", path: "/tracker" },
     { icon: Bell, label: "Updates", path: "/feed" },
+    { icon: ShoppingCart, label: "Cart", path: "/cart" },
     { icon: MapPin, label: "Shop", path: "/shop" },
-    { icon: Heart, label: "Adopt", path: "/adoption" },
   ];
 
   return (
@@ -46,6 +50,13 @@ const BottomNav = () => {
                   "w-6 h-6 transition-all",
                   isActive ? "stroke-[2.5]" : "stroke-[2] group-hover:scale-110"
                 )} />
+                {item.path === "/cart" && cartItemCount > 0 && (
+                  <Badge 
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold border-2 border-white"
+                  >
+                    {cartItemCount > 9 ? "9+" : cartItemCount}
+                  </Badge>
+                )}
               </motion.div>
             </Link>
           );
