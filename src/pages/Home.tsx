@@ -595,7 +595,7 @@ const Home = () => {
 
         {/* Membership Banner - Gold Rounded Rectangle */}
         <motion.div 
-          className="mb-5"
+          className="mb-3"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -605,6 +605,53 @@ const Home = () => {
             <div className="relative z-10">
               <div className="text-sm mb-0.5">Membership Club</div>
               <div className="text-xs font-medium opacity-80">Premium Access</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Animated Promo Ticker */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="mb-5 overflow-hidden bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#7DD3C0] py-2 rounded-xl shadow-sm"
+        >
+          <div className="flex animate-scroll-left whitespace-nowrap">
+            {/* First set of messages */}
+            <div className="flex gap-8 px-4">
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>🎉</span> Free Shipping on Orders Over ₪199
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>⭐</span> New Member? Get 15% Off Your First Order
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>🐾</span> Premium Pet Food - Best Prices Guaranteed
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>❤️</span> Join Our Loyalty Program Today
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>🎁</span> Special Deals Updated Daily
+              </span>
+            </div>
+            {/* Duplicate set for seamless loop */}
+            <div className="flex gap-8 px-4">
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>🎉</span> Free Shipping on Orders Over ₪199
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>⭐</span> New Member? Get 15% Off Your First Order
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>🐾</span> Premium Pet Food - Best Prices Guaranteed
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>❤️</span> Join Our Loyalty Program Today
+              </span>
+              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
+                <span>🎁</span> Special Deals Updated Daily
+              </span>
             </div>
           </div>
         </motion.div>
