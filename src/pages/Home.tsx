@@ -464,36 +464,47 @@ const Home = () => {
       {/* Content Container */}
       <div className="bg-white px-4 py-4">
 
-        {/* My Pets Section */}
-        {pets.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-6"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-gray-900 font-jakarta">My Pets</h2>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {pets.map((pet, index) => (
-                <motion.div
-                  key={pet.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.05 + index * 0.03 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onTouchStart={() => handlePetLongPressStart(pet)}
-                  onTouchEnd={handlePetLongPressEnd}
-                  onMouseDown={() => handlePetLongPressStart(pet)}
-                  onMouseUp={handlePetLongPressEnd}
-                  onMouseLeave={handlePetLongPressEnd}
-                  onClick={() => navigate('/add-pet')}
-                  className="flex-shrink-0 cursor-pointer"
-                >
+        {/* My Pets Section - Always visible */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6 pt-2"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-gray-900 font-jakarta">My Pets</h2>
+            {pets.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/archived-pets')}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 font-jakarta text-xs h-7 px-2"
+              >
+                Archived
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {pets.map((pet, index) => (
+              <motion.div
+                key={pet.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 + index * 0.03 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
+                onTouchStart={() => handlePetLongPressStart(pet)}
+                onTouchEnd={handlePetLongPressEnd}
+                onMouseDown={() => handlePetLongPressStart(pet)}
+                onMouseUp={handlePetLongPressEnd}
+                onMouseLeave={handlePetLongPressEnd}
+                onClick={() => navigate('/add-pet')}
+                className="flex-shrink-0 cursor-pointer"
+              >
+                <div className="flex flex-col items-center">
+                  {/* Circular Avatar */}
                   <div className="relative">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-sm overflow-hidden border border-gray-200">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_4px_12px_rgba(0,0,0,0.12)] overflow-hidden border-[3px] border-white ring-2 ring-gray-100">
                       {pet.avatar_url ? (
                         <img
                           src={pet.avatar_url}
@@ -501,41 +512,41 @@ const Home = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl">
+                        <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] to-[#7DD3C0]">
                           {pet.type === 'dog' ? '🐕' : '🐈'}
                         </div>
                       )}
                     </div>
-                    <div className="mt-1 text-center">
-                      <p className="text-xs font-semibold text-gray-800 font-jakarta truncate max-w-[64px]">
-                        {pet.name}
-                      </p>
-                    </div>
                   </div>
-                </motion.div>
-              ))}
-              {/* Add Pet Button */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.05 + pets.length * 0.03 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/add-pet')}
-                className="flex-shrink-0 cursor-pointer"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-white border-2 border-dashed border-gray-300 shadow-sm flex items-center justify-center hover:border-[#7DD3C0] hover:bg-[#7DD3C0]/5 transition-all">
-                  <Plus className="w-6 h-6 text-gray-400" />
-                </div>
-                <div className="mt-1 text-center">
-                  <p className="text-xs font-semibold text-gray-500 font-jakarta">
-                    Add Pet
+                  {/* Pet Name */}
+                  <p className="mt-2 text-xs font-bold text-gray-800 font-jakarta truncate max-w-[80px] text-center">
+                    {pet.name}
                   </p>
                 </div>
               </motion.div>
-            </div>
-          </motion.div>
-        )}
+            ))}
+            
+            {/* Add Pet Button - Circular */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.05 + pets.length * 0.03 }}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => navigate('/add-pet')}
+              className="flex-shrink-0 cursor-pointer"
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] to-[#FFE8D6] border-[3px] border-dashed border-[#7DD3C0]/40 shadow-[0_4px_12px_rgba(125,211,192,0.15)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_6px_16px_rgba(125,211,192,0.25)] transition-all">
+                  <Plus className="w-8 h-8 text-[#7DD3C0]" />
+                </div>
+                <p className="mt-2 text-xs font-bold text-[#7DD3C0] font-jakarta">
+                  Add Pet
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
 
         {/* Membership Banner - Gold Rounded Rectangle */}
         <motion.div 
@@ -651,20 +662,6 @@ const Home = () => {
           </motion.button>
         </div>
       </div>
-
-      {/* Archived Pets Button - Small link */}
-      {pets.length > 0 && (
-        <div className="px-4 pb-2 flex justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/archived-pets')}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-jakarta text-xs h-7"
-          >
-            Archived
-          </Button>
-        </div>
-      )}
 
       {/* 2-Column Product Grid with Smooth Animations */}
       <div className="px-4 pt-4 pb-6">
