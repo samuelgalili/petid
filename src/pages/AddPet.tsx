@@ -311,8 +311,8 @@ const AddPet = () => {
         </div>
       )}
 
-      {/* Back Button - Only visible on steps 2 and 3 */}
-      {currentStep > 1 && (
+      {/* Back Button - Only visible on step 2 */}
+      {currentStep === 2 && (
         <button
           type="button"
           onClick={() => {
@@ -563,6 +563,37 @@ const AddPet = () => {
                       </p>
                     )}
                   </div>
+
+                  {/* Continue Button */}
+                  <div className="pt-4">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        if (canProceed()) {
+                          setSlideDirection('left');
+                          setCurrentStep(3);
+                          setShowValidationError(false);
+                        } else {
+                          setShowValidationError(true);
+                          setTimeout(() => setShowValidationError(false), 2000);
+                        }
+                      }}
+                      disabled={!canProceed() || breedDetecting}
+                      className="w-full h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {breedDetecting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Detecting...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight className="mr-2 h-4 w-4" />
+                          Continue to Step 3
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   </motion.div>
                 )}
 
@@ -615,15 +646,38 @@ const AddPet = () => {
 
               {/* Navigation Buttons */}
               <div className="flex gap-3 pt-6">
-                {currentStep === 3 && <Button type="submit" disabled={loading} className="w-full h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                    {loading ? <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </> : <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Add Pet
-                      </>}
-                  </Button>}
+                {currentStep === 3 && (
+                  <>
+                    <Button 
+                      type="button" 
+                      onClick={() => {
+                        setSlideDirection('right');
+                        setCurrentStep(2);
+                      }}
+                      className="h-12 text-sm border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-900 rounded-full font-jakarta font-bold transition-all duration-300 hover:scale-[1.02] px-6"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={loading} 
+                      className="flex-1 h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Add Pet
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
               </div>
             </form>
         </div>
