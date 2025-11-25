@@ -2,7 +2,7 @@ import { Menu, Bell, UserX, Camera, Loader2, History, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { HomePageSkeleton } from "@/components/LoadingSkeleton";
+import { HomePageSkeleton, PetCardSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [petsLoading, setPetsLoading] = useState(true);
   const [pets, setPets] = useState<any[]>([]);
   const [redetectingPetId, setRedetectingPetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,6 +24,7 @@ const Home = () => {
   // Fetch user's pets
   useEffect(() => {
     const fetchPets = async () => {
+      setPetsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
@@ -34,6 +36,7 @@ const Home = () => {
         }
       }
       setLoading(false);
+      setPetsLoading(false);
     };
 
     fetchPets();
@@ -361,7 +364,19 @@ const Home = () => {
       </div>
 
       {/* My Pets Section */}
-      {pets.length > 0 ? (
+      {petsLoading ? (
+        <div className="px-6 pt-8 pb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="h-7 w-32 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="h-9 w-24 bg-gray-200 rounded-full animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            {[1, 2, 3].map((i) => (
+              <PetCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      ) : pets.length > 0 ? (
         <motion.div 
           className="px-6 pt-8 pb-6"
           initial={{ opacity: 0, y: 20 }}
