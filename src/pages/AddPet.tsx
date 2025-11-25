@@ -339,6 +339,24 @@ const AddPet = () => {
           </p>
         </div>
 
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-jakarta font-semibold text-gray-600">
+              Progress
+            </span>
+            <span className="text-xs font-jakarta font-bold text-[#F4C542]">
+              {Math.round((currentStep / 4) * 100)}%
+            </span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-[#FBD66A] to-[#F4C542] transition-all duration-500 ease-out rounded-full shadow-[0_0_10px_rgba(251,214,106,0.5)]"
+              style={{ width: `${(currentStep / 4) * 100}%` }}
+            />
+          </div>
+        </div>
+
         {/* Progress Steps */}
         <div className="flex justify-center items-center gap-2 mb-12">
           {[1, 2, 3, 4].map(step => <div key={step} className="flex items-center">
