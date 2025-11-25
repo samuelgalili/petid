@@ -486,42 +486,52 @@ const Home = () => {
       {/* Content Container */}
       <div className="bg-white px-4 py-4">
 
-        {/* My Pets Section - Always visible */}
+        {/* My Pets Section - Enhanced with gradient background */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-6 pt-2"
+          className="mb-6 pt-2 px-4 py-5 bg-gradient-to-br from-[#F8FCFB] via-white to-[#FFF9F5] rounded-3xl shadow-[0_2px_20px_rgba(125,211,192,0.08)] border border-gray-100/50"
         >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-gray-900 font-jakarta">My Pets</h2>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] flex items-center justify-center shadow-md">
+                <span className="text-base">🐾</span>
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 font-jakarta bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text">My Pets</h2>
+            </div>
             {pets.length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/archived-pets')}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 font-jakarta text-xs h-7 px-2"
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 font-jakarta text-xs h-8 px-3 rounded-full"
               >
                 Archived
               </Button>
             )}
           </div>
 
-          {/* Empty State - No Pets Yet */}
+          {/* Empty State - Enhanced with modern design */}
           {pets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FFE8D6] to-[#E8F5E8] flex items-center justify-center mb-4 shadow-lg">
-                <span className="text-5xl">🐾</span>
+            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+              <div className="relative mb-5">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] flex items-center justify-center shadow-[0_8px_32px_rgba(125,211,192,0.3)] border-4 border-white">
+                  <span className="text-6xl">🐾</span>
+                </div>
+                <div className="absolute -top-1 -right-1 w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full shadow-lg animate-pulse flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-2">
+              <h3 className="text-xl font-bold text-gray-900 font-jakarta mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text">
                 No Pets Yet
               </h3>
-              <p className="text-sm text-gray-500 font-jakarta mb-6 max-w-xs">
+              <p className="text-sm text-gray-500 font-jakarta mb-6 max-w-xs leading-relaxed">
                 Add your first furry friend to get started! Make sure you're logged in to save your pet's profile.
               </p>
               <Button
                 onClick={() => navigate('/add-pet')}
-                className="bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] hover:from-[#6BC4AD] hover:to-[#7DD3C0] text-white rounded-full font-jakarta font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                className="bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#5BB89C] hover:from-[#6BC4AD] hover:via-[#5BB89C] hover:to-[#4AA68A] text-white rounded-full font-jakarta font-bold px-10 py-6 text-base shadow-[0_8px_24px_rgba(125,211,192,0.4)] hover:shadow-[0_12px_32px_rgba(125,211,192,0.5)] transition-all hover:scale-105 border border-white/20"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add Your First Pet
@@ -546,9 +556,10 @@ const Home = () => {
                   className="flex-shrink-0 cursor-pointer"
                 >
                   <div className="flex flex-col items-center">
-                    {/* Circular Avatar */}
+                    {/* Enhanced Circular Avatar with glow */}
                     <div className="relative">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_4px_12px_rgba(0,0,0,0.12)] overflow-hidden border-[3px] border-white ring-2 ring-gray-100">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-30 animate-pulse"></div>
+                      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_6px_20px_rgba(125,211,192,0.25)] overflow-hidden border-[3px] border-white ring-2 ring-[#7DD3C0]/20">
                         {pet.avatar_url ? (
                           <img
                             src={pet.avatar_url}
@@ -556,21 +567,21 @@ const Home = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] to-[#7DD3C0]">
+                          <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] via-[#7DD3C0] to-[#6BC4AD]">
                             {pet.type === 'dog' ? '🐕' : '🐈'}
                           </div>
                         )}
                       </div>
                     </div>
-                    {/* Pet Name */}
-                    <p className="mt-2 text-xs font-bold text-gray-800 font-jakarta truncate max-w-[80px] text-center">
+                    {/* Pet Name with gradient */}
+                    <p className="mt-2.5 text-xs font-bold text-gray-800 font-jakarta truncate max-w-[80px] text-center">
                       {pet.name}
                     </p>
                   </div>
                 </motion.div>
               ))}
               
-              {/* Add Pet Button - Circular */}
+              {/* Enhanced Add Pet Button with glow */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -581,10 +592,13 @@ const Home = () => {
                 className="flex-shrink-0 cursor-pointer"
               >
                 <div className="flex flex-col items-center">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] to-[#FFE8D6] border-[3px] border-dashed border-[#7DD3C0]/40 shadow-[0_4px_12px_rgba(125,211,192,0.15)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_6px_16px_rgba(125,211,192,0.25)] transition-all">
-                    <Plus className="w-8 h-8 text-[#7DD3C0]" />
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-30 animate-pulse"></div>
+                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] via-[#FFE8D6] to-[#FFF0E5] border-[3px] border-dashed border-[#7DD3C0]/50 shadow-[0_6px_20px_rgba(125,211,192,0.25)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_8px_24px_rgba(125,211,192,0.35)] transition-all">
+                      <Plus className="w-8 h-8 text-[#7DD3C0]" />
+                    </div>
                   </div>
-                  <p className="mt-2 text-xs font-bold text-[#7DD3C0] font-jakarta">
+                  <p className="mt-2.5 text-xs font-bold text-[#7DD3C0] font-jakarta">
                     Add Pet
                   </p>
                 </div>
@@ -593,28 +607,30 @@ const Home = () => {
           )}
         </motion.div>
 
-        {/* Membership Banner - Gold Rounded Rectangle */}
+        {/* Enhanced Membership Banner with shine effect */}
         <motion.div 
           className="mb-3"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#FBD66A] text-gray-900 rounded-2xl px-5 py-3.5 text-center font-bold shadow-[0_4px_20px_rgba(251,214,106,0.35)] font-jakarta relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent"></div>
+          <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#EAA831] text-gray-900 rounded-3xl px-6 py-4 text-center font-bold shadow-[0_8px_32px_rgba(251,214,106,0.45)] font-jakarta relative overflow-hidden border border-[#FFF5DC]/40">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-white/10"></div>
+            <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"></div>
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
             <div className="relative z-10">
-              <div className="text-sm mb-0.5">Membership Club</div>
-              <div className="text-xs font-medium opacity-80">Premium Access</div>
+              <div className="text-base mb-1 font-extrabold tracking-wide drop-shadow-sm">✨ Membership Club</div>
+              <div className="text-xs font-semibold opacity-90">Premium Access & Exclusive Deals</div>
             </div>
           </div>
         </motion.div>
 
-        {/* Animated Promo Ticker */}
+        {/* Enhanced Animated Promo Ticker with glow */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mb-5 overflow-hidden bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#7DD3C0] py-2 rounded-xl shadow-sm"
+          className="mb-6 overflow-hidden bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#7DD3C0] py-2.5 rounded-2xl shadow-[0_4px_20px_rgba(125,211,192,0.3)] border border-[#A5E8D8]/30"
         >
           <div className="flex animate-scroll-left whitespace-nowrap">
             {/* First set of messages */}
@@ -656,29 +672,31 @@ const Home = () => {
           </div>
         </motion.div>
 
-        {/* Primary Filter Pills with Soft Shadows */}
-        <div className="flex gap-2.5 overflow-x-auto pb-3 mb-5 scrollbar-hide">
+        {/* Enhanced Primary Filter Pills with gradients */}
+        <div className="flex gap-3 overflow-x-auto pb-4 mb-6 scrollbar-hide">
           <motion.button 
             onClick={() => setActiveFilter("account")}
             whileTap={{ scale: 0.95 }}
-            className={`px-6 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
+            whileHover={{ scale: 1.03 }}
+            className={`px-7 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
               activeFilter === "account" 
-                ? "bg-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-[0_6px_24px_rgba(0,0,0,0.3)] border border-gray-700" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
             }`}
           >
             <span>All Products</span>
             {activeFilter === "account" && (
-              <span className="text-sm">→</span>
+              <span className="text-sm animate-pulse">→</span>
             )}
           </motion.button>
           <motion.button 
             onClick={() => setActiveFilter("aget")}
             whileTap={{ scale: 0.95 }}
-            className={`px-6 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
+            whileHover={{ scale: 1.03 }}
+            className={`px-7 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
               activeFilter === "aget" 
-                ? "bg-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-[0_6px_24px_rgba(0,0,0,0.3)] border border-gray-700" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
             }`}
           >
             Best Sellers
@@ -686,32 +704,34 @@ const Home = () => {
           <motion.button 
             onClick={() => setActiveFilter("int1-out")}
             whileTap={{ scale: 0.95 }}
-            className={`px-6 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
+            whileHover={{ scale: 1.03 }}
+            className={`px-7 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
               activeFilter === "int1-out" 
-                ? "bg-gray-900 text-white shadow-[0_4px_16px_rgba(0,0,0,0.25)]" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-[0_6px_24px_rgba(0,0,0,0.3)] border border-gray-700" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
             }`}
           >
             New In
           </motion.button>
         </div>
 
-        {/* Secondary Category Filters with Product Count Badges */}
-        <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
+        {/* Enhanced Category Filters with gradient badges */}
+        <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
           <motion.button 
             onClick={() => setActiveCategory("account-cater")}
             whileTap={{ scale: 0.95 }}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
+            whileHover={{ scale: 1.03 }}
+            className={`px-6 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2.5 ${
               activeCategory === "account-cater" 
-                ? "bg-[#7DD3C0] text-gray-900 shadow-[0_4px_16px_rgba(125,211,192,0.3)]" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                ? "bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] text-white shadow-[0_6px_24px_rgba(125,211,192,0.4)] border border-[#A5E8D8]/40" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
             }`}
           >
             <span>Accessories</span>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+            <span className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all ${
               activeCategory === "account-cater" 
-                ? "bg-white/60 text-gray-900" 
-                : "bg-gray-100 text-gray-700"
+                ? "bg-white/90 text-[#7DD3C0] shadow-sm" 
+                : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-700"
             }`}>
               {categoryCount("account-cater")}
             </span>
@@ -719,17 +739,18 @@ const Home = () => {
           <motion.button 
             onClick={() => setActiveCategory("intop-ribet")}
             whileTap={{ scale: 0.95 }}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
+            whileHover={{ scale: 1.03 }}
+            className={`px-6 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2.5 ${
               activeCategory === "intop-ribet" 
-                ? "bg-[#7DD3C0] text-gray-900 shadow-[0_4px_16px_rgba(125,211,192,0.3)]" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                ? "bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] text-white shadow-[0_6px_24px_rgba(125,211,192,0.4)] border border-[#A5E8D8]/40" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
             }`}
           >
             <span>Food & Treats</span>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+            <span className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all ${
               activeCategory === "intop-ribet" 
-                ? "bg-white/60 text-gray-900" 
-                : "bg-gray-100 text-gray-700"
+                ? "bg-white/90 text-[#7DD3C0] shadow-sm" 
+                : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-700"
             }`}>
               {categoryCount("intop-ribet")}
             </span>
@@ -737,17 +758,18 @@ const Home = () => {
           <motion.button 
             onClick={() => setActiveCategory("deterrtn")}
             whileTap={{ scale: 0.95 }}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
+            whileHover={{ scale: 1.03 }}
+            className={`px-6 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2.5 ${
               activeCategory === "deterrtn" 
-                ? "bg-[#7DD3C0] text-gray-900 shadow-[0_4px_16px_rgba(125,211,192,0.3)]" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
+                ? "bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] text-white shadow-[0_6px_24px_rgba(125,211,192,0.4)] border border-[#A5E8D8]/40" 
+                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
             }`}
           >
             <span>Healthcare</span>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+            <span className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all ${
               activeCategory === "deterrtn" 
-                ? "bg-white/60 text-gray-900" 
-                : "bg-gray-100 text-gray-700"
+                ? "bg-white/90 text-[#7DD3C0] shadow-sm" 
+                : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-700"
             }`}>
               {categoryCount("deterrtn")}
             </span>
@@ -779,12 +801,15 @@ const Home = () => {
                   duration: 0.35,
                   ease: [0.34, 1.56, 0.64, 1]
                 }}
-                whileHover={{ scale: 1.04, y: -8 }}
+                whileHover={{ scale: 1.05, y: -10 }}
                 whileTap={{ scale: 0.96 }}
-                className={`${product.color} rounded-3xl p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_6px_24px_rgba(0,0,0,0.10)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.18)] border border-white/40`}
+                className={`${product.color} rounded-3xl p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.2)] border-2 border-white/50 backdrop-blur-sm relative overflow-hidden`}
               >
-                {/* Product Image with White Backdrop */}
-                <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/50 rounded-2xl backdrop-blur-sm overflow-hidden shadow-inner">
+                {/* Subtle gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
+                
+                {/* Product Image with enhanced backdrop */}
+                <div className="relative w-full aspect-square flex items-center justify-center mb-4 bg-white/60 rounded-2xl backdrop-blur-md overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.08)] border border-white/60">
                   <img 
                     src={product.image} 
                     alt={product.name}
@@ -793,14 +818,14 @@ const Home = () => {
                 </div>
 
                 {/* Product Info */}
-                <div className="flex-1 flex flex-col">
-                  <h3 className="font-bold text-base mb-2.5 text-gray-900 font-jakarta leading-snug line-clamp-2 min-h-[2.5rem]">
+                <div className="flex-1 flex flex-col relative z-10">
+                  <h3 className="font-bold text-base mb-3 text-gray-900 font-jakarta leading-snug line-clamp-2 min-h-[2.5rem]">
                     {product.name}
                   </h3>
                   
-                  {/* Price and Dark Rounded Cart Button */}
+                  {/* Price and Enhanced Cart Button */}
                   <div className="flex items-center justify-between mt-auto pt-2">
-                    <span className="text-base font-bold text-gray-900 font-jakarta">
+                    <span className="text-lg font-extrabold text-gray-900 font-jakarta">
                       {product.price}
                     </span>
                     <motion.button 
@@ -811,9 +836,9 @@ const Home = () => {
                           description: `${product.name} added successfully` 
                         });
                       }}
-                      whileHover={{ scale: 1.12, rotate: 5 }}
-                      whileTap={{ scale: 0.92 }}
-                      className="w-11 h-11 bg-gray-900 hover:bg-gray-800 rounded-2xl flex items-center justify-center transition-all shadow-lg active:shadow-sm"
+                      whileHover={{ scale: 1.15, rotate: 8 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 rounded-2xl flex items-center justify-center transition-all shadow-[0_6px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)] active:shadow-sm border border-gray-700"
                     >
                       <ShoppingCart className="w-5 h-5 text-white" />
                     </motion.button>
