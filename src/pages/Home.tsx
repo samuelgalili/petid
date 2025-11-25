@@ -394,22 +394,22 @@ const Home = () => {
               transition={{ duration: 0.3 }}
               className="grid grid-cols-2 gap-4"
             >
-              {filteredProducts.map((product, index) => (
-                <motion.div
-                  key={`${activeCategory}-${index}`}
-                  onClick={() => navigate(product.path)}
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                  transition={{ 
-                    delay: index * 0.05, 
-                    duration: 0.3,
-                    ease: "easeOut"
-                  }}
-                  whileHover={{ scale: 1.03, y: -6 }}
-                  whileTap={{ scale: 0.97 }}
-                  className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
-                >
+            {filteredProducts.map((product, index) => (
+              <motion.div
+                key={`${activeCategory}-${index}`}
+                onClick={() => navigate('/product/' + index, { state: { product } })}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                transition={{ 
+                  delay: index * 0.05, 
+                  duration: 0.3,
+                  ease: "easeOut"
+                }}
+                whileHover={{ scale: 1.03, y: -6 }}
+                whileTap={{ scale: 0.97 }}
+                className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
+              >
                 {/* Product Image */}
                 <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm overflow-hidden">
                   <img 
