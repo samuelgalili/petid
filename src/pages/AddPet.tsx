@@ -142,9 +142,7 @@ const AddPet = () => {
       <div className="max-w-2xl mx-auto mt-4 md:mt-8">
         {/* Header with Icon */}
         <div className="text-center mb-10 animate-slide-up">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-2xl mb-5 shadow-[0_10px_40px_rgba(251,214,106,0.4)] transform hover:scale-105 transition-all duration-300">
-            <PawPrint className="w-12 h-12 text-gray-900" />
-          </div>
+          
           <h1 className="text-4xl md:text-5xl font-jakarta font-bold text-gray-900 mb-3 tracking-tight">
             Add Your Pet
           </h1>
@@ -175,35 +173,21 @@ const AddPet = () => {
               {/* Step 1: Pet Type Selection */}
               {currentStep === 1 && <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-8 md:gap-12">
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setPetType("dog");
-                        setCurrentStep(2);
-                      }} 
-                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in"
-                      style={{ animationDelay: '100ms' }}
-                    >
-                      <img 
-                        src={dogIcon} 
-                        alt="Dog" 
-                        className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" 
-                      />
+                    <button type="button" onClick={() => {
+                  setPetType("dog");
+                  setCurrentStep(2);
+                }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
+                  animationDelay: '100ms'
+                }}>
+                      <img src={dogIcon} alt="Dog" className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
                     </button>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setPetType("cat");
-                        setCurrentStep(2);
-                      }} 
-                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in"
-                      style={{ animationDelay: '250ms' }}
-                    >
-                      <img 
-                        src={catIcon} 
-                        alt="Cat" 
-                        className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" 
-                      />
+                    <button type="button" onClick={() => {
+                  setPetType("cat");
+                  setCurrentStep(2);
+                }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
+                  animationDelay: '250ms'
+                }}>
+                      <img src={catIcon} alt="Cat" className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
                     </button>
                   </div>
                 </div>}
