@@ -93,7 +93,7 @@ const Shop = () => {
       description: "15 ק״ג - מלא בשר",
       price: 189,
       originalPrice: 249,
-      image: "/placeholder.svg",
+      image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
       terms: "עד נגמר המלאי | בתוקף עד ה- 31.12.25\nמחיר לק״ג: 12.60 ש״ח. מזון איכותי מתאים לכלבים בוגרים. תקף בכל סניפי Petid. מוגבל ל-2 יחידות לקונה. בכפוף לתקנון המועדון.",
     },
     {
@@ -102,7 +102,7 @@ const Shop = () => {
       description: "500 גר׳",
       price: 45,
       originalPrice: null,
-      image: "/placeholder.svg",
+      image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
     },
     {
       id: 3,
@@ -110,7 +110,7 @@ const Shop = () => {
       description: "גודל L - זיכרון צורה",
       price: 299,
       originalPrice: 399,
-      image: "/placeholder.svg",
+      image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
     },
     {
       id: 4,
@@ -118,7 +118,7 @@ const Shop = () => {
       description: "משחק חכם",
       price: 129,
       originalPrice: null,
-      image: "/placeholder.svg",
+      image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
     },
     {
       id: 5,
@@ -126,7 +126,7 @@ const Shop = () => {
       description: "500 מ״ל",
       price: 59,
       originalPrice: 79,
-      image: "/placeholder.svg",
+      image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
     },
     {
       id: 6,
@@ -134,7 +134,7 @@ const Shop = () => {
       description: "עם מתקן מים",
       price: 169,
       originalPrice: null,
-      image: "/placeholder.svg",
+      image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
     },
   ];
 
