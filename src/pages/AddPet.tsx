@@ -311,10 +311,14 @@ const AddPet = () => {
         </div>
       )}
 
-      {/* Back Button */}
+      {/* Back Button - Always visible on all steps */}
       <button
-        onClick={() => navigate(-1)}
-        className="fixed top-4 left-4 z-50 p-2 hover:bg-gray-100 rounded-full transition-all group animate-fade-in"
+        onClick={() => {
+          console.log('Back button clicked, current step:', currentStep);
+          navigate(-1);
+        }}
+        className="fixed top-4 left-4 z-[100] p-2 hover:bg-gray-100 rounded-full transition-all group bg-white shadow-lg"
+        style={{ display: 'block' }}
       >
         <ArrowLeft className="w-6 h-6 text-gray-900 group-hover:scale-110 transition-transform" />
       </button>
