@@ -498,7 +498,7 @@ const Home = () => {
                 onMouseDown={() => handlePetLongPressStart(pet)}
                 onMouseUp={handlePetLongPressEnd}
                 onMouseLeave={handlePetLongPressEnd}
-                onClick={() => navigate('/add-pet')}
+                onClick={() => navigate(`/pet/${pet.id}`)}
                 className="flex-shrink-0 cursor-pointer"
               >
                 <div className="flex flex-col items-center">
