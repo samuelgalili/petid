@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import {
   LineChart,
   Line,
@@ -61,6 +62,9 @@ interface CustomerSegment {
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Enable real-time notifications for new orders and status changes
+  useAdminNotifications();
   const [stats, setStats] = useState<OrderStats>({
     totalOrders: 0,
     totalRevenue: 0,
@@ -74,6 +78,27 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchAllAnalytics();
+
+    // Set up realtime subscription for automatic refresh
+    const channel = supabase
+      .channel("dashboard-order-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        () => {
+          // Refresh analytics when any order changes
+          fetchAllAnalytics();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchAllAnalytics = async () => {

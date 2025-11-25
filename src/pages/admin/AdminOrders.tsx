@@ -26,6 +26,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
 interface Order {
   id: string;
@@ -41,6 +42,9 @@ interface Order {
 const AdminOrders = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Enable real-time notifications for new orders and status changes
+  useAdminNotifications();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +55,27 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    // Set up realtime subscription for automatic refresh
+    const channel = supabase
+      .channel("order-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        () => {
+          // Refresh orders list when any order changes
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
