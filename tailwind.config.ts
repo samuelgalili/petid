@@ -18,6 +18,21 @@ export default {
         playfair: ['Playfair Display', 'serif'],
         jakarta: ['Plus Jakarta Sans', 'sans-serif'],
       },
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1.2', letterSpacing: '0.01em' }],
+        'sm': ['0.875rem', { lineHeight: '1.4', letterSpacing: '0.01em' }],
+        'base': ['1rem', { lineHeight: '1.5', letterSpacing: '0.01em' }],
+        'lg': ['1.125rem', { lineHeight: '1.6', letterSpacing: '0' }],
+        'xl': ['1.25rem', { lineHeight: '1.6', letterSpacing: '-0.01em' }],
+        '2xl': ['1.5rem', { lineHeight: '1.5', letterSpacing: '-0.02em' }],
+        '3xl': ['1.875rem', { lineHeight: '1.4', letterSpacing: '-0.02em' }],
+      },
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem',
+        '26': '6.5rem',
+        '30': '7.5rem',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
