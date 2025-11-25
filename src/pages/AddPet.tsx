@@ -314,7 +314,7 @@ const AddPet = () => {
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
-        className="fixed top-4 left-4 z-10 p-2 hover:bg-gray-100 rounded-full transition-all group"
+        className="fixed top-4 left-4 z-50 p-2 hover:bg-gray-100 rounded-full transition-all group animate-fade-in"
       >
         <ArrowLeft className="w-6 h-6 text-gray-900 group-hover:scale-110 transition-transform" />
       </button>
