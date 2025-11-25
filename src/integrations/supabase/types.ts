@@ -228,6 +228,83 @@ export type Database = {
         }
         Relationships: []
       }
+      redemptions: {
+        Row: {
+          expires_at: string
+          id: string
+          redeemed_at: string
+          redemption_code: string
+          reward_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          id?: string
+          redeemed_at?: string
+          redemption_code: string
+          reward_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          redeemed_at?: string
+          redemption_code?: string
+          reward_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          created_at: string
+          description: string
+          gradient: string
+          icon: string
+          id: string
+          is_active: boolean
+          points_cost: number
+          title: string
+          type: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          gradient: string
+          icon: string
+          id?: string
+          is_active?: boolean
+          points_cost: number
+          title: string
+          type: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          gradient?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          points_cost?: number
+          title?: string
+          type?: string
+          value?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
