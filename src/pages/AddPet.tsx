@@ -54,8 +54,8 @@ const AddPet = () => {
     e.preventDefault();
     if (!petType) {
       toast({
-        title: "שגיאה",
-        description: "אנא בחר סוג חיית מחמד",
+        title: "Error",
+        description: "Please choose a pet type",
         variant: "destructive",
       });
       return;
@@ -67,8 +67,8 @@ const AddPet = () => {
       // For guest users, just show success and navigate
       if (isGuest) {
         toast({
-          title: "הצלחה!",
-          description: "חיית המחמד נוספה (מצב אורח - לא נשמר)",
+          title: "Success!",
+          description: "Pet added (guest mode - not saved)",
         });
         navigate("/home");
         return;
@@ -114,14 +114,14 @@ const AddPet = () => {
       if (insertError) throw insertError;
 
       toast({
-        title: "הצלחה!",
-        description: "חיית המחמד נוספה בהצלחה",
+        title: "Success!",
+        description: "Pet added successfully",
       });
 
       navigate("/home");
     } catch (error: any) {
       toast({
-        title: "שגיאה",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -137,18 +137,18 @@ const AddPet = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30 p-4 pb-24 animate-fade-in" dir="rtl">
+    <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in" dir="ltr">
       <div className="max-w-2xl mx-auto mt-8">
         {/* Header with Icon */}
         <div className="text-center mb-8 animate-slide-up">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full mb-4 shadow-premium animate-float">
-            <PawPrint className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#FBD66A] rounded-full mb-4 shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
+            <PawPrint className="w-10 h-10 text-gray-900" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-jakarta font-bold text-foreground mb-2">
-            הוסף חיית מחמד
+          <h1 className="text-4xl md:text-5xl font-jakarta font-bold text-gray-900 mb-2">
+            Add Your Pet
           </h1>
-          <p className="text-muted-foreground text-lg">
-            בואו ניצור יחד פרופיל מיוחד לחבר שלכם
+          <p className="text-gray-600 text-lg font-jakarta">
+            Let's create a special profile for your friend
           </p>
         </div>
 
@@ -159,28 +159,27 @@ const AddPet = () => {
               key={step}
               className={`h-2 rounded-full transition-all duration-500 ${
                 step === currentStep
-                  ? "w-12 bg-gradient-to-r from-primary to-accent"
+                  ? "w-12 bg-[#FBD66A]"
                   : step < currentStep
-                  ? "w-8 bg-primary"
-                  : "w-8 bg-border"
+                  ? "w-8 bg-[#F4C542]"
+                  : "w-8 bg-gray-200"
               }`}
             />
           ))}
         </div>
 
-        <Card className="shadow-premium border-0 overflow-hidden animate-scale-in bg-card/80 backdrop-blur-sm">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] animate-shimmer" />
+        <Card className="shadow-[0_8px_30px_rgba(0,0,0,0.15)] border-2 border-gray-200 overflow-hidden animate-scale-in bg-white/95 backdrop-blur-sm">
           
           <CardHeader className="text-center space-y-2 pb-6">
-            <CardTitle className="text-2xl font-jakarta font-bold">
-              {currentStep === 1 && "בחר סוג חיית מחמד"}
-              {currentStep === 2 && "פרטים בסיסיים"}
-              {currentStep === 3 && "פרטים נוספים"}
+            <CardTitle className="text-2xl font-jakarta font-bold text-gray-900">
+              {currentStep === 1 && "Choose Pet Type"}
+              {currentStep === 2 && "Basic Details"}
+              {currentStep === 3 && "Additional Details"}
             </CardTitle>
-            <CardDescription className="text-base">
-              {currentStep === 1 && "כלב או חתול? בחר את המתאים"}
-              {currentStep === 2 && "ספר לנו על חיית המחמד שלך"}
-              {currentStep === 3 && "עוד כמה פרטים קטנים"}
+            <CardDescription className="text-base text-gray-600 font-jakarta">
+              {currentStep === 1 && "Dog or Cat? Choose what fits"}
+              {currentStep === 2 && "Tell us about your pet"}
+              {currentStep === 3 && "Just a few more details"}
             </CardDescription>
           </CardHeader>
 
@@ -195,16 +194,16 @@ const AddPet = () => {
                       onClick={() => setPetType("dog")}
                       className={`group relative p-8 border-2 rounded-2xl transition-all duration-300 ${
                         petType === "dog"
-                          ? "border-primary bg-gradient-to-br from-primary/10 to-accent/5 shadow-medium scale-105"
-                          : "border-border hover:border-primary/50 hover:shadow-soft hover:scale-102"
+                          ? "border-[#FBD66A] bg-[#FBD66A]/10 shadow-[0_8px_30px_rgba(251,214,106,0.3)] scale-105"
+                          : "border-gray-200 hover:border-[#FBD66A]/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:scale-102"
                       }`}
                     >
                       <div className="text-6xl mb-3 transition-transform duration-300 group-hover:scale-110">
                         🐕
                       </div>
-                      <div className="font-semibold text-lg">כלב</div>
+                      <div className="font-semibold text-lg font-jakarta text-gray-900">Dog</div>
                       {petType === "dog" && (
-                        <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1">
+                        <div className="absolute -top-2 -right-2 bg-[#FBD66A] text-gray-900 rounded-full p-1">
                           <Sparkles className="w-4 h-4" />
                         </div>
                       )}
@@ -214,16 +213,16 @@ const AddPet = () => {
                       onClick={() => setPetType("cat")}
                       className={`group relative p-8 border-2 rounded-2xl transition-all duration-300 ${
                         petType === "cat"
-                          ? "border-primary bg-gradient-to-br from-primary/10 to-accent/5 shadow-medium scale-105"
-                          : "border-border hover:border-primary/50 hover:shadow-soft hover:scale-102"
+                          ? "border-[#FBD66A] bg-[#FBD66A]/10 shadow-[0_8px_30px_rgba(251,214,106,0.3)] scale-105"
+                          : "border-gray-200 hover:border-[#FBD66A]/50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:scale-102"
                       }`}
                     >
                       <div className="text-6xl mb-3 transition-transform duration-300 group-hover:scale-110">
                         🐈
                       </div>
-                      <div className="font-semibold text-lg">חתול</div>
+                      <div className="font-semibold text-lg font-jakarta text-gray-900">Cat</div>
                       {petType === "cat" && (
-                        <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1">
+                        <div className="absolute -top-2 -right-2 bg-[#FBD66A] text-gray-900 rounded-full p-1">
                           <Sparkles className="w-4 h-4" />
                         </div>
                       )}
@@ -237,24 +236,23 @@ const AddPet = () => {
                 <div className="space-y-6 animate-fade-in">
                   {/* Image Upload */}
                   <div className="space-y-3">
-                    <Label htmlFor="image" className="text-base font-medium">תמונה</Label>
+                    <Label htmlFor="image" className="text-base font-medium font-jakarta text-gray-700">Photo</Label>
                     <div className="flex flex-col items-center gap-6">
                       {imagePreview && (
                         <div className="relative group">
                           <img
                             src={imagePreview}
                             alt="Preview"
-                            className="w-40 h-40 rounded-full object-cover ring-4 ring-primary/20 shadow-large transition-all duration-300 group-hover:scale-105"
+                            className="w-40 h-40 rounded-full object-cover ring-4 ring-[#FBD66A]/20 shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 group-hover:scale-105"
                           />
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       )}
                       <Label
                         htmlFor="image"
-                        className="flex items-center gap-3 cursor-pointer border-2 border-dashed border-primary/30 rounded-xl p-6 hover:border-primary hover:bg-primary/5 transition-all duration-300 group w-full justify-center"
+                        className="flex items-center gap-3 cursor-pointer border-2 border-dashed border-[#FBD66A]/30 rounded-xl p-6 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 transition-all duration-300 group w-full justify-center backdrop-blur-sm"
                       >
-                        <Upload className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
-                        <span className="font-medium text-primary">{imagePreview ? "שנה תמונה" : "העלה תמונה"}</span>
+                        <Upload className="w-6 h-6 text-[#FBD66A] group-hover:scale-110 transition-transform" />
+                        <span className="font-medium font-jakarta text-[#FBD66A]">{imagePreview ? "Change Photo" : "Upload Photo"}</span>
                         <Input
                           id="image"
                           type="file"
@@ -268,32 +266,32 @@ const AddPet = () => {
 
                   {/* Name */}
                   <div className="space-y-3">
-                    <Label htmlFor="name" className="text-base font-medium">
-                      שם <span className="text-primary">*</span>
+                    <Label htmlFor="name" className="text-base font-medium font-jakarta text-gray-700">
+                      Name <span className="text-[#FBD66A]">*</span>
                     </Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="מה קוראים לחיית המחמד שלך?"
+                      placeholder="What's your pet's name?"
                       required
                       disabled={loading}
-                      className="h-12 text-base border-2 focus:border-primary transition-all"
+                      className="h-12 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(251,214,106,0.3)] backdrop-blur-sm font-jakarta"
                     />
                   </div>
 
                   {/* Age */}
                   <div className="space-y-3">
-                    <Label htmlFor="age" className="text-base font-medium">גיל (בשנים)</Label>
+                    <Label htmlFor="age" className="text-base font-medium font-jakarta text-gray-700">Age (in years)</Label>
                     <Input
                       id="age"
                       type="number"
                       min="0"
                       value={formData.age}
                       onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                      placeholder="כמה שנים?"
+                      placeholder="How many years?"
                       disabled={loading}
-                      className="h-12 text-base border-2 focus:border-primary transition-all"
+                      className="h-12 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(251,214,106,0.3)] backdrop-blur-sm font-jakarta"
                     />
                   </div>
                 </div>
@@ -304,49 +302,49 @@ const AddPet = () => {
                 <div className="space-y-6 animate-fade-in">
                   {/* Gender */}
                   <div className="space-y-3">
-                    <Label htmlFor="gender" className="text-base font-medium">מין</Label>
+                    <Label htmlFor="gender" className="text-base font-medium font-jakarta text-gray-700">Gender</Label>
                     <Select
                       value={formData.gender}
                       onValueChange={(value) => setFormData({ ...formData, gender: value })}
                       disabled={loading}
                     >
-                      <SelectTrigger className="h-12 text-base border-2 focus:border-primary transition-all">
-                        <SelectValue placeholder="בחר מין" />
+                      <SelectTrigger className="h-12 text-base border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm font-jakarta">
+                        <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="male">זכר</SelectItem>
-                        <SelectItem value="female">נקבה</SelectItem>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Breed */}
                   <div className="space-y-3">
-                    <Label htmlFor="breed" className="text-base font-medium">גזע</Label>
+                    <Label htmlFor="breed" className="text-base font-medium font-jakarta text-gray-700">Breed</Label>
                     <Input
                       id="breed"
                       value={formData.breed}
                       onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
-                      placeholder="איזה גזע?"
+                      placeholder="What breed?"
                       disabled={loading}
-                      className="h-12 text-base border-2 focus:border-primary transition-all"
+                      className="h-12 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(251,214,106,0.3)] backdrop-blur-sm font-jakarta"
                     />
                   </div>
 
                   {/* Neutered */}
                   <div className="space-y-3">
-                    <Label htmlFor="neutered" className="text-base font-medium">מסורס/מעוקר</Label>
+                    <Label htmlFor="neutered" className="text-base font-medium font-jakarta text-gray-700">Neutered/Spayed</Label>
                     <Select
                       value={formData.is_neutered}
                       onValueChange={(value) => setFormData({ ...formData, is_neutered: value })}
                       disabled={loading}
                     >
-                      <SelectTrigger className="h-12 text-base border-2 focus:border-primary transition-all">
-                        <SelectValue placeholder="בחר סטטוס" />
+                      <SelectTrigger className="h-12 text-base border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] backdrop-blur-sm font-jakarta">
+                        <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="true">כן</SelectItem>
-                        <SelectItem value="false">לא</SelectItem>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -361,9 +359,9 @@ const AddPet = () => {
                     variant="outline"
                     onClick={() => setCurrentStep(currentStep - 1)}
                     disabled={loading}
-                    className="flex-1 h-12 text-base border-2 hover:border-primary transition-all"
+                    className="flex-1 h-12 text-base border-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-xl transition-all font-jakarta font-medium shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)]"
                   >
-                    חזרה
+                    Back
                   </Button>
                 )}
                 
@@ -372,25 +370,25 @@ const AddPet = () => {
                     type="button"
                     onClick={() => setCurrentStep(currentStep + 1)}
                     disabled={!canProceed() || loading}
-                    className="flex-1 h-12 text-base bg-gradient-to-r from-primary to-accent hover:shadow-large transition-all duration-300 hover:scale-105"
+                    className="flex-1 h-12 text-base bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-jakarta font-semibold shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] transition-all duration-300 hover:scale-[1.02]"
                   >
-                    הבא
+                    Next
                   </Button>
                 ) : (
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 h-12 text-base bg-gradient-to-r from-primary to-accent hover:shadow-large transition-all duration-300 hover:scale-105"
+                    className="flex-1 h-12 text-base bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-jakarta font-semibold shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] transition-all duration-300 hover:scale-[1.02]"
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="ml-2 h-5 w-5 animate-spin" />
-                        שומר...
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Saving...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="ml-2 h-5 w-5" />
-                        הוסף חיית מחמד
+                        <Sparkles className="mr-2 h-5 w-5" />
+                        Add Pet
                       </>
                     )}
                   </Button>
