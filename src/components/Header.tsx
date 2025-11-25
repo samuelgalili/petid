@@ -1,4 +1,4 @@
-import { Menu, Bell, User, Search } from "lucide-react";
+import { Menu, Bell, User, Search, ShoppingCart } from "lucide-react";
 import petidLogo from "@/assets/petid-logo.png";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Button } from "@/components/ui/button";
@@ -11,14 +11,18 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/contexts/CartContext";
 
 export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { getTotalItems } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const cartItemCount = getTotalItems();
 
   // Don't render header on auth, signup, or add-pet pages
   const hideHeaderPaths = ['/auth', '/signup', '/add-pet', '/forgot-password', '/reset-password'];
@@ -58,18 +62,40 @@ export const Header = () => {
               <img src={petidLogo} alt="Petid" className="h-6 w-auto" />
             </div>
             
-            {/* Right: User, Notifications, Search - Close together */}
+            {/* Right: Cart, User, Notifications, Search - Close together */}
             <div className="flex items-center -space-x-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring"
+                    className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all relative focus-visible-ring"
+                    onClick={() => navigate('/cart')}
+                    aria-label="Shopping cart"
+                  >
+                    <ShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FBD66A] text-gray-900 rounded-full text-xs font-bold flex items-center justify-center">
+                        {cartItemCount > 9 ? '9+' : cartItemCount}
+                      </span>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="font-semibold">Cart ({cartItemCount})</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all focus-visible-ring"
                     onClick={() => navigate('/settings')}
                     aria-label="User profile"
                   >
-                    <User className="w-5 h-5 text-gray-700" />
+                    <User className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -82,11 +108,11 @@ export const Header = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="rounded-full hover:bg-gray-100 transition-all relative focus-visible-ring"
+                    className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all relative focus-visible-ring"
                     onClick={() => toast({ title: "🔔 Notifications", description: "No new notifications" })}
                     aria-label="View notifications"
                   >
-                    <Bell className="w-5 h-5 text-gray-700" />
+                    <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                     <span className="absolute top-1 right-1 w-2 h-2 bg-[#7DD3C0] rounded-full animate-pulse" />
                   </Button>
                 </TooltipTrigger>
@@ -101,11 +127,11 @@ export const Header = () => {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="rounded-full hover:bg-gray-100 transition-all focus-visible-ring"
+                      className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all focus-visible-ring"
                       onClick={() => setIsSearchOpen(true)}
                       aria-label="Open search"
                     >
-                      <Search className="w-5 h-5 text-gray-700" />
+                      <Search className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
