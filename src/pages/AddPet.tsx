@@ -337,22 +337,37 @@ const AddPet = () => {
                   {/* Breed */}
                   <div className="space-y-3">
                     <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">Breed</Label>
-                    {!breedConfident && formData.breed && (
+                    {breedDetecting && (
+                      <div className="flex items-center gap-2 text-xs text-[#F4C542] font-jakarta font-semibold animate-pulse">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        AI is analyzing your photo...
+                      </div>
+                    )}
+                    {!breedConfident && formData.breed && !breedDetecting && (
                       <p className="text-xs text-gray-600 font-jakarta -mb-1">
                         AI detected: "{formData.breed}". Please confirm or edit if needed.
                       </p>
                     )}
-                    <Input 
-                      id="breed" 
-                      value={formData.breed} 
-                      onChange={e => setFormData({
-                        ...formData,
-                        breed: e.target.value
-                      })} 
-                      placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
-                      disabled={loading || breedDetecting} 
-                      className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" 
-                    />
+                    <div className="relative">
+                      <Input 
+                        id="breed" 
+                        value={formData.breed} 
+                        onChange={e => setFormData({
+                          ...formData,
+                          breed: e.target.value
+                        })} 
+                        placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
+                        disabled={loading || breedDetecting} 
+                        className={`h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)] ${
+                          breedDetecting ? 'border-[#FBD66A] animate-pulse pr-10' : 'border-gray-200'
+                        }`} 
+                      />
+                      {breedDetecting && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Loader2 className="w-5 h-5 text-[#F4C542] animate-spin" />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Neutered */}
