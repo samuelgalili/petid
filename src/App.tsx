@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
+import { Header } from "@/components/Header";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -40,8 +41,10 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+    <>
+      <Header />
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
@@ -66,8 +69,9 @@ const AnimatedRoutes = () => {
         <Route path="/chat" element={<ProtectedRoute><PageTransition><NotFound /></PageTransition></ProtectedRoute>} />
         <Route path="/adoption" element={<ProtectedRoute><PageTransition><NotFound /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-      </Routes>
-    </AnimatePresence>
+        </Routes>
+      </AnimatePresence>
+    </>
   );
 };
 
