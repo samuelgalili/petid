@@ -314,9 +314,12 @@ const AddPet = () => {
       {/* Back Button - Only visible on steps 2 and 3 */}
       {currentStep > 1 && (
         <button
+          type="button"
           onClick={() => {
-            console.log('Back button clicked, current step:', currentStep);
-            navigate(-1);
+            console.log('Back button clicked, going from step', currentStep, 'to step', currentStep - 1);
+            setSlideDirection('right');
+            setCurrentStep(prev => prev - 1);
+            setShowValidationError(false);
           }}
           className="fixed top-4 left-4 z-[100] p-2 hover:bg-gray-100 rounded-full transition-all group bg-white shadow-lg"
         >
