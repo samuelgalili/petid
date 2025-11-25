@@ -236,6 +236,10 @@ const Home = () => {
     },
   ];
 
+  // Calculate product counts per category
+  const categoryCount = (category: string) => 
+    products.filter(p => p.category === category).length;
+
   // Filter products based on active category
   const filteredProducts = products.filter(
     product => product.category === activeCategory
@@ -327,33 +331,42 @@ const Home = () => {
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
           <button 
             onClick={() => setActiveCategory("intop-ribet")}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
               activeCategory === "intop-ribet" 
                 ? "bg-[#7DD3C0] text-gray-900" 
                 : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Food & Treats
+            <span>Food & Treats</span>
+            <span className="px-2 py-0.5 bg-white/50 rounded-full text-xs font-semibold">
+              {categoryCount("intop-ribet")}
+            </span>
           </button>
           <button 
             onClick={() => setActiveCategory("account-cater")}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
               activeCategory === "account-cater" 
                 ? "bg-[#7DD3C0] text-gray-900" 
                 : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Accessories
+            <span>Accessories</span>
+            <span className="px-2 py-0.5 bg-white/50 rounded-full text-xs font-semibold">
+              {categoryCount("account-cater")}
+            </span>
           </button>
           <button 
             onClick={() => setActiveCategory("deterrtn")}
-            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${
               activeCategory === "deterrtn" 
                 ? "bg-[#7DD3C0] text-gray-900" 
                 : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
             }`}
           >
-            Healthcare
+            <span>Healthcare</span>
+            <span className="px-2 py-0.5 bg-white/50 rounded-full text-xs font-semibold">
+              {categoryCount("deterrtn")}
+            </span>
           </button>
         </div>
       </div>
