@@ -15,6 +15,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Import product images
@@ -37,6 +45,9 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("account");
   const [activeCategory, setActiveCategory] = useState("intop-ribet");
+  const [selectedPetForEdit, setSelectedPetForEdit] = useState<any | null>(null);
+  const [editFormData, setEditFormData] = useState({ name: "", breed: "" });
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const { toast } = useToast();
 
@@ -147,6 +158,69 @@ const Home = () => {
       });
     } finally {
       setRedetectingPetId(null);
+    }
+  };
+
+  const handlePetLongPressStart = (pet: any) => {
+    const timer = setTimeout(() => {
+      setSelectedPetForEdit(pet);
+      setEditFormData({
+        name: pet.name || "",
+        breed: pet.breed || "",
+      });
+      toast({
+        title: "Edit Mode",
+        description: `Long press detected - editing ${pet.name}`,
+      });
+    }, 500); // 500ms long press
+    setLongPressTimer(timer);
+  };
+
+  const handlePetLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const handleSavePetEdit = async () => {
+    if (!selectedPetForEdit) return;
+
+    try {
+      const { error } = await supabase
+        .from('pets')
+        .update({
+          name: editFormData.name,
+          breed: editFormData.breed,
+        })
+        .eq('id', selectedPetForEdit.id);
+
+      if (error) throw error;
+
+      // Refresh pets list
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('pets')
+          .select('*')
+          .eq('user_id', user.id);
+        if (data) {
+          setPets(data);
+        }
+      }
+
+      toast({
+        title: "Pet Updated!",
+        description: `${editFormData.name}'s details have been saved`,
+      });
+
+      setSelectedPetForEdit(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -467,6 +541,11 @@ const Home = () => {
                   transition={{ delay: 0.1 + index * 0.05 }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onTouchStart={() => handlePetLongPressStart(pet)}
+                  onTouchEnd={handlePetLongPressEnd}
+                  onMouseDown={() => handlePetLongPressStart(pet)}
+                  onMouseUp={handlePetLongPressEnd}
+                  onMouseLeave={handlePetLongPressEnd}
                   onClick={() => navigate('/add-pet')}
                   className="flex-shrink-0 cursor-pointer"
                 >
@@ -730,6 +809,86 @@ const Home = () => {
           </Button>
         </motion.div>
       )}
+
+      {/* Edit Pet Sheet */}
+      <Sheet open={!!selectedPetForEdit} onOpenChange={(open) => !open && setSelectedPetForEdit(null)}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle className="font-jakarta text-xl font-bold text-gray-900">
+              Edit Pet Details
+            </SheetTitle>
+            <SheetDescription className="font-jakarta text-sm text-gray-600">
+              Long press detected - Update your pet's information
+            </SheetDescription>
+          </SheetHeader>
+          
+          {selectedPetForEdit && (
+            <div className="mt-6 space-y-6">
+              {/* Pet Avatar Display */}
+              <div className="flex justify-center">
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#E8F5E8] to-[#B8E3D5] shadow-lg overflow-hidden border-4 border-white">
+                  {selectedPetForEdit.avatar_url ? (
+                    <img
+                      src={selectedPetForEdit.avatar_url}
+                      alt={selectedPetForEdit.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl">
+                      {selectedPetForEdit.pet_type === 'dog' ? '🐕' : '🐈'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="pet-name" className="font-jakarta font-semibold text-gray-900">
+                  Pet Name
+                </Label>
+                <Input
+                  id="pet-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="Enter pet name"
+                  className="font-jakarta h-12 rounded-xl border-2 focus:border-[#7DD3C0] focus:ring-[#7DD3C0]"
+                />
+              </div>
+
+              {/* Breed Field */}
+              <div className="space-y-2">
+                <Label htmlFor="pet-breed" className="font-jakarta font-semibold text-gray-900">
+                  Breed
+                </Label>
+                <Input
+                  id="pet-breed"
+                  value={editFormData.breed}
+                  onChange={(e) => setEditFormData({ ...editFormData, breed: e.target.value })}
+                  placeholder="Enter breed"
+                  className="font-jakarta h-12 rounded-xl border-2 focus:border-[#7DD3C0] focus:ring-[#7DD3C0]"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedPetForEdit(null)}
+                  className="flex-1 h-12 rounded-xl font-jakarta font-bold border-2"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSavePetEdit}
+                  className="flex-1 h-12 rounded-xl font-jakarta font-bold bg-[#7DD3C0] hover:bg-[#6BC4AD] text-gray-900 shadow-md"
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       <BottomNav />
     </div>
