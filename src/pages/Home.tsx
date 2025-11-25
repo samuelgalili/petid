@@ -1,4 +1,4 @@
-import { Camera, Loader2, History, Plus, ShoppingCart, Package, Info, HelpCircle, Wallet, ShieldCheck, Heart, Store, ImageIcon, FileText } from "lucide-react";
+import { Camera, Loader2, History, Plus, ShoppingCart, Package, Info, HelpCircle, Wallet, ShieldCheck, Heart, Store, ImageIcon, FileText, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -572,6 +572,18 @@ const Home = () => {
     <div className="min-h-screen pb-20 animate-fade-in bg-gray-50 transition-colors">
       {/* Content Container */}
       <div className="pt-4 pb-6">
+        
+        {/* Gift Icon - Top Left */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.05 }}
+          className="px-4 mb-4"
+        >
+          <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center">
+            <Gift className="w-8 h-8 text-[#FFD700]" />
+          </div>
+        </motion.div>
 
         {/* My Pets Section - Compact & Improved */}
         <motion.div 
