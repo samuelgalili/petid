@@ -45,8 +45,10 @@ const Auth = () => {
       </video>
 
       {/* Fixed Header with Logo */}
-      <div className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm">
-        
+      <div className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm py-4">
+        <div className="flex justify-center">
+          <PetidLogo showAnimals={false} />
+        </div>
       </div>
 
       {/* Content */}
@@ -63,11 +65,6 @@ const Auth = () => {
       }} className="w-full max-w-[440px] relative px-4 mt-20" style={{
         zIndex: 2
       }}>
-            {/* Logo */}
-            <div className="mb-8">
-              <PetidLogo showAnimals={false} />
-            </div>
-
             {/* Login Form */}
             <div className="mb-5">
               <LoginForm />
