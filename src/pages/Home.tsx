@@ -571,7 +571,7 @@ const Home = () => {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="min-h-screen pb-20 animate-fade-in bg-white dark:bg-gray-900 transition-colors" dir="rtl">
+    <div className="min-h-screen pb-20 animate-fade-in bg-white dark:bg-gray-900 transition-colors">
       {/* Content Container */}
       <div className="bg-white px-4 py-4">
 
@@ -775,7 +775,7 @@ const Home = () => {
           )}
         </motion.div>
 
-        {/* Wallet Banner - Shows 5% cashback from purchases */}
+        {/* Wallet Card - Matching Reference Design */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
@@ -790,24 +790,45 @@ const Home = () => {
               tabIndex={0}
               aria-label="View wallet balance"
             >
-              <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#EAA831] text-gray-900 rounded-3xl px-7 py-6 shadow-[0_8px_32px_rgba(251,214,106,0.45)] font-jakarta relative overflow-hidden border border-[#FFF5DC]/40">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-white/10"></div>
-                <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"></div>
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="relative z-10 flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Wallet className="w-6 h-6 text-gray-900" />
-                      <span className="text-sm font-bold opacity-90">My Wallet</span>
-                    </div>
-                    <div className="text-3xl font-extrabold mb-1 drop-shadow-sm">
+              <div className="bg-[#F4D35E] text-gray-900 rounded-[28px] px-6 py-8 shadow-[0_8px_32px_rgba(244,211,94,0.4)] font-jakarta relative overflow-hidden">
+                {/* White dog illustration on left */}
+                <div className="absolute left-6 bottom-6 opacity-20">
+                  <svg width="100" height="100" viewBox="0 0 100 100" fill="none" className="text-white">
+                    <path d="M50 20C35 20 25 30 25 45C25 55 30 65 40 70L45 85L55 85L60 70C70 65 75 55 75 45C75 30 65 20 50 20Z" fill="currentColor"/>
+                    <circle cx="42" cy="42" r="3" fill="#333"/>
+                    <circle cx="58" cy="42" r="3" fill="#333"/>
+                    <path d="M35 30C35 25 30 22 25 25C20 28 22 35 27 35C30 35 35 33 35 30Z" fill="currentColor"/>
+                    <path d="M65 30C65 25 70 22 75 25C80 28 78 35 73 35C70 35 65 33 65 30Z" fill="currentColor"/>
+                  </svg>
+                </div>
+
+                {/* Drops decoration */}
+                <div className="absolute left-12 top-12">
+                  <svg width="40" height="50" viewBox="0 0 40 50" fill="none" className="text-white opacity-40">
+                    <path d="M10 15C10 10 15 5 20 10C25 5 30 10 30 15C30 22 25 28 20 28C15 28 10 22 10 15Z" fill="currentColor"/>
+                    <path d="M5 30C5 27 8 24 12 27C16 24 19 27 19 30C19 34 16 38 12 38C8 38 5 34 5 30Z" fill="currentColor"/>
+                  </svg>
+                </div>
+                
+                <div className="relative z-10">
+                  {/* Top text */}
+                  <div className="text-sm font-semibold mb-6 opacity-80">Savings from purchases</div>
+                  
+                  {/* White card section */}
+                  <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 mb-4 shadow-lg">
+                    <div className="text-xs text-gray-600 mb-1">Your accumulated balance</div>
+                    <div className="text-4xl font-extrabold text-gray-900">
                       ₪{walletBalance.toFixed(2)}
                     </div>
-                    <div className="text-xs font-semibold opacity-80">5% Cashback Balance</div>
                   </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
-                    <div className="text-2xl font-extrabold text-gray-900">5%</div>
-                    <div className="text-xs font-bold opacity-80 whitespace-nowrap">Cashback</div>
+                  
+                  {/* Bottom text */}
+                  <div className="flex items-center justify-between text-xs font-bold opacity-90">
+                    <span>Club</span>
+                    <span>•</span>
+                    <span>Rewards</span>
+                    <span>•</span>
+                    <span>Vouchers</span>
                   </div>
                 </div>
               </div>
@@ -818,6 +839,38 @@ const Home = () => {
             <p className="text-xs opacity-80">Earn 5% back on every purchase</p>
           </TooltipContent>
         </Tooltip>
+
+        {/* Pet Type Icons Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mb-6 grid grid-cols-2 gap-4"
+        >
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/home')}
+            className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer flex flex-col items-center"
+          >
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+              <span className="text-3xl">🐕</span>
+            </div>
+            <span className="text-sm font-bold text-gray-900 font-jakarta">Dogs</span>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/home')}
+            className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer flex flex-col items-center"
+          >
+            <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mb-3">
+              <span className="text-3xl">🐈</span>
+            </div>
+            <span className="text-sm font-bold text-gray-900 font-jakarta">Cats</span>
+          </motion.div>
+        </motion.div>
 
         {/* Quick Actions Grid */}
         <motion.div
