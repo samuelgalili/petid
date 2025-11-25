@@ -20,6 +20,7 @@ export type Database = {
           avatar_url: string | null
           birth_date: string | null
           breed: string | null
+          breed_confidence: number | null
           created_at: string | null
           gender: string | null
           id: string
@@ -34,6 +35,7 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           breed?: string | null
+          breed_confidence?: number | null
           created_at?: string | null
           gender?: string | null
           id?: string
@@ -48,6 +50,7 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           breed?: string | null
+          breed_confidence?: number | null
           created_at?: string | null
           gender?: string | null
           id?: string
