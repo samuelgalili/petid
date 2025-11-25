@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
-const otpSignupSchema = z.object({
+const emailSignupSchema = z.object({
   fullName: z
     .string()
     .min(2, "Full name must be at least 2 characters")
@@ -19,6 +19,14 @@ const otpSignupSchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Invalid email address"),
+});
+
+const phoneSignupSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, "Full name must be at least 2 characters")
+    .max(100, "Full name must be less than 100 characters")
+    .trim(),
   phone: z
     .string()
     .min(1, "Phone number is required")
@@ -32,6 +40,7 @@ interface FieldError {
 }
 
 export const SignupForm = () => {
+  const [signupMethod, setSignupMethod] = useState<"email" | "phone">("phone");
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -73,24 +82,45 @@ export const SignupForm = () => {
 
         try {
           const otpCode = otp.join('');
-          const { error } = await supabase.auth.verifyOtp({
-            phone: formData.phone,
-            token: otpCode,
-            type: 'sms'
-          });
-
-          if (error) {
-            setGeneralError(error.message);
-            toast({
-              title: "Verification failed",
-              description: error.message,
-              variant: "destructive",
+          
+          if (signupMethod === "email") {
+            const { error } = await supabase.auth.verifyOtp({
+              email: formData.email,
+              token: otpCode,
+              type: 'email'
             });
-            // Clear OTP on error
-            setOtp(["", "", "", "", "", ""]);
-            otpInputRefs.current[0]?.focus();
-            setLoading(false);
-            return;
+
+            if (error) {
+              setGeneralError(error.message);
+              toast({
+                title: "Verification failed",
+                description: error.message,
+                variant: "destructive",
+              });
+              setOtp(["", "", "", "", "", ""]);
+              otpInputRefs.current[0]?.focus();
+              setLoading(false);
+              return;
+            }
+          } else {
+            const { error } = await supabase.auth.verifyOtp({
+              phone: formData.phone,
+              token: otpCode,
+              type: 'sms'
+            });
+
+            if (error) {
+              setGeneralError(error.message);
+              toast({
+                title: "Verification failed",
+                description: error.message,
+                variant: "destructive",
+              });
+              setOtp(["", "", "", "", "", ""]);
+              otpInputRefs.current[0]?.focus();
+              setLoading(false);
+              return;
+            }
           }
 
           toast({
@@ -169,7 +199,17 @@ export const SignupForm = () => {
 
   const validateForm = (): boolean => {
     try {
-      otpSignupSchema.parse(formData);
+      if (signupMethod === "email") {
+        emailSignupSchema.parse({
+          fullName: formData.fullName,
+          email: formData.email,
+        });
+      } else {
+        phoneSignupSchema.parse({
+          fullName: formData.fullName,
+          phone: formData.phone,
+        });
+      }
       setFieldErrors({});
       setGeneralError("");
       return true;
@@ -189,44 +229,51 @@ export const SignupForm = () => {
     setGeneralError("");
 
     try {
-      // Send OTP to phone
-      const { error: phoneError } = await supabase.auth.signInWithOtp({
-        phone: formData.phone,
-        options: {
-          data: {
-            full_name: formData.fullName,
+      if (signupMethod === "email") {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: formData.email,
+          options: {
+            data: {
+              full_name: formData.fullName,
+            },
           },
-        },
-      });
-
-      if (phoneError) {
-        setGeneralError(phoneError.message);
-        toast({
-          title: "Error",
-          description: phoneError.message,
-          variant: "destructive",
         });
-        setLoading(false);
-        return false;
-      }
 
-      // Also send OTP to email
-      const { error: emailError } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-        options: {
-          data: {
-            full_name: formData.fullName,
+        if (error) {
+          setGeneralError(error.message);
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return false;
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: formData.phone,
+          options: {
+            data: {
+              full_name: formData.fullName,
+            },
           },
-        },
-      });
+        });
 
-      if (emailError) {
-        console.warn("Email OTP error:", emailError.message);
+        if (error) {
+          setGeneralError(error.message);
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return false;
+        }
       }
 
       toast({
         title: "Verification code sent!",
-        description: "Check your phone and email for the code.",
+        description: `Check your ${signupMethod === "email" ? "email" : "phone"} for the code.`,
       });
 
       setShowOTPInput(true);
@@ -287,6 +334,42 @@ export const SignupForm = () => {
 
       {!showOTPInput ? (
         <>
+          {/* Signup Method Tabs */}
+          <div className="flex p-2 bg-gray-100/80 rounded-2xl backdrop-blur-sm gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSignupMethod("email");
+                setFieldErrors({});
+                setGeneralError("");
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-jakarta font-medium transition-all ${
+                signupMethod === "email"
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSignupMethod("phone");
+                setFieldErrors({});
+                setGeneralError("");
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-jakarta font-medium transition-all ${
+                signupMethod === "phone"
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Phone className="h-4 w-4" />
+              Phone
+            </button>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-sm font-jakarta font-medium text-gray-700">
               Full Name
@@ -320,71 +403,73 @@ export const SignupForm = () => {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
-              Email Address
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="your@email.com"
-              value={formData.email}
-              onChange={(e) => {
-                setFormData({ ...formData, email: e.target.value });
-                setFieldErrors({ ...fieldErrors, email: undefined });
-              }}
-              disabled={loading}
-              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-              aria-invalid={!!fieldErrors.email}
-              aria-describedby={fieldErrors.email ? "email-error" : undefined}
-              autoComplete="email"
-            />
-            {fieldErrors.email && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                id="email-error"
-                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-                role="alert"
-              >
-                {fieldErrors.email}
-              </motion.p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
-              Phone Number
-            </Label>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              placeholder="+1234567890"
-              value={formData.phone}
-              onChange={(e) => {
-                setFormData({ ...formData, phone: e.target.value });
-                setFieldErrors({ ...fieldErrors, phone: undefined });
-              }}
-              disabled={loading}
-              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-              aria-invalid={!!fieldErrors.phone}
-              aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-              autoComplete="tel"
-            />
-            {fieldErrors.phone && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                id="phone-error"
-                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-                role="alert"
-              >
-                {fieldErrors.phone}
-              </motion.p>
-            )}
-          </div>
+          {signupMethod === "email" ? (
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="your@email.com"
+                value={formData.email}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  setFieldErrors({ ...fieldErrors, email: undefined });
+                }}
+                disabled={loading}
+                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
+                autoComplete="email"
+              />
+              {fieldErrors.email && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  id="email-error"
+                  className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                  role="alert"
+                >
+                  {fieldErrors.email}
+                </motion.p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
+                Phone Number
+              </Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+1234567890"
+                value={formData.phone}
+                onChange={(e) => {
+                  setFormData({ ...formData, phone: e.target.value });
+                  setFieldErrors({ ...fieldErrors, phone: undefined });
+                }}
+                disabled={loading}
+                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                aria-invalid={!!fieldErrors.phone}
+                aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
+                autoComplete="tel"
+              />
+              {fieldErrors.phone && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  id="phone-error"
+                  className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                  role="alert"
+                >
+                  {fieldErrors.phone}
+                </motion.p>
+              )}
+            </div>
+          )}
         </>
       ) : (
         <div className="space-y-3">
@@ -431,7 +516,7 @@ export const SignupForm = () => {
             transition={{ duration: 0.5 }}
             className="text-xs font-jakarta text-center"
           >
-            {otp.every(d => d) ? "✓ Code complete! Click verify to continue" : "Enter the 6-digit code sent to your phone and email"}
+            {otp.every(d => d) ? "✓ Code complete! Click verify to continue" : `Enter the 6-digit code sent to your ${signupMethod === "email" ? "email" : "phone"}`}
           </motion.p>
         </div>
       )}
@@ -492,7 +577,7 @@ export const SignupForm = () => {
             className="w-full text-sm text-gray-700 hover:text-gray-900 font-jakarta transition-colors"
             disabled={loading}
           >
-            Change phone number
+            Change {signupMethod === "email" ? "email" : "phone number"}
           </button>
         </div>
       )}
