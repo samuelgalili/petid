@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Sparkles, PawPrint } from "lucide-react";
@@ -192,7 +192,8 @@ const AddPet = () => {
                 </div>}
 
               {/* Step 2: Basic Info */}
-              {currentStep === 2 && <div className="space-y-6 animate-fade-in">
+              {currentStep === 2 && <Card className="border-0 shadow-lg bg-card backdrop-blur-sm">
+                  <CardContent className="p-6 md:p-8 space-y-6 animate-fade-in">
                   {/* Image Upload */}
                   <div className="space-y-4">
                     <Label htmlFor="image" className="text-base font-semibold font-jakarta text-foreground">Pet Photo</Label>
@@ -228,10 +229,12 @@ const AddPet = () => {
                   age: e.target.value
                 })} placeholder="How many years?" disabled={loading} className="h-14 text-base border-2 border-input text-foreground placeholder:text-muted-foreground focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta" />
                   </div>
-                </div>}
+                </CardContent>
+                </Card>}
 
               {/* Step 3: Additional Info */}
-              {currentStep === 3 && <div className="space-y-6 animate-fade-in">
+              {currentStep === 3 && <Card className="border-0 shadow-lg bg-card backdrop-blur-sm">
+                  <CardContent className="p-6 md:p-8 space-y-6 animate-fade-in">
                   {/* Gender */}
                   <div className="space-y-4">
                     <Label htmlFor="gender" className="text-base font-semibold font-jakarta text-foreground">Gender</Label>
@@ -274,7 +277,8 @@ const AddPet = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>}
+                </CardContent>
+                </Card>}
 
               {/* Navigation Buttons */}
               <div className="flex gap-4 pt-6">
