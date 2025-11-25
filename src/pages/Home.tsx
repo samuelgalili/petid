@@ -577,83 +577,55 @@ const Home = () => {
       {/* Content Container */}
       <div className="bg-white px-4 py-4">
 
-        {/* My Pets Section - Enhanced with gradient background */}
+        {/* My Pets Section - Compact & Improved */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-6 pt-2 px-4 py-5 bg-gradient-to-br from-[#F8FCFB] via-white to-[#FFF9F5] rounded-3xl shadow-[0_2px_20px_rgba(125,211,192,0.08)] border border-gray-100/50"
+          className="mb-5 px-4"
         >
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden border border-gray-100">
-                <img src={defaultPetAvatar} alt="My Pets" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h2 className="text-xl font-extrabold text-gray-900 font-jakarta bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text leading-none">My Pets</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Long press to edit</p>
-              </div>
-            </div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-gray-900 font-jakarta">My Pets</h2>
             {pets.length > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/archived-pets')}
-                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 font-jakarta text-xs h-9 px-4 rounded-full focus-visible-ring"
-                    aria-label="View archived pets"
-                  >
-                    Archived
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p className="font-semibold">View Archived Pets</p>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/archived-pets')}
+                className="text-gray-400 hover:text-gray-600 h-7 px-3 text-xs font-jakarta"
+              >
+                Archived
+              </Button>
             )}
           </div>
 
-          {/* Empty State - Enhanced with modern design */}
+          {/* Empty State - Compact */}
           {pets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <div className="flex flex-col items-center justify-center py-6 text-center bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-100">
               <button
                 onClick={() => navigate('/add-pet')}
-                className="relative mb-5 cursor-pointer group"
+                className="relative mb-3 cursor-pointer group"
                 aria-label="Add your first pet"
               >
-                <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center shadow-[0_8px_32px_rgba(125,211,192,0.3)] border-4 border-white overflow-hidden group-hover:shadow-[0_12px_40px_rgba(125,211,192,0.4)] transition-all">
-                  <img src={defaultPetAvatar} alt="Add your first pet" className="w-full h-full object-cover" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full shadow-lg animate-pulse flex items-center justify-center pointer-events-none">
-                  <Plus className="w-5 h-5 text-white pointer-events-none" />
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-md border-2 border-gray-100 group-hover:shadow-lg transition-all">
+                  <Plus className="w-7 h-7 text-[#7DD3C0]" />
                 </div>
               </button>
-               <h3 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-2.5 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text tracking-tight">
-                 No Pets Yet
-               </h3>
-               <p className="text-sm text-gray-600 font-jakarta mb-7 max-w-xs leading-relaxed">
-                 Add your first furry friend to get started! 🐕 🐈<br/>
-                 <span className="text-xs text-gray-500">Make sure you're logged in to save profiles</span>
-               </p>
-               <Tooltip>
-                 <TooltipTrigger asChild>
-                   <Button
-                     onClick={() => navigate('/add-pet')}
-                     className="bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#5BB89C] hover:from-[#6BC4AD] hover:via-[#5BB89C] hover:to-[#4AA68A] text-white rounded-full font-jakarta font-extrabold px-12 py-7 text-base shadow-[0_8px_24px_rgba(125,211,192,0.4)] hover:shadow-[0_12px_32px_rgba(125,211,192,0.5)] transition-all hover:scale-105 border border-white/20 focus-visible-ring"
-                     aria-label="Add your first pet"
-                   >
-                     <Plus className="w-5 h-5 mr-2" />
-                     Add Your First Pet
-                   </Button>
-                 </TooltipTrigger>
-                 <TooltipContent side="bottom">
-                   <p className="font-semibold">Create a pet profile</p>
-                 </TooltipContent>
-               </Tooltip>
+              <h3 className="text-base font-bold text-gray-900 font-jakarta mb-1">
+                No Pets Yet
+              </h3>
+              <p className="text-xs text-gray-500 font-jakarta mb-4 max-w-[200px]">
+                Add your first pet to get started
+              </p>
+              <Button
+                onClick={() => navigate('/add-pet')}
+                className="bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] hover:opacity-90 text-white rounded-full font-jakarta font-bold px-6 py-2 text-sm h-9"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Pet
+              </Button>
             </div>
           ) : (
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {pets.map((pet, index) => {
                 const isNewPet = newlyAddedPetIds.has(pet.id);
                 
@@ -663,60 +635,41 @@ const Home = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ 
                     opacity: 1, 
-                    scale: isNewPet ? [1, 1.15, 1] : 1,
+                    scale: isNewPet ? [1, 1.1, 1] : 1,
                   }}
                   transition={{ 
                     delay: 0.05 + index * 0.03,
                     scale: isNewPet ? {
-                      duration: 0.6,
-                      repeat: 3,
+                      duration: 0.5,
+                      repeat: 2,
                       repeatType: "reverse",
-                      ease: "easeInOut"
                     } : {}
                   }}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onTouchStart={() => handlePetLongPressStart(pet)}
                   onTouchEnd={handlePetLongPressEnd}
                   onMouseDown={() => handlePetLongPressStart(pet)}
                   onMouseUp={handlePetLongPressEnd}
                   onMouseLeave={handlePetLongPressEnd}
                   onClick={() => navigate(`/pet/${pet.id}`)}
-                  className={`flex-shrink-0 cursor-pointer ${isNewPet ? 'relative' : ''}`}
+                  className="flex-shrink-0 cursor-pointer"
                 >
                   {isNewPet && (
                     <motion.div
-                      className="absolute -inset-2 bg-gradient-to-r from-[#7DD3C0] via-[#FBD66A] to-[#7DD3C0] rounded-full blur-xl opacity-60 z-0"
+                      className="absolute -inset-1 bg-gradient-to-r from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-50 z-0"
                       animate={{
-                        opacity: [0.6, 0.8, 0.6],
-                        scale: [1, 1.1, 1],
+                        opacity: [0.5, 0.7, 0.5],
                       }}
                       transition={{
-                        duration: 1.5,
+                        duration: 1,
                         repeat: Infinity,
-                        ease: "easeInOut"
                       }}
                     />
                   )}
                   <div className="flex flex-col items-center relative z-10">
-                    {/* Enhanced Circular Avatar with conditional glow */}
                     <div className="relative">
-                      {isNewPet && (
-                        <motion.div 
-                          className="absolute -inset-1 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-lg opacity-70"
-                          animate={{
-                            opacity: [0.7, 1, 0.7],
-                            scale: [1, 1.2, 1],
-                          }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-30 animate-pulse"></div>
-                      <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_6px_20px_rgba(125,211,192,0.25)] overflow-hidden border-[3px] ${isNewPet ? 'border-[#FBD66A]' : 'border-white'} ring-2 ${isNewPet ? 'ring-[#FBD66A]/50' : 'ring-[#7DD3C0]/20'}`}>
+                      <div className={`relative w-14 h-14 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-md overflow-hidden border-2 ${isNewPet ? 'border-[#FBD66A]' : 'border-white'}`}>
                         {pet.avatar_url ? (
                           <img
                             src={pet.avatar_url}
@@ -724,14 +677,13 @@ const Home = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] via-[#7DD3C0] to-[#6BC4AD]">
+                          <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-[#B8E3D5] via-[#7DD3C0] to-[#6BC4AD]">
                             {pet.type === 'dog' ? '🐕' : '🐈'}
                           </div>
                         )}
                       </div>
                     </div>
-                    {/* Pet Name with gradient */}
-                    <p className="mt-2.5 text-xs font-bold text-gray-800 font-jakarta truncate max-w-[80px] text-center">
+                    <p className="mt-1.5 text-[10px] font-bold text-gray-700 font-jakarta truncate max-w-[56px] text-center">
                       {pet.name}
                     </p>
                   </div>
@@ -739,40 +691,25 @@ const Home = () => {
                 );
               })}
               
-               {/* Enhanced Add Pet Button with tooltip and glow */}
-               <Tooltip>
-                 <TooltipTrigger asChild>
-                   <motion.div
-                     initial={{ opacity: 0, scale: 0.9 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     transition={{ delay: 0.05 + pets.length * 0.03 }}
-                     whileHover={{ scale: 1.08 }}
-                     whileTap={{ scale: 0.92 }}
-                     onClick={() => navigate('/add-pet')}
-                     className="flex-shrink-0 cursor-pointer"
-                     role="button"
-                     tabIndex={0}
-                     onKeyDown={(e) => e.key === 'Enter' && navigate('/add-pet')}
-                     aria-label="Add new pet"
-                   >
-                     <div className="flex flex-col items-center">
-                       <div className="relative">
-                         <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-30 animate-pulse"></div>
-                         <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] via-[#FFE8D6] to-[#FFF0E5] border-[3px] border-dashed border-[#7DD3C0]/50 shadow-[0_6px_20px_rgba(125,211,192,0.25)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_8px_24px_rgba(125,211,192,0.35)] transition-all">
-                           <Plus className="w-8 h-8 text-[#7DD3C0]" />
-                         </div>
-                       </div>
-                       <p className="mt-2.5 text-xs font-bold text-[#7DD3C0] font-jakarta">
-                         Add Pet
-                       </p>
-                     </div>
-                   </motion.div>
-                 </TooltipTrigger>
-                 <TooltipContent side="bottom">
-                   <p className="font-semibold">Add New Pet Profile</p>
-                   <p className="text-xs opacity-80">Click to create</p>
-                 </TooltipContent>
-               </Tooltip>
+              {/* Compact Add Pet Button */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 + pets.length * 0.03 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/add-pet')}
+                className="flex-shrink-0 cursor-pointer"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-gray-50 to-white border-2 border-dashed border-[#7DD3C0]/60 shadow-sm flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-md transition-all">
+                    <Plus className="w-6 h-6 text-[#7DD3C0]" />
+                  </div>
+                  <p className="mt-1.5 text-[10px] font-bold text-[#7DD3C0] font-jakarta">
+                    Add
+                  </p>
+                </div>
+              </motion.div>
             </div>
           )}
         </motion.div>
