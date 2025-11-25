@@ -1,4 +1,4 @@
-import { Camera, Loader2, History, Plus, ShoppingCart, Package, Info, HelpCircle, Wallet } from "lucide-react";
+import { Camera, Loader2, History, Plus, ShoppingCart, Package, Info, HelpCircle, Wallet, ShieldCheck, Heart, Store, ImageIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,6 +41,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { useCart } from "@/contexts/CartContext";
 
 // Import product images
 import dogFoodImg from "@/assets/products/dog-food.jpg";
@@ -136,8 +144,6 @@ const Home = () => {
   const [petsLoading, setPetsLoading] = useState(true);
   const [pets, setPets] = useState<any[]>([]);
   const [redetectingPetId, setRedetectingPetId] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState("account");
-  const [activeCategory, setActiveCategory] = useState("intop-ribet");
   const [selectedPetForEdit, setSelectedPetForEdit] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState({ name: "", breed: "" });
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
@@ -147,6 +153,7 @@ const Home = () => {
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
+  const { addToCart } = useCart();
 
   // Confetti effects - memoized
   const triggerConfetti = useCallback(() => {
@@ -197,17 +204,68 @@ const Home = () => {
     });
   }, []);
 
-  // Filter products based on active category - memoized
-  const filteredProducts = useMemo(() => 
-    products.filter(product => product.category === activeCategory),
-    [activeCategory]
-  );
+  // Quick action items for the home page
+  const quickActions = [
+    {
+      icon: ShieldCheck,
+      title: "Insurance",
+      description: "Protect your pet",
+      path: "/insurance",
+      gradient: "from-blue-400 to-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    {
+      icon: Heart,
+      title: "Adoption",
+      description: "Find a new friend",
+      path: "/adoption",
+      gradient: "from-pink-400 to-pink-600",
+      bgColor: "bg-pink-50",
+    },
+    {
+      icon: Store,
+      title: "Shop",
+      description: "Pet supplies",
+      path: "/shop",
+      gradient: "from-green-400 to-green-600",
+      bgColor: "bg-green-50",
+    },
+    {
+      icon: ImageIcon,
+      title: "Photo Album",
+      description: "Pet memories",
+      path: "/photos",
+      gradient: "from-purple-400 to-purple-600",
+      bgColor: "bg-purple-50",
+    },
+    {
+      icon: FileText,
+      title: "Documents",
+      description: "Medical records",
+      path: "/documents",
+      gradient: "from-orange-400 to-orange-600",
+      bgColor: "bg-orange-50",
+    },
+  ];
 
-  // Calculate product counts per category - memoized
-  const categoryCount = useCallback((category: string) => 
-    products.filter(p => p.category === category).length,
-    []
-  );
+  // Quick add to cart handler
+  const handleQuickAddToCart = useCallback((product: typeof products[0]) => {
+    addToCart({
+      id: product.name,
+      name: product.name,
+      price: parseFloat(product.price.replace('₪', '')),
+      image: product.image,
+      quantity: 1,
+    });
+    
+    toast({
+      title: "Added to cart!",
+      description: `${product.name} has been added to your cart`,
+    });
+
+    // Trigger confetti
+    triggerConfetti();
+  }, [addToCart, toast, triggerConfetti]);
 
   // Fetch user's pets
   useEffect(() => {
@@ -721,7 +779,7 @@ const Home = () => {
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
-              className="mb-3 cursor-pointer"
+              className="mb-6 cursor-pointer"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -739,9 +797,7 @@ const Home = () => {
                 <div className="relative z-10 flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                      </svg>
+                      <Wallet className="w-6 h-6 text-gray-900" />
                       <span className="text-sm font-bold opacity-90">My Wallet</span>
                     </div>
                     <div className="text-3xl font-extrabold mb-1 drop-shadow-sm">
@@ -763,245 +819,102 @@ const Home = () => {
           </TooltipContent>
         </Tooltip>
 
-        {/* Enhanced Animated Promo Ticker with glow */}
+        {/* Quick Actions Grid */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-6 overflow-hidden bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#7DD3C0] py-2.5 rounded-2xl shadow-[0_4px_20px_rgba(125,211,192,0.3)] border border-[#A5E8D8]/30"
+          className="mb-6"
         >
-          <div className="flex animate-scroll-left whitespace-nowrap">
-            {/* First set of messages */}
-            <div className="flex gap-8 px-4">
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>🎉</span> Free Shipping on Orders Over ₪199
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>⭐</span> New Member? Get 15% Off Your First Order
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>🐾</span> Premium Pet Food - Best Prices Guaranteed
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>❤️</span> Join Our Loyalty Program Today
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>🎁</span> Special Deals Updated Daily
-              </span>
-            </div>
-            {/* Duplicate set for seamless loop */}
-            <div className="flex gap-8 px-4">
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>🎉</span> Free Shipping on Orders Over ₪199
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>⭐</span> New Member? Get 15% Off Your First Order
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>🐾</span> Premium Pet Food - Best Prices Guaranteed
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>❤️</span> Join Our Loyalty Program Today
-              </span>
-              <span className="text-white text-sm font-bold font-jakarta flex items-center gap-2">
-                <span>🎁</span> Special Deals Updated Daily
-              </span>
-            </div>
+          <h2 className="text-lg font-extrabold text-gray-900 font-jakarta mb-4 px-1">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-4">
+            {quickActions.map((action, index) => (
+              <motion.div
+                key={action.path}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.35 + index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate(action.path)}
+                className={`${action.bgColor} rounded-2xl p-5 cursor-pointer shadow-sm hover:shadow-md transition-all border border-gray-100`}
+              >
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center mb-3 shadow-md`}>
+                  <action.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 font-jakarta mb-1">{action.title}</h3>
+                <p className="text-xs text-gray-600 font-jakarta">{action.description}</p>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
 
-        {/* Enhanced Primary Filter Pills with gradients */}
-        <div className="flex gap-3 overflow-x-auto pb-4 mb-6 scrollbar-hide">
-          <motion.button 
-            onClick={() => setActiveFilter("account")}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.03 }}
-            className={`px-7 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeFilter === "account" 
-                ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-[0_6px_24px_rgba(0,0,0,0.3)] border border-gray-700" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
-            }`}
-          >
-            <span>All Products</span>
-            {activeFilter === "account" && (
-              <span className="text-sm animate-pulse">→</span>
-            )}
-          </motion.button>
-          <motion.button 
-            onClick={() => setActiveFilter("aget")}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.03 }}
-            className={`px-7 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
-              activeFilter === "aget" 
-                ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-[0_6px_24px_rgba(0,0,0,0.3)] border border-gray-700" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
-            }`}
-          >
-            Best Sellers
-          </motion.button>
-          <motion.button 
-            onClick={() => setActiveFilter("int1-out")}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.03 }}
-            className={`px-7 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all ${
-              activeFilter === "int1-out" 
-                ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-[0_6px_24px_rgba(0,0,0,0.3)] border border-gray-700" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
-            }`}
-          >
-            New In
-          </motion.button>
-        </div>
-
-        {/* Enhanced Category Filters with gradient badges */}
-        <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
-          <motion.button 
-            onClick={() => setActiveCategory("account-cater")}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.03 }}
-            className={`px-6 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2.5 ${
-              activeCategory === "account-cater" 
-                ? "bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] text-white shadow-[0_6px_24px_rgba(125,211,192,0.4)] border border-[#A5E8D8]/40" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
-            }`}
-          >
-            <span>Accessories</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all ${
-              activeCategory === "account-cater" 
-                ? "bg-white/90 text-[#7DD3C0] shadow-sm" 
-                : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-700"
-            }`}>
-              {categoryCount("account-cater")}
-            </span>
-          </motion.button>
-          <motion.button 
-            onClick={() => setActiveCategory("intop-ribet")}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.03 }}
-            className={`px-6 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2.5 ${
-              activeCategory === "intop-ribet" 
-                ? "bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] text-white shadow-[0_6px_24px_rgba(125,211,192,0.4)] border border-[#A5E8D8]/40" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
-            }`}
-          >
-            <span>Food & Treats</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all ${
-              activeCategory === "intop-ribet" 
-                ? "bg-white/90 text-[#7DD3C0] shadow-sm" 
-                : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-700"
-            }`}>
-              {categoryCount("intop-ribet")}
-            </span>
-          </motion.button>
-          <motion.button 
-            onClick={() => setActiveCategory("deterrtn")}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.03 }}
-            className={`px-6 py-3 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all flex items-center gap-2.5 ${
-              activeCategory === "deterrtn" 
-                ? "bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] text-white shadow-[0_6px_24px_rgba(125,211,192,0.4)] border border-[#A5E8D8]/40" 
-                : "bg-white text-gray-700 border-2 border-gray-200 shadow-[0_3px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)] hover:border-gray-300"
-            }`}
-          >
-            <span>Healthcare</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all ${
-              activeCategory === "deterrtn" 
-                ? "bg-white/90 text-[#7DD3C0] shadow-sm" 
-                : "bg-gradient-to-br from-gray-100 to-gray-50 text-gray-700"
-            }`}>
-              {categoryCount("deterrtn")}
-            </span>
-          </motion.button>
-        </div>
-      </div>
-
-      {/* 2-Column Product Grid with Smooth Animations */}
-      <div className="px-4 pt-4 pb-6">
-        <AnimatePresence mode="wait">
-          {filteredProducts.length > 0 ? (
-            <motion.div 
-              key={activeCategory}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-              className="grid grid-cols-2 gap-4"
+        {/* Featured Products Carousel */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mb-6"
+        >
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">Featured Products</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/shop')}
+              className="text-primary hover:text-primary/80 font-jakarta text-sm font-bold"
             >
-            {filteredProducts.map((product, index) => (
-              <motion.div
-                key={`${activeCategory}-${index}`}
-                onClick={() => navigate('/product/' + index, { state: { product } })}
-                initial={{ opacity: 0, scale: 0.88, y: 25 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.88, y: -25 }}
-                transition={{ 
-                  delay: index * 0.06, 
-                  duration: 0.35,
-                  ease: [0.34, 1.56, 0.64, 1]
-                }}
-                whileHover={{ scale: 1.05, y: -10 }}
-                whileTap={{ scale: 0.96 }}
-                className={`${product.color} rounded-3xl p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.2)] border-2 border-white/50 backdrop-blur-sm relative overflow-hidden`}
-              >
-                {/* Subtle gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
-                
-                {/* Product Image with enhanced backdrop */}
-                <div className="relative w-full aspect-square flex items-center justify-center mb-4 bg-white/60 rounded-2xl backdrop-blur-md overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.08)] border border-white/60">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Product Info */}
-                <div className="flex-1 flex flex-col relative z-10">
-                  <h3 className="font-bold text-base mb-3 text-gray-900 font-jakarta leading-snug line-clamp-2 min-h-[2.5rem]">
-                    {product.name}
-                  </h3>
-                  
-                  {/* Price and Enhanced Cart Button */}
-                  <div className="flex items-center justify-between mt-auto pt-2">
-                    <span className="text-lg font-extrabold text-gray-900 font-jakarta">
-                      {product.price}
-                    </span>
-                    <motion.button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        triggerConfetti();
-                        toast({ 
-                          title: "Added to cart", 
-                          description: `${product.name} added successfully` 
-                        });
-                      }}
-                      whileHover={{ scale: 1.15, rotate: 8 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 rounded-2xl flex items-center justify-center transition-all shadow-[0_6px_20px_rgba(0,0,0,0.3)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)] active:shadow-sm border border-gray-700"
+              View All →
+            </Button>
+          </div>
+          
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {products.slice(0, 6).map((product, index) => (
+                <CarouselItem key={index} className="pl-2 md:pl-4 basis-[70%] md:basis-1/2 lg:basis-1/3">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.65 + index * 0.05 }}
+                    className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all"
+                  >
+                    <div 
+                      className={`${product.color} p-6 cursor-pointer`}
+                      onClick={() => navigate(product.path)}
                     >
-                      <ShoppingCart className="w-5 h-5 text-white" />
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="empty-state"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-col items-center justify-center py-16 text-center"
-            >
-              <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-                <Package className="w-10 h-10 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-bold font-jakarta text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-500 font-jakarta text-sm">Try selecting a different category</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-40 object-cover rounded-xl shadow-md"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-sm font-bold text-gray-900 font-jakarta mb-1 truncate">{product.name}</h3>
+                      <p className="text-lg font-extrabold text-primary mb-3">{product.price}</p>
+                      <Button
+                        onClick={() => handleQuickAddToCart(product)}
+                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white rounded-full font-jakarta font-bold text-sm py-2 shadow-sm hover:shadow-md transition-all"
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Quick Add
+                      </Button>
+                    </div>
+                  </motion.div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex" />
+            <CarouselNext className="hidden md:flex" />
+          </Carousel>
+        </motion.div>
+
+
       </div>
 
       {/* Edit Pet Sheet */}
