@@ -228,6 +228,54 @@ export type Database = {
         }
         Relationships: []
       }
+      promotional_offers: {
+        Row: {
+          badge_text: string
+          button_color: string
+          button_link: string
+          button_text: string
+          created_at: string
+          display_order: number
+          expires_at: string | null
+          gradient_from: string
+          gradient_to: string
+          id: string
+          is_active: boolean
+          subtitle: string
+          title: string
+        }
+        Insert: {
+          badge_text: string
+          button_color?: string
+          button_link?: string
+          button_text?: string
+          created_at?: string
+          display_order?: number
+          expires_at?: string | null
+          gradient_from?: string
+          gradient_to?: string
+          id?: string
+          is_active?: boolean
+          subtitle: string
+          title: string
+        }
+        Update: {
+          badge_text?: string
+          button_color?: string
+          button_link?: string
+          button_text?: string
+          created_at?: string
+          display_order?: number
+          expires_at?: string | null
+          gradient_from?: string
+          gradient_to?: string
+          id?: string
+          is_active?: boolean
+          subtitle?: string
+          title?: string
+        }
+        Relationships: []
+      }
       redemptions: {
         Row: {
           expires_at: string
