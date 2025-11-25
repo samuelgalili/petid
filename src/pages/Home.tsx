@@ -775,11 +775,11 @@ const Home = () => {
           )}
         </motion.div>
 
-        {/* Wallet Card - Matching Reference Design */}
+        {/* Wallet Card - Matching Reference Design Exactly */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
-              className="mb-6 cursor-pointer"
+              className="mb-6 cursor-pointer px-4"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -790,45 +790,55 @@ const Home = () => {
               tabIndex={0}
               aria-label="View wallet balance"
             >
-              <div className="bg-[#F4D35E] text-gray-900 rounded-[28px] px-6 py-8 shadow-[0_8px_32px_rgba(244,211,94,0.4)] font-jakarta relative overflow-hidden">
-                {/* White dog illustration on left */}
-                <div className="absolute left-6 bottom-6 opacity-20">
-                  <svg width="100" height="100" viewBox="0 0 100 100" fill="none" className="text-white">
-                    <path d="M50 20C35 20 25 30 25 45C25 55 30 65 40 70L45 85L55 85L60 70C70 65 75 55 75 45C75 30 65 20 50 20Z" fill="currentColor"/>
-                    <circle cx="42" cy="42" r="3" fill="#333"/>
-                    <circle cx="58" cy="42" r="3" fill="#333"/>
-                    <path d="M35 30C35 25 30 22 25 25C20 28 22 35 27 35C30 35 35 33 35 30Z" fill="currentColor"/>
-                    <path d="M65 30C65 25 70 22 75 25C80 28 78 35 73 35C70 35 65 33 65 30Z" fill="currentColor"/>
-                  </svg>
-                </div>
-
-                {/* Drops decoration */}
-                <div className="absolute left-12 top-12">
-                  <svg width="40" height="50" viewBox="0 0 40 50" fill="none" className="text-white opacity-40">
-                    <path d="M10 15C10 10 15 5 20 10C25 5 30 10 30 15C30 22 25 28 20 28C15 28 10 22 10 15Z" fill="currentColor"/>
-                    <path d="M5 30C5 27 8 24 12 27C16 24 19 27 19 30C19 34 16 38 12 38C8 38 5 34 5 30Z" fill="currentColor"/>
-                  </svg>
-                </div>
+              <div className="relative">
+                {/* Stacked Card Effect - Bottom Layers (Turquoise) */}
+                <div className="absolute -bottom-2 -right-2 w-full h-full bg-[#7DD3C0] rounded-2xl"></div>
+                <div className="absolute -bottom-1 -right-1 w-full h-full bg-[#6BC9B5] rounded-2xl"></div>
                 
-                <div className="relative z-10">
-                  {/* Top text */}
-                  <div className="text-sm font-semibold mb-6 opacity-80">Savings from purchases</div>
+                {/* Main Card */}
+                <div className="relative bg-gradient-to-br from-[#E89B5A] via-[#F4D35E] to-[#F4E976] rounded-2xl p-6 shadow-xl overflow-hidden min-h-[160px]">
+                  {/* Decorative Circle - Top Left */}
+                  <div className="absolute -top-8 -left-8 w-32 h-32 bg-[#E89B5A] rounded-full opacity-60"></div>
                   
-                  {/* White card section */}
-                  <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 mb-4 shadow-lg">
-                    <div className="text-xs text-gray-600 mb-1">Your accumulated balance</div>
-                    <div className="text-4xl font-extrabold text-gray-900">
+                  {/* "yellow" text at top center */}
+                  <div className="relative z-10 text-white text-2xl font-bold mb-8 text-center">
+                    yellow
+                  </div>
+
+                  {/* White Dog Illustration - Bottom Left */}
+                  <div className="absolute left-6 bottom-4 w-28 h-28">
+                    <svg viewBox="0 0 100 100" fill="white" className="w-full h-full">
+                      {/* Dog body */}
+                      <ellipse cx="50" cy="70" rx="28" ry="18" />
+                      {/* Dog head */}
+                      <circle cx="50" cy="45" r="22" />
+                      {/* Left ear */}
+                      <ellipse cx="33" cy="30" rx="10" ry="18" transform="rotate(-20 33 30)" />
+                      {/* Right ear */}
+                      <ellipse cx="67" cy="30" rx="10" ry="18" transform="rotate(20 67 30)" />
+                      {/* Left eye */}
+                      <circle cx="42" cy="42" r="3" fill="#333" />
+                      {/* Right eye */}
+                      <circle cx="58" cy="42" r="3" fill="#333" />
+                      {/* Nose */}
+                      <ellipse cx="50" cy="52" rx="4" ry="3" fill="#333" />
+                      {/* Mouth */}
+                      <path d="M 50 52 Q 45 58 40 56" stroke="#333" strokeWidth="2" fill="none" />
+                      <path d="M 50 52 Q 55 58 60 56" stroke="#333" strokeWidth="2" fill="none" />
+                      {/* Front legs */}
+                      <rect x="38" y="78" width="6" height="15" rx="3" />
+                      <rect x="56" y="78" width="6" height="15" rx="3" />
+                    </svg>
+                  </div>
+
+                  {/* Wallet Amount - Right Side */}
+                  <div className="relative z-10 text-right">
+                    <div className="text-white text-3xl font-bold mb-1">
                       ₪{walletBalance.toFixed(2)}
                     </div>
-                  </div>
-                  
-                  {/* Bottom text */}
-                  <div className="flex items-center justify-between text-xs font-bold opacity-90">
-                    <span>Club</span>
-                    <span>•</span>
-                    <span>Rewards</span>
-                    <span>•</span>
-                    <span>Vouchers</span>
+                    <div className="text-white/90 text-xs font-jakarta">
+                      Savings from purchases
+                    </div>
                   </div>
                 </div>
               </div>
