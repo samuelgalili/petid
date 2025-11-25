@@ -39,6 +39,8 @@ const AddPet = () => {
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [showValidationError, setShowValidationError] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | null>(null);
+  const [isEditingBreed, setIsEditingBreed] = useState(false);
+  const [tempBreed, setTempBreed] = useState("");
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -842,30 +844,67 @@ const AddPet = () => {
                         </div>
                       )}
 
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="text-xs text-gray-500 font-jakarta mb-1">Breed</p>
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
+                        <p className="text-xs text-gray-500 font-jakarta mb-1">Breed</p>
+                        {isEditingBreed ? (
                           <div className="flex items-center gap-2">
-                            <p className="text-base font-jakarta font-semibold text-gray-900">{formData.breed}</p>
-                            {breedConfidence !== null && (
-                              <span className={`text-xl font-semibold ${
-                                breedConfident ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {breedConfident ? '✓' : '✗'}
-                              </span>
-                            )}
+                            <Input 
+                              value={tempBreed}
+                              onChange={e => setTempBreed(e.target.value)}
+                              className="h-9 text-sm font-jakarta"
+                              autoFocus
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                if (tempBreed.trim()) {
+                                  setFormData({ ...formData, breed: tempBreed });
+                                  setIsEditingBreed(false);
+                                  toast({ title: "Breed updated", description: "Changes saved successfully" });
+                                }
+                              }}
+                              className="h-9 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-jakarta"
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditingBreed(false);
+                                setTempBreed(formData.breed);
+                              }}
+                              className="h-9 font-jakarta"
+                            >
+                              Cancel
+                            </Button>
                           </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSlideDirection('right');
-                            setCurrentStep(2);
-                          }}
-                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
-                        >
-                          <Edit2 className="w-4 h-4 text-gray-600" />
-                        </button>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <p className="text-base font-jakarta font-semibold text-gray-900">{formData.breed}</p>
+                              {breedConfidence !== null && (
+                                <span className={`text-xl font-semibold ${
+                                  breedConfident ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {breedConfident ? '✓' : '✗'}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTempBreed(formData.breed);
+                                setIsEditingBreed(true);
+                              }}
+                              className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                            >
+                              <Edit2 className="w-4 h-4 text-gray-600" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {formData.gender && (
