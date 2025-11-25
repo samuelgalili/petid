@@ -108,3 +108,30 @@ export const FeedPageSkeleton = () => {
     </div>
   );
 };
+
+export const PetCardSkeleton = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="p-4 bg-white border-2 border-gray-200 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+    >
+      <div className="flex items-start gap-4">
+        <div className="relative">
+          <Skeleton className="w-16 h-16 rounded-full" />
+          <Skeleton className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full" />
+        </div>
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-5 w-24 rounded-lg" />
+          <Skeleton className="h-4 w-16 rounded-lg" />
+          <div className="flex items-center gap-2 mt-2">
+            <Skeleton className="h-4 w-32 rounded-lg" />
+            <Skeleton className="h-5 w-5 rounded-full" />
+          </div>
+          <Skeleton className="h-3 w-20 rounded-lg" />
+        </div>
+        <Skeleton className="w-9 h-9 rounded-xl self-center" />
+      </div>
+    </motion.div>
+  );
+};
