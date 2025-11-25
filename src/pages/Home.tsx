@@ -66,24 +66,46 @@ const Home = () => {
   useEffect(() => {
     const fetchPets = async () => {
       setPetsLoading(true);
+      
+      // Check authentication status
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('pets')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('archived', false) // Only fetch non-archived pets
-          .order('created_at', { ascending: false });
+      
+      if (!user) {
+        console.log("No authenticated user found");
+        setPetsLoading(false);
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Fetching pets for user:", user.id);
+      
+      const { data, error } = await supabase
+        .from('pets')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('archived', false) // Only fetch non-archived pets
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching pets:", error);
+        toast({
+          title: "Error loading pets",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        console.log("Pets fetched:", data);
         if (data) {
           setPets(data);
         }
       }
+      
       setLoading(false);
       setPetsLoading(false);
     };
 
     fetchPets();
-  }, []);
+  }, [toast]);
 
   const handleRedetectBreed = async (petId: string, petType: string, imageFile: File) => {
     setRedetectingPetId(petId);
@@ -495,7 +517,7 @@ const Home = () => {
                 No Pets Yet
               </h3>
               <p className="text-sm text-gray-500 font-jakarta mb-6 max-w-xs">
-                Add your first furry friend to get started with your pet profile!
+                Add your first furry friend to get started! Make sure you're logged in to save your pet's profile.
               </p>
               <Button
                 onClick={() => navigate('/add-pet')}
