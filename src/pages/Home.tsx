@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -371,21 +371,34 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Product Grid with Staggered Animation */}
+      {/* Product Grid with Smooth Transition Animation */}
       <div className="px-6 pt-6 pb-6">
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4">
-            {filteredProducts.map((product, index) => (
-              <motion.div
-                key={index}
-                onClick={() => navigate(product.path)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.08, duration: 0.4 }}
-                whileHover={{ scale: 1.03, y: -6 }}
-                whileTap={{ scale: 0.97 }}
-                className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
-              >
+        <AnimatePresence mode="wait">
+          {filteredProducts.length > 0 ? (
+            <motion.div 
+              key={activeCategory}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-2 gap-4"
+            >
+              {filteredProducts.map((product, index) => (
+                <motion.div
+                  key={`${activeCategory}-${index}`}
+                  onClick={() => navigate(product.path)}
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                  transition={{ 
+                    delay: index * 0.05, 
+                    duration: 0.3,
+                    ease: "easeOut"
+                  }}
+                  whileHover={{ scale: 1.03, y: -6 }}
+                  whileTap={{ scale: 0.97 }}
+                  className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
+                >
                 {/* Product Image */}
                 <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm">
                   <span className="text-6xl">{product.image}</span>
@@ -418,20 +431,24 @@ const Home = () => {
                 </div>
               </motion.div>
             ))}
-          </div>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
-          >
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="empty-state"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+              className="text-center py-12"
+            >
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl">🔍</span>
             </div>
             <h3 className="text-lg font-bold font-jakarta text-gray-900 mb-2">No products found</h3>
             <p className="text-gray-600 font-jakarta text-sm">Try selecting a different category</p>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* My Pets Section */}
