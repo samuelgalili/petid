@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles, ArrowLeft } from "lucide-react";
+import { Loader2, Upload, Sparkles, ArrowLeft, Calendar as CalendarIcon, Camera } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 const AddPet = () => {
@@ -18,11 +22,14 @@ const AddPet = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
-    age: "",
+    birthDate: null as Date | null,
     gender: "",
     breed: "",
     is_neutered: "false"
   });
+  const [breedDetecting, setBreedDetecting] = useState(false);
+  const [breedConfident, setBreedConfident] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(false);
   const {
     petType,
     setPetType
@@ -47,13 +54,48 @@ const AddPet = () => {
     };
     checkAuth();
   }, [navigate, isGuest]);
+  const detectBreed = async (base64Image: string) => {
+    if (!petType) return;
+    
+    setBreedDetecting(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-pet-breed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          imageBase64: base64Image,
+          petType: petType
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.breed && data.breed !== "Unknown Breed") {
+        setFormData(prev => ({ ...prev, breed: data.breed }));
+        setBreedConfident(data.confident);
+      } else {
+        setBreedConfident(false);
+      }
+    } catch (error) {
+      console.error('Error detecting breed:', error);
+      setBreedConfident(false);
+    } finally {
+      setBreedDetecting(false);
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const result = reader.result as string;
+        setImagePreview(result);
+        detectBreed(result);
       };
       reader.readAsDataURL(file);
     }
@@ -104,13 +146,18 @@ const AddPet = () => {
       }
 
       // Insert pet data
+      // Calculate age from birth date
+      const age = formData.birthDate 
+        ? Math.floor((new Date().getTime() - formData.birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : null;
+
       const {
         error: insertError
       } = await supabase.from("pets").insert({
         user_id: user.id,
         name: formData.name,
         type: petType,
-        age: formData.age ? parseInt(formData.age) : null,
+        age: age,
         gender: formData.gender || null,
         breed: formData.breed || null,
         is_neutered: formData.is_neutered === "true",
@@ -202,17 +249,29 @@ const AddPet = () => {
               {currentStep === 2 && <div className="space-y-5 animate-fade-in">
                   {/* Image Upload */}
                   <div className="space-y-3">
-                    <Label htmlFor="image" className="text-sm font-semibold font-jakarta text-gray-900">Pet Photo</Label>
+                    <Label className="text-sm font-semibold font-jakarta text-gray-900">Pet Photo</Label>
                     <div className="flex flex-col items-center gap-4">
                       {imagePreview && <div className="relative group">
                           <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity"></div>
                           <img src={imagePreview} alt="Preview" className="relative w-32 h-32 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 group-hover:scale-105 group-hover:ring-[#FBD66A]/50" />
+                          {breedDetecting && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                              <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            </div>
+                          )}
                         </div>}
-                      <Label htmlFor="image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-6 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 transition-all duration-300 group w-full justify-center">
-                        <Upload className="w-5 h-5 text-[#FBD66A] group-hover:scale-110 transition-transform" />
-                        <span className="font-semibold text-sm font-jakarta text-[#F4C542]">{imagePreview ? "Change Photo" : "Upload Photo"}</span>
-                        <Input id="image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                      </Label>
+                      <div className="flex gap-3 w-full">
+                        <Label htmlFor="image-upload" className="flex-1 flex items-center gap-2 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-4 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 transition-all duration-300 group justify-center">
+                          <Upload className="w-5 h-5 text-[#FBD66A] group-hover:scale-110 transition-transform" />
+                          <span className="font-semibold text-sm font-jakarta text-[#F4C542]">Upload</span>
+                          <Input id="image-upload" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                        </Label>
+                        <Label htmlFor="image-camera" className="flex-1 flex items-center gap-2 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-4 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 transition-all duration-300 group justify-center">
+                          <Camera className="w-5 h-5 text-[#FBD66A] group-hover:scale-110 transition-transform" />
+                          <span className="font-semibold text-sm font-jakarta text-[#F4C542]">Camera</span>
+                          <Input id="image-camera" type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden" />
+                        </Label>
+                      </div>
                     </div>
                   </div>
 
@@ -227,13 +286,36 @@ const AddPet = () => {
                 })} placeholder="What's your pet's name?" required disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" />
                   </div>
 
-                  {/* Age */}
+                  {/* Birth Date */}
                   <div className="space-y-3">
-                    <Label htmlFor="age" className="text-sm font-semibold font-jakarta text-gray-900">Age (in years)</Label>
-                    <Input id="age" type="number" min="0" value={formData.age} onChange={e => setFormData({
-                  ...formData,
-                  age: e.target.value
-                })} placeholder="How many years?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" />
+                    <Label className="text-sm font-semibold font-jakarta text-gray-900">Birth Date</Label>
+                    <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full h-12 text-sm border-2 border-gray-200 text-gray-900 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)] justify-start text-left font-normal",
+                            !formData.birthDate && "text-gray-500"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.birthDate ? format(formData.birthDate, "PPP") : "Select birth date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.birthDate || undefined}
+                          onSelect={(date) => {
+                            setFormData({ ...formData, birthDate: date || null });
+                            setShowCalendar(false);
+                          }}
+                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>}
 
@@ -259,10 +341,22 @@ const AddPet = () => {
                   {/* Breed */}
                   <div className="space-y-3">
                     <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">Breed</Label>
-                    <Input id="breed" value={formData.breed} onChange={e => setFormData({
-                  ...formData,
-                  breed: e.target.value
-                })} placeholder="What breed?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" />
+                    {!breedConfident && formData.breed && (
+                      <p className="text-xs text-gray-600 font-jakarta -mb-1">
+                        AI detected: "{formData.breed}". Please confirm or edit if needed.
+                      </p>
+                    )}
+                    <Input 
+                      id="breed" 
+                      value={formData.breed} 
+                      onChange={e => setFormData({
+                        ...formData,
+                        breed: e.target.value
+                      })} 
+                      placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
+                      disabled={loading || breedDetecting} 
+                      className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" 
+                    />
                   </div>
 
                   {/* Neutered */}
