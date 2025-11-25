@@ -152,7 +152,7 @@ const AddPet = () => {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex justify-center items-center gap-3 mb-10">
+        <div className="flex justify-center items-center gap-3 mb-16">
           {[1, 2, 3].map(step => <div key={step} className="flex items-center">
               <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${step === currentStep ? "w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] shadow-[0_4px_20px_rgba(251,214,106,0.4)] scale-110" : step < currentStep ? "w-8 h-8 bg-[#F4C542] shadow-md" : "w-8 h-8 bg-muted"}`}>
                 {step < currentStep ? <Sparkles className="w-4 h-4 text-foreground" /> : <span className={`font-jakarta font-bold ${step === currentStep ? 'text-foreground text-sm' : 'text-muted-foreground text-xs'}`}>
