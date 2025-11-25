@@ -1,4 +1,4 @@
-import { Menu, Bell, User, Search, ShoppingCart } from "lucide-react";
+import { Menu, Bell, User, Search, ShoppingCart, X } from "lucide-react";
 import petidLogo from "@/assets/petid-logo.png";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { getTotalItems, items, getSubtotal } = useCart();
+  const { getTotalItems, items, getSubtotal, removeFromCart } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -123,7 +123,7 @@ export const Header = () => {
 
                       <div className="max-h-80 overflow-y-auto">
                         {items.slice(0, 3).map((item) => (
-                          <div key={`${item.id}-${item.variant || ''}-${item.size || ''}`} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                          <div key={`${item.id}-${item.variant || ''}-${item.size || ''}`} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
                             <div className="flex gap-3">
                               <img 
                                 src={item.image} 
@@ -131,7 +131,20 @@ export const Header = () => {
                                 className="w-16 h-16 object-cover rounded-lg"
                               />
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">{item.name}</h4>
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">{item.name}</h4>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeFromCart(item.id);
+                                      toast({ title: "Removed from cart", description: `${item.name} removed` });
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                                    aria-label="Remove item"
+                                  >
+                                    <X className="w-4 h-4 text-red-500" />
+                                  </button>
+                                </div>
                                 {item.variant && (
                                   <p className="text-xs text-gray-600 dark:text-gray-400">{item.variant}</p>
                                 )}
