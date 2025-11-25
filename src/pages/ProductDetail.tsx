@@ -10,11 +10,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import { useCart } from "@/contexts/CartContext";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState("Chicken & Rice");
@@ -88,6 +90,16 @@ const ProductDetail = () => {
   ];
 
   const handleAddToCart = () => {
+    const priceNumeric = parseFloat(product.price.replace('₪', ''));
+    addToCart({
+      id: `${product.name}-${selectedVariant}-${selectedSize}`,
+      name: product.name,
+      price: priceNumeric,
+      image: product.image,
+      quantity: quantity,
+      variant: selectedVariant,
+      size: selectedSize,
+    });
     toast({
       title: "Added to cart",
       description: `${product.name} x${quantity} added successfully`,
@@ -95,10 +107,8 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = () => {
-    toast({
-      title: "Proceeding to checkout",
-      description: "Redirecting to payment...",
-    });
+    handleAddToCart();
+    navigate("/cart");
   };
 
   const toggleWishlist = () => {
