@@ -174,24 +174,34 @@ const AddPet = () => {
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Pet Type Selection */}
               {currentStep === 1 && <div className="space-y-6 animate-fade-in">
-                  <div className="grid grid-cols-2 gap-6 md:gap-8">
-                    <button type="button" onClick={() => setPetType("dog")} className={`group relative p-10 border-2 rounded-3xl transition-all duration-300 ${petType === "dog" ? "border-[#FBD66A] bg-gradient-to-br from-[#FBD66A]/10 to-[#F4C542]/5 shadow-[0_12px_40px_rgba(251,214,106,0.35)] scale-105" : "border-gray-200 bg-white hover:border-[#FBD66A]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:scale-102 hover:bg-gray-50/50"}`}>
-                      <div className="mb-4 transition-transform duration-300 group-hover:scale-110 flex justify-center">
-                        <img src={dogIcon} alt="Dog" className="w-24 h-24 object-contain drop-shadow-lg" />
-                      </div>
-                      <div className="font-bold text-xl font-jakarta text-gray-900">Dog</div>
-                      {petType === "dog" && <div className="absolute -top-3 -right-3 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-full p-2 shadow-lg">
-                          <Sparkles className="w-5 h-5" />
-                        </div>}
+                  <div className="grid grid-cols-2 gap-8 md:gap-12">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setPetType("dog");
+                        setCurrentStep(2);
+                      }} 
+                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none"
+                    >
+                      <img 
+                        src={dogIcon} 
+                        alt="Dog" 
+                        className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" 
+                      />
                     </button>
-                    <button type="button" onClick={() => setPetType("cat")} className={`group relative p-10 border-2 rounded-3xl transition-all duration-300 ${petType === "cat" ? "border-[#FBD66A] bg-gradient-to-br from-[#FBD66A]/10 to-[#F4C542]/5 shadow-[0_12px_40px_rgba(251,214,106,0.35)] scale-105" : "border-gray-200 bg-white hover:border-[#FBD66A]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:scale-102 hover:bg-gray-50/50"}`}>
-                      <div className="mb-4 transition-transform duration-300 group-hover:scale-110 flex justify-center">
-                        <img src={catIcon} alt="Cat" className="w-24 h-24 object-contain drop-shadow-lg" />
-                      </div>
-                      <div className="font-bold text-xl font-jakarta text-gray-900">Cat</div>
-                      {petType === "cat" && <div className="absolute -top-3 -right-3 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-full p-2 shadow-lg">
-                          <Sparkles className="w-5 h-5" />
-                        </div>}
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setPetType("cat");
+                        setCurrentStep(2);
+                      }} 
+                      className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none"
+                    >
+                      <img 
+                        src={catIcon} 
+                        alt="Cat" 
+                        className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" 
+                      />
                     </button>
                   </div>
                 </div>}
