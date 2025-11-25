@@ -11,6 +11,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Import product images
+import dogFoodImg from "@/assets/products/dog-food.jpg";
+import dogTreatsImg from "@/assets/products/dog-treats.jpg";
+import petBedImg from "@/assets/products/pet-bed.jpg";
+import dogSnacksImg from "@/assets/products/dog-snacks.jpg";
+import dogToysImg from "@/assets/products/dog-toys.jpg";
+import catFoodImg from "@/assets/products/cat-food.jpg";
+import petVitaminsImg from "@/assets/products/pet-vitamins.jpg";
+import fleaTreatmentImg from "@/assets/products/flea-treatment.jpg";
+import petCollarImg from "@/assets/products/pet-collar.jpg";
+
 const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -165,7 +176,7 @@ const Home = () => {
     {
       name: "Piedhu Premium",
       price: "₪207.84",
-      image: "🐕",
+      image: dogFoodImg,
       path: "/shop",
       color: "bg-[#B8E3D5]",
       category: "intop-ribet", // Food & Treats
@@ -173,7 +184,7 @@ const Home = () => {
     {
       name: "Premium Treats",
       price: "₪307.00",
-      image: "🦴",
+      image: dogTreatsImg,
       path: "/shop",
       color: "bg-[#F5E6D3]",
       category: "intop-ribet", // Food & Treats
@@ -181,7 +192,7 @@ const Home = () => {
     {
       name: "Pet Bed Deluxe",
       price: "₪208.12",
-      image: "🛏️",
+      image: petBedImg,
       path: "/shop",
       color: "bg-[#E8F5E8]",
       category: "account-cater", // Accessories
@@ -189,7 +200,7 @@ const Home = () => {
     {
       name: "Reagor Snacks",
       price: "₪101.72",
-      image: "🍪",
+      image: dogSnacksImg,
       path: "/shop",
       color: "bg-[#FFE5E5]",
       category: "intop-ribet", // Food & Treats
@@ -197,7 +208,7 @@ const Home = () => {
     {
       name: "Dog Toys Set",
       price: "₪156.00",
-      image: "🎾",
+      image: dogToysImg,
       path: "/shop",
       color: "bg-[#E8E5FF]",
       category: "account-cater", // Accessories
@@ -205,7 +216,7 @@ const Home = () => {
     {
       name: "Cat Food Pro",
       price: "₪189.50",
-      image: "🐱",
+      image: catFoodImg,
       path: "/shop",
       color: "bg-[#FFE8D6]",
       category: "intop-ribet", // Food & Treats
@@ -213,7 +224,7 @@ const Home = () => {
     {
       name: "Pet Vitamins",
       price: "₪145.00",
-      image: "💊",
+      image: petVitaminsImg,
       path: "/shop",
       color: "bg-[#FFE5F0]",
       category: "deterrtn", // Healthcare
@@ -221,7 +232,7 @@ const Home = () => {
     {
       name: "Flea Treatment",
       price: "₪225.00",
-      image: "🩺",
+      image: fleaTreatmentImg,
       path: "/shop",
       color: "bg-[#E5F5FF]",
       category: "deterrtn", // Healthcare
@@ -229,7 +240,7 @@ const Home = () => {
     {
       name: "Pet Collar",
       price: "₪89.99",
-      image: "🎀",
+      image: petCollarImg,
       path: "/shop",
       color: "bg-[#FFF0E5]",
       category: "account-cater", // Accessories
@@ -400,8 +411,12 @@ const Home = () => {
                   className={`${product.color} rounded-[28px] p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border border-black/5`}
                 >
                 {/* Product Image */}
-                <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm">
-                  <span className="text-6xl">{product.image}</span>
+                <div className="w-full aspect-square flex items-center justify-center mb-4 bg-white/40 rounded-2xl backdrop-blur-sm overflow-hidden">
+                  <img 
+                    src={product.image} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
                 {/* Product Info */}
