@@ -38,6 +38,7 @@ const AddPet = () => {
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [showValidationError, setShowValidationError] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | null>(null);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -71,11 +72,73 @@ const AddPet = () => {
     if (!hasSeenTutorial) {
       setShowTutorial(true);
     }
-  }, [navigate, isGuest]);
+
+    // Load saved draft from localStorage
+    const savedDraft = localStorage.getItem('addPetDraft');
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        if (draft.formData) {
+          setFormData({
+            ...draft.formData,
+            birthDate: draft.formData.birthDate ? new Date(draft.formData.birthDate) : null
+          });
+        }
+        if (draft.currentStep) setCurrentStep(draft.currentStep);
+        if (draft.petType) setPetType(draft.petType);
+        if (draft.imagePreview) setImagePreview(draft.imagePreview);
+        if (draft.breedConfidence !== undefined) setBreedConfidence(draft.breedConfidence);
+        if (draft.breedConfident !== undefined) setBreedConfident(draft.breedConfident);
+        
+        toast({
+          title: "Draft restored",
+          description: "Your previous progress has been restored"
+        });
+      } catch (e) {
+        console.error('Error loading draft:', e);
+      }
+    }
+  }, [navigate, isGuest, toast]);
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    if (currentStep > 1 || petType) {
+      setAutoSaveStatus('saving');
+      
+      const draft = {
+        formData: {
+          ...formData,
+          birthDate: formData.birthDate?.toISOString()
+        },
+        currentStep,
+        petType,
+        imagePreview,
+        breedConfidence,
+        breedConfident,
+        timestamp: new Date().toISOString()
+      };
+
+      const saveTimer = setTimeout(() => {
+        localStorage.setItem('addPetDraft', JSON.stringify(draft));
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus(null), 2000);
+      }, 1000); // Debounce auto-save
+
+      return () => clearTimeout(saveTimer);
+    }
+  }, [formData, currentStep, petType, imagePreview, breedConfidence, breedConfident]);
 
   const dismissTutorial = () => {
     setShowTutorial(false);
     localStorage.setItem('hasSeenSwipeTutorial', 'true');
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem('addPetDraft');
+    toast({
+      title: "Draft cleared",
+      description: "Your saved progress has been removed"
+    });
   };
   const detectBreed = async (base64Image: string) => {
     if (!petType) return;
@@ -207,6 +270,10 @@ const AddPet = () => {
         title: "Success!",
         description: "Pet added successfully"
       });
+      
+      // Clear saved draft after successful submission
+      localStorage.removeItem('addPetDraft');
+      
       navigate("/home");
     } catch (error: any) {
       toast({
@@ -331,9 +398,21 @@ const AddPet = () => {
       <div className="max-w-[440px] mx-auto mt-8 md:mt-12">
         {/* Header */}
         <div className="text-center mb-8 animate-slide-up">
-          <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-gray-900 mb-2 tracking-tight">
-            Add Your Pet
-          </h1>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-gray-900 tracking-tight">
+              Add Your Pet
+            </h1>
+            {currentStep > 1 && (
+              <button
+                type="button"
+                onClick={clearDraft}
+                className="text-xs text-gray-400 hover:text-gray-600 font-jakarta underline transition-colors"
+                title="Clear saved draft"
+              >
+                Clear draft
+              </button>
+            )}
+          </div>
           <p className="text-gray-700 text-sm md:text-base font-jakarta font-normal max-w-md mx-auto">
             Let's create a special profile for your furry friend
           </p>
@@ -345,9 +424,19 @@ const AddPet = () => {
             <span className="text-xs font-jakarta font-semibold text-gray-600">
               Progress
             </span>
-            <span className="text-xs font-jakarta font-bold text-[#F4C542]">
-              {Math.round((currentStep / 4) * 100)}%
-            </span>
+            <div className="flex items-center gap-2">
+              {autoSaveStatus && (
+                <span className={cn(
+                  "text-xs font-jakarta font-medium transition-opacity duration-300",
+                  autoSaveStatus === 'saving' ? "text-gray-400" : "text-green-600"
+                )}>
+                  {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved ✓'}
+                </span>
+              )}
+              <span className="text-xs font-jakarta font-bold text-[#F4C542]">
+                {Math.round((currentStep / 4) * 100)}%
+              </span>
+            </div>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div 
