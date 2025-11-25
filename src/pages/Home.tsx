@@ -324,82 +324,6 @@ const Home = () => {
           </DropdownMenu>
         </div>
 
-        {/* My Pets Section - Above Membership Banner */}
-        {pets.length > 0 && (
-          <motion.div 
-            className="mb-6"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-gray-900 font-jakarta">My Pets</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/add-pet')}
-                className="text-[#7DD3C0] hover:text-[#6BC4AD] hover:bg-[#7DD3C0]/10 font-jakarta text-sm font-semibold"
-              >
-                + Add Pet
-              </Button>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {pets.map((pet, index) => (
-                <motion.div
-                  key={pet.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/add-pet')}
-                  className="flex-shrink-0 cursor-pointer"
-                >
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#E8F5E8] to-[#B8E3D5] shadow-[0_4px_16px_rgba(0,0,0,0.1)] overflow-hidden border-2 border-white">
-                      {pet.avatar_url ? (
-                        <img
-                          src={pet.avatar_url}
-                          alt={pet.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl">
-                          {pet.pet_type === 'dog' ? '🐕' : '🐈'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-1.5 text-center">
-                      <p className="text-xs font-bold text-gray-900 font-jakarta truncate max-w-[80px]">
-                        {pet.name}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-              {/* Add Pet Card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 + pets.length * 0.05 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/add-pet')}
-                className="flex-shrink-0 cursor-pointer"
-              >
-                <div className="w-20 h-20 rounded-2xl bg-white border-2 border-dashed border-gray-300 shadow-sm flex items-center justify-center hover:border-[#7DD3C0] hover:bg-[#7DD3C0]/5 transition-all">
-                  <Plus className="w-8 h-8 text-gray-400" />
-                </div>
-                <div className="mt-1.5 text-center">
-                  <p className="text-xs font-bold text-gray-500 font-jakarta">
-                    Add Pet
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-
         {/* Membership Banner - Gold Rounded Rectangle */}
         <motion.div 
           className="mb-6"
@@ -513,6 +437,83 @@ const Home = () => {
             </span>
           </motion.button>
         </div>
+      </div>
+
+      {/* My Pets Section - Between Header and Product Grid */}
+      <div className="px-6 pt-4 pb-2">
+        {pets.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-gray-900 font-jakarta">My Pets</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/add-pet')}
+                className="text-[#7DD3C0] hover:text-[#6BC4AD] hover:bg-[#7DD3C0]/10 font-jakarta text-sm font-semibold"
+              >
+                + Add Pet
+              </Button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {pets.map((pet, index) => (
+                <motion.div
+                  key={pet.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/add-pet')}
+                  className="flex-shrink-0 cursor-pointer"
+                >
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#E8F5E8] to-[#B8E3D5] shadow-[0_4px_16px_rgba(0,0,0,0.1)] overflow-hidden border-2 border-white">
+                      {pet.avatar_url ? (
+                        <img
+                          src={pet.avatar_url}
+                          alt={pet.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl">
+                          {pet.pet_type === 'dog' ? '🐕' : '🐈'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-1.5 text-center">
+                      <p className="text-xs font-bold text-gray-900 font-jakarta truncate max-w-[80px]">
+                        {pet.name}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              {/* Add Pet Card */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 + pets.length * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/add-pet')}
+                className="flex-shrink-0 cursor-pointer"
+              >
+                <div className="w-20 h-20 rounded-2xl bg-white border-2 border-dashed border-gray-300 shadow-sm flex items-center justify-center hover:border-[#7DD3C0] hover:bg-[#7DD3C0]/5 transition-all">
+                  <Plus className="w-8 h-8 text-gray-400" />
+                </div>
+                <div className="mt-1.5 text-center">
+                  <p className="text-xs font-bold text-gray-500 font-jakarta">
+                    Add Pet
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* 2-Column Product Grid with Smooth Animations */}
