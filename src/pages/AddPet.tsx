@@ -146,7 +146,7 @@ const AddPet = () => {
           <h1 className="text-4xl md:text-5xl font-jakarta font-bold text-foreground mb-3 tracking-tight">
             Add Your Pet
           </h1>
-          <p className="text-muted-foreground text-lg font-jakarta max-w-md mx-auto">
+          <p className="text-muted-foreground text-base md:text-lg font-jakarta font-normal max-w-md mx-auto">
             Let's create a special profile for your furry friend
           </p>
         </div>
