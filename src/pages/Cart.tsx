@@ -1,286 +1,277 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag, Truck, Shield, Tag } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
+import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "@/contexts/CartContext";
+import { ArrowRight, Plus, Minus, Trash2, ShoppingBag, CreditCard } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Cart = () => {
   const navigate = useNavigate();
+  const { items, updateQuantity, removeFromCart, getSubtotal, getTotalItems } = useCart();
   const { toast } = useToast();
-  const { items, updateQuantity, removeFromCart, getSubtotal } = useCart();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const subtotal = getSubtotal();
-  const shipping = subtotal >= 199 ? 0 : 25;
-  const tax = subtotal * 0.17; // 17% VAT in Israel
-  const total = subtotal + shipping + tax;
-
-  const handleCheckout = () => {
-    if (items.length === 0) {
-      toast({
-        title: "Cart is empty",
-        description: "Add some items to your cart first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    navigate("/checkout");
-  };
+  const shippingCost = getSubtotal() >= 200 ? 0 : 25;
+  const taxRate = 0.17; // 17% VAT
+  const tax = getSubtotal() * taxRate;
+  const total = getSubtotal() + shippingCost + tax;
 
   const handleRemoveItem = (id: string, name: string) => {
     removeFromCart(id);
     toast({
-      title: "Item removed",
-      description: `${name} removed from cart`,
+      title: "הוסר מהעגלה",
+      description: `${name} הוסר בהצלחה`,
+      duration: 2000,
     });
   };
 
-  return (
-    <div className="min-h-screen pb-32 bg-gradient-to-b from-white to-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-gray-100"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </Button>
-          <h1 className="text-base font-bold font-jakarta text-gray-900">Shopping Cart</h1>
-          <div className="w-10" />
-        </div>
-      </header>
+  const handleCheckout = () => {
+    toast({
+      title: "🎉 תודה!",
+      description: "מעבר לדף תשלום...",
+      duration: 2000,
+    });
+    setTimeout(() => {
+      navigate("/checkout");
+    }, 1000);
+  };
 
-      {/* Empty Cart State */}
-      {items.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center px-4 py-20"
-        >
-          <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <ShoppingBag className="w-12 h-12 text-gray-400" />
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen bg-white pb-20" dir="rtl">
+        <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        
+        {/* Header */}
+        <div className="bg-[#FFC107] pt-6 pb-6 shadow-md">
+          <div className="max-w-md mx-auto px-4 flex items-center">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <ArrowRight className="w-6 h-6 text-gray-900" />
+            </button>
+            <h1 className="text-2xl font-bold text-gray-900 text-center flex-1 font-jakarta">
+              עגלת הקניות
+            </h1>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 font-jakarta mb-2">Your cart is empty</h2>
-          <p className="text-sm text-gray-600 font-jakarta mb-6 text-center">
-            Add some items to get started
-          </p>
-          <Button
-            size="lg"
-            className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-bold font-jakarta"
-            onClick={() => navigate("/home")}
+        </div>
+
+        {/* Empty Cart State */}
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="text-center"
           >
-            Continue Shopping
-          </Button>
-        </motion.div>
-      )}
+            <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ShoppingBag className="w-16 h-16 text-gray-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3 font-jakarta">
+              העגלה שלך ריקה
+            </h2>
+            <p className="text-gray-600 mb-8 font-jakarta">
+              הוסף מוצרים מהחנות כדי להתחיל
+            </p>
+            <Button
+              onClick={() => navigate("/shop")}
+              className="bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 font-bold px-8 py-6 rounded-2xl shadow-lg font-jakarta"
+            >
+              המשך לקניות
+            </Button>
+          </motion.div>
+        </div>
+
+        <BottomNav />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white pb-32" dir="rtl">
+      <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      
+      {/* Header */}
+      <div className="bg-[#FFC107] pt-6 pb-6 shadow-md sticky top-0 z-40">
+        <div className="max-w-md mx-auto px-4 flex items-center">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <ArrowRight className="w-6 h-6 text-gray-900" />
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900 text-center flex-1 font-jakarta">
+            עגלת הקניות ({getTotalItems()})
+          </h1>
+        </div>
+      </div>
 
       {/* Cart Items */}
-      {items.length > 0 && (
-        <div className="px-4 py-5 space-y-5">
-          {/* Items List */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-bold text-gray-900 font-jakarta">
-              Cart Items ({items.length})
-            </h2>
-            <AnimatePresence mode="popLayout">
-              {items.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  layout
-                >
-                  <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <div className="flex gap-3">
-                      {/* Product Image */}
-                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+      <div className="max-w-md mx-auto px-4 py-6">
+        <AnimatePresence mode="popLayout">
+          {items.map((item) => (
+            <motion.div
+              key={item.id}
+              layout
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              className="mb-4"
+            >
+              <Card className="overflow-hidden border-0 shadow-md">
+                <div className="flex gap-4 p-4">
+                  {/* Product Image */}
+                  <div className="w-24 h-24 bg-gray-50 rounded-xl flex-shrink-0 overflow-hidden">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
-                      {/* Product Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 font-jakarta text-sm mb-1 truncate">
-                          {item.name}
-                        </h3>
-                        {item.variant && (
-                          <p className="text-xs text-gray-600 font-jakarta mb-1">
-                            Flavor: {item.variant}
-                          </p>
-                        )}
-                        {item.size && (
-                          <p className="text-xs text-gray-600 font-jakarta mb-2">
-                            Size: {item.size}
-                          </p>
-                        )}
-                        <p className="text-base font-bold text-gray-900 font-jakarta">
-                          ₪{item.price.toFixed(2)}
-                        </p>
-                      </div>
-
-                      {/* Remove Button */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                        onClick={() => handleRemoveItem(item.id, item.name)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 text-sm mb-1 font-jakarta line-clamp-2">
+                      {item.name}
+                    </h3>
+                    {item.variant && (
+                      <p className="text-xs text-gray-600 mb-2 font-jakarta">
+                        {item.variant}
+                      </p>
+                    )}
+                    
+                    {/* Price */}
+                    <div className="text-lg font-bold text-[#E91E63] mb-3 font-jakarta">
+                      {item.price}₪
                     </div>
 
                     {/* Quantity Controls */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                      <span className="text-xs font-semibold text-gray-700 font-jakarta">
-                        Quantity
-                      </span>
-                      <div className="flex items-center border border-gray-300 rounded-lg">
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 bg-gray-100 rounded-full px-2 py-1">
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="h-8 w-8 hover:bg-gray-100"
+                          className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                         >
-                          <Minus className="w-3 h-3 text-gray-700" />
-                        </Button>
-                        <span className="w-10 text-center text-sm font-bold text-gray-900 font-jakarta">
+                          <Minus className="w-4 h-4 text-gray-700" />
+                        </motion.button>
+                        <span className="text-base font-bold text-gray-900 w-8 text-center font-jakarta">
                           {item.quantity}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="h-8 w-8 hover:bg-gray-100"
+                          className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                         >
-                          <Plus className="w-3 h-3 text-gray-700" />
-                        </Button>
+                          <Plus className="w-4 h-4 text-gray-700" />
+                        </motion.button>
                       </div>
-                      <span className="text-sm font-bold text-gray-900 font-jakarta">
-                        ₪{(item.price * item.quantity).toFixed(2)}
-                      </span>
+
+                      {/* Remove Button */}
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleRemoveItem(item.id, item.name)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </motion.button>
                     </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
-          <Separator />
+        {/* Order Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-8"
+        >
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 font-jakarta">
+                סיכום הזמנה
+              </h2>
 
-          {/* Delivery Info */}
-          <Card className="p-4 bg-gradient-to-r from-[#B8E3D5]/20 to-[#FBD66A]/20 border-none">
-            <div className="flex items-center gap-2 mb-2">
-              <Truck className="w-5 h-5 text-[#7DD3C0]" />
-              <span className="text-sm font-bold text-gray-900 font-jakarta">
-                Delivery Information
-              </span>
+              {/* Price Breakdown */}
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-jakarta">סכום ביניים</span>
+                  <span className="font-bold text-gray-900 font-jakarta">
+                    ₪{getSubtotal().toFixed(2)}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-jakarta">משלוח</span>
+                  <span className="font-bold text-gray-900 font-jakarta">
+                    {shippingCost === 0 ? (
+                      <span className="text-green-600">חינם</span>
+                    ) : (
+                      `₪${shippingCost.toFixed(2)}`
+                    )}
+                  </span>
+                </div>
+
+                {getSubtotal() < 200 && (
+                  <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded-lg font-jakarta">
+                    הוסף עוד ₪{(200 - getSubtotal()).toFixed(2)} למשלוח חינם!
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-jakarta">מע״מ (17%)</span>
+                  <span className="font-bold text-gray-900 font-jakarta">
+                    ₪{tax.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="border-t-2 border-dashed border-gray-300 pt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xl font-bold text-gray-900 font-jakarta">
+                      סה״כ לתשלום
+                    </span>
+                    <span className="text-2xl font-bold text-[#E91E63] font-jakarta">
+                      ₪{total.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Checkout Button */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  onClick={handleCheckout}
+                  className="w-full h-14 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
+                >
+                  <CreditCard className="w-6 h-6" />
+                  המשך לתשלום
+                </Button>
+              </motion.div>
             </div>
-            <p className="text-xs text-gray-600 font-jakarta">
-              {shipping === 0
-                ? "🎉 You qualify for FREE shipping!"
-                : `Add ₪${(199 - subtotal).toFixed(2)} more for FREE shipping`}
-            </p>
           </Card>
+        </motion.div>
 
-          <Separator />
-
-          {/* Order Summary */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-bold text-gray-900 font-jakarta">Order Summary</h3>
-            <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 font-jakarta">Subtotal</span>
-                <span className="font-semibold text-gray-900 font-jakarta">
-                  ₪{subtotal.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 font-jakarta flex items-center gap-1">
-                  <Truck className="w-4 h-4" />
-                  Shipping
-                </span>
-                <span className="font-semibold text-gray-900 font-jakarta">
-                  {shipping === 0 ? (
-                    <span className="text-[#7DD3C0]">FREE</span>
-                  ) : (
-                    `₪${shipping.toFixed(2)}`
-                  )}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 font-jakarta flex items-center gap-1">
-                  <Tag className="w-4 h-4" />
-                  Tax (VAT 17%)
-                </span>
-                <span className="font-semibold text-gray-900 font-jakarta">
-                  ₪{tax.toFixed(2)}
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-gray-900 font-jakarta">Total</span>
-                <span className="text-xl font-bold text-gray-900 font-jakarta">
-                  ₪{total.toFixed(2)}
-                </span>
-              </div>
-            </Card>
-          </div>
-
-          {/* Trust Badges */}
-          <div className="grid grid-cols-3 gap-2 py-2">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-10 h-10 rounded-full bg-[#7DD3C0]/20 flex items-center justify-center mb-1">
-                <Shield className="w-5 h-5 text-[#7DD3C0]" />
-              </div>
-              <span className="text-xs font-semibold text-gray-900 font-jakarta">
-                Secure Payment
-              </span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <div className="w-10 h-10 rounded-full bg-[#FBD66A]/20 flex items-center justify-center mb-1">
-                <Truck className="w-5 h-5 text-[#F4C542]" />
-              </div>
-              <span className="text-xs font-semibold text-gray-900 font-jakarta">
-                Fast Delivery
-              </span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <div className="w-10 h-10 rounded-full bg-[#7DD3C0]/20 flex items-center justify-center mb-1">
-                <Shield className="w-5 h-5 text-[#7DD3C0]" />
-              </div>
-              <span className="text-xs font-semibold text-gray-900 font-jakarta">
-                30-Day Returns
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sticky Bottom Checkout Button */}
-      {items.length > 0 && (
-        <div className="fixed bottom-16 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 p-3 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-          <div className="max-w-2xl mx-auto">
-            <Button
-              size="lg"
-              className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-bold font-jakarta shadow-md h-12"
-              onClick={handleCheckout}
-            >
-              Proceed to Checkout · ₪{total.toFixed(2)}
-            </Button>
-          </div>
-        </div>
-      )}
+        {/* Continue Shopping */}
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/shop")}
+          className="w-full mt-4 py-4 text-gray-600 hover:text-gray-900 font-medium transition-colors font-jakarta"
+        >
+          ← המשך לקניות
+        </motion.button>
+      </div>
 
       <BottomNav />
     </div>

@@ -10,6 +10,7 @@ import { GuestProvider } from "@/contexts/GuestContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { PointsProvider } from "@/contexts/PointsContext";
+import { CartProvider } from "@/contexts/CartContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
 import { Header } from "@/components/Header";
@@ -92,13 +93,15 @@ const App = () => (
           <PetPreferenceProvider>
             <GuestProvider>
               <PointsProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrowserRouter>
-                    <AnimatedRoutes />
-                  </BrowserRouter>
-                </TooltipProvider>
+                <CartProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                      <AnimatedRoutes />
+                    </BrowserRouter>
+                  </TooltipProvider>
+                </CartProvider>
               </PointsProvider>
             </GuestProvider>
           </PetPreferenceProvider>
