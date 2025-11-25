@@ -159,6 +159,7 @@ const AddPet = () => {
         birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
         gender: formData.gender || null,
         breed: formData.breed || null,
+        breed_confidence: breedConfidence,
         is_neutered: formData.is_neutered === "true",
         avatar_url: avatarUrl
       });
