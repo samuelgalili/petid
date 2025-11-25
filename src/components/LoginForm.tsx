@@ -283,7 +283,7 @@ export const LoginForm = () => {
 
       {!showOTPInput ? <>
           {/* Login Method Tabs */}
-          <div className="flex p-1 bg-gray-100/80 rounded-2xl backdrop-blur-sm gap-[8px]">
+          <div className="flex p-2 bg-gray-100/80 rounded-2xl backdrop-blur-sm gap-2">
             <button type="button" onClick={() => {
           setLoginMethod("email");
           setFieldErrors({});
