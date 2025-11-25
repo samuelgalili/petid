@@ -15,16 +15,7 @@ export const PetidLogo = ({
       <div className="flex justify-center relative" style={{
       marginBottom: showAnimals ? '2rem' : '1.5rem'
     }}>
-        <motion.img initial={{
-        opacity: 0,
-        scale: 0.8
-      }} animate={{
-        opacity: 1,
-        scale: 1
-      }} transition={{
-        duration: 0.5,
-        ease: "easeOut"
-      }} src={petidLogo} alt="PetID Logo" className="h-12 w-auto object-contain" />
+        
         {/* Blinking Paw over the "i" */}
         <motion.div className="absolute" style={{
         top: '-8px',
