@@ -484,68 +484,91 @@ const Home = () => {
               </Button>
             )}
           </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {pets.map((pet, index) => (
+
+          {/* Empty State - No Pets Yet */}
+          {pets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FFE8D6] to-[#E8F5E8] flex items-center justify-center mb-4 shadow-lg">
+                <span className="text-5xl">🐾</span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-2">
+                No Pets Yet
+              </h3>
+              <p className="text-sm text-gray-500 font-jakarta mb-6 max-w-xs">
+                Add your first furry friend to get started with your pet profile!
+              </p>
+              <Button
+                onClick={() => navigate('/add-pet')}
+                className="bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] hover:from-[#6BC4AD] hover:to-[#7DD3C0] text-white rounded-full font-jakarta font-bold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Your First Pet
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {pets.map((pet, index) => (
+                <motion.div
+                  key={pet.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.05 + index * 0.03 }}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
+                  onTouchStart={() => handlePetLongPressStart(pet)}
+                  onTouchEnd={handlePetLongPressEnd}
+                  onMouseDown={() => handlePetLongPressStart(pet)}
+                  onMouseUp={handlePetLongPressEnd}
+                  onMouseLeave={handlePetLongPressEnd}
+                  onClick={() => navigate(`/pet/${pet.id}`)}
+                  className="flex-shrink-0 cursor-pointer"
+                >
+                  <div className="flex flex-col items-center">
+                    {/* Circular Avatar */}
+                    <div className="relative">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_4px_12px_rgba(0,0,0,0.12)] overflow-hidden border-[3px] border-white ring-2 ring-gray-100">
+                        {pet.avatar_url ? (
+                          <img
+                            src={pet.avatar_url}
+                            alt={pet.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] to-[#7DD3C0]">
+                            {pet.type === 'dog' ? '🐕' : '🐈'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Pet Name */}
+                    <p className="mt-2 text-xs font-bold text-gray-800 font-jakarta truncate max-w-[80px] text-center">
+                      {pet.name}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+              
+              {/* Add Pet Button - Circular */}
               <motion.div
-                key={pet.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.05 + index * 0.03 }}
+                transition={{ delay: 0.05 + pets.length * 0.03 }}
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
-                onTouchStart={() => handlePetLongPressStart(pet)}
-                onTouchEnd={handlePetLongPressEnd}
-                onMouseDown={() => handlePetLongPressStart(pet)}
-                onMouseUp={handlePetLongPressEnd}
-                onMouseLeave={handlePetLongPressEnd}
-                onClick={() => navigate(`/pet/${pet.id}`)}
+                onClick={() => navigate('/add-pet')}
                 className="flex-shrink-0 cursor-pointer"
               >
                 <div className="flex flex-col items-center">
-                  {/* Circular Avatar */}
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-[0_4px_12px_rgba(0,0,0,0.12)] overflow-hidden border-[3px] border-white ring-2 ring-gray-100">
-                      {pet.avatar_url ? (
-                        <img
-                          src={pet.avatar_url}
-                          alt={pet.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] to-[#7DD3C0]">
-                          {pet.type === 'dog' ? '🐕' : '🐈'}
-                        </div>
-                      )}
-                    </div>
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] to-[#FFE8D6] border-[3px] border-dashed border-[#7DD3C0]/40 shadow-[0_4px_12px_rgba(125,211,192,0.15)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_6px_16px_rgba(125,211,192,0.25)] transition-all">
+                    <Plus className="w-8 h-8 text-[#7DD3C0]" />
                   </div>
-                  {/* Pet Name */}
-                  <p className="mt-2 text-xs font-bold text-gray-800 font-jakarta truncate max-w-[80px] text-center">
-                    {pet.name}
+                  <p className="mt-2 text-xs font-bold text-[#7DD3C0] font-jakarta">
+                    Add Pet
                   </p>
                 </div>
               </motion.div>
-            ))}
-            
-            {/* Add Pet Button - Circular */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.05 + pets.length * 0.03 }}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.92 }}
-              onClick={() => navigate('/add-pet')}
-              className="flex-shrink-0 cursor-pointer"
-            >
-              <div className="flex flex-col items-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] to-[#FFE8D6] border-[3px] border-dashed border-[#7DD3C0]/40 shadow-[0_4px_12px_rgba(125,211,192,0.15)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_6px_16px_rgba(125,211,192,0.25)] transition-all">
-                  <Plus className="w-8 h-8 text-[#7DD3C0]" />
-                </div>
-                <p className="mt-2 text-xs font-bold text-[#7DD3C0] font-jakarta">
-                  Add Pet
-                </p>
-              </div>
-            </motion.div>
-          </div>
+            </div>
+          )}
         </motion.div>
 
         {/* Membership Banner - Gold Rounded Rectangle */}
