@@ -12,6 +12,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const Header = () => {
   const navigate = useNavigate();
@@ -74,11 +75,24 @@ export const Header = () => {
                     aria-label="Shopping cart"
                   >
                     <ShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FBD66A] text-gray-900 rounded-full text-xs font-bold flex items-center justify-center">
-                        {cartItemCount > 9 ? '9+' : cartItemCount}
-                      </span>
-                    )}
+                    <AnimatePresence mode="wait">
+                      {cartItemCount > 0 && (
+                        <motion.span
+                          key={cartItemCount}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ 
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 25
+                          }}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-[#FBD66A] text-gray-900 rounded-full text-xs font-bold flex items-center justify-center"
+                        >
+                          {cartItemCount > 9 ? '9+' : cartItemCount}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
