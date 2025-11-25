@@ -28,11 +28,7 @@ const Cart = () => {
       return;
     }
 
-    toast({
-      title: "Proceeding to checkout",
-      description: "Redirecting to payment...",
-    });
-    // Navigate to checkout page (to be implemented)
+    navigate("/checkout");
   };
 
   const handleRemoveItem = (id: string, name: string) => {
