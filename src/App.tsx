@@ -34,6 +34,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
 import Tasks from "./pages/Tasks";
+import Rewards from "./pages/Rewards";
 import NotFound from "./pages/NotFound";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -67,6 +68,7 @@ const AnimatedRoutes = () => {
         <Route path="/order-history" element={<ProtectedRoute><PageTransition><OrderHistory /></PageTransition></ProtectedRoute>} />
         <Route path="/insurance" element={<ProtectedRoute><PageTransition><Insurance /></PageTransition></ProtectedRoute>} />
         <Route path="/tasks" element={<ProtectedRoute><PageTransition><Tasks /></PageTransition></ProtectedRoute>} />
+        <Route path="/rewards" element={<ProtectedRoute><PageTransition><Rewards /></PageTransition></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedRoute><AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/orders" element={<ProtectedRoute><AdminRoute><PageTransition><AdminOrders /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/customers" element={<ProtectedRoute><AdminRoute><PageTransition><AdminCustomers /></PageTransition></AdminRoute></ProtectedRoute>} />
