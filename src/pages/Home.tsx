@@ -1,4 +1,4 @@
-import { Menu, Bell, UserX, Camera, Loader2, History } from "lucide-react";
+import { Menu, Bell, UserX, Camera, Loader2, History, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -9,12 +9,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
 
 const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [pets, setPets] = useState<any[]>([]);
   const [redetectingPetId, setRedetectingPetId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const { toast } = useToast();
 
@@ -256,10 +258,20 @@ const Home = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95"
+              onClick={() => toast({ title: "Notifications", description: "No new notifications" })}
+            >
               <Bell className="w-5 h-5 text-gray-700" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95"
+              onClick={() => navigate('/settings')}
+            >
               <UserX className="w-5 h-5 text-gray-700" />
             </Button>
           </div>
@@ -299,119 +311,171 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Feature Grid */}
+      {/* Feature Grid with Staggered Animation */}
       <div className="px-6 pt-6 pb-6 grid grid-cols-3 gap-4">
         {features.map((feature, index) => {
           if (feature.external) {
             return (
-              <a
+              <motion.a
                 key={index}
                 href={feature.path}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] border-2 border-gray-100`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                whileTap={{ scale: 0.95 }}
+                className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border-2 border-gray-100`}
               >
-                <div className="absolute top-3 right-3 w-4 h-4 rounded-full" style={{ backgroundColor: feature.dotColor }} />
-                <div className="text-4xl mb-1">{feature.icon}</div>
+                <div className="absolute top-3 right-3 w-4 h-4 rounded-full transition-transform group-hover:scale-110" style={{ backgroundColor: feature.dotColor }} />
+                <div className="text-4xl mb-1 transition-transform group-hover:scale-110">{feature.icon}</div>
                 <div className="text-center">
                   <h3 className="font-bold text-sm mb-0.5 leading-tight text-gray-900 font-jakarta">{feature.label}</h3>
                   <p className="text-[9px] text-gray-500 uppercase tracking-wide font-semibold font-jakarta">{feature.description}</p>
                 </div>
-              </a>
+              </motion.a>
             );
           }
           
           return (
-            <div
+            <motion.div
               key={index}
               onClick={() => navigate(feature.path)}
-              className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] border-2 border-gray-100`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05, duration: 0.3 }}
+              whileHover={{ scale: 1.05, y: -4 }}
+              whileTap={{ scale: 0.95 }}
+              className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.15)] border-2 border-gray-100`}
             >
-              <div className="absolute top-3 right-3 w-4 h-4 rounded-full" style={{ backgroundColor: feature.dotColor }} />
-              <div className="text-4xl mb-1">{feature.icon}</div>
+              <div className="absolute top-3 right-3 w-4 h-4 rounded-full transition-transform group-hover:scale-110" style={{ backgroundColor: feature.dotColor }} />
+              <div className="text-4xl mb-1 transition-transform group-hover:scale-110">{feature.icon}</div>
               <div className="text-center">
                 <h3 className="font-bold text-sm mb-0.5 leading-tight text-gray-900 font-jakarta">{feature.label}</h3>
                 <p className="text-[9px] text-gray-500 uppercase tracking-wide font-semibold font-jakarta">{feature.description}</p>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
       {/* My Pets Section */}
-      {pets.length > 0 && (
-        <div className="px-6 pt-8 pb-6">
-          <h2 className="text-xl font-bold font-jakarta mb-4">My Pets</h2>
+      {pets.length > 0 ? (
+        <motion.div 
+          className="px-6 pt-8 pb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold font-jakarta text-gray-900">My Pets</h2>
+            <Button
+              onClick={() => navigate('/add-pet')}
+              size="sm"
+              className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-full font-jakarta font-semibold shadow-md hover:shadow-lg transition-all"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Pet
+            </Button>
+          </div>
           <div className="grid grid-cols-1 gap-4">
-            {pets.map((pet) => (
-              <Card key={pet.id} className="p-4 bg-white border-2 border-gray-200 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-                <div className="flex items-start gap-4">
-                  <div className="relative">
-                    <Avatar className="w-16 h-16 border-2 border-[#FBD66A]/30">
-                      <AvatarImage src={pet.avatar_url || undefined} />
-                      <AvatarFallback className="bg-[#FBD66A]/20 text-gray-900 font-bold text-lg font-jakarta">
-                        {pet.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Button
-                      size="icon"
-                      onClick={() => fileInputRefs.current[pet.id]?.click()}
-                      disabled={redetectingPetId === pet.id}
-                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 shadow-md"
-                    >
-                      {redetectingPetId === pet.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Camera className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                    <Input
-                      ref={(el) => (fileInputRefs.current[pet.id] = el)}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleRedetectBreed(pet.id, pet.type, file);
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg font-jakarta text-gray-900">{pet.name}</h3>
-                    <p className="text-sm text-gray-600 font-jakarta capitalize">{pet.type}</p>
-                    {pet.breed && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-sm text-gray-700 font-jakarta">{pet.breed}</span>
-                        {pet.breed_confidence !== null && (
-                          <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
-                            pet.breed_confidence > 80 ? 'bg-green-100 text-green-700' :
-                            pet.breed_confidence > 60 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-orange-100 text-orange-700'
-                          }`}>
-                            {pet.breed_confidence}% AI
-                          </span>
+            {pets.map((pet, index) => (
+              <motion.div
+                key={pet.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6 + index * 0.1, duration: 0.3 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Card className="p-4 bg-white border-2 border-gray-200 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="relative">
+                      <Avatar className="w-16 h-16 border-2 border-[#FBD66A]/30 ring-2 ring-transparent hover:ring-[#FBD66A]/20 transition-all">
+                        <AvatarImage src={pet.avatar_url || undefined} />
+                        <AvatarFallback className="bg-[#FBD66A]/20 text-gray-900 font-bold text-lg font-jakarta">
+                          {pet.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Button
+                        size="icon"
+                        onClick={() => fileInputRefs.current[pet.id]?.click()}
+                        disabled={redetectingPetId === pet.id}
+                        className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 shadow-md hover:shadow-lg transition-all hover:scale-110"
+                      >
+                        {redetectingPetId === pet.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Camera className="w-3.5 h-3.5" />
                         )}
-                      </div>
-                    )}
-                    {pet.gender && (
-                      <p className="text-xs text-gray-500 font-jakarta mt-1 capitalize">{pet.gender}</p>
-                    )}
+                      </Button>
+                      <Input
+                        ref={(el) => (fileInputRefs.current[pet.id] = el)}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleRedetectBreed(pet.id, pet.type, file);
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg font-jakarta text-gray-900">{pet.name}</h3>
+                      <p className="text-sm text-gray-600 font-jakarta capitalize">{pet.type}</p>
+                      {pet.breed && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-sm text-gray-700 font-jakarta">{pet.breed}</span>
+                          {pet.breed_confidence !== null && (
+                            <span className={`text-lg font-semibold ${
+                              pet.breed_confidence > 70 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {pet.breed_confidence > 70 ? '✓' : '✗'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {pet.gender && (
+                        <p className="text-xs text-gray-500 font-jakarta mt-1 capitalize">{pet.gender}</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/breed-history/${pet.id}`)}
+                      className="self-center rounded-xl border-2 border-gray-200 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 text-gray-700 hover:text-gray-900 transition-all hover:scale-105"
+                    >
+                      <History className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/breed-history/${pet.id}`)}
-                    className="self-center rounded-xl border-2 border-gray-200 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 text-gray-700 hover:text-gray-900"
-                  >
-                    <History className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
+      ) : (
+        <motion.div 
+          className="px-6 pt-12 pb-6 flex flex-col items-center justify-center text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+        >
+          <div className="w-32 h-32 bg-gradient-to-br from-[#FBD66A]/20 to-[#F4C542]/20 rounded-full flex items-center justify-center mb-6 shadow-lg">
+            <span className="text-6xl">🐾</span>
+          </div>
+          <h3 className="text-xl font-bold font-jakarta text-gray-900 mb-2">No Pets Yet</h3>
+          <p className="text-gray-600 font-jakarta mb-6 max-w-sm">Start your pet journey by adding your first furry friend!</p>
+          <Button
+            onClick={() => navigate('/add-pet')}
+            className="bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-semibold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add Your First Pet
+          </Button>
+        </motion.div>
       )}
 
       <BottomNav />
