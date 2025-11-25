@@ -513,81 +513,6 @@ const Home = () => {
       {/* Header - Fixed at Top */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 shadow-sm z-40">
         <div className="flex items-center gap-3">
-          {/* Left: Hamburger Menu with Tooltip */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50 transition-all flex-shrink-0 focus-visible-ring">
-                    <Menu className="w-5 h-5 text-gray-700" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-64 bg-white z-[9999] shadow-xl border border-gray-200 rounded-2xl p-2">
-                  <DropdownMenuItem onClick={() => navigate("/order-history")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <Package className="w-5 h-5 mr-3 text-[#7DD3C0]" />
-                    <div>
-                      <div className="font-semibold text-gray-900">Order History</div>
-                      <div className="text-xs text-gray-500">View past orders</div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/cart")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <ShoppingCart className="w-5 h-5 mr-3 text-[#7DD3C0]" />
-                    <div>
-                      <div className="font-semibold text-gray-900">Shopping Cart</div>
-                      <div className="text-xs text-gray-500">View items</div>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <User className="w-5 h-5 mr-3 text-[#7DD3C0]" />
-                    <div>
-                      <div className="font-semibold text-gray-900">Settings</div>
-                      <div className="text-xs text-gray-500">Manage account</div>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p className="font-semibold">Menu</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          {/* Center: Search Icon / Expanded Search Bar */}
-          {!isSearchOpen ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
-                  onClick={() => setIsSearchOpen(true)}
-                  aria-label="Open search"
-                >
-                  <Search className="w-5 h-5 text-gray-700" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p className="font-semibold">Search</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <div className="flex-1 relative animate-fade-in">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-              <input 
-                type="text" 
-                placeholder="Search products, pets, and more..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onBlur={() => {
-                  if (!searchQuery) setIsSearchOpen(false);
-                }}
-                autoFocus
-                aria-label="Search products"
-                className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50/80 backdrop-blur-sm border-2 border-gray-200 focus:border-[#7DD3C0] focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm hover:shadow-md focus:shadow-lg focus-visible-ring"
-              />
-            </div>
-          )}
-          
           {/* Right: Notifications + User Profile with Tooltips */}
           <div className="flex gap-2 flex-shrink-0">
             <Tooltip>
@@ -625,6 +550,81 @@ const Home = () => {
               </TooltipContent>
             </Tooltip>
           </div>
+          
+          {/* Center: Search Icon / Expanded Search Bar */}
+          {!isSearchOpen ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
+                  onClick={() => setIsSearchOpen(true)}
+                  aria-label="Open search"
+                >
+                  <Search className="w-5 h-5 text-gray-700" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="font-semibold">Search</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="flex-1 relative animate-fade-in">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <input 
+                type="text" 
+                placeholder="Search products, pets, and more..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onBlur={() => {
+                  if (!searchQuery) setIsSearchOpen(false);
+                }}
+                autoFocus
+                aria-label="Search products"
+                className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50/80 backdrop-blur-sm border-2 border-gray-200 focus:border-[#7DD3C0] focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm hover:shadow-md focus:shadow-lg focus-visible-ring"
+              />
+            </div>
+          )}
+          
+          {/* Left: Hamburger Menu with Tooltip */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50 transition-all flex-shrink-0 focus-visible-ring">
+                    <Menu className="w-5 h-5 text-gray-700" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 bg-white z-[9999] shadow-xl border border-gray-200 rounded-2xl p-2">
+                  <DropdownMenuItem onClick={() => navigate("/order-history")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <Package className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Order History</div>
+                      <div className="text-xs text-gray-500">View past orders</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/cart")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <ShoppingCart className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Shopping Cart</div>
+                      <div className="text-xs text-gray-500">View items</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <User className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Settings</div>
+                      <div className="text-xs text-gray-500">Manage account</div>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="font-semibold">Menu</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
