@@ -32,7 +32,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Analyze this ${petType} image and identify the breed. Return only the breed name (e.g., "Golden Retriever", "Persian", "Mixed Breed"). If you cannot determine the breed with high confidence, return "Unknown Breed". Be concise - only return the breed name, nothing else.`
+                text: `Analyze this ${petType} image and identify the breed. You must respond with a JSON object in this exact format: {"breed": "breed name", "confidence": 85}. The breed should be the specific breed name (e.g., "Golden Retriever", "Persian", "Mixed Breed"). The confidence should be a number from 0-100 indicating how certain you are of the breed identification. If you cannot determine the breed, use "Unknown Breed" with a low confidence score.`
               },
               {
                 type: "image_url",
@@ -53,17 +53,30 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const detectedBreed = data.choices?.[0]?.message?.content?.trim() || "Unknown Breed";
+    const aiResponse = data.choices?.[0]?.message?.content?.trim() || "{}";
     
-    // Determine confidence based on response
-    const isConfident = !detectedBreed.toLowerCase().includes('unknown') && 
-                       !detectedBreed.toLowerCase().includes('cannot') &&
-                       !detectedBreed.toLowerCase().includes('unsure');
+    // Parse the JSON response from AI
+    let detectedBreed = "Unknown Breed";
+    let confidenceScore = 0;
+    
+    try {
+      const parsed = JSON.parse(aiResponse);
+      detectedBreed = parsed.breed || "Unknown Breed";
+      confidenceScore = parsed.confidence || 0;
+    } catch (e) {
+      // Fallback: if AI didn't return valid JSON, treat the response as the breed name
+      detectedBreed = aiResponse;
+      confidenceScore = 50; // Default medium confidence if format is wrong
+    }
+    
+    // Determine if we consider this "confident" (>70%)
+    const isConfident = confidenceScore > 70;
 
     return new Response(
       JSON.stringify({ 
         breed: detectedBreed,
-        confident: isConfident
+        confident: isConfident,
+        confidence: confidenceScore
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -76,7 +89,8 @@ serve(async (req) => {
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error',
         breed: "Unknown Breed",
-        confident: false
+        confident: false,
+        confidence: 0
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

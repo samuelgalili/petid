@@ -29,6 +29,7 @@ const AddPet = () => {
   });
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [breedConfident, setBreedConfident] = useState(true);
+  const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const {
     petType,
@@ -76,8 +77,10 @@ const AddPet = () => {
       if (data.breed && data.breed !== "Unknown Breed") {
         setFormData(prev => ({ ...prev, breed: data.breed }));
         setBreedConfident(data.confident);
+        setBreedConfidence(data.confidence || null);
       } else {
         setBreedConfident(false);
+        setBreedConfidence(data.confidence || null);
       }
     } catch (error) {
       console.error('Error detecting breed:', error);
@@ -343,10 +346,19 @@ const AddPet = () => {
                         AI is analyzing your photo...
                       </div>
                     )}
-                    {!breedConfident && formData.breed && !breedDetecting && (
-                      <p className="text-xs text-gray-600 font-jakarta -mb-1">
-                        AI detected: "{formData.breed}". Please confirm or edit if needed.
-                      </p>
+                    {formData.breed && !breedDetecting && breedConfidence !== null && (
+                      <div className="flex items-center gap-2 -mb-1">
+                        <p className="text-xs text-gray-600 font-jakarta">
+                          AI detected: "{formData.breed}"
+                        </p>
+                        <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
+                          breedConfidence > 80 ? 'bg-green-100 text-green-700' :
+                          breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-orange-100 text-orange-700'
+                        }`}>
+                          {breedConfidence}% confident
+                        </span>
+                      </div>
                     )}
                     <div className="relative">
                       <Input 
