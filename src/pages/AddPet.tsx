@@ -174,7 +174,7 @@ const AddPet = () => {
                 }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
                   animationDelay: '100ms'
                 }}>
-                      <div className="w-44 h-44 md:w-52 md:h-52 flex items-center justify-center">
+                      <div className="w-44 h-44 md:w-52 md:h-52 flex items-center justify-center animate-pulse-subtle">
                         <img src={dogIcon} alt="Dog" className="w-full h-full object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
                       </div>
                     </button>
@@ -184,7 +184,7 @@ const AddPet = () => {
                 }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
                   animationDelay: '250ms'
                 }}>
-                      <div className="w-44 h-44 md:w-52 md:h-52 flex items-center justify-center">
+                      <div className="w-44 h-44 md:w-52 md:h-52 flex items-center justify-center animate-pulse-subtle">
                         <img src={catIcon} alt="Cat" className="w-full h-full object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
                       </div>
                     </button>
