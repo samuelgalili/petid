@@ -11,6 +11,8 @@ const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState("קופונים וכרטיסיות");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [selectedPetType, setSelectedPetType] = useState<"dog" | "cat" | "puppy">("dog");
+  const [showCategories, setShowCategories] = useState(false);
 
   const tabs = [
     { id: "yellow", label: "yellow" },
@@ -18,12 +20,64 @@ const Shop = () => {
     { id: "all-stories", label: "לכל הסיפורים" },
   ];
 
-  const categories = [
+  const mainCategories = [
     { id: "coupons", label: "קופונים וכרטיסיות" },
     { id: "yellow-tuesday", label: "Yellow Tuesday" },
     { id: "on-the-go", label: "מבצעים על הדרך" },
     { id: "hot-deals", label: "מבצעים חמים" },
   ];
+
+  // Product categories with dog/cat subcategories
+  const productCategories = {
+    dog: [
+      { id: "puppy-food", label: "אוכל לגורי כלבים", icon: "🐕" },
+      { id: "dry-food", label: "שקי מזדימים לכלב", icon: "🥘" },
+      { id: "bones-chew", label: "עצמות ומוצרי לעיסה", icon: "🦴" },
+      { id: "treats", label: "חטיפים לכלב", icon: "🍪" },
+      { id: "medical-food", label: "אוכל רפואי לכלב", icon: "💊" },
+      { id: "natural-food", label: "אוכל טבעי לכלב", icon: "🌿" },
+      { id: "canned-food", label: "שימורים ומעדנים לכלב", icon: "🥫" },
+      { id: "kibble", label: "מזון יבש לכלב", icon: "🍚" },
+      { id: "carriers", label: "כלובי הסעה", icon: "🚗" },
+      { id: "puppy-gates", label: "גדר גורים", icon: "🚧" },
+      { id: "training-crate", label: "כלוב איילוף", icon: "🏠" },
+      { id: "dog-houses", label: "חלונות לכלב", icon: "🏡" },
+      { id: "leash-harness", label: "רצועות רתמות וקולרים לכלב", icon: "🦮" },
+      { id: "toys", label: "צעצועים ומשחקים לכלב", icon: "🎾" },
+      { id: "bowls", label: "כלי אוכל ושתייה לכלב", icon: "🥣" },
+      { id: "beds", label: "מיטה / מזרון לכלב", icon: "🛏️" },
+      { id: "accessories", label: "ציוד משלים לכלב", icon: "🎒" },
+      { id: "grooming", label: "מוצרי טיפוח, היגיינה וודברה לכלב", icon: "🧴" },
+      { id: "training", label: "איילוף לכלב", icon: "📚" },
+      { id: "carriers-bag", label: "תיקי נשיאה לכלב", icon: "👜" },
+    ],
+    cat: [
+      { id: "kitten-food", label: "אוכל לגורי חתולים", icon: "🐱" },
+      { id: "dry-food", label: "שקי מזדימים לחתול", icon: "🥘" },
+      { id: "treats", label: "חטיפים לחתול", icon: "🍪" },
+      { id: "medical-food", label: "אוכל רפואי לחתול", icon: "💊" },
+      { id: "natural-food", label: "אוכל טבעי לחתול", icon: "🌿" },
+      { id: "canned-food", label: "שימורים ומעדנים לחתול", icon: "🥫" },
+      { id: "kibble", label: "מזון יבש לחתול", icon: "🍚" },
+      { id: "litter-boxes", label: "ארגזי חול", icon: "📦" },
+      { id: "scratching-posts", label: "עמודי גירוד", icon: "🪵" },
+      { id: "toys", label: "צעצועים ומשחקים לחתול", icon: "🧶" },
+      { id: "bowls", label: "כלי אוכל ושתייה לחתול", icon: "🥣" },
+      { id: "beds", label: "מיטה / מזרון לחתול", icon: "🛏️" },
+      { id: "accessories", label: "ציוד משלים לחתול", icon: "🎒" },
+      { id: "grooming", label: "מוצרי טיפוח והיגיינה לחתול", icon: "🧴" },
+      { id: "carriers", label: "תיקי נשיאה לחתול", icon: "👜" },
+      { id: "collars", label: "קולרים לחתול", icon: "🔗" },
+    ],
+    puppy: [
+      { id: "carriers", label: "תיקי נשיאה לגורי כלבים", icon: "👜" },
+      { id: "food", label: "מזון לגורים", icon: "🍼" },
+      { id: "gates", label: "גדרות גורים", icon: "🚧" },
+      { id: "training-crates", label: "כלובי איילוף", icon: "🏠" },
+      { id: "pads", label: "פדים לגורים", icon: "🧻" },
+      { id: "starter-kit", label: "חבילת גורים", icon: "📦" },
+    ],
+  };
 
   const offerCard = {
     badge: "הטבה באהבה",
@@ -104,12 +158,15 @@ const Shop = () => {
       {/* White Content Area with Rounded Top */}
       <div className="bg-white rounded-t-[32px] -mt-4 relative z-10">
         <div className="max-w-md mx-auto px-4 pt-6">
-          {/* Category Filters */}
+          {/* Main Category Filters */}
           <div className="flex flex-wrap gap-3 mb-6">
-            {categories.map((category) => (
+            {mainCategories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => setSelectedCategory(category.label)}
+                onClick={() => {
+                  setSelectedCategory(category.label);
+                  setShowCategories(false);
+                }}
                 className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
                   selectedCategory === category.label
                     ? "bg-gray-900 text-white"
@@ -119,11 +176,68 @@ const Shop = () => {
                 {category.label}
               </button>
             ))}
-            <button className="px-6 py-2.5 rounded-full text-sm font-medium bg-white text-gray-700 border border-gray-300 flex items-center gap-1">
-              עוד 3
-              <span className="text-xs">▼</span>
+            <button 
+              onClick={() => setShowCategories(!showCategories)}
+              className="px-6 py-2.5 rounded-full text-sm font-medium bg-white text-gray-700 border border-gray-300 flex items-center gap-1"
+            >
+              קטגוריות
+              <span className="text-xs">{showCategories ? "▲" : "▼"}</span>
             </button>
           </div>
+
+          {/* Product Categories Section */}
+          {showCategories && (
+            <div className="mb-8">
+              {/* Pet Type Selector */}
+              <div className="flex gap-3 mb-6">
+                <button
+                  onClick={() => setSelectedPetType("dog")}
+                  className={`flex-1 py-3 rounded-xl text-base font-medium transition-all ${
+                    selectedPetType === "dog"
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-700 border border-gray-300"
+                  }`}
+                >
+                  🐕 כלבים
+                </button>
+                <button
+                  onClick={() => setSelectedPetType("cat")}
+                  className={`flex-1 py-3 rounded-xl text-base font-medium transition-all ${
+                    selectedPetType === "cat"
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-700 border border-gray-300"
+                  }`}
+                >
+                  🐱 חתולים
+                </button>
+                <button
+                  onClick={() => setSelectedPetType("puppy")}
+                  className={`flex-1 py-3 rounded-xl text-base font-medium transition-all ${
+                    selectedPetType === "puppy"
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-700 border border-gray-300"
+                  }`}
+                >
+                  🐶 גורים
+                </button>
+              </div>
+
+              {/* Categories Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {productCategories[selectedPetType].map((category) => (
+                  <button
+                    key={category.id}
+                    className="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg transition-all hover:border-gray-400 text-right"
+                  >
+                    <div className="text-3xl mb-2">{category.icon}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {category.label}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Section Title */}
           <h2 className="text-2xl font-bold text-gray-900 text-center mb-6">
