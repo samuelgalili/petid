@@ -128,21 +128,21 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20" dir="rtl" style={{ background: 'hsl(48 67% 97%)' }}>
-        <div className="bg-[hsl(48_67%_97%)] border-b border-border/30 p-6 pb-6">
+      <div className="min-h-screen pb-20 bg-white" dir="rtl">
+        <div className="bg-white border-b border-gray-200 p-6 pb-6">
           <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Menu className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+              <Menu className="w-5 h-5 text-gray-700" />
             </Button>
             <div className="flex-1 mx-4">
-              <div className="h-10 bg-white rounded-full" />
+              <div className="h-10 bg-gray-100 rounded-full" />
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Bell className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+                <Bell className="w-5 h-5 text-gray-700" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <UserX className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+                <UserX className="w-5 h-5 text-gray-700" />
               </Button>
             </div>
           </div>
@@ -239,69 +239,68 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-20 animate-fade-in" dir="rtl" style={{ background: 'hsl(48 67% 97%)' }}>
+    <div className="min-h-screen pb-20 animate-fade-in bg-white" dir="rtl">
       {/* Header */}
-      <div className="bg-[hsl(48_67%_97%)] border-b border-border/30 p-6 pb-6">
+      <div className="bg-white border-b border-gray-200 p-6 pb-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/50">
-            <Menu className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+            <Menu className="w-5 h-5 text-gray-700" />
           </Button>
           <div className="flex-1 mx-4">
             <div className="relative">
               <input 
                 type="text" 
                 placeholder="Search" 
-                className="w-full h-10 px-4 rounded-full bg-white border-0 text-sm text-center shadow-sm"
+                className="w-full h-10 px-4 rounded-full bg-gray-50 border-2 border-gray-200 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 text-sm text-center text-gray-900 placeholder:text-gray-500 font-jakarta transition-all shadow-sm focus:shadow-md"
               />
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/50">
-              <Bell className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+              <Bell className="w-5 h-5 text-gray-700" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/50">
-              <UserX className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+              <UserX className="w-5 h-5 text-gray-700" />
             </Button>
           </div>
         </div>
 
         {/* Membership Banner */}
         <div className="mb-4">
-          <div className="bg-primary text-white rounded-2xl px-4 py-3 text-center font-semibold text-sm shadow-md">
-            Annual Membership<br />Membership.yub
+          <div className="bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-2xl px-4 py-3 text-center font-semibold text-sm shadow-[0_4px_20px_rgba(251,214,106,0.3)] font-jakarta">
+            Annual Membership<br />Premium Access
           </div>
         </div>
 
         {/* Filter Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
-          <button className="px-4 py-2 rounded-full bg-white text-sm font-medium whitespace-nowrap shadow-sm border border-border/20">
-            AUEE ועד
+          <button className="px-4 py-2 rounded-full bg-[#FBD66A] text-gray-900 text-sm font-semibold font-jakarta whitespace-nowrap shadow-sm hover:bg-[#F4C542] transition-all">
+            All Categories
           </button>
-          <button className="px-4 py-2 rounded-full bg-white/50 text-sm font-medium whitespace-nowrap">
-            לימון LIMOUNT
+          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta whitespace-nowrap hover:bg-gray-200 transition-all">
+            Featured
           </button>
-          <button className="px-4 py-2 rounded-full bg-white/50 text-sm font-medium whitespace-nowrap">
-            ACCOUION
+          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta whitespace-nowrap hover:bg-gray-200 transition-all">
+            Popular
           </button>
         </div>
 
         {/* Category Filter */}
         <div className="flex gap-2 mb-4">
-          <button className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium shadow-md flex items-center gap-2">
-            <span>A</span>
-            <span>COCAINT</span>
+          <button className="px-4 py-2 rounded-full bg-gray-900 text-white text-sm font-semibold font-jakarta shadow-md flex items-center gap-2 hover:bg-gray-800 transition-all">
+            <span>All</span>
           </button>
-          <button className="px-4 py-2 rounded-full bg-white text-sm font-medium">
-            חייב יקרים ACCOUN
+          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta hover:bg-gray-200 transition-all">
+            Services
           </button>
-          <button className="px-4 py-2 rounded-full bg-white text-sm font-medium">
-            COOUFOINS
+          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta hover:bg-gray-200 transition-all">
+            Products
           </button>
         </div>
       </div>
 
       {/* Feature Grid */}
-      <div className="px-6 pt-6 pb-6 grid grid-cols-3 gap-3">
+      <div className="px-6 pt-6 pb-6 grid grid-cols-3 gap-4">
         {features.map((feature, index) => {
           if (feature.external) {
             return (
@@ -310,13 +309,13 @@ const Home = () => {
                 href={feature.path}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all duration-200 min-h-[130px] relative shadow-sm`}
+                className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] border-2 border-gray-100`}
               >
                 <div className="absolute top-3 right-3 w-4 h-4 rounded-full" style={{ backgroundColor: feature.dotColor }} />
                 <div className="text-4xl mb-1">{feature.icon}</div>
                 <div className="text-center">
-                  <h3 className="font-bold text-sm mb-0.5 leading-tight">{feature.label}</h3>
-                  <p className="text-[9px] text-foreground/50 uppercase tracking-wide font-medium">{feature.description}</p>
+                  <h3 className="font-bold text-sm mb-0.5 leading-tight text-gray-900 font-jakarta">{feature.label}</h3>
+                  <p className="text-[9px] text-gray-500 uppercase tracking-wide font-semibold font-jakarta">{feature.description}</p>
                 </div>
               </a>
             );
@@ -326,13 +325,13 @@ const Home = () => {
             <div
               key={index}
               onClick={() => navigate(feature.path)}
-              className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-95 transition-all duration-200 min-h-[130px] relative shadow-sm`}
+              className={`group ${feature.color} rounded-[1.75rem] p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:scale-[1.05] active:scale-95 transition-all duration-200 min-h-[130px] relative shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] border-2 border-gray-100`}
             >
               <div className="absolute top-3 right-3 w-4 h-4 rounded-full" style={{ backgroundColor: feature.dotColor }} />
               <div className="text-4xl mb-1">{feature.icon}</div>
               <div className="text-center">
-                <h3 className="font-bold text-sm mb-0.5 leading-tight">{feature.label}</h3>
-                <p className="text-[9px] text-foreground/50 uppercase tracking-wide font-medium">{feature.description}</p>
+                <h3 className="font-bold text-sm mb-0.5 leading-tight text-gray-900 font-jakarta">{feature.label}</h3>
+                <p className="text-[9px] text-gray-500 uppercase tracking-wide font-semibold font-jakarta">{feature.description}</p>
               </div>
             </div>
           );
