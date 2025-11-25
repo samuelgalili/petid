@@ -143,7 +143,7 @@ const AddPet = () => {
         {/* Header with Icon */}
         <div className="text-center mb-10 animate-slide-up">
           
-          <h1 className="text-4xl md:text-5xl font-jakarta font-bold text-foreground mb-3 tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-foreground mb-3 tracking-tight">
             Add Your Pet
           </h1>
           <p className="text-muted-foreground text-base md:text-lg font-jakarta font-normal max-w-md mx-auto">
