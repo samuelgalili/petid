@@ -33,6 +33,8 @@ const AddPet = () => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -222,14 +224,26 @@ const AddPet = () => {
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setIsSwiping(true);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     setTouchEnd(e.targetTouches[0].clientX);
+    
+    if (touchStart !== null) {
+      const distance = touchStart - e.targetTouches[0].clientX;
+      if (Math.abs(distance) > 10) {
+        setSwipeDirection(distance > 0 ? 'left' : 'right');
+      }
+    }
   };
 
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (!touchStart || !touchEnd) {
+      setIsSwiping(false);
+      setSwipeDirection(null);
+      return;
+    }
     
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
@@ -244,6 +258,9 @@ const AddPet = () => {
     if (isRightSwipe && currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     }
+
+    setIsSwiping(false);
+    setSwipeDirection(null);
   };
   return <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in relative" dir="ltr">
       {/* Tutorial Overlay */}
@@ -312,7 +329,26 @@ const AddPet = () => {
             </div>)}
         </div>
 
-        <div className="animate-scale-in">
+        <div className="animate-scale-in relative">
+            {/* Swipe Indicators */}
+            {isSwiping && currentStep > 1 && swipeDirection === 'right' && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none animate-fade-in">
+                <div className="flex items-center gap-1 text-[#FBD66A] animate-pulse">
+                  <ArrowLeft className="w-8 h-8" strokeWidth={3} />
+                  <ArrowLeft className="w-6 h-6 -ml-4 opacity-60" strokeWidth={3} />
+                </div>
+              </div>
+            )}
+            
+            {isSwiping && currentStep < 3 && canProceed() && swipeDirection === 'left' && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none animate-fade-in">
+                <div className="flex items-center gap-1 text-[#FBD66A] animate-pulse">
+                  <ArrowRight className="w-6 h-6 -mr-4 opacity-60" strokeWidth={3} />
+                  <ArrowRight className="w-8 h-8" strokeWidth={3} />
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-8" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
               {/* Step 1: Pet Type Selection */}
               {currentStep === 1 && <div className="space-y-6">
