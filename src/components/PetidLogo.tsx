@@ -15,6 +15,11 @@ export const PetidLogo = ({
       <div className="flex justify-center relative" style={{
       marginBottom: showAnimals ? '2rem' : '1.5rem'
     }}>
+        <img 
+          src={petidLogo} 
+          alt="Petid Logo" 
+          className="h-16 w-auto object-contain"
+        />
         
         {/* Blinking Paw over the "i" */}
         <motion.div className="absolute" style={{
