@@ -146,18 +146,14 @@ const AddPet = () => {
       }
 
       // Insert pet data
-      // Calculate age from birth date
-      const age = formData.birthDate 
-        ? Math.floor((new Date().getTime() - formData.birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-        : null;
-
+      // Insert pet data with birth date
       const {
         error: insertError
       } = await supabase.from("pets").insert({
         user_id: user.id,
         name: formData.name,
         type: petType,
-        age: age,
+        birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
         gender: formData.gender || null,
         breed: formData.breed || null,
         is_neutered: formData.is_neutered === "true",
