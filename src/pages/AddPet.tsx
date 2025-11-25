@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Sparkles, ArrowLeft } from "lucide-react";
@@ -199,8 +198,7 @@ const AddPet = () => {
                 </div>}
 
               {/* Step 2: Basic Info */}
-              {currentStep === 2 && <Card className="border-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-sm rounded-3xl">
-                  <CardContent className="p-6 space-y-5 animate-fade-in">
+              {currentStep === 2 && <div className="space-y-5 animate-fade-in">
                   {/* Image Upload */}
                   <div className="space-y-3">
                     <Label htmlFor="image" className="text-sm font-semibold font-jakarta text-gray-900">Pet Photo</Label>
@@ -225,7 +223,7 @@ const AddPet = () => {
                     <Input id="name" value={formData.name} onChange={e => setFormData({
                   ...formData,
                   name: e.target.value
-                })} placeholder="What's your pet's name?" required disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta" />
+                })} placeholder="What's your pet's name?" required disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" />
                   </div>
 
                   {/* Age */}
@@ -234,14 +232,12 @@ const AddPet = () => {
                     <Input id="age" type="number" min="0" value={formData.age} onChange={e => setFormData({
                   ...formData,
                   age: e.target.value
-                })} placeholder="How many years?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta" />
+                })} placeholder="How many years?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" />
                   </div>
-                </CardContent>
-                </Card>}
+                </div>}
 
               {/* Step 3: Additional Info */}
-              {currentStep === 3 && <Card className="border-0 shadow-[0_4px_20px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-sm rounded-3xl">
-                  <CardContent className="p-6 space-y-5 animate-fade-in">
+              {currentStep === 3 && <div className="space-y-5 animate-fade-in">
                   {/* Gender */}
                   <div className="space-y-3">
                     <Label htmlFor="gender" className="text-sm font-semibold font-jakarta text-gray-900">Gender</Label>
@@ -249,7 +245,7 @@ const AddPet = () => {
                   ...formData,
                   gender: value
                 })} disabled={loading}>
-                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta">
+                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -265,7 +261,7 @@ const AddPet = () => {
                     <Input id="breed" value={formData.breed} onChange={e => setFormData({
                   ...formData,
                   breed: e.target.value
-                })} placeholder="What breed?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta" />
+                })} placeholder="What breed?" disabled={loading} className="h-12 text-sm border-2 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]" />
                   </div>
 
                   {/* Neutered */}
@@ -275,7 +271,7 @@ const AddPet = () => {
                   ...formData,
                   is_neutered: value
                 })} disabled={loading}>
-                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta">
+                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -284,8 +280,7 @@ const AddPet = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </CardContent>
-                </Card>}
+                </div>}
 
               {/* Navigation Buttons */}
               <div className="flex gap-3 pt-6">
