@@ -18,6 +18,8 @@ const Home = () => {
   const [pets, setPets] = useState<any[]>([]);
   const [redetectingPetId, setRedetectingPetId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("account");
+  const [activeCategory, setActiveCategory] = useState("intop-ribet");
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const { toast } = useToast();
 
@@ -281,35 +283,81 @@ const Home = () => {
         </div>
 
         {/* Membership Banner */}
-        <div className="mb-4">
+        <div className="mb-5">
           <div className="bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-2xl px-4 py-3 text-center font-semibold text-sm shadow-[0_4px_20px_rgba(251,214,106,0.3)] font-jakarta">
-            Annual Membership<br />Premium Access
+            Membership Club<br />
+            <span className="text-xs font-normal opacity-70">Premium Access</span>
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
-          <button className="px-4 py-2 rounded-full bg-[#FBD66A] text-gray-900 text-sm font-semibold font-jakarta whitespace-nowrap shadow-sm hover:bg-[#F4C542] transition-all">
-            All Categories
+        {/* Primary Filter Buttons */}
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+          <button 
+            onClick={() => setActiveFilter("int1-out")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+              activeFilter === "int1-out" 
+                ? "bg-white text-gray-900 border-2 border-gray-200" 
+                : "bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100"
+            }`}
+          >
+            New In
           </button>
-          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta whitespace-nowrap hover:bg-gray-200 transition-all">
-            Featured
+          <button 
+            onClick={() => setActiveFilter("aget")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+              activeFilter === "aget" 
+                ? "bg-white text-gray-900 border-2 border-gray-200" 
+                : "bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100"
+            }`}
+          >
+            Best Sellers
           </button>
-          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta whitespace-nowrap hover:bg-gray-200 transition-all">
-            Popular
+          <button 
+            onClick={() => setActiveFilter("account")}
+            className={`px-5 py-2.5 rounded-full text-sm font-semibold font-jakarta whitespace-nowrap transition-all shadow-md flex items-center gap-2 ${
+              activeFilter === "account" 
+                ? "bg-gray-900 text-white" 
+                : "bg-gray-50 text-gray-600 border-2 border-transparent hover:bg-gray-100"
+            }`}
+          >
+            <span>All Products</span>
+            {activeFilter === "account" && (
+              <span className="text-xs">→</span>
+            )}
           </button>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex gap-2 mb-4">
-          <button className="px-4 py-2 rounded-full bg-gray-900 text-white text-sm font-semibold font-jakarta shadow-md flex items-center gap-2 hover:bg-gray-800 transition-all">
-            <span>All</span>
+        {/* Category Filter Buttons */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+          <button 
+            onClick={() => setActiveCategory("intop-ribet")}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+              activeCategory === "intop-ribet" 
+                ? "bg-[#7DD3C0] text-gray-900" 
+                : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Food & Treats
           </button>
-          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta hover:bg-gray-200 transition-all">
-            Services
+          <button 
+            onClick={() => setActiveCategory("account-cater")}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+              activeCategory === "account-cater" 
+                ? "bg-[#7DD3C0] text-gray-900" 
+                : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Accessories
           </button>
-          <button className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium font-jakarta hover:bg-gray-200 transition-all">
-            Products
+          <button 
+            onClick={() => setActiveCategory("deterrtn")}
+            className={`px-5 py-2.5 rounded-full text-sm font-bold font-jakarta whitespace-nowrap transition-all shadow-sm ${
+              activeCategory === "deterrtn" 
+                ? "bg-[#7DD3C0] text-gray-900" 
+                : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            Healthcare
           </button>
         </div>
       </div>
