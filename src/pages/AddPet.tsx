@@ -219,7 +219,7 @@ const AddPet = () => {
   };
   const canProceed = () => {
     if (currentStep === 1) return petType !== null;
-    if (currentStep === 2) return formData.name.trim() !== "";
+    if (currentStep === 2) return formData.name.trim() !== "" && formData.breed.trim() !== "";
     return true;
   };
 
