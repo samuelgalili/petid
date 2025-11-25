@@ -4,17 +4,32 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { HomePageSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 
 const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [pets, setPets] = useState<any[]>([]);
 
-  // Simulate data loading
+  // Fetch user's pets
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const fetchPets = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('pets')
+          .select('*')
+          .eq('user_id', user.id);
+        if (data) {
+          setPets(data);
+        }
+      }
       setLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
+    };
+
+    fetchPets();
   }, []);
 
   if (loading) {
@@ -192,7 +207,7 @@ const Home = () => {
       </div>
 
       {/* Feature Grid */}
-      <div className="px-6 pt-6 grid grid-cols-3 gap-3">
+      <div className="px-6 pt-6 pb-6 grid grid-cols-3 gap-3">
         {features.map((feature, index) => {
           if (feature.external) {
             return (
@@ -229,6 +244,48 @@ const Home = () => {
           );
         })}
       </div>
+
+      {/* My Pets Section */}
+      {pets.length > 0 && (
+        <div className="px-6 pt-8 pb-6">
+          <h2 className="text-xl font-bold font-jakarta mb-4">My Pets</h2>
+          <div className="grid grid-cols-1 gap-4">
+            {pets.map((pet) => (
+              <Card key={pet.id} className="p-4 bg-white border-2 border-gray-200 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                <div className="flex items-start gap-4">
+                  <Avatar className="w-16 h-16 border-2 border-[#FBD66A]/30">
+                    <AvatarImage src={pet.avatar_url || undefined} />
+                    <AvatarFallback className="bg-[#FBD66A]/20 text-gray-900 font-bold text-lg font-jakarta">
+                      {pet.name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg font-jakarta text-gray-900">{pet.name}</h3>
+                    <p className="text-sm text-gray-600 font-jakarta capitalize">{pet.type}</p>
+                    {pet.breed && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-sm text-gray-700 font-jakarta">{pet.breed}</span>
+                        {pet.breed_confidence !== null && (
+                          <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
+                            pet.breed_confidence > 80 ? 'bg-green-100 text-green-700' :
+                            pet.breed_confidence > 60 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-orange-100 text-orange-700'
+                          }`}>
+                            {pet.breed_confidence}% AI confidence
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {pet.gender && (
+                      <p className="text-xs text-gray-500 font-jakarta mt-1 capitalize">{pet.gender}</p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
