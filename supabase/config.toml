@@ -1,1 +1,4 @@
 project_id = "xcauajpfrmalzhhiodcb"
+
+[functions.detect-pet-breed]
+verify_jwt = false
