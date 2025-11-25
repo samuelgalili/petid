@@ -9,6 +9,7 @@ import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
+import { PointsProvider } from "@/contexts/PointsContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
 import { Header } from "@/components/Header";
@@ -90,13 +91,15 @@ const App = () => (
         <LanguageProvider>
           <PetPreferenceProvider>
             <GuestProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <AnimatedRoutes />
-                </BrowserRouter>
-              </TooltipProvider>
+              <PointsProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <AnimatedRoutes />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </PointsProvider>
             </GuestProvider>
           </PetPreferenceProvider>
         </LanguageProvider>
