@@ -55,6 +55,13 @@ const Auth = () => {
         <source src="/videos/background-pup-story.mp4" type="video/mp4" />
       </video>
 
+      {/* Fixed Header with Logo */}
+      <div className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
+          <PetidLogo showAnimals={false} />
+        </div>
+      </div>
+
       {/* Content */}
       <AnimatePresence>
         {videoEnded && (
@@ -62,13 +69,9 @@ const Auth = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-[440px] relative px-4"
+            className="w-full max-w-[440px] relative px-4 mt-20"
             style={{ zIndex: 2 }}
           >
-            {/* Logo */}
-            <div className="mb-8">
-              <PetidLogo showAnimals={false} />
-            </div>
 
             {/* Login Form */}
             <div className="mb-5">
