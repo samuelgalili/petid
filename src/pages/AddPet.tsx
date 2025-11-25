@@ -12,7 +12,6 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
-
 const AddPet = () => {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -23,23 +22,32 @@ const AddPet = () => {
     age: "",
     gender: "",
     breed: "",
-    is_neutered: "false",
+    is_neutered: "false"
   });
-  const { petType, setPetType } = usePetPreference();
-  const { isGuest } = useGuest();
+  const {
+    petType,
+    setPetType
+  } = usePetPreference();
+  const {
+    isGuest
+  } = useGuest();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       if (!session && !isGuest) {
         navigate("/auth");
       }
     };
     checkAuth();
   }, [navigate, isGuest]);
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -51,95 +59,86 @@ const AddPet = () => {
       reader.readAsDataURL(file);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!petType) {
       toast({
         title: "Error",
         description: "Please choose a pet type",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setLoading(true);
-
     try {
       // For guest users, just show success and navigate
       if (isGuest) {
         toast({
           title: "Success!",
-          description: "Pet added (guest mode - not saved)",
+          description: "Pet added (guest mode - not saved)"
         });
         navigate("/home");
         return;
       }
-
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
-
       let avatarUrl = "";
 
       // Upload image if exists
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from("pet-avatars")
-          .upload(fileName, imageFile);
-
+        const {
+          error: uploadError
+        } = await supabase.storage.from("pet-avatars").upload(fileName, imageFile);
         if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("pet-avatars")
-          .getPublicUrl(fileName);
-
+        const {
+          data: {
+            publicUrl
+          }
+        } = supabase.storage.from("pet-avatars").getPublicUrl(fileName);
         avatarUrl = publicUrl;
       }
 
       // Insert pet data
-      const { error: insertError } = await supabase
-        .from("pets")
-        .insert({
-          user_id: user.id,
-          name: formData.name,
-          type: petType,
-          age: formData.age ? parseInt(formData.age) : null,
-          gender: formData.gender || null,
-          breed: formData.breed || null,
-          is_neutered: formData.is_neutered === "true",
-          avatar_url: avatarUrl,
-        });
-
+      const {
+        error: insertError
+      } = await supabase.from("pets").insert({
+        user_id: user.id,
+        name: formData.name,
+        type: petType,
+        age: formData.age ? parseInt(formData.age) : null,
+        gender: formData.gender || null,
+        breed: formData.breed || null,
+        is_neutered: formData.is_neutered === "true",
+        avatar_url: avatarUrl
+      });
       if (insertError) throw insertError;
-
       toast({
         title: "Success!",
-        description: "Pet added successfully",
+        description: "Pet added successfully"
       });
-
       navigate("/home");
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const canProceed = () => {
     if (currentStep === 1) return petType !== null;
     if (currentStep === 2) return formData.name.trim() !== "";
     return true;
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-4 pb-24 animate-fade-in" dir="ltr">
+  return <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 p-4 pb-24 animate-fade-in" dir="ltr">
       <div className="max-w-2xl mx-auto mt-4 md:mt-8">
         {/* Header with Icon */}
         <div className="text-center mb-10 animate-slide-up">
@@ -156,128 +155,61 @@ const AddPet = () => {
 
         {/* Progress Steps */}
         <div className="flex justify-center items-center gap-3 mb-10">
-          {[1, 2, 3].map((step) => (
-            <div key={step} className="flex items-center">
-              <div
-                className={`flex items-center justify-center rounded-full transition-all duration-500 ${
-                  step === currentStep
-                    ? "w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] shadow-[0_4px_20px_rgba(251,214,106,0.4)] scale-110"
-                    : step < currentStep
-                    ? "w-8 h-8 bg-[#F4C542] shadow-md"
-                    : "w-8 h-8 bg-gray-200"
-                }`}
-              >
-                {step < currentStep ? (
-                  <Sparkles className="w-4 h-4 text-gray-900" />
-                ) : (
-                  <span className={`font-jakarta font-bold ${step === currentStep ? 'text-gray-900 text-sm' : 'text-gray-400 text-xs'}`}>
+          {[1, 2, 3].map(step => <div key={step} className="flex items-center">
+              <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${step === currentStep ? "w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] shadow-[0_4px_20px_rgba(251,214,106,0.4)] scale-110" : step < currentStep ? "w-8 h-8 bg-[#F4C542] shadow-md" : "w-8 h-8 bg-gray-200"}`}>
+                {step < currentStep ? <Sparkles className="w-4 h-4 text-gray-900" /> : <span className={`font-jakarta font-bold ${step === currentStep ? 'text-gray-900 text-sm' : 'text-gray-400 text-xs'}`}>
                     {step}
-                  </span>
-                )}
+                  </span>}
               </div>
-              {step < 3 && (
-                <div className={`w-8 h-1 mx-1 rounded-full transition-all duration-500 ${
-                  step < currentStep ? 'bg-[#F4C542]' : 'bg-gray-200'
-                }`} />
-              )}
-            </div>
-          ))}
+              {step < 3 && <div className={`w-8 h-1 mx-1 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-[#F4C542]' : 'bg-gray-200'}`} />}
+            </div>)}
         </div>
 
         <Card className="shadow-[0_20px_60px_rgba(0,0,0,0.12)] border-0 overflow-hidden animate-scale-in bg-white backdrop-blur-sm">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#FBD66A] via-[#F4C542] to-[#FBD66A]" />
           
-          <CardHeader className="text-center space-y-3 pb-8 pt-10">
-            <CardTitle className="text-3xl font-jakarta font-bold text-gray-900 tracking-tight">
-              {currentStep === 1 && "Choose Pet Type"}
-              {currentStep === 2 && "Basic Details"}
-              {currentStep === 3 && "Additional Details"}
-            </CardTitle>
-            <CardDescription className="text-base text-gray-600 font-jakarta max-w-md mx-auto">
-              {currentStep === 1 && "Dog or Cat? Choose what fits best"}
-              {currentStep === 2 && "Tell us about your wonderful pet"}
-              {currentStep === 3 && "Just a few more details to complete"}
-            </CardDescription>
-          </CardHeader>
+          
 
           <CardContent className="px-6 md:px-10 pb-10">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Pet Type Selection */}
-              {currentStep === 1 && (
-                <div className="space-y-6 animate-fade-in">
+              {currentStep === 1 && <div className="space-y-6 animate-fade-in">
                   <div className="grid grid-cols-2 gap-6 md:gap-8">
-                    <button
-                      type="button"
-                      onClick={() => setPetType("dog")}
-                      className={`group relative p-10 border-2 rounded-3xl transition-all duration-300 ${
-                        petType === "dog"
-                          ? "border-[#FBD66A] bg-gradient-to-br from-[#FBD66A]/10 to-[#F4C542]/5 shadow-[0_12px_40px_rgba(251,214,106,0.35)] scale-105"
-                          : "border-gray-200 bg-white hover:border-[#FBD66A]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:scale-102 hover:bg-gray-50/50"
-                      }`}
-                    >
+                    <button type="button" onClick={() => setPetType("dog")} className={`group relative p-10 border-2 rounded-3xl transition-all duration-300 ${petType === "dog" ? "border-[#FBD66A] bg-gradient-to-br from-[#FBD66A]/10 to-[#F4C542]/5 shadow-[0_12px_40px_rgba(251,214,106,0.35)] scale-105" : "border-gray-200 bg-white hover:border-[#FBD66A]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:scale-102 hover:bg-gray-50/50"}`}>
                       <div className="mb-4 transition-transform duration-300 group-hover:scale-110 flex justify-center">
                         <img src={dogIcon} alt="Dog" className="w-24 h-24 object-contain drop-shadow-lg" />
                       </div>
                       <div className="font-bold text-xl font-jakarta text-gray-900">Dog</div>
-                      {petType === "dog" && (
-                        <div className="absolute -top-3 -right-3 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-full p-2 shadow-lg">
+                      {petType === "dog" && <div className="absolute -top-3 -right-3 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-full p-2 shadow-lg">
                           <Sparkles className="w-5 h-5" />
-                        </div>
-                      )}
+                        </div>}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setPetType("cat")}
-                      className={`group relative p-10 border-2 rounded-3xl transition-all duration-300 ${
-                        petType === "cat"
-                          ? "border-[#FBD66A] bg-gradient-to-br from-[#FBD66A]/10 to-[#F4C542]/5 shadow-[0_12px_40px_rgba(251,214,106,0.35)] scale-105"
-                          : "border-gray-200 bg-white hover:border-[#FBD66A]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:scale-102 hover:bg-gray-50/50"
-                      }`}
-                    >
+                    <button type="button" onClick={() => setPetType("cat")} className={`group relative p-10 border-2 rounded-3xl transition-all duration-300 ${petType === "cat" ? "border-[#FBD66A] bg-gradient-to-br from-[#FBD66A]/10 to-[#F4C542]/5 shadow-[0_12px_40px_rgba(251,214,106,0.35)] scale-105" : "border-gray-200 bg-white hover:border-[#FBD66A]/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:scale-102 hover:bg-gray-50/50"}`}>
                       <div className="mb-4 transition-transform duration-300 group-hover:scale-110 flex justify-center">
                         <img src={catIcon} alt="Cat" className="w-24 h-24 object-contain drop-shadow-lg" />
                       </div>
                       <div className="font-bold text-xl font-jakarta text-gray-900">Cat</div>
-                      {petType === "cat" && (
-                        <div className="absolute -top-3 -right-3 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-full p-2 shadow-lg">
+                      {petType === "cat" && <div className="absolute -top-3 -right-3 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] text-gray-900 rounded-full p-2 shadow-lg">
                           <Sparkles className="w-5 h-5" />
-                        </div>
-                      )}
+                        </div>}
                     </button>
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Step 2: Basic Info */}
-              {currentStep === 2 && (
-                <div className="space-y-6 animate-fade-in">
+              {currentStep === 2 && <div className="space-y-6 animate-fade-in">
                   {/* Image Upload */}
                   <div className="space-y-4">
                     <Label htmlFor="image" className="text-base font-semibold font-jakarta text-gray-900">Pet Photo</Label>
                     <div className="flex flex-col items-center gap-6">
-                      {imagePreview && (
-                        <div className="relative group">
+                      {imagePreview && <div className="relative group">
                           <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="relative w-44 h-44 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300 group-hover:scale-105 group-hover:ring-[#FBD66A]/50"
-                          />
-                        </div>
-                      )}
-                      <Label
-                        htmlFor="image"
-                        className="flex items-center gap-3 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-8 hover:border-[#FBD66A] hover:bg-gradient-to-br hover:from-[#FBD66A]/5 hover:to-[#F4C542]/5 transition-all duration-300 group w-full justify-center backdrop-blur-sm shadow-sm hover:shadow-lg"
-                      >
+                          <img src={imagePreview} alt="Preview" className="relative w-44 h-44 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300 group-hover:scale-105 group-hover:ring-[#FBD66A]/50" />
+                        </div>}
+                      <Label htmlFor="image" className="flex items-center gap-3 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-8 hover:border-[#FBD66A] hover:bg-gradient-to-br hover:from-[#FBD66A]/5 hover:to-[#F4C542]/5 transition-all duration-300 group w-full justify-center backdrop-blur-sm shadow-sm hover:shadow-lg">
                         <Upload className="w-7 h-7 text-[#FBD66A] group-hover:scale-110 transition-transform" />
                         <span className="font-semibold text-lg font-jakarta text-[#FBD66A]">{imagePreview ? "Change Photo" : "Upload Photo"}</span>
-                        <Input
-                          id="image"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
+                        <Input id="image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                       </Label>
                     </div>
                   </div>
@@ -287,45 +219,31 @@ const AddPet = () => {
                     <Label htmlFor="name" className="text-base font-semibold font-jakarta text-gray-900">
                       Pet Name <span className="text-[#FBD66A]">*</span>
                     </Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="What's your pet's name?"
-                      required
-                      disabled={loading}
-                      className="h-14 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta"
-                    />
+                    <Input id="name" value={formData.name} onChange={e => setFormData({
+                  ...formData,
+                  name: e.target.value
+                })} placeholder="What's your pet's name?" required disabled={loading} className="h-14 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta" />
                   </div>
 
                   {/* Age */}
                   <div className="space-y-4">
                     <Label htmlFor="age" className="text-base font-semibold font-jakarta text-gray-900">Age (in years)</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      min="0"
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                      placeholder="How many years?"
-                      disabled={loading}
-                      className="h-14 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta"
-                    />
+                    <Input id="age" type="number" min="0" value={formData.age} onChange={e => setFormData({
+                  ...formData,
+                  age: e.target.value
+                })} placeholder="How many years?" disabled={loading} className="h-14 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta" />
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Step 3: Additional Info */}
-              {currentStep === 3 && (
-                <div className="space-y-6 animate-fade-in">
+              {currentStep === 3 && <div className="space-y-6 animate-fade-in">
                   {/* Gender */}
                   <div className="space-y-4">
                     <Label htmlFor="gender" className="text-base font-semibold font-jakarta text-gray-900">Gender</Label>
-                    <Select
-                      value={formData.gender}
-                      onValueChange={(value) => setFormData({ ...formData, gender: value })}
-                      disabled={loading}
-                    >
+                    <Select value={formData.gender} onValueChange={value => setFormData({
+                  ...formData,
+                  gender: value
+                })} disabled={loading}>
                       <SelectTrigger className="h-14 text-base border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md backdrop-blur-sm font-jakarta">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
@@ -339,24 +257,19 @@ const AddPet = () => {
                   {/* Breed */}
                   <div className="space-y-4">
                     <Label htmlFor="breed" className="text-base font-semibold font-jakarta text-gray-900">Breed</Label>
-                    <Input
-                      id="breed"
-                      value={formData.breed}
-                      onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
-                      placeholder="What breed?"
-                      disabled={loading}
-                      className="h-14 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta"
-                    />
+                    <Input id="breed" value={formData.breed} onChange={e => setFormData({
+                  ...formData,
+                  breed: e.target.value
+                })} placeholder="What breed?" disabled={loading} className="h-14 text-base border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md focus:shadow-[0_8px_30px_rgba(251,214,106,0.25)] backdrop-blur-sm font-jakarta" />
                   </div>
 
                   {/* Neutered */}
                   <div className="space-y-4">
                     <Label htmlFor="neutered" className="text-base font-semibold font-jakarta text-gray-900">Neutered/Spayed</Label>
-                    <Select
-                      value={formData.is_neutered}
-                      onValueChange={(value) => setFormData({ ...formData, is_neutered: value })}
-                      disabled={loading}
-                    >
+                    <Select value={formData.is_neutered} onValueChange={value => setFormData({
+                  ...formData,
+                  is_neutered: value
+                })} disabled={loading}>
                       <SelectTrigger className="h-14 text-base border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-4 focus:ring-[#FBD66A]/10 rounded-xl transition-all shadow-sm hover:shadow-md backdrop-blur-sm font-jakarta">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
@@ -366,58 +279,30 @@ const AddPet = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              )}
+                </div>}
 
               {/* Navigation Buttons */}
               <div className="flex gap-4 pt-6">
-                {currentStep > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCurrentStep(currentStep - 1)}
-                    disabled={loading}
-                    className="flex-1 h-14 text-base border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 text-gray-700 rounded-xl transition-all font-jakarta font-semibold shadow-sm hover:shadow-lg"
-                  >
+                {currentStep > 1 && <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={loading} className="flex-1 h-14 text-base border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400 text-gray-700 rounded-xl transition-all font-jakarta font-semibold shadow-sm hover:shadow-lg">
                     Back
-                  </Button>
-                )}
+                  </Button>}
                 
-                {currentStep < 3 ? (
-                  <Button
-                    type="button"
-                    onClick={() => setCurrentStep(currentStep + 1)}
-                    disabled={!canProceed() || loading}
-                    className="flex-1 h-14 text-base bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-xl font-jakarta font-bold shadow-[0_8px_30px_rgba(251,214,106,0.35)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  >
+                {currentStep < 3 ? <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} disabled={!canProceed() || loading} className="flex-1 h-14 text-base bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-xl font-jakarta font-bold shadow-[0_8px_30px_rgba(251,214,106,0.35)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
                     Next Step
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 h-14 text-base bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-xl font-jakarta font-bold shadow-[0_8px_30px_rgba(251,214,106,0.35)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  >
-                    {loading ? (
-                      <>
+                  </Button> : <Button type="submit" disabled={loading} className="flex-1 h-14 text-base bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-xl font-jakarta font-bold shadow-[0_8px_30px_rgba(251,214,106,0.35)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.5)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    {loading ? <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Saving...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         <Sparkles className="mr-2 h-5 w-5" />
                         Add Pet
-                      </>
-                    )}
-                  </Button>
-                )}
+                      </>}
+                  </Button>}
               </div>
             </form>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AddPet;
