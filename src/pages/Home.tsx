@@ -573,16 +573,20 @@ const Home = () => {
       {/* Content Container */}
       <div className="pt-4 pb-6">
         
-        {/* Gift Icon - Top Left */}
+        {/* Gift Icon - Top Left - Clickable to Rewards */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.05 }}
           className="px-4 mb-4"
         >
-          <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center">
+          <button
+            onClick={() => navigate('/rewards')}
+            className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center hover:shadow-lg transition-all active:scale-95"
+            aria-label="View Rewards"
+          >
             <Gift className="w-8 h-8 text-[#FFD700]" />
-          </div>
+          </button>
         </motion.div>
 
         {/* My Pets Section - Compact & Improved */}
