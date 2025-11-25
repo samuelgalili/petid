@@ -850,35 +850,51 @@ const Home = () => {
           </TooltipContent>
         </Tooltip>
 
-        {/* Pet Type Icons Section */}
+        {/* Pet Type Icons Section - Matching Reference */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-6 grid grid-cols-2 gap-4"
+          className="px-4 mb-6 flex items-center justify-center gap-6"
         >
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/home')}
-            className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer flex flex-col items-center"
+            className="cursor-pointer group"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.35 }}
           >
-            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-3">
-              <span className="text-3xl">🐕</span>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] rounded-2xl blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+              <div className="relative bg-gradient-to-br from-[#E8F5FF] to-[#D4ECFF] rounded-2xl p-4 shadow-md hover:shadow-xl transition-all duration-300 border-2 border-[#7DD3C0]/20 group-hover:border-[#7DD3C0]/50">
+                <div className="w-14 h-14 flex items-center justify-center">
+                  <span className="text-4xl transform group-hover:scale-110 transition-transform duration-300">🐕</span>
+                </div>
+              </div>
             </div>
-            <span className="text-sm font-bold text-gray-900 font-jakarta">Dogs</span>
+            <p className="text-center mt-2 text-xs font-bold text-gray-700 font-jakarta group-hover:text-[#7DD3C0] transition-colors">Dogs</p>
           </motion.div>
 
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.1, rotate: -5 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/home')}
-            className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer flex flex-col items-center"
+            className="cursor-pointer group"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
           >
-            <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mb-3">
-              <span className="text-3xl">🐈</span>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FFE5F0] to-[#FFD4E5] rounded-2xl blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+              <div className="relative bg-gradient-to-br from-[#FFF0F5] to-[#FFE5F0] rounded-2xl p-4 shadow-md hover:shadow-xl transition-all duration-300 border-2 border-pink-200/50 group-hover:border-pink-300">
+                <div className="w-14 h-14 flex items-center justify-center">
+                  <span className="text-4xl transform group-hover:scale-110 transition-transform duration-300">🐈</span>
+                </div>
+              </div>
             </div>
-            <span className="text-sm font-bold text-gray-900 font-jakarta">Cats</span>
+            <p className="text-center mt-2 text-xs font-bold text-gray-700 font-jakarta group-hover:text-pink-400 transition-colors">Cats</p>
           </motion.div>
         </motion.div>
 
