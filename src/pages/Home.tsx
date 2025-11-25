@@ -153,10 +153,19 @@ const Home = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [userName, setUserName] = useState<string>("Friend");
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
   const { addToCart } = useCart();
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
 
   // Confetti effects - memoized
   const triggerConfetti = useCallback(() => {
@@ -265,7 +274,7 @@ const Home = () => {
     triggerConfetti();
   }, [addToCart, toast, triggerConfetti]);
 
-  // Fetch user's pets
+  // Fetch user's pets and profile
   useEffect(() => {
     const fetchPets = async () => {
       setPetsLoading(true);
@@ -278,6 +287,18 @@ const Home = () => {
         setPetsLoading(false);
         setLoading(false);
         return;
+      }
+      
+      // Fetch user profile name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile?.full_name) {
+        const firstName = profile.full_name.split(' ')[0];
+        setUserName(firstName);
       }
       
       console.log("Fetching pets for user:", user.id);
@@ -573,20 +594,25 @@ const Home = () => {
       {/* Content Container */}
       <div className="pt-4 pb-6">
         
-        {/* Gift Icon - Top Left - Clickable to Rewards */}
+        {/* Gift Icon and Greeting - Top Left */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.05 }}
-          className="px-4 mb-4"
+          className="px-4 mb-4 flex items-center gap-3"
         >
           <button
             onClick={() => navigate('/rewards')}
-            className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center hover:shadow-lg transition-all active:scale-95"
+            className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center hover:shadow-lg transition-all active:scale-95 flex-shrink-0"
             aria-label="View Rewards"
           >
             <Gift className="w-8 h-8 text-[#FFD700]" />
           </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 font-jakarta">
+              {getGreeting()}, {userName}
+            </h1>
+          </div>
         </motion.div>
 
         {/* My Pets Section - Compact & Improved */}
