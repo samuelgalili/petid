@@ -174,7 +174,9 @@ const AddPet = () => {
                 }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
                   animationDelay: '100ms'
                 }}>
-                      <img src={dogIcon} alt="Dog" className="w-40 h-40 md:w-48 md:h-48 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
+                      <div className="w-44 h-44 md:w-52 md:h-52 flex items-center justify-center">
+                        <img src={dogIcon} alt="Dog" className="w-full h-full object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
+                      </div>
                     </button>
                     <button type="button" onClick={() => {
                   setPetType("cat");
@@ -182,7 +184,9 @@ const AddPet = () => {
                 }} className="group relative flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 focus:outline-none animate-fade-in" style={{
                   animationDelay: '250ms'
                 }}>
-                      <img src={catIcon} alt="Cat" className="w-40 h-40 md:w-48 md:h-48 object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
+                      <div className="w-44 h-44 md:w-52 md:h-52 flex items-center justify-center">
+                        <img src={catIcon} alt="Cat" className="w-full h-full object-contain drop-shadow-xl transition-all duration-300 group-hover:drop-shadow-2xl" />
+                      </div>
                     </button>
                   </div>
                 </div>}
