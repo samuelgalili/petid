@@ -665,14 +665,18 @@ const Home = () => {
           {/* Empty State - Enhanced with modern design */}
           {pets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-              <div className="relative mb-5">
-                <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center shadow-[0_8px_32px_rgba(125,211,192,0.3)] border-4 border-white overflow-hidden">
+              <button
+                onClick={() => navigate('/add-pet')}
+                className="relative mb-5 cursor-pointer group"
+                aria-label="Add your first pet"
+              >
+                <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center shadow-[0_8px_32px_rgba(125,211,192,0.3)] border-4 border-white overflow-hidden group-hover:shadow-[0_12px_40px_rgba(125,211,192,0.4)] transition-all">
                   <img src={defaultPetAvatar} alt="Add your first pet" className="w-full h-full object-cover" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full shadow-lg animate-pulse flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-white" />
+                <div className="absolute -top-1 -right-1 w-10 h-10 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full shadow-lg animate-pulse flex items-center justify-center pointer-events-none">
+                  <Plus className="w-5 h-5 text-white pointer-events-none" />
                 </div>
-              </div>
+              </button>
                <h3 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-2.5 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text tracking-tight">
                  No Pets Yet
                </h3>
