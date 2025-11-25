@@ -154,6 +154,7 @@ const Home = () => {
   const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [userName, setUserName] = useState<string>("Friend");
+  const [promotionalOffers, setPromotionalOffers] = useState<any[]>([]);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
@@ -373,6 +374,25 @@ const Home = () => {
     };
 
     fetchWalletBalance();
+  }, []);
+
+  // Fetch promotional offers
+  useEffect(() => {
+    const fetchPromotionalOffers = async () => {
+      const { data, error } = await supabase
+        .from('promotional_offers')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error("Error fetching promotional offers:", error);
+      } else if (data) {
+        setPromotionalOffers(data);
+      }
+    };
+
+    fetchPromotionalOffers();
   }, []);
 
   const handleRedetectBreed = async (petId: string, petType: string, imageFile: File) => {
@@ -873,81 +893,43 @@ const Home = () => {
             className="w-full"
           >
             <CarouselContent className="-ml-2 md:-ml-4">
-              {/* Offer 1 - 20% Off Premium Food */}
-              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
-                <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
-                  <div>
-                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
-                      LIMITED TIME
-                    </span>
-                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">20% Off</h3>
-                    <p className="text-sm text-white/90 font-jakarta">Premium Pet Food</p>
+              {promotionalOffers.length > 0 ? (
+                promotionalOffers.map((offer, index) => (
+                  <CarouselItem key={offer.id} className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.55 + index * 0.05 }}
+                      className={`bg-gradient-to-br rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between`}
+                      style={{
+                        backgroundImage: `linear-gradient(to bottom right, ${offer.gradient_from}, ${offer.gradient_to})`
+                      }}
+                    >
+                      <div>
+                        <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
+                          {offer.badge_text}
+                        </span>
+                        <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">{offer.title}</h3>
+                        <p className="text-sm text-white/90 font-jakarta">{offer.subtitle}</p>
+                      </div>
+                      <Button
+                        onClick={() => navigate(offer.button_link)}
+                        className={`bg-white text-${offer.button_color} text-sm font-bold py-2 px-4 rounded-xl hover:bg-opacity-90 transition-colors font-jakarta shadow-md`}
+                        style={{ color: `var(--${offer.button_color})` }}
+                      >
+                        {offer.button_text}
+                      </Button>
+                    </motion.div>
+                  </CarouselItem>
+                ))
+              ) : (
+                // Fallback loading state or empty state
+                <CarouselItem className="pl-2 md:pl-4 basis-[85%]">
+                  <div className="bg-gray-100 rounded-2xl p-5 h-44 flex items-center justify-center">
+                    <p className="text-gray-500 font-jakarta">Loading offers...</p>
                   </div>
-                  <Button
-                    onClick={() => navigate('/shop')}
-                    className="bg-white text-orange-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-orange-50 transition-colors font-jakarta shadow-md"
-                  >
-                    Shop Now
-                  </Button>
-                </div>
-              </CarouselItem>
-
-              {/* Offer 2 - Free Shipping */}
-              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
-                <div className="bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
-                  <div>
-                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
-                      THIS WEEK
-                    </span>
-                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">Free Shipping</h3>
-                    <p className="text-sm text-white/90 font-jakarta">On orders over ₪199</p>
-                  </div>
-                  <Button
-                    onClick={() => navigate('/shop')}
-                    className="bg-white text-blue-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-blue-50 transition-colors font-jakarta shadow-md"
-                  >
-                    Shop Now
-                  </Button>
-                </div>
-              </CarouselItem>
-
-              {/* Offer 3 - Earn Double Points */}
-              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
-                <div className="bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
-                  <div>
-                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
-                      MEMBERS ONLY
-                    </span>
-                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">2x Points</h3>
-                    <p className="text-sm text-white/90 font-jakarta">Complete tasks today</p>
-                  </div>
-                  <Button
-                    onClick={() => navigate('/tasks')}
-                    className="bg-white text-purple-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-purple-50 transition-colors font-jakarta shadow-md"
-                  >
-                    Start Tasks
-                  </Button>
-                </div>
-              </CarouselItem>
-
-              {/* Offer 4 - New Arrivals */}
-              <CarouselItem className="pl-2 md:pl-4 basis-[85%] md:basis-1/2 lg:basis-1/3">
-                <div className="bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl p-5 shadow-lg h-44 flex flex-col justify-between">
-                  <div>
-                    <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full mb-2">
-                      NEW
-                    </span>
-                    <h3 className="text-2xl font-extrabold text-white mb-1 font-jakarta">New Arrivals</h3>
-                    <p className="text-sm text-white/90 font-jakarta">Fresh toys & treats</p>
-                  </div>
-                  <Button
-                    onClick={() => navigate('/shop')}
-                    className="bg-white text-green-600 text-sm font-bold py-2 px-4 rounded-xl hover:bg-green-50 transition-colors font-jakarta shadow-md"
-                  >
-                    Explore
-                  </Button>
-                </div>
-              </CarouselItem>
+                </CarouselItem>
+              )}
             </CarouselContent>
             <CarouselPrevious className="hidden md:flex -left-4" />
             <CarouselNext className="hidden md:flex -right-4" />
