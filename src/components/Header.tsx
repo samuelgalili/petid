@@ -23,8 +23,24 @@ export const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCartPreview, setShowCartPreview] = useState(false);
+  const [leaveTimeout, setLeaveTimeout] = useState<NodeJS.Timeout | null>(null);
   
   const cartItemCount = getTotalItems();
+
+  const handleMouseEnter = () => {
+    if (leaveTimeout) {
+      clearTimeout(leaveTimeout);
+      setLeaveTimeout(null);
+    }
+    setShowCartPreview(true);
+  };
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setShowCartPreview(false);
+    }, 300);
+    setLeaveTimeout(timeout);
+  };
 
   // Don't render header on auth, signup, or add-pet pages
   const hideHeaderPaths = ['/auth', '/signup', '/add-pet', '/forgot-password', '/reset-password'];
@@ -68,8 +84,8 @@ export const Header = () => {
             <div className="flex items-center -space-x-2">
               <div 
                 className="relative"
-                onMouseEnter={() => setShowCartPreview(true)}
-                onMouseLeave={() => setShowCartPreview(false)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -114,7 +130,9 @@ export const Header = () => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+                      className="absolute right-0 top-full mt-1 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
                     >
                       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                         <h3 className="font-bold text-gray-900 dark:text-white">Shopping Cart</h3>
