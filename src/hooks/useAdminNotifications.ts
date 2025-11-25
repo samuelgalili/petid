@@ -1,0 +1,73 @@
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useAdmin } from "./useAdmin";
+
+export const useAdminNotifications = () => {
+  const { toast } = useToast();
+  const { isAdmin } = useAdmin();
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    console.log("Admin notifications: Setting up realtime subscription");
+
+    const channel = supabase
+      .channel("admin-order-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          console.log("New order received:", payload);
+          const newOrder = payload.new as any;
+          toast({
+            title: "🎉 New Order Received!",
+            description: `Order #${newOrder.id.slice(0, 8)} - Total: ₪${parseFloat(newOrder.total).toFixed(2)}`,
+            duration: 5000,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+        },
+        (payload) => {
+          console.log("Order updated:", payload);
+          const updatedOrder = payload.new as any;
+          const oldOrder = payload.old as any;
+
+          // Only notify if status changed
+          if (updatedOrder.status !== oldOrder.status) {
+            const statusEmojis: Record<string, string> = {
+              pending: "⏳",
+              processing: "🔄",
+              shipped: "🚚",
+              delivered: "✅",
+              cancelled: "❌",
+            };
+
+            toast({
+              title: `${statusEmojis[updatedOrder.status] || "📦"} Order Status Updated`,
+              description: `Order #${updatedOrder.id.slice(0, 8)} is now ${updatedOrder.status}`,
+              duration: 5000,
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log("Admin notifications subscription status:", status);
+      });
+
+    return () => {
+      console.log("Admin notifications: Cleaning up realtime subscription");
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin, toast]);
+};
