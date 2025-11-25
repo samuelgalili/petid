@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
+import { motion, AnimatePresence } from "framer-motion";
 const AddPet = () => {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -35,6 +36,7 @@ const AddPet = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -251,11 +253,13 @@ const AddPet = () => {
 
     // Swipe left = next step (if allowed)
     if (isLeftSwipe && currentStep < 3 && canProceed()) {
+      setSlideDirection('left');
       setCurrentStep(prev => prev + 1);
     }
 
     // Swipe right = previous step
     if (isRightSwipe && currentStep > 1) {
+      setSlideDirection('right');
       setCurrentStep(prev => prev - 1);
     }
 
@@ -350,8 +354,17 @@ const AddPet = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-              {/* Step 1: Pet Type Selection */}
-              {currentStep === 1 && <div className="space-y-6">
+              <AnimatePresence mode="wait" initial={false}>
+                {/* Step 1: Pet Type Selection */}
+                {currentStep === 1 && (
+                  <motion.div
+                    key="step-1"
+                    initial={{ x: slideDirection === 'left' ? 100 : -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="space-y-6"
+                  >
                   <div className="grid grid-cols-2 gap-8 md:gap-10 py-6">
                     <button type="button" onClick={() => {
                   setPetType("dog");
@@ -374,10 +387,19 @@ const AddPet = () => {
                       </div>
                     </button>
                   </div>
-                </div>}
+                  </motion.div>
+                )}
 
-              {/* Step 2: Basic Info */}
-              {currentStep === 2 && <div className="space-y-5 animate-fade-in">
+                {/* Step 2: Basic Info */}
+                {currentStep === 2 && (
+                  <motion.div
+                    key="step-2"
+                    initial={{ x: slideDirection === 'left' ? 100 : -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="space-y-5"
+                  >
                   {/* Image Upload */}
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold font-jakarta text-gray-900">Pet Photo</Label>
@@ -448,10 +470,19 @@ const AddPet = () => {
                       </PopoverContent>
                     </Popover>
                   </div>
-                </div>}
+                  </motion.div>
+                )}
 
-              {/* Step 3: Additional Info */}
-              {currentStep === 3 && <div className="space-y-5 animate-fade-in">
+                {/* Step 3: Additional Info */}
+                {currentStep === 3 && (
+                  <motion.div
+                    key="step-3"
+                    initial={{ x: slideDirection === 'left' ? 100 : -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="space-y-5"
+                  >
                   {/* Gender */}
                   <div className="space-y-3">
                     <Label htmlFor="gender" className="text-sm font-semibold font-jakarta text-gray-900">Gender</Label>
@@ -530,7 +561,9 @@ const AddPet = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Navigation Buttons */}
               <div className="flex gap-3 pt-6">
