@@ -1,4 +1,5 @@
 import { Menu, Bell, User, Camera, Loader2, History, Plus, ShoppingCart, Package, Search, Info, HelpCircle } from "lucide-react";
+import { PetidLogo } from "@/components/PetidLogo";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -512,9 +513,26 @@ const Home = () => {
     <div className="min-h-screen pb-20 animate-fade-in bg-white" dir="rtl">
       {/* Header - Fixed at Top */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 shadow-sm z-40">
-        <div className="flex items-center gap-3">
-          {/* Right: Notifications + User Profile with Tooltips */}
-          <div className="flex gap-2 flex-shrink-0">
+        <div className="flex items-center justify-between gap-3">
+          {/* Right: User, Notifications, Search */}
+          <div className="flex gap-2 items-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
+                  onClick={() => navigate('/settings')}
+                  aria-label="User profile"
+                >
+                  <User className="w-5 h-5 text-gray-700" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="font-semibold">Profile & Settings</p>
+              </TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
@@ -533,66 +551,55 @@ const Home = () => {
               </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
-                  onClick={() => navigate('/settings')}
-                  aria-label="User profile"
-                >
-                  <User className="w-5 h-5 text-gray-700" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p className="font-semibold">Profile & Settings</p>
-              </TooltipContent>
-            </Tooltip>
+            {!isSearchOpen ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
+                    onClick={() => setIsSearchOpen(true)}
+                    aria-label="Open search"
+                  >
+                    <Search className="w-5 h-5 text-gray-700" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="font-semibold">Search</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <div className="fixed left-4 right-20 top-3 z-50 animate-fade-in">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  <input 
+                    type="text" 
+                    placeholder="Search products, pets, and more..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => {
+                      if (!searchQuery) setIsSearchOpen(false);
+                    }}
+                    autoFocus
+                    aria-label="Search products"
+                    className="w-full h-12 pl-12 pr-4 rounded-2xl bg-white backdrop-blur-sm border-2 border-gray-200 focus:border-[#7DD3C0] text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-lg focus-visible-ring"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           
-          {/* Center: Search Icon / Expanded Search Bar */}
-          {!isSearchOpen ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
-                  onClick={() => setIsSearchOpen(true)}
-                  aria-label="Open search"
-                >
-                  <Search className="w-5 h-5 text-gray-700" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p className="font-semibold">Search</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <div className="flex-1 relative animate-fade-in">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-              <input 
-                type="text" 
-                placeholder="Search products, pets, and more..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onBlur={() => {
-                  if (!searchQuery) setIsSearchOpen(false);
-                }}
-                autoFocus
-                aria-label="Search products"
-                className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50/80 backdrop-blur-sm border-2 border-gray-200 focus:border-[#7DD3C0] focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm hover:shadow-md focus:shadow-lg focus-visible-ring"
-              />
-            </div>
-          )}
+          {/* Center: Petid Logo */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <PetidLogo className="h-8" />
+          </div>
           
-          {/* Left: Hamburger Menu with Tooltip */}
+          {/* Left: Hamburger Menu */}
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50 transition-all flex-shrink-0 focus-visible-ring">
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring">
                     <Menu className="w-5 h-5 text-gray-700" />
                   </Button>
                 </DropdownMenuTrigger>
