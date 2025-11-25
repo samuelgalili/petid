@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus } from "lucide-react";
+import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, DollarSign, Tag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,9 @@ const Shop = () => {
   const [selectedPetType, setSelectedPetType] = useState<"dog" | "cat">("dog");
   const [showCategories, setShowCategories] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState<"none" | "price-low" | "price-high" | "popularity">("none");
+  const [showDealsOnly, setShowDealsOnly] = useState(false);
 
   const tabs = [
     { id: "petid", label: "Petid" },
@@ -95,6 +98,7 @@ const Shop = () => {
       originalPrice: 249,
       image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
       terms: "עד נגמר המלאי | בתוקף עד ה- 31.12.25\nמחיר לק״ג: 12.60 ש״ח. מזון איכותי מתאים לכלבים בוגרים. תקף בכל סניפי Petid. מוגבל ל-2 יחידות לקונה. בכפוף לתקנון המועדון.",
+      popularity: 95,
     },
     {
       id: 2,
@@ -103,6 +107,7 @@ const Shop = () => {
       price: 45,
       originalPrice: null,
       image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
+      popularity: 78,
     },
     {
       id: 3,
@@ -111,6 +116,7 @@ const Shop = () => {
       price: 299,
       originalPrice: 399,
       image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
+      popularity: 88,
     },
     {
       id: 4,
@@ -119,6 +125,7 @@ const Shop = () => {
       price: 129,
       originalPrice: null,
       image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
+      popularity: 65,
     },
     {
       id: 5,
@@ -127,6 +134,7 @@ const Shop = () => {
       price: 59,
       originalPrice: 79,
       image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
+      popularity: 72,
     },
     {
       id: 6,
@@ -135,8 +143,36 @@ const Shop = () => {
       price: 169,
       originalPrice: null,
       image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
+      popularity: 81,
     },
   ];
+
+  // Filter and sort products
+  const filteredAndSortedProducts = useMemo(() => {
+    let result = [...products];
+
+    // Filter by deals only
+    if (showDealsOnly) {
+      result = result.filter(p => p.originalPrice);
+    }
+
+    // Sort products
+    switch (sortBy) {
+      case "price-low":
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high":
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case "popularity":
+        result.sort((a, b) => b.popularity - a.popularity);
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [sortBy, showDealsOnly]);
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
@@ -237,7 +273,137 @@ const Shop = () => {
                 <ChevronDown className="w-4 h-4" />
               )}
             </motion.button>
+            
+            {/* Filter Button */}
+            <motion.button 
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all font-jakarta ${
+                showFilters || sortBy !== "none" || showDealsOnly
+                  ? "bg-[#FFC107] text-gray-900 shadow-md"
+                  : "bg-white text-gray-700 border-2 border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              סינון
+              {(sortBy !== "none" || showDealsOnly) && (
+                <span className="w-2 h-2 bg-[#E91E63] rounded-full" />
+              )}
+            </motion.button>
           </div>
+
+          {/* Filter Options Panel */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden mb-6"
+              >
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-5 border-2 border-gray-200 shadow-lg">
+                  {/* Sort Options */}
+                  <div className="mb-4">
+                    <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 font-jakarta">
+                      <TrendingUp className="w-4 h-4 text-[#FFC107]" />
+                      מיון לפי
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSortBy("none")}
+                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta ${
+                          sortBy === "none"
+                            ? "bg-gray-900 text-white shadow-md"
+                            : "bg-white text-gray-700 border border-gray-300"
+                        }`}
+                      >
+                        ברירת מחדל
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSortBy("popularity")}
+                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
+                          sortBy === "popularity"
+                            ? "bg-gray-900 text-white shadow-md"
+                            : "bg-white text-gray-700 border border-gray-300"
+                        }`}
+                      >
+                        <TrendingUp className="w-3 h-3" />
+                        פופולריים
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSortBy("price-low")}
+                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
+                          sortBy === "price-low"
+                            ? "bg-gray-900 text-white shadow-md"
+                            : "bg-white text-gray-700 border border-gray-300"
+                        }`}
+                      >
+                        <DollarSign className="w-3 h-3" />
+                        מחיר נמוך
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSortBy("price-high")}
+                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
+                          sortBy === "price-high"
+                            ? "bg-gray-900 text-white shadow-md"
+                            : "bg-white text-gray-700 border border-gray-300"
+                        }`}
+                      >
+                        <DollarSign className="w-3 h-3" />
+                        מחיר גבוה
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Deals Only Toggle */}
+                  <div className="border-t border-gray-200 pt-4">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowDealsOnly(!showDealsOnly)}
+                      className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all font-jakarta flex items-center justify-between ${
+                        showDealsOnly
+                          ? "bg-[#E91E63] text-white shadow-lg"
+                          : "bg-white text-gray-700 border-2 border-gray-300"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Tag className="w-4 h-4" />
+                        הצג מבצעים בלבד
+                      </span>
+                      <div className={`w-12 h-6 rounded-full transition-all ${
+                        showDealsOnly ? "bg-white" : "bg-gray-300"
+                      }`}>
+                        <motion.div 
+                          animate={{ x: showDealsOnly ? 24 : 2 }}
+                          className={`w-5 h-5 rounded-full mt-0.5 ${
+                            showDealsOnly ? "bg-[#E91E63]" : "bg-white"
+                          }`}
+                        />
+                      </div>
+                    </motion.button>
+                  </div>
+
+                  {/* Active Filters Count */}
+                  {(sortBy !== "none" || showDealsOnly) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4 text-xs text-gray-600 text-center font-jakarta"
+                    >
+                      {[sortBy !== "none" && "מיון פעיל", showDealsOnly && "מבצעים בלבד"]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Product Categories Section with Animation */}
           <AnimatePresence>
@@ -383,7 +549,7 @@ const Shop = () => {
 
           {/* Products Grid - 2 Columns */}
           <div className="grid grid-cols-2 gap-4 pb-8">
-            {products.map((product, index) => (
+            {filteredAndSortedProducts.map((product, index) => (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, y: 20 }}
