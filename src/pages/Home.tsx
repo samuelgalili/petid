@@ -63,13 +63,7 @@ import petCollarImg from "@/assets/products/pet-collar.jpg";
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import petidLogo from "@/assets/petid-logo.png";
 import catIconGif from "@/assets/cat-icon.gif";
-
-// Import quick action images
-import insuranceImg from "@/assets/quick-actions/insurance.jpg";
-import adoptionImg from "@/assets/quick-actions/adoption.jpg";
-import shopImg from "@/assets/quick-actions/shop.jpg";
-import photosImg from "@/assets/quick-actions/photos.jpg";
-import documentsImg from "@/assets/quick-actions/documents.jpg";
+import dogIconGif from "@/assets/dog-icon.gif";
 
 // Product data - moved outside component for performance
 const products = [
@@ -213,52 +207,42 @@ const Home = () => {
     });
   }, []);
 
-  // Quick action items for the home page
+  // Quick action items for the home page - Yellow style
   const quickActions = [
     {
       icon: ShieldCheck,
       title: "Insurance",
       description: "Protect your pet",
       path: "/insurance",
-      gradient: "from-blue-400 to-blue-600",
-      bgColor: "bg-blue-50",
-      image: insuranceImg,
+      bgColor: "bg-white",
     },
     {
       icon: Heart,
       title: "Adoption",
       description: "Find a new friend",
       path: "/adoption",
-      gradient: "from-pink-400 to-pink-600",
-      bgColor: "bg-pink-50",
-      image: adoptionImg,
+      bgColor: "bg-white",
     },
     {
       icon: Store,
       title: "Shop",
       description: "Pet supplies",
       path: "/shop",
-      gradient: "from-green-400 to-green-600",
-      bgColor: "bg-green-50",
-      image: shopImg,
+      bgColor: "bg-white",
     },
     {
       icon: ImageIcon,
       title: "Photo Album",
       description: "Pet memories",
       path: "/photos",
-      gradient: "from-purple-400 to-purple-600",
-      bgColor: "bg-purple-50",
-      image: photosImg,
+      bgColor: "bg-white",
     },
     {
       icon: FileText,
       title: "Documents",
       description: "Medical records",
       path: "/documents",
-      gradient: "from-orange-400 to-orange-600",
-      bgColor: "bg-orange-50",
-      image: documentsImg,
+      bgColor: "bg-white",
     },
   ];
 
@@ -576,7 +560,7 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20 bg-white">
+      <div className="min-h-screen pb-20 bg-gray-50">
         <HomePageSkeleton />
         <BottomNav />
       </div>
@@ -585,9 +569,9 @@ const Home = () => {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="min-h-screen pb-20 animate-fade-in bg-white dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen pb-20 animate-fade-in bg-gray-50 transition-colors">
       {/* Content Container */}
-      <div className="bg-white px-4 py-4">
+      <div className="pt-4 pb-6">
 
         {/* My Pets Section - Compact & Improved */}
         <motion.div 
@@ -726,7 +710,7 @@ const Home = () => {
           )}
         </motion.div>
 
-        {/* Wallet Card - Matching Reference Design Exactly */}
+        {/* Loyalty Card - Yellow Style with Petid Branding */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
@@ -739,38 +723,46 @@ const Home = () => {
               onClick={() => navigate('/order-history')}
               role="button"
               tabIndex={0}
-              aria-label="View wallet balance"
+              aria-label="View loyalty balance"
             >
-              <div className="relative">
-                {/* Stacked Card Effect - Bottom Layers (Turquoise) */}
-                <div className="absolute -bottom-2 -right-2 w-full h-full bg-[#7DD3C0] rounded-2xl"></div>
-                <div className="absolute -bottom-1 -right-1 w-full h-full bg-[#6BC9B5] rounded-2xl"></div>
+              <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] rounded-[24px] p-6 shadow-lg overflow-hidden min-h-[200px]">
+                {/* Top decorative shapes - small triangles and circles */}
+                <div className="absolute top-4 right-8 w-3 h-3 bg-pink-500 rotate-45 opacity-70"></div>
+                <div className="absolute top-8 right-16 w-2 h-2 bg-blue-500 rounded-full opacity-70"></div>
+                <div className="absolute top-6 right-24 w-2.5 h-2.5 bg-orange-500 rotate-12 opacity-70"></div>
                 
-                {/* Main Card */}
-                <div className="relative bg-gradient-to-br from-[#E89B5A] via-[#F4D35E] to-[#F4E976] rounded-2xl p-6 shadow-xl overflow-hidden min-h-[160px]">
-                  {/* Decorative Circle - Top Left */}
-                  <div className="absolute -top-8 -left-8 w-32 h-32 bg-[#E89B5A] rounded-full opacity-60"></div>
-                  
-                  {/* Petid Logo at top center */}
-                  <div className="relative z-10 flex justify-center mb-8">
-                    <img src={petidLogo} alt="Petid" className="h-8 object-contain" />
+                {/* White code field at top */}
+                <div className="relative z-10 bg-white rounded-xl px-4 py-3 mb-4 shadow-sm">
+                  <div className="text-center text-sm text-gray-600 font-jakarta">
+                    Your personal code for checkout
                   </div>
-
-                  {/* Animated Cat - Bottom Left */}
-                  <div className="absolute left-6 bottom-4 w-28 h-28">
-                    <img src={catIconGif} alt="Cat" className="w-full h-full object-contain" />
-                  </div>
-
-                  {/* Wallet Amount - Right Side */}
-                  <div className="relative z-10 text-right">
-                    <div className="text-gray-900 text-3xl font-bold mb-1">
-                      ₪{walletBalance.toFixed(2)}
-                    </div>
-                    <div className="text-gray-800 text-xs font-jakarta">
-                      Savings from purchases
-                    </div>
+                  <div className="text-center font-mono font-bold text-gray-900 text-xs mt-1">
+                    PETID-{Math.random().toString(36).substring(2, 8).toUpperCase()}
                   </div>
                 </div>
+
+                {/* Dog illustration - bottom left */}
+                <div className="absolute left-4 bottom-4 w-24 h-24 z-10">
+                  <img src={dogIconGif} alt="Dog" className="w-full h-full object-contain drop-shadow-lg" />
+                </div>
+
+                {/* Cat illustration - bottom left, slightly offset */}
+                <div className="absolute left-20 bottom-6 w-20 h-20 z-10">
+                  <img src={catIconGif} alt="Cat" className="w-full h-full object-contain drop-shadow-lg" />
+                </div>
+
+                {/* Balance - Right Side */}
+                <div className="relative z-10 text-right mt-2">
+                  <div className="text-gray-900 text-5xl font-extrabold leading-none mb-1">
+                    ₪{walletBalance.toFixed(2)}
+                  </div>
+                  <div className="text-gray-800 text-sm font-bold font-jakarta">
+                    Savings on purchases
+                  </div>
+                </div>
+
+                {/* Decorative circle bottom right */}
+                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white rounded-full opacity-20"></div>
               </div>
             </motion.div>
           </TooltipTrigger>
@@ -787,30 +779,25 @@ const Home = () => {
           transition={{ delay: 0.3 }}
           className="mb-6"
         >
-          <h2 className="text-lg font-extrabold text-gray-900 font-jakarta mb-4 px-1">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex justify-center gap-4 overflow-x-auto pb-2 px-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {quickActions.map((action, index) => (
               <motion.div
                 key={action.path}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.35 + index * 0.05 }}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(action.path)}
-                className="rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all border border-gray-100 relative group"
+                className="flex-shrink-0 cursor-pointer"
               >
-                <div className="relative h-32">
-                  <img
-                    src={action.image}
-                    alt={action.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="text-base font-bold text-white font-jakarta mb-0.5 drop-shadow-lg">{action.title}</h3>
-                    <p className="text-xs text-white/90 font-jakarta drop-shadow-md">{action.description}</p>
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center mb-2 hover:shadow-lg transition-all">
+                    <action.icon className="w-7 h-7 text-gray-700" />
                   </div>
+                  <p className="text-[10px] font-bold text-gray-900 font-jakarta text-center max-w-[64px] leading-tight">
+                    {action.title}
+                  </p>
                 </div>
               </motion.div>
             ))}
