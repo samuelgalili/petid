@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera } from "lucide-react";
+import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Edit2 } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { format } from "date-fns";
@@ -660,7 +660,7 @@ const AddPet = () => {
 
                     {/* Pet Photo */}
                     {imagePreview && (
-                      <div className="flex justify-center">
+                      <div className="flex justify-center relative">
                         <div className="relative group">
                           <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-lg opacity-30"></div>
                           <img 
@@ -668,55 +668,137 @@ const AddPet = () => {
                             alt="Pet preview" 
                             className="relative w-32 h-32 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)]" 
                           />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSlideDirection('right');
+                              setCurrentStep(2);
+                            }}
+                            className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-all hover:scale-110 border-2 border-[#FBD66A]"
+                          >
+                            <Edit2 className="w-4 h-4 text-gray-900" />
+                          </button>
                         </div>
                       </div>
                     )}
 
                     {/* Summary Cards */}
                     <div className="space-y-3">
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-                        <p className="text-xs text-gray-500 font-jakarta mb-1">Pet Type</p>
-                        <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{petType}</p>
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500 font-jakarta mb-1">Pet Type</p>
+                          <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{petType}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSlideDirection('right');
+                            setCurrentStep(1);
+                          }}
+                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                        >
+                          <Edit2 className="w-4 h-4 text-gray-600" />
+                        </button>
                       </div>
 
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-                        <p className="text-xs text-gray-500 font-jakarta mb-1">Name</p>
-                        <p className="text-base font-jakarta font-semibold text-gray-900">{formData.name}</p>
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500 font-jakarta mb-1">Name</p>
+                          <p className="text-base font-jakarta font-semibold text-gray-900">{formData.name}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSlideDirection('right');
+                            setCurrentStep(2);
+                          }}
+                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                        >
+                          <Edit2 className="w-4 h-4 text-gray-600" />
+                        </button>
                       </div>
 
                       {formData.birthDate && (
-                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-                          <p className="text-xs text-gray-500 font-jakarta mb-1">Birth Date</p>
-                          <p className="text-base font-jakarta font-semibold text-gray-900">{format(formData.birthDate, "PPP")}</p>
+                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-500 font-jakarta mb-1">Birth Date</p>
+                            <p className="text-base font-jakarta font-semibold text-gray-900">{format(formData.birthDate, "PPP")}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSlideDirection('right');
+                              setCurrentStep(2);
+                            }}
+                            className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                          >
+                            <Edit2 className="w-4 h-4 text-gray-600" />
+                          </button>
                         </div>
                       )}
 
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-                        <p className="text-xs text-gray-500 font-jakarta mb-1">Breed</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-base font-jakarta font-semibold text-gray-900">{formData.breed}</p>
-                          {breedConfidence !== null && (
-                            <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
-                              breedConfidence > 80 ? 'bg-green-100 text-green-700' :
-                              breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-orange-100 text-orange-700'
-                            }`}>
-                              AI: {breedConfidence}%
-                            </span>
-                          )}
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 font-jakarta mb-1">Breed</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-base font-jakarta font-semibold text-gray-900">{formData.breed}</p>
+                            {breedConfidence !== null && (
+                              <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
+                                breedConfidence > 80 ? 'bg-green-100 text-green-700' :
+                                breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-orange-100 text-orange-700'
+                              }`}>
+                                AI: {breedConfidence}%
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSlideDirection('right');
+                            setCurrentStep(2);
+                          }}
+                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                        >
+                          <Edit2 className="w-4 h-4 text-gray-600" />
+                        </button>
                       </div>
 
                       {formData.gender && (
-                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-                          <p className="text-xs text-gray-500 font-jakarta mb-1">Gender</p>
-                          <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{formData.gender}</p>
+                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-500 font-jakarta mb-1">Gender</p>
+                            <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{formData.gender}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSlideDirection('right');
+                              setCurrentStep(3);
+                            }}
+                            className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                          >
+                            <Edit2 className="w-4 h-4 text-gray-600" />
+                          </button>
                         </div>
                       )}
 
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-                        <p className="text-xs text-gray-500 font-jakarta mb-1">Neutered/Spayed</p>
-                        <p className="text-base font-jakarta font-semibold text-gray-900">{formData.is_neutered === "true" ? "Yes" : "No"}</p>
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500 font-jakarta mb-1">Neutered/Spayed</p>
+                          <p className="text-base font-jakarta font-semibold text-gray-900">{formData.is_neutered === "true" ? "Yes" : "No"}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSlideDirection('right');
+                            setCurrentStep(3);
+                          }}
+                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                        >
+                          <Edit2 className="w-4 h-4 text-gray-600" />
+                        </button>
                       </div>
                     </div>
 
