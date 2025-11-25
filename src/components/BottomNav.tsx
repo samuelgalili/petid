@@ -15,7 +15,7 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/98 backdrop-blur-sm border-t border-border z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white backdrop-blur-sm border-t border-gray-200 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
       <div className="flex justify-around items-center h-16 max-w-md mx-auto px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -27,28 +27,32 @@ const BottomNav = () => {
               to={item.path}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 relative group",
-                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                isActive ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
               )}
             >
               {isActive && (
                 <motion.span 
                   layoutId="activeIndicator"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-foreground rounded-full"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-[#FBD66A] to-[#F4C542] rounded-full shadow-md"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
               <motion.div
-                animate={{ scale: isActive ? 1.1 : 1 }}
+                animate={{ scale: isActive ? 1.15 : 1 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className={cn(
+                  "rounded-full p-1.5 transition-all",
+                  isActive && "bg-[#FBD66A]/10"
+                )}
               >
                 <Icon className={cn(
-                  "w-[22px] h-[22px] mb-1 transition-transform",
-                  isActive ? "" : "group-hover:scale-105"
+                  "w-5 h-5 mb-0.5 transition-all",
+                  isActive ? "stroke-[2.5]" : "stroke-[2] group-hover:scale-110"
                 )} />
               </motion.div>
               <span className={cn(
-                "text-[11px] font-medium transition-all",
-                isActive ? "font-semibold" : ""
+                "text-[10px] font-jakarta transition-all mt-0.5",
+                isActive ? "font-bold" : "font-medium"
               )}>{item.label}</span>
             </Link>
           );
