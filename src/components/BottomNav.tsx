@@ -1,13 +1,15 @@
-import { Home, Calendar, Bell, MapPin, ShoppingCart } from "lucide-react";
+import { Home, Calendar, Bell, MapPin, ShoppingCart, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/contexts/CartContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 
 const BottomNav = () => {
   const location = useLocation();
   const { getTotalItems } = useCart();
+  const { isAdmin } = useAdmin();
   const cartItemCount = getTotalItems();
 
   const navItems = [
@@ -15,7 +17,7 @@ const BottomNav = () => {
     { icon: Calendar, label: "Diary", path: "/tracker" },
     { icon: Bell, label: "Updates", path: "/feed" },
     { icon: ShoppingCart, label: "Cart", path: "/cart" },
-    { icon: MapPin, label: "Shop", path: "/shop" },
+    ...(isAdmin ? [{ icon: Shield, label: "Admin", path: "/admin/dashboard" }] : [{ icon: MapPin, label: "Shop", path: "/shop" }]),
   ];
 
   return (
