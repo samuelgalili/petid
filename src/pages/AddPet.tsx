@@ -211,38 +211,71 @@ const AddPet = () => {
       // For guest users, just show success and navigate
       if (isGuest) {
         toast({
-          title: "Success!",
-          description: "Pet added (guest mode - not saved)"
+          title: "Guest Mode",
+          description: "Please log in to save your pet permanently. Your pet data won't be saved in guest mode.",
+          variant: "destructive"
         });
         navigate("/home");
         return;
       }
+      
+      console.log("Starting pet submission...");
+      
       const {
         data: {
           user
         }
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      
+      if (!user) {
+        console.error("No user authenticated");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to add a pet",
+          variant: "destructive"
+        });
+        navigate("/auth");
+        return;
+      }
+      
+      console.log("User authenticated:", user.id);
+      
       let avatarUrl = "";
 
       // Upload image if exists
       if (imageFile) {
+        console.log("Uploading image...");
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
         const {
           error: uploadError
         } = await supabase.storage.from("pet-avatars").upload(fileName, imageFile);
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
         const {
           data: {
             publicUrl
           }
         } = supabase.storage.from("pet-avatars").getPublicUrl(fileName);
         avatarUrl = publicUrl;
+        console.log("Image uploaded:", avatarUrl);
       }
 
       // Insert pet data
-      // Insert pet data with birth date
+      console.log("Inserting pet data...", {
+        user_id: user.id,
+        name: formData.name,
+        type: petType,
+        birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
+        gender: formData.gender || null,
+        breed: formData.breed || null,
+        breed_confidence: breedConfidence,
+        is_neutered: formData.is_neutered === "true",
+        avatar_url: avatarUrl
+      });
+      
       const {
         data: petData,
         error: insertError
@@ -257,10 +290,17 @@ const AddPet = () => {
         is_neutered: formData.is_neutered === "true",
         avatar_url: avatarUrl
       }).select().single();
-      if (insertError) throw insertError;
+      
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
+      
+      console.log("Pet inserted successfully:", petData);
 
       // Save initial breed detection to history if available
       if (petData && formData.breed && breedConfidence !== null) {
+        console.log("Saving breed detection history...");
         await supabase.from("breed_detection_history").insert({
           pet_id: petData.id,
           breed: formData.breed,
@@ -268,9 +308,10 @@ const AddPet = () => {
           avatar_url: avatarUrl
         });
       }
+      
       toast({
         title: "Success!",
-        description: "Pet added successfully"
+        description: `${formData.name} has been added successfully!`
       });
       
       // Clear saved draft after successful submission
