@@ -221,6 +221,7 @@ const AddPet = () => {
   const canProceed = () => {
     if (currentStep === 1) return petType !== null;
     if (currentStep === 2) return formData.name.trim() !== "" && formData.breed.trim() !== "";
+    if (currentStep === 3) return true; // Gender and neutered are optional
     return true;
   };
 
@@ -253,7 +254,7 @@ const AddPet = () => {
     const isRightSwipe = distance < -minSwipeDistance;
 
     // Swipe left = next step (if allowed)
-    if (isLeftSwipe && currentStep < 3) {
+    if (isLeftSwipe && currentStep < 4) {
       if (canProceed()) {
         setSlideDirection('left');
         setCurrentStep(prev => prev + 1);
@@ -311,8 +312,8 @@ const AddPet = () => {
         </div>
       )}
 
-      {/* Back Button - Only visible on step 2 */}
-      {currentStep === 2 && (
+      {/* Back Button - Only visible on step 2 and 3 */}
+      {(currentStep === 2 || currentStep === 3) && (
         <button
           type="button"
           onClick={() => {
@@ -340,13 +341,13 @@ const AddPet = () => {
 
         {/* Progress Steps */}
         <div className="flex justify-center items-center gap-2 mb-12">
-          {[1, 2, 3].map(step => <div key={step} className="flex items-center">
+          {[1, 2, 3, 4].map(step => <div key={step} className="flex items-center">
               <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${step === currentStep ? "w-9 h-9 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] shadow-[0_4px_20px_rgba(251,214,106,0.4)] scale-110" : step < currentStep ? "w-7 h-7 bg-[#F4C542] shadow-md" : "w-7 h-7 bg-gray-200"}`}>
                 {step < currentStep ? <Sparkles className="w-3.5 h-3.5 text-gray-900" /> : <span className={`font-jakarta font-bold ${step === currentStep ? 'text-gray-900 text-sm' : 'text-gray-500 text-xs'}`}>
                     {step}
                   </span>}
               </div>
-              {step < 3 && <div className={`w-6 h-0.5 mx-0.5 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-[#F4C542]' : 'bg-gray-200'}`} />}
+              {step < 4 && <div className={`w-6 h-0.5 mx-0.5 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-[#F4C542]' : 'bg-gray-200'}`} />}
             </div>)}
         </div>
 
@@ -361,7 +362,7 @@ const AddPet = () => {
               </div>
             )}
             
-            {isSwiping && currentStep < 3 && canProceed() && swipeDirection === 'left' && (
+            {isSwiping && currentStep < 4 && canProceed() && swipeDirection === 'left' && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none animate-fade-in">
                 <div className="flex items-center gap-1 text-[#FBD66A] animate-pulse">
                   <ArrowRight className="w-6 h-6 -mr-4 opacity-60" strokeWidth={3} />
@@ -642,17 +643,112 @@ const AddPet = () => {
                   </div>
                   </motion.div>
                 )}
+
+                {/* Step 4: Review/Summary */}
+                {currentStep === 4 && (
+                  <motion.div
+                    key="step-4"
+                    initial={{ x: slideDirection === 'left' ? 100 : -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="space-y-6"
+                  >
+                    <h3 className="text-xl font-jakarta font-bold text-gray-900 text-center mb-6">
+                      Review Pet Details
+                    </h3>
+
+                    {/* Pet Photo */}
+                    {imagePreview && (
+                      <div className="flex justify-center">
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-lg opacity-30"></div>
+                          <img 
+                            src={imagePreview} 
+                            alt="Pet preview" 
+                            className="relative w-32 h-32 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)]" 
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Summary Cards */}
+                    <div className="space-y-3">
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
+                        <p className="text-xs text-gray-500 font-jakarta mb-1">Pet Type</p>
+                        <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{petType}</p>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
+                        <p className="text-xs text-gray-500 font-jakarta mb-1">Name</p>
+                        <p className="text-base font-jakarta font-semibold text-gray-900">{formData.name}</p>
+                      </div>
+
+                      {formData.birthDate && (
+                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
+                          <p className="text-xs text-gray-500 font-jakarta mb-1">Birth Date</p>
+                          <p className="text-base font-jakarta font-semibold text-gray-900">{format(formData.birthDate, "PPP")}</p>
+                        </div>
+                      )}
+
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
+                        <p className="text-xs text-gray-500 font-jakarta mb-1">Breed</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-base font-jakarta font-semibold text-gray-900">{formData.breed}</p>
+                          {breedConfidence !== null && (
+                            <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
+                              breedConfidence > 80 ? 'bg-green-100 text-green-700' :
+                              breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-orange-100 text-orange-700'
+                            }`}>
+                              AI: {breedConfidence}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {formData.gender && (
+                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
+                          <p className="text-xs text-gray-500 font-jakarta mb-1">Gender</p>
+                          <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{formData.gender}</p>
+                        </div>
+                      )}
+
+                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
+                        <p className="text-xs text-gray-500 font-jakarta mb-1">Neutered/Spayed</p>
+                        <p className="text-base font-jakarta font-semibold text-gray-900">{formData.is_neutered === "true" ? "Yes" : "No"}</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-500 font-jakarta text-center pt-4">
+                      Please review all details before submitting
+                    </p>
+                  </motion.div>
+                )}
               </AnimatePresence>
 
               {/* Navigation Buttons */}
               <div className="flex gap-3 pt-6">
                 {currentStep === 3 && (
+                  <Button 
+                    type="button" 
+                    onClick={() => {
+                      setSlideDirection('left');
+                      setCurrentStep(4);
+                    }}
+                    className="w-full h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Continue to Review
+                  </Button>
+                )}
+                {currentStep === 4 && (
                   <>
                     <Button 
                       type="button" 
                       onClick={() => {
                         setSlideDirection('right');
-                        setCurrentStep(2);
+                        setCurrentStep(3);
                       }}
                       className="h-12 text-sm border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-900 rounded-full font-jakarta font-bold transition-all duration-300 hover:scale-[1.02] px-6"
                     >
