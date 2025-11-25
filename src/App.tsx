@@ -7,6 +7,8 @@ import { AnimatePresence } from "framer-motion";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
 import { GuestProvider } from "@/contexts/GuestContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
 import Auth from "./pages/Auth";
@@ -71,19 +73,23 @@ const AnimatedRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <PetPreferenceProvider>
-        <GuestProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AnimatedRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
-        </GuestProvider>
-      </PetPreferenceProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <AccessibilityProvider>
+        <LanguageProvider>
+          <PetPreferenceProvider>
+            <GuestProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AnimatedRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </GuestProvider>
+          </PetPreferenceProvider>
+        </LanguageProvider>
+      </AccessibilityProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
