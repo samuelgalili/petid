@@ -1,4 +1,4 @@
-import { Menu, Bell, User, Camera, Loader2, History, Plus, ShoppingCart, Package, Search } from "lucide-react";
+import { Menu, Bell, User, Camera, Loader2, History, Plus, ShoppingCart, Package, Search, Info, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -6,8 +6,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { HomePageSkeleton, PetCardSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,8 +71,8 @@ const Home = () => {
   const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
 
-  // Confetti effects
-  const triggerConfetti = () => {
+  // Confetti effects - memoized
+  const triggerConfetti = useCallback(() => {
     const count = 200;
     const defaults = {
       origin: { y: 0.7 },
@@ -112,7 +118,7 @@ const Home = () => {
       startVelocity: 45,
       colors: ['#7DD3C0', '#E8F5E8']
     });
-  };
+  }, []);
 
   // Fetch user's pets
   useEffect(() => {
@@ -486,74 +492,116 @@ const Home = () => {
     },
   ];
 
-  // Calculate product counts per category
-  const categoryCount = (category: string) => 
-    products.filter(p => p.category === category).length;
+  // Filter products based on active category - memoized
+  const filteredProducts = useMemo(() => 
+    products.filter(product => product.category === activeCategory),
+    [activeCategory]
+  );
 
-  // Filter products based on active category
-  const filteredProducts = products.filter(
-    product => product.category === activeCategory
+  // Calculate product counts per category - memoized
+  const categoryCount = useCallback((category: string) => 
+    products.filter(p => p.category === category).length,
+    []
   );
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="min-h-screen pb-20 animate-fade-in bg-white" dir="rtl">
       {/* Header - Fixed at Top */}
       <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 shadow-sm z-40">
         <div className="flex items-center gap-3">
-          {/* Left: Hamburger Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50 transition-all flex-shrink-0">
-                <Menu className="w-5 h-5 text-gray-700" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 bg-white z-50">
-              <DropdownMenuItem onClick={() => navigate("/order-history")}>
-                <Package className="w-4 h-4 mr-2" />
-                Order History
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/cart")}>
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Shopping Cart
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
-                <User className="w-4 h-4 mr-2" />
-                Settings
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Left: Hamburger Menu with Tooltip */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50 transition-all flex-shrink-0 focus-visible-ring">
+                    <Menu className="w-5 h-5 text-gray-700" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 bg-white z-[9999] shadow-xl border border-gray-200 rounded-2xl p-2">
+                  <DropdownMenuItem onClick={() => navigate("/order-history")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <Package className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Order History</div>
+                      <div className="text-xs text-gray-500">View past orders</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/cart")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <ShoppingCart className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Shopping Cart</div>
+                      <div className="text-xs text-gray-500">View items</div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")} className="rounded-xl p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <User className="w-5 h-5 mr-3 text-[#7DD3C0]" />
+                    <div>
+                      <div className="font-semibold text-gray-900">Settings</div>
+                      <div className="text-xs text-gray-500">Manage account</div>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="font-semibold">Menu</p>
+            </TooltipContent>
+          </Tooltip>
           
-          {/* Center: Large Rounded Search Bar */}
+          {/* Center: Enhanced Search Bar with Tooltip */}
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
             <input 
               type="text" 
-              placeholder="Search products" 
+              placeholder="Search products, pets, and more..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onClick={() => toast({ title: "Search", description: "Search functionality coming soon" })}
-              className="w-full h-11 pl-11 pr-4 rounded-xl bg-gray-50 border border-gray-200 focus:border-gray-300 focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm"
+              onClick={() => toast({ 
+                title: "🔍 Search Coming Soon", 
+                description: "We're building an amazing search experience for you!" 
+              })}
+              aria-label="Search products"
+              className="w-full h-12 pl-12 pr-4 rounded-2xl bg-gray-50/80 backdrop-blur-sm border-2 border-gray-200 focus:border-[#7DD3C0] focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm hover:shadow-md focus:shadow-lg focus-visible-ring"
             />
           </div>
           
-          {/* Right: Notifications + User Profile */}
-          <div className="flex gap-1 flex-shrink-0">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full hover:bg-gray-50 transition-all"
-              onClick={() => toast({ title: "Notifications", description: "No new notifications" })}
-            >
-              <Bell className="w-5 h-5 text-gray-700" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full hover:bg-gray-50 transition-all"
-              onClick={() => navigate('/settings')}
-            >
-              <User className="w-5 h-5 text-gray-700" />
-            </Button>
+          {/* Right: Notifications + User Profile with Tooltips */}
+          <div className="flex gap-2 flex-shrink-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full hover:bg-gray-50 transition-all relative focus-visible-ring"
+                  onClick={() => toast({ title: "🔔 Notifications", description: "No new notifications" })}
+                  aria-label="View notifications"
+                >
+                  <Bell className="w-5 h-5 text-gray-700" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-[#7DD3C0] rounded-full animate-pulse" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="font-semibold">Notifications</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full hover:bg-gray-50 transition-all focus-visible-ring"
+                  onClick={() => navigate('/settings')}
+                  aria-label="User profile"
+                >
+                  <User className="w-5 h-5 text-gray-700" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="font-semibold">Profile & Settings</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -572,21 +620,32 @@ const Home = () => {
           className="mb-6 pt-2 px-4 py-5 bg-gradient-to-br from-[#F8FCFB] via-white to-[#FFF9F5] rounded-3xl shadow-[0_2px_20px_rgba(125,211,192,0.08)] border border-gray-100/50"
         >
           <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] flex items-center justify-center shadow-md">
-                <span className="text-base">🐾</span>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] flex items-center justify-center shadow-lg animate-pulse-subtle">
+                <span className="text-lg">🐾</span>
               </div>
-              <h2 className="text-lg font-bold text-gray-900 font-jakarta bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text">My Pets</h2>
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900 font-jakarta bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text leading-none">My Pets</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Long press to edit</p>
+              </div>
             </div>
             {pets.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/archived-pets')}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 font-jakarta text-xs h-8 px-3 rounded-full"
-              >
-                Archived
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/archived-pets')}
+                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-50 font-jakarta text-xs h-9 px-4 rounded-full focus-visible-ring"
+                    aria-label="View archived pets"
+                  >
+                    Archived
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="font-semibold">View Archived Pets</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
 
@@ -601,19 +660,28 @@ const Home = () => {
                   <Plus className="w-5 h-5 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 font-jakarta mb-2 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text">
-                No Pets Yet
-              </h3>
-              <p className="text-sm text-gray-500 font-jakarta mb-6 max-w-xs leading-relaxed">
-                Add your first furry friend to get started! Make sure you're logged in to save your pet's profile.
-              </p>
-              <Button
-                onClick={() => navigate('/add-pet')}
-                className="bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#5BB89C] hover:from-[#6BC4AD] hover:via-[#5BB89C] hover:to-[#4AA68A] text-white rounded-full font-jakarta font-bold px-10 py-6 text-base shadow-[0_8px_24px_rgba(125,211,192,0.4)] hover:shadow-[0_12px_32px_rgba(125,211,192,0.5)] transition-all hover:scale-105 border border-white/20"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Add Your First Pet
-              </Button>
+               <h3 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-2.5 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text tracking-tight">
+                 No Pets Yet
+               </h3>
+               <p className="text-sm text-gray-600 font-jakarta mb-7 max-w-xs leading-relaxed">
+                 Add your first furry friend to get started! 🐕 🐈<br/>
+                 <span className="text-xs text-gray-500">Make sure you're logged in to save profiles</span>
+               </p>
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                   <Button
+                     onClick={() => navigate('/add-pet')}
+                     className="bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#5BB89C] hover:from-[#6BC4AD] hover:via-[#5BB89C] hover:to-[#4AA68A] text-white rounded-full font-jakarta font-extrabold px-12 py-7 text-base shadow-[0_8px_24px_rgba(125,211,192,0.4)] hover:shadow-[0_12px_32px_rgba(125,211,192,0.5)] transition-all hover:scale-105 border border-white/20 focus-visible-ring"
+                     aria-label="Add your first pet"
+                   >
+                     <Plus className="w-5 h-5 mr-2" />
+                     Add Your First Pet
+                   </Button>
+                 </TooltipTrigger>
+                 <TooltipContent side="bottom">
+                   <p className="font-semibold">Create a pet profile</p>
+                 </TooltipContent>
+               </Tooltip>
             </div>
           ) : (
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -702,49 +770,79 @@ const Home = () => {
                 );
               })}
               
-              {/* Enhanced Add Pet Button with glow */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.05 + pets.length * 0.03 }}
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
-                onClick={() => navigate('/add-pet')}
-                className="flex-shrink-0 cursor-pointer"
-              >
-                <div className="flex flex-col items-center">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-30 animate-pulse"></div>
-                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] via-[#FFE8D6] to-[#FFF0E5] border-[3px] border-dashed border-[#7DD3C0]/50 shadow-[0_6px_20px_rgba(125,211,192,0.25)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_8px_24px_rgba(125,211,192,0.35)] transition-all">
-                      <Plus className="w-8 h-8 text-[#7DD3C0]" />
-                    </div>
-                  </div>
-                  <p className="mt-2.5 text-xs font-bold text-[#7DD3C0] font-jakarta">
-                    Add Pet
-                  </p>
-                </div>
-              </motion.div>
+               {/* Enhanced Add Pet Button with tooltip and glow */}
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                   <motion.div
+                     initial={{ opacity: 0, scale: 0.9 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     transition={{ delay: 0.05 + pets.length * 0.03 }}
+                     whileHover={{ scale: 1.08 }}
+                     whileTap={{ scale: 0.92 }}
+                     onClick={() => navigate('/add-pet')}
+                     className="flex-shrink-0 cursor-pointer"
+                     role="button"
+                     tabIndex={0}
+                     onKeyDown={(e) => e.key === 'Enter' && navigate('/add-pet')}
+                     aria-label="Add new pet"
+                   >
+                     <div className="flex flex-col items-center">
+                       <div className="relative">
+                         <div className="absolute inset-0 bg-gradient-to-br from-[#7DD3C0] to-[#FBD66A] rounded-full blur-md opacity-30 animate-pulse"></div>
+                         <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6D3] via-[#FFE8D6] to-[#FFF0E5] border-[3px] border-dashed border-[#7DD3C0]/50 shadow-[0_6px_20px_rgba(125,211,192,0.25)] flex items-center justify-center hover:border-[#7DD3C0] hover:shadow-[0_8px_24px_rgba(125,211,192,0.35)] transition-all">
+                           <Plus className="w-8 h-8 text-[#7DD3C0]" />
+                         </div>
+                       </div>
+                       <p className="mt-2.5 text-xs font-bold text-[#7DD3C0] font-jakarta">
+                         Add Pet
+                       </p>
+                     </div>
+                   </motion.div>
+                 </TooltipTrigger>
+                 <TooltipContent side="bottom">
+                   <p className="font-semibold">Add New Pet Profile</p>
+                   <p className="text-xs opacity-80">Click to create</p>
+                 </TooltipContent>
+               </Tooltip>
             </div>
           )}
         </motion.div>
 
-        {/* Enhanced Membership Banner with shine effect */}
-        <motion.div 
-          className="mb-3"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#EAA831] text-gray-900 rounded-3xl px-6 py-4 text-center font-bold shadow-[0_8px_32px_rgba(251,214,106,0.45)] font-jakarta relative overflow-hidden border border-[#FFF5DC]/40">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-white/10"></div>
-            <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"></div>
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
-            <div className="relative z-10">
-              <div className="text-base mb-1 font-extrabold tracking-wide drop-shadow-sm">✨ Membership Club</div>
-              <div className="text-xs font-semibold opacity-90">Premium Access & Exclusive Deals</div>
-            </div>
-          </div>
-        </motion.div>
+        {/* Enhanced Membership Banner with tooltip and shine effect */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.div 
+              className="mb-3 cursor-pointer"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => toast({ 
+                title: "✨ Premium Membership", 
+                description: "Unlock exclusive benefits and special discounts!",
+                duration: 3000
+              })}
+              role="button"
+              tabIndex={0}
+              aria-label="Learn more about membership"
+            >
+              <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#EAA831] text-gray-900 rounded-3xl px-7 py-5 text-center font-bold shadow-[0_8px_32px_rgba(251,214,106,0.45)] font-jakarta relative overflow-hidden border border-[#FFF5DC]/40">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-white/10"></div>
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"></div>
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+                <div className="relative z-10">
+                  <div className="text-lg mb-1 font-extrabold tracking-wide drop-shadow-sm">✨ Membership Club</div>
+                  <div className="text-sm font-semibold opacity-90">Premium Access & Exclusive Deals</div>
+                </div>
+              </div>
+            </motion.div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p className="font-semibold">Premium Membership</p>
+            <p className="text-xs opacity-80">Click to learn more</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Enhanced Animated Promo Ticker with glow */}
         <motion.div
@@ -1105,6 +1203,7 @@ const Home = () => {
 
       <BottomNav />
     </div>
+    </TooltipProvider>
   );
 };
 

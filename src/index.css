@@ -20,11 +20,11 @@ All colors MUST be HSL.
     --primary: 174 62% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 100%;
-    --secondary-foreground: 26 10% 10%;
+    --secondary: 174 45% 95%;
+    --secondary-foreground: 174 62% 25%;
 
-    --muted: 220 13% 69%;
-    --muted-foreground: 220 9% 58%;
+    --muted: 220 13% 95%;
+    --muted-foreground: 220 9% 46%;
 
     --accent: 174 62% 60%;
     --accent-foreground: 0 0% 100%;
@@ -274,5 +274,37 @@ All colors MUST be HSL.
 
   .animate-scroll-left:hover {
     animation-play-state: paused;
+  }
+
+  /* Enhanced smooth scrolling */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Focus visible improvements */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7DD3C0] focus-visible:ring-offset-2;
+  }
+
+  /* Skeleton loading shimmer */
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .skeleton-shimmer {
+    animation: skeleton-shimmer 2s ease-in-out infinite;
+    background: linear-gradient(
+      90deg,
+      hsl(220, 13%, 95%) 0%,
+      hsl(220, 13%, 98%) 50%,
+      hsl(220, 13%, 95%) 100%
+    );
+    background-size: 1000px 100%;
   }
 }
