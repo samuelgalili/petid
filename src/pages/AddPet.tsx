@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles, ArrowLeft, Calendar as CalendarIcon, Camera } from "lucide-react";
+import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { format } from "date-fns";
@@ -32,6 +32,7 @@ const AddPet = () => {
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -59,7 +60,18 @@ const AddPet = () => {
       }
     };
     checkAuth();
+
+    // Check if user has seen the tutorial
+    const hasSeenTutorial = localStorage.getItem('hasSeenSwipeTutorial');
+    if (!hasSeenTutorial) {
+      setShowTutorial(true);
+    }
   }, [navigate, isGuest]);
+
+  const dismissTutorial = () => {
+    setShowTutorial(false);
+    localStorage.setItem('hasSeenSwipeTutorial', 'true');
+  };
   const detectBreed = async (base64Image: string) => {
     if (!petType) return;
     
@@ -234,6 +246,41 @@ const AddPet = () => {
     }
   };
   return <div className="min-h-screen bg-background p-4 pb-24 animate-fade-in relative" dir="ltr">
+      {/* Tutorial Overlay */}
+      {showTutorial && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-background rounded-2xl p-8 max-w-sm w-full space-y-6 animate-scale-in shadow-2xl">
+            <h3 className="text-2xl font-bold text-foreground text-center">
+              Swipe to Navigate
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ArrowLeft className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-muted-foreground">
+                  Swipe <span className="font-semibold text-foreground">right</span> to go back
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ArrowRight className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-muted-foreground">
+                  Swipe <span className="font-semibold text-foreground">left</span> to continue
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={dismissTutorial}
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-800"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
