@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 
@@ -94,33 +95,84 @@ const Checkout = () => {
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
 
-    // Simulate order processing
-    setTimeout(() => {
-      const orderId = `PID-${Date.now()}`;
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Store order details
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const orderNumber = `PID-${Date.now()}`;
+      const orderTotal = total + (paymentMethod === "cash-on-delivery" ? 5 : 0);
+
+      // Insert order
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          order_number: orderNumber,
+          status: "pending",
+          subtotal: subtotal,
+          shipping: shipping,
+          tax: tax,
+          total: orderTotal,
+          payment_method: paymentMethod,
+          shipping_address: shippingData,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Insert order items
+      const orderItems = items.map((item) => ({
+        order_id: orderData.id,
+        product_name: item.name,
+        product_image: item.image,
+        quantity: item.quantity,
+        price: item.price,
+        variant: item.variant,
+        size: item.size,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Store order details for confirmation page
       const orderDetails = {
-        orderId,
+        orderId: orderNumber,
         items,
         shippingData,
         paymentMethod,
         subtotal,
         shipping,
         tax,
-        total,
+        total: orderTotal,
         orderDate: new Date().toISOString(),
       };
 
       localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
-      
+
       // Clear cart
       clearCart();
-      
+
       setIsProcessing(false);
-      
+
       // Navigate to confirmation
       navigate("/order-confirmation", { state: { order: orderDetails } });
-    }, 2000);
+    } catch (error: any) {
+      console.error("Error placing order:", error);
+      setIsProcessing(false);
+      toast({
+        title: "Order Failed",
+        description: error.message || "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const steps = [

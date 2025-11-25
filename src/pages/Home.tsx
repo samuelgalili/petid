@@ -1,5 +1,11 @@
-import { Menu, Bell, UserX, Camera, Loader2, History, Plus, ShoppingCart } from "lucide-react";
+import { Menu, Bell, UserX, Camera, Loader2, History, Plus, ShoppingCart, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { HomePageSkeleton, PetCardSkeleton } from "@/components/LoadingSkeleton";
@@ -261,9 +267,23 @@ const Home = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-6 pb-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
-            <Menu className="w-5 h-5 text-gray-700" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+                <Menu className="w-5 h-5 text-gray-700" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem onClick={() => navigate("/order-history")}>
+                <Package className="w-4 h-4 mr-2" />
+                Order History
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/cart")}>
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Shopping Cart
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex-1 mx-4">
             <div className="relative">
               <input 
