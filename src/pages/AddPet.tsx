@@ -470,6 +470,56 @@ const AddPet = () => {
                       </PopoverContent>
                     </Popover>
                   </div>
+
+                  {/* Breed */}
+                  <div className="space-y-3">
+                    <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">Breed</Label>
+                    {breedDetecting && (
+                      <div className="flex items-center gap-2 text-xs text-[#F4C542] font-jakarta font-semibold animate-pulse">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        AI is analyzing your photo...
+                      </div>
+                    )}
+                    {formData.breed && !breedDetecting && breedConfidence !== null && (
+                      <div className="flex items-center gap-2 -mb-1">
+                        <p className="text-xs text-gray-600 font-jakarta">
+                          AI detected: "{formData.breed}"
+                        </p>
+                        <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
+                          breedConfidence > 80 ? 'bg-green-100 text-green-700' :
+                          breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-orange-100 text-orange-700'
+                        }`}>
+                          {breedConfidence}% confident
+                        </span>
+                      </div>
+                    )}
+                    {!breedConfident && formData.breed && (
+                      <p className="text-xs text-orange-600 font-jakarta">
+                        Please confirm or correct the detected breed
+                      </p>
+                    )}
+                    <div className="relative">
+                      <Input 
+                        id="breed" 
+                        value={formData.breed} 
+                        onChange={e => setFormData({
+                          ...formData,
+                          breed: e.target.value
+                        })} 
+                        placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
+                        disabled={loading || breedDetecting} 
+                        className={`h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)] ${
+                          breedDetecting ? 'border-[#FBD66A] animate-pulse pr-10' : 'border-gray-200'
+                        }`} 
+                      />
+                      {breedDetecting && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Loader2 className="w-5 h-5 text-[#F4C542] animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   </motion.div>
                 )}
 
@@ -498,51 +548,6 @@ const AddPet = () => {
                         <SelectItem value="female">Female</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  {/* Breed */}
-                  <div className="space-y-3">
-                    <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">Breed</Label>
-                    {breedDetecting && (
-                      <div className="flex items-center gap-2 text-xs text-[#F4C542] font-jakarta font-semibold animate-pulse">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        AI is analyzing your photo...
-                      </div>
-                    )}
-                    {formData.breed && !breedDetecting && breedConfidence !== null && (
-                      <div className="flex items-center gap-2 -mb-1">
-                        <p className="text-xs text-gray-600 font-jakarta">
-                          AI detected: "{formData.breed}"
-                        </p>
-                        <span className={`text-xs font-semibold font-jakarta px-2 py-0.5 rounded-full ${
-                          breedConfidence > 80 ? 'bg-green-100 text-green-700' :
-                          breedConfidence > 60 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-orange-100 text-orange-700'
-                        }`}>
-                          {breedConfidence}% confident
-                        </span>
-                      </div>
-                    )}
-                    <div className="relative">
-                      <Input 
-                        id="breed" 
-                        value={formData.breed} 
-                        onChange={e => setFormData({
-                          ...formData,
-                          breed: e.target.value
-                        })} 
-                        placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
-                        disabled={loading || breedDetecting} 
-                        className={`h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)] ${
-                          breedDetecting ? 'border-[#FBD66A] animate-pulse pr-10' : 'border-gray-200'
-                        }`} 
-                      />
-                      {breedDetecting && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          <Loader2 className="w-5 h-5 text-[#F4C542] animate-spin" />
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   {/* Neutered */}
