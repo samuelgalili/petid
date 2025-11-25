@@ -1,4 +1,4 @@
-import { Menu, Bell, UserX, Camera, Loader2, History, Plus, ShoppingCart, Package } from "lucide-react";
+import { Menu, Bell, User, Camera, Loader2, History, Plus, ShoppingCart, Package, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -285,26 +285,26 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20 bg-white" dir="rtl">
-        <div className="bg-white border-b border-gray-200 p-6 pb-6">
-          <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+      <div className="min-h-screen pb-20 bg-white">
+        <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 shadow-sm z-40">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50">
               <Menu className="w-5 h-5 text-gray-700" />
             </Button>
-            <div className="flex-1 mx-4">
-              <div className="h-10 bg-gray-100 rounded-full" />
+            <div className="flex-1">
+              <div className="h-11 bg-gray-100 rounded-xl" />
             </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50">
                 <Bell className="w-5 h-5 text-gray-700" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100">
-                <UserX className="w-5 h-5 text-gray-700" />
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50">
+                <User className="w-5 h-5 text-gray-700" />
               </Button>
             </div>
           </div>
         </div>
-
+        <div className="h-16"></div>
         <HomePageSkeleton />
         <BottomNav />
       </div>
@@ -397,50 +397,17 @@ const Home = () => {
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in bg-white" dir="rtl">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-6 pb-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          {/* Left Side: User Icon + Notifications */}
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95"
-              onClick={() => navigate('/settings')}
-            >
-              <UserX className="w-5 h-5 text-gray-700" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95"
-              onClick={() => toast({ title: "Notifications", description: "No new notifications" })}
-            >
-              <Bell className="w-5 h-5 text-gray-700" />
-            </Button>
-          </div>
-          
-          {/* Center: Large Rounded Search Bar */}
-          <div className="flex-1 mx-4">
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Search products..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 px-6 rounded-full bg-gray-50 border-2 border-gray-200 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm focus:shadow-md hover:shadow-md"
-              />
-            </div>
-          </div>
-          
-          {/* Right Side: Hamburger Menu */}
+      {/* Header - Fixed at Top */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 shadow-sm z-40">
+        <div className="flex items-center gap-3">
+          {/* Left: Hamburger Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100 transition-all hover:scale-110 active:scale-95">
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50 transition-all flex-shrink-0">
                 <Menu className="w-5 h-5 text-gray-700" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-white z-50">
+            <DropdownMenuContent align="start" className="w-56 bg-white z-50">
               <DropdownMenuItem onClick={() => navigate("/order-history")}>
                 <Package className="w-4 h-4 mr-2" />
                 Order History
@@ -450,24 +417,137 @@ const Home = () => {
                 Shopping Cart
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/settings")}>
-                <UserX className="w-4 h-4 mr-2" />
+                <User className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          {/* Center: Large Rounded Search Bar */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search products" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClick={() => toast({ title: "Search", description: "Search functionality coming soon" })}
+              className="w-full h-11 pl-11 pr-4 rounded-xl bg-gray-50 border border-gray-200 focus:border-gray-300 focus:bg-white text-sm text-gray-900 placeholder:text-gray-400 font-jakarta transition-all shadow-sm"
+            />
+          </div>
+          
+          {/* Right: Notifications + User Profile */}
+          <div className="flex gap-1 flex-shrink-0">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-gray-50 transition-all"
+              onClick={() => toast({ title: "Notifications", description: "No new notifications" })}
+            >
+              <Bell className="w-5 h-5 text-gray-700" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-gray-50 transition-all"
+              onClick={() => navigate('/settings')}
+            >
+              <User className="w-5 h-5 text-gray-700" />
+            </Button>
+          </div>
         </div>
+      </div>
+
+      {/* Spacer for fixed header */}
+      <div className="h-16"></div>
+
+      {/* Content Container */}
+      <div className="bg-white px-4 py-4">
+
+        {/* My Pets Section */}
+        {pets.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-6"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-bold text-gray-900 font-jakarta">My Pets</h2>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {pets.map((pet, index) => (
+                <motion.div
+                  key={pet.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.05 + index * 0.03 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onTouchStart={() => handlePetLongPressStart(pet)}
+                  onTouchEnd={handlePetLongPressEnd}
+                  onMouseDown={() => handlePetLongPressStart(pet)}
+                  onMouseUp={handlePetLongPressEnd}
+                  onMouseLeave={handlePetLongPressEnd}
+                  onClick={() => navigate('/add-pet')}
+                  className="flex-shrink-0 cursor-pointer"
+                >
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-sm overflow-hidden border border-gray-200">
+                      {pet.avatar_url ? (
+                        <img
+                          src={pet.avatar_url}
+                          alt={pet.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl">
+                          {pet.type === 'dog' ? '🐕' : '🐈'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-1 text-center">
+                      <p className="text-xs font-semibold text-gray-800 font-jakarta truncate max-w-[64px]">
+                        {pet.name}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              {/* Add Pet Button */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 + pets.length * 0.03 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/add-pet')}
+                className="flex-shrink-0 cursor-pointer"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-white border-2 border-dashed border-gray-300 shadow-sm flex items-center justify-center hover:border-[#7DD3C0] hover:bg-[#7DD3C0]/5 transition-all">
+                  <Plus className="w-6 h-6 text-gray-400" />
+                </div>
+                <div className="mt-1 text-center">
+                  <p className="text-xs font-semibold text-gray-500 font-jakarta">
+                    Add Pet
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Membership Banner - Gold Rounded Rectangle */}
         <motion.div 
-          className="mb-6"
+          className="mb-5"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#FBD66A] text-gray-900 rounded-2xl px-6 py-4 text-center font-bold shadow-[0_6px_25px_rgba(251,214,106,0.4)] font-jakarta relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#FBD66A] via-[#F4C542] to-[#FBD66A] text-gray-900 rounded-2xl px-5 py-3.5 text-center font-bold shadow-[0_4px_20px_rgba(251,214,106,0.35)] font-jakarta relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent"></div>
             <div className="relative z-10">
-              <div className="text-base mb-0.5">Membership Club</div>
+              <div className="text-sm mb-0.5">Membership Club</div>
               <div className="text-xs font-medium opacity-80">Premium Access</div>
             </div>
           </div>
@@ -572,100 +652,22 @@ const Home = () => {
         </div>
       </div>
 
-      {/* My Pets Section - Between Header and Product Grid */}
-      <div className="px-6 pt-4 pb-2">
-        {pets.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+      {/* Archived Pets Button - Small link */}
+      {pets.length > 0 && (
+        <div className="px-4 pb-2 flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/archived-pets')}
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-jakarta text-xs h-7"
           >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-gray-900 font-jakarta">My Pets</h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/archived-pets')}
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 font-jakarta text-xs font-semibold"
-                >
-                  Archived
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/add-pet')}
-                  className="text-[#7DD3C0] hover:text-[#6BC4AD] hover:bg-[#7DD3C0]/10 font-jakarta text-sm font-semibold"
-                >
-                  + Add Pet
-                </Button>
-              </div>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {pets.map((pet, index) => (
-                <motion.div
-                  key={pet.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onTouchStart={() => handlePetLongPressStart(pet)}
-                  onTouchEnd={handlePetLongPressEnd}
-                  onMouseDown={() => handlePetLongPressStart(pet)}
-                  onMouseUp={handlePetLongPressEnd}
-                  onMouseLeave={handlePetLongPressEnd}
-                  onClick={() => navigate('/add-pet')}
-                  className="flex-shrink-0 cursor-pointer"
-                >
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#E8F5E8] to-[#B8E3D5] shadow-[0_4px_16px_rgba(0,0,0,0.1)] overflow-hidden border-2 border-white">
-                      {pet.avatar_url ? (
-                        <img
-                          src={pet.avatar_url}
-                          alt={pet.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl">
-                          {pet.pet_type === 'dog' ? '🐕' : '🐈'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-1.5 text-center">
-                      <p className="text-xs font-bold text-gray-900 font-jakarta truncate max-w-[80px]">
-                        {pet.name}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-              {/* Add Pet Card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 + pets.length * 0.05 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/add-pet')}
-                className="flex-shrink-0 cursor-pointer"
-              >
-                <div className="w-20 h-20 rounded-2xl bg-white border-2 border-dashed border-gray-300 shadow-sm flex items-center justify-center hover:border-[#7DD3C0] hover:bg-[#7DD3C0]/5 transition-all">
-                  <Plus className="w-8 h-8 text-gray-400" />
-                </div>
-                <div className="mt-1.5 text-center">
-                  <p className="text-xs font-bold text-gray-500 font-jakarta">
-                    Add Pet
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </div>
+            Archived
+          </Button>
+        </div>
+      )}
 
       {/* 2-Column Product Grid with Smooth Animations */}
-      <div className="px-6 pt-6 pb-6">
+      <div className="px-4 pt-4 pb-6">
         <AnimatePresence mode="wait">
           {filteredProducts.length > 0 ? (
             <motion.div 
@@ -749,135 +751,7 @@ const Home = () => {
         </AnimatePresence>
       </div>
 
-      {/* My Pets Section */}
-      {petsLoading ? (
-        <div className="px-6 pt-8 pb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-7 w-32 bg-gray-200 rounded-lg animate-pulse" />
-            <div className="h-9 w-24 bg-gray-200 rounded-full animate-pulse" />
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            {[1, 2, 3].map((i) => (
-              <PetCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-      ) : pets.length > 0 ? (
-        <motion.div 
-          className="px-6 pt-8 pb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold font-jakarta text-gray-900">My Pets</h2>
-            <Button
-              onClick={() => navigate('/add-pet')}
-              size="sm"
-              className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-full font-jakarta font-semibold shadow-md hover:shadow-lg transition-all"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Pet
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            {pets.map((pet, index) => (
-              <motion.div
-                key={pet.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + index * 0.1, duration: 0.3 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Card className="p-4 bg-white border-2 border-gray-200 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-all">
-                  <div className="flex items-start gap-4">
-                    <div className="relative">
-                      <Avatar className="w-16 h-16 border-2 border-[#FBD66A]/30 ring-2 ring-transparent hover:ring-[#FBD66A]/20 transition-all">
-                        <AvatarImage src={pet.avatar_url || undefined} />
-                        <AvatarFallback className="bg-[#FBD66A]/20 text-gray-900 font-bold text-lg font-jakarta">
-                          {pet.name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <Button
-                        size="icon"
-                        onClick={() => fileInputRefs.current[pet.id]?.click()}
-                        disabled={redetectingPetId === pet.id}
-                        className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 shadow-md hover:shadow-lg transition-all hover:scale-110"
-                      >
-                        {redetectingPetId === pet.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Camera className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
-                      <Input
-                        ref={(el) => (fileInputRefs.current[pet.id] = el)}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleRedetectBreed(pet.id, pet.type, file);
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg font-jakarta text-gray-900">{pet.name}</h3>
-                      <p className="text-sm text-gray-600 font-jakarta capitalize">{pet.type}</p>
-                      {pet.breed && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-sm text-gray-700 font-jakarta">{pet.breed}</span>
-                          {pet.breed_confidence !== null && (
-                            <span className={`text-lg font-semibold ${
-                              pet.breed_confidence > 70 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {pet.breed_confidence > 70 ? '✓' : '✗'}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {pet.gender && (
-                        <p className="text-xs text-gray-500 font-jakarta mt-1 capitalize">{pet.gender}</p>
-                      )}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/breed-history/${pet.id}`)}
-                      className="self-center rounded-xl border-2 border-gray-200 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 text-gray-700 hover:text-gray-900 transition-all hover:scale-105"
-                    >
-                      <History className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      ) : (
-        <motion.div 
-          className="px-6 pt-12 pb-6 flex flex-col items-center justify-center text-center"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
-        >
-          <div className="w-32 h-32 bg-gradient-to-br from-[#FBD66A]/20 to-[#F4C542]/20 rounded-full flex items-center justify-center mb-6 shadow-lg">
-            <span className="text-6xl">🐾</span>
-          </div>
-          <h3 className="text-xl font-bold font-jakarta text-gray-900 mb-2">No Pets Yet</h3>
-          <p className="text-gray-600 font-jakarta mb-6 max-w-sm">Start your pet journey by adding your first furry friend!</p>
-          <Button
-            onClick={() => navigate('/add-pet')}
-            className="bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-semibold px-8 py-6 text-base shadow-lg hover:shadow-xl transition-all hover:scale-105"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Your First Pet
-          </Button>
-        </motion.div>
-      )}
+      </div>
 
       {/* Edit Pet Sheet */}
       <Sheet open={!!selectedPetForEdit} onOpenChange={(open) => !open && setSelectedPetForEdit(null)}>
