@@ -285,11 +285,7 @@ const AddPet = () => {
 
               {/* Navigation Buttons */}
               <div className="flex gap-3 pt-6">
-                {currentStep > 1 && <Button type="button" variant="ghost" onClick={() => setCurrentStep(currentStep - 1)} disabled={loading} className="flex-1 h-12 text-sm rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] font-jakarta font-semibold">
-                    Back
-                  </Button>}
-                
-                {currentStep === 3 && <Button type="submit" disabled={loading} className="flex-1 h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                {currentStep === 3 && <Button type="submit" disabled={loading} className="w-full h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
                     {loading ? <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
