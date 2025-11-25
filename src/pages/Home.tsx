@@ -1148,6 +1148,65 @@ const Home = () => {
           </Button>
         </motion.div>
 
+        {/* Accumulation & Redemption Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.3 }}
+          className="px-4 mt-8 mb-32"
+        >
+          <h2 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-4">
+            Accumulation & Redemption
+          </h2>
+          
+          {/* Scrollable Cards Row */}
+          <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+            {/* Card 1 */}
+            <div className="min-w-[280px] bg-white rounded-2xl shadow-md p-5 flex-shrink-0">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl">🏪</span>
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 font-jakarta text-center mb-2">
+                10% Back
+              </h3>
+              <p className="text-sm text-gray-600 font-jakarta text-center">
+                Accumulate up to 10 credits for every liter
+              </p>
+            </div>
+
+            {/* Card 2 */}
+            <div className="min-w-[280px] bg-white rounded-2xl shadow-md p-5 flex-shrink-0">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl">🌳</span>
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 font-jakarta text-center mb-2">
+                10% Accumulation
+              </h3>
+              <p className="text-sm text-gray-600 font-jakarta text-center">
+                For purchases made from our partners
+              </p>
+            </div>
+
+            {/* Card 3 */}
+            <div className="min-w-[280px] bg-white rounded-2xl shadow-md p-5 flex-shrink-0">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl">🏦</span>
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 font-jakarta text-center mb-2">
+                10% Accumulation
+              </h3>
+              <p className="text-sm text-gray-600 font-jakarta text-center">
+                From local insurance providers
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
       </div>
 
