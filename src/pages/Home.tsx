@@ -64,6 +64,13 @@ import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import petidLogo from "@/assets/petid-logo.png";
 import catIconGif from "@/assets/cat-icon.gif";
 
+// Import quick action images
+import insuranceImg from "@/assets/quick-actions/insurance.jpg";
+import adoptionImg from "@/assets/quick-actions/adoption.jpg";
+import shopImg from "@/assets/quick-actions/shop.jpg";
+import photosImg from "@/assets/quick-actions/photos.jpg";
+import documentsImg from "@/assets/quick-actions/documents.jpg";
+
 // Product data - moved outside component for performance
 const products = [
   {
@@ -215,6 +222,7 @@ const Home = () => {
       path: "/insurance",
       gradient: "from-blue-400 to-blue-600",
       bgColor: "bg-blue-50",
+      image: insuranceImg,
     },
     {
       icon: Heart,
@@ -223,6 +231,7 @@ const Home = () => {
       path: "/adoption",
       gradient: "from-pink-400 to-pink-600",
       bgColor: "bg-pink-50",
+      image: adoptionImg,
     },
     {
       icon: Store,
@@ -231,6 +240,7 @@ const Home = () => {
       path: "/shop",
       gradient: "from-green-400 to-green-600",
       bgColor: "bg-green-50",
+      image: shopImg,
     },
     {
       icon: ImageIcon,
@@ -239,6 +249,7 @@ const Home = () => {
       path: "/photos",
       gradient: "from-purple-400 to-purple-600",
       bgColor: "bg-purple-50",
+      image: photosImg,
     },
     {
       icon: FileText,
@@ -247,6 +258,7 @@ const Home = () => {
       path: "/documents",
       gradient: "from-orange-400 to-orange-600",
       bgColor: "bg-orange-50",
+      image: documentsImg,
     },
   ];
 
@@ -786,13 +798,20 @@ const Home = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(action.path)}
-                className={`${action.bgColor} rounded-2xl p-5 cursor-pointer shadow-sm hover:shadow-md transition-all border border-gray-100`}
+                className="rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all border border-gray-100 relative group"
               >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center mb-3 shadow-md`}>
-                  <action.icon className="w-6 h-6 text-white" />
+                <div className="relative h-32">
+                  <img
+                    src={action.image}
+                    alt={action.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <h3 className="text-base font-bold text-white font-jakarta mb-0.5 drop-shadow-lg">{action.title}</h3>
+                    <p className="text-xs text-white/90 font-jakarta drop-shadow-md">{action.description}</p>
+                  </div>
                 </div>
-                <h3 className="text-base font-bold text-gray-900 font-jakarta mb-1">{action.title}</h3>
-                <p className="text-xs text-gray-600 font-jakarta">{action.description}</p>
               </motion.div>
             ))}
           </div>
