@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, CreditCard, MapPin, Package, Truck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CreditCard, MapPin, Package, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -176,32 +176,32 @@ const Checkout = () => {
   };
 
   const steps = [
-    { number: 1, title: "Shipping", icon: Truck },
-    { number: 2, title: "Payment", icon: CreditCard },
-    { number: 3, title: "Review", icon: Package },
+    { number: 1, title: "משלוח", icon: Truck },
+    { number: 2, title: "תשלום", icon: CreditCard },
+    { number: 3, title: "סיכום", icon: Package },
   ];
 
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen pb-20 bg-white" dir="rtl">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-40 bg-[#FFC107] shadow-md">
+        <div className="flex items-center justify-between px-4 py-4">
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full hover:bg-gray-100"
+            className="rounded-full hover:bg-white/20"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowRight className="w-6 h-6 text-gray-900" />
           </Button>
-          <h1 className="text-base font-bold font-jakarta text-gray-900">Checkout</h1>
+          <h1 className="text-xl font-bold font-jakarta text-gray-900">תשלום</h1>
           <div className="w-10" />
         </div>
       </header>
 
       {/* Progress Steps */}
-      <div className="px-4 py-5">
-        <div className="flex items-center justify-between mb-8">
+      <div className="px-4 py-6 bg-gray-50">
+        <div className="flex items-center justify-between mb-8 max-w-md mx-auto">
           {steps.map((step, index) => {
             const StepIcon = step.icon;
             const isCompleted = currentStep > step.number;
@@ -211,22 +211,22 @@ const Checkout = () => {
               <div key={step.number} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md ${
                       isCompleted
-                        ? "bg-[#7DD3C0] text-white"
+                        ? "bg-green-500 text-white"
                         : isActive
-                        ? "bg-[#FBD66A] text-gray-900"
-                        : "bg-gray-200 text-gray-500"
+                        ? "bg-[#FFC107] text-gray-900"
+                        : "bg-white border-2 border-gray-300 text-gray-400"
                     }`}
                   >
                     {isCompleted ? (
-                      <Check className="w-5 h-5" />
+                      <Check className="w-6 h-6" />
                     ) : (
                       <StepIcon className="w-5 h-5" />
                     )}
                   </div>
                   <span
-                    className={`text-xs font-jakarta mt-1 ${
+                    className={`text-xs font-jakarta mt-2 ${
                       isActive ? "font-bold text-gray-900" : "text-gray-600"
                     }`}
                   >
@@ -235,8 +235,8 @@ const Checkout = () => {
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`h-0.5 flex-1 transition-all ${
-                      isCompleted ? "bg-[#7DD3C0]" : "bg-gray-200"
+                    className={`h-1 flex-1 transition-all mx-2 rounded-full ${
+                      isCompleted ? "bg-green-500" : "bg-gray-300"
                     }`}
                   />
                 )}
@@ -257,22 +257,22 @@ const Checkout = () => {
               transition={{ duration: 0.3 }}
               className="space-y-4"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-[#7DD3C0]" />
-                <h2 className="text-lg font-bold text-gray-900 font-jakarta">Shipping Address</h2>
+              <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
+                <MapPin className="w-5 h-5 text-[#FFC107]" />
+                <h2 className="text-lg font-bold text-gray-900 font-jakarta">כתובת למשלוח</h2>
               </div>
 
-              <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm space-y-4">
+              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg space-y-4 max-w-md mx-auto">
                 <div>
-                  <Label htmlFor="fullName" className="font-jakarta text-sm font-semibold">
-                    Full Name *
+                  <Label htmlFor="fullName" className="font-jakarta text-sm font-semibold text-gray-700">
+                    שם מלא *
                   </Label>
                   <Input
                     id="fullName"
                     value={shippingData.fullName}
                     onChange={(e) => handleInputChange("fullName", e.target.value)}
-                    className={`mt-1 font-jakarta ${errors.fullName ? "border-red-500" : ""}`}
-                    placeholder="John Doe"
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.fullName ? "border-red-500" : ""}`}
+                    placeholder="ישראל ישראלי"
                   />
                   {errors.fullName && (
                     <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.fullName}</p>
@@ -280,16 +280,16 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="email" className="font-jakarta text-sm font-semibold">
-                    Email *
+                  <Label htmlFor="email" className="font-jakarta text-sm font-semibold text-gray-700">
+                    אימייל *
                   </Label>
                   <Input
                     id="email"
                     type="email"
                     value={shippingData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className={`mt-1 font-jakarta ${errors.email ? "border-red-500" : ""}`}
-                    placeholder="john@example.com"
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.email ? "border-red-500" : ""}`}
+                    placeholder="email@example.com"
                   />
                   {errors.email && (
                     <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.email}</p>
@@ -297,15 +297,15 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="font-jakarta text-sm font-semibold">
-                    Phone Number *
+                  <Label htmlFor="phone" className="font-jakarta text-sm font-semibold text-gray-700">
+                    מספר טלפון *
                   </Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={shippingData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
-                    className={`mt-1 font-jakarta ${errors.phone ? "border-red-500" : ""}`}
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.phone ? "border-red-500" : ""}`}
                     placeholder="0501234567"
                   />
                   {errors.phone && (
@@ -314,15 +314,15 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="address" className="font-jakarta text-sm font-semibold">
-                    Street Address *
+                  <Label htmlFor="address" className="font-jakarta text-sm font-semibold text-gray-700">
+                    כתובת רחוב *
                   </Label>
                   <Input
                     id="address"
                     value={shippingData.address}
                     onChange={(e) => handleInputChange("address", e.target.value)}
-                    className={`mt-1 font-jakarta ${errors.address ? "border-red-500" : ""}`}
-                    placeholder="123 Main Street, Apt 4B"
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.address ? "border-red-500" : ""}`}
+                    placeholder="רחוב הרצל 123, דירה 4"
                   />
                   {errors.address && (
                     <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.address}</p>
@@ -331,15 +331,15 @@ const Checkout = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="city" className="font-jakarta text-sm font-semibold">
-                      City *
+                    <Label htmlFor="city" className="font-jakarta text-sm font-semibold text-gray-700">
+                      עיר *
                     </Label>
                     <Input
                       id="city"
                       value={shippingData.city}
                       onChange={(e) => handleInputChange("city", e.target.value)}
-                      className={`mt-1 font-jakarta ${errors.city ? "border-red-500" : ""}`}
-                      placeholder="Tel Aviv"
+                      className={`mt-1.5 font-jakarta rounded-xl ${errors.city ? "border-red-500" : ""}`}
+                      placeholder="תל אביב"
                     />
                     {errors.city && (
                       <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.city}</p>
@@ -347,14 +347,14 @@ const Checkout = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="zipCode" className="font-jakarta text-sm font-semibold">
-                      Zip Code *
+                    <Label htmlFor="zipCode" className="font-jakarta text-sm font-semibold text-gray-700">
+                      מיקוד *
                     </Label>
                     <Input
                       id="zipCode"
                       value={shippingData.zipCode}
                       onChange={(e) => handleInputChange("zipCode", e.target.value)}
-                      className={`mt-1 font-jakarta ${errors.zipCode ? "border-red-500" : ""}`}
+                      className={`mt-1.5 font-jakarta rounded-xl ${errors.zipCode ? "border-red-500" : ""}`}
                       placeholder="12345"
                     />
                     {errors.zipCode && (
@@ -376,18 +376,18 @@ const Checkout = () => {
               transition={{ duration: 0.3 }}
               className="space-y-4"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <CreditCard className="w-5 h-5 text-[#7DD3C0]" />
-                <h2 className="text-lg font-bold text-gray-900 font-jakarta">Payment Method</h2>
+              <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
+                <CreditCard className="w-5 h-5 text-[#FFC107]" />
+                <h2 className="text-lg font-bold text-gray-900 font-jakarta">אמצעי תשלום</h2>
               </div>
 
-              <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="space-y-3">
                     <div
-                      className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "credit-card"
-                          ? "border-[#7DD3C0] bg-[#7DD3C0]/5"
+                          ? "border-[#FFC107] bg-[#FFC107]/10"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setPaymentMethod("credit-card")}
@@ -395,9 +395,9 @@ const Checkout = () => {
                       <RadioGroupItem value="credit-card" id="credit-card" />
                       <Label
                         htmlFor="credit-card"
-                        className="flex-1 cursor-pointer font-jakarta font-semibold"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-gray-900"
                       >
-                        Credit / Debit Card
+                        כרטיס אשראי
                       </Label>
                       <div className="flex gap-1">
                         <div className="w-8 h-5 bg-gradient-to-r from-blue-600 to-blue-400 rounded"></div>
@@ -406,9 +406,9 @@ const Checkout = () => {
                     </div>
 
                     <div
-                      className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "paypal"
-                          ? "border-[#7DD3C0] bg-[#7DD3C0]/5"
+                          ? "border-[#FFC107] bg-[#FFC107]/10"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setPaymentMethod("paypal")}
@@ -416,7 +416,7 @@ const Checkout = () => {
                       <RadioGroupItem value="paypal" id="paypal" />
                       <Label
                         htmlFor="paypal"
-                        className="flex-1 cursor-pointer font-jakarta font-semibold"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-gray-900"
                       >
                         PayPal
                       </Label>
@@ -426,9 +426,9 @@ const Checkout = () => {
                     </div>
 
                     <div
-                      className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "cash-on-delivery"
-                          ? "border-[#7DD3C0] bg-[#7DD3C0]/5"
+                          ? "border-[#FFC107] bg-[#FFC107]/10"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setPaymentMethod("cash-on-delivery")}
@@ -436,19 +436,19 @@ const Checkout = () => {
                       <RadioGroupItem value="cash-on-delivery" id="cash-on-delivery" />
                       <Label
                         htmlFor="cash-on-delivery"
-                        className="flex-1 cursor-pointer font-jakarta font-semibold"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-gray-900"
                       >
-                        Cash on Delivery
+                        מזומן במשלוח
                       </Label>
-                      <div className="text-xs text-gray-600 font-jakarta">+₪5 fee</div>
+                      <div className="text-xs text-gray-600 font-jakarta">+₪5 עמלה</div>
                     </div>
                   </div>
                 </RadioGroup>
               </Card>
 
-              <Card className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+              <Card className="p-3 bg-blue-50 border-0 rounded-xl max-w-md mx-auto">
                 <p className="text-xs text-blue-800 font-jakarta">
-                  🔒 Your payment information is secure and encrypted
+                  🔒 פרטי התשלום שלך מאובטחים ומוצפנים
                 </p>
               </Card>
             </motion.div>
@@ -464,24 +464,24 @@ const Checkout = () => {
               transition={{ duration: 0.3 }}
               className="space-y-4"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <Package className="w-5 h-5 text-[#7DD3C0]" />
-                <h2 className="text-lg font-bold text-gray-900 font-jakarta">Review Order</h2>
+              <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
+                <Package className="w-5 h-5 text-[#FFC107]" />
+                <h2 className="text-lg font-bold text-gray-900 font-jakarta">סיכום הזמנה</h2>
               </div>
 
               {/* Shipping Info */}
-              <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-gray-900 font-jakarta text-sm">
-                    Shipping Address
+                  <h3 className="font-bold text-gray-900 font-jakarta text-base">
+                    כתובת למשלוח
                   </h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setCurrentStep(1)}
-                    className="text-[#7DD3C0] hover:bg-[#7DD3C0]/10 font-jakarta text-xs"
+                    className="text-[#FFC107] hover:bg-[#FFC107]/10 font-jakarta text-xs"
                   >
-                    Edit
+                    ערוך
                   </Button>
                 </div>
                 <div className="text-sm text-gray-600 font-jakarta space-y-1">
@@ -496,32 +496,33 @@ const Checkout = () => {
               </Card>
 
               {/* Payment Method */}
-              <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-gray-900 font-jakarta text-sm">Payment Method</h3>
+                  <h3 className="font-bold text-gray-900 font-jakarta text-base">אמצעי תשלום</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setCurrentStep(2)}
-                    className="text-[#7DD3C0] hover:bg-[#7DD3C0]/10 font-jakarta text-xs"
+                    className="text-[#FFC107] hover:bg-[#FFC107]/10 font-jakarta text-xs"
                   >
-                    Edit
+                    ערוך
                   </Button>
                 </div>
-                <p className="text-sm text-gray-600 font-jakarta capitalize">
-                  {paymentMethod.replace("-", " ")}
+                <p className="text-sm text-gray-600 font-jakarta">
+                  {paymentMethod === "credit-card" ? "כרטיס אשראי" : 
+                   paymentMethod === "paypal" ? "PayPal" : "מזומן במשלוח"}
                 </p>
               </Card>
 
               {/* Order Items */}
-              <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                <h3 className="font-bold text-gray-900 font-jakarta text-sm mb-3">
-                  Order Items ({items.length})
+              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+                <h3 className="font-bold text-gray-900 font-jakarta text-base mb-4">
+                  פריטים בהזמנה ({items.length})
                 </h3>
                 <div className="space-y-3">
                   {items.map((item) => (
                     <div key={item.id} className="flex gap-3">
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                         <img
                           src={item.image}
                           alt={item.name}
@@ -529,11 +530,11 @@ const Checkout = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 font-jakarta text-sm truncate">
+                        <h4 className="font-semibold text-gray-900 font-jakarta text-sm line-clamp-2">
                           {item.name}
                         </h4>
                         <p className="text-xs text-gray-600 font-jakarta">
-                          Qty: {item.quantity}
+                          כמות: {item.quantity}
                           {item.variant && ` • ${item.variant}`}
                           {item.size && ` • ${item.size}`}
                         </p>
@@ -547,18 +548,18 @@ const Checkout = () => {
               </Card>
 
               {/* Order Summary */}
-              <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm space-y-2">
+              <Card className="p-5 bg-gradient-to-br from-white to-gray-50 border-0 rounded-2xl shadow-xl max-w-md mx-auto space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-jakarta">Subtotal</span>
+                  <span className="text-gray-600 font-jakarta">סכום ביניים</span>
                   <span className="font-semibold text-gray-900 font-jakarta">
                     ₪{subtotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-jakarta">Shipping</span>
+                  <span className="text-gray-600 font-jakarta">משלוח</span>
                   <span className="font-semibold text-gray-900 font-jakarta">
                     {shipping === 0 ? (
-                      <span className="text-[#7DD3C0]">FREE</span>
+                      <span className="text-green-600 font-bold">חינם</span>
                     ) : (
                       `₪${shipping.toFixed(2)}`
                     )}
@@ -566,20 +567,22 @@ const Checkout = () => {
                 </div>
                 {paymentMethod === "cash-on-delivery" && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 font-jakarta">COD Fee</span>
+                    <span className="text-gray-600 font-jakarta">עמלת מזומן</span>
                     <span className="font-semibold text-gray-900 font-jakarta">₪5.00</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-jakarta">Tax (VAT 17%)</span>
+                  <span className="text-gray-600 font-jakarta">מע״מ (17%)</span>
                   <span className="font-semibold text-gray-900 font-jakarta">
                     ₪{tax.toFixed(2)}
                   </span>
                 </div>
                 <Separator />
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-900 font-jakarta">Total</span>
-                  <span className="text-xl font-bold text-gray-900 font-jakarta">
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-lg font-bold text-gray-900 font-jakarta">
+                    סה״כ לתשלום
+                  </span>
+                  <span className="text-2xl font-bold text-[#E91E63] font-jakarta">
                     ₪
                     {(
                       total + (paymentMethod === "cash-on-delivery" ? 5 : 0)
@@ -592,35 +595,35 @@ const Checkout = () => {
         </AnimatePresence>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-6 px-4 max-w-md mx-auto">
           {currentStep > 1 && (
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-2 border-gray-300 text-gray-900 hover:bg-gray-100 rounded-xl font-bold font-jakarta"
+              className="flex-1 border-2 border-gray-300 text-gray-900 hover:bg-gray-100 rounded-xl font-bold font-jakarta h-14"
               onClick={() => setCurrentStep(currentStep - 1)}
               disabled={isProcessing}
             >
-              Back
+              חזור
             </Button>
           )}
           <Button
             size="lg"
-            className="flex-1 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-bold font-jakarta shadow-md"
+            className={`flex-1 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
             onClick={currentStep === 3 ? handlePlaceOrder : handleNextStep}
             disabled={isProcessing}
           >
             {isProcessing ? (
               <>
-                <span className="animate-spin mr-2">⏳</span>
-                Processing...
+                <span className="animate-spin ml-2">⏳</span>
+                מעבד...
               </>
             ) : currentStep === 3 ? (
-              `Place Order · ₪${(
+              `בצע הזמנה · ₪${(
                 total + (paymentMethod === "cash-on-delivery" ? 5 : 0)
               ).toFixed(2)}`
             ) : (
-              "Continue"
+              "המשך"
             )}
           </Button>
         </div>
