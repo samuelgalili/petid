@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      adoption_pets: {
+        Row: {
+          age_months: number | null
+          age_years: number | null
+          breed: string | null
+          created_at: string | null
+          description: string | null
+          gender: string | null
+          id: string
+          image_url: string | null
+          is_neutered: boolean | null
+          is_vaccinated: boolean | null
+          name: string
+          size: string
+          special_needs: string | null
+          status: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          age_months?: number | null
+          age_years?: number | null
+          breed?: string | null
+          created_at?: string | null
+          description?: string | null
+          gender?: string | null
+          id?: string
+          image_url?: string | null
+          is_neutered?: boolean | null
+          is_vaccinated?: boolean | null
+          name: string
+          size: string
+          special_needs?: string | null
+          status?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          age_months?: number | null
+          age_years?: number | null
+          breed?: string | null
+          created_at?: string | null
+          description?: string | null
+          gender?: string | null
+          id?: string
+          image_url?: string | null
+          is_neutered?: boolean | null
+          is_vaccinated?: boolean | null
+          name?: string
+          size?: string
+          special_needs?: string | null
+          status?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      adoption_requests: {
+        Row: {
+          address: string
+          created_at: string | null
+          email: string
+          experience_details: string | null
+          full_name: string
+          has_experience: boolean | null
+          has_other_pets: boolean | null
+          id: string
+          other_pets_details: string | null
+          pet_id: string
+          phone: string
+          reason: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          email: string
+          experience_details?: string | null
+          full_name: string
+          has_experience?: boolean | null
+          has_other_pets?: boolean | null
+          id?: string
+          other_pets_details?: string | null
+          pet_id: string
+          phone: string
+          reason: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          email?: string
+          experience_details?: string | null
+          full_name?: string
+          has_experience?: boolean | null
+          has_other_pets?: boolean | null
+          id?: string
+          other_pets_details?: string | null
+          pet_id?: string
+          phone?: string
+          reason?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adoption_requests_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "adoption_pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       breed_detection_history: {
         Row: {
           avatar_url: string | null
