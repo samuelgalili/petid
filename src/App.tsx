@@ -41,6 +41,8 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Chat from "./pages/Chat";
 import Adoption from "./pages/Adoption";
+import Experiences from "./pages/Experiences";
+import Parks from "./pages/Parks";
 import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
@@ -80,6 +82,8 @@ const AnimatedRoutes = () => {
         <Route path="/admin/customers" element={<ProtectedRoute><AdminRoute><PageTransition><AdminCustomers /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
         <Route path="/adoption" element={<ProtectedRoute><PageTransition><Adoption /></PageTransition></ProtectedRoute>} />
+        <Route path="/experiences" element={<ProtectedRoute><PageTransition><Experiences /></PageTransition></ProtectedRoute>} />
+        <Route path="/parks" element={<ProtectedRoute><PageTransition><Parks /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>
