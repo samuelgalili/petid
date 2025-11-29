@@ -40,6 +40,7 @@ import Rewards from "./pages/Rewards";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Chat from "./pages/Chat";
+import Adoption from "./pages/Adoption";
 import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
@@ -78,7 +79,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin/orders" element={<ProtectedRoute><AdminRoute><PageTransition><AdminOrders /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/customers" element={<ProtectedRoute><AdminRoute><PageTransition><AdminCustomers /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
-        <Route path="/adoption" element={<ProtectedRoute><PageTransition><NotFound /></PageTransition></ProtectedRoute>} />
+        <Route path="/adoption" element={<ProtectedRoute><PageTransition><Adoption /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>
