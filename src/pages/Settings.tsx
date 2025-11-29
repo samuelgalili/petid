@@ -1,4 +1,4 @@
-import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages } from "lucide-react";
+import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -15,13 +15,35 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useAccessibility } from "@/contexts/AccessibilityContext";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { t, language, setLanguage, direction } = useLanguage();
+  const { theme, setTheme } = useTheme();
+  const { fontSize, highContrast, reduceMotion, setFontSize, setHighContrast, setReduceMotion } = useAccessibility();
+  const { user, signOut } = useAuth();
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [location, setLocation] = useState(true);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("התנתקת בהצלחה");
+      navigate("/auth");
+    } catch (error) {
+      toast.error("שגיאה בהתנתקות");
+    }
+  };
+
+  const getThemeIcon = () => {
+    if (theme === "light") return Sun;
+    if (theme === "dark") return Moon;
+    return Monitor;
+  };
 
   const settingsSections = [
     {
@@ -48,12 +70,17 @@ const Settings = () => {
           value: notifications,
         },
         {
-          icon: darkMode ? Moon : Sun,
-          label: t("settings.darkMode"),
-          description: t("settings.darkModeDesc"),
-          action: () => setDarkMode(!darkMode),
-          type: "toggle",
-          value: darkMode,
+          icon: getThemeIcon(),
+          label: "ערכת נושא",
+          description: "בחר בהיר, כהה או אוטומטי",
+          type: "select",
+          value: theme,
+          options: [
+            { value: "light", label: "בהיר" },
+            { value: "dark", label: "כהה" },
+            { value: "system", label: "אוטומטי" },
+          ],
+          action: (value: string) => setTheme(value as any),
         },
         {
           icon: Globe,
@@ -75,6 +102,40 @@ const Settings = () => {
             { value: "ar", label: t("languages.ar") },
           ],
           action: (value: string) => setLanguage(value as "he" | "en" | "ar"),
+        },
+      ],
+    },
+    {
+      title: "נגישות",
+      items: [
+        {
+          icon: Type,
+          label: "גודל טקסט",
+          description: "שנה את גודל הטקסט",
+          type: "select",
+          value: fontSize,
+          options: [
+            { value: "small", label: "קטן" },
+            { value: "medium", label: "בינוני" },
+            { value: "large", label: "גדול" },
+          ],
+          action: (value: string) => setFontSize(value as any),
+        },
+        {
+          icon: Contrast,
+          label: "ניגודיות גבוהה",
+          description: "שפר את הנראות",
+          action: () => setHighContrast(!highContrast),
+          type: "toggle",
+          value: highContrast,
+        },
+        {
+          icon: Zap,
+          label: "הפחת אנימציות",
+          description: "הקטן תנועה בממשק",
+          action: () => setReduceMotion(!reduceMotion),
+          type: "toggle",
+          value: reduceMotion,
         },
       ],
     },
@@ -130,8 +191,8 @@ const Settings = () => {
               <AvatarFallback className="bg-muted text-foreground font-bold">יי</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="font-bold text-base mb-0.5">ישראל ישראלי</h3>
-              <p className="text-sm text-muted-foreground">israel@example.com</p>
+              <h3 className="font-bold text-base mb-0.5">{user?.user_metadata?.full_name || "משתמש"}</h3>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
             <Button
               variant="ghost"
@@ -214,6 +275,7 @@ const Settings = () => {
 
         {/* Logout Button */}
         <Card
+          onClick={handleLogout}
           className="border border-border rounded-2xl overflow-hidden cursor-pointer hover:bg-destructive/5 active:bg-destructive/10 transition-colors animate-scale-in"
           style={{ animationDelay: `${(settingsSections.length + 1) * 50}ms` }}
         >
