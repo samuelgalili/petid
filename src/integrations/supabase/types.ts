@@ -263,6 +263,44 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_photos: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          id: string
+          pet_id: string | null
+          photo_url: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          pet_id?: string | null
+          photo_url: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          pet_id?: string | null
+          photo_url?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_photos_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           age: number | null
