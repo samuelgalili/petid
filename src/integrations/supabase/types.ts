@@ -263,6 +263,56 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_documents: {
+        Row: {
+          description: string | null
+          document_type: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          pet_id: string
+          title: string
+          updated_at: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          document_type: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          pet_id: string
+          title: string
+          updated_at?: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          document_type?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          pet_id?: string
+          title?: string
+          updated_at?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_documents_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_photos: {
         Row: {
           caption: string | null
