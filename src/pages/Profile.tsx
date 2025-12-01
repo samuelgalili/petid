@@ -1,67 +1,39 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { 
-  User, 
-  Mail, 
-  Phone, 
-  Camera, 
-  LogOut, 
-  Edit2, 
-  Check, 
-  X,
-  Settings,
-  Bell,
-  Shield,
-  HelpCircle,
-  ChevronRight
+  ChevronLeft,
+  CreditCard,
+  Lock,
+  ShoppingBag,
+  Gift,
+  MapPin,
+  Receipt,
+  Plus,
+  ChevronRight,
+  Check
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import dogIcon from "@/assets/dog-official.svg";
+import catIcon from "@/assets/cat-official.png";
 
 const Profile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-
-  const [profile, setProfile] = useState({
-    id: "",
-    full_name: "",
-    email: "",
-    phone: "",
-    avatar_url: "",
-  });
-
-  const [editedProfile, setEditedProfile] = useState({
-    full_name: "",
-    phone: "",
-  });
+  const [profile, setProfile] = useState<any>(null);
+  const [pets, setPets] = useState<any[]>([]);
+  const [lastOrder, setLastOrder] = useState<any>(null);
+  const [activeCoupons, setActiveCoupons] = useState<any[]>([]);
+  const [nearbyParks, setNearbyParks] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchProfile();
+    fetchAllData();
   }, []);
 
-  const fetchProfile = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -71,114 +43,60 @@ const Profile = () => {
         return;
       }
 
-      const { data: profileData, error } = await supabase
+      // Fetch profile
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      setProfile(profileData);
 
-      const profileInfo = {
-        id: user.id,
-        full_name: profileData?.full_name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        avatar_url: profileData?.avatar_url || "",
-      };
+      // Fetch pets
+      const { data: petsData } = await supabase
+        .from('pets')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('archived', false)
+        .order('created_at', { ascending: false });
 
-      setProfile(profileInfo);
-      setEditedProfile({
-        full_name: profileInfo.full_name,
-        phone: profileInfo.phone,
-      });
-    } catch (error: any) {
-      console.error("Error fetching profile:", error);
-      toast({
-        title: "Error loading profile",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      setPets(petsData || []);
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setUploading(true);
-      
-      if (!event.target.files || event.target.files.length === 0) {
-        return;
+      // Fetch last order
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (ordersData && ordersData.length > 0) {
+        setLastOrder(ordersData[0]);
       }
 
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.id}-${Date.now()}.${fileExt}`;
+      // Fetch active redemptions (coupons)
+      const { data: redemptionsData } = await supabase
+        .from('redemptions')
+        .select('*, rewards(*)')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('expires_at', { ascending: true });
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file);
+      setActiveCoupons(redemptionsData || []);
 
-      if (uploadError) throw uploadError;
+      // Fetch nearby parks (just get first 3)
+      const { data: parksData } = await supabase
+        .from('dog_parks')
+        .select('*')
+        .eq('status', 'active')
+        .limit(3);
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
+      setNearbyParks(parksData || []);
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', profile.id);
-
-      if (updateError) throw updateError;
-
-      setProfile({ ...profile, avatar_url: publicUrl });
-      
-      toast({
-        title: "Avatar updated!",
-        description: "Your profile picture has been updated successfully.",
-      });
     } catch (error: any) {
-      toast({
-        title: "Error uploading avatar",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("Error fetching data:", error);
     } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: editedProfile.full_name,
-        })
-        .eq('id', profile.id);
-
-      if (error) throw error;
-
-      setProfile({
-        ...profile,
-        full_name: editedProfile.full_name,
-        phone: editedProfile.phone,
-      });
-
-      setEditing(false);
-      
-      toast({
-        title: "Profile updated!",
-        description: "Your profile has been updated successfully.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error updating profile",
-        description: error.message,
-        variant: "destructive",
-      });
+      setLoading(false);
     }
   };
 
@@ -186,57 +104,21 @@ const Profile = () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
       navigate('/auth');
-      
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully.",
-      });
     } catch (error: any) {
       toast({
-        title: "Error logging out",
+        title: "שגיאה",
         description: error.message,
         variant: "destructive",
       });
     }
   };
 
-  const menuItems = [
-    {
-      icon: Settings,
-      label: "Settings",
-      description: "App preferences",
-      onClick: () => navigate('/settings'),
-    },
-    {
-      icon: Bell,
-      label: "Notifications",
-      description: "Manage notifications",
-      onClick: () => toast({ title: "Coming soon!" }),
-    },
-    {
-      icon: Shield,
-      label: "Privacy & Security",
-      description: "Account security",
-      onClick: () => toast({ title: "Coming soon!" }),
-    },
-    {
-      icon: HelpCircle,
-      label: "Help & Support",
-      description: "Get help",
-      onClick: () => toast({ title: "Coming soon!" }),
-    },
-  ];
-
   if (loading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-background flex items-center justify-center pb-20">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-[#7DD3C0] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 font-jakarta">Loading profile...</p>
-          </div>
+        <div className="min-h-screen bg-white flex items-center justify-center pb-20">
+          <div className="w-12 h-12 border-3 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
         </div>
       </PageTransition>
     );
@@ -244,181 +126,209 @@ const Profile = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-white pb-20" dir="rtl">
         {/* Header */}
-        <div className="bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] pt-8 pb-20 px-4">
-          <h1 className="text-2xl font-bold text-white font-jakarta mb-2">Profile</h1>
-          <p className="text-white/90 text-sm font-jakarta">Manage your account</p>
+        <div className="bg-white px-4 pt-4 pb-4 flex items-center justify-between sticky top-0 z-10 border-b border-gray-100">
+          <button onClick={() => navigate(-1)} className="p-2">
+            <ChevronRight className="w-6 h-6 text-gray-900" />
+          </button>
+          <h1 className="text-lg font-bold text-gray-900 font-jakarta">האזור האישי שלך</h1>
+          <div className="w-10" />
         </div>
 
-        {/* Profile Card - Overlapping Header */}
-        <div className="px-4 -mt-12">
-          <Card className="p-6 shadow-xl">
-            <div className="flex flex-col items-center">
-              {/* Avatar with Upload */}
-              <div className="relative mb-4">
-                <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-                  <AvatarImage src={profile.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] text-white text-2xl">
-                    {profile.full_name?.charAt(0) || profile.email?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <label htmlFor="avatar-upload">
-                  <div className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors border-2 border-[#7DD3C0]">
-                    {uploading ? (
-                      <div className="w-4 h-4 border-2 border-[#7DD3C0] border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <Camera className="w-4 h-4 text-[#7DD3C0]" />
-                    )}
-                  </div>
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                    disabled={uploading}
-                  />
-                </label>
-              </div>
-
-              {/* Profile Info */}
-              {editing ? (
-                <div className="w-full space-y-4">
-                  <div>
-                    <Label htmlFor="full_name" className="text-sm font-jakarta">Full Name</Label>
-                    <Input
-                      id="full_name"
-                      value={editedProfile.full_name}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, full_name: e.target.value })}
-                      className="font-jakarta"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSaveProfile}
-                      className="flex-1 bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] hover:opacity-90 font-jakarta"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setEditing(false);
-                        setEditedProfile({
-                          full_name: profile.full_name,
-                          phone: profile.phone,
-                        });
-                      }}
-                      variant="outline"
-                      className="flex-1 font-jakarta"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-xl font-bold text-gray-900 font-jakarta mb-1">
-                    {profile.full_name || "Set your name"}
-                  </h2>
-                  
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
-                    <Mail className="w-4 h-4" />
-                    <span className="font-jakarta">{profile.email}</span>
-                  </div>
-
-                  {profile.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                      <Phone className="w-4 h-4" />
-                      <span className="font-jakarta">{profile.phone}</span>
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={() => setEditing(true)}
-                    variant="outline"
-                    className="mt-2 font-jakarta"
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                </>
-              )}
-            </div>
-          </Card>
-        </div>
-
-        {/* Menu Items */}
-        <div className="px-4 mt-6 space-y-2">
-          {menuItems.map((item, index) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
+        {/* Content Container */}
+        <div className="px-4 py-4 space-y-4">
+          
+          {/* User Header Section */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 font-jakarta mb-1">
+              {profile?.full_name || "אורח"}
+            </h2>
+            <button 
+              onClick={() => navigate('/settings')}
+              className="text-sm text-blue-600 font-jakarta hover:underline"
             >
-              <Card
-                className="p-4 cursor-pointer hover:shadow-md transition-shadow"
-                onClick={item.onClick}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <item.icon className="w-5 h-5 text-gray-700" />
+              ערוך פרטים &lt;
+            </button>
+          </div>
+
+          {/* Pets Section */}
+          <div>
+            <h3 className="text-gray-900 font-bold font-jakarta mb-3">הרכבים שלי</h3>
+            <div className="bg-[#F7F7F7] rounded-2xl p-4 shadow-sm space-y-3">
+              {pets.length > 0 ? (
+                pets.map((pet) => (
+                  <div 
+                    key={pet.id}
+                    onClick={() => navigate(`/pet/${pet.id}`)}
+                    className="bg-white rounded-xl p-3 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                        {pet.avatar_url ? (
+                          <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <img 
+                            src={pet.type === 'dog' ? dogIcon : catIcon} 
+                            alt={pet.type} 
+                            className="w-6 h-6"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 font-jakarta text-sm">{pet.name}</p>
+                        <p className="text-xs text-gray-500 font-jakarta">{pet.breed || pet.type}</p>
+                      </div>
                     </div>
+                    <ChevronLeft className="w-5 h-5 text-gray-400" />
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm font-jakarta text-center py-2">אין חיות מחמד</p>
+              )}
+              <button
+                onClick={() => navigate('/add-pet')}
+                className="w-full bg-white rounded-xl p-3 flex items-center justify-center gap-2 text-blue-600 font-jakarta font-semibold hover:bg-gray-50 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                הוסף רכב
+              </button>
+            </div>
+          </div>
+
+          {/* Payments & Security Section */}
+          <div>
+            <h3 className="text-gray-900 font-bold font-jakarta mb-3">תשלום ואבטחה</h3>
+            <div className="bg-[#F7F7F7] rounded-2xl p-4 shadow-sm space-y-3">
+              <button className="w-full bg-white rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
+                  <span className="font-jakarta text-gray-900">ניהול אמצעי תשלום</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-gray-400" />
+              </button>
+              <button className="w-full bg-white rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3">
+                  <Lock className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
+                  <span className="font-jakarta text-gray-900">הוספת אמצעי הגנה</span>
+                </div>
+                <Plus className="w-5 h-5 text-blue-600" />
+              </button>
+            </div>
+          </div>
+
+          {/* Orders Section */}
+          {lastOrder && (
+            <div>
+              <h3 className="text-gray-900 font-bold font-jakarta mb-3">הספר שלי</h3>
+              <div 
+                onClick={() => navigate('/order-history')}
+                className="bg-[#F7F7F7] rounded-2xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="bg-white rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <ShoppingBag className="w-5 h-5 text-red-600" strokeWidth={1.5} />
                     <div>
-                      <h3 className="font-bold text-gray-900 font-jakarta">{item.label}</h3>
-                      <p className="text-xs text-gray-500 font-jakarta">{item.description}</p>
+                      <p className="font-bold text-gray-900 font-jakarta text-sm">טיפ טוב</p>
+                      <p className="text-xs text-gray-500 font-jakarta">
+                        {new Date(lastOrder.order_date).toLocaleDateString('he-IL')}
+                      </p>
                     </div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                  <ChevronLeft className="w-5 h-5 text-gray-400" />
                 </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+              </div>
+            </div>
+          )}
 
-        {/* Logout Button */}
-        <div className="px-4 mt-6">
-          <Button
-            onClick={() => setShowLogoutDialog(true)}
-            variant="outline"
-            className="w-full border-red-200 text-red-600 hover:bg-red-50 font-jakarta font-bold"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
+          {/* Membership Section */}
+          {activeCoupons.length > 0 && (
+            <div>
+              <h3 className="text-gray-900 font-bold font-jakarta mb-3">מנוי הקפה שלי</h3>
+              <div className="bg-[#F7F7F7] rounded-2xl p-4 shadow-sm">
+                <p className="text-sm text-gray-700 font-jakarta mb-2">
+                  ניתן לחסוך עד שלושה רכבים
+                </p>
+                <button
+                  onClick={() => navigate('/rewards')}
+                  className="w-full bg-white rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center gap-3">
+                    <Gift className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
+                    <span className="font-jakarta text-gray-900">
+                      אפשר להחסין אותר לקפה?
+                    </span>
+                  </div>
+                  <Plus className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+            </div>
+          )}
 
-        {/* App Version */}
-        <div className="text-center mt-6 pb-4">
-          <p className="text-xs text-gray-400 font-jakarta">Petid v1.0.0</p>
-        </div>
+          {/* Dog Parks Section */}
+          {nearbyParks.length > 0 && (
+            <div>
+              <h3 className="text-gray-900 font-bold font-jakarta mb-3">גינות כלבים קרובות</h3>
+              <div className="bg-[#F7F7F7] rounded-2xl p-4 shadow-sm">
+                {nearbyParks.slice(0, 2).map((park) => (
+                  <div key={park.id} className="bg-white rounded-xl p-3 mb-2 last:mb-0">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-700" strokeWidth={1.5} />
+                      <p className="font-jakarta text-gray-900 text-sm">{park.name}</p>
+                    </div>
+                    <p className="text-xs text-gray-500 font-jakarta mr-6">{park.city}</p>
+                  </div>
+                ))}
+                <button
+                  onClick={() => navigate('/parks')}
+                  className="w-full text-blue-600 font-jakarta text-sm mt-3 hover:underline"
+                >
+                  צפייה בכל הגינות &lt;
+                </button>
+              </div>
+            </div>
+          )}
 
-        {/* Logout Confirmation Dialog */}
-        <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="font-jakarta">Logout</AlertDialogTitle>
-              <AlertDialogDescription className="font-jakarta">
-                Are you sure you want to logout? You'll need to sign in again to access your account.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="font-jakarta">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 font-jakarta"
+          {/* Purchase History Section */}
+          <div>
+            <h3 className="text-gray-900 font-bold font-jakarta mb-3">היסטוריית רכישות</h3>
+            <div className="bg-[#F7F7F7] rounded-2xl p-4 shadow-sm">
+              <button 
+                onClick={() => navigate('/order-history')}
+                className="w-full bg-white rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow mb-3"
               >
-                Logout
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <div className="flex items-center gap-3">
+                  <Receipt className="w-5 h-5 text-green-600" strokeWidth={1.5} />
+                  <span className="font-jakarta text-gray-900">חשבונית דיגיטלית</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-gray-400" />
+              </button>
+              <label className="flex items-center gap-2 pr-4">
+                <div className="w-5 h-5 rounded border-2 border-blue-600 flex items-center justify-center">
+                  <Check className="w-4 h-4 text-blue-600" strokeWidth={3} />
+                </div>
+                <span className="text-sm text-gray-700 font-jakarta">
+                  אני רוצה לקבל חשבוניות לאזור האישי
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Logout Button */}
+          <div className="pt-4">
+            <button
+              onClick={handleLogout}
+              className="text-blue-600 font-jakarta font-semibold text-center w-full py-2 hover:underline"
+            >
+              התנתקות
+            </button>
+          </div>
+
+          {/* Version */}
+          <div className="text-center pb-4">
+            <p className="text-xs text-gray-400 font-jakarta">גרסה: 1.0.0</p>
+          </div>
+        </div>
 
         <BottomNav />
       </div>
