@@ -610,48 +610,57 @@ const Home = () => {
       {/* Content Container */}
       <div className="pt-0 pb-6">
         
-        {/* Yellow-Style Header Banner - Exact 1:1 Match */}
-        <motion.div initial={{
-          opacity: 0,
-          y: -10
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 0.05
-        }} className="bg-white px-4 py-5 mb-4 mx-4 rounded-2xl shadow-md border border-gray-100" dir="rtl">
-          <div className="flex items-start justify-between gap-3">
-            {/* Gift Icon - Right Side with Circle Background */}
-            <button onClick={() => navigate('/rewards')} className="flex-shrink-0 w-20 h-20 flex items-center justify-center hover:scale-105 transition-all duration-300 ease-out bg-gray-100 rounded-full" aria-label="מתנה">
-              <img src={giftIcon} alt="מתנה" className="w-14 h-14 object-contain mix-blend-multiply" />
-            </button>
+        {/* Mobile-Only Rewards Header - RTL Pixel Perfect */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.05 }}
+          className="bg-white px-4 py-[18px] mb-3 mx-4 rounded-2xl shadow-sm shadow-neutral-200 max-w-[430px]"
+          dir="rtl"
+        >
+          {/* Main Content: Icon (Right) + Text Column (Left) */}
+          <div className="flex flex-row-reverse items-center gap-[14px]">
+            {/* Gift Icon - Right Side - NO background circle */}
+            <div className="flex-shrink-0 w-12 h-12 hover:scale-105 transition-transform duration-200">
+              <img 
+                src={giftIcon} 
+                alt="מתנה" 
+                className="w-full h-full object-contain"
+              />
+            </div>
 
-            {/* Text Content - Left Side */}
-            <div className="flex-1 text-right">
-              {/* Small greeting - only name is clickable - Top Right */}
-              <div className="text-sm text-gray-900 font-normal mb-3">
+            {/* Text Column - Left Side */}
+            <div className="flex-1 text-right space-y-1">
+              {/* Greeting Line - Top */}
+              <div className="text-sm leading-tight font-normal text-[#1A1A1A] mb-1">
                 {getGreeting()},{" "}
-                <button onClick={() => setIsMenuOpen(true)} className="underline decoration-2 decoration-gray-900 hover:text-gray-700 transition-colors font-normal">
+                <button 
+                  onClick={() => setIsMenuOpen(true)} 
+                  className="hover:opacity-70 transition-opacity font-normal"
+                >
                   {userName}
                 </button>
               </div>
               
-              {/* Main headline - Very Large and Bold */}
-              <h1 className="text-[2rem] leading-tight font-black text-gray-900 mb-2">
-                רבעון חדש, צבירה חדשה!
+              {/* Main Headline - 32px / font-black */}
+              <h1 className="text-[2rem] leading-[1.1] font-black text-[#1A1A1A] mb-1">
+                צבירה חדשה!
               </h1>
               
-              {/* Details text - Smaller Gray */}
-              <p className="text-xs text-gray-600 leading-relaxed font-normal">צוברים 50ש עד ה-31.12.25 ב-פז, yellow ובסופרמרקטים</p>
+              {/* Small Info Line - 11px */}
+              <p className="text-[0.6875rem] leading-tight font-normal text-[#6E6E6E] truncate mb-2">
+                צוברים ₪50 עד ה-31.12.25 בפז, yellow ובסופרמרקטים
+              </p>
+              
+              {/* Link Button - 13px / medium / #2271CF */}
+              <button 
+                onClick={() => navigate('/rewards')} 
+                className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
+              >
+                צבירה ומימוש
+                <span className="text-sm">‹</span>
+              </button>
             </div>
-          </div>
-
-          {/* Bottom Link - Blue - Left Aligned */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-medium text-sm hover:text-blue-700 transition-colors inline-flex items-center gap-1">
-              צבירה ומימוש
-              <span className="text-base">‹</span>
-            </button>
           </div>
         </motion.div>
 
