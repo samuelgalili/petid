@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { HomePageSkeleton, PetCardSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -155,6 +156,7 @@ const Home = () => {
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [userName, setUserName] = useState<string>("חבר");
   const [promotionalOffers, setPromotionalOffers] = useState<any[]>([]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
@@ -601,7 +603,7 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20 bg-gray-50">
+      <div className="min-h-screen pb-20 bg-white">
         <HomePageSkeleton />
         <BottomNav />
       </div>
@@ -610,37 +612,43 @@ const Home = () => {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="min-h-screen pb-20 animate-fade-in bg-gray-50 transition-colors">
+    {/* Hamburger Menu */}
+    <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+    
+    <div className="min-h-screen pb-20 animate-fade-in bg-white transition-colors">
       {/* Content Container */}
-      <div className="pt-4 pb-6">
+      <div className="pt-0 pb-6">
         
         {/* Yellow-Style Header Banner - Exact 1:1 Match */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-white px-4 py-6 mb-6"
+          className="bg-white px-6 py-8 mb-4"
           dir="rtl"
         >
-          <div className="flex items-start gap-5">
+          <div className="flex items-start gap-6">
             {/* Gift Icon - Left Side (Exact Match) */}
             <button
               onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-28 h-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-100 shadow-lg flex items-center justify-center hover:shadow-xl transition-all"
+              className="flex-shrink-0 w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-md flex items-center justify-center hover:shadow-lg transition-all"
               aria-label="מתנה"
             >
-              <Gift className="w-12 h-12 text-gray-600" strokeWidth={1.5} />
+              <Gift className="w-16 h-16 text-gray-500" strokeWidth={1.5} />
             </button>
 
             {/* Text Content - Right Side */}
-            <div className="flex-1 pt-1">
-              {/* Small greeting - underlined */}
-              <p className="text-lg text-gray-900 font-jakarta mb-2 underline decoration-2 decoration-gray-900">
+            <div className="flex-1 pt-2">
+              {/* Small greeting - underlined - clickable to open menu */}
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                className="text-lg text-gray-900 font-jakarta mb-3 underline decoration-2 decoration-gray-900 hover:text-gray-700 transition-colors text-right"
+              >
                 {getGreeting()} {userName}!
-              </p>
+              </button>
               
               {/* Main headline - Bold and Large */}
-              <h1 className="text-3xl font-extrabold text-gray-900 font-jakarta mb-3 leading-tight">
+              <h1 className="text-4xl font-black text-gray-900 font-jakarta mb-4 leading-tight">
                 רבעון חדש, צבירה חדשה!
               </h1>
               
@@ -652,7 +660,7 @@ const Home = () => {
           </div>
 
           {/* Bottom Link - Blue */}
-          <div className="mt-5 pt-4 border-t border-gray-100">
+          <div className="mt-6 pt-5 border-t border-gray-100">
             <button
               onClick={() => navigate('/rewards')}
               className="text-blue-600 font-jakarta font-bold text-base hover:underline inline-flex items-center gap-1"
