@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Heart, MessageCircle, Grid3x3, Settings, UserPlus, UserMinus } from "lucide-react";
+import { ArrowRight, Heart, MessageCircle, Grid3x3, Settings, PawPrint, Award, TrendingUp, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { FollowersDialog } from "@/components/FollowersDialog";
+import dogIcon from "@/assets/dog-official.svg";
+import catIcon from "@/assets/cat-official.png";
 
 interface UserProfile {
   id: string;
@@ -32,13 +34,38 @@ interface FollowStats {
   following: number;
 }
 
+interface Pet {
+  id: string;
+  name: string;
+  type: string;
+  breed: string;
+  avatar_url: string;
+  birth_date: string;
+}
+
+interface UserStats {
+  totalPosts: number;
+  totalLikes: number;
+  totalComments: number;
+  joinedDate: string;
+  petsCount: number;
+}
+
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [pets, setPets] = useState<Pet[]>([]);
   const [followStats, setFollowStats] = useState<FollowStats>({ followers: 0, following: 0 });
+  const [userStats, setUserStats] = useState<UserStats>({
+    totalPosts: 0,
+    totalLikes: 0,
+    totalComments: 0,
+    joinedDate: "",
+    petsCount: 0,
+  });
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
@@ -79,17 +106,38 @@ const UserProfile = () => {
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
+    let totalLikes = 0;
+    let totalComments = 0;
+
     if (postsData) {
-      setPosts(
-        postsData.map((post: any) => ({
+      const mappedPosts = postsData.map((post: any) => {
+        const likesCount = post.post_likes?.[0]?.count || 0;
+        const commentsCount = post.post_comments?.[0]?.count || 0;
+        totalLikes += likesCount;
+        totalComments += commentsCount;
+        
+        return {
           id: post.id,
           image_url: post.image_url,
           caption: post.caption,
           created_at: post.created_at,
-          likes_count: post.post_likes?.[0]?.count || 0,
-          comments_count: post.post_comments?.[0]?.count || 0,
-        }))
-      );
+          likes_count: likesCount,
+          comments_count: commentsCount,
+        };
+      });
+      setPosts(mappedPosts);
+    }
+
+    // Fetch user's pets
+    const { data: petsData } = await supabase
+      .from("pets")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("archived", false)
+      .order("created_at", { ascending: false });
+
+    if (petsData) {
+      setPets(petsData);
     }
 
     // Fetch follow stats
@@ -106,6 +154,15 @@ const UserProfile = () => {
     setFollowStats({
       followers: followersCount || 0,
       following: followingCount || 0,
+    });
+
+    // Set user statistics
+    setUserStats({
+      totalPosts: postsData?.length || 0,
+      totalLikes,
+      totalComments,
+      joinedDate: profileData?.created_at || "",
+      petsCount: petsData?.length || 0,
     });
 
     // Check if current user is following this profile
@@ -287,14 +344,46 @@ const UserProfile = () => {
           </div>
         )}
 
+        {/* Statistics Section */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 text-center shadow-md">
+            <Heart className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.totalLikes}</p>
+            <p className="text-xs text-gray-600 font-jakarta">לייקים</p>
+          </div>
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 text-center shadow-md">
+            <MessageCircle className="w-5 h-5 text-purple-600 mx-auto mb-2" />
+            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.totalComments}</p>
+            <p className="text-xs text-gray-600 font-jakarta">תגובות</p>
+          </div>
+          <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-4 text-center shadow-md">
+            <PawPrint className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.petsCount}</p>
+            <p className="text-xs text-gray-600 font-jakarta">חיות</p>
+          </div>
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-4 text-center shadow-md">
+            <Calendar className="w-5 h-5 text-green-600 mx-auto mb-2" />
+            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">
+              {userStats.joinedDate ? new Date(userStats.joinedDate).getFullYear() : "---"}
+            </p>
+            <p className="text-xs text-gray-600 font-jakarta">הצטרף</p>
+          </div>
+        </div>
+
         {/* Posts Grid */}
         <Tabs defaultValue="posts" className="mt-2">
-          <TabsList className="w-full grid grid-cols-2 font-jakarta border-t border-gray-200 bg-transparent rounded-none h-12">
+          <TabsList className="w-full grid grid-cols-3 font-jakarta border-t border-gray-200 bg-transparent rounded-none h-12">
             <TabsTrigger 
               value="posts" 
               className="gap-2 data-[state=active]:border-t-2 data-[state=active]:border-gray-900 rounded-none"
             >
               <Grid3x3 className="w-5 h-5" />
+            </TabsTrigger>
+            <TabsTrigger 
+              value="pets" 
+              className="gap-2 data-[state=active]:border-t-2 data-[state=active]:border-gray-900 rounded-none"
+            >
+              <PawPrint className="w-5 h-5" />
             </TabsTrigger>
             <TabsTrigger 
               value="saved" 
@@ -336,6 +425,59 @@ const UserProfile = () => {
                           <span className="font-semibold font-jakarta">{post.comments_count}</span>
                         </div>
                       </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="pets" className="mt-4">
+            {pets.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <PawPrint className="w-10 h-10 text-gray-400" />
+                </div>
+                <p className="text-gray-500 font-jakarta">אין חיות מחמד רשומות</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pets.map((pet, index) => (
+                  <motion.div
+                    key={pet.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => navigate(`/pet/${pet.id}`)}
+                    className="bg-white rounded-3xl p-5 flex items-center gap-4 cursor-pointer hover:shadow-xl transition-all shadow-md border border-gray-100"
+                  >
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 flex-shrink-0 ring-2 ring-gray-200">
+                      {pet.avatar_url ? (
+                        <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {pet.type === "dog" ? (
+                            <img src={dogIcon} alt="dog" className="w-10 h-10" />
+                          ) : (
+                            <img src={catIcon} alt="cat" className="w-10 h-10" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-black text-gray-900 font-jakarta text-lg mb-1">{pet.name}</p>
+                      <p className="text-gray-600 font-jakarta text-sm">{pet.breed || "גזע לא ידוע"}</p>
+                      {pet.birth_date && (
+                        <p className="text-gray-400 font-jakarta text-xs mt-1">
+                          {Math.floor(
+                            (new Date().getTime() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365)
+                          )}{" "}
+                          שנים
+                        </p>
+                      )}
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <ArrowRight className="w-5 h-5 text-gray-600" />
                     </div>
                   </motion.div>
                 ))}
