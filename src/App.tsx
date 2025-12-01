@@ -26,6 +26,7 @@ const Feed = lazy(() => import("./pages/Feed"));
 import UserProfile from "./pages/UserProfile";
 import PostDetail from "./pages/PostDetail";
 import StoryViewer from "./pages/StoryViewer";
+import HighlightViewer from "./pages/HighlightViewer";
 import Tracker from "./pages/Tracker";
 const Shop = lazy(() => import("./pages/Shop"));
 import ProductDetail from "./pages/ProductDetail";
@@ -86,6 +87,7 @@ const AnimatedRoutes = () => {
         <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
         <Route path="/post/:postId" element={<ProtectedRoute><PageTransition><PostDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/story/:userId" element={<ProtectedRoute><StoryViewer /></ProtectedRoute>} />
+        <Route path="/highlight/:highlightId" element={<ProtectedRoute><HighlightViewer /></ProtectedRoute>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
         <Route path="/shop" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProtectedRoute><PageTransition><ProductDetail /></PageTransition></ProtectedRoute>} />
