@@ -32,6 +32,7 @@ import BottomNav from "@/components/BottomNav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -459,6 +460,38 @@ const Home = () => {
 
       {/* Push Notification Prompt */}
       <PushNotificationPrompt />
+
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        actions={[
+          {
+            icon: Plus,
+            label: "הוסף חיית מחמד",
+            onClick: () => navigate("/add-pet")
+          },
+          {
+            icon: Camera,
+            label: "העלה תמונה",
+            onClick: () => navigate("/photos")
+          },
+          {
+            icon: Store,
+            label: "חנות",
+            onClick: () => navigate("/shop")
+          },
+          {
+            icon: MapPin,
+            label: "מצא גינת כלבים",
+            onClick: () => navigate("/parks")
+          },
+          {
+            icon: Heart,
+            label: "אימוץ",
+            onClick: () => navigate("/adoption")
+          }
+        ]}
+        position="bottom-right"
+      />
     </div>
   );
 };

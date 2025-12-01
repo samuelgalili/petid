@@ -28,6 +28,8 @@ import {
   FileImage,
   Home,
   Scissors,
+  GraduationCap,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -268,15 +270,33 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     to="/adoption"
                   />
                   <SmartPanel.Item
+                    icon={Store}
+                    label="חנות"
+                    value="מוצרים לחיות מחמד"
+                    to="/shop"
+                  />
+                  <SmartPanel.Item
                     icon={Scissors}
                     label="טיפוח ומספרות"
                     value="קבע תור"
                     to="/grooming"
                   />
                   <SmartPanel.Item
+                    icon={GraduationCap}
+                    label="אילוף ואימון"
+                    value="מדריכים וקורסים"
+                    to="/training"
+                  />
+                  <SmartPanel.Item
+                    icon={MapPin}
+                    label="גינות כלבים"
+                    value="מצא גינה קרובה"
+                    to="/parks"
+                  />
+                  <SmartPanel.Item
                     icon={Camera}
                     label="אלבום תמונות"
-                    value="זכרונים מתוקים"
+                    value="זכרונות מתוקים"
                     to="/photos"
                   />
                   <SmartPanel.Item
