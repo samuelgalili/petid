@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { Search, MapPin, Star, Check, X, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink } from "lucide-react";
+import { Search, MapPin, Star, Check, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink, Map as MapIcon, List, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { APIProvider, Map, AdvancedMarker, InfoWindow } from "@vis.gl/react-google-maps";
 
 interface DogPark {
   id: string;
@@ -43,7 +45,11 @@ const Parks = () => {
   const [filterFencing, setFilterFencing] = useState(false);
   const [filterWater, setFilterWater] = useState(false);
   const [filterShade, setFilterShade] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [selectedPark, setSelectedPark] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
   useEffect(() => {
     fetchParks();
@@ -137,37 +143,177 @@ const Parks = () => {
     }
   };
 
+  // Calculate map center based on filtered parks with valid coordinates
+  const mapCenter = () => {
+    const parksWithCoords = filteredParks.filter(p => p.latitude && p.longitude);
+    if (parksWithCoords.length === 0) {
+      return { lat: 32.0853, lng: 34.7818 }; // Tel Aviv default
+    }
+    
+    const avgLat = parksWithCoords.reduce((sum, p) => sum + (p.latitude || 0), 0) / parksWithCoords.length;
+    const avgLng = parksWithCoords.reduce((sum, p) => sum + (p.longitude || 0), 0) / parksWithCoords.length;
+    
+    return { lat: avgLat, lng: avgLng };
+  };
+
+  const renderParkCard = (park: DogPark) => (
+    <Card
+      key={park.id}
+      className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-shadow rounded-2xl"
+    >
+      <div className="p-5">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <h3 className="font-bold text-xl text-gray-900 mb-1 font-jakarta">{park.name}</h3>
+            <div className="flex items-center gap-1 text-sm text-gray-600">
+              <MapPin className="w-4 h-4" />
+              <span>{park.city}</span>
+            </div>
+          </div>
+          {park.verified && (
+            <Badge className="bg-green-100 text-green-800 border-green-200 rounded-full">
+              <Check className="w-3 h-3 ml-1" />
+              מאומת
+            </Badge>
+          )}
+        </div>
+
+        {/* Address */}
+        <p className="text-sm text-gray-600 mb-3">{park.address}</p>
+
+        {/* Opening Hours */}
+        <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
+          <Clock className="w-4 h-4" />
+          <span>פתוח 24/7</span>
+        </div>
+
+        {/* Size and Rating */}
+        <div className="flex items-center gap-4 mb-4">
+          <Badge variant="outline" className="rounded-full bg-gray-50 border-gray-300 text-gray-900">
+            גודל: {getSizeLabel(park.size)}
+          </Badge>
+          {park.rating && park.rating > 0 ? (
+            <div className="flex items-center gap-1 text-sm">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span className="font-medium text-gray-900">{park.rating.toFixed(1)}</span>
+              <span className="text-gray-500">({park.total_reviews} ביקורות)</span>
+            </div>
+          ) : (
+            <span className="text-sm text-gray-500">אין ביקורות</span>
+          )}
+        </div>
+
+        {/* Facilities */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          {park.fencing && (
+            <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-3 py-1 rounded-full">
+              <Check className="w-4 h-4 text-green-600" />
+              <span>גדר</span>
+            </div>
+          )}
+          {park.water && (
+            <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-3 py-1 rounded-full">
+              <Droplets className="w-4 h-4 text-blue-600" />
+              <span>מים</span>
+            </div>
+          )}
+          {park.shade && (
+            <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-3 py-1 rounded-full">
+              <Trees className="w-4 h-4 text-green-600" />
+              <span>צל</span>
+            </div>
+          )}
+          {park.agility && (
+            <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-3 py-1 rounded-full">
+              <Activity className="w-4 h-4 text-purple-600" />
+              <span>אג'יליטי</span>
+            </div>
+          )}
+          {park.parking && (
+            <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-3 py-1 rounded-full">
+              <Car className="w-4 h-4 text-gray-600" />
+              <span>חניה</span>
+            </div>
+          )}
+          {park.lighting && (
+            <div className="flex items-center gap-1 text-sm text-gray-700 bg-gray-50 px-3 py-1 rounded-full">
+              <Lightbulb className="w-4 h-4 text-yellow-600" />
+              <span>תאורה</span>
+            </div>
+          )}
+        </div>
+
+        {/* Notes */}
+        {park.notes && (
+          <p className="text-sm text-gray-600 mb-4 italic bg-gray-50 p-3 rounded-lg">{park.notes}</p>
+        )}
+
+        {/* Actions */}
+        <Button
+          onClick={() => openInMaps(park)}
+          className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full font-jakarta"
+        >
+          <ExternalLink className="w-4 h-4 ml-2" />
+          פתח בגוגל מפות
+        </Button>
+      </div>
+    </Card>
+  );
+
   return (
-    <div className="min-h-screen bg-white pb-20" dir="rtl">
+    <div className="min-h-screen bg-gray-50 pb-20" dir="rtl">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-6 pb-4 sticky top-0 z-10">
-        <h1 className="text-3xl font-bold text-black mb-4">גינות כלבים</h1>
+      <div className="bg-white border-b border-gray-200 p-6 pb-4 sticky top-0 z-20 shadow-sm">
+        <h1 className="text-3xl font-black text-gray-900 mb-4 font-jakarta">גינות כלבים</h1>
 
         {/* Search Bar */}
         <div className="relative mb-4">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
             placeholder="חיפוש גינה, עיר או כתובת..."
-            className="pr-10 rounded-full bg-gray-50 border-gray-200 text-black placeholder:text-gray-400"
+            className="pr-10 rounded-full bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
+        {/* View Toggle */}
+        <div className="flex items-center gap-2 mb-3">
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+            className={`rounded-full ${viewMode === "list" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border-gray-300"}`}
+          >
+            <List className="w-4 h-4 ml-1" />
+            רשימה
+          </Button>
+          <Button
+            variant={viewMode === "map" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("map")}
+            className={`rounded-full ${viewMode === "map" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border-gray-300"}`}
+          >
+            <MapIcon className="w-4 h-4 ml-1" />
+            מפה
+          </Button>
+        </div>
+
         {/* Quick Filters */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className="text-black hover:bg-gray-100"
+            className="text-gray-900 hover:bg-gray-100 rounded-full flex-shrink-0"
           >
             <SlidersHorizontal className="w-4 h-4 ml-2" />
             סינון
           </Button>
 
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="w-32 rounded-full bg-gray-50 border-gray-200 text-black">
+            <SelectTrigger className="w-32 rounded-full bg-gray-100 border-gray-200 text-gray-900 flex-shrink-0">
               <SelectValue placeholder="עיר" />
             </SelectTrigger>
             <SelectContent>
@@ -181,7 +327,7 @@ const Parks = () => {
           </Select>
 
           <Select value={selectedSize} onValueChange={setSelectedSize}>
-            <SelectTrigger className="w-32 rounded-full bg-gray-50 border-gray-200 text-black">
+            <SelectTrigger className="w-32 rounded-full bg-gray-100 border-gray-200 text-gray-900 flex-shrink-0">
               <SelectValue placeholder="גודל" />
             </SelectTrigger>
             <SelectContent>
@@ -207,8 +353,8 @@ const Parks = () => {
                   variant="outline"
                   className={`rounded-full cursor-pointer transition-colors ${
                     filterFencing
-                      ? "bg-black text-white border-black"
-                      : "bg-gray-50 text-black border-gray-200 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-gray-100 text-gray-900 border-gray-200 hover:bg-gray-200"
                   }`}
                   onClick={() => setFilterFencing(!filterFencing)}
                 >
@@ -219,8 +365,8 @@ const Parks = () => {
                   variant="outline"
                   className={`rounded-full cursor-pointer transition-colors ${
                     filterWater
-                      ? "bg-black text-white border-black"
-                      : "bg-gray-50 text-black border-gray-200 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-gray-100 text-gray-900 border-gray-200 hover:bg-gray-200"
                   }`}
                   onClick={() => setFilterWater(!filterWater)}
                 >
@@ -231,8 +377,8 @@ const Parks = () => {
                   variant="outline"
                   className={`rounded-full cursor-pointer transition-colors ${
                     filterShade
-                      ? "bg-black text-white border-black"
-                      : "bg-gray-50 text-black border-gray-200 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-gray-100 text-gray-900 border-gray-200 hover:bg-gray-200"
                   }`}
                   onClick={() => setFilterShade(!filterShade)}
                 >
@@ -245,119 +391,77 @@ const Parks = () => {
         </AnimatePresence>
 
         {/* Results Count */}
-        <p className="text-sm text-gray-500 mt-3">
+        <p className="text-sm text-gray-600 mt-3 font-jakarta">
           נמצאו {filteredParks.length} {filteredParks.length === 1 ? "גינה" : "גינות"}
         </p>
       </div>
 
-      {/* Parks List */}
-      <div className="px-6 py-4 space-y-4">
+      {/* Content Area */}
+      <div className="relative">
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-            <p className="text-gray-500 mt-2">טוען גינות...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <p className="text-gray-600 mt-2 font-jakarta">טוען גינות...</p>
           </div>
         ) : filteredParks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">לא נמצאו גינות התואמות את החיפוש</p>
+          <div className="text-center py-12 px-6">
+            <p className="text-gray-600 font-jakarta">לא נמצאו גינות התואמות את החיפוש</p>
+          </div>
+        ) : viewMode === "list" ? (
+          <div className="px-6 py-4 space-y-4">
+            {filteredParks.map(renderParkCard)}
           </div>
         ) : (
-          filteredParks.map((park) => (
-            <Card
-              key={park.id}
-              className="overflow-hidden bg-gray-50 border-gray-200 hover:shadow-md transition-shadow"
-            >
-              <div className="p-5">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-xl text-black mb-1">{park.name}</h3>
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      <span>{park.city}</span>
-                    </div>
-                  </div>
-                  {park.verified && (
-                    <Badge className="bg-green-100 text-green-800 border-green-200">
-                      <Check className="w-3 h-3 ml-1" />
-                      מאומת
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Address */}
-                <p className="text-sm text-gray-600 mb-3">{park.address}</p>
-
-                {/* Size and Rating */}
-                <div className="flex items-center gap-4 mb-3">
-                  <Badge variant="outline" className="rounded-full bg-white border-gray-300 text-black">
-                    גודל: {getSizeLabel(park.size)}
-                  </Badge>
-                  {park.rating && park.rating > 0 && (
-                    <div className="flex items-center gap-1 text-sm">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="font-medium text-black">{park.rating.toFixed(1)}</span>
-                      <span className="text-gray-500">({park.total_reviews})</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Facilities */}
-                <div className="flex flex-wrap gap-3 mb-4">
-                  {park.fencing && (
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span>גדר</span>
-                    </div>
-                  )}
-                  {park.water && (
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Droplets className="w-4 h-4 text-blue-600" />
-                      <span>מים</span>
-                    </div>
-                  )}
-                  {park.shade && (
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Trees className="w-4 h-4 text-green-600" />
-                      <span>צל</span>
-                    </div>
-                  )}
-                  {park.agility && (
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Activity className="w-4 h-4 text-purple-600" />
-                      <span>אג'יליטי</span>
-                    </div>
-                  )}
-                  {park.parking && (
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Car className="w-4 h-4 text-gray-600" />
-                      <span>חניה</span>
-                    </div>
-                  )}
-                  {park.lighting && (
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Lightbulb className="w-4 h-4 text-yellow-600" />
-                      <span>תאורה</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Notes */}
-                {park.notes && (
-                  <p className="text-sm text-gray-600 mb-4 italic">{park.notes}</p>
-                )}
-
-                {/* Actions */}
-                <Button
-                  onClick={() => openInMaps(park)}
-                  className="w-full bg-black hover:bg-gray-800 text-white rounded-full"
+          <div className="h-[calc(100vh-280px)] w-full">
+            {GOOGLE_MAPS_API_KEY ? (
+              <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+                <Map
+                  defaultCenter={mapCenter()}
+                  defaultZoom={11}
+                  mapId="dog-parks-map"
+                  gestureHandling="greedy"
+                  disableDefaultUI={false}
+                  className="w-full h-full"
                 >
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                  פתח בגוגל מפות
-                </Button>
+                  {filteredParks
+                    .filter(park => park.latitude && park.longitude)
+                    .map((park) => (
+                      <AdvancedMarker
+                        key={park.id}
+                        position={{ lat: park.latitude!, lng: park.longitude! }}
+                        onClick={() => setSelectedPark(park.id)}
+                      >
+                        <div className="bg-gray-900 text-white p-2 rounded-full shadow-lg">
+                          <MapPin className="w-5 h-5" />
+                        </div>
+                      </AdvancedMarker>
+                    ))}
+
+                  {selectedPark && (
+                    <InfoWindow
+                      position={{
+                        lat: filteredParks.find(p => p.id === selectedPark)?.latitude!,
+                        lng: filteredParks.find(p => p.id === selectedPark)?.longitude!
+                      }}
+                      onCloseClick={() => setSelectedPark(null)}
+                    >
+                      <div className="p-2 max-w-xs" dir="rtl">
+                        {renderParkCard(filteredParks.find(p => p.id === selectedPark)!)}
+                      </div>
+                    </InfoWindow>
+                  )}
+                </Map>
+              </APIProvider>
+            ) : (
+              <div className="flex items-center justify-center h-full bg-gray-100 p-6">
+                <div className="text-center">
+                  <MapIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 font-jakarta mb-2">תצוגת המפה לא זמינה</p>
+                  <p className="text-sm text-gray-500">נא להגדיר מפתח API של Google Maps</p>
+                </div>
               </div>
-            </Card>
-          ))
+            )}
+          </div>
         )}
       </div>
 
