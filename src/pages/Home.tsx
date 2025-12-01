@@ -1003,45 +1003,22 @@ const Home = () => {
                     </div>
                   </motion.div>
 
-                  {/* White Field with Barcode */}
-                  <div className="relative bg-white rounded-2xl p-4 shadow-md">
-                    {/* Title Text */}
-                    <div className="text-center mb-3">
-                      <p className="text-sm font-bold text-gray-800 font-jakarta">
-                        קוד קלאב למימוש נקודות
-                      </p>
-                    </div>
-
-                    {/* Barcode Area */}
-                    <div className="flex justify-center items-center py-3 bg-gray-50 rounded-lg">
-                      <div className="flex gap-[2px] items-end" style={{ height: '50px' }}>
-                        {/* Barcode Lines */}
-                        {[3, 2, 4, 2, 3, 1, 4, 2, 3, 2, 4, 1, 3, 2, 4, 3, 2, 1, 4, 2, 3, 2, 4, 1, 3].map((height, i) => (
-                          <div 
-                            key={i} 
-                            className="bg-black"
-                            style={{ 
-                              width: i % 7 === 0 ? '3px' : '2px',
-                              height: `${height * 10}px`
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Balance Display Below Barcode */}
+                  {/* Simplified Balance Display - Right Side Only */}
+                  <div className="relative flex justify-end">
                     <motion.div 
-                      className="text-center mt-3 pt-3 border-t border-gray-200"
+                      className="bg-white rounded-2xl px-6 py-4 shadow-md"
                       key={walletBalance}
-                      initial={{ scale: 1.1, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
+                      initial={{ scale: 1.1, opacity: 0, x: 20 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
                       transition={{ type: "spring", stiffness: 200 }}
                     >
-                      <div className="text-2xl font-black text-gray-900 leading-none mb-1">
-                        ₪{walletBalance.toFixed(2)}
-                      </div>
-                      <div className="text-xs font-bold text-gray-600 font-jakarta">
-                        יתרת חיסכון
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="text-3xl font-black text-gray-900 leading-none">
+                          ₪{walletBalance.toFixed(2)}
+                        </div>
+                        <div className="text-xs font-bold text-gray-600 font-jakarta">
+                          יתרת חיסכון
+                        </div>
                       </div>
                     </motion.div>
                   </div>
