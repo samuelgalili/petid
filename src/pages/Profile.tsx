@@ -148,54 +148,50 @@ const Profile = () => {
               onClick={() => navigate('/settings')}
               className="text-base text-blue-600 font-jakarta hover:underline font-semibold inline-flex items-center gap-1"
             >
-              ערוך פרטים
+              עריכת פרטים
               <span className="text-lg">&lt;</span>
             </button>
           </div>
 
           {/* Pets Section */}
           <div>
-            <h3 className="text-gray-900 font-extrabold font-jakarta text-xl mb-3">הרכבים שלי</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-gray-700 font-jakarta text-base">ניתן לחסוך עד שלושה רכבים</p>
-                <button 
-                  onClick={() => navigate('/add-pet')}
-                  className="text-blue-600 font-jakarta font-semibold hover:underline text-base"
+            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">הרכבים שלי</h3>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-700 font-jakarta text-base">ניתן לחסוך עד שלושה רכבים</span>
+              <button 
+                onClick={() => navigate('/add-pet')}
+                className="text-blue-600 font-jakarta font-semibold hover:underline text-base"
+              >
+                הוספת רכב
+              </button>
+            </div>
+            {pets.length > 0 ? (
+              pets.map((pet) => (
+                <div 
+                  key={pet.id}
+                  onClick={() => navigate(`/pet/${pet.id}`)}
+                  className="bg-white rounded-3xl p-5 mb-3 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow shadow-sm"
                 >
-                  הוספת רכב
-                </button>
-              </div>
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-              {pets.length > 0 ? (
-                pets.map((pet) => (
-                  <div 
-                    key={pet.id}
-                    onClick={() => navigate(`/pet/${pet.id}`)}
-                    className="bg-white rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow border border-gray-100"
-                  >
-                    <Car className="w-12 h-12 text-red-600" strokeWidth={1.5} />
-                    <div className="flex-1">
-                      <p className="font-extrabold text-gray-900 font-jakarta text-lg">רכב שלי 1</p>
-                      <p className="text-gray-600 font-jakarta text-base">56-733-63</p>
-                      <p className="text-gray-500 font-jakarta text-sm">דלק 95</p>
-                    </div>
+                  <Car className="w-12 h-12 text-red-600" strokeWidth={1.5} />
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-900 font-jakarta text-lg mb-0.5">רכב שלי 1</p>
+                    <p className="text-gray-600 font-jakarta text-base mb-0.5">56-733-63</p>
+                    <p className="text-gray-500 font-jakarta text-sm">דלק 95</p>
                   </div>
-                ))
-              ) : (
-                <div className="bg-white rounded-2xl p-4 border border-gray-100">
-                  <p className="text-gray-500 text-base font-jakarta text-center py-4">אין רכבים</p>
                 </div>
-              )}
-            </div>
-            </div>
+              ))
+            ) : (
+              <div className="bg-white rounded-3xl p-5 shadow-sm">
+                <p className="text-gray-500 text-base font-jakarta text-center py-4">אין רכבים</p>
+              </div>
+            )}
           </div>
 
           {/* Payments & Security Section */}
           <div>
-            <h3 className="text-gray-900 font-extrabold font-jakarta text-xl mb-3">תשלום ואבטחה</h3>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <button className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100">
+            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">תשלום ואבטחה</h3>
+            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+              <button className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200">
                 <span className="font-jakarta text-gray-900 text-base">ניהול אמצעי תשלום</span>
                 <CreditCard className="w-6 h-6 text-[#FFD700]" strokeWidth={1.5} />
               </button>
@@ -211,14 +207,14 @@ const Profile = () => {
 
           {/* Orders Section */}
           <div>
-            <h3 className="text-gray-900 font-extrabold font-jakarta text-xl mb-3">הספר שלי</h3>
+            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">הספר שלי</h3>
             <div 
               onClick={() => navigate('/order-history')}
-              className="bg-white rounded-2xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow border border-gray-100"
+              className="bg-white rounded-3xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-extrabold text-gray-900 font-jakarta text-lg mb-1">טיפ טוב</p>
+                  <p className="font-bold text-gray-900 font-jakarta text-lg mb-1">טיפ טוב</p>
                   <p className="text-gray-600 font-jakarta text-base">
                     {lastOrder ? new Date(lastOrder.order_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }) + ', רעננה' : 'שברט 22, רעננה'}
                   </p>
@@ -230,8 +226,8 @@ const Profile = () => {
 
           {/* Membership Section */}
           <div>
-            <h3 className="text-gray-900 font-extrabold font-jakarta text-xl mb-3">מנוי הקפה שלי</h3>
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">מנוי הקפה שלי</h3>
+            <div className="bg-white rounded-3xl p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="font-jakarta text-gray-900 text-base">
                   אפשר להזמין אותך לקפה?
@@ -247,11 +243,11 @@ const Profile = () => {
 
           {/* Purchase History Section */}
           <div>
-            <h3 className="text-gray-900 font-extrabold font-jakarta text-xl mb-3">היסטוריית רכישות</h3>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">היסטוריית רכישות</h3>
+            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
               <button 
                 onClick={() => navigate('/order-history')}
-                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-100"
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200"
               >
                 <span className="font-jakarta text-gray-900 text-base">חשבונית דיגיטלית</span>
                 <Receipt className="w-6 h-6 text-green-600" strokeWidth={1.5} />
