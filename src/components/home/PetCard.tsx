@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { memo } from "react";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface PetCardProps {
   pet: any;
@@ -75,7 +76,13 @@ export const PetCard = memo(({
             isNewPet ? 'border-[#FBD66A]' : 'border-white'
           } transition-all`}>
             {pet.avatar_url ? (
-              <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+              <OptimizedImage 
+                src={pet.avatar_url} 
+                alt={pet.name}
+                className="w-full h-full"
+                objectFit="cover"
+                sizes="80px"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] via-[#7DD3C0] to-[#6BC4AD]">
                 {pet.type === 'dog' ? '🐕' : '🐈'}

@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface Post {
   id: string;
@@ -265,16 +266,14 @@ const Feed = () => {
             </div>
 
             {/* Post Image */}
-            <div 
-              className="w-full aspect-square bg-gray-100 relative overflow-hidden cursor-pointer"
+            <OptimizedImage
+              src={post.image_url}
+              alt={post.caption || "פוסט"}
+              className="w-full aspect-square cursor-pointer"
+              objectFit="cover"
+              sizes="(max-width: 768px) 100vw, 672px"
               onClick={() => navigate(`/post/${post.id}`)}
-            >
-              <img 
-                src={post.image_url} 
-                alt={post.caption || ""}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            />
 
             {/* Post Actions */}
             <div className="p-4">

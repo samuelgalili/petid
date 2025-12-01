@@ -9,6 +9,7 @@ import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, T
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -571,14 +572,16 @@ const Shop = () => {
                   {/* Product Image */}
                   <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
                     {product.originalPrice && (
-                      <div className="absolute top-2 right-2 bg-[#E91E63] text-white px-2 py-1 rounded-full text-xs font-bold shadow-md font-jakarta">
+                      <div className="absolute top-2 right-2 bg-[#E91E63] text-white px-2 py-1 rounded-full text-xs font-bold shadow-md font-jakarta z-10">
                         מבצע
                       </div>
                     )}
-                    <img
+                    <OptimizedImage
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full"
+                      objectFit="contain"
+                      sizes="(max-width: 768px) 50vw, 300px"
                     />
                   </div>
                   
@@ -625,14 +628,21 @@ const Shop = () => {
 
                 {/* Product Image */}
                 <div className="flex justify-center py-6">
-                  <motion.img
+                  <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.3 }}
-                    src={selectedProduct.image}
-                    alt={selectedProduct.name}
-                    className="w-56 h-56 object-contain"
-                  />
+                    className="w-56 h-56"
+                  >
+                    <OptimizedImage
+                      src={selectedProduct.image}
+                      alt={selectedProduct.name}
+                      className="w-full h-full"
+                      objectFit="contain"
+                      sizes="224px"
+                      priority
+                    />
+                  </motion.div>
                 </div>
 
                 {/* Dotted Separator */}
