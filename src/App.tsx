@@ -21,6 +21,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AddPet from "./pages/AddPet";
 import Home from "./pages/Home";
 import Feed from "./pages/Feed";
+import UserProfile from "./pages/UserProfile";
 import Tracker from "./pages/Tracker";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -73,6 +74,7 @@ const AnimatedRoutes = () => {
         <Route path="/pet/:petId" element={<ProtectedRoute><PageTransition><PetDetails /></PageTransition></ProtectedRoute>} />
         <Route path="/breed-history/:petId" element={<ProtectedRoute><PageTransition><BreedHistory /></PageTransition></ProtectedRoute>} />
         <Route path="/feed" element={<ProtectedRoute><PageTransition><Feed /></PageTransition></ProtectedRoute>} />
+        <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
         <Route path="/shop" element={<ProtectedRoute><PageTransition><Shop /></PageTransition></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProtectedRoute><PageTransition><ProductDetail /></PageTransition></ProtectedRoute>} />

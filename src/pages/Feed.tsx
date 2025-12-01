@@ -1,60 +1,146 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+interface Post {
+  id: string;
+  user_id: string;
+  image_url: string;
+  caption: string;
+  created_at: string;
+  user: {
+    id: string;
+    full_name: string;
+    avatar_url: string;
+  };
+  likes_count: number;
+  comments_count: number;
+  is_liked: boolean;
+}
 
 const Feed = () => {
   const navigate = useNavigate();
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      userName: "שרה כהן",
-      userAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-      petName: "מקס",
-      petType: "dog",
-      image: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=600&h=600&fit=crop",
-      caption: "יום מקסים בפארק! 🐕 המזג היה מושלם והיינו עם חברים",
-      likes: 124,
-      comments: 18,
-      timeAgo: "לפני 2 שעות",
-      liked: false
-    },
-    {
-      id: 2,
-      userName: "דני לוי",
-      userAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=danny",
-      petName: "מיטל",
-      petType: "cat",
-      image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=600&h=600&fit=crop",
-      caption: "זמן תנומה 😸 החתולה שלי יודעת איך להירגע",
-      likes: 89,
-      comments: 12,
-      timeAgo: "לפני 4 שעות",
-      liked: false
-    },
-    {
-      id: 3,
-      userName: "מיכל אברהם",
-      userAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=michal",
-      petName: "צ'רלי",
-      petType: "dog",
-      image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=600&fit=crop",
-      caption: "הגור החדש שלנו! 🐶 ברוכים הבאים לבית",
-      likes: 201,
-      comments: 35,
-      timeAgo: "לפני 6 שעות",
-      liked: true
-    }
-  ]);
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleLike = (postId: number) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ));
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    
+    // Fetch posts with user profiles, likes count, and comments count
+    const { data: postsData } = await supabase
+      .from("posts")
+      .select(`
+        id,
+        user_id,
+        image_url,
+        caption,
+        created_at,
+        profiles!posts_user_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        ),
+        post_likes (count),
+        post_comments (count)
+      `)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (postsData) {
+      const formattedPosts = await Promise.all(
+        postsData.map(async (post: any) => {
+          // Check if current user liked this post
+          let isLiked = false;
+          if (user) {
+            const { data: likeData } = await supabase
+              .from("post_likes")
+              .select("id")
+              .eq("post_id", post.id)
+              .eq("user_id", user.id)
+              .single();
+            
+            isLiked = !!likeData;
+          }
+
+          return {
+            id: post.id,
+            user_id: post.user_id,
+            image_url: post.image_url,
+            caption: post.caption,
+            created_at: post.created_at,
+            user: {
+              id: post.profiles.id,
+              full_name: post.profiles.full_name,
+              avatar_url: post.profiles.avatar_url,
+            },
+            likes_count: post.post_likes?.[0]?.count || 0,
+            comments_count: post.post_comments?.[0]?.count || 0,
+            is_liked: isLiked,
+          };
+        })
+      );
+
+      setPosts(formattedPosts);
+    }
+
+    setLoading(false);
+  };
+
+  const handleLike = async (postId: string) => {
+    if (!user) return;
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    if (post.is_liked) {
+      // Unlike
+      await supabase
+        .from("post_likes")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", user.id);
+      
+      setPosts(posts.map(p =>
+        p.id === postId
+          ? { ...p, is_liked: false, likes_count: p.likes_count - 1 }
+          : p
+      ));
+    } else {
+      // Like
+      await supabase
+        .from("post_likes")
+        .insert({ post_id: postId, user_id: user.id });
+      
+      setPosts(posts.map(p =>
+        p.id === postId
+          ? { ...p, is_liked: true, likes_count: p.likes_count + 1 }
+          : p
+      ));
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (seconds < 60) return "עכשיו";
+    if (seconds < 3600) return `לפני ${Math.floor(seconds / 60)} דקות`;
+    if (seconds < 86400) return `לפני ${Math.floor(seconds / 3600)} שעות`;
+    if (seconds < 604800) return `לפני ${Math.floor(seconds / 86400)} ימים`;
+    return date.toLocaleDateString("he-IL");
   };
 
   return (
@@ -78,7 +164,36 @@ const Feed = () => {
 
       {/* Feed */}
       <div className="max-w-2xl mx-auto">
-        {posts.map((post, index) => (
+        {loading ? (
+          // Loading skeleton
+          [...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white mb-1 border-b border-gray-100 p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+              <Skeleton className="w-full aspect-square" />
+              <div className="mt-4 space-y-2">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </div>
+          ))
+        ) : posts.length === 0 ? (
+          // Empty state
+          <div className="text-center py-16 px-4">
+            <p className="text-gray-500 font-jakarta text-lg mb-4">
+              עדיין אין פוסטים
+            </p>
+            <p className="text-gray-400 font-jakarta text-sm">
+              שתפו תמונות וסיפורים של חיות המחמד שלכם 🐕🐈
+            </p>
+          </div>
+        ) : (
+          posts.map((post, index) => (
           <motion.div
             key={post.id}
             initial={{ opacity: 0, y: 20 }}
@@ -88,18 +203,19 @@ const Feed = () => {
           >
             {/* Post Header */}
             <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-purple-400"
-                  style={{
-                    backgroundImage: `url(${post.userAvatar})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                />
+              <div 
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={() => navigate(`/user/${post.user.id}`)}
+              >
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={post.user.avatar_url} />
+                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
+                    {post.user.full_name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
-                  <p className="font-semibold text-gray-900 font-jakarta">{post.userName}</p>
-                  <p className="text-sm text-gray-500 font-jakarta">{post.timeAgo}</p>
+                  <p className="font-semibold text-gray-900 font-jakarta">{post.user.full_name}</p>
+                  <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
                 </div>
               </div>
               <button className="text-gray-600 hover:text-gray-900">
@@ -110,8 +226,8 @@ const Feed = () => {
             {/* Post Image */}
             <div className="w-full aspect-square bg-gray-100 relative overflow-hidden">
               <img 
-                src={post.image} 
-                alt={post.petName}
+                src={post.image_url} 
+                alt={post.caption || ""}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -123,15 +239,15 @@ const Feed = () => {
                   <button 
                     onClick={() => handleLike(post.id)}
                     className={`flex items-center gap-2 transition-colors ${
-                      post.liked ? 'text-red-500' : 'text-gray-700 hover:text-red-500'
+                      post.is_liked ? 'text-red-500' : 'text-gray-700 hover:text-red-500'
                     }`}
                   >
-                    <Heart className={`w-6 h-6 ${post.liked ? 'fill-current' : ''}`} />
-                    <span className="font-semibold font-jakarta">{post.likes}</span>
+                    <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
+                    <span className="font-semibold font-jakarta">{post.likes_count}</span>
                   </button>
                   <button className="flex items-center gap-2 text-gray-700 hover:text-blue-500 transition-colors">
                     <MessageCircle className="w-6 h-6" />
-                    <span className="font-semibold font-jakarta">{post.comments}</span>
+                    <span className="font-semibold font-jakarta">{post.comments_count}</span>
                   </button>
                   <button className="text-gray-700 hover:text-green-500 transition-colors">
                     <Share2 className="w-6 h-6" />
@@ -145,19 +261,26 @@ const Feed = () => {
               {/* Post Caption */}
               <div>
                 <p className="text-gray-900 font-jakarta">
-                  <span className="font-semibold">{post.userName}</span> {post.caption}
+                  <span 
+                    className="font-semibold cursor-pointer hover:underline"
+                    onClick={() => navigate(`/user/${post.user.id}`)}
+                  >
+                    {post.user.full_name}
+                  </span>{" "}
+                  {post.caption}
                 </p>
               </div>
 
               {/* View Comments */}
-              {post.comments > 0 && (
+              {post.comments_count > 0 && (
                 <button className="text-gray-500 text-sm mt-2 font-jakarta hover:text-gray-700">
-                  הצג את כל {post.comments} התגובות
+                  הצג את כל {post.comments_count} התגובות
                 </button>
               )}
             </div>
           </motion.div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Empty State Hint */}
