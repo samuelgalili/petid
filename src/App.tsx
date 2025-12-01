@@ -58,11 +58,13 @@ import Grooming from "./pages/Grooming";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 
 const queryClient = new QueryClient();
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  useAdminNotifications();
   
   return (
     <>
