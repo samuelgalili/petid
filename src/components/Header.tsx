@@ -13,12 +13,14 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { getTotalItems, items, getSubtotal, removeFromCart } = useCart();
+  const { unreadCount } = useRealtimeNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -229,15 +231,34 @@ export const Header = () => {
                     variant="ghost" 
                     size="icon" 
                     className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all relative focus-visible-ring"
-                    onClick={() => toast({ title: "🔔 Notifications", description: "No new notifications" })}
+                    onClick={() => navigate('/notifications')}
                     aria-label="View notifications"
                   >
                     <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-[#7DD3C0] rounded-full animate-pulse" />
+                    <AnimatePresence mode="wait">
+                      {unreadCount > 0 && (
+                        <motion.span
+                          key={unreadCount}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ 
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 25
+                          }}
+                          className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full text-xs font-black flex items-center justify-center shadow-lg animate-pulse border-2 border-white"
+                        >
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p className="font-semibold">Notifications</p>
+                  <p className="font-semibold">
+                    התראות {unreadCount > 0 && `(${unreadCount})`}
+                  </p>
                 </TooltipContent>
               </Tooltip>
 
