@@ -17,6 +17,14 @@ export default {
         sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         jakarta: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
+      fontWeight: {
+        normal: '400',    // Body text
+        medium: '500',    // Buttons, emphasized text
+        semibold: '600',  // Secondary headings
+        bold: '700',      // Primary headings
+        extrabold: '800', // Hero headings
+        black: '900',     // Special emphasis (optional)
+      },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: '1.25', letterSpacing: '0' }],
         'sm': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0' }],
