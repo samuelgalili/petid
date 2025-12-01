@@ -227,6 +227,48 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                 </button>
               </section>
 
+              {/* ביטוח */}
+              <section>
+                <h2 className="text-xl font-black text-gray-900 mb-3 text-right">
+                  ביטוח חיות מחמד
+                </h2>
+                <button
+                  onClick={() => handleNavigation("/insurance")}
+                  className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between"
+                >
+                  <span className="text-gray-900 font-semibold">הביטוח שלי</span>
+                  <Shield className="w-6 h-6 text-[#2196F3]" />
+                </button>
+              </section>
+
+              {/* אימוץ */}
+              <section>
+                <h2 className="text-xl font-black text-gray-900 mb-3 text-right">
+                  אימוץ חיות מחמד
+                </h2>
+                <button
+                  onClick={() => handleNavigation("/adoption")}
+                  className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between"
+                >
+                  <span className="text-gray-900 font-semibold">מצא חבר חדש</span>
+                  <Heart className="w-6 h-6 text-[#E91E63]" />
+                </button>
+              </section>
+
+              {/* משימות */}
+              <section>
+                <h2 className="text-xl font-black text-gray-900 mb-3 text-right">
+                  משימות יומיות
+                </h2>
+                <button
+                  onClick={() => handleNavigation("/tasks")}
+                  className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between"
+                >
+                  <span className="text-gray-900 font-semibold">המשימות שלי</span>
+                  <Star className="w-6 h-6 text-[#FFC107]" />
+                </button>
+              </section>
+
               {/* אלבום תמונות */}
               <section>
                 <h2 className="text-xl font-black text-gray-900 mb-3 text-right">
