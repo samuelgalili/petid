@@ -632,12 +632,12 @@ const Home = () => {
               </div>
               
               {/* Main headline - Bold and Large */}
-              <h1 className="text-4xl font-black text-gray-900 font-jakarta mb-4 leading-tight drop-shadow-sm">
+              <h1 className="text-4xl font-extrabold text-gray-900 mb-4 leading-tight drop-shadow-sm">
                 רבעון חדש, צבירה חדשה!
               </h1>
               
               {/* Details text - Gray */}
-              <p className="text-base text-gray-700 font-jakarta leading-relaxed font-medium">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
+              <p className="text-base text-gray-700 leading-relaxed font-normal">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
             </div>
 
             {/* Gift Icon - Right Side */}
@@ -648,7 +648,7 @@ const Home = () => {
 
           {/* Bottom Link - Blue */}
           <div className="mt-6 pt-5 border-t border-gray-200">
-            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-jakarta font-bold text-base hover:underline hover:text-blue-700 transition-colors inline-flex items-center gap-1">
+            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-semibold text-base hover:underline hover:text-blue-700 transition-colors inline-flex items-center gap-1">
               צבירה ומימוש
               <span className="text-xl transform rotate-180 inline-block">›</span>
             </button>
@@ -666,8 +666,8 @@ const Home = () => {
           delay: 0.1
         }} className="mb-5 px-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-gray-900 font-jakarta">My Pets</h2>
-            {pets.length > 0 && <Button variant="ghost" size="sm" onClick={() => navigate('/archived-pets')} className="text-gray-400 hover:text-gray-600 h-7 px-3 text-xs font-jakarta">
+            <h2 className="text-base font-bold text-gray-900">My Pets</h2>
+            {pets.length > 0 && <Button variant="ghost" size="sm" onClick={() => navigate('/archived-pets')} className="text-gray-400 hover:text-gray-600 h-7 px-3 text-xs font-medium">
                 Archived
               </Button>}
           </div>

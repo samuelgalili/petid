@@ -191,12 +191,12 @@ export const Header = () => {
                           <span className="font-semibold text-gray-900 dark:text-white">Subtotal:</span>
                           <span className="font-bold text-lg text-gray-900 dark:text-white">₪{getSubtotal().toFixed(2)}</span>
                         </div>
-                        <Button 
+                        <Button
                           onClick={() => {
                             setShowCartPreview(false);
                             navigate('/cart');
                           }}
-                          className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-bold rounded-xl"
+                          className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-semibold rounded-xl"
                         >
                           View Cart
                         </Button>
