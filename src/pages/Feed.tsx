@@ -12,6 +12,7 @@ import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { Virtuoso } from "react-virtuoso";
+import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 
 interface Post {
   id: string;
@@ -379,6 +380,8 @@ const Feed = () => {
         onOpenChange={setCreatePostOpen}
         onPostCreated={fetchPosts}
       />
+
+      <PushNotificationPrompt />
 
       <BottomNav />
     </div>
