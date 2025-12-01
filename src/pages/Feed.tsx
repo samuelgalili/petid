@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Share2, Bookmark, Camera, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,11 +34,7 @@ const Feed = () => {
   const [loading, setLoading] = useState(true);
   const [createPostOpen, setCreatePostOpen] = useState(false);
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     
     try {
@@ -121,9 +117,13 @@ const Feed = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const handleLike = async (postId: string) => {
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  const handleLike = useCallback(async (postId: string) => {
     if (!user) return;
 
     const post = posts.find(p => p.id === postId);
@@ -167,9 +167,9 @@ const Feed = () => {
       ));
       console.error("Error toggling like:", error);
     }
-  };
+  }, [user, posts]);
 
-  const getTimeAgo = (dateString: string) => {
+  const getTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -179,7 +179,7 @@ const Feed = () => {
     if (seconds < 86400) return `לפני ${Math.floor(seconds / 3600)} שעות`;
     if (seconds < 604800) return `לפני ${Math.floor(seconds / 86400)} ימים`;
     return date.toLocaleDateString("he-IL");
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white pb-24" dir="rtl">
