@@ -217,8 +217,8 @@ const Shop = () => {
     <div className="min-h-screen bg-white pb-20" dir="rtl">
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       
-      {/* Yellow Header Section */}
-      <div className="bg-[#FFC107] pt-6 pb-8 shadow-md">
+      {/* Header Section */}
+      <div className="bg-accent pt-6 pb-8 shadow-md">
         <div className="max-w-md mx-auto px-4">
           <h1 className="text-2xl font-bold text-gray-900 text-center mb-6 font-jakarta">
             מבצעים והטבות
@@ -290,14 +290,14 @@ const Shop = () => {
               onClick={() => setShowFilters(!showFilters)}
               className={`px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all font-jakarta ${
                 showFilters || sortBy !== "none" || showDealsOnly
-                  ? "bg-[#FFC107] text-gray-900 shadow-md"
+                  ? "bg-accent text-gray-900 shadow-md"
                   : "bg-white text-gray-700 border-2 border-gray-300 hover:border-gray-400"
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               סינון
               {(sortBy !== "none" || showDealsOnly) && (
-                <span className="w-2 h-2 bg-[#E91E63] rounded-full" />
+                <span className="w-2 h-2 bg-error rounded-full" />
               )}
             </motion.button>
           </div>
@@ -316,7 +316,7 @@ const Shop = () => {
                   {/* Sort Options */}
                   <div className="mb-4">
                     <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 font-jakarta">
-                      <TrendingUp className="w-4 h-4 text-[#FFC107]" />
+                      <TrendingUp className="w-4 h-4 text-accent" />
                       מיון לפי
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -377,7 +377,7 @@ const Shop = () => {
                       onClick={() => setShowDealsOnly(!showDealsOnly)}
                       className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all font-jakarta flex items-center justify-between ${
                         showDealsOnly
-                          ? "bg-[#E91E63] text-white shadow-lg"
+                          ? "bg-error text-white shadow-lg"
                           : "bg-white text-gray-700 border-2 border-gray-300"
                       }`}
                     >
@@ -391,7 +391,7 @@ const Shop = () => {
                         <motion.div 
                           animate={{ x: showDealsOnly ? 24 : 2 }}
                           className={`w-5 h-5 rounded-full mt-0.5 ${
-                            showDealsOnly ? "bg-[#E91E63]" : "bg-white"
+                            showDealsOnly ? "bg-error" : "bg-white"
                           }`}
                         />
                       </div>

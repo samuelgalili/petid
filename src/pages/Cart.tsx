@@ -46,7 +46,7 @@ const Cart = () => {
         <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         
         {/* Header */}
-        <div className="bg-[#FFC107] pt-6 pb-6 shadow-md">
+        <div className="bg-accent pt-6 pb-6 shadow-md">
           <div className="max-w-md mx-auto px-4 flex items-center">
             <button
               onClick={() => navigate(-1)}
@@ -79,7 +79,7 @@ const Cart = () => {
             </p>
             <Button
               onClick={() => navigate("/shop")}
-              className="bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 font-bold px-8 py-6 rounded-2xl shadow-lg font-jakarta"
+              className="bg-accent hover:bg-accent-hover text-gray-900 font-bold px-8 py-6 rounded-2xl shadow-lg font-jakarta"
             >
               המשך לקניות
             </Button>
@@ -96,7 +96,7 @@ const Cart = () => {
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       
       {/* Header */}
-      <div className="bg-[#FFC107] pt-6 pb-6 shadow-md sticky top-0 z-40">
+      <div className="bg-accent pt-6 pb-6 shadow-md sticky top-0 z-40">
         <div className="max-w-md mx-auto px-4 flex items-center">
           <button
             onClick={() => navigate(-1)}
@@ -146,7 +146,7 @@ const Cart = () => {
                     )}
                     
                     {/* Price */}
-                    <div className="text-lg font-bold text-[#E91E63] mb-3 font-jakarta">
+                    <div className="text-lg font-bold text-error mb-3 font-jakarta">
                       {item.price}₪
                     </div>
 
@@ -176,7 +176,7 @@ const Cart = () => {
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleRemoveItem(item.id, item.name)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        className="p-2 text-error hover:bg-error/10 rounded-full transition-colors"
                       >
                         <Trash2 className="w-5 h-5" />
                       </motion.button>
@@ -214,7 +214,7 @@ const Cart = () => {
                   <span className="text-gray-600 font-jakarta">משלוח</span>
                   <span className="font-bold text-gray-900 font-jakarta">
                     {shippingCost === 0 ? (
-                      <span className="text-green-600">חינם</span>
+                      <span className="text-success">חינם</span>
                     ) : (
                       `₪${shippingCost.toFixed(2)}`
                     )}
@@ -222,7 +222,7 @@ const Cart = () => {
                 </div>
 
                 {getSubtotal() < 200 && (
-                  <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded-lg font-jakarta">
+                  <div className="text-xs text-gray-500 bg-accent/10 p-2 rounded-lg font-jakarta">
                     הוסף עוד ₪{(200 - getSubtotal()).toFixed(2)} למשלוח חינם!
                   </div>
                 )}
@@ -239,7 +239,7 @@ const Cart = () => {
                     <span className="text-xl font-bold text-gray-900 font-jakarta">
                       סה״כ לתשלום
                     </span>
-                    <span className="text-2xl font-bold text-[#E91E63] font-jakarta">
+                    <span className="text-2xl font-bold text-error font-jakarta">
                       ₪{total.toFixed(2)}
                     </span>
                   </div>
@@ -253,7 +253,7 @@ const Cart = () => {
               >
                 <Button
                   onClick={handleCheckout}
-                  className="w-full h-14 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
+                  className="w-full h-14 bg-accent hover:bg-accent-hover text-gray-900 text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
                 >
                   <CreditCard className="w-6 h-6" />
                   המשך לתשלום

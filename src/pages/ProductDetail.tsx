@@ -240,7 +240,7 @@ const ProductDetail = () => {
             {product.originalPrice && (
               <>
                 <span className="text-lg text-gray-400 line-through font-jakarta">{product.originalPrice}</span>
-                <Badge className="bg-[#FBD66A] text-gray-900 hover:bg-[#FBD66A] font-jakarta text-xs">
+                <Badge className="bg-accent text-gray-900 hover:bg-accent font-jakarta text-xs">
                   {product.discount}
                 </Badge>
               </>
@@ -254,7 +254,7 @@ const ProductDetail = () => {
                   key={i}
                   className={`w-4 h-4 ${
                     i < Math.floor(product.rating)
-                      ? "fill-[#FBD66A] text-[#FBD66A]"
+                      ? "fill-warning text-warning"
                       : "fill-gray-200 text-gray-200"
                   }`}
                 />
@@ -286,7 +286,7 @@ const ProductDetail = () => {
                   onClick={() => setSelectedVariant(variant)}
                   className={`px-4 py-2 rounded-lg text-sm font-jakarta transition-all ${
                     selectedVariant === variant
-                      ? "bg-[#7DD3C0] text-gray-900 font-semibold shadow-md"
+                      ? "bg-secondary text-gray-900 font-semibold shadow-md"
                       : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300"
                   }`}
                 >
@@ -305,7 +305,7 @@ const ProductDetail = () => {
                   onClick={() => setSelectedSize(size)}
                   className={`px-4 py-2 rounded-lg text-sm font-jakarta transition-all ${
                     selectedSize === size
-                      ? "bg-[#7DD3C0] text-gray-900 font-semibold shadow-md"
+                      ? "bg-secondary text-gray-900 font-semibold shadow-md"
                       : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300"
                   }`}
                 >
@@ -330,8 +330,8 @@ const ProductDetail = () => {
               const Icon = benefit.icon;
               return (
                 <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100">
-                  <div className="w-10 h-10 rounded-full bg-[#FBD66A]/20 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-5 h-5 text-[#F4C542]" />
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5 text-accent" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 text-sm font-jakarta">{benefit.title}</h4>

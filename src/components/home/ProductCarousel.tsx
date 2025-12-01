@@ -34,7 +34,7 @@ export const ProductCarousel = () => {
           variant="ghost"
           size="sm"
           onClick={() => navigate('/shop')}
-          className="text-[#FFD700] hover:text-[#F4C542] font-jakarta text-sm font-bold"
+          className="text-accent hover:text-accent-hover font-jakarta text-sm font-bold"
         >
           צפה בהכל ←
         </Button>
@@ -65,7 +65,7 @@ export const ProductCarousel = () => {
           image={petBedImg}
           title="Refreshing Sale"
           subtitle="Special offers"
-          bgColor="bg-[#FFD700]"
+          bgColor="bg-accent"
           textColor="text-gray-900"
           index={0}
           badgeText="petid"
@@ -77,7 +77,7 @@ export const ProductCarousel = () => {
           image={dogToysImg}
           title="Pet Toys"
           price="₪4.90"
-          bgColor="bg-[#F44336]"
+          bgColor="bg-error"
           index={2}
           hasSaleBadge
           onClick={() => navigate('/shop')}
@@ -87,7 +87,7 @@ export const ProductCarousel = () => {
           image={catFoodImg}
           title="Cat Food"
           price="₪1.90"
-          bgColor="bg-[#F44336]"
+          bgColor="bg-error"
           index={3}
           hasSaleBadge
           onClick={() => navigate('/shop')}
@@ -116,7 +116,7 @@ export const ProductCarousel = () => {
           image={petCollarImg}
           title="Special Deals"
           subtitle="Limited time"
-          bgColor="bg-[#F44336]"
+          bgColor="bg-error"
           textColor="text-white"
           index={1}
           badgeText="SALE"
@@ -146,7 +146,7 @@ export const ProductCarousel = () => {
       {/* View More Button */}
       <Button
         onClick={() => navigate('/shop')}
-        className="w-full mt-4 bg-[#FFD700] hover:bg-[#F4C542] text-gray-900 font-jakarta font-bold py-3 rounded-2xl shadow-md"
+        className="w-full mt-4 bg-accent hover:bg-accent-hover text-gray-900 font-jakarta font-bold py-3 rounded-2xl shadow-md"
       >
         צפה בכל המוצרים
       </Button>

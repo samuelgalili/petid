@@ -184,7 +184,7 @@ const Checkout = () => {
   return (
     <div className="min-h-screen pb-20 bg-white" dir="rtl">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#FFC107] shadow-md">
+      <header className="sticky top-0 z-40 bg-accent shadow-md">
         <div className="flex items-center justify-between px-4 py-4">
           <Button
             variant="ghost"
@@ -213,9 +213,9 @@ const Checkout = () => {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md ${
                       isCompleted
-                        ? "bg-green-500 text-white"
+                        ? "bg-success text-white"
                         : isActive
-                        ? "bg-[#FFC107] text-gray-900"
+                        ? "bg-accent text-gray-900"
                         : "bg-white border-2 border-gray-300 text-gray-400"
                     }`}
                   >
@@ -236,7 +236,7 @@ const Checkout = () => {
                 {index < steps.length - 1 && (
                   <div
                     className={`h-1 flex-1 transition-all mx-2 rounded-full ${
-                      isCompleted ? "bg-green-500" : "bg-gray-300"
+                      isCompleted ? "bg-success" : "bg-gray-300"
                     }`}
                   />
                 )}
@@ -258,7 +258,7 @@ const Checkout = () => {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
-                <MapPin className="w-5 h-5 text-[#FFC107]" />
+                <MapPin className="w-5 h-5 text-accent" />
                 <h2 className="text-lg font-bold text-gray-900 font-jakarta">כתובת למשלוח</h2>
               </div>
 
@@ -377,7 +377,7 @@ const Checkout = () => {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
-                <CreditCard className="w-5 h-5 text-[#FFC107]" />
+                <CreditCard className="w-5 h-5 text-accent" />
                 <h2 className="text-lg font-bold text-gray-900 font-jakarta">אמצעי תשלום</h2>
               </div>
 
@@ -387,7 +387,7 @@ const Checkout = () => {
                     <div
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "credit-card"
-                          ? "border-[#FFC107] bg-[#FFC107]/10"
+                          ? "border-accent bg-accent/10"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setPaymentMethod("credit-card")}
@@ -408,7 +408,7 @@ const Checkout = () => {
                     <div
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "paypal"
-                          ? "border-[#FFC107] bg-[#FFC107]/10"
+                          ? "border-accent bg-accent/10"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setPaymentMethod("paypal")}
@@ -428,7 +428,7 @@ const Checkout = () => {
                     <div
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "cash-on-delivery"
-                          ? "border-[#FFC107] bg-[#FFC107]/10"
+                          ? "border-accent bg-accent/10"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setPaymentMethod("cash-on-delivery")}
