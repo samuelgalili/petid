@@ -43,64 +43,116 @@ const products = [{
   image: dogFoodImg,
   path: "/shop",
   color: "bg-[#B8E3D5]",
-  category: "intop-ribet" // Food & Treats
+  category: "intop-ribet"
 }, {
   name: "Premium Treats",
   price: "₪307.00",
   image: dogTreatsImg,
   path: "/shop",
   color: "bg-[#F5E6D3]",
-  category: "intop-ribet" // Food & Treats
+  category: "intop-ribet"
 }, {
   name: "Pet Bed Deluxe",
   price: "₪208.12",
   image: petBedImg,
   path: "/shop",
   color: "bg-[#E8F5E8]",
-  category: "account-cater" // Accessories
+  category: "account-cater"
 }, {
   name: "Reagor Snacks",
   price: "₪101.72",
   image: dogSnacksImg,
   path: "/shop",
   color: "bg-[#FFE5E5]",
-  category: "intop-ribet" // Food & Treats
+  category: "intop-ribet"
 }, {
   name: "Dog Toys Set",
   price: "₪156.00",
   image: dogToysImg,
   path: "/shop",
   color: "bg-[#E8E5FF]",
-  category: "account-cater" // Accessories
+  category: "account-cater"
 }, {
   name: "Cat Food Pro",
   price: "₪189.50",
   image: catFoodImg,
   path: "/shop",
   color: "bg-[#FFE8D6]",
-  category: "intop-ribet" // Food & Treats
+  category: "intop-ribet"
 }, {
   name: "Pet Vitamins",
   price: "₪145.00",
   image: petVitaminsImg,
   path: "/shop",
   color: "bg-[#FFE5F0]",
-  category: "deterrtn" // Healthcare
+  category: "deterrtn"
 }, {
   name: "Flea Treatment",
   price: "₪225.00",
   image: fleaTreatmentImg,
   path: "/shop",
   color: "bg-[#E5F5FF]",
-  category: "deterrtn" // Healthcare
+  category: "deterrtn"
 }, {
   name: "Pet Collar",
   price: "₪89.99",
   image: petCollarImg,
   path: "/shop",
   color: "bg-[#FFF0E5]",
-  category: "account-cater" // Accessories
+  category: "account-cater"
 }];
+
+// Wallet Achievements System
+const walletAchievements = [
+  { 
+    id: 1, 
+    name: "מתחיל חסכן", 
+    threshold: 10, 
+    icon: "🌱", 
+    color: "from-green-400 to-emerald-500",
+    description: "צברת ₪10 בחיסכון"
+  },
+  { 
+    id: 2, 
+    name: "חוסך מתמיד", 
+    threshold: 50, 
+    icon: "💚", 
+    color: "from-green-500 to-teal-500",
+    description: "צברת ₪50 בחיסכון"
+  },
+  { 
+    id: 3, 
+    name: "חוסך מקצועי", 
+    threshold: 100, 
+    icon: "⭐", 
+    color: "from-yellow-400 to-orange-500",
+    description: "צברת ₪100 בחיסכון"
+  },
+  { 
+    id: 4, 
+    name: "מומחה חיסכון", 
+    threshold: 250, 
+    icon: "🏆", 
+    color: "from-orange-500 to-red-500",
+    description: "צברת ₪250 בחיסכון"
+  },
+  { 
+    id: 5, 
+    name: "אלוף החיסכון", 
+    threshold: 500, 
+    icon: "👑", 
+    color: "from-purple-500 to-pink-500",
+    description: "צברת ₪500 בחיסכון"
+  },
+  { 
+    id: 6, 
+    name: "אגדת החיסכון", 
+    threshold: 1000, 
+    icon: "💎", 
+    color: "from-blue-500 to-purple-600",
+    description: "צברת ₪1000 בחיסכון"
+  }
+];
 const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -340,51 +392,50 @@ const Home = () => {
     }
   }, [walletBalance, triggerConfetti]);
 
-  // Quick action items for the home page - Hebrew labels matching Yellow design
-  const quickActions = [{
-    icon: FileText,
-    title: "מסמכים",
-    path: "/documents",
-    bgColor: "bg-white"
-  }, {
-    icon: Store,
-    title: "חנות",
-    path: "/shop",
-    bgColor: "bg-white"
-  }, {
-    icon: Scissors,
-    title: "מספרה",
-    path: "/grooming",
-    bgColor: "bg-white"
-  }, {
-    icon: GraduationCap,
-    title: "אילוף",
-    path: "/training",
-    bgColor: "bg-white"
-  }, {
-    icon: MapPin,
-    title: "גינות כלבים",
-    path: "/parks",
-    bgColor: "bg-white"
-  }, {
-    icon: ImageIcon,
-    title: "אלבום תמונות",
-    path: "/photos",
-    bgColor: "bg-white"
-  }, {
-    icon: Heart,
-    title: "אימוץ",
-    path: "/adoption",
-    bgColor: "bg-white"
-  }, {
-    icon: ShieldCheck,
-    title: "ביטוח",
-    path: "/insurance",
-    bgColor: "bg-white"
-  }];
+// Quick action items for the home page
+const quickActions = [{
+  icon: FileText,
+  title: "מסמכים",
+  path: "/documents",
+  bgColor: "bg-white"
+}, {
+  icon: Store,
+  title: "חנות",
+  path: "/shop",
+  bgColor: "bg-white"
+}, {
+  icon: Scissors,
+  title: "מספרה",
+  path: "/grooming",
+  bgColor: "bg-white"
+}, {
+  icon: GraduationCap,
+  title: "אילוף",
+  path: "/training",
+  bgColor: "bg-white"
+}, {
+  icon: MapPin,
+  title: "גינות כלבים",
+  path: "/parks",
+  bgColor: "bg-white"
+}, {
+  icon: ImageIcon,
+  title: "אלבום תמונות",
+  path: "/photos",
+  bgColor: "bg-white"
+}, {
+  icon: Heart,
+  title: "אימוץ",
+  path: "/adoption",
+  bgColor: "bg-white"
+}, {
+  icon: ShieldCheck,
+  title: "ביטוח",
+  path: "/insurance",
+  bgColor: "bg-white"
+}];
 
-  // Quick add to cart handler
-  const handleQuickAddToCart = useCallback((product: typeof products[0]) => {
+  // Quick add to cart handler - removed as not needed with new components
     addToCart({
       id: product.name,
       name: product.name,
