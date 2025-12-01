@@ -618,7 +618,7 @@ const Home = () => {
           y: 0
         }} transition={{
           delay: 0.05
-        }} className="bg-white px-4 py-[18px] mb-3 mx-4 rounded-2xl shadow-sm shadow-neutral-200 max-w-[430px]" dir="rtl">
+        }} className="px-4 py-[18px] mb-3 mx-4 max-w-full overflow-visible" dir="rtl">
           {/* Main Content: Icon (Right) + Text Column (Left) */}
           <div className="flex flex-row-reverse items-center gap-[14px]">
             {/* Gift Icon - Right Side - Clean & Aesthetic */}
@@ -627,7 +627,7 @@ const Home = () => {
             </button>
 
             {/* Text Column - Left Side */}
-            <div className="flex-1 text-right space-y-1">
+            <div className="flex-1 text-right space-y-1 overflow-visible min-w-0">
               {/* Greeting Line - Top - Slightly Larger */}
               <div className="text-[15px] leading-tight font-normal text-[#1A1A1A] mb-1 whitespace-nowrap overflow-visible">
                 {getGreeting()},{" "}
@@ -642,8 +642,8 @@ const Home = () => {
               </h1>
               
               {/* Small Info Line - 11px */}
-              <p className="text-[0.6875rem] leading-tight font-normal text-[#6E6E6E] truncate mb-2">צוברים 5% מכל קנייה ב Petid  ונהנים</p>
-            </div>
+              <p className="text-[0.6875rem] leading-tight font-normal text-[#6E6E6E] mb-2">צוברים 5% מכל קנייה ב Petid  ונהנים</p>
+             </div>
           </div>
 
           {/* Link Button - Bottom Left Corner */}
