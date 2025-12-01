@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import giftIcon from "@/assets/gift-icon.gif";
+import { buttonHover, buttonTap, wiggle } from "@/lib/animations";
+import { MICROCOPY } from "@/lib/microcopy";
+import { getAccessibleButtonProps, TAP_TARGET } from "@/lib/accessibility";
 
 interface RewardsHeaderProps {
   userName: string;
@@ -21,14 +24,18 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
     >
       {/* Main Content: Icon (Right) + Text Column (Left) */}
       <div className="flex flex-row-reverse items-center gap-[14px]">
-        {/* Gift Icon - Right Side - Clean & Aesthetic */}
-          <button
-            onClick={() => navigate('/rewards')}
-            className="flex-shrink-0 w-20 h-20 rounded-full bg-surface-elevated flex items-center justify-center shadow-lg border-2 border-border-light hover:scale-105 hover:shadow-xl active:scale-95 transition-all duration-200 ease-out"
-            aria-label="עבור למתנות ותגמולים"
-          >
+        {/* Gift Icon - Right Side - Playful & Accessible */}
+        <motion.button
+          onClick={() => navigate('/rewards')}
+          whileHover={{ scale: 1.05, rotate: [0, -2, 2, -2, 0] }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.2 }}
+          className="flex-shrink-0 w-20 h-20 rounded-full bg-surface-elevated flex items-center justify-center shadow-lg border-2 border-border-light transition-shadow focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          style={{ minWidth: TAP_TARGET.comfortable, minHeight: TAP_TARGET.comfortable }}
+          {...getAccessibleButtonProps("עבור למתנות ותגמולים")}
+        >
           <img src={giftIcon} alt="מתנה" className="w-14 h-14 object-contain drop-shadow-sm" />
-        </button>
+        </motion.button>
 
         {/* Text Column - Left Side */}
         <div className="flex-1 text-right space-y-1 overflow-visible min-w-0">
@@ -55,15 +62,20 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
         </div>
       </div>
 
-      {/* Link Button - Bottom Left Corner */}
+      {/* Link Button - Bottom Left Corner - Enhanced Accessibility */}
       <div className="mt-3 text-left">
-        <button
+        <motion.button
           onClick={() => navigate('/rewards')}
-          className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
+          whileHover={{ x: -2 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.15 }}
+          className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2"
+          style={{ minHeight: TAP_TARGET.minimum }}
+          {...getAccessibleButtonProps("צפה בתגמולים והטבות")}
         >
           צבירה ומימוש
           <span className="text-sm">‹</span>
-        </button>
+        </motion.button>
       </div>
     </motion.div>
   );
