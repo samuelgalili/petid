@@ -610,7 +610,7 @@ const Home = () => {
       {/* Content Container */}
       <div className="pt-0 pb-6">
         
-        {/* Mobile-Only Rewards Header - RTL Pixel Perfect */}
+        {/* Mobile-Only Rewards Header - RTL Pixel Perfect - Updated */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
@@ -620,23 +620,23 @@ const Home = () => {
         >
           {/* Main Content: Icon (Right) + Text Column (Left) */}
           <div className="flex flex-row-reverse items-center gap-[14px]">
-            {/* Gift Icon - Right Side - Enhanced with gray background - Rounded Square */}
+            {/* Gift Icon - Right Side - Clean Circle */}
             <button 
               onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-300 ease-out group"
+              className="flex-shrink-0 w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 ease-out"
               aria-label="עבור למתנות ותגמולים"
             >
               <img 
                 src={giftIcon} 
                 alt="מתנה" 
-                className="w-14 h-14 object-contain group-hover:rotate-12 transition-transform duration-300"
+                className="w-11 h-11 object-contain"
               />
             </button>
 
             {/* Text Column - Left Side */}
             <div className="flex-1 text-right space-y-1">
-              {/* Greeting Line - Top */}
-              <div className="text-sm leading-tight font-normal text-[#1A1A1A] mb-1">
+              {/* Greeting Line - Top - Slightly Larger */}
+              <div className="text-[15px] leading-tight font-normal text-[#1A1A1A] mb-1">
                 {getGreeting()},{" "}
                 <button 
                   onClick={() => setIsMenuOpen(true)} 
@@ -646,27 +646,27 @@ const Home = () => {
                 </button>
               </div>
               
-              {/* Main Headline - 32px / font-black */}
+              {/* Main Headline - Marketing Message */}
               <h1 className="text-[2rem] leading-[1.1] font-black text-[#1A1A1A] mb-1">
-                צבירה חדשה!
+                קונים, צוברים, נהנים — בכל רכישה מחדש!
               </h1>
               
               {/* Small Info Line - 11px */}
               <p className="text-[0.6875rem] leading-tight font-normal text-[#6E6E6E] truncate mb-2">
                 צוברים ₪50 עד ה-31.12.25 בפז, yellow ובסופרמרקטים
               </p>
-              
-              {/* Link Button - 13px / medium / #2271CF - Left Aligned */}
-              <div className="text-left">
-                <button 
-                  onClick={() => navigate('/rewards')} 
-                  className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
-                >
-                  צבירה ומימוש
-                  <span className="text-sm">‹</span>
-                </button>
-              </div>
             </div>
+          </div>
+
+          {/* Link Button - Bottom Right Corner */}
+          <div className="mt-3 text-right">
+            <button 
+              onClick={() => navigate('/rewards')} 
+              className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
+            >
+              צבירה ומימוש
+              <span className="text-sm">‹</span>
+            </button>
           </div>
         </motion.div>
 
