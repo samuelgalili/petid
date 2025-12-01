@@ -233,7 +233,7 @@ const Feed = () => {
             onClick={handleLoadNewPosts}
           >
             <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
-              <TrendingUp className="w-5 h-5" />
+              <TrendingUp className="w-5 h-5" strokeWidth={1.5} />
               <span className="font-bold font-jakarta">פוסטים חדשים זמינים - לחץ לטעינה</span>
             </div>
           </motion.div>
@@ -274,7 +274,7 @@ const Feed = () => {
             className="text-center py-20 px-4"
           >
             <div className="w-32 h-32 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Camera className="w-16 h-16 text-gray-400" />
+              <Camera className="w-16 h-16 text-gray-400" strokeWidth={1.5} />
             </div>
             <h3 className="text-2xl font-black text-gray-900 font-jakarta mb-3">
               אין פוסטים עדיין
@@ -286,7 +286,7 @@ const Feed = () => {
               onClick={() => setCreatePostOpen(true)}
               className="bg-accent hover:bg-accent-hover text-text-inverse font-bold shadow-lg"
             >
-              <Plus className="w-5 h-5 ml-2" />
+              <Plus className="w-5 h-5 ml-2" strokeWidth={1.5} />
               צור פוסט ראשון
             </Button>
           </motion.div>
@@ -345,7 +345,7 @@ const Feed = () => {
                           post.is_liked ? 'text-red-500' : 'text-gray-700'
                         }`}
                       >
-                        <Heart className={`w-7 h-7 ${post.is_liked ? 'fill-current' : ''}`} />
+                        <Heart className={`w-7 h-7 ${post.is_liked ? 'fill-current' : ''}`} strokeWidth={1.5} />
                         {post.likes_count > 0 && (
                           <span className="font-black font-jakarta">{post.likes_count}</span>
                         )}
@@ -356,7 +356,7 @@ const Feed = () => {
                         className="flex items-center gap-2 text-gray-700"
                         onClick={() => navigate(`/post/${post.id}`)}
                       >
-                        <MessageCircle className="w-7 h-7" />
+                        <MessageCircle className="w-7 h-7" strokeWidth={1.5} />
                         {post.comments_count > 0 && (
                           <span className="font-black font-jakarta">{post.comments_count}</span>
                         )}
@@ -366,14 +366,14 @@ const Feed = () => {
                         whileTap={{ scale: 0.9 }}
                         className="text-gray-700"
                       >
-                        <Share2 className="w-7 h-7" />
+                        <Share2 className="w-7 h-7" strokeWidth={1.5} />
                       </motion.button>
                     </div>
                     <motion.button 
                       whileTap={{ scale: 0.9 }}
                       className={`${post.is_saved ? 'text-accent' : 'text-gray-700'}`}
                     >
-                      <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} />
+                      <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
                     </motion.button>
                   </div>
 
