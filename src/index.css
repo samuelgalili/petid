@@ -172,24 +172,48 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 400; /* Regular - default for all text */
   }
   
+  /* Typography System - Plus Jakarta Sans Only */
+  
+  /* Font Weights - Use consistently across the app:
+     - font-normal (400):     Body text, paragraphs, descriptions
+     - font-medium (500):     Buttons, labels, emphasized text
+     - font-semibold (600):   Secondary headings (H4-H6), important labels
+     - font-bold (700):       Primary headings (H2-H3), card titles
+     - font-extrabold (800):  Hero headings (H1), main page titles
+  */
+  
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
   
-  /* Typography scale for consistency */
-  h1 { @apply text-4xl font-extrabold; }
-  h2 { @apply text-3xl font-bold; }
-  h3 { @apply text-2xl font-bold; }
-  h4 { @apply text-xl font-semibold; }
-  h5 { @apply text-lg font-semibold; }
-  h6 { @apply text-base font-semibold; }
+  /* Heading Scale with Consistent Weights */
+  h1 { @apply text-4xl font-extrabold; }  /* Hero sections */
+  h2 { @apply text-3xl font-bold; }       /* Page titles */
+  h3 { @apply text-2xl font-bold; }       /* Section titles */
+  h4 { @apply text-xl font-semibold; }    /* Subsection titles */
+  h5 { @apply text-lg font-semibold; }    /* Card titles */
+  h6 { @apply text-base font-semibold; }  /* Small headings */
   
-  p { @apply text-base; }
+  /* Text Elements */
+  p { @apply text-base font-normal; }
   
-  button, input, textarea, select {
+  /* Interactive Elements - Default to medium weight */
+  button { 
+    @apply font-medium;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  
+  input, textarea, select {
+    @apply font-normal;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  
+  /* Labels should be medium weight for emphasis */
+  label {
+    @apply font-medium;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
   
