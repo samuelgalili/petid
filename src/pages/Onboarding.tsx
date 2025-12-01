@@ -151,7 +151,7 @@ const Onboarding = () => {
       // Save onboarding completion to localStorage
       localStorage.setItem('onboardingCompleted', 'true');
 
-      setTimeout(() => navigate('/'), 2000);
+      setTimeout(() => navigate('/home'), 2000);
     } catch (error) {
       console.error("Error completing onboarding:", error);
       toast({
@@ -172,7 +172,7 @@ const Onboarding = () => {
 
   const skipOnboarding = () => {
     localStorage.setItem('onboardingCompleted', 'true');
-    navigate('/');
+    navigate('/home');
   };
 
   return (

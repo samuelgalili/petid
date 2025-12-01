@@ -1,4 +1,4 @@
-import { Home, MapPin, Grid3x3, ShoppingBag, MessageCircle } from "lucide-react";
+import { Home, Heart, Grid3x3, ShoppingBag, MessageCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -10,16 +10,16 @@ const BottomNav = () => {
   const location = useLocation();
 
   const navItems = [
-    { icon: Home, label: "בית", path: "/" },
-    { icon: ShoppingBag, label: "מבצעים וקופונים", path: "/rewards" },
+    { icon: Home, label: "בית", path: "/home" },
+    { icon: Heart, label: "אימוץ", path: "/adoption" },
     { 
       icon: MessageCircle, 
       label: "צ'אט AI", 
       path: "/chat",
       isCenter: true, // Large elevated center button
     },
-    { icon: Grid3x3, label: "פעילות", path: "/feed" },
-    { icon: MapPin, label: "ניווט", path: "/parks" },
+    { icon: ShoppingBag, label: "חנות", path: "/shop" },
+    { icon: Grid3x3, label: "משימות", path: "/tasks" },
   ];
 
   return (
