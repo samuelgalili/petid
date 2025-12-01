@@ -171,6 +171,90 @@ export type Database = {
           },
         ]
       }
+      dog_parks: {
+        Row: {
+          address: string
+          agility: boolean | null
+          city: string
+          coordinates: unknown
+          created_at: string
+          created_by: string | null
+          fencing: boolean | null
+          google_maps_link: string | null
+          id: string
+          latitude: number | null
+          lighting: boolean | null
+          longitude: number | null
+          name: string
+          notes: string | null
+          parking: boolean | null
+          rating: number | null
+          shade: boolean | null
+          size: string | null
+          source: string | null
+          status: string
+          total_reviews: number | null
+          updated_at: string
+          updated_by: string | null
+          verified: boolean | null
+          water: boolean | null
+        }
+        Insert: {
+          address: string
+          agility?: boolean | null
+          city: string
+          coordinates?: unknown
+          created_at?: string
+          created_by?: string | null
+          fencing?: boolean | null
+          google_maps_link?: string | null
+          id?: string
+          latitude?: number | null
+          lighting?: boolean | null
+          longitude?: number | null
+          name: string
+          notes?: string | null
+          parking?: boolean | null
+          rating?: number | null
+          shade?: boolean | null
+          size?: string | null
+          source?: string | null
+          status?: string
+          total_reviews?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          verified?: boolean | null
+          water?: boolean | null
+        }
+        Update: {
+          address?: string
+          agility?: boolean | null
+          city?: string
+          coordinates?: unknown
+          created_at?: string
+          created_by?: string | null
+          fencing?: boolean | null
+          google_maps_link?: string | null
+          id?: string
+          latitude?: number | null
+          lighting?: boolean | null
+          longitude?: number | null
+          name?: string
+          notes?: string | null
+          parking?: boolean | null
+          rating?: number | null
+          shade?: boolean | null
+          size?: string | null
+          source?: string | null
+          status?: string
+          total_reviews?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          verified?: boolean | null
+          water?: boolean | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
