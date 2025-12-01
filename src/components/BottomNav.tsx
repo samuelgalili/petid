@@ -1,4 +1,4 @@
-import { Home, MapPin, Grid3x3, ShoppingBag, Fuel } from "lucide-react";
+import { Home, MapPin, Grid3x3, ShoppingBag, MessageCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -10,13 +10,13 @@ const BottomNav = () => {
     { icon: Home, label: "בית", path: "/" },
     { icon: ShoppingBag, label: "מבצעים וקופונים", path: "/rewards" },
     { 
-      icon: Fuel, 
-      label: "תדלוק בע'יק", 
-      path: "/tasks",
+      icon: MessageCircle, 
+      label: "צ'אט AI", 
+      path: "/chat",
       isCenter: true, // Large elevated center button
     },
-    { icon: Grid3x3, label: "פעילות", path: "/shop" },
-    { icon: MapPin, label: "ניווט", path: "/profile" },
+    { icon: Grid3x3, label: "פעילות", path: "/feed" },
+    { icon: MapPin, label: "ניווט", path: "/parks" },
   ];
 
   return (
@@ -58,7 +58,7 @@ const BottomNav = () => {
                     whileTap={{ scale: 0.95 }}
                     className="w-16 h-16 rounded-full bg-[#FFC107] flex items-center justify-center shadow-[0_4px_20px_rgba(255,193,7,0.4)] mb-1"
                   >
-                    <Fuel className="w-7 h-7 text-[#E63946] stroke-[2.5]" />
+                    <MessageCircle className="w-7 h-7 text-[#E63946] stroke-[2.5]" />
                   </motion.div>
                 ) : (
                   <motion.div
