@@ -374,7 +374,7 @@ const UserProfile = () => {
               {isFollowing ? "עוקב" : "עקוב"}
             </Button>
             <Button
-              onClick={() => navigate(`/chat`)}
+              onClick={() => navigate(`/messages/${userId}`)}
               variant="outline"
               className="flex-1 font-jakarta font-bold"
             >

@@ -60,6 +60,8 @@ import Grooming from "./pages/Grooming";
 import ColorSystemShowcase from "./pages/ColorSystemShowcase";
 import Onboarding from "./pages/Onboarding";
 import Achievements from "./pages/Achievements";
+import Messages from "./pages/Messages";
+import MessageThread from "./pages/MessageThread";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -119,6 +121,8 @@ const AnimatedRoutes = () => {
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><PageTransition><Notifications /></PageTransition></ProtectedRoute>} />
         <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><PageTransition><Messages /></PageTransition></ProtectedRoute>} />
+        <Route path="/messages/:userId" element={<ProtectedRoute><PageTransition><MessageThread /></PageTransition></ProtectedRoute>} />
         <Route path="/color-system" element={<ProtectedRoute><PageTransition><ColorSystemShowcase /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
