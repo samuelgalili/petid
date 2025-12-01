@@ -41,29 +41,35 @@ const Feed = () => {
   const fetchPosts = async () => {
     setLoading(true);
     
-    // Fetch posts with user profiles, likes count, and comments count
+    // Fetch posts
     const { data: postsData } = await supabase
       .from("posts")
-      .select(`
-        id,
-        user_id,
-        image_url,
-        caption,
-        created_at,
-        profiles!posts_user_id_fkey (
-          id,
-          full_name,
-          avatar_url
-        ),
-        post_likes (count),
-        post_comments (count)
-      `)
+      .select("*")
       .order("created_at", { ascending: false })
       .limit(20);
 
     if (postsData) {
       const formattedPosts = await Promise.all(
         postsData.map(async (post: any) => {
+          // Fetch user profile for each post
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .eq("id", post.user_id)
+            .single();
+
+          // Count likes
+          const { count: likesCount } = await supabase
+            .from("post_likes")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", post.id);
+
+          // Count comments
+          const { count: commentsCount } = await supabase
+            .from("post_comments")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", post.id);
+
           // Check if current user liked this post
           let isLiked = false;
           if (user) {
@@ -72,7 +78,7 @@ const Feed = () => {
               .select("id")
               .eq("post_id", post.id)
               .eq("user_id", user.id)
-              .single();
+              .maybeSingle();
             
             isLiked = !!likeData;
           }
@@ -84,12 +90,12 @@ const Feed = () => {
             caption: post.caption,
             created_at: post.created_at,
             user: {
-              id: post.profiles.id,
-              full_name: post.profiles.full_name,
-              avatar_url: post.profiles.avatar_url,
+              id: profileData?.id || post.user_id,
+              full_name: profileData?.full_name || "משתמש",
+              avatar_url: profileData?.avatar_url || "",
             },
-            likes_count: post.post_likes?.[0]?.count || 0,
-            comments_count: post.post_comments?.[0]?.count || 0,
+            likes_count: likesCount || 0,
+            comments_count: commentsCount || 0,
             is_liked: isLiked,
           };
         })
