@@ -246,7 +246,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden font-jakarta" dir="rtl">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden font-jakarta bg-gradient-to-br from-gray-50 to-white" dir="rtl">
         {previewUrl ? (
           editMode ? (
             // Edit Mode
@@ -384,20 +384,20 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl"
                     onClick={() => setEditMode(false)}
                     disabled={uploading}
                   >
                     חזור
                   </Button>
                   <Button
-                    className="flex-1 bg-blue-500 hover:bg-blue-600"
+                    className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-black font-jakarta rounded-2xl shadow-lg"
                     onClick={handleCreateStory}
                     disabled={uploading}
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                        <Loader2 className="w-5 h-5 ml-2 animate-spin" />
                         מפרסם...
                       </>
                     ) : (
@@ -437,7 +437,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl"
                     onClick={handleRemoveMedia}
                     disabled={uploading}
                   >
@@ -446,7 +446,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                   {selectedMedia?.type.startsWith('image/') && (
                     <Button
                       variant="outline"
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30"
+                      className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl"
                       onClick={() => setEditMode(true)}
                       disabled={uploading}
                     >
@@ -454,13 +454,13 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                     </Button>
                   )}
                   <Button
-                    className="flex-1 bg-blue-500 hover:bg-blue-600"
+                    className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-black font-jakarta rounded-2xl shadow-lg"
                     onClick={handleCreateStory}
                     disabled={uploading}
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                        <Loader2 className="w-5 h-5 ml-2 animate-spin" />
                         מפרסם...
                       </>
                     ) : (
@@ -472,8 +472,9 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
             </div>
           )
         ) : (
-          <div className="p-8">
-            <h2 className="text-2xl font-bold text-center mb-6">צור סטורי חדש</h2>
+          <div className="p-8 bg-gradient-to-br from-white to-gray-50">
+            <h2 className="text-3xl font-black text-center mb-2 text-gray-900 font-jakarta">צור סטורי חדש</h2>
+            <p className="text-center text-gray-600 font-jakarta text-sm mb-8">שתף רגע מחיות המחמד שלך 📸</p>
             <div className="grid grid-cols-2 gap-4">
               <input
                 ref={fileInputRef}
@@ -493,20 +494,24 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
               
               <Button
                 variant="outline"
-                className="h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed hover:border-primary"
+                className="h-44 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-gradient-to-br hover:from-yellow-50 hover:to-amber-50 rounded-3xl shadow-sm hover:shadow-xl transition-all group"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <ImageIcon className="w-10 h-10 text-gray-500" />
-                <span className="text-sm text-gray-600">בחר מהגלריה</span>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-[#FFD700] group-hover:to-[#FFC107] flex items-center justify-center transition-all">
+                  <ImageIcon className="w-8 h-8 text-gray-600 group-hover:text-gray-900 transition-colors" />
+                </div>
+                <span className="text-sm font-black text-gray-900 font-jakarta">בחר מהגלריה</span>
               </Button>
 
               <Button
                 variant="outline"
-                className="h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed hover:border-primary"
+                className="h-44 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-gradient-to-br hover:from-yellow-50 hover:to-amber-50 rounded-3xl shadow-sm hover:shadow-xl transition-all group"
                 onClick={() => cameraInputRef.current?.click()}
               >
-                <Camera className="w-10 h-10 text-gray-500" />
-                <span className="text-sm text-gray-600">צלם</span>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-[#FFD700] group-hover:to-[#FFC107] flex items-center justify-center transition-all">
+                  <Camera className="w-8 h-8 text-gray-600 group-hover:text-gray-900 transition-colors" />
+                </div>
+                <span className="text-sm font-black text-gray-900 font-jakarta">צלם תמונה</span>
               </Button>
             </div>
             <p className="text-xs text-gray-500 text-center mt-4">

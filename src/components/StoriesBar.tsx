@@ -94,12 +94,12 @@ export const StoriesBar = () => {
 
   if (loading) {
     return (
-      <div className="px-4 py-3 border-b border-gray-100 bg-white">
+      <div className="px-4 py-4 bg-white border-b border-gray-100">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
-              <div className="w-12 h-3 bg-gray-200 rounded animate-pulse" />
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
+              <div className="w-14 h-3 bg-gray-200 rounded-full animate-pulse" />
             </div>
           ))}
         </div>
@@ -109,28 +109,32 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-4 py-3 border-b border-gray-100 bg-white">
-        <div className="flex gap-4 overflow-x-auto no-scrollbar">
+      <div className="px-4 py-4 bg-white border-b border-gray-100 shadow-sm">
+        <div className="flex gap-5 overflow-x-auto no-scrollbar pb-1">
           {/* Add Story Button */}
           {user && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
               onClick={() => setCreateDialogOpen(true)}
             >
               <div className="relative">
-                <Avatar className="w-16 h-16 ring-2 ring-gray-300">
-                  <AvatarImage src={user.user_metadata?.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
-                    {user.user_metadata?.full_name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute bottom-0 right-0 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white">
-                  <Plus className="w-3 h-3 text-white" />
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFC107] p-[3px] shadow-lg">
+                  <Avatar className="w-full h-full ring-2 ring-white">
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback className="bg-gradient-to-br from-gray-700 to-gray-900 text-white font-black text-xl">
+                      {user.user_metadata?.full_name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="absolute bottom-0 right-0 w-6 h-6 bg-gradient-to-r from-[#FFD700] to-[#FFC107] rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <Plus className="w-4 h-4 text-gray-900 font-bold" />
                 </div>
               </div>
-              <span className="text-xs font-jakarta text-gray-700">הסטורי שלך</span>
+              <span className="text-xs font-jakarta font-bold text-gray-900">הסטורי שלך</span>
             </motion.div>
           )}
 
@@ -140,31 +144,33 @@ export const StoriesBar = () => {
               key={storyUser.user_id}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               transition={{ delay: index * 0.05 }}
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
               onClick={() => navigate(`/story/${storyUser.user_id}`)}
             >
-              <div className={`p-0.5 rounded-full ${
+              <div className={`p-[3px] rounded-full shadow-lg ${
                 storyUser.has_viewed 
-                  ? 'bg-gray-300' 
-                  : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500'
+                  ? 'bg-gradient-to-br from-gray-300 to-gray-400' 
+                  : 'bg-gradient-to-tr from-[#FFD700] via-[#FFC107] to-[#FFB700] animate-pulse'
               }`}>
-                <Avatar className="w-16 h-16 ring-2 ring-white">
+                <Avatar className="w-20 h-20 ring-[3px] ring-white">
                   <AvatarImage src={storyUser.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black text-xl">
                     {storyUser.full_name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <span className="text-xs font-jakarta text-gray-700 max-w-[64px] truncate">
+              <span className="text-xs font-jakarta font-semibold text-gray-900 max-w-[80px] truncate">
                 {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}
               </span>
             </motion.div>
           ))}
 
           {storyUsers.length === 0 && !user && (
-            <div className="text-center py-4 w-full">
-              <p className="text-gray-500 font-jakarta text-sm">אין סטוריז פעילים כרגע</p>
+            <div className="text-center py-6 w-full">
+              <p className="text-gray-500 font-jakarta text-sm font-semibold">אין סטוריז פעילים כרגע 📸</p>
             </div>
           )}
         </div>
