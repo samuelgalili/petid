@@ -629,7 +629,7 @@ const Home = () => {
             {/* Text Column - Left Side */}
             <div className="flex-1 text-right space-y-1">
               {/* Greeting Line - Top - Slightly Larger */}
-              <div className="text-[15px] leading-tight font-normal text-[#1A1A1A] mb-1">
+              <div className="text-[15px] leading-tight font-normal text-[#1A1A1A] mb-1 whitespace-nowrap overflow-visible">
                 {getGreeting()},{" "}
                 <button onClick={() => setIsMenuOpen(true)} className="hover:opacity-70 transition-opacity font-normal">
                   {userName}
