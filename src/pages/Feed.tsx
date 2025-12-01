@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
@@ -12,6 +12,7 @@ import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { toast } from "sonner";
+import { AppHeader } from "@/components/AppHeader";
 
 interface Post {
   id: string;
@@ -211,25 +212,15 @@ const Feed = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-24" dir="rtl">
-      {/* Header */}
-      <div className="bg-gradient-primary sticky top-0 z-10 px-4 py-4 shadow-md">
-        <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-text-inverse" />
-            <h1 className="text-2xl font-black text-text-inverse font-jakarta">
-              הפיד שלי
-            </h1>
-          </div>
-          <Button 
-            size="icon"
-            className="rounded-full bg-secondary hover:bg-secondary-dark text-white shadow-lg w-12 h-12"
-            onClick={() => setCreatePostOpen(true)}
-          >
-            <Plus className="w-6 h-6" />
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-white pb-24" dir="rtl">
+      <AppHeader 
+        title="הפיד שלי" 
+        showBackButton={true}
+        extraAction={{
+          icon: Plus,
+          onClick: () => setCreatePostOpen(true)
+        }}
+      />
 
       {/* New Posts Banner */}
       <AnimatePresence>

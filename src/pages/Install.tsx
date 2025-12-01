@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Smartphone, Download, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { AppHeader } from "@/components/AppHeader";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -49,7 +50,9 @@ const Install = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-white pb-20" dir="rtl">
+      <AppHeader title="התקנת האפליקציה" showBackButton={true} />
+      <div className="flex items-center justify-center p-4 min-h-[calc(100vh-3.5rem)]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -166,6 +169,7 @@ const Install = () => {
           </div>
         </Card>
       </motion.div>
+      </div>
     </div>
   );
 };
