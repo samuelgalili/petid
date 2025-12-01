@@ -323,7 +323,7 @@ const Feed = () => {
       <StoriesBar />
 
       {/* Filter Tabs */}
-      <div className="max-w-2xl mx-auto px-4 pt-2 bg-white sticky top-[72px] z-[5] border-b border-gray-100">
+      <div className="max-w-2xl mx-auto px-4 pt-2 bg-white sticky top-[56px] z-10 border-b border-gray-100">
         <Tabs value={feedFilter} onValueChange={(value) => setFeedFilter(value as "all" | "following")}>
           <TabsList className="w-full grid grid-cols-2 font-jakarta bg-gray-100">
             <TabsTrigger value="all" className="font-black data-[state=active]:bg-white">
