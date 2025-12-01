@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
+import { StoriesBar } from "@/components/StoriesBar";
 
 interface Post {
   id: string;
@@ -163,6 +164,9 @@ const Feed = () => {
           </Button>
         </div>
       </div>
+
+      {/* Stories Bar */}
+      <StoriesBar />
 
       {/* Feed */}
       <div className="max-w-2xl mx-auto">

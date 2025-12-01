@@ -396,4 +396,14 @@ All colors MUST be HSL.
     );
     background-size: 1000px 100%;
   }
+
+  /* Hide scrollbar for stories bar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

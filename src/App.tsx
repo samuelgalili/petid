@@ -23,6 +23,7 @@ import Home from "./pages/Home";
 import Feed from "./pages/Feed";
 import UserProfile from "./pages/UserProfile";
 import PostDetail from "./pages/PostDetail";
+import StoryViewer from "./pages/StoryViewer";
 import Tracker from "./pages/Tracker";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -77,6 +78,7 @@ const AnimatedRoutes = () => {
         <Route path="/feed" element={<ProtectedRoute><PageTransition><Feed /></PageTransition></ProtectedRoute>} />
         <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
         <Route path="/post/:postId" element={<ProtectedRoute><PageTransition><PostDetail /></PageTransition></ProtectedRoute>} />
+        <Route path="/story/:userId" element={<ProtectedRoute><StoryViewer /></ProtectedRoute>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
         <Route path="/shop" element={<ProtectedRoute><PageTransition><Shop /></PageTransition></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProtectedRoute><PageTransition><ProductDetail /></PageTransition></ProtectedRoute>} />
