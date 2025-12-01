@@ -11,13 +11,16 @@ import {
   HelpCircle,
   Package,
   Star,
-  PawPrint
+  PawPrint,
+  Camera
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
+import { ProfileImageEditor } from "@/components/ProfileImageEditor";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -28,6 +31,7 @@ const Profile = () => {
   const [lastOrder, setLastOrder] = useState<any>(null);
   const [activeCoupons, setActiveCoupons] = useState<any[]>([]);
   const [nearbyParks, setNearbyParks] = useState<any[]>([]);
+  const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -150,8 +154,19 @@ const Profile = () => {
                   {profile?.email || "user@example.com"}
                 </p>
               </div>
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
-                <User className="w-8 h-8 text-gray-900" />
+              <div className="relative">
+                <Avatar className="w-20 h-20 border-4 border-white shadow-xl ring-2 ring-yellow-400/50">
+                  <AvatarImage src={profile?.avatar_url} />
+                  <AvatarFallback className="bg-gradient-to-br from-gray-900 to-gray-700 text-white font-black text-2xl">
+                    {profile?.full_name?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={() => setIsImageEditorOpen(true)}
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95"
+                >
+                  <Camera className="w-4 h-4 text-white" />
+                </button>
               </div>
             </div>
             <button 
@@ -312,6 +327,16 @@ const Profile = () => {
 
         <BottomNav />
       </div>
+
+      {/* Profile Image Editor */}
+      <ProfileImageEditor
+        isOpen={isImageEditorOpen}
+        onClose={() => setIsImageEditorOpen(false)}
+        currentImageUrl={profile?.avatar_url}
+        onImageUpdated={(url) => {
+          setProfile((prev: any) => ({ ...prev, avatar_url: url }));
+        }}
+      />
     </PageTransition>
   );
 };

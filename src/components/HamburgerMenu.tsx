@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -139,12 +141,20 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     transition={{ delay: 0.1 }}
                     className="flex items-center gap-4"
                   >
-                    <Avatar className="w-16 h-16 border-3 border-white shadow-xl ring-2 ring-yellow-400/50">
-                      <AvatarImage src={profile?.avatar_url} />
-                      <AvatarFallback className="bg-gradient-to-br from-gray-900 to-gray-700 text-white font-black text-xl">
-                        {profile?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="w-16 h-16 border-3 border-white shadow-xl ring-2 ring-yellow-400/50">
+                        <AvatarImage src={profile?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-gray-900 to-gray-700 text-white font-black text-xl">
+                          {profile?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <button
+                        onClick={() => setIsImageEditorOpen(true)}
+                        className="absolute bottom-0 right-0 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    </div>
                     <div className="flex-1">
                       <p className="text-xl font-black text-gray-900 font-jakarta mb-1">
                         {profile?.full_name || "משתמש"}
@@ -380,6 +390,16 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
           </motion.div>
         </>
       )}
+
+      {/* Profile Image Editor */}
+      <ProfileImageEditor
+        isOpen={isImageEditorOpen}
+        onClose={() => setIsImageEditorOpen(false)}
+        currentImageUrl={profile?.avatar_url}
+        onImageUpdated={(url) => {
+          setProfile((prev: any) => ({ ...prev, avatar_url: url }));
+        }}
+      />
     </AnimatePresence>
   );
 };
