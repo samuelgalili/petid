@@ -158,7 +158,7 @@ const PetDetails = () => {
         >
           <Avatar className="w-32 h-32 border-[4px] border-white ring-4 ring-gray-100 shadow-xl mb-4">
             <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
-            <AvatarFallback className="bg-gradient-to-br from-[#B8E3D5] to-[#7DD3C0] text-white text-4xl font-bold">
+            <AvatarFallback className="bg-gradient-secondary text-white text-4xl font-bold">
               {pet.type === 'dog' ? '🐕' : '🐈'}
             </AvatarFallback>
           </Avatar>
@@ -173,10 +173,10 @@ const PetDetails = () => {
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
-          <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
-            <Info className="w-5 h-5 text-[#7DD3C0]" />
-            Profile Information
-          </h3>
+            <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
+              <Info className="w-5 h-5 text-secondary" />
+              Profile Information
+            </h3>
           <Card className="p-5 bg-gradient-to-br from-[#F5F5F5] to-[#FAFAFA] border-2 border-gray-100 rounded-3xl shadow-sm">
             <div className="space-y-4">
               {/* Breed */}
@@ -193,7 +193,7 @@ const PetDetails = () => {
                   </div>
                 </div>
                 {pet.breed_confidence !== null && (
-                  <span className={`text-2xl ${pet.breed_confidence > 70 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`text-2xl ${pet.breed_confidence > 70 ? 'text-success' : 'text-error'}`}>
                     {pet.breed_confidence > 70 ? '✓' : '✗'}
                   </span>
                 )}
@@ -201,8 +201,8 @@ const PetDetails = () => {
 
               {/* Age */}
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-[#E8F5E8] flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-[#7DD3C0]" />
+                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-secondary" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 font-jakarta">Age</p>
@@ -269,7 +269,7 @@ const PetDetails = () => {
             className="mb-6"
           >
             <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
-              <History className="w-5 h-5 text-[#7DD3C0]" />
+              <History className="w-5 h-5 text-secondary" />
               Breed Detection History
             </h3>
             <div className="space-y-3">
@@ -292,7 +292,7 @@ const PetDetails = () => {
                           {record.breed || "Unknown"}
                         </p>
                         {record.confidence !== null && (
-                          <span className={`text-lg ${record.confidence > 70 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className={`text-lg ${record.confidence > 70 ? 'text-success' : 'text-error'}`}>
                             {record.confidence > 70 ? '✓' : '✗'}
                           </span>
                         )}
@@ -320,10 +320,10 @@ const PetDetails = () => {
           transition={{ delay: 0.3 }}
           className="mb-6"
         >
-          <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
-            <Stethoscope className="w-5 h-5 text-[#7DD3C0]" />
-            Health Records
-          </h3>
+            <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 text-secondary" />
+              Health Records
+            </h3>
           <Card className="p-6 bg-gradient-to-br from-[#F5F5F5] to-[#FAFAFA] border-2 border-dashed border-gray-200 rounded-3xl">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-[#FFE8D6] to-[#FFE5F0] rounded-full flex items-center justify-center mb-4">
@@ -337,7 +337,7 @@ const PetDetails = () => {
               </p>
               <Button
                 onClick={() => toast({ title: "Coming Soon", description: "Health records feature is under development" })}
-                className="bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] hover:from-[#6BC4AD] hover:to-[#7DD3C0] text-white rounded-full font-jakarta font-bold px-6 shadow-md"
+                className="bg-gradient-secondary hover:opacity-90 text-white rounded-full font-jakarta font-bold px-6 shadow-md"
               >
                 Add Health Record
               </Button>
@@ -354,14 +354,14 @@ const PetDetails = () => {
         >
           <Button
             onClick={() => navigate(`/breed-history/${pet.id}`)}
-            className="w-full h-14 bg-white border-2 border-gray-200 hover:border-[#7DD3C0] hover:bg-[#7DD3C0]/5 text-gray-900 rounded-2xl font-jakarta font-bold shadow-sm"
+            className="w-full h-14 bg-white border-2 border-gray-200 hover:border-secondary hover:bg-secondary/5 text-gray-900 rounded-2xl font-jakarta font-bold shadow-sm"
           >
             <History className="w-5 h-5 mr-2" />
             View Full Breed History
           </Button>
           <Button
             onClick={() => toast({ title: "Coming Soon", description: "Edit profile feature is under development" })}
-            className="w-full h-14 bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-2xl font-jakarta font-bold shadow-md"
+            className="w-full h-14 bg-gradient-primary hover:opacity-90 text-gray-900 rounded-2xl font-jakarta font-bold shadow-md"
           >
             Edit Profile
           </Button>

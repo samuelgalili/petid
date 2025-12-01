@@ -414,7 +414,7 @@ const AddPet = () => {
             </div>
             <button
               onClick={dismissTutorial}
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-800"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-accent hover:bg-accent-hover text-gray-800"
             >
               Got it!
             </button>
@@ -476,14 +476,14 @@ const AddPet = () => {
                   {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved ✓'}
                 </span>
               )}
-              <span className="text-xs font-jakarta font-bold text-[#F4C542]">
+              <span className="text-xs font-jakarta font-bold text-accent-hover">
                 {Math.round((currentStep / 4) * 100)}%
               </span>
             </div>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-[#FBD66A] to-[#F4C542] transition-all duration-500 ease-out rounded-full shadow-[0_0_10px_rgba(251,214,106,0.5)]"
+              className="h-full bg-gradient-primary transition-all duration-500 ease-out rounded-full"
               style={{ width: `${(currentStep / 4) * 100}%` }}
             />
           </div>
@@ -492,12 +492,12 @@ const AddPet = () => {
         {/* Progress Steps */}
         <div className="flex justify-center items-center gap-2 mb-12">
           {[1, 2, 3, 4].map(step => <div key={step} className="flex items-center">
-              <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${step === currentStep ? "w-9 h-9 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] shadow-[0_4px_20px_rgba(251,214,106,0.4)] scale-110" : step < currentStep ? "w-7 h-7 bg-[#F4C542] shadow-md" : "w-7 h-7 bg-gray-200"}`}>
+              <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${step === currentStep ? "w-9 h-9 bg-gradient-primary shadow-lg scale-110" : step < currentStep ? "w-7 h-7 bg-accent-hover shadow-md" : "w-7 h-7 bg-gray-200"}`}>
                 {step < currentStep ? <Sparkles className="w-3.5 h-3.5 text-gray-900" /> : <span className={`font-jakarta font-bold ${step === currentStep ? 'text-gray-900 text-sm' : 'text-gray-500 text-xs'}`}>
                     {step}
                   </span>}
               </div>
-              {step < 4 && <div className={`w-6 h-0.5 mx-0.5 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-[#F4C542]' : 'bg-gray-200'}`} />}
+              {step < 4 && <div className={`w-6 h-0.5 mx-0.5 rounded-full transition-all duration-500 ${step < currentStep ? 'bg-accent-hover' : 'bg-gray-200'}`} />}
             </div>)}
         </div>
 
@@ -505,7 +505,7 @@ const AddPet = () => {
             {/* Swipe Indicators */}
             {isSwiping && currentStep > 1 && swipeDirection === 'right' && (
               <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none animate-fade-in">
-                <div className="flex items-center gap-1 text-[#FBD66A] animate-pulse">
+                <div className="flex items-center gap-1 text-accent animate-pulse">
                   <ArrowLeft className="w-8 h-8" strokeWidth={3} />
                   <ArrowLeft className="w-6 h-6 -ml-4 opacity-60" strokeWidth={3} />
                 </div>
@@ -514,7 +514,7 @@ const AddPet = () => {
             
             {isSwiping && currentStep < 4 && canProceed() && swipeDirection === 'left' && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none animate-fade-in">
-                <div className="flex items-center gap-1 text-[#FBD66A] animate-pulse">
+                <div className="flex items-center gap-1 text-accent animate-pulse">
                   <ArrowRight className="w-6 h-6 -mr-4 opacity-60" strokeWidth={3} />
                   <ArrowRight className="w-8 h-8" strokeWidth={3} />
                 </div>
@@ -573,8 +573,8 @@ const AddPet = () => {
                     <Label className="text-sm font-semibold font-jakarta text-gray-900">Pet Photo</Label>
                     <div className="flex flex-col items-center gap-4">
                       {imagePreview && <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                          <img src={imagePreview} alt="Preview" className="relative w-32 h-32 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 group-hover:scale-105 group-hover:ring-[#FBD66A]/50" />
+                          <div className="absolute inset-0 bg-gradient-primary rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                          <img src={imagePreview} alt="Preview" className="relative w-32 h-32 rounded-full object-cover ring-4 ring-accent/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300 group-hover:scale-105 group-hover:ring-accent/50" />
                           {breedDetecting && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
                               <Loader2 className="w-6 h-6 text-white animate-spin" />
@@ -582,14 +582,14 @@ const AddPet = () => {
                           )}
                         </div>}
                       <div className="flex gap-3 w-full">
-                        <Label htmlFor="image-upload" className="flex-1 flex items-center gap-2 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-4 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 transition-all duration-300 group justify-center">
-                          <Upload className="w-5 h-5 text-[#FBD66A] group-hover:scale-110 transition-transform" />
-                          <span className="font-semibold text-sm font-jakarta text-[#F4C542]">Upload</span>
+                        <Label htmlFor="image-upload" className="flex-1 flex items-center gap-2 cursor-pointer border-2 border-dashed border-accent/40 rounded-2xl p-4 hover:border-accent hover:bg-accent/5 transition-all duration-300 group justify-center">
+                          <Upload className="w-5 h-5 text-accent group-hover:scale-110 transition-transform" />
+                          <span className="font-semibold text-sm font-jakarta text-accent-hover">Upload</span>
                           <Input id="image-upload" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                         </Label>
-                        <Label htmlFor="image-camera" className="flex-1 flex items-center gap-2 cursor-pointer border-2 border-dashed border-[#FBD66A]/40 rounded-2xl p-4 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 transition-all duration-300 group justify-center">
-                          <Camera className="w-5 h-5 text-[#FBD66A] group-hover:scale-110 transition-transform" />
-                          <span className="font-semibold text-sm font-jakarta text-[#F4C542]">Camera</span>
+                        <Label htmlFor="image-camera" className="flex-1 flex items-center gap-2 cursor-pointer border-2 border-dashed border-accent/40 rounded-2xl p-4 hover:border-accent hover:bg-accent/5 transition-all duration-300 group justify-center">
+                          <Camera className="w-5 h-5 text-accent group-hover:scale-110 transition-transform" />
+                          <span className="font-semibold text-sm font-jakarta text-accent-hover">Camera</span>
                           <Input id="image-camera" type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden" />
                         </Label>
                       </div>
@@ -599,7 +599,7 @@ const AddPet = () => {
                   {/* Name */}
                   <div className="space-y-3">
                     <Label htmlFor="name" className="text-sm font-semibold font-jakarta text-gray-900">
-                      Pet Name <span className="text-[#F4C542]">*</span>
+                      Pet Name <span className="text-accent-hover">*</span>
                     </Label>
                     <Input 
                       id="name" 
@@ -612,12 +612,12 @@ const AddPet = () => {
                       required 
                       disabled={loading} 
                       className={cn(
-                        "h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
-                        showValidationError && formData.name.trim() === "" && "border-red-400 animate-pulse"
+                        "h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
+                        showValidationError && formData.name.trim() === "" && "border-error animate-pulse"
                       )}
                     />
                     {showValidationError && formData.name.trim() === "" && (
-                      <p className="text-xs text-red-600 font-jakarta animate-fade-in">
+                      <p className="text-xs text-error font-jakarta animate-fade-in">
                         Pet name is required
                       </p>
                     )}
@@ -631,7 +631,7 @@ const AddPet = () => {
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full h-12 text-sm border-2 border-gray-200 text-gray-900 hover:border-[#FBD66A] hover:bg-[#FBD66A]/5 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)] justify-start text-left font-normal",
+                            "w-full h-12 text-sm border-2 border-gray-200 text-gray-900 hover:border-accent hover:bg-accent/5 focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)] justify-start text-left font-normal",
                             !formData.birthDate && "text-gray-500"
                           )}
                         >
@@ -658,10 +658,10 @@ const AddPet = () => {
                   {/* Breed */}
                   <div className="space-y-3">
                     <Label htmlFor="breed" className="text-sm font-semibold font-jakarta text-gray-900">
-                      Breed <span className="text-[#F4C542]">*</span>
+                      Breed <span className="text-accent-hover">*</span>
                     </Label>
                     {breedDetecting && (
-                      <div className="flex items-center gap-2 text-xs text-[#F4C542] font-jakarta font-semibold animate-pulse">
+                      <div className="flex items-center gap-2 text-xs text-accent-hover font-jakarta font-semibold animate-pulse">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         AI is analyzing your photo...
                       </div>
@@ -672,14 +672,14 @@ const AddPet = () => {
                           AI detected: "{formData.breed}"
                         </p>
                         <span className={`text-xl font-semibold ${
-                          breedConfident ? 'text-green-600' : 'text-red-600'
+                          breedConfident ? 'text-success' : 'text-error'
                         }`}>
                           {breedConfident ? '✓' : '✗'}
                         </span>
                       </div>
                     )}
                     {!breedConfident && formData.breed && (
-                      <p className="text-xs text-orange-600 font-jakarta">
+                      <p className="text-xs text-warning font-jakarta">
                         Please confirm or correct the detected breed
                       </p>
                     )}
@@ -694,20 +694,20 @@ const AddPet = () => {
                         placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
                         disabled={loading || breedDetecting} 
                         className={cn(
-                          "h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
-                          breedDetecting && "border-[#FBD66A] animate-pulse pr-10",
+                          "h-12 text-sm border-2 text-gray-900 placeholder:text-gray-500 focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
+                          breedDetecting && "border-accent animate-pulse pr-10",
                           !breedDetecting && "border-gray-200",
-                          showValidationError && formData.breed.trim() === "" && "border-red-400 animate-pulse"
+                          showValidationError && formData.breed.trim() === "" && "border-error animate-pulse"
                         )}
                       />
                       {breedDetecting && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          <Loader2 className="w-5 h-5 text-[#F4C542] animate-spin" />
+                          <Loader2 className="w-5 h-5 text-accent-hover animate-spin" />
                         </div>
                       )}
                     </div>
                     {showValidationError && formData.breed.trim() === "" && (
-                      <p className="text-xs text-red-600 font-jakarta animate-fade-in">
+                      <p className="text-xs text-error font-jakarta animate-fade-in">
                         Breed is required - please upload a photo or enter manually
                       </p>
                     )}
@@ -728,7 +728,7 @@ const AddPet = () => {
                         }
                       }}
                       disabled={!canProceed() || breedDetecting}
-                      className="w-full h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="w-full h-12 text-sm bg-gradient-primary hover:opacity-90 text-gray-900 rounded-full font-jakarta font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       {breedDetecting ? (
                         <>
@@ -763,7 +763,7 @@ const AddPet = () => {
                   ...formData,
                   gender: value
                 })} disabled={loading}>
-                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -780,7 +780,7 @@ const AddPet = () => {
                   ...formData,
                   is_neutered: value
                 })} disabled={loading}>
-                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-[#FBD66A] focus:ring-2 focus:ring-[#FBD66A]/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                      <SelectTrigger className="h-12 text-sm border-2 border-gray-200 text-gray-900 focus:border-accent focus:ring-2 focus:ring-accent/20 rounded-xl transition-all bg-white/95 font-jakarta shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -807,14 +807,14 @@ const AddPet = () => {
                     </h3>
 
                     {/* Pet Photo */}
-                    {imagePreview && (
+                      {imagePreview && (
                       <div className="flex justify-center relative">
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#FBD66A] to-[#F4C542] rounded-full blur-lg opacity-30"></div>
+                          <div className="absolute inset-0 bg-gradient-primary rounded-full blur-lg opacity-30"></div>
                           <img 
                             src={imagePreview} 
                             alt="Pet preview" 
-                            className="relative w-32 h-32 rounded-full object-cover ring-4 ring-[#FBD66A]/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)]" 
+                            className="relative w-32 h-32 rounded-full object-cover ring-4 ring-accent/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)]" 
                           />
                           <button
                             type="button"
@@ -822,7 +822,7 @@ const AddPet = () => {
                               setSlideDirection('right');
                               setCurrentStep(2);
                             }}
-                            className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-all hover:scale-110 border-2 border-[#FBD66A]"
+                            className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-all hover:scale-110 border-2 border-accent"
                           >
                             <Edit2 className="w-4 h-4 text-gray-900" />
                           </button>
@@ -1001,7 +1001,7 @@ const AddPet = () => {
                       setSlideDirection('left');
                       setCurrentStep(4);
                     }}
-                    className="w-full h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02]"
+                    className="w-full h-12 text-sm bg-gradient-primary hover:opacity-90 text-gray-900 rounded-full font-jakarta font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                   >
                     <ArrowRight className="mr-2 h-4 w-4" />
                     Continue to Review
@@ -1023,7 +1023,7 @@ const AddPet = () => {
                     <Button 
                       type="submit" 
                       disabled={loading} 
-                      className="flex-1 h-12 text-sm bg-gradient-to-r from-[#FBD66A] to-[#F4C542] hover:from-[#F4C542] hover:to-[#FBD66A] text-gray-900 rounded-full font-jakarta font-bold shadow-[0_4px_20px_rgba(251,214,106,0.4)] hover:shadow-[0_8px_30px_rgba(251,214,106,0.6)] transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="flex-1 h-12 text-sm bg-gradient-primary hover:opacity-90 text-gray-900 rounded-full font-jakarta font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       {loading ? (
                         <>

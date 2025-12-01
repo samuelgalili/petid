@@ -67,7 +67,7 @@ export const PetEditSheet = ({
                 value={editFormData.name}
                 onChange={(e) => onFormDataChange({ ...editFormData, name: e.target.value })}
                 placeholder="Enter pet name"
-                className="font-jakarta h-12 rounded-xl border-2 focus:border-[#7DD3C0] focus:ring-[#7DD3C0]"
+                className="font-jakarta h-12 rounded-xl border-2 focus:border-secondary focus:ring-secondary"
               />
             </div>
 
@@ -81,7 +81,7 @@ export const PetEditSheet = ({
                 value={editFormData.breed}
                 onChange={(e) => onFormDataChange({ ...editFormData, breed: e.target.value })}
                 placeholder="Enter breed"
-                className="font-jakarta h-12 rounded-xl border-2 focus:border-[#7DD3C0] focus:ring-[#7DD3C0]"
+                className="font-jakarta h-12 rounded-xl border-2 focus:border-secondary focus:ring-secondary"
               />
             </div>
 
@@ -97,7 +97,7 @@ export const PetEditSheet = ({
                 </Button>
                 <Button
                   onClick={onSave}
-                  className="flex-1 h-12 rounded-xl font-jakarta font-bold bg-[#7DD3C0] hover:bg-[#6BC4AD] text-gray-900 shadow-md"
+                  className="flex-1 h-12 rounded-xl font-jakarta font-bold bg-secondary hover:bg-secondary-dark text-gray-900 shadow-md"
                 >
                   Save Changes
                 </Button>
@@ -107,7 +107,7 @@ export const PetEditSheet = ({
               <Button
                 variant="destructive"
                 onClick={() => onDeleteConfirmChange(true)}
-                className="w-full h-12 rounded-xl font-jakarta font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-md"
+                className="w-full h-12 rounded-xl font-jakarta font-bold bg-warning hover:bg-warning/90 text-white shadow-md"
               >
                 Archive Pet
               </Button>
@@ -133,7 +133,7 @@ export const PetEditSheet = ({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={onDelete}
-              className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white"
+              className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto bg-warning hover:bg-warning/90 text-white"
             >
               Archive Pet
             </AlertDialogAction>
