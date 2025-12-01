@@ -3,15 +3,15 @@ import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { 
   ChevronRight,
-  CreditCard,
-  Lock,
-  ShoppingBag,
   ShoppingCart,
-  Gift,
-  Receipt,
   Plus,
   Check,
-  Car
+  User,
+  Settings,
+  HelpCircle,
+  Package,
+  Star,
+  PawPrint
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,143 +139,174 @@ const Profile = () => {
         {/* Content Container */}
         <div className="px-4 py-6 space-y-5">
           
-          {/* User Header Section */}
-          <div className="mb-6">
-            <h2 className="text-3xl font-extrabold text-gray-900 font-jakarta mb-2">
-              {profile?.full_name || "שמואל גלילי יוסף"}
-            </h2>
+          {/* User Header Section - Enhanced */}
+          <div className="bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] rounded-3xl p-6 mb-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex-1">
+                <h2 className="text-3xl font-black text-gray-900 font-jakarta mb-2">
+                  {profile?.full_name || "משתמש"}
+                </h2>
+                <p className="text-gray-700 font-jakarta text-sm">
+                  {profile?.email || "user@example.com"}
+                </p>
+              </div>
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
+                <User className="w-8 h-8 text-gray-900" />
+              </div>
+            </div>
             <button 
               onClick={() => navigate('/settings')}
-              className="text-base text-blue-600 font-jakarta hover:underline font-semibold inline-flex items-center gap-1"
+              className="w-full bg-white text-gray-900 rounded-2xl py-3 font-bold font-jakarta hover:bg-gray-50 transition-all shadow-md hover:shadow-xl active:scale-[0.98]"
             >
-              עריכת פרטים
-              <span className="text-lg">&lt;</span>
+              עריכת פרופיל
             </button>
           </div>
 
-          {/* Pets Section */}
+          {/* Pets Section - Enhanced */}
           <div>
-            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">הרכבים שלי</h3>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-700 font-jakarta text-base">ניתן לחסוך עד שלושה רכבים</span>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-gray-900 font-black font-jakarta text-xl">חיות המחמד שלי</h3>
               <button 
                 onClick={() => navigate('/add-pet')}
-                className="text-blue-600 font-jakarta font-semibold hover:underline text-base"
+                className="bg-blue-600 text-white px-4 py-2 rounded-full font-bold font-jakarta text-sm hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2"
               >
-                הוספת רכב
+                <Plus className="w-4 h-4" />
+                הוסף חיית מחמד
               </button>
             </div>
             {pets.length > 0 ? (
-              pets.map((pet) => (
-                <div 
-                  key={pet.id}
-                  onClick={() => navigate(`/pet/${pet.id}`)}
-                  className="bg-white rounded-3xl p-5 mb-3 flex items-center gap-4 cursor-pointer hover:shadow-md transition-shadow shadow-sm"
-                >
-                  <Car className="w-12 h-12 text-red-600" strokeWidth={1.5} />
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-900 font-jakarta text-lg mb-0.5">רכב שלי 1</p>
-                    <p className="text-gray-600 font-jakarta text-base mb-0.5">56-733-63</p>
-                    <p className="text-gray-500 font-jakarta text-sm">דלק 95</p>
+              <div className="space-y-3">
+                {pets.map((pet) => (
+                  <div 
+                    key={pet.id}
+                    onClick={() => navigate(`/pet/${pet.id}`)}
+                    className="bg-white rounded-3xl p-5 flex items-center gap-4 cursor-pointer hover:shadow-xl transition-all shadow-md group hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex-shrink-0 ring-2 ring-gray-200">
+                      {pet.avatar_url ? (
+                        <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {pet.type === 'dog' ? (
+                            <img src={dogIcon} alt="dog" className="w-10 h-10" />
+                          ) : (
+                            <img src={catIcon} alt="cat" className="w-10 h-10" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-black text-gray-900 font-jakarta text-lg mb-1">{pet.name}</p>
+                      <p className="text-gray-600 font-jakarta text-base">{pet.breed || 'גזע לא ידוע'}</p>
+                    </div>
+                    <ChevronRight className="w-6 h-6 text-gray-400 group-hover:translate-x-1 transition-transform" />
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
-              <div className="bg-white rounded-3xl p-5 shadow-sm">
-                <p className="text-gray-500 text-base font-jakarta text-center py-4">אין רכבים</p>
+              <div className="bg-white rounded-3xl p-8 shadow-md text-center">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <PawPrint className="w-10 h-10 text-gray-400" />
+                </div>
+                <p className="text-gray-500 text-base font-jakarta mb-4">אין חיות מחמד רשומות</p>
+                <button
+                  onClick={() => navigate('/add-pet')}
+                  className="bg-[#FFD700] text-gray-900 px-6 py-3 rounded-full font-bold font-jakarta hover:bg-[#FFC107] transition-colors"
+                >
+                  הוסף חיית מחמד ראשונה
+                </button>
               </div>
             )}
           </div>
 
-          {/* Payments & Security Section */}
-          <div>
-            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">תשלום ואבטחה</h3>
-            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-              <button className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200">
-                <span className="font-jakarta text-gray-900 text-base">ניהול אמצעי תשלום</span>
-                <CreditCard className="w-6 h-6 text-[#FFD700]" strokeWidth={1.5} />
-              </button>
-              <button className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                <span className="font-jakarta text-gray-900 text-base">הוספת אמצעי הגנה</span>
-                <div className="flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-blue-600" strokeWidth={2} />
-                  <Lock className="w-6 h-6 text-gray-500" strokeWidth={1.5} />
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Orders Section */}
-          <div>
-            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">הספר שלי</h3>
-            <div 
-              onClick={() => navigate('/order-history')}
-              className="bg-white rounded-3xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+          {/* Quick Actions Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={() => navigate('/cart')}
+              className="bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-gray-900 font-jakarta text-lg mb-1">טיפ טוב</p>
-                  <p className="text-gray-600 font-jakarta text-base">
-                    {lastOrder ? new Date(lastOrder.order_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }) + ', רעננה' : 'שברט 22, רעננה'}
-                  </p>
-                </div>
-                <ShoppingCart className="w-8 h-8 text-red-600" strokeWidth={1.5} />
+              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <ShoppingCart className="w-6 h-6 text-white" />
               </div>
-            </div>
+              <p className="text-gray-900 font-bold font-jakarta text-center text-sm">עגלת קניות</p>
+            </button>
+
+            <button 
+              onClick={() => navigate('/order-history')}
+              className="bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+              <p className="text-gray-900 font-bold font-jakarta text-center text-sm">ההזמנות שלי</p>
+            </button>
+
+            <button 
+              onClick={() => navigate('/rewards')}
+              className="bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Star className="w-6 h-6 text-white" />
+              </div>
+              <p className="text-gray-900 font-bold font-jakarta text-center text-sm">תגמולים</p>
+            </button>
+
+            <button 
+              onClick={() => navigate('/tasks')}
+              className="bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Check className="w-6 h-6 text-white" />
+              </div>
+              <p className="text-gray-900 font-bold font-jakarta text-center text-sm">משימות</p>
+            </button>
           </div>
 
-          {/* Membership Section */}
+          {/* Account Settings */}
           <div>
-            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">מנוי הקפה שלי</h3>
-            <div className="bg-white rounded-3xl p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-jakarta text-gray-900 text-base">
-                  אפשר להזמין אותך לקפה?
-                </span>
-                <div className="flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-blue-600" strokeWidth={2} />
-                  <Gift className="w-7 h-7 text-gray-500" strokeWidth={1.5} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-
-          {/* Purchase History Section */}
-          <div>
-            <h3 className="text-gray-900 font-bold font-jakarta text-xl mb-3">היסטוריית רכישות</h3>
-            <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+            <h3 className="text-gray-900 font-black font-jakarta text-xl mb-4">הגדרות חשבון</h3>
+            <div className="space-y-3">
               <button 
-                onClick={() => navigate('/order-history')}
-                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-200"
+                onClick={() => navigate('/settings')}
+                className="w-full bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
               >
-                <span className="font-jakarta text-gray-900 text-base">חשבונית דיגיטלית</span>
-                <Receipt className="w-6 h-6 text-green-600" strokeWidth={1.5} />
-              </button>
-              <label className="flex items-center gap-3 p-5 cursor-pointer hover:bg-gray-50 transition-colors">
-                <div className="w-6 h-6 rounded border-2 border-blue-600 flex items-center justify-center bg-blue-600">
-                  <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-gray-900 font-bold font-jakarta">הגדרות</span>
                 </div>
-                <span className="text-base text-gray-700 font-jakarta">
-                  אני רוצה לקבל חשבוניות לאזור האישי
-                </span>
-              </label>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button 
+                onClick={() => navigate('/support')}
+                className="w-full bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
+                    <HelpCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-gray-900 font-bold font-jakarta">תמיכה ועזרה</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
           </div>
 
           {/* Logout Button */}
-          <div className="pt-6 pb-2">
+          <div className="pt-4 pb-2">
             <button
               onClick={handleLogout}
-              className="text-blue-600 font-jakarta font-bold text-center w-full py-3 hover:underline text-lg"
+              className="w-full bg-white text-red-600 font-jakarta font-bold text-center py-5 rounded-3xl shadow-md hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              התנתקות
+              התנתק מהחשבון
             </button>
           </div>
 
           {/* Version */}
-          <div className="text-center pb-6">
-            <p className="text-sm text-gray-500 font-jakarta">גרסה: 8.3.57</p>
+          <div className="text-center pb-6 pt-4">
+            <p className="text-sm text-gray-400 font-jakarta">Petid v1.0.0 • כל הזכויות שמורות</p>
           </div>
         </div>
 
