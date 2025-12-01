@@ -255,6 +255,123 @@ export type Database = {
         }
         Relationships: []
       }
+      grooming_appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          pet_id: string | null
+          price: number | null
+          salon_id: string
+          service_type: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          price?: number | null
+          salon_id: string
+          service_type: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          price?: number | null
+          salon_id?: string
+          service_type?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grooming_appointments_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grooming_appointments_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "grooming_salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grooming_salons: {
+        Row: {
+          address: string
+          city: string
+          created_at: string | null
+          description: string | null
+          email: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          price_range: string | null
+          rating: number | null
+          services: string[] | null
+          total_reviews: number | null
+          updated_at: string | null
+          working_hours: Json | null
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          services?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          working_hours?: Json | null
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          services?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          working_hours?: Json | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
