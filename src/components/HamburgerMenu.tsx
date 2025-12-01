@@ -137,7 +137,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-gray-900 dark:text-white">{user.user_metadata?.full_name || 'User'}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{user.user_metadata?.full_name || 'User'}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">View Profile</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -145,7 +145,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                 ) : (
                   <Button
                     onClick={() => handleNavigation('/auth')}
-                    className="w-full bg-[#7DD3C0] hover:bg-[#6BC4AD] text-white rounded-full font-bold"
+                    className="w-full bg-[#7DD3C0] hover:bg-[#6BC4AD] text-white rounded-full font-semibold"
                   >
                     Login / Sign Up
                   </Button>

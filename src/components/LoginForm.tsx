@@ -390,7 +390,7 @@ export const LoginForm = () => {
           </motion.p>
         </div>}
 
-      {!showOTPInput && <Button type="submit" className="w-full h-12 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-jakarta font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100" disabled={loading} aria-busy={loading}>
+      {!showOTPInput && <Button type="submit" className="w-full h-12 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100" disabled={loading} aria-busy={loading}>
           {loading ? <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
               <span>Sending code...</span>
@@ -399,7 +399,7 @@ export const LoginForm = () => {
 
       {showOTPInput && loading && <div className="flex items-center justify-center py-3">
           <Loader2 className="h-6 w-6 animate-spin text-[#FBD66A]" aria-hidden="true" />
-          <span className="ml-2 text-sm font-jakarta text-gray-700">Verifying...</span>
+          <span className="ml-2 text-sm text-gray-700">Verifying...</span>
         </div>}
 
       {showOTPInput && <div className="flex flex-col gap-2">
@@ -407,7 +407,7 @@ export const LoginForm = () => {
         if (resendCountdown === 0) {
           await sendOTP();
         }
-      }} disabled={loading || resendCountdown > 0} className="w-full h-10 bg-gray-50/95 hover:bg-gray-100 text-gray-700 font-jakarta font-medium border-2 border-gray-200 rounded-xl transition-all disabled:opacity-50">
+      }} disabled={loading || resendCountdown > 0} className="w-full h-10 bg-gray-50/95 hover:bg-gray-100 text-gray-700 font-medium border-2 border-gray-200 rounded-xl transition-all disabled:opacity-50">
             {resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : "Resend verification code"}
           </Button>
           
@@ -416,7 +416,7 @@ export const LoginForm = () => {
         setOtp(["", "", "", "", "", ""]);
         setGeneralError("");
         setResendCountdown(0);
-      }} className="w-full text-sm text-gray-700 hover:text-gray-900 font-jakarta transition-colors" disabled={loading}>
+      }} className="w-full text-sm text-gray-700 hover:text-gray-900 transition-colors" disabled={loading}>
             Change {loginMethod === "email" ? "email" : "phone number"}
           </button>
         </div>}
