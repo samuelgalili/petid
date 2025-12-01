@@ -1275,6 +1275,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      send_post_notification: {
+        Args: {
+          p_body: string
+          p_icon?: string
+          p_post_id: string
+          p_title: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
