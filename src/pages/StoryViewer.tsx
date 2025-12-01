@@ -186,18 +186,18 @@ const StoryViewer = () => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black z-50"
+      className="fixed inset-0 bg-gradient-to-b from-black via-gray-900 to-black z-50"
       onMouseDown={() => setIsPaused(true)}
       onMouseUp={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
       {/* Progress bars */}
-      <div className="absolute top-0 left-0 right-0 flex gap-1 p-2 z-10">
+      <div className="absolute top-0 left-0 right-0 flex gap-1.5 p-3 z-10">
         {stories.map((_, index) => (
-          <div key={index} className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden">
+          <div key={index} className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
             <motion.div
-              className="h-full bg-white"
+              className="h-full bg-gradient-to-r from-[#FFD700] to-[#FFC107] shadow-lg"
               initial={{ width: "0%" }}
               animate={{
                 width: index < currentIndex ? "100%" : index === currentIndex ? `${progress}%` : "0%",
@@ -209,59 +209,61 @@ const StoryViewer = () => {
       </div>
 
       {/* Header */}
-      <div className="absolute top-4 left-0 right-0 flex items-center justify-between px-4 z-10">
+      <div className="absolute top-6 left-0 right-0 flex items-center justify-between px-5 z-10 backdrop-blur-md bg-black/30 py-3 mx-2 rounded-2xl shadow-xl">
         <div 
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate(`/user/${currentStory.user.id}`)}
         >
-          <Avatar className="w-10 h-10 ring-2 ring-white">
-            <AvatarImage src={currentStory.user.avatar_url} />
-            <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
-              {currentStory.user.full_name?.charAt(0) || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <div className="p-[2px] rounded-full bg-gradient-to-tr from-[#FFD700] to-[#FFC107]">
+            <Avatar className="w-12 h-12 ring-2 ring-black">
+              <AvatarImage src={currentStory.user.avatar_url} />
+              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black">
+                {currentStory.user.full_name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           <div>
-            <p className="font-semibold text-white font-jakarta">{currentStory.user.full_name}</p>
-            <p className="text-xs text-white/80 font-jakarta">{getTimeAgo(currentStory.created_at)}</p>
+            <p className="font-black text-white font-jakarta drop-shadow-lg">{currentStory.user.full_name}</p>
+            <p className="text-xs text-white/90 font-jakarta font-semibold drop-shadow-md">{getTimeAgo(currentStory.created_at)}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {user && currentStory.user_id !== user.id && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 rounded-full shadow-lg"
+              onClick={() => setShowReplyDialog(true)}
+            >
+              <MessageCircle className="w-5 h-5" />
+            </Button>
+          )}
+          
           {user && currentStory.user_id === user.id && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full">
                   <MoreVertical className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="font-jakarta">
-                <DropdownMenuItem onClick={handleDelete} className="text-red-600">
+              <DropdownMenuContent className="font-jakarta bg-white/95 backdrop-blur-lg">
+                <DropdownMenuItem onClick={handleDelete} className="text-red-600 font-bold cursor-pointer">
                   <Trash2 className="w-4 h-4 ml-2" />
                   מחק סטורי
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 rounded-full"
             onClick={() => navigate("/feed")}
           >
             <X className="w-6 h-6" />
           </Button>
-
-          {/* Reply Button - only show for other users' stories */}
-          {currentStory && currentStory.user_id !== user?.id && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 left-16 bg-black/50 hover:bg-black/70 text-white rounded-full"
-              onClick={() => setShowReplyDialog(true)}
-            >
-              <MessageCircle className="w-6 h-6" />
-            </Button>
-          )}
         </div>
       </div>
 
@@ -294,19 +296,29 @@ const StoryViewer = () => {
       </AnimatePresence>
 
       {/* Navigation */}
-      <button
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-colors"
-        onClick={handlePrevious}
-        disabled={currentIndex === 0}
-      >
-        <ChevronRight className="w-8 h-8" />
-      </button>
-      <button
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white hover:bg-white/20 rounded-full transition-colors"
+      {currentIndex > 0 && (
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-[#FFD700] to-[#FFC107] text-gray-900 rounded-full shadow-2xl transition-all"
+          onClick={handlePrevious}
+        >
+          <ChevronRight className="w-8 h-8" />
+        </motion.button>
+      )}
+      
+      <motion.button
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-[#FFD700] to-[#FFC107] text-gray-900 rounded-full shadow-2xl transition-all"
         onClick={handleNext}
       >
         <ChevronLeft className="w-8 h-8" />
-      </button>
+      </motion.button>
 
       {/* Tap zones for mobile */}
       <div className="absolute inset-0 flex pointer-events-none">
