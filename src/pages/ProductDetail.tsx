@@ -163,7 +163,7 @@ const ProductDetail = () => {
       </header>
 
       {/* Product Images Gallery */}
-      <div className="bg-gradient-to-br from-[#B8E3D5] to-[#A5D8C8] relative">
+      <div className="bg-gradient-primary relative">
         <div className="aspect-square max-w-2xl mx-auto relative overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.img
@@ -202,8 +202,8 @@ const ProductDetail = () => {
               onClick={() => setSelectedImage(idx)}
               className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
                 selectedImage === idx
-                  ? "border-gray-900 scale-110 shadow-md"
-                  : "border-white/50 opacity-60 hover:opacity-80"
+                  ? "border-foreground scale-110 shadow-md"
+                  : "border-background/50 opacity-60 hover:opacity-80"
               }`}
             >
               <img src={img} alt="" className="w-full h-full object-cover" />
@@ -213,11 +213,11 @@ const ProductDetail = () => {
         
         {/* Trust Badges */}
         <div className="flex justify-center gap-3 pb-4 px-4">
-          <Badge className="bg-white/90 text-gray-800 border-none shadow-sm font-jakarta text-xs">
+          <Badge className="bg-background/90 text-foreground border-none shadow-sm font-jakarta text-xs">
             <Check className="w-3 h-3 mr-1" />
             Pet Owner Recommended
           </Badge>
-          <Badge className="bg-white/90 text-gray-800 border-none shadow-sm font-jakarta text-xs">
+          <Badge className="bg-background/90 text-foreground border-none shadow-sm font-jakarta text-xs">
             <Shield className="w-3 h-3 mr-1" />
             100% Secure
           </Badge>
@@ -286,8 +286,8 @@ const ProductDetail = () => {
                   onClick={() => setSelectedVariant(variant)}
                   className={`px-4 py-2 rounded-lg text-sm font-jakarta transition-all ${
                     selectedVariant === variant
-                      ? "bg-secondary text-gray-900 font-semibold shadow-md"
-                      : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300"
+                      ? "bg-secondary text-foreground font-semibold shadow-md"
+                      : "bg-background border border-border text-foreground hover:border-border-light"
                   }`}
                 >
                   {variant}
@@ -305,8 +305,8 @@ const ProductDetail = () => {
                   onClick={() => setSelectedSize(size)}
                   className={`px-4 py-2 rounded-lg text-sm font-jakarta transition-all ${
                     selectedSize === size
-                      ? "bg-secondary text-gray-900 font-semibold shadow-md"
-                      : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300"
+                      ? "bg-secondary text-foreground font-semibold shadow-md"
+                      : "bg-background border border-border text-foreground hover:border-border-light"
                   }`}
                 >
                   {size}
@@ -329,7 +329,7 @@ const ProductDetail = () => {
             {benefits.map((benefit, idx) => {
               const Icon = benefit.icon;
               return (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                <div key={idx} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
                   <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-5 h-5 text-accent" />
                   </div>
@@ -353,8 +353,8 @@ const ProductDetail = () => {
         >
           <h3 className="text-lg font-bold mb-3 text-gray-900 font-jakarta">Product Details</h3>
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="description" className="border-gray-200">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-gray-900 hover:no-underline">
+            <AccordionItem value="description" className="border-border">
+              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
                 Full Description
               </AccordionTrigger>
               <AccordionContent className="text-sm text-gray-600 font-jakarta leading-relaxed">
@@ -362,8 +362,8 @@ const ProductDetail = () => {
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="ingredients" className="border-gray-200">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-gray-900 hover:no-underline">
+            <AccordionItem value="ingredients" className="border-border">
+              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
                 Ingredients & Nutrition
               </AccordionTrigger>
               <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2">
@@ -373,8 +373,8 @@ const ProductDetail = () => {
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="usage" className="border-gray-200">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-gray-900 hover:no-underline">
+            <AccordionItem value="usage" className="border-border">
+              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
                 Usage Instructions
               </AccordionTrigger>
               <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2">
@@ -388,8 +388,8 @@ const ProductDetail = () => {
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="suitability" className="border-gray-200">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-gray-900 hover:no-underline">
+            <AccordionItem value="suitability" className="border-border">
+              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
                 Pet Suitability
               </AccordionTrigger>
               <AccordionContent className="text-sm text-gray-600 font-jakarta">
@@ -398,8 +398,8 @@ const ProductDetail = () => {
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="shipping" className="border-gray-200">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-gray-900 hover:no-underline">
+            <AccordionItem value="shipping" className="border-border">
+              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
                 Shipping & Returns
               </AccordionTrigger>
               <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2">
