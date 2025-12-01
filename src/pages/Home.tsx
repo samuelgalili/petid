@@ -658,8 +658,8 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Link Button - Bottom Right Corner */}
-          <div className="mt-3 text-right">
+          {/* Link Button - Bottom Left Corner */}
+          <div className="mt-3 text-left">
             <button 
               onClick={() => navigate('/rewards')} 
               className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
