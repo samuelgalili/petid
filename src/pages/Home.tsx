@@ -130,13 +130,78 @@ const Home = () => {
     addToCart
   } = useCart();
 
+  // Israeli holidays with approximate dates (Hebrew calendar varies)
+  const getHolidayGreeting = () => {
+    const now = new Date();
+    const month = now.getMonth() + 1; // 1-12
+    const day = now.getDate();
+    
+    // Check for Israeli holidays (approximate Gregorian dates for 2025)
+    const holidays: { [key: string]: string } = {
+      // Format: "M-D": "Holiday Name"
+      "4-13": "פסח",
+      "4-14": "פסח",
+      "4-15": "פסח",
+      "4-16": "פסח",
+      "4-17": "פסח",
+      "4-18": "פסח",
+      "4-19": "פסח",
+      "4-20": "פסח",
+      "5-23": "שבועות",
+      "10-3": "ראש השנה",
+      "10-4": "ראש השנה",
+      "10-12": "יום כיפור",
+      "10-17": "סוכות",
+      "10-24": "שמחת תורה",
+      "12-15": "חנוכה",
+      "12-16": "חנוכה",
+      "12-17": "חנוכה",
+      "12-18": "חנוכה",
+      "12-19": "חנוכה",
+      "12-20": "חנוכה",
+      "12-21": "חנוכה",
+      "12-22": "חנוכה",
+      "3-14": "פורים",
+    };
+    
+    // Check for special pet days
+    const petDays: { [key: string]: string } = {
+      "8-26": "יום הכלב הבינלאומי",
+      "8-8": "יום החתול הבינלאומי",
+    };
+    
+    const dateKey = `${month}-${day}`;
+    
+    if (holidays[dateKey]) {
+      return `חג ${holidays[dateKey]} שמח`;
+    }
+    
+    if (petDays[dateKey]) {
+      return petDays[dateKey] === "יום הכלב הבינלאומי" ? "יום כלבים שמח" : "יום חתולים שמח";
+    }
+    
+    return null;
+  };
+
   // Get greeting based on time of day
   const getGreeting = () => {
+    // Check for holidays first
+    const holidayGreeting = getHolidayGreeting();
+    if (holidayGreeting) return holidayGreeting;
+    
     const hour = new Date().getHours();
-    if (hour < 12) return "בוקר טוב";
-    if (hour < 17) return "צהריים טובים";
-    if (hour < 21) return "ערב טוב";
-    return "לילה טוב";
+    
+    // 21:00-5:59 - לילה טוב
+    if (hour >= 21 || hour < 6) return "לילה טוב";
+    
+    // 6:00-11:59 - בוקר טוב
+    if (hour >= 6 && hour < 12) return "בוקר טוב";
+    
+    // 12:00-16:59 - צהריים טובים
+    if (hour >= 12 && hour < 17) return "צהריים טובים";
+    
+    // 17:00-21:00 - ערב טוב
+    return "ערב טוב";
   };
 
   // Confetti effects - memoized
