@@ -922,7 +922,7 @@ const Home = () => {
             </div>)}
         </motion.div>
 
-        {/* Premium Wallet Card - Yellow Card Design (Based on Reference) */}
+        {/* Compact Wallet Card - Yellow with Original Icons */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
@@ -937,179 +937,163 @@ const Home = () => {
               tabIndex={0} 
               aria-label="View loyalty balance"
             >
-              {/* Shadow effect - positioned behind card */}
-              <div className="relative">
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[95%] h-8 bg-black/20 rounded-[28px] blur-lg" />
-                
-                {/* Main Card */}
-                <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-[28px] overflow-visible shadow-2xl">
-                  {/* Top curved notch - like physical card hole */}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-24 h-16 bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-t-full" />
-                  
-                  {/* Circle button at top center */}
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                    <motion.button
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="w-16 h-16 rounded-full bg-gradient-to-br from-[#FFE766] to-[#FFD700] shadow-xl border-4 border-[#FFC700] flex items-center justify-center"
-                    >
-                      <motion.div
-                        animate={{ 
-                          rotate: [0, 5, -5, 0],
-                          scale: [1, 1.1, 1]
-                        }}
-                        transition={{ 
-                          duration: 2, 
-                          repeat: Infinity,
-                          ease: "easeInOut"
-                        }}
-                        className="text-3xl"
-                      >
-                        😊
-                      </motion.div>
-                    </motion.button>
-                  </div>
+              <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-[24px] shadow-2xl overflow-hidden">
+                {/* Animated Background Pattern */}
+                <motion.div 
+                  className="absolute inset-0 opacity-10"
+                  animate={{ 
+                    backgroundPosition: ['0% 0%', '100% 100%'],
+                  }}
+                  transition={{ 
+                    duration: 20, 
+                    repeat: Infinity, 
+                    repeatType: "reverse" 
+                  }}
+                  style={{
+                    backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 80%, white 1px, transparent 1px)',
+                    backgroundSize: '40px 40px'
+                  }}
+                />
 
-                  {/* Card Content */}
-                  <div className="pt-12 pb-8 px-6">
-                    {/* White field with code */}
+                {/* Top decorative shapes */}
+                <motion.div 
+                  className="absolute top-3 right-6 w-2.5 h-2.5 bg-pink-500 rotate-45"
+                  animate={{ rotate: [45, 135, 45], opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <motion.div 
+                  className="absolute top-5 right-12 w-2 h-2 bg-blue-500 rounded-full"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+                />
+
+                <div className="p-5">
+                  {/* Compact White Code Field */}
+                  <motion.div 
+                    className="relative z-10 bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 mb-4 shadow-lg"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <div className="text-center text-xs font-semibold text-gray-700 font-jakarta mb-2">
+                      קוד אישי לתשלום
+                    </div>
+                    {/* Compact Barcode */}
+                    <div className="flex justify-center items-center gap-[1px] py-2 mb-1">
+                      {[...Array(20)].map((_, i) => (
+                        <div 
+                          key={i}
+                          className="bg-gray-900"
+                          style={{
+                            height: Math.random() > 0.5 ? '24px' : '28px',
+                            width: i % 5 === 0 ? '2px' : '1.5px'
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-center font-mono font-bold text-gray-900 text-[10px] tracking-wider">
+                      PETID-{Math.random().toString(36).substring(2, 8).toUpperCase()}
+                    </div>
+                  </motion.div>
+
+                  {/* Animated Pet Illustrations - Bottom Left */}
+                  <motion.div 
+                    className="absolute left-3 bottom-3 w-20 h-20 z-10"
+                    animate={{ 
+                      y: [0, -6, 0],
+                      rotate: [0, -3, 0]
+                    }}
+                    transition={{ 
+                      duration: 3, 
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <img src={dogIconGif} alt="Dog" className="w-full h-full object-contain drop-shadow-2xl" />
+                  </motion.div>
+
+                  <motion.div 
+                    className="absolute left-16 bottom-4 w-16 h-16 z-10"
+                    animate={{ 
+                      y: [0, -5, 0],
+                      rotate: [0, 4, 0]
+                    }}
+                    transition={{ 
+                      duration: 2.5, 
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 0.5
+                    }}
+                  >
+                    <img src={catIconGif} alt="Cat" className="w-full h-full object-contain drop-shadow-2xl" />
+                  </motion.div>
+
+                  {/* Compact Balance Display - Right Side */}
+                  <div className="relative z-10 text-right">
                     <motion.div 
-                      className="bg-white rounded-2xl p-6 shadow-lg mb-6"
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
+                      className="inline-flex flex-col items-end"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 }}
                     >
-                      {/* Rainbow logo arc on left */}
-                      <div className="absolute top-4 left-4">
-                        <svg width="40" height="40" viewBox="0 0 40 40" className="opacity-30">
-                          <path d="M5 35 Q5 15, 25 15 Q35 15, 35 25" fill="none" stroke="#FFD700" strokeWidth="3" strokeLinecap="round"/>
-                          <path d="M8 35 Q8 18, 25 18 Q32 18, 32 25" fill="none" stroke="#FFA500" strokeWidth="3" strokeLinecap="round"/>
-                        </svg>
-                      </div>
-
-                      <div className="text-center mb-4">
-                        <div className="text-sm font-bold text-gray-700 font-jakarta mb-3">
-                          קוד חבר לזכאות לקופונים
-                        </div>
-                        
-                        {/* Barcode Display */}
-                        <div className="flex justify-center items-center gap-[2px] py-4">
-                          {[...Array(30)].map((_, i) => (
-                            <div 
-                              key={i}
-                              className="bg-gray-900"
-                              style={{
-                                height: Math.random() > 0.5 ? '40px' : '48px',
-                                width: i % 5 === 0 ? '3px' : '2px'
-                              }}
-                            />
-                          ))}
-                        </div>
-                        
-                        {/* Code number below barcode */}
-                        <div className="text-center font-mono font-bold text-gray-900 text-xs tracking-widest mt-2">
-                          PETID-{Math.random().toString(36).substring(2, 8).toUpperCase()}
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    {/* Balance Display */}
-                    <div className="text-center mb-4">
-                      <motion.div 
-                        className="text-white text-5xl font-black leading-none tracking-tight mb-2"
+                      <motion.span 
+                        className="text-white text-4xl font-black leading-none tracking-tight mb-1"
                         key={walletBalance}
                         initial={{ scale: 1.2, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: "spring", stiffness: 200 }}
                       >
                         ₪{walletBalance.toFixed(2)}
-                      </motion.div>
-                      <div className="text-white text-sm font-bold font-jakarta">
-                        חיסכון מרכישות • 5%
+                      </motion.span>
+                      <div className="text-white text-xs font-bold font-jakarta">
+                        חיסכון • 5%
                       </div>
-                    </div>
+                    </motion.div>
+                  </div>
 
-                    {/* Achievements Section */}
-                    <div className="space-y-3">
-                      {/* Current Achievement Badge */}
-                      {achievementData.current && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.5 }}
-                          className={`inline-flex items-center gap-2 bg-gradient-to-r ${achievementData.current.color} px-4 py-2 rounded-full shadow-lg border-2 border-white/50`}
-                        >
-                          <span className="text-2xl">{achievementData.current.icon}</span>
-                          <div className="text-white">
-                            <div className="text-xs font-bold font-jakarta">{achievementData.current.name}</div>
-                            <div className="text-[10px] opacity-90">{achievementData.totalAchieved} / {walletAchievements.length} הישגים</div>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* Progress to Next Achievement */}
-                      {achievementData.next && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.6 }}
-                          className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-md"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">{achievementData.next.icon}</span>
-                              <div className="text-right">
-                                <div className="text-xs font-bold text-gray-900 font-jakarta">{achievementData.next.name}</div>
-                                <div className="text-[10px] text-gray-600">עוד ₪{(achievementData.next.threshold - walletBalance).toFixed(2)}</div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <motion.div 
-                              className={`h-full bg-gradient-to-r ${achievementData.next.color} rounded-full`}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${achievementData.progress}%` }}
-                              transition={{ duration: 1, ease: "easeOut", delay: 0.7 }}
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {/* All Achievements Mini Display */}
+                  {/* Compact Achievements Row */}
+                  <div className="relative z-10 mt-3 flex items-center gap-2">
+                    {/* Current Achievement */}
+                    {achievementData.current && (
                       <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7 }}
-                        className="flex gap-1.5 flex-wrap justify-center"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className={`inline-flex items-center gap-1.5 bg-gradient-to-r ${achievementData.current.color} px-3 py-1.5 rounded-full shadow-lg border border-white/40`}
                       >
-                        {walletAchievements.map((achievement) => {
-                          const isAchieved = walletBalance >= achievement.threshold;
-                          return (
-                            <Tooltip key={achievement.id}>
-                              <TooltipTrigger asChild>
-                                <motion.div
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 ${
-                                    isAchieved 
-                                      ? `bg-gradient-to-br ${achievement.color} border-white shadow-md` 
-                                      : 'bg-white/30 border-white/50 grayscale opacity-40'
-                                  }`}
-                                  whileHover={{ scale: 1.2 }}
-                                  whileTap={{ scale: 0.9 }}
-                                >
-                                  {achievement.icon}
-                                </motion.div>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-gray-900 text-white border-gray-700">
-                                <p className="font-bold text-xs">{achievement.name}</p>
-                                <p className="text-[10px] opacity-80">{achievement.description}</p>
-                                {!isAchieved && (
-                                  <p className="text-[10px] text-yellow-400 mt-1">עוד ₪{(achievement.threshold - walletBalance).toFixed(2)}</p>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })}
+                        <span className="text-lg">{achievementData.current.icon}</span>
+                        <div className="text-white">
+                          <div className="text-[10px] font-bold font-jakarta leading-tight">{achievementData.current.name}</div>
+                        </div>
                       </motion.div>
+                    )}
+
+                    {/* Mini Achievements Icons */}
+                    <div className="flex gap-1">
+                      {walletAchievements.slice(0, 4).map((achievement) => {
+                        const isAchieved = walletBalance >= achievement.threshold;
+                        return (
+                          <Tooltip key={achievement.id}>
+                            <TooltipTrigger asChild>
+                              <motion.div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border ${
+                                  isAchieved 
+                                    ? `bg-gradient-to-br ${achievement.color} border-white/40 shadow-md` 
+                                    : 'bg-white/20 border-white/30 grayscale opacity-30'
+                                }`}
+                                whileHover={{ scale: 1.3 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                {achievement.icon}
+                              </motion.div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-gray-900 text-white border-gray-700">
+                              <p className="font-bold text-xs">{achievement.name}</p>
+                              <p className="text-[10px] opacity-80">{achievement.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
