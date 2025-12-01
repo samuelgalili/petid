@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { APIProvider, Map, AdvancedMarker, InfoWindow } from "@vis.gl/react-google-maps";
 import { ParkReviewDialog } from "@/components/ParkReviewDialog";
 import { ParkReviewsList } from "@/components/ParkReviewsList";
+import { AppHeader } from "@/components/AppHeader";
 
 interface DogPark {
   id: string;
@@ -319,17 +320,20 @@ const Parks = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20" dir="rtl">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-6 pb-4 sticky top-0 z-20 shadow-sm">
-        <h1 className="text-3xl font-black text-gray-900 mb-4 font-jakarta">גינות כלבים</h1>
-
+    <div className="min-h-screen bg-muted pb-20" dir="rtl">
+      <AppHeader 
+        title="גינות כלבים" 
+        showBackButton={true}
+        showMenuButton={false}
+      />
+      
+      <div className="px-4 pt-4">
         {/* Search Bar */}
         <div className="relative mb-4">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             placeholder="חיפוש גינה, עיר או כתובת..."
-            className="pr-10 rounded-full bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white"
+            className="pr-10 rounded-full bg-card border-border text-foreground placeholder:text-muted-foreground focus:bg-card"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -448,7 +452,7 @@ const Parks = () => {
         </AnimatePresence>
 
         {/* Results Count */}
-        <p className="text-sm text-gray-600 mt-3 font-jakarta">
+        <p className="text-sm text-muted-foreground mt-3 font-jakarta">
           נמצאו {filteredParks.length} {filteredParks.length === 1 ? "גינה" : "גינות"}
         </p>
       </div>

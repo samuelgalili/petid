@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AppHeader } from "@/components/AppHeader";
 
 interface Reward {
   id: string;
@@ -237,41 +238,44 @@ const Rewards = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-background pb-20">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-          <div className="px-4 py-4">
-            <h1 className="text-2xl font-bold text-gray-900 font-jakarta mb-4">Rewards</h1>
+        <AppHeader 
+          title="פרסים והטבות" 
+          showBackButton={false}
+          showMenuButton={true}
+          extraAction={{
+            icon: Gift,
+            onClick: () => {}
+          }}
+        />
+        
+        <div className="px-4 pt-4">
 
-            {/* Points Balance Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-primary rounded-2xl p-6 shadow-lg relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+          {/* Points Balance Card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-primary rounded-2xl p-6 shadow-lg relative overflow-hidden mb-6"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
 
-              <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-5 h-5 text-white" />
-                    <span className="text-white/90 text-sm font-jakarta">Your Points</span>
-                  </div>
-                  <div className="text-5xl font-bold text-white">{totalPoints}</div>
-                  <p className="text-white/80 text-xs mt-2 font-jakarta">
-                    Complete tasks to earn more points
-                  </p>
+            <div className="relative z-10 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-primary-foreground" />
+                  <span className="text-primary-foreground/90 text-sm font-jakarta">Your Points</span>
                 </div>
-                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Gift className="w-10 h-10 text-white" />
-                </div>
+                <div className="text-5xl font-bold text-primary-foreground">{totalPoints}</div>
+                <p className="text-primary-foreground/80 text-xs mt-2 font-jakarta">
+                  Complete tasks to earn more points
+                </p>
               </div>
-            </motion.div>
-          </div>
-        </div>
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <Gift className="w-10 h-10 text-primary-foreground" />
+              </div>
+            </div>
+          </motion.div>
 
-        {/* Content */}
-        <div className="px-4 py-6">
           <Tabs defaultValue="available" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="available" className="font-jakarta">

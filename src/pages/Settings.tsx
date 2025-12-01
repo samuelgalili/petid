@@ -1,4 +1,4 @@
-import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff, Palette } from "lucide-react";
+import { User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff, Palette, ChevronLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +20,7 @@ import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { AppHeader } from "@/components/AppHeader";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -192,20 +193,11 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 animate-fade-in" dir={direction}>
-      {/* Header */}
-      <div className="bg-background border-b border-border/50 p-6 sticky top-0 z-10 backdrop-blur-sm bg-background/95">
-        <div className="flex items-center gap-4 animate-slide-up">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="rounded-full hover:bg-muted animate-press"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-bold">{t("settings.title")}</h1>
-        </div>
-      </div>
+      <AppHeader 
+        title={t("settings.title")} 
+        showBackButton={true}
+        showMenuButton={false}
+      />
 
       {/* Profile Card */}
       <div className="px-6 pt-6 pb-4">
