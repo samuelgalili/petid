@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
 
 interface Post {
   id: string;
@@ -30,6 +31,7 @@ const Feed = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createPostOpen, setCreatePostOpen] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -155,7 +157,7 @@ const Feed = () => {
             variant="ghost" 
             size="icon"
             className="rounded-full"
-            onClick={() => {/* Add post functionality */}}
+            onClick={() => setCreatePostOpen(true)}
           >
             <Camera className="w-6 h-6 text-gray-700" />
           </Button>
@@ -289,6 +291,12 @@ const Feed = () => {
           שתפו תמונות וסיפורים של חיות המחמד שלכם 🐕🐈
         </p>
       </div>
+
+      <CreatePostDialog
+        open={createPostOpen}
+        onOpenChange={setCreatePostOpen}
+        onPostCreated={fetchPosts}
+      />
 
       <BottomNav />
     </div>
