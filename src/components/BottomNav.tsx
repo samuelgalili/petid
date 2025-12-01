@@ -82,7 +82,7 @@ const BottomNav = () => {
                     <Icon 
                       className={cn(
                         "w-5 h-5 transition-all",
-                        isActive ? "text-[#1F2A44]" : "text-[#333333]"
+                        isActive ? "text-secondary" : "text-muted-foreground"
                       )} 
                       strokeWidth={1.5}
                     />
@@ -99,7 +99,7 @@ const BottomNav = () => {
                 
                 <span className={cn(
                   "text-[9px] font-medium font-jakarta transition-colors text-center leading-tight",
-                  item.isCenter ? "text-foreground font-bold" : (isActive ? "text-[#1F2A44]" : "text-[#333333]")
+                  item.isCenter ? "text-foreground font-bold" : (isActive ? "text-secondary" : "text-muted-foreground")
                 )}>
                   {item.label}
                 </span>

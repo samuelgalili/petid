@@ -51,10 +51,10 @@ export const PushNotificationPrompt = () => {
         className="fixed bottom-24 left-4 right-4 z-50 max-w-md mx-auto"
         dir="rtl"
       >
-        <Card className="p-5 shadow-2xl border-2 border-[#FFC107] bg-white">
+        <Card className="p-5 shadow-2xl border-2 border-primary bg-card">
           <button
             onClick={handleDismiss}
-            className="absolute top-2 left-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute top-2 left-2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="סגור"
           >
             <X className="w-5 h-5" />
@@ -64,23 +64,23 @@ export const PushNotificationPrompt = () => {
             <motion.div
               animate={{ rotate: [0, -10, 10, -10, 0] }}
               transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
-              className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-[#FFC107] to-[#FFA000] flex items-center justify-center shadow-lg"
+              className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg"
             >
-              <Bell className="w-6 h-6 text-white" />
+              <Bell className="w-6 h-6 text-primary-foreground" />
             </motion.div>
 
             <div className="flex-1">
-              <h3 className="font-bold text-gray-900 text-lg mb-2 font-jakarta">
+              <h3 className="font-bold text-foreground text-lg mb-2 font-jakarta">
                 קבלו עדכונים על הפעילות
               </h3>
-              <p className="text-sm text-gray-600 mb-4 font-jakarta">
+              <p className="text-sm text-muted-foreground mb-4 font-jakarta">
                 הפעילו התראות כדי לקבל עדכונים על לייקים, תגובות ופעילויות חדשות של חיות המחמד שלכם
               </p>
 
               <div className="flex gap-3">
                 <Button
                   onClick={handleSubscribe}
-                  className="flex-1 bg-[#FFC107] hover:bg-[#F4C542] text-gray-900 font-bold shadow-lg font-jakarta"
+                  className="flex-1 bg-primary hover:bg-primary-dark text-primary-foreground font-bold shadow-lg font-jakarta"
                 >
                   <Bell className="w-4 h-4 ml-2" />
                   הפעילו התראות

@@ -57,7 +57,7 @@ export const PetCard = memo(({
       {/* New Pet Glow Effect */}
       {isNewPet && (
         <motion.div
-          className="absolute -inset-2 bg-gradient-to-r from-[#7DD3C0] via-[#FBD66A] to-[#7DD3C0] rounded-3xl blur-xl opacity-30 z-0"
+          className="absolute -inset-2 bg-gradient-to-r from-success via-primary to-success rounded-3xl blur-xl opacity-30 z-0"
           animate={{
             opacity: [0.3, 0.5, 0.3],
             scale: [1, 1.05, 1]
@@ -67,13 +67,13 @@ export const PetCard = memo(({
       )}
       
       {/* Pet Card */}
-      <div className={`relative bg-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all min-w-[140px] z-10 ${
-        isNewPet ? 'ring-2 ring-[#FBD66A] ring-offset-2' : ''
+      <div className={`relative bg-card rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all min-w-[140px] z-10 ${
+        isNewPet ? 'ring-2 ring-primary ring-offset-2' : ''
       }`}>
         {/* Pet Avatar with Status Badge */}
         <div className="relative mb-3 flex justify-center">
-          <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-md overflow-hidden border-3 ${
-            isNewPet ? 'border-[#FBD66A]' : 'border-white'
+          <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br from-surface-elevated via-muted to-success/10 shadow-md overflow-hidden border-3 ${
+            isNewPet ? 'border-primary' : 'border-background'
           } transition-all`}>
             {pet.avatar_url ? (
               <OptimizedImage 
@@ -84,21 +84,21 @@ export const PetCard = memo(({
                 sizes="80px"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] via-[#7DD3C0] to-[#6BC4AD]">
+              <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-success/20 via-success/30 to-success/40">
                 {pet.type === 'dog' ? '🐕' : '🐈'}
               </div>
             )}
           </div>
           
           {/* Type Badge */}
-          <div className="absolute -top-1 -right-1 w-7 h-7 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-gray-100">
+          <div className="absolute -top-1 -right-1 w-7 h-7 bg-card rounded-full shadow-md flex items-center justify-center border-2 border-muted">
             <span className="text-sm">{pet.type === 'dog' ? '🐕' : '🐈'}</span>
           </div>
           
           {/* New Badge */}
           {isNewPet && (
             <motion.div
-              className="absolute -top-2 -left-2 bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-white text-[9px] font-bold px-2 py-1 rounded-full shadow-md"
+              className="absolute -top-2 -left-2 bg-gradient-to-r from-primary to-primary-dark text-primary-foreground text-[9px] font-bold px-2 py-1 rounded-full shadow-md"
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 0.8, repeat: Infinity }}
             >
@@ -109,21 +109,21 @@ export const PetCard = memo(({
         
         {/* Pet Info */}
         <div className="text-center space-y-1">
-          <h3 className="text-sm font-extrabold text-gray-900 font-jakarta truncate">
+          <h3 className="text-sm font-extrabold text-foreground font-jakarta truncate">
             {pet.name}
           </h3>
           
           {/* Breed */}
           {pet.breed && (
-            <p className="text-[10px] font-semibold text-gray-500 truncate">
+            <p className="text-[10px] font-semibold text-muted-foreground truncate">
               {pet.breed}
             </p>
           )}
           
           {/* Age Badge */}
           {petAge !== null && (
-            <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#E8F5E8] to-[#FFE8D6] px-2 py-1 rounded-full">
-              <span className="text-[10px] font-bold text-gray-700">
+            <div className="inline-flex items-center gap-1 bg-gradient-to-r from-success/10 to-primary/10 px-2 py-1 rounded-full">
+              <span className="text-[10px] font-bold text-foreground">
                 {petAge} {petAge === 1 ? 'שנה' : 'שנים'}
               </span>
             </div>
@@ -131,7 +131,7 @@ export const PetCard = memo(({
         </div>
         
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#7DD3C0]/10 to-transparent opacity-0 hover:opacity-100 transition-opacity rounded-2xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-success/10 to-transparent opacity-0 hover:opacity-100 transition-opacity rounded-2xl pointer-events-none" />
       </div>
     </motion.div>
   );
@@ -162,11 +162,11 @@ export const AddPetCard = memo(({ index, onAddPet }: AddPetCardProps) => {
       onClick={onAddPet}
       className="flex-shrink-0 cursor-pointer"
     >
-      <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-2xl p-4 shadow-md hover:shadow-lg transition-all min-w-[140px] border-2 border-dashed border-[#7DD3C0]/40 hover:border-[#7DD3C0] flex flex-col items-center justify-center h-full">
-        <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#7DD3C0]/10 to-[#6BC4AD]/10 flex items-center justify-center mb-3 hover:scale-110 transition-transform">
-          <Plus className="w-8 h-8 text-[#7DD3C0]" strokeWidth={2.5} />
+      <div className="bg-gradient-to-br from-muted via-background to-muted rounded-2xl p-4 shadow-md hover:shadow-lg transition-all min-w-[140px] border-2 border-dashed border-success/40 hover:border-success flex flex-col items-center justify-center h-full">
+        <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-success/10 to-success/20 flex items-center justify-center mb-3 hover:scale-110 transition-transform">
+          <Plus className="w-8 h-8 text-success" strokeWidth={2.5} />
         </div>
-        <p className="text-xs font-extrabold text-[#7DD3C0] font-jakarta">
+        <p className="text-xs font-extrabold text-success font-jakarta">
           הוסף חיית מחמד
         </p>
       </div>

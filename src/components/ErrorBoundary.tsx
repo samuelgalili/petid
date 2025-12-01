@@ -43,23 +43,23 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4" dir="rtl">
-          <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center">
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-10 h-10 text-red-600" />
+        <div className="min-h-screen bg-muted flex items-center justify-center p-4" dir="rtl">
+          <div className="bg-card rounded-3xl shadow-xl p-8 max-w-md w-full text-center">
+            <div className="w-20 h-20 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-10 h-10 text-error" />
             </div>
             
-            <h2 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-3">
+            <h2 className="text-2xl font-extrabold text-foreground font-jakarta mb-3">
               אופס! משהו השתבש
             </h2>
             
-            <p className="text-gray-600 font-jakarta mb-6 leading-relaxed">
+            <p className="text-muted-foreground font-jakarta mb-6 leading-relaxed">
               נתקלנו בשגיאה בלתי צפויה. אנחנו עובדים על זה!
             </p>
 
             {process.env.NODE_ENV === "development" && this.state.error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-right">
-                <p className="text-xs font-mono text-red-800 break-words">
+              <div className="bg-error/5 border border-error/20 rounded-xl p-4 mb-6 text-right">
+                <p className="text-xs font-mono text-error break-words">
                   {this.state.error.message}
                 </p>
               </div>
@@ -68,7 +68,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="flex flex-col gap-3">
               <Button
                 onClick={this.handleReset}
-                className="w-full bg-[#FFD700] hover:bg-[#F4C542] text-gray-900 font-jakarta font-bold py-3 rounded-2xl shadow-md"
+                className="w-full bg-primary hover:bg-primary-dark text-primary-foreground font-jakarta font-bold py-3 rounded-2xl shadow-md"
               >
                 <RefreshCw className="w-5 h-5 ml-2" />
                 נסה שוב
