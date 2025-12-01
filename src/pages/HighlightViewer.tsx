@@ -189,7 +189,7 @@ const HighlightViewer = () => {
         {stories.map((_, index) => (
           <div key={index} className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
             <motion.div
-              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
+              className="h-full bg-gradient-secondary shadow-lg"
               initial={{ width: "0%" }}
               animate={{
                 width: index < currentIndex ? "100%" : index === currentIndex ? `${progress}%` : "0%",
@@ -206,10 +206,10 @@ const HighlightViewer = () => {
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate(`/user/${highlight.user.id}`)}
         >
-          <div className="p-[2px] rounded-full bg-gradient-to-tr from-purple-500 to-pink-500">
+          <div className="p-[2px] rounded-full bg-gradient-secondary">
             <Avatar className="w-12 h-12 ring-2 ring-black">
               <AvatarImage src={highlight.user.avatar_url} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black">
+              <AvatarFallback className="bg-gradient-secondary text-white font-black">
                 {highlight.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
@@ -278,7 +278,7 @@ const HighlightViewer = () => {
           animate={{ opacity: 1, x: 0 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full shadow-2xl"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-secondary hover:bg-secondary-dark text-white rounded-full shadow-2xl"
           onClick={handlePrevious}
         >
           <ChevronRight className="w-8 h-8" />
@@ -290,7 +290,7 @@ const HighlightViewer = () => {
         animate={{ opacity: 1, x: 0 }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full shadow-2xl"
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-secondary hover:bg-secondary-dark text-white rounded-full shadow-2xl"
         onClick={handleNext}
       >
         <ChevronLeft className="w-8 h-8" />
