@@ -21,9 +21,17 @@ const Auth = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [videoEnded, setVideoEnded] = useState(false);
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate("/add-pet");
-    }
+    const checkOnboarding = async () => {
+      if (!authLoading && isAuthenticated) {
+        const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+        if (onboardingCompleted === 'true') {
+          navigate("/home");
+        } else {
+          navigate("/onboarding");
+        }
+      }
+    };
+    checkOnboarding();
   }, [isAuthenticated, authLoading, navigate]);
   useEffect(() => {
     const timer = setTimeout(() => {

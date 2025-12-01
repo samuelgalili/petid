@@ -9,7 +9,8 @@ import {
   FileText,
   ShieldCheck,
   Scissors,
-  GraduationCap
+  GraduationCap,
+  Trophy
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
@@ -29,6 +30,9 @@ import { AchievementDialog } from "@/components/home/AchievementDialog";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import StreakIndicator from "@/components/home/StreakIndicator";
+import { useGame } from "@/contexts/GameContext";
+import { usePoints } from "@/contexts/PointsContext";
 
 // Lazy load heavy components
 const PromotionalOffers = lazy(() => import("@/components/home/PromotionalOffers").then(m => ({ default: m.PromotionalOffers })));
@@ -110,6 +114,8 @@ const Home = () => {
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const previousPetIdsRef = useRef<Set<string>>(new Set());
   const { toast } = useToast();
+  const { streak, achievements, updateStreak } = useGame();
+  const { totalPoints } = usePoints();
 
   // Wallet Achievements System
   const walletAchievements = [
@@ -204,7 +210,8 @@ const Home = () => {
     };
 
     fetchPets();
-  }, [toast, triggerConfetti]);
+    updateStreak(); // Update streak on page load
+  }, [toast, triggerConfetti, updateStreak]);
 
   // Fetch promotional offers
   useEffect(() => {
@@ -337,6 +344,42 @@ const Home = () => {
           greeting={getGreeting()}
           onMenuOpen={() => setIsMenuOpen(true)}
         />
+
+        {/* Gamification Bar - Streak & Points */}
+        <div className="px-4 py-3 flex items-center justify-between gap-3">
+          {streak && (
+            <StreakIndicator 
+              currentStreak={streak.current_streak} 
+              level={streak.streak_level}
+            />
+          )}
+          
+          <div className="flex items-center gap-3">
+            {/* Points Display */}
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2 bg-card rounded-full px-4 py-2 shadow-sm border border-border cursor-pointer"
+              onClick={() => navigate('/rewards')}
+            >
+              <span className="text-2xl">⭐</span>
+              <div className="flex flex-col items-start">
+                <div className="text-xs text-muted-foreground">נקודות</div>
+                <div className="text-sm font-bold">{totalPoints}</div>
+              </div>
+            </motion.div>
+
+            {/* Achievements Button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/achievements')}
+              className="flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-sm hover:shadow-md transition-shadow"
+            >
+              <Trophy className="w-5 h-5" />
+            </motion.button>
+          </div>
+        </div>
 
         {/* My Pets Section */}
         <MyPetsSection
