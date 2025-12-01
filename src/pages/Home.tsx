@@ -568,7 +568,7 @@ const Home = () => {
               </h1>
               
               {/* Details text - Gray */}
-              <p className="text-base text-gray-600 font-jakarta leading-relaxed">רוכשים צוברים ונהנים</p>
+              <p className="text-base text-gray-600 font-jakarta leading-relaxed">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
             </div>
 
             {/* Gift Icon - Right Side */}
