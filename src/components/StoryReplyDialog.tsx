@@ -91,7 +91,7 @@ export const StoryReplyDialog = ({
               ביטול
             </Button>
             <Button
-              className="flex-1 bg-blue-500 hover:bg-blue-600"
+              className="flex-1 bg-accent hover:bg-accent-hover"
               onClick={handleSendReply}
               disabled={sending || !message.trim()}
             >

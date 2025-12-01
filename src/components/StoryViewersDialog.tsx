@@ -104,7 +104,7 @@ export const StoryViewersDialog = ({ open, onOpenChange, storyId }: StoryViewers
       <DialogContent className="sm:max-w-md font-jakarta bg-gradient-to-br from-white to-gray-50 rounded-3xl" dir="rtl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-black text-gray-900 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFC107] flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center shadow-lg">
               <Eye className="w-6 h-6 text-gray-900" />
             </div>
             צפו בסטורי
@@ -119,7 +119,7 @@ export const StoryViewersDialog = ({ open, onOpenChange, storyId }: StoryViewers
                 <Users className="w-5 h-5 text-gray-700" />
                 <span className="text-sm font-bold text-gray-700">סך הכל צפיות</span>
               </div>
-              <span className="text-2xl font-black text-gray-900 bg-gradient-to-r from-[#FFD700] to-[#FFC107] bg-clip-text text-transparent">
+              <span className="text-2xl font-black text-accent">
                 {viewers.length}
               </span>
             </div>
@@ -155,18 +155,18 @@ export const StoryViewersDialog = ({ open, onOpenChange, storyId }: StoryViewers
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-3 bg-white rounded-2xl hover:bg-gradient-to-r hover:from-yellow-50 hover:to-amber-50 border border-gray-100 hover:border-[#FFD700] transition-all cursor-pointer shadow-sm hover:shadow-md"
+                  className="flex items-center justify-between p-3 bg-white rounded-2xl hover:bg-accent/10 border border-gray-100 hover:border-accent transition-all cursor-pointer shadow-sm hover:shadow-md"
                   onClick={() => handleViewerClick(viewer.id)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <Avatar className="w-12 h-12 ring-2 ring-white shadow-md">
                         <AvatarImage src={viewer.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black">
+                        <AvatarFallback className="bg-gradient-secondary text-white font-black">
                           {viewer.full_name?.charAt(0) || "U"}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-br from-green-400 to-green-500 rounded-full border-2 border-white shadow-sm" />
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-white shadow-sm" />
                     </div>
                     <div>
                       <p className="font-black text-gray-900">{viewer.full_name}</p>

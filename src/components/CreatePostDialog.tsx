@@ -101,7 +101,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
       <DialogContent className="sm:max-w-lg font-jakarta bg-white rounded-3xl" dir="rtl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-black text-center text-gray-900 flex items-center justify-center gap-2">
-            <Sparkles className="w-6 h-6 text-yellow-500" />
+            <Sparkles className="w-6 h-6 text-accent" />
             פוסט חדש
           </DialogTitle>
         </DialogHeader>
@@ -152,10 +152,10 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               >
                 <Button
                   variant="outline"
-                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-yellow-50 rounded-2xl transition-all"
+                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-accent hover:bg-accent/10 rounded-2xl transition-all"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-secondary rounded-full flex items-center justify-center">
                     <ImageIcon className="w-8 h-8 text-gray-700" />
                   </div>
                   <span className="text-sm font-bold text-gray-700">בחר מהגלריה</span>
@@ -168,10 +168,10 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               >
                 <Button
                   variant="outline"
-                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-yellow-50 rounded-2xl transition-all"
+                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-accent hover:bg-accent/10 rounded-2xl transition-all"
                   onClick={() => cameraInputRef.current?.click()}
                 >
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-teal-100 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-secondary-reverse rounded-full flex items-center justify-center">
                     <Camera className="w-8 h-8 text-gray-700" />
                   </div>
                   <span className="text-sm font-bold text-gray-700">צלם תמונה</span>
@@ -186,7 +186,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               placeholder="שתף משהו על חיית המחמד שלך... 🐾"
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              className="min-h-[120px] resize-none rounded-2xl border-2 focus:border-[#FFD700] font-jakarta"
+              className="min-h-[120px] resize-none rounded-2xl border-2 focus:border-accent font-jakarta"
               maxLength={500}
             />
             <div className="text-xs text-gray-500 text-left font-jakarta">
@@ -205,7 +205,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               ביטול
             </Button>
             <Button
-              className="flex-1 rounded-2xl font-bold font-jakarta h-12 bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 shadow-lg"
+              className="flex-1 rounded-2xl font-bold font-jakarta h-12 bg-gradient-primary hover:bg-gradient-primary-hover text-gray-900 shadow-lg"
               onClick={handleCreatePost}
               disabled={!selectedImage || uploading}
             >

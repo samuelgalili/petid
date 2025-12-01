@@ -74,11 +74,11 @@ export const CreateHighlightDialog = ({ open, onOpenChange, onSuccess }: CreateH
           </div>
           
           <div className="flex gap-2">
-            <Button
-              onClick={handleCreate}
-              disabled={!title.trim() || isCreating}
-              className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-black"
-            >
+              <Button
+                onClick={handleCreate}
+                disabled={!title.trim() || isCreating}
+                className="flex-1 bg-gradient-primary hover:bg-gradient-primary-hover text-gray-900 font-black"
+              >
               {isCreating ? (
                 <>
                   <Loader2 className="w-4 h-4 ml-2 animate-spin" />

@@ -239,7 +239,7 @@ export const ProfileImageEditor = ({
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] p-6 flex items-center justify-between">
+              <div className="bg-gradient-primary p-6 flex items-center justify-between">
                 <h2 className="text-2xl font-black text-gray-900 font-jakarta">
                   עריכת תמונת פרופיל
                 </h2>
@@ -270,7 +270,7 @@ export const ProfileImageEditor = ({
                             onChange={handleFileSelect}
                             className="hidden"
                           />
-                          <div className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold font-jakarta inline-flex items-center gap-2 hover:bg-blue-700 transition-colors">
+                          <div className="bg-accent text-white px-6 py-3 rounded-2xl font-bold font-jakarta inline-flex items-center gap-2 hover:bg-accent-hover transition-colors">
                             <Upload className="w-5 h-5" />
                             העלה מהגלריה
                           </div>
@@ -362,7 +362,7 @@ export const ProfileImageEditor = ({
                       <Button
                         onClick={handleSave}
                         disabled={isUploading}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-2xl py-6 font-bold font-jakarta"
+                        className="flex-1 bg-success hover:bg-success-dark text-white rounded-2xl py-6 font-bold font-jakarta"
                       >
                         {isUploading ? (
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
