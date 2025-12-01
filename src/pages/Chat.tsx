@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -156,57 +155,41 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 pb-24 pt-20 px-4 dir-rtl">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl font-bold text-yellow-900 mb-2">💬 צ'אט AI</h1>
-          <p className="text-yellow-700">שאל שאלות על חיות המחמד שלך וקבל תשובות מיידיות</p>
-        </motion.div>
-
-        <Card className="bg-white/80 backdrop-blur-sm border-yellow-200 shadow-xl mb-4">
-          <div className="h-[500px] overflow-y-auto p-6 space-y-4">
+    <div className="min-h-screen bg-background pb-24 pt-4 px-4 dir-rtl">
+      <div className="max-w-3xl mx-auto h-[calc(100vh-7rem)]">
+        {/* Messages Container - ChatGPT style */}
+        <div className="h-full flex flex-col">
+          <div className="flex-1 overflow-y-auto space-y-3 py-4">
             <AnimatePresence>
               {messages.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-center py-12"
+                  className="text-center py-20"
                 >
-                  <Bot className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-                  <p className="text-yellow-700 text-lg">שלום! איך אוכל לעזור לך היום?</p>
-                  <div className="mt-6 space-y-2">
-                    <p className="text-yellow-600 text-sm">דוגמאות לשאלות:</p>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-yellow-700 border-yellow-300 hover:bg-yellow-50"
-                        onClick={() => setInput("איך לטפל בכלב שלי?")}
-                      >
-                        איך לטפל בכלב?
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-yellow-700 border-yellow-300 hover:bg-yellow-50"
-                        onClick={() => setInput("מה לתת לחתול לאכול?")}
-                      >
-                        מה לתת לחתול לאכול?
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-yellow-700 border-yellow-300 hover:bg-yellow-50"
-                        onClick={() => setInput("כיצד לאלף כלב צעיר?")}
-                      >
-                        איך לאלף כלב צעיר?
-                      </Button>
-                    </div>
+                  <Bot className="w-12 h-12 mx-auto mb-4 text-muted-foreground" strokeWidth={1.5} />
+                  <h2 className="text-2xl font-semibold text-foreground mb-2">איך אוכל לעזור לך?</h2>
+                  <p className="text-muted-foreground text-sm mb-8">שאל שאלות על חיות המחמד שלך</p>
+                  <div className="flex flex-wrap gap-2 justify-center max-w-md mx-auto">
+                    <button
+                      onClick={() => setInput("איך לטפל בכלב שלי?")}
+                      className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors text-foreground"
+                    >
+                      איך לטפל בכלב?
+                    </button>
+                    <button
+                      onClick={() => setInput("מה לתת לחתול לאכול?")}
+                      className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors text-foreground"
+                    >
+                      מה לתת לחתול?
+                    </button>
+                    <button
+                      onClick={() => setInput("כיצד לאלף כלב צעיר?")}
+                      className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors text-foreground"
+                    >
+                      איך לאלף כלב?
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -216,31 +199,32 @@ const Chat = () => {
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-3 ${
+                  transition={{ duration: 0.2 }}
+                  className={`flex gap-4 ${
                     message.role === "user" ? "flex-row-reverse" : "flex-row"
-                  }`}
+                  } max-w-full`}
                 >
                   <div
                     className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                       message.role === "user"
-                        ? "bg-yellow-500 text-white"
-                        : "bg-amber-500 text-white"
+                        ? "bg-foreground text-background"
+                        : "bg-primary text-primary-foreground"
                     }`}
                   >
                     {message.role === "user" ? (
-                      <User className="w-5 h-5" />
+                      <User className="w-4 h-4" strokeWidth={2} />
                     ) : (
-                      <Bot className="w-5 h-5" />
+                      <Bot className="w-4 h-4" strokeWidth={2} />
                     )}
                   </div>
                   <div
-                    className={`flex-1 rounded-2xl px-4 py-3 ${
+                    className={`flex-1 px-4 py-3 rounded-xl ${
                       message.role === "user"
-                        ? "bg-yellow-500 text-white"
-                        : "bg-amber-100 text-yellow-900"
+                        ? "bg-muted text-foreground"
+                        : "bg-transparent text-foreground"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    <p className="whitespace-pre-wrap text-[15px] leading-[1.6]">{message.content}</p>
                   </div>
                 </motion.div>
               ))}
@@ -249,13 +233,13 @@ const Chat = () => {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex gap-3"
+                  className="flex gap-4"
                 >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    <Bot className="w-4 h-4" strokeWidth={2} />
                   </div>
-                  <div className="flex-1 rounded-2xl px-4 py-3 bg-amber-100">
-                    <Loader2 className="w-5 h-5 animate-spin text-yellow-700" />
+                  <div className="flex-1 px-4 py-3">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                   </div>
                 </motion.div>
               )}
@@ -263,21 +247,23 @@ const Chat = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-yellow-200 p-4 bg-yellow-50/50">
-            <div className="flex gap-2">
+          {/* Input Area - ChatGPT style */}
+          <div className="pt-4 pb-2">
+            <div className="flex gap-2 bg-surface border border-border rounded-xl p-2 shadow-sm">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="כתוב את השאלה שלך כאן..."
-                className="flex-1 border-yellow-300 focus:ring-yellow-500"
+                placeholder="כתוב הודעה..."
+                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-muted-foreground"
                 disabled={isLoading}
                 dir="rtl"
               />
               <Button
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                size="icon"
+                className="bg-foreground hover:bg-foreground/90 text-background rounded-lg h-10 w-10"
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -287,7 +273,7 @@ const Chat = () => {
               </Button>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       <BottomNav />

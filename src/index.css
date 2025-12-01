@@ -19,242 +19,213 @@
 @layer base {
   :root {
     /* ===========================
-     * PRIMARY COLORS
-     * Honey-Gold / Yellow - Main brand color for CTAs and highlights
+     * MINIMALIST CHATGPT-STYLE COLOR SYSTEM
+     * Clean, focused, minimal palette
      * =========================== */
-    --primary: 45 100% 64%;           /* #FFC84A - Honey Gold */
-    --primary-foreground: 222 37% 19%; /* Deep Blue text for contrast */
-    --primary-light: 45 100% 74%;     /* Lighter Gold */
-    --primary-dark: 45 100% 54%;      /* Darker Gold */
+    
+    /* PRIMARY - Soft Green/Teal accent */
+    --primary: 162 100% 33%;          /* #00A870 - Soft Green */
+    --primary-foreground: 0 0% 100%;  /* White text */
+    --primary-light: 162 100% 43%;    /* Lighter Green */
+    --primary-dark: 162 100% 28%;     /* Darker Green */
 
-    /* ===========================
-     * SECONDARY COLORS  
-     * Deep Midnight Blue - Trust & professionalism
-     * =========================== */
-    --secondary: 222 37% 19%;         /* #1F2A44 - Deep Midnight Blue */
+    /* SECONDARY - Neutral text colors */
+    --secondary: 0 0% 18%;            /* #2D2D2D - Dark grey text */
     --secondary-foreground: 0 0% 100%; /* White text */
-    --secondary-light: 222 37% 29%;   /* Lighter Blue */
-    --secondary-dark: 222 37% 14%;    /* Darker Blue */
+    --secondary-light: 0 0% 28%;      /* Lighter grey */
+    --secondary-dark: 0 0% 13%;       /* Darker grey */
 
-    /* ===========================
-     * CTA & ACCENT COLORS
-     * Honey-Gold for interactive elements
-     * =========================== */
-    --accent: 45 100% 64%;            /* #FFC84A - Honey Gold */
-    --accent-foreground: 222 37% 19%; /* Deep Blue text */
-    --accent-hover: 45 100% 54%;      /* Darker Gold on hover */
-    --accent-light: 45 100% 74%;      /* Lighter Gold */
+    /* ACCENT - Same as primary for minimal palette */
+    --accent: 162 100% 33%;           /* #00A870 - Soft Green */
+    --accent-foreground: 0 0% 100%;   /* White text */
+    --accent-hover: 162 100% 28%;     /* Darker on hover */
+    --accent-light: 162 100% 43%;     /* Lighter accent */
 
-    /* ===========================
-     * SUCCESS & HEALTH
-     * Mint-Green - positive states
-     * =========================== */
-    --success: 164 100% 38%;          /* #00C489 - Mint Green */
+    /* SUCCESS - Soft Green */
+    --success: 162 100% 33%;          /* #00A870 */
     --success-foreground: 0 0% 100%;
-    --success-light: 164 100% 48%;    /* Lighter Mint */
-    --success-dark: 164 100% 28%;     /* Darker Mint */
+    --success-light: 162 100% 43%;
+    --success-dark: 162 100% 28%;
 
-    /* ===========================
-     * SEMANTIC STATES
-     * =========================== */
-    --warning: 44 100% 50%;           /* #FFB300 - Amber Orange */
+    /* SEMANTIC STATES - Minimal, only when needed */
+    --warning: 44 100% 50%;           /* #FFB300 - Amber (kept for errors) */
     --warning-foreground: 0 0% 100%;
-    --warning-light: 44 100% 60%;     /* Lighter Amber */
+    --warning-light: 44 100% 60%;
     
-    --error: 6 100% 69%;              /* #FF6F61 - Coral Red */
+    --error: 0 72% 51%;               /* #DC2626 - Red for errors */
     --error-foreground: 0 0% 100%;
-    --error-light: 6 100% 79%;        /* Lighter Red */
+    --error-light: 0 72% 61%;
     
-    --info: 199 89% 48%;              /* #0EA5E9 - Sky Blue */
+    --info: 199 89% 48%;              /* #0EA5E9 - Blue for info */
     --info-foreground: 0 0% 100%;
-    --info-light: 199 89% 65%;        /* Lighter Sky Blue */
+    --info-light: 199 89% 65%;
 
-    /* ===========================
-     * DESTRUCTIVE (Legacy support)
-     * =========================== */
+    /* DESTRUCTIVE (Legacy support) */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* ===========================
-     * NEUTRAL COLORS
-     * Warm Grey Palette - Clean, professional surfaces
-     * =========================== */
-    --background: 60 5% 96%;          /* #F5F5F3 - Warm Light Grey */
-    --foreground: 0 0% 20%;           /* #333333 - Near Black text */
+    /* NEUTRAL COLORS - ChatGPT style */
+    --background: 210 20% 98%;        /* #F7F8FA - Light grey-blue bg */
+    --foreground: 0 0% 20%;           /* #333333 - Dark text */
     
     --surface: 0 0% 100%;             /* #FFFFFF - Pure white */
-    --surface-elevated: 60 5% 96%;    /* #F5F5F3 - Light Grey */
+    --surface-elevated: 0 0% 96%;     /* #F5F5F5 - Slightly elevated */
     
-    --muted: 0 0% 92%;                /* #EAEAEA - Medium Grey */
-    --muted-foreground: 0 0% 43%;     /* #6E6E6E - Neutral Grey text */
+    --muted: 0 0% 96%;                /* #F5F5F5 - Light grey */
+    --muted-foreground: 0 0% 43%;     /* #6D6D6D - Muted text */
     
-    --border: 0 0% 88%;               /* #E1E1E1 - Very Light Grey */
+    --border: 0 0% 90%;               /* #E5E5E5 - Light border */
     --border-light: 0 0% 93%;         /* Lighter border */
     
-    --input: 0 0% 96%;                /* #F5F5F5 - Input background */
-    --ring: 45 100% 64%;              /* Matches primary */
+    --input: 0 0% 100%;               /* #FFFFFF - White input */
+    --ring: 162 100% 33%;             /* Matches primary */
 
-    /* ===========================
-     * CARD & POPOVER
-     * =========================== */
+    /* CARD & POPOVER */
     --card: 0 0% 100%;                /* Pure white cards */
-    --card-foreground: 0 0% 20%;      /* Near Black text */
-    --card-border: 0 0% 88%;          /* Very Light Grey border */
+    --card-foreground: 0 0% 20%;      /* Dark text */
+    --card-border: 0 0% 90%;          /* Light border */
     
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;   /* Near Black text */
+    --popover-foreground: 0 0% 20%;
 
-    /* ===========================
-     * SIDEBAR & NAVIGATION
-     * =========================== */
-    --sidebar-background: 222 37% 19%;      /* Deep Midnight Blue */
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 45 100% 64%;         /* Honey Gold */
-    --sidebar-primary-foreground: 0 0% 20%;
-    --sidebar-accent: 222 37% 24%;          /* Slightly lighter blue */
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 222 37% 29%;
-    --sidebar-ring: 45 100% 64%;
+    /* SIDEBAR & NAVIGATION - Minimal */
+    --sidebar-background: 0 0% 100%;        /* White sidebar */
+    --sidebar-foreground: 0 0% 20%;         /* Dark text */
+    --sidebar-primary: 162 100% 33%;        /* Soft Green */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;             /* Light grey */
+    --sidebar-accent-foreground: 0 0% 20%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 162 100% 33%;
 
-    /* ===========================
-     * GRADIENTS
-     * Clean combinations using approved palette
-     * =========================== */
-    --gradient-primary: linear-gradient(135deg, hsl(45, 100%, 64%) 0%, hsl(45, 100%, 54%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(45, 100%, 64%) 0%, hsl(44, 100%, 50%) 100%);
-    --gradient-trust: linear-gradient(135deg, hsl(222, 37%, 19%) 0%, hsl(222, 37%, 29%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(45, 100%, 64%) 0%, hsl(164, 100%, 38%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(60, 5%, 96%) 100%);
+    /* GRADIENTS - Minimal, subtle */
+    --gradient-primary: linear-gradient(135deg, hsl(162, 100%, 33%) 0%, hsl(162, 100%, 28%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(0, 0%, 100%) 0%, hsl(0, 0%, 96%) 100%);
+    --gradient-trust: linear-gradient(135deg, hsl(0, 0%, 20%) 0%, hsl(0, 0%, 28%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(162, 100%, 33%) 0%, hsl(180, 100%, 33%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(0, 0%, 98%) 100%);
 
-    /* ===========================
-     * SHADOWS
-     * Soft shadows using secondary color
-     * =========================== */
-    --shadow-sm: 0 1px 2px 0 rgba(31, 42, 68, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(31, 42, 68, 0.08), 0 2px 4px -1px rgba(31, 42, 68, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(31, 42, 68, 0.1), 0 4px 6px -2px rgba(31, 42, 68, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(31, 42, 68, 0.12), 0 10px 10px -5px rgba(31, 42, 68, 0.06);
-    --shadow-card: 0 4px 12px rgba(31, 42, 68, 0.08);
-    --shadow-elevated: 0 8px 20px rgba(31, 42, 68, 0.12);
-    --shadow-button: 0 4px 8px rgba(255, 200, 74, 0.3);
-    --shadow-button-hover: 0 6px 12px rgba(255, 200, 74, 0.4);
+    /* SHADOWS - Subtle, minimal */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 8px 16px 0 rgba(0, 0, 0, 0.12);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.1);
+    --shadow-button-hover: 0 2px 4px rgba(0, 0, 0, 0.15);
 
-    /* ===========================
-     * COMPONENT-SPECIFIC
-     * =========================== */
-    --header-bg: 0 0% 100%;
-    --header-text: 0 0% 20%;          /* Near Black */
-    --footer-bg: 222 37% 19%;         /* Deep Midnight Blue */
-    --footer-text: 0 0% 100%;
+    /* COMPONENT-SPECIFIC - Minimal */
+    --header-bg: 0 0% 100%;           /* White */
+    --header-text: 0 0% 20%;          /* Dark text */
+    --footer-bg: 0 0% 100%;           /* White footer */
+    --footer-text: 0 0% 20%;          /* Dark text */
     
     --toast-bg: 0 0% 100%;
-    --toast-border: 0 0% 88%;         /* Very Light Grey */
-    --toast-text: 0 0% 20%;           /* Near Black */
+    --toast-border: 0 0% 90%;
+    --toast-text: 0 0% 20%;
     
-    --tag-bg: 45 100% 90%;
-    --tag-text: 0 0% 20%;             /* Near Black */
-    --tag-border: 45 100% 80%;
+    --tag-bg: 0 0% 96%;               /* Light grey */
+    --tag-text: 0 0% 20%;
+    --tag-border: 0 0% 90%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;                /* 12px - Softer radius */
   }
 
-  /* ===========================
-   * DARK MODE
-   * Maintains warmth while providing comfort for night usage
-   * =========================== */
+  /* DARK MODE - ChatGPT style */
   .dark {
-    --background: 222 37% 10%;        /* Dark midnight blue */
-    --foreground: 0 0% 96%;           /* Light grey */
+    --background: 0 0% 12%;           /* #1F1F1F - Dark bg */
+    --foreground: 0 0% 92%;           /* #EAEAEA - Light text */
     
-    --surface: 222 37% 13%;           /* Slightly elevated dark surface */
-    --surface-elevated: 222 37% 16%;
+    --surface: 0 0% 15%;              /* Slightly elevated */
+    --surface-elevated: 0 0% 18%;
     
-    --muted: 0 0% 20%;                /* Dark grey */
-    --muted-foreground: 0 0% 65%;     /* Muted light text */
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
     
-    --primary: 45 100% 60%;           /* Adjusted gold for dark bg */
-    --primary-foreground: 0 0% 10%;
-    --primary-light: 45 100% 70%;
-    --primary-dark: 45 100% 50%;
+    --primary: 162 100% 38%;          /* Brighter green for dark */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 162 100% 48%;
+    --primary-dark: 162 100% 33%;
     
-    --secondary: 222 37% 24%;         /* Lighter midnight blue */
-    --secondary-foreground: 0 0% 96%;
-    --secondary-light: 222 37% 32%;
-    --secondary-dark: 222 37% 19%;
+    --secondary: 0 0% 92%;            /* Light grey text */
+    --secondary-foreground: 0 0% 12%;
+    --secondary-light: 0 0% 85%;
+    --secondary-dark: 0 0% 75%;
     
-    --accent: 45 100% 60%;            /* Gold adjusted */
-    --accent-foreground: 0 0% 10%;
-    --accent-hover: 45 100% 50%;
-    --accent-light: 45 100% 70%;
+    --accent: 162 100% 38%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 162 100% 33%;
+    --accent-light: 162 100% 48%;
     
-    --success: 164 100% 42%;
-    --success-foreground: 0 0% 10%;
-    --success-light: 164 100% 52%;
-    --success-dark: 164 100% 32%;
+    --success: 162 100% 38%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 162 100% 48%;
+    --success-dark: 162 100% 33%;
     
     --warning: 44 100% 55%;
-    --warning-foreground: 0 0% 10%;
+    --warning-foreground: 0 0% 12%;
     --warning-light: 44 100% 65%;
     
-    --error: 6 100% 73%;
-    --error-foreground: 0 0% 10%;
-    --error-light: 6 100% 83%;
+    --error: 0 72% 55%;
+    --error-foreground: 0 0% 100%;
+    --error-light: 0 72% 65%;
     
     --info: 199 89% 55%;
-    --info-foreground: 0 0% 10%;
+    --info-foreground: 0 0% 12%;
     --info-light: 199 89% 70%;
     
-    --destructive: 6 100% 73%;
-    --destructive-foreground: 0 0% 10%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
     
     --border: 0 0% 25%;
     --border-light: 0 0% 30%;
-    --input: 222 37% 16%;
-    --ring: 45 100% 60%;
+    --input: 0 0% 18%;
+    --ring: 162 100% 38%;
     
-    --card: 222 37% 13%;
-    --card-foreground: 0 0% 96%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 92%;
     --card-border: 0 0% 25%;
     
-    --popover: 222 37% 13%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 92%;
     
-    --sidebar-background: 222 37% 8%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 45 100% 60%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 222 37% 16%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 45 100% 60%;
+    --sidebar-background: 0 0% 12%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 162 100% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 162 100% 38%;
     
-    --header-bg: 222 37% 13%;
-    --header-text: 0 0% 96%;
-    --footer-bg: 222 37% 8%;
-    --footer-text: 0 0% 96%;
+    --header-bg: 0 0% 15%;
+    --header-text: 0 0% 92%;
+    --footer-bg: 0 0% 12%;
+    --footer-text: 0 0% 92%;
     
-    --toast-bg: 222 37% 16%;
+    --toast-bg: 0 0% 18%;
     --toast-border: 0 0% 25%;
-    --toast-text: 0 0% 96%;
+    --toast-text: 0 0% 92%;
     
-    --tag-bg: 45 100% 25%;
-    --tag-text: 0 0% 96%;
-    --tag-border: 45 100% 35%;
+    --tag-bg: 0 0% 20%;
+    --tag-text: 0 0% 92%;
+    --tag-border: 0 0% 30%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(45, 100%, 60%) 0%, hsl(45, 100%, 50%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(45, 100%, 60%) 0%, hsl(44, 100%, 50%) 100%);
-    --gradient-trust: linear-gradient(135deg, hsl(222, 37%, 16%) 0%, hsl(222, 37%, 24%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(45, 100%, 60%) 0%, hsl(164, 100%, 38%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(222, 37%, 13%) 0%, hsl(222, 37%, 16%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(162, 100%, 38%) 0%, hsl(162, 100%, 33%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(0, 0%, 15%) 0%, hsl(0, 0%, 18%) 100%);
+    --gradient-trust: linear-gradient(135deg, hsl(0, 0%, 18%) 0%, hsl(0, 0%, 25%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(162, 100%, 38%) 0%, hsl(180, 100%, 38%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 15%) 0%, hsl(0, 0%, 18%) 100%);
     
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.35), 0 10px 10px -5px rgba(0, 0, 0, 0.25);
-    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-elevated: 0 8px 20px rgba(0, 0, 0, 0.35);
-    --shadow-button: 0 4px 8px rgba(255, 200, 74, 0.25);
-    --shadow-button-hover: 0 6px 12px rgba(255, 200, 74, 0.35);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 4px 8px 0 rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 8px 16px 0 rgba(0, 0, 0, 0.6);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-button-hover: 0 2px 4px rgba(0, 0, 0, 0.4);
   }
 
   /* ===========================
