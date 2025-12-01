@@ -165,7 +165,7 @@ export const ParkReviewDialog = ({
                   <Star
                     className={`w-10 h-10 ${
                       star <= (hoveredRating || rating)
-                        ? "fill-amber-400 text-amber-400"
+                        ? "fill-warning text-warning"
                         : "text-gray-300"
                     }`}
                   />
@@ -197,7 +197,7 @@ export const ParkReviewDialog = ({
                   <img src={preview} alt={`תמונה ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     onClick={() => removePhoto(index)}
-                    className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    className="absolute top-1 left-1 bg-error text-white rounded-full p-1 hover:bg-error-dark"
                   >
                     <X className="w-3 h-3" />
                   </button>

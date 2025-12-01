@@ -158,11 +158,11 @@ export const AddToHighlightDialog = ({ open, onOpenChange, storyId, storyMediaUr
                     variant="outline"
                     className={`w-full justify-start gap-3 h-auto py-4 transition-all ${
                       highlight.has_story
-                        ? "bg-green-50 border-green-500 hover:bg-green-100"
+                        ? "bg-success/10 border-success hover:bg-success/20"
                         : "hover:bg-gray-50"
                     }`}
                   >
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 overflow-hidden flex-shrink-0 relative">
+                    <div className="w-14 h-14 rounded-full bg-gradient-secondary overflow-hidden flex-shrink-0 relative">
                       {highlight.cover_image ? (
                         <img
                           src={highlight.cover_image}
@@ -175,8 +175,8 @@ export const AddToHighlightDialog = ({ open, onOpenChange, storyId, storyMediaUr
                         </div>
                       )}
                       {highlight.has_story && (
-                        <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
-                          <Check className="w-6 h-6 text-green-600" />
+                        <div className="absolute inset-0 bg-success/20 flex items-center justify-center">
+                          <Check className="w-6 h-6 text-success" />
                         </div>
                       )}
                     </div>

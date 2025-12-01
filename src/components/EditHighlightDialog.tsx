@@ -160,7 +160,7 @@ export const EditHighlightDialog = ({
               <Label className="font-bold text-gray-700">תמונת כיסוי</Label>
               <div className="flex items-center gap-3">
                 {coverImage ? (
-                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 ring-2 ring-gray-300">
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-gradient-secondary ring-2 ring-gray-300">
                     <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
                   </div>
                 ) : (
@@ -194,7 +194,7 @@ export const EditHighlightDialog = ({
                         }}
                         className={`aspect-square rounded-lg overflow-hidden ring-2 transition-all ${
                           coverImage === story.media_url
-                            ? "ring-blue-500 ring-offset-2"
+                            ? "ring-accent ring-offset-2"
                             : "ring-gray-200 hover:ring-gray-400"
                         }`}
                       >
@@ -215,7 +215,7 @@ export const EditHighlightDialog = ({
               <Button
                 onClick={handleUpdate}
                 disabled={!title.trim() || isUpdating}
-                className="w-full bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-black"
+                className="w-full bg-gradient-primary hover:bg-gradient-primary-hover text-gray-900 font-black"
               >
                 {isUpdating ? (
                   <>
