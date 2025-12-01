@@ -1191,7 +1191,7 @@ const Home = () => {
         }} transition={{
           delay: 0.3
         }} className="mb-6">
-          <div className="flex justify-center gap-4 overflow-x-auto pb-2 px-4" style={{
+          <div className="flex gap-4 overflow-x-auto pb-2 px-4 scrollbar-hide" style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
           }}>
