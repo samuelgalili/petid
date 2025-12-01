@@ -64,20 +64,20 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   };
 
   const menuItems = [
-    { icon: Heart, label: "My Pets", path: "/home" },
-    { icon: Package, label: "Orders", path: "/order-history" },
-    { icon: Star, label: "Membership Club", path: "/membership" },
-    { icon: Grid3x3, label: "Shop Categories", path: "/shop" },
-    { icon: Heart, label: "Favorites", path: "/favorites" },
-    { icon: ShoppingCart, label: "Cart", path: "/cart" },
-    { icon: Bell, label: "Notifications", path: "/notifications" },
+    { icon: Heart, label: "חיות המחמד שלי", path: "/home" },
+    { icon: Package, label: "הזמנות", path: "/order-history" },
+    { icon: Star, label: "מועדון חברים", path: "/membership" },
+    { icon: Grid3x3, label: "קטגוריות חנות", path: "/shop" },
+    { icon: Heart, label: "מועדפים", path: "/favorites" },
+    { icon: ShoppingCart, label: "עגלת קניות", path: "/cart" },
+    { icon: Bell, label: "התראות", path: "/notifications" },
   ];
 
   const secondaryItems = [
-    { icon: Settings, label: "Settings", path: "/settings" },
-    { icon: HelpCircle, label: "Support & Help", path: "/support" },
-    { icon: FileText, label: "FAQ", path: "/faq" },
-    { icon: Info, label: "About Petid", path: "/about" },
+    { icon: Settings, label: "הגדרות", path: "/settings" },
+    { icon: HelpCircle, label: "תמיכה ועזרה", path: "/support" },
+    { icon: FileText, label: "שאלות נפוצות", path: "/faq" },
+    { icon: Info, label: "אודות Petid", path: "/about" },
     { icon: Shield, label: "Terms & Privacy", path: "/terms" },
   ];
 
@@ -138,7 +138,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     </Avatar>
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-gray-900 dark:text-white">{user.user_metadata?.full_name || 'User'}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">View Profile</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">צפה בפרופיל</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400" />
                   </button>
@@ -147,7 +147,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     onClick={() => handleNavigation('/auth')}
                     className="w-full bg-[#7DD3C0] hover:bg-[#6BC4AD] text-white rounded-full font-semibold"
                   >
-                    Login / Sign Up
+                    התחבר / הירשם
                   </Button>
                 )}
               </div>

@@ -136,8 +136,8 @@ export const Header = () => {
                       onMouseLeave={handleMouseLeave}
                     >
                       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="font-bold text-gray-900 dark:text-white">Shopping Cart</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</p>
+                        <h3 className="font-bold text-gray-900 dark:text-white">עגלת קניות</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{cartItemCount} {cartItemCount === 1 ? 'פריט' : 'פריטים'}</p>
                       </div>
 
                       <div className="max-h-80 overflow-y-auto">
@@ -156,7 +156,7 @@ export const Header = () => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       removeFromCart(item.id);
-                                      toast({ title: "Removed from cart", description: `${item.name} removed` });
+                                      toast({ title: "הוסר מהעגלה", description: `${item.name} הוסר` });
                                     }}
                                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
                                     aria-label="Remove item"
@@ -168,10 +168,10 @@ export const Header = () => {
                                   <p className="text-xs text-gray-600 dark:text-gray-400">{item.variant}</p>
                                 )}
                                 {item.size && (
-                                  <p className="text-xs text-gray-600 dark:text-gray-400">Size: {item.size}</p>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400">גודל: {item.size}</p>
                                 )}
                                 <div className="flex items-center justify-between mt-1">
-                                  <span className="text-xs text-gray-600 dark:text-gray-400">Qty: {item.quantity}</span>
+                                  <span className="text-xs text-gray-600 dark:text-gray-400">כמות: {item.quantity}</span>
                                   <span className="font-bold text-sm text-gray-900 dark:text-white">₪{(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
                               </div>
@@ -181,14 +181,14 @@ export const Header = () => {
                         
                         {items.length > 3 && (
                           <div className="p-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                            +{items.length - 3} more {items.length - 3 === 1 ? 'item' : 'items'}
+                            +{items.length - 3} {items.length - 3 === 1 ? 'פריט נוסף' : 'פריטים נוספים'}
                           </div>
                         )}
                       </div>
 
                       <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="font-semibold text-gray-900 dark:text-white">Subtotal:</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">סך הכל:</span>
                           <span className="font-bold text-lg text-gray-900 dark:text-white">₪{getSubtotal().toFixed(2)}</span>
                         </div>
                         <Button
@@ -198,7 +198,7 @@ export const Header = () => {
                           }}
                           className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-semibold rounded-xl"
                         >
-                          View Cart
+                          צפה בעגלה
                         </Button>
                       </div>
                     </motion.div>

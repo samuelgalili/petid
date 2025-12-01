@@ -7,16 +7,16 @@ const BottomNav = () => {
   const location = useLocation();
 
   const navItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: ShoppingBag, label: "Deals & Coupons", path: "/rewards" },
+    { icon: Home, label: "בית", path: "/" },
+    { icon: ShoppingBag, label: "מבצעים וקופונים", path: "/rewards" },
     { 
       icon: Fuel, 
-      label: "Fuel Check-in", 
+      label: "תדלוק בע'יק", 
       path: "/tasks",
       isCenter: true, // Large elevated center button
     },
-    { icon: Grid3x3, label: "Activity", path: "/shop" },
-    { icon: MapPin, label: "Navigate", path: "/profile" },
+    { icon: Grid3x3, label: "פעילות", path: "/shop" },
+    { icon: MapPin, label: "ניווט", path: "/profile" },
   ];
 
   return (
