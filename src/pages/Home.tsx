@@ -652,14 +652,16 @@ const Home = () => {
                 צוברים ₪50 עד ה-31.12.25 בפז, yellow ובסופרמרקטים
               </p>
               
-              {/* Link Button - 13px / medium / #2271CF */}
-              <button 
-                onClick={() => navigate('/rewards')} 
-                className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
-              >
-                צבירה ומימוש
-                <span className="text-sm">‹</span>
-              </button>
+              {/* Link Button - 13px / medium / #2271CF - Left Aligned */}
+              <div className="text-left">
+                <button 
+                  onClick={() => navigate('/rewards')} 
+                  className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
+                >
+                  צבירה ומימוש
+                  <span className="text-sm">‹</span>
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>
