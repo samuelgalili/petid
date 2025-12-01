@@ -134,8 +134,9 @@ const Home = () => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "בוקר טוב";
-    if (hour < 18) return "אחר הצהריים טובים";
-    return "ערב טוב";
+    if (hour < 17) return "צהריים טובים";
+    if (hour < 21) return "ערב טוב";
+    return "לילה טוב";
   };
 
   // Confetti effects - memoized
@@ -557,10 +558,13 @@ const Home = () => {
           <div className="flex items-start gap-6">
             {/* Text Content - Left Side */}
             <div className="flex-1 pt-2">
-              {/* Small greeting - underlined - clickable to open menu */}
-              <button onClick={() => setIsMenuOpen(true)} className="text-lg text-gray-900 font-jakarta mb-3 underline decoration-2 decoration-gray-900 hover:text-gray-700 transition-colors text-right">
-                {getGreeting()} {userName}!
-              </button>
+              {/* Small greeting - only name is clickable */}
+              <div className="text-lg text-gray-900 font-jakarta mb-3 text-right">
+                {getGreeting()},{" "}
+                <button onClick={() => setIsMenuOpen(true)} className="underline decoration-2 decoration-gray-900 hover:text-gray-700 transition-colors">
+                  {userName}
+                </button>
+              </div>
               
               {/* Main headline - Bold and Large */}
               <h1 className="text-4xl font-black text-gray-900 font-jakarta mb-4 leading-tight">
