@@ -69,7 +69,7 @@ export const Header = () => {
                   onClick={() => setIsMenuOpen(true)}
                   aria-label="Open menu"
                 >
-                  <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                  <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -98,7 +98,7 @@ export const Header = () => {
                       onClick={() => navigate('/cart')}
                       aria-label="Shopping cart"
                     >
-                      <ShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                      <ShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
                       <AnimatePresence mode="wait">
                         {cartItemCount > 0 && (
                           <motion.span
@@ -163,7 +163,7 @@ export const Header = () => {
                                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
                                     aria-label="Remove item"
                                   >
-                                    <X className="w-4 h-4 text-red-500" />
+                                    <X className="w-4 h-4 text-red-500" strokeWidth={1.5} />
                                   </button>
                                 </div>
                                 {item.variant && (
@@ -217,7 +217,7 @@ export const Header = () => {
                     onClick={() => navigate('/settings')}
                     aria-label="User profile"
                   >
-                    <User className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <User className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -234,7 +234,7 @@ export const Header = () => {
                     onClick={() => navigate('/notifications')}
                     aria-label="View notifications"
                   >
-                    <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
                     <AnimatePresence mode="wait">
                       {unreadCount > 0 && (
                         <motion.span
@@ -272,7 +272,7 @@ export const Header = () => {
                       onClick={() => setIsSearchOpen(true)}
                       aria-label="Open search"
                     >
-                      <Search className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                      <Search className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">

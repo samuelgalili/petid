@@ -166,7 +166,7 @@ const Tasks = () => {
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-gray-900 font-jakarta">Pet Care Tasks</h1>
               <Button variant="ghost" size="icon">
-                <Bell className="w-5 h-5 text-gray-600" />
+                <Bell className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
               </Button>
             </div>
 
@@ -190,7 +190,7 @@ const Tasks = () => {
                 </div>
                 <div className="text-center">
                   <div className="flex items-center gap-1 mb-1">
-                    <Flame className="w-5 h-5 text-warning" />
+                    <Flame className="w-5 h-5 text-warning" strokeWidth={1.5} />
                     <span className="text-2xl font-bold text-gray-900">{streak}</span>
                   </div>
                   <div className="text-xs text-gray-700">Day Streak</div>
@@ -217,7 +217,7 @@ const Tasks = () => {
               <Card className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-secondary" />
+                    <Calendar className="w-5 h-5 text-secondary" strokeWidth={1.5} />
                     <span className="font-semibold text-gray-900 font-jakarta">Daily Progress</span>
                   </div>
                   <span className="text-sm text-gray-600">
@@ -251,10 +251,10 @@ const Tasks = () => {
                         >
                           {task.completed ? (
                             <div className="w-6 h-6 rounded-full bg-success flex items-center justify-center">
-                              <Check className="w-4 h-4 text-white" />
+                              <Check className="w-4 h-4 text-white" strokeWidth={1.5} />
                             </div>
                           ) : (
-                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" />
+                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" strokeWidth={1.5} />
                           )}
                         </button>
 
@@ -288,7 +288,7 @@ const Tasks = () => {
               <Card className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-accent" />
+                    <Trophy className="w-5 h-5 text-accent" strokeWidth={1.5} />
                     <span className="font-semibold text-gray-900 font-jakarta">Weekly Progress</span>
                   </div>
                   <span className="text-sm text-gray-600">
@@ -322,10 +322,10 @@ const Tasks = () => {
                         >
                           {task.completed ? (
                             <div className="w-6 h-6 rounded-full bg-success flex items-center justify-center">
-                              <Check className="w-4 h-4 text-white" />
+                              <Check className="w-4 h-4 text-white" strokeWidth={1.5} />
                             </div>
                           ) : (
-                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" />
+                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" strokeWidth={1.5} />
                           )}
                         </button>
 

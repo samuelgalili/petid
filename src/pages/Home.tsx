@@ -62,7 +62,7 @@ const Home = () => {
   const { streak, updateStreak } = useGame();
   const { totalPoints } = usePoints();
 
-  // Quick Actions
+  // Quick Actions - Updated with consistent icon set
   const quickActions = [
     { icon: FileText, title: "מסמכים", path: "/documents" },
     { icon: Store, title: "חנות", path: "/shop" },
@@ -204,7 +204,7 @@ const Home = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" strokeWidth={1.5} />
       </div>
     );
   }
@@ -228,7 +228,7 @@ const Home = () => {
             onClick={() => setIsMenuOpen(true)}
             className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors z-10"
           >
-            <Menu className="w-5 h-5 text-white" />
+            <Menu className="w-5 h-5 text-white" strokeWidth={1.5} />
           </button>
 
           <div className="flex items-center h-full px-6">
@@ -281,10 +281,10 @@ const Home = () => {
               onClick={() => navigate(action.path)}
               className="flex flex-col items-center gap-2 flex-1 min-w-0"
             >
-              <div className="w-14 h-14 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-105 transition-all">
-                <action.icon className="w-6 h-6 text-gray-800" strokeWidth={1.5} />
+              <div className="w-14 h-14 rounded-full bg-[#F5F5F3] border border-[#E1E1E1] flex items-center justify-center shadow-sm hover:shadow-md hover:scale-105 transition-all">
+                <action.icon className="w-6 h-6 text-[#1F2A44]" strokeWidth={1.5} />
               </div>
-              <span className="text-xs text-gray-700 font-medium text-center leading-tight truncate w-full">
+              <span className="text-xs text-[#333333] font-medium text-center leading-tight truncate w-full">
                 {action.title}
               </span>
             </button>
@@ -327,7 +327,7 @@ const Home = () => {
                       {task.title}
                     </span>
                     {task.completed && (
-                      <Check className="w-4 h-4 text-green-600" />
+                      <Check className="w-4 h-4 text-green-600" strokeWidth={1.5} />
                     )}
                   </div>
                 ))}
@@ -387,7 +387,7 @@ const Home = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <MapPin className="w-4 h-4 text-primary" />
+                    <MapPin className="w-4 h-4 text-primary" strokeWidth={1.5} />
                     <h3 className="text-base font-bold text-gray-900">{nearbyParks[0].name}</h3>
                   </div>
                   <p className="text-xs text-gray-600 mb-2">{nearbyParks[0].city}</p>
@@ -396,6 +396,7 @@ const Home = () => {
                       <Star
                         key={star}
                         className={`w-3 h-3 ${star <= (nearbyParks[0].rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                        strokeWidth={1.5}
                       />
                     ))}
                     <span className="text-xs text-gray-600 mr-1">
@@ -408,7 +409,7 @@ const Home = () => {
                   onClick={() => navigate('/parks')}
                   className="bg-primary hover:bg-primary/90 text-white rounded-full h-8 px-4"
                 >
-                  <Navigation className="w-3 h-3 ml-1" />
+                  <Navigation className="w-3 h-3 ml-1" strokeWidth={1.5} />
                   נווט
                 </Button>
               </div>

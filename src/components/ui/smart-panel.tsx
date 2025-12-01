@@ -62,7 +62,7 @@ export const SmartPanel = ({
           <div className="flex items-center gap-3">
             {Icon && (
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Icon className="w-5 h-5 text-primary" />
+                <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -114,13 +114,16 @@ export const SmartPanelItem = ({
           variant === "warning" && "bg-warning/20",
           variant === "success" && "bg-success/20"
         )}>
-          <Icon className={cn(
-            "w-5 h-5",
-            variant === "default" && "text-foreground",
-            variant === "highlighted" && "text-primary",
-            variant === "warning" && "text-warning",
-            variant === "success" && "text-success"
-          )} />
+          <Icon 
+            className={cn(
+              "w-5 h-5",
+              variant === "default" && "text-[#1F2A44]",
+              variant === "highlighted" && "text-primary",
+              variant === "warning" && "text-warning",
+              variant === "success" && "text-success"
+            )} 
+            strokeWidth={1.5}
+          />
         </div>
         
         <div className="flex-1 min-w-0">

@@ -15,6 +15,7 @@ import {
   FileText,
   Info,
   Shield,
+  ShieldCheck,
   LogOut,
   ChevronLeft,
   CreditCard,
@@ -25,7 +26,6 @@ import {
   Plus,
   PawPrint,
   Camera,
-  FileImage,
   Home,
   Scissors,
   GraduationCap,
@@ -258,7 +258,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               >
                 <SmartPanel title="שירותים" icon={Store}>
                   <SmartPanel.Item
-                    icon={Shield}
+                    icon={ShieldCheck}
                     label="ביטוח לחיות מחמד"
                     value="הגנה מקיפה"
                     to="/insurance"
@@ -300,7 +300,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     to="/photos"
                   />
                   <SmartPanel.Item
-                    icon={FileImage}
+                    icon={FileText}
                     label="מסמכים"
                     value="חיסונים ותעודות"
                     to="/documents"
