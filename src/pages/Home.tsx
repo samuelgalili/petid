@@ -637,7 +637,7 @@ const Home = () => {
               </div>
               
               {/* Main Headline - Marketing Message */}
-              <h1 className="text-[1.25rem] leading-tight font-black text-[#1A1A1A] mb-1 whitespace-nowrap">
+              <h1 className="text-[0.95rem] leading-tight font-black text-[#1A1A1A] mb-1 whitespace-nowrap">
                 קונים, צוברים, נהנים — בכל רכישה מחדש!
               </h1>
               
