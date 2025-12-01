@@ -314,98 +314,117 @@ const PostDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white" dir="rtl">
+    <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-4">
+      <div className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] sticky top-0 z-10 px-4 py-4 shadow-md">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="rounded-full"
+            className="rounded-full hover:bg-white/20"
           >
-            <ArrowRight className="w-6 h-6" />
+            <ArrowRight className="w-6 h-6 text-gray-900" />
           </Button>
-          <h1 className="text-xl font-bold text-gray-900 font-jakarta">פוסט</h1>
+          <h1 className="text-xl font-black text-gray-900 font-jakarta">פוסט</h1>
           <div className="w-10" />
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto">
-        {/* Post Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <div 
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => navigate(`/user/${post.user.id}`)}
-          >
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
-                {post.user.full_name?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-gray-900 font-jakarta">{post.user.full_name}</p>
-              <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Post Image */}
-        <div className="w-full aspect-square bg-gray-100 relative">
-          <img 
-            src={post.image_url} 
-            alt={post.caption || ""}
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Post Actions */}
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={handleLike}
-                className={`flex items-center gap-2 transition-colors ${
-                  post.is_liked ? 'text-red-500' : 'text-gray-700 hover:text-red-500'
-                }`}
-              >
-                <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
-                <span className="font-semibold font-jakarta">{post.likes_count}</span>
-              </button>
-              <div className="flex items-center gap-2 text-gray-700">
-                <MessageCircle className="w-6 h-6" />
-                <span className="font-semibold font-jakarta">{post.comments_count}</span>
+      <div className="max-w-2xl mx-auto p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-xl overflow-hidden"
+        >
+          {/* Post Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <div 
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => navigate(`/user/${post.user.id}`)}
+            >
+              <Avatar className="w-12 h-12 ring-2 ring-gray-100">
+                <AvatarImage src={post.user.avatar_url} />
+                <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white font-black">
+                  {post.user.full_name?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-black text-gray-900 font-jakarta">{post.user.full_name}</p>
+                <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
               </div>
-              <button className="text-gray-700 hover:text-green-500 transition-colors">
-                <Share2 className="w-6 h-6" />
-              </button>
             </div>
-            <button className="text-gray-700 hover:text-yellow-500 transition-colors">
-              <Bookmark className="w-6 h-6" />
-            </button>
           </div>
 
-          {/* Post Caption */}
-          {post.caption && (
-            <div className="mb-3">
-              <p className="text-gray-900 font-jakarta">
-                <span 
-                  className="font-semibold cursor-pointer hover:underline"
-                  onClick={() => navigate(`/user/${post.user.id}`)}
-                >
-                  {post.user.full_name}
-                </span>{" "}
-                {post.caption}
-              </p>
-            </div>
-          )}
-        </div>
+          {/* Post Image */}
+          <div className="w-full aspect-square bg-gray-100 relative">
+            <img 
+              src={post.image_url} 
+              alt={post.caption || ""}
+              className="w-full h-full object-cover"
+            />
+          </div>
 
-        {/* Comments Section */}
-        <div className="pb-20">
-          <AnimatePresence>
-            {comments.map((comment) => (
+          {/* Post Actions */}
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-5">
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleLike}
+                  className={`flex items-center gap-2 transition-colors ${
+                    post.is_liked ? 'text-red-500' : 'text-gray-700'
+                  }`}
+                >
+                  <Heart className={`w-7 h-7 ${post.is_liked ? 'fill-current' : ''}`} />
+                  {post.likes_count > 0 && (
+                    <span className="font-black font-jakarta">{post.likes_count}</span>
+                  )}
+                </motion.button>
+                <div className="flex items-center gap-2 text-gray-700">
+                  <MessageCircle className="w-7 h-7" />
+                  {post.comments_count > 0 && (
+                    <span className="font-black font-jakarta">{post.comments_count}</span>
+                  )}
+                </div>
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  className="text-gray-700"
+                >
+                  <Share2 className="w-7 h-7" />
+                </motion.button>
+              </div>
+              <motion.button 
+                whileTap={{ scale: 0.9 }}
+                className="text-gray-700 hover:text-yellow-500 transition-colors"
+              >
+                <Bookmark className="w-7 h-7" />
+              </motion.button>
+            </div>
+
+            {/* Post Caption */}
+            {post.caption && (
+              <div className="mb-2">
+                <p className="text-gray-900 font-jakarta">
+                  <span 
+                    className="font-black cursor-pointer hover:underline"
+                    onClick={() => navigate(`/user/${post.user.id}`)}
+                  >
+                    {post.user.full_name}
+                  </span>{" "}
+                  {post.caption}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Comments Section */}
+          <div className="max-h-[400px] overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <h3 className="font-black text-gray-900 font-jakarta">תגובות</h3>
+            </div>
+            <AnimatePresence>
+              {comments.map((comment) => (
               <motion.div
                 key={comment.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -512,37 +531,50 @@ const PostDetail = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
+    </div>
 
       {/* Add Comment Input - Fixed at bottom */}
       {user && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
-          <div className="max-w-2xl mx-auto flex items-end gap-3">
-            <Avatar className="w-9 h-9">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 z-10 shadow-2xl">
+          <div className="max-w-2xl mx-auto flex gap-3">
+            <Avatar className="w-10 h-10 flex-shrink-0 ring-2 ring-gray-200">
               <AvatarImage src={user.user_metadata?.avatar_url} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white text-sm">
+              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white font-black">
                 {user.user_metadata?.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
-            <Textarea
-              placeholder="הוסף תגובה..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="flex-1 min-h-[40px] max-h-[120px] resize-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleAddComment();
-                }
-              }}
-            />
-            <Button
-              onClick={handleAddComment}
-              disabled={!newComment.trim() || submitting}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
+            <div className="flex-1 flex gap-2">
+              <Textarea
+                placeholder="כתוב תגובה... 💬"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="min-h-[48px] max-h-[100px] resize-none rounded-2xl border-2 focus:border-[#FFD700] font-jakarta"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddComment();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleAddComment}
+                disabled={!newComment.trim() || submitting}
+                size="icon"
+                className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 shadow-lg"
+              >
+                {submitting ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                  >
+                    <Send className="w-5 h-5" />
+                  </motion.div>
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}

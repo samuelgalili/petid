@@ -2,10 +2,11 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -50,7 +51,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     setUploading(true);
 
     try {
-      // Upload image to avatars bucket (reusing existing bucket)
+      // Upload image to avatars bucket
       const fileExt = selectedImage.name.split(".").pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
@@ -79,7 +80,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
 
       if (insertError) throw insertError;
 
-      toast.success("הפוסט פורסם בהצלחה!");
+      toast.success("🎉 הפוסט פורסם בהצלחה!");
       
       // Reset form
       setCaption("");
@@ -97,31 +98,38 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg font-jakarta" dir="rtl">
+      <DialogContent className="sm:max-w-lg font-jakarta bg-white rounded-3xl" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">פוסט חדש</DialogTitle>
+          <DialogTitle className="text-2xl font-black text-center text-gray-900 flex items-center justify-center gap-2">
+            <Sparkles className="w-6 h-6 text-yellow-500" />
+            פוסט חדש
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Image Preview or Upload Options */}
           {previewUrl ? (
-            <div className="relative">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative"
+            >
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full aspect-square object-cover rounded-lg"
+                className="w-full aspect-square object-cover rounded-2xl shadow-lg"
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 left-2 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white rounded-full shadow-lg w-10 h-10"
                 onClick={handleRemoveImage}
               >
                 <X className="w-5 h-5" />
               </Button>
-            </div>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -138,60 +146,79 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
                 onChange={handleImageSelect}
               />
               
-              <Button
-                variant="outline"
-                className="h-32 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary"
-                onClick={() => fileInputRef.current?.click()}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <ImageIcon className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-600">בחר מהגלריה</span>
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-yellow-50 rounded-2xl transition-all"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-gray-700" />
+                  </div>
+                  <span className="text-sm font-bold text-gray-700">בחר מהגלריה</span>
+                </Button>
+              </motion.div>
 
-              <Button
-                variant="outline"
-                className="h-32 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary"
-                onClick={() => cameraInputRef.current?.click()}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Camera className="w-8 h-8 text-gray-500" />
-                <span className="text-sm text-gray-600">צלם תמונה</span>
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-yellow-50 rounded-2xl transition-all"
+                  onClick={() => cameraInputRef.current?.click()}
+                >
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-teal-100 rounded-full flex items-center justify-center">
+                    <Camera className="w-8 h-8 text-gray-700" />
+                  </div>
+                  <span className="text-sm font-bold text-gray-700">צלם תמונה</span>
+                </Button>
+              </motion.div>
             </div>
           )}
 
           {/* Caption Input */}
-          <Textarea
-            placeholder="כתוב כיתוב לפוסט..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="min-h-[100px] resize-none"
-            maxLength={500}
-          />
-          <div className="text-xs text-gray-500 text-left">
-            {caption.length}/500
+          <div className="space-y-2">
+            <Textarea
+              placeholder="שתף משהו על חיית המחמד שלך... 🐾"
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              className="min-h-[120px] resize-none rounded-2xl border-2 focus:border-[#FFD700] font-jakarta"
+              maxLength={500}
+            />
+            <div className="text-xs text-gray-500 text-left font-jakarta">
+              {caption.length}/500
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               variant="outline"
-              className="flex-1"
+              className="flex-1 rounded-2xl font-bold font-jakarta h-12"
               onClick={() => onOpenChange(false)}
               disabled={uploading}
             >
               ביטול
             </Button>
             <Button
-              className="flex-1 bg-blue-500 hover:bg-blue-600"
+              className="flex-1 rounded-2xl font-bold font-jakarta h-12 bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 shadow-lg"
               onClick={handleCreatePost}
               disabled={!selectedImage || uploading}
             >
               {uploading ? (
                 <>
-                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  <Loader2 className="w-5 h-5 ml-2 animate-spin" />
                   מפרסם...
                 </>
               ) : (
-                "פרסם"
+                <>
+                  <Sparkles className="w-5 h-5 ml-2" />
+                  פרסם
+                </>
               )}
             </Button>
           </div>
