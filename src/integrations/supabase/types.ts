@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          id: string
+          points_awarded: number
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          id?: string
+          points_awarded?: number
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          id?: string
+          points_awarded?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       adoption_pets: {
         Row: {
           age_months: number | null
@@ -132,6 +164,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      badges: {
+        Row: {
+          condition_type: string
+          condition_value: number
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          name_he: string
+          points_reward: number
+          rarity: string
+        }
+        Insert: {
+          condition_type: string
+          condition_value: number
+          created_at?: string
+          description: string
+          icon: string
+          id?: string
+          name: string
+          name_he: string
+          points_reward?: number
+          rarity: string
+        }
+        Update: {
+          condition_type?: string
+          condition_value?: number
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          name_he?: string
+          points_reward?: number
+          rarity?: string
+        }
+        Relationships: []
       }
       breed_detection_history: {
         Row: {
@@ -675,10 +746,14 @@ export type Database = {
           breed: string | null
           breed_confidence: number | null
           created_at: string | null
+          favorite_activities: string[] | null
           gender: string | null
+          health_notes: string | null
           id: string
           is_neutered: boolean | null
+          mood_score: number | null
           name: string
+          personality_tags: string[] | null
           type: string
           updated_at: string | null
           user_id: string
@@ -692,10 +767,14 @@ export type Database = {
           breed?: string | null
           breed_confidence?: number | null
           created_at?: string | null
+          favorite_activities?: string[] | null
           gender?: string | null
+          health_notes?: string | null
           id?: string
           is_neutered?: boolean | null
+          mood_score?: number | null
           name: string
+          personality_tags?: string[] | null
           type: string
           updated_at?: string | null
           user_id: string
@@ -709,10 +788,14 @@ export type Database = {
           breed?: string | null
           breed_confidence?: number | null
           created_at?: string | null
+          favorite_activities?: string[] | null
           gender?: string | null
+          health_notes?: string | null
           id?: string
           is_neutered?: boolean | null
+          mood_score?: number | null
           name?: string
+          personality_tags?: string[] | null
           type?: string
           updated_at?: string | null
           user_id?: string
@@ -1100,6 +1183,98 @@ export type Database = {
           viewer_id?: string
         }
         Relationships: []
+      }
+      streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_activity_date: string | null
+          longest_streak: number
+          streak_level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          streak_level?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          streak_level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          category: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          pet_id: string | null
+          points: number
+          task_type: string
+          title: string
+          title_he: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          pet_id?: string | null
+          points?: number
+          task_type: string
+          title: string
+          title_he: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          pet_id?: string | null
+          points?: number
+          task_type?: string
+          title?: string
+          title_he?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trainers: {
         Row: {
