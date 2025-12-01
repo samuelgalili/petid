@@ -143,12 +143,12 @@ const Profile = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-[#F5F5F5] pb-20" dir="rtl">
-        {/* Yellow Header */}
-        <div className="bg-[#FFD700] px-4 pt-4 pb-4 flex items-center justify-between sticky top-0 z-10">
+        {/* Header */}
+        <div className="bg-primary px-4 pt-4 pb-4 flex items-center justify-between sticky top-0 z-10">
           <button onClick={() => navigate(-1)} className="p-2">
-            <ChevronRight className="w-6 h-6 text-gray-900" />
+            <ChevronRight className="w-6 h-6 text-text-inverse" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900 font-jakarta">האזור האישי שלך</h1>
+          <h1 className="text-xl font-bold text-text-inverse font-jakarta">האזור האישי שלך</h1>
           <div className="w-10" />
         </div>
 
@@ -156,7 +156,7 @@ const Profile = () => {
         <div className="px-4 py-6 space-y-5">
           
           {/* User Header Section - Enhanced */}
-          <div className="bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] rounded-3xl p-6 mb-6 shadow-xl relative overflow-hidden">
+          <div className="bg-gradient-primary rounded-3xl p-6 mb-6 shadow-xl relative overflow-hidden">
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -184,10 +184,10 @@ const Profile = () => {
                   </div>
                 </div>
                 <div className="relative">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full opacity-75 blur animate-pulse" />
+                  <div className="absolute -inset-1 bg-gradient-secondary rounded-full opacity-75 blur animate-pulse" />
                   <Avatar className="relative w-20 h-20 border-4 border-white shadow-2xl">
                     <AvatarImage src={profile?.avatar_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-gray-900 to-gray-700 text-white font-black text-2xl">
+                    <AvatarFallback className="bg-gradient-secondary text-white font-black text-2xl">
                       {profile?.full_name?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -291,7 +291,7 @@ const Profile = () => {
                 <p className="text-gray-500 text-base font-jakarta mb-4">אין חיות מחמד רשומות</p>
                 <button
                   onClick={() => navigate('/add-pet')}
-                  className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] text-gray-900 px-6 py-3 rounded-full font-bold font-jakarta hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                  className="bg-accent hover:bg-accent-hover text-text-inverse px-6 py-3 rounded-full font-bold font-jakarta hover:shadow-lg transition-all hover:scale-105 active:scale-95"
                 >
                   הוסף חיית מחמד ראשונה
                 </button>

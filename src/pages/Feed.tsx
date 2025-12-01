@@ -213,17 +213,17 @@ const Feed = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F5] pb-24" dir="rtl">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] sticky top-0 z-10 px-4 py-4 shadow-md">
+      <div className="bg-gradient-primary sticky top-0 z-10 px-4 py-4 shadow-md">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-gray-900" />
-            <h1 className="text-2xl font-black text-gray-900 font-jakarta">
+            <Sparkles className="w-6 h-6 text-text-inverse" />
+            <h1 className="text-2xl font-black text-text-inverse font-jakarta">
               הפיד שלי
             </h1>
           </div>
           <Button 
             size="icon"
-            className="rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg w-12 h-12"
+            className="rounded-full bg-secondary hover:bg-secondary-dark text-white shadow-lg w-12 h-12"
             onClick={() => setCreatePostOpen(true)}
           >
             <Plus className="w-6 h-6" />
@@ -293,7 +293,7 @@ const Feed = () => {
             </p>
             <Button
               onClick={() => setCreatePostOpen(true)}
-              className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-bold shadow-lg"
+              className="bg-accent hover:bg-accent-hover text-text-inverse font-bold shadow-lg"
             >
               <Plus className="w-5 h-5 ml-2" />
               צור פוסט ראשון
@@ -317,7 +317,7 @@ const Feed = () => {
                   >
                     <Avatar className="w-12 h-12 ring-2 ring-gray-100">
                       <AvatarImage src={post.user.avatar_url} />
-                      <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white font-black">
+                      <AvatarFallback className="bg-gradient-secondary text-white font-black">
                         {post.user.full_name?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -380,7 +380,7 @@ const Feed = () => {
                     </div>
                     <motion.button 
                       whileTap={{ scale: 0.9 }}
-                      className={`${post.is_saved ? 'text-yellow-500' : 'text-gray-700'}`}
+                      className={`${post.is_saved ? 'text-accent' : 'text-gray-700'}`}
                     >
                       <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} />
                     </motion.button>

@@ -265,7 +265,7 @@ const UserProfile = () => {
         <div className="flex items-start gap-6 mb-6">
           <Avatar className="w-20 h-20 md:w-28 md:h-28">
             <AvatarImage src={profile.avatar_url} />
-            <AvatarFallback className="text-3xl bg-gradient-to-br from-pink-400 to-purple-400 text-white">
+            <AvatarFallback className="text-3xl bg-gradient-secondary text-white">
               {profile.full_name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
@@ -318,7 +318,7 @@ const UserProfile = () => {
               className={`flex-1 font-jakarta ${
                 isFollowing
                   ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
+                  : "bg-secondary hover:bg-secondary-dark text-white"
               }`}
             >
               {isFollowing ? "עוקב" : "עקוב"}
