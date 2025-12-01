@@ -115,8 +115,13 @@ export const usePushNotifications = () => {
       const registration = await navigator.serviceWorker.register('/sw.js');
       await navigator.serviceWorker.ready;
 
-      // VAPID public key - you'll need to generate this
-      const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+      // Get VAPID public key from environment
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      
+      if (!vapidPublicKey) {
+        throw new Error('VAPID public key not configured');
+      }
+      
       const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
       // Subscribe to push notifications
