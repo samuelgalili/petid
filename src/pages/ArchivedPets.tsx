@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { AppHeader } from "@/components/AppHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -131,22 +132,8 @@ const ArchivedPets = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-b from-white to-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-gray-100"
-            onClick={() => navigate("/home")}
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </Button>
-          <h1 className="text-base font-bold font-jakarta text-gray-900">Archived Pets</h1>
-          <div className="w-10" />
-        </div>
-      </header>
+    <div className="min-h-screen pb-20 bg-white">
+      <AppHeader title="חיות מחמד בארכיון" showBackButton={true} />
 
       {/* Content */}
       <div className="px-4 py-6">

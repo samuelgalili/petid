@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import BottomNav from "@/components/BottomNav";
+import { AppHeader } from "@/components/AppHeader";
 
 const Experiences = () => {
   const experiences = [
@@ -27,9 +28,11 @@ const Experiences = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Header */}
-      <div className="bg-gradient-to-b from-pink/30 to-background p-6 pb-4">
+    <div className="min-h-screen bg-white pb-20" dir="rtl">
+      <AppHeader title="חניות חיות" showBackButton={true} />
+      
+      {/* Search and filters */}
+      <div className="px-4 py-4">
         <div className="flex items-center gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

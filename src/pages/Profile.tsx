@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
+import { AppHeader } from "@/components/AppHeader";
 import { 
   ChevronRight,
   ShoppingCart,
@@ -142,15 +143,8 @@ const Profile = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[#F5F5F5] pb-20" dir="rtl">
-        {/* Header */}
-        <div className="bg-primary px-4 pt-4 pb-4 flex items-center justify-between sticky top-0 z-10">
-          <button onClick={() => navigate(-1)} className="p-2">
-            <ChevronRight className="w-6 h-6 text-text-inverse" />
-          </button>
-          <h1 className="text-xl font-bold text-text-inverse font-jakarta">האזור האישי שלך</h1>
-          <div className="w-10" />
-        </div>
+      <div className="min-h-screen bg-white pb-20" dir="rtl">
+        <AppHeader title="האזור האישי שלך" showBackButton={true} />
 
         {/* Content Container */}
         <div className="px-4 py-6 space-y-5">

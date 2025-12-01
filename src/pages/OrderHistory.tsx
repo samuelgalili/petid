@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Clock, CheckCircle, Truck, XCircle, RefreshCw } from "lucide-react";
+import { Package, Clock, CheckCircle, Truck, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import { AppHeader } from "@/components/AppHeader";
 
 interface OrderItem {
   id: string;
@@ -142,22 +143,8 @@ const OrderHistory = () => {
   };
 
   return (
-    <div className="min-h-screen pb-32 bg-gradient-to-b from-white to-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-gray-100"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </Button>
-          <h1 className="text-base font-bold font-jakarta text-gray-900">Order History</h1>
-          <div className="w-10" />
-        </div>
-      </header>
+    <div className="min-h-screen bg-white pb-20" dir="rtl">
+      <AppHeader title="היסטוריית הזמנות" showBackButton={true} />
 
       {/* Loading State */}
       {loading && (

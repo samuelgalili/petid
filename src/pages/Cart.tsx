@@ -3,17 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
-import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
-import { ArrowRight, Plus, Minus, Trash2, ShoppingBag, CreditCard } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AppHeader } from "@/components/AppHeader";
 
 const Cart = () => {
   const navigate = useNavigate();
   const { items, updateQuantity, removeFromCart, getSubtotal, getTotalItems } = useCart();
   const { toast } = useToast();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const shippingCost = getSubtotal() >= 200 ? 0 : 25;
   const taxRate = 0.17; // 17% VAT
@@ -43,22 +42,7 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-white pb-20" dir="rtl">
-        <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        
-        {/* Header */}
-        <div className="bg-accent pt-6 pb-6 shadow-md">
-          <div className="max-w-md mx-auto px-4 flex items-center">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <ArrowRight className="w-6 h-6 text-gray-900" />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900 text-center flex-1 font-jakarta">
-              עגלת הקניות
-            </h1>
-          </div>
-        </div>
+        <AppHeader title="עגלת הקניות" showBackButton={true} />
 
         {/* Empty Cart State */}
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
@@ -93,23 +77,8 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-white pb-32" dir="rtl">
-      <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <AppHeader title="עגלת הקניות" showBackButton={true} />
       
-      {/* Header */}
-      <div className="bg-accent pt-6 pb-6 shadow-md sticky top-0 z-40">
-        <div className="max-w-md mx-auto px-4 flex items-center">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors"
-          >
-            <ArrowRight className="w-6 h-6 text-gray-900" />
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900 text-center flex-1 font-jakarta">
-            עגלת הקניות ({getTotalItems()})
-          </h1>
-        </div>
-      </div>
-
       {/* Cart Items */}
       <div className="max-w-md mx-auto px-4 py-6">
         <AnimatePresence mode="popLayout">
@@ -253,9 +222,8 @@ const Cart = () => {
               >
                 <Button
                   onClick={handleCheckout}
-                  className="w-full h-14 bg-accent hover:bg-accent-hover text-gray-900 text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
+                  className="w-full h-14 bg-primary hover:bg-primary/90 text-foreground text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
                 >
-                  <CreditCard className="w-6 h-6" />
                   המשך לתשלום
                 </Button>
               </motion.div>

@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, Calendar, Info, History, Heart, Stethoscope, Pill, Syringe } from "lucide-react";
+import { Camera, Calendar, Info, History, Heart, Stethoscope, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
+import { AppHeader } from "@/components/AppHeader";
 
 interface Pet {
   id: string;
@@ -104,17 +105,7 @@ const PetDetails = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 z-40">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/home')}
-            className="rounded-full hover:bg-gray-50"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </Button>
-        </div>
-        <div className="h-16"></div>
+        <AppHeader title="פרופיל חיית מחמד" showBackButton={true} />
         <div className="px-4 pt-6">
           <div className="animate-pulse">
             <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4"></div>
@@ -130,23 +121,7 @@ const PetDetails = () => {
 
   return (
     <div className="min-h-screen bg-white pb-20">
-      {/* Header */}
-      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 shadow-sm z-40">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/home')}
-            className="rounded-full hover:bg-gray-50"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </Button>
-          <h1 className="text-lg font-bold text-gray-900 font-jakarta">Pet Profile</h1>
-          <div className="w-10"></div>
-        </div>
-      </div>
-
-      <div className="h-16"></div>
+      <AppHeader title="פרופיל חיית מחמד" showBackButton={true} />
 
       {/* Content */}
       <div className="px-4 pt-6">

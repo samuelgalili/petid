@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, CreditCard, MapPin, Package, Truck } from "lucide-react";
+import { Check, CreditCard, MapPin, Package, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
+import { AppHeader } from "@/components/AppHeader";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(100, "Full name must be less than 100 characters"),
@@ -183,21 +184,7 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen pb-20 bg-white" dir="rtl">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-accent shadow-md">
-        <div className="flex items-center justify-between px-4 py-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-white/20"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowRight className="w-6 h-6 text-gray-900" />
-          </Button>
-          <h1 className="text-xl font-bold font-jakarta text-gray-900">תשלום</h1>
-          <div className="w-10" />
-        </div>
-      </header>
+      <AppHeader title="תשלום" showBackButton={true} />
 
       {/* Progress Steps */}
       <div className="px-4 py-6 bg-gray-50">
