@@ -9,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
+import { FollowersDialog } from "@/components/FollowersDialog";
 
 interface UserProfile {
   id: string;
@@ -40,6 +41,8 @@ const UserProfile = () => {
   const [followStats, setFollowStats] = useState<FollowStats>({ followers: 0, following: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
+  const [followersDialogTab, setFollowersDialogTab] = useState<"followers" | "following">("followers");
 
   const isOwnProfile = user?.id === userId;
 
@@ -219,13 +222,25 @@ const UserProfile = () => {
                 </div>
                 <div className="text-sm text-gray-500 font-jakarta">פוסטים</div>
               </div>
-              <div className="text-center">
+              <div 
+                className="text-center cursor-pointer hover:opacity-70 transition-opacity"
+                onClick={() => {
+                  setFollowersDialogTab("followers");
+                  setFollowersDialogOpen(true);
+                }}
+              >
                 <div className="text-xl font-bold text-gray-900 font-jakarta">
                   {followStats.followers}
                 </div>
                 <div className="text-sm text-gray-500 font-jakarta">עוקבים</div>
               </div>
-              <div className="text-center">
+              <div 
+                className="text-center cursor-pointer hover:opacity-70 transition-opacity"
+                onClick={() => {
+                  setFollowersDialogTab("following");
+                  setFollowersDialogOpen(true);
+                }}
+              >
                 <div className="text-xl font-bold text-gray-900 font-jakarta">
                   {followStats.following}
                 </div>
@@ -317,6 +332,13 @@ const UserProfile = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <FollowersDialog
+        open={followersDialogOpen}
+        onOpenChange={setFollowersDialogOpen}
+        userId={userId!}
+        defaultTab={followersDialogTab}
+      />
 
       <BottomNav />
     </div>
