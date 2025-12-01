@@ -620,14 +620,18 @@ const Home = () => {
         >
           {/* Main Content: Icon (Right) + Text Column (Left) */}
           <div className="flex flex-row-reverse items-center gap-[14px]">
-            {/* Gift Icon - Right Side - NO background circle */}
-            <div className="flex-shrink-0 w-12 h-12 hover:scale-105 transition-transform duration-200">
+            {/* Gift Icon - Right Side - Enhanced with soft background */}
+            <button 
+              onClick={() => navigate('/rewards')}
+              className="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-br from-amber-50 to-yellow-100 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-300 ease-out group"
+              aria-label="עבור למתנות ותגמולים"
+            >
               <img 
                 src={giftIcon} 
                 alt="מתנה" 
-                className="w-full h-full object-contain"
+                className="w-9 h-9 object-contain group-hover:rotate-12 transition-transform duration-300"
               />
-            </div>
+            </button>
 
             {/* Text Column - Left Side */}
             <div className="flex-1 text-right space-y-1">
