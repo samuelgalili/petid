@@ -25,13 +25,13 @@ const BottomNav = () => {
       <div className="fixed bottom-[72px] left-0 right-0 bg-white border-t border-gray-100 z-40">
         <div className="max-w-md mx-auto px-4 py-3">
           <div className="flex justify-center items-center gap-3 flex-wrap text-xs">
-            <a href="#" className="text-blue-600 hover:underline font-jakarta">Accessibility Statement</a>
+            <a href="#" className="text-secondary hover:underline font-jakarta">Accessibility Statement</a>
             <span className="text-gray-300">|</span>
-            <a href="#" className="text-blue-600 hover:underline font-jakarta">Club Terms</a>
+            <a href="#" className="text-secondary hover:underline font-jakarta">Club Terms</a>
             <span className="text-gray-300">|</span>
-            <a href="#" className="text-blue-600 hover:underline font-jakarta">Privacy Policy</a>
+            <a href="#" className="text-secondary hover:underline font-jakarta">Privacy Policy</a>
             <span className="text-gray-300">|</span>
-            <a href="#" className="text-blue-600 hover:underline font-jakarta">Terms of Use</a>
+            <a href="#" className="text-secondary hover:underline font-jakarta">Terms of Use</a>
           </div>
         </div>
       </div>
@@ -56,9 +56,9 @@ const BottomNav = () => {
                   // Large elevated center button - Fuel Check-in
                   <motion.div
                     whileTap={{ scale: 0.95 }}
-                    className="w-16 h-16 rounded-full bg-[#FFC107] flex items-center justify-center shadow-[0_4px_20px_rgba(255,193,7,0.4)] mb-1"
+                    className="w-16 h-16 rounded-full bg-accent flex items-center justify-center shadow-[0_4px_20px_rgba(251,214,106,0.4)] mb-1"
                   >
-                    <MessageCircle className="w-7 h-7 text-[#E63946] stroke-[2.5]" />
+                    <MessageCircle className="w-7 h-7 text-error stroke-[2.5]" />
                   </motion.div>
                 ) : (
                   <motion.div

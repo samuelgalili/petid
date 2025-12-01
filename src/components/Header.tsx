@@ -198,7 +198,7 @@ export const Header = () => {
                             setShowCartPreview(false);
                             navigate('/cart');
                           }}
-                          className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-semibold rounded-xl"
+                          className="w-full bg-accent hover:bg-accent-hover text-text-inverse font-semibold rounded-xl"
                         >
                           צפה בעגלה
                         </Button>
@@ -247,7 +247,7 @@ export const Header = () => {
                             stiffness: 500,
                             damping: 25
                           }}
-                          className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full text-xs font-black flex items-center justify-center shadow-lg animate-pulse border-2 border-white"
+                          className="absolute -top-1 -right-1 w-6 h-6 bg-error text-white rounded-full text-xs font-black flex items-center justify-center shadow-lg animate-pulse border-2 border-white"
                         >
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </motion.span>
@@ -293,7 +293,7 @@ export const Header = () => {
                       }}
                       autoFocus
                       aria-label="Search products"
-                      className="w-full h-12 pl-12 pr-4 rounded-2xl bg-white border-2 border-[#7DD3C0] text-sm text-gray-900 placeholder:text-gray-400 font-jakarta shadow-lg focus-visible-ring"
+                      className="w-full h-12 pl-12 pr-4 rounded-2xl bg-white border-2 border-success text-sm text-gray-900 placeholder:text-gray-400 font-jakarta shadow-lg focus-visible-ring"
                     />
                   </div>
                 </div>
