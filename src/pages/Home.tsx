@@ -619,7 +619,7 @@ const Home = () => {
           y: 0
         }} transition={{
           delay: 0.05
-        }} className="bg-white px-6 py-8 mb-4" dir="rtl">
+        }} className="bg-white px-6 py-8 mb-4 mx-4 rounded-2xl shadow-lg border border-gray-100" dir="rtl">
           <div className="flex items-start gap-6">
             {/* Text Content - Left Side */}
             <div className="flex-1 pt-2">
@@ -632,12 +632,12 @@ const Home = () => {
               </div>
               
               {/* Main headline - Bold and Large */}
-              <h1 className="text-4xl font-black text-gray-900 font-jakarta mb-4 leading-tight">
+              <h1 className="text-4xl font-black text-gray-900 font-jakarta mb-4 leading-tight drop-shadow-sm">
                 רבעון חדש, צבירה חדשה!
               </h1>
               
               {/* Details text - Gray */}
-              <p className="text-base text-gray-600 font-jakarta leading-relaxed">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
+              <p className="text-base text-gray-700 font-jakarta leading-relaxed font-medium">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
             </div>
 
             {/* Gift Icon - Right Side */}
@@ -647,8 +647,8 @@ const Home = () => {
           </div>
 
           {/* Bottom Link - Blue */}
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-jakarta font-bold text-base hover:underline inline-flex items-center gap-1">
+          <div className="mt-6 pt-5 border-t border-gray-200">
+            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-jakarta font-bold text-base hover:underline hover:text-blue-700 transition-colors inline-flex items-center gap-1">
               צבירה ומימוש
               <span className="text-xl transform rotate-180 inline-block">›</span>
             </button>
