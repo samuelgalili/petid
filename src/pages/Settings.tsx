@@ -249,7 +249,7 @@ const Settings = () => {
                       }`}
                     >
                       <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-5 h-5" />
+                        <Icon className="w-5 h-5 text-icon-base" strokeWidth={1.5} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm mb-0.5">{item.label}</h3>
@@ -280,7 +280,7 @@ const Settings = () => {
                         </Select>
                       )}
                       {item.type === "link" && (
-                        <ChevronLeft className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <ChevronLeft className="w-5 h-5 text-icon-base flex-shrink-0" strokeWidth={1.5} />
                       )}
                     </div>
                   </div>
@@ -298,7 +298,7 @@ const Settings = () => {
         >
           <div className="flex items-center gap-4 p-4">
             <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
-              <LogOut className="w-5 h-5 text-destructive" />
+              <LogOut className="w-5 h-5 text-destructive" strokeWidth={1.5} />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-sm text-destructive">{t("settings.logout")}</h3>

@@ -53,7 +53,7 @@ const Cart = () => {
             className="text-center"
           >
             <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShoppingBag className="w-16 h-16 text-gray-400" />
+              <ShoppingBag className="w-16 h-16 text-gray-400" strokeWidth={1.5} />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3 font-jakarta">
               העגלה שלך ריקה
@@ -127,7 +127,7 @@ const Cart = () => {
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                         >
-                          <Minus className="w-4 h-4 text-gray-700" />
+                          <Minus className="w-4 h-4 text-gray-700" strokeWidth={1.5} />
                         </motion.button>
                         <span className="text-base font-bold text-gray-900 w-8 text-center font-jakarta">
                           {item.quantity}
@@ -137,7 +137,7 @@ const Cart = () => {
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                         >
-                          <Plus className="w-4 h-4 text-gray-700" />
+                          <Plus className="w-4 h-4 text-gray-700" strokeWidth={1.5} />
                         </motion.button>
                       </div>
 
@@ -147,7 +147,7 @@ const Cart = () => {
                         onClick={() => handleRemoveItem(item.id, item.name)}
                         className="p-2 text-error hover:bg-error/10 rounded-full transition-colors"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-5 h-5" strokeWidth={1.5} />
                       </motion.button>
                     </div>
                   </div>
