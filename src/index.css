@@ -2,165 +2,295 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* 
+ * RESEARCH-BACKED PET-CARE & COMMUNITY COLOR SYSTEM
+ * Based on UX studies, color psychology, and market leader analysis
+ * 
+ * Core Philosophy:
+ * - Trust, empathy, warmth (pet-first feeling)
+ * - Innovative & high-tech look
+ * - Comfort for long-time usage
+ * - Gender-neutral, pet-neutral
+ * - Professional, not toy-ish
+ *
+ * All colors MUST be HSL format.
+ */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 26 10% 10%;
+    /* ===========================
+     * PRIMARY COLORS
+     * Soft Warm Yellow - Friendliness & Happiness
+     * Research: Yellow associates with joy and positive pet experiences
+     * =========================== */
+    --primary: 46 91% 65%;           /* #F8CE59 - Warm Yellow */
+    --primary-foreground: 222 37% 19%; /* Deep Blue text for contrast */
+    --primary-light: 47 92% 75%;      /* #FBD97C - Lighter Yellow */
+    --primary-dark: 45 88% 55%;       /* #F4C33E - Darker Yellow */
 
-    --card: 0 0% 100%;
-    --card-foreground: 26 10% 10%;
+    /* ===========================
+     * SECONDARY COLORS  
+     * Deep Midnight Blue - Trust & Innovation
+     * Research: Conveys reliability and tech credibility
+     * =========================== */
+    --secondary: 221 36% 21%;         /* #223048 - Midnight Blue */
+    --secondary-foreground: 0 0% 100%; /* White text */
+    --secondary-light: 221 36% 30%;   /* #334563 - Lighter Blue */
+    --secondary-dark: 222 37% 16%;    /* #1B2338 - Darker Blue */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 26 10% 10%;
+    /* ===========================
+     * CTA & ACCENT COLORS
+     * Honey-Gold - Drives interaction & engagement
+     * Research: Optimal for conversion without eye strain
+     * =========================== */
+    --accent: 47 100% 50%;            /* #FFC700 - Honey Gold */
+    --accent-foreground: 222 37% 19%; /* Deep Blue text */
+    --accent-hover: 47 100% 45%;      /* #E5B300 - Darker Gold */
+    --accent-light: 47 100% 60%;      /* #FFD633 - Lighter Gold */
 
-    --primary: 174 62% 60%;
-    --primary-foreground: 0 0% 100%;
+    /* ===========================
+     * SUCCESS & HEALTH
+     * Mint-Green - Vitality & wellness association
+     * =========================== */
+    --success: 164 100% 38%;          /* #00C489 - Mint Green */
+    --success-foreground: 0 0% 100%;
+    --success-light: 164 100% 50%;    /* #00F9AD - Lighter Mint */
+    --success-dark: 162 100% 32%;     /* #00A471 - Darker Mint */
 
-    --secondary: 174 45% 95%;
-    --secondary-foreground: 174 62% 25%;
+    /* ===========================
+     * SEMANTIC STATES
+     * =========================== */
+    --warning: 38 92% 50%;            /* #F59E0B - Warm Amber */
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 65%;      /* Lighter Amber */
+    
+    --error: 0 72% 51%;               /* #DC2626 - Clear Red */
+    --error-foreground: 0 0% 100%;
+    --error-light: 0 72% 65%;         /* Lighter Red */
+    
+    --info: 199 89% 48%;              /* #0EA5E9 - Sky Blue */
+    --info-foreground: 0 0% 100%;
+    --info-light: 199 89% 65%;        /* Lighter Sky Blue */
 
-    --muted: 220 13% 95%;
-    --muted-foreground: 220 9% 46%;
-
-    --accent: 174 62% 60%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
+    /* ===========================
+     * DESTRUCTIVE (Legacy support)
+     * =========================== */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 95%;
-    --ring: 174 62% 60%;
-
-    --radius: 2rem;
-
-    /* Exact colors from design */
-    --turquoise-primary: 174 62% 60%;
-    --turquoise-bg-start: 174 43% 88%;
-    --turquoise-bg-end: 180 40% 92%;
-    --cream-bg: 48 67% 97%;
+    /* ===========================
+     * NEUTRAL COLORS
+     * Soft Warm Greys - Calm, comfortable reading
+     * Research: Provides clean aesthetic for pet content
+     * =========================== */
+    --background: 60 5% 98%;          /* #FBFBFA - Off-white warm */
+    --foreground: 222 37% 19%;        /* #223048 - Deep Blue text */
     
-    /* Category pastel colors with dots */
-    --pastel-pink: 0 100% 95%;
-    --pastel-pink-dot: 0 100% 87%;
-    --pastel-blue: 174 43% 88%;
-    --pastel-blue-dot: 174 58% 73%;
-    --pastel-yellow: 48 100% 95%;
-    --pastel-yellow-dot: 48 100% 84%;
-    --pastel-purple: 248 100% 95%;
-    --pastel-purple-dot: 248 100% 87%;
-    --pastel-green: 132 43% 93%;
-    --pastel-green-dot: 132 43% 82%;
-    --pastel-peach: 20 100% 94%;
-    --pastel-peach-dot: 20 100% 85%;
+    --surface: 0 0% 100%;             /* #FFFFFF - Pure white */
+    --surface-elevated: 60 5% 96%;    /* #F5F5F3 - Slightly elevated */
     
-    /* Shadows */
-    --shadow-card: 0 8px 32px rgba(93, 213, 200, 0.15);
-    --shadow-image: 0 12px 40px rgba(0, 0, 0, 0.1);
-    --shadow-button: 0 4px 16px rgba(93, 213, 200, 0.4);
-    --shadow-banner: 0 4px 12px rgba(93, 213, 200, 0.3);
+    --muted: 0 0% 92%;                /* #EAEAEA - Medium Grey */
+    --muted-foreground: 220 10% 45%;  /* #6B7280 - Muted text */
+    
+    --border: 0 0% 88%;               /* #E0E0E0 - Border grey */
+    --border-light: 0 0% 93%;         /* #EDEDED - Light border */
+    
+    --input: 0 0% 96%;                /* #F5F5F5 - Input background */
+    --ring: 46 91% 65%;               /* Matches primary */
 
-    --sidebar-background: 0 0% 98%;
+    /* ===========================
+     * CARD & POPOVER
+     * =========================== */
+    --card: 0 0% 100%;                /* Pure white cards */
+    --card-foreground: 222 37% 19%;
+    --card-border: 0 0% 93%;          /* Subtle card border */
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 37% 19%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* ===========================
+     * SIDEBAR & NAVIGATION
+     * =========================== */
+    --sidebar-background: 221 36% 21%;      /* Midnight Blue */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 46 91% 65%;          /* Warm Yellow */
+    --sidebar-primary-foreground: 222 37% 19%;
+    --sidebar-accent: 221 36% 25%;          /* Slightly lighter blue */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 221 36% 30%;
+    --sidebar-ring: 46 91% 65%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* ===========================
+     * GRADIENTS
+     * Research-backed combinations for warmth & trust
+     * =========================== */
+    --gradient-primary: linear-gradient(135deg, hsl(46, 91%, 65%) 0%, hsl(47, 100%, 60%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(46, 91%, 65%) 0%, hsl(38, 92%, 60%) 100%);
+    --gradient-trust: linear-gradient(135deg, hsl(221, 36%, 21%) 0%, hsl(221, 36%, 30%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(46, 91%, 70%) 0%, hsl(164, 100%, 45%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(60, 5%, 98%) 100%);
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* ===========================
+     * SHADOWS
+     * Warm, soft shadows that complement pet photos
+     * =========================== */
+    --shadow-sm: 0 1px 2px 0 rgba(34, 48, 72, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(34, 48, 72, 0.08), 0 2px 4px -1px rgba(34, 48, 72, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(34, 48, 72, 0.1), 0 4px 6px -2px rgba(34, 48, 72, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(34, 48, 72, 0.12), 0 10px 10px -5px rgba(34, 48, 72, 0.06);
+    --shadow-card: 0 4px 12px rgba(34, 48, 72, 0.08);
+    --shadow-elevated: 0 8px 20px rgba(34, 48, 72, 0.12);
+    --shadow-button: 0 4px 8px rgba(248, 206, 89, 0.3);
+    --shadow-button-hover: 0 6px 12px rgba(248, 206, 89, 0.4);
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* ===========================
+     * COMPONENT-SPECIFIC
+     * =========================== */
+    --header-bg: 0 0% 100%;
+    --header-text: 222 37% 19%;
+    --footer-bg: 221 36% 21%;
+    --footer-text: 0 0% 100%;
+    
+    --toast-bg: 0 0% 100%;
+    --toast-border: 0 0% 88%;
+    --toast-text: 222 37% 19%;
+    
+    --tag-bg: 46 91% 90%;
+    --tag-text: 222 37% 19%;
+    --tag-border: 46 91% 75%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  /* Dark mode support */
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 168 76% 65%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 168 76% 65%;
+    --radius: 1rem;
   }
 
-  /* High contrast mode */
+  /* ===========================
+   * DARK MODE
+   * Maintains warmth while providing comfort for night usage
+   * =========================== */
+  .dark {
+    --background: 222 40% 10%;        /* Dark midnight blue */
+    --foreground: 60 5% 96%;          /* Warm off-white */
+    
+    --surface: 222 37% 13%;           /* Slightly elevated dark surface */
+    --surface-elevated: 222 37% 16%;
+    
+    --muted: 220 15% 20%;             /* Dark muted grey */
+    --muted-foreground: 220 10% 65%;  /* Muted text */
+    
+    --primary: 46 91% 60%;            /* Slightly darker yellow for dark bg */
+    --primary-foreground: 222 40% 10%;
+    --primary-light: 47 92% 70%;
+    --primary-dark: 45 88% 50%;
+    
+    --secondary: 221 36% 25%;         /* Lighter midnight blue */
+    --secondary-foreground: 60 5% 96%;
+    --secondary-light: 221 36% 32%;
+    --secondary-dark: 222 37% 19%;
+    
+    --accent: 47 100% 55%;            /* Honey gold adjusted */
+    --accent-foreground: 222 40% 10%;
+    --accent-hover: 47 100% 50%;
+    --accent-light: 47 100% 65%;
+    
+    --success: 164 100% 45%;
+    --success-foreground: 222 40% 10%;
+    --success-light: 164 100% 55%;
+    --success-dark: 162 100% 38%;
+    
+    --warning: 38 92% 55%;
+    --warning-foreground: 222 40% 10%;
+    --warning-light: 38 92% 70%;
+    
+    --error: 0 72% 58%;
+    --error-foreground: 222 40% 10%;
+    --error-light: 0 72% 70%;
+    
+    --info: 199 89% 55%;
+    --info-foreground: 222 40% 10%;
+    --info-light: 199 89% 70%;
+    
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 222 40% 10%;
+    
+    --border: 220 15% 25%;
+    --border-light: 220 15% 30%;
+    --input: 222 37% 16%;
+    --ring: 46 91% 60%;
+    
+    --card: 222 37% 13%;
+    --card-foreground: 60 5% 96%;
+    --card-border: 220 15% 25%;
+    
+    --popover: 222 37% 13%;
+    --popover-foreground: 60 5% 96%;
+    
+    --sidebar-background: 222 40% 8%;
+    --sidebar-foreground: 60 5% 96%;
+    --sidebar-primary: 46 91% 60%;
+    --sidebar-primary-foreground: 222 40% 10%;
+    --sidebar-accent: 222 37% 16%;
+    --sidebar-accent-foreground: 60 5% 96%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 46 91% 60%;
+    
+    --header-bg: 222 37% 13%;
+    --header-text: 60 5% 96%;
+    --footer-bg: 222 40% 8%;
+    --footer-text: 60 5% 96%;
+    
+    --toast-bg: 222 37% 16%;
+    --toast-border: 220 15% 25%;
+    --toast-text: 60 5% 96%;
+    
+    --tag-bg: 46 91% 25%;
+    --tag-text: 60 5% 96%;
+    --tag-border: 46 91% 35%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(46, 91%, 60%) 0%, hsl(47, 100%, 55%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(46, 91%, 60%) 0%, hsl(38, 92%, 55%) 100%);
+    --gradient-trust: linear-gradient(135deg, hsl(222, 37%, 16%) 0%, hsl(221, 36%, 25%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(46, 91%, 60%) 0%, hsl(164, 100%, 40%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(222, 37%, 13%) 0%, hsl(222, 37%, 16%) 100%);
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.35), 0 10px 10px -5px rgba(0, 0, 0, 0.25);
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-elevated: 0 8px 20px rgba(0, 0, 0, 0.35);
+    --shadow-button: 0 4px 8px rgba(248, 206, 89, 0.25);
+    --shadow-button-hover: 0 6px 12px rgba(248, 206, 89, 0.35);
+  }
+
+  /* ===========================
+   * HIGH CONTRAST MODE
+   * Accessibility support
+   * =========================== */
   .high-contrast {
     --foreground: 0 0% 0%;
     --background: 0 0% 100%;
-    --muted: 0 0% 80%;
-    --border: 0 0% 20%;
+    --muted: 0 0% 70%;
+    --border: 0 0% 15%;
+    --primary: 46 100% 40%;
+    --accent: 47 100% 35%;
   }
 
   .dark.high-contrast {
     --foreground: 0 0% 100%;
     --background: 0 0% 0%;
-    --muted: 0 0% 30%;
-    --border: 0 0% 80%;
+    --muted: 0 0% 40%;
+    --border: 0 0% 85%;
+    --primary: 46 100% 60%;
+    --accent: 47 100% 60%;
   }
 
-  /* Reduce motion */
+  /* ===========================
+   * REDUCE MOTION
+   * Accessibility support
+   * =========================== */
   .reduce-motion * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-  .dark {
-    --background: 0 0% 10%;
-    --foreground: 0 0% 95%;
-
-    --card: 0 0% 12%;
-    --card-foreground: 0 0% 95%;
-
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 0 0% 95%;
-    --primary-foreground: 0 0% 10%;
-
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 95%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-
-    --accent: 0 0% 95%;
-    --accent-foreground: 0 0% 10%;
-
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 0% 95%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -177,15 +307,10 @@ All colors MUST be HSL.
     text-align: right;
   }
   
-  /* Typography System - Plus Jakarta Sans Only */
-  
-  /* Font Weights - Use consistently across the app:
-     - font-normal (400):     Body text, paragraphs, descriptions
-     - font-medium (500):     Buttons, labels, emphasized text
-     - font-semibold (600):   Secondary headings (H4-H6), important labels
-     - font-bold (700):       Primary headings (H2-H3), card titles
-     - font-extrabold (800):  Hero headings (H1), main page titles
-  */
+  /* ===========================
+   * TYPOGRAPHY SYSTEM
+   * Plus Jakarta Sans - Modern, friendly, professional
+   * =========================== */
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -202,7 +327,7 @@ All colors MUST be HSL.
   /* Text Elements */
   p { @apply text-base font-normal; }
   
-  /* Interactive Elements - Default to medium weight */
+  /* Interactive Elements */
   button { 
     @apply font-medium;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -215,7 +340,6 @@ All colors MUST be HSL.
     text-align: right;
   }
   
-  /* Labels should be medium weight for emphasis */
   label {
     @apply font-medium;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -227,13 +351,119 @@ All colors MUST be HSL.
   }
 }
 
+@layer components {
+  /* ===========================
+   * BUTTON VARIANTS
+   * Research-backed interactive elements
+   * =========================== */
+  
+  .btn-primary {
+    @apply bg-primary text-primary-foreground font-medium rounded-xl px-6 py-3 
+           transition-all duration-200 hover:shadow-[var(--shadow-button-hover)] 
+           active:scale-95 focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-primary focus-visible:ring-offset-2;
+    background: hsl(var(--primary));
+    box-shadow: var(--shadow-button);
+  }
+  
+  .btn-primary:hover {
+    background: hsl(var(--primary-dark));
+  }
+  
+  .btn-accent {
+    @apply bg-accent text-accent-foreground font-medium rounded-xl px-6 py-3 
+           transition-all duration-200 active:scale-95 
+           focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-accent focus-visible:ring-offset-2;
+    background: hsl(var(--accent));
+    box-shadow: var(--shadow-button);
+  }
+  
+  .btn-accent:hover {
+    background: hsl(var(--accent-hover));
+    box-shadow: var(--shadow-button-hover);
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground font-medium rounded-xl px-6 py-3 
+           transition-all duration-200 hover:bg-[hsl(var(--secondary-light))] 
+           active:scale-95 focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-secondary focus-visible:ring-offset-2;
+    box-shadow: var(--shadow-md);
+  }
+  
+  .btn-outline {
+    @apply bg-transparent text-foreground font-medium rounded-xl px-6 py-3 
+           border-2 border-border transition-all duration-200 
+           hover:bg-muted hover:border-[hsl(var(--primary))] 
+           active:scale-95 focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent text-foreground font-medium rounded-xl px-6 py-3 
+           transition-all duration-200 hover:bg-muted 
+           active:scale-95 focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+  
+  /* ===========================
+   * CARD STYLES
+   * Warm, welcoming containers for content
+   * =========================== */
+  
+  .card-elevated {
+    @apply bg-card border border-[hsl(var(--card-border))] rounded-2xl p-6;
+    box-shadow: var(--shadow-card);
+  }
+  
+  .card-interactive {
+    @apply bg-card border border-[hsl(var(--card-border))] rounded-2xl p-6 
+           transition-all duration-200 hover:shadow-[var(--shadow-elevated)] 
+           hover:-translate-y-1 cursor-pointer;
+  }
+  
+  /* ===========================
+   * TAG & BADGE STYLES
+   * =========================== */
+  
+  .tag-primary {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+    background: hsl(var(--tag-bg));
+    color: hsl(var(--tag-text));
+    border: 1px solid hsl(var(--tag-border));
+  }
+  
+  .tag-success {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+           bg-[hsl(var(--success-light))] text-[hsl(var(--success-dark))]
+           border border-[hsl(var(--success))];
+  }
+  
+  /* ===========================
+   * TOAST STYLES
+   * =========================== */
+  
+  .toast-container {
+    @apply rounded-xl p-4 border;
+    background: hsl(var(--toast-bg));
+    border-color: hsl(var(--toast-border));
+    color: hsl(var(--toast-text));
+    box-shadow: var(--shadow-lg);
+  }
+}
+
 @layer utilities {
+  /* ===========================
+   * ANIMATION UTILITIES
+   * =========================== */
+  
   .animate-press {
     @apply active:scale-95 transition-transform duration-150;
   }
   
   .animate-hover-lift {
-    @apply hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200;
+    @apply hover:shadow-[var(--shadow-elevated)] hover:-translate-y-1 transition-all duration-200;
   }
   
   .animate-fade-in {
@@ -337,17 +567,32 @@ All colors MUST be HSL.
     }
   }
 
-  /* Hide scrollbars for horizontal scroll containers */
+  /* ===========================
+   * SCROLLBAR UTILITIES
+   * =========================== */
+  
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari, Opera */
+    display: none;
   }
 
-  /* Infinite scroll animation for promo ticker */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* ===========================
+   * SCROLL ANIMATION
+   * =========================== */
+  
   @keyframes scroll-left {
     0% {
       transform: translateX(0);
@@ -365,18 +610,27 @@ All colors MUST be HSL.
     animation-play-state: paused;
   }
 
-  /* Enhanced smooth scrolling */
+  /* ===========================
+   * SMOOTH SCROLLING
+   * =========================== */
+  
   .smooth-scroll {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Focus visible improvements */
+  /* ===========================
+   * FOCUS STYLES
+   * =========================== */
+  
   .focus-visible-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7DD3C0] focus-visible:ring-offset-2;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
   }
 
-  /* Skeleton loading shimmer */
+  /* ===========================
+   * SKELETON LOADING
+   * =========================== */
+  
   @keyframes skeleton-shimmer {
     0% {
       background-position: -1000px 0;
@@ -390,20 +644,34 @@ All colors MUST be HSL.
     animation: skeleton-shimmer 2s ease-in-out infinite;
     background: linear-gradient(
       90deg,
-      hsl(220, 13%, 95%) 0%,
-      hsl(220, 13%, 98%) 50%,
-      hsl(220, 13%, 95%) 100%
+      hsl(var(--muted)) 0%,
+      hsl(var(--background)) 50%,
+      hsl(var(--muted)) 100%
     );
     background-size: 1000px 100%;
   }
 
-  /* Hide scrollbar for stories bar */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  /* ===========================
+   * GRADIENT BACKGROUNDS
+   * =========================== */
+  
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
   }
   
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .bg-gradient-warm {
+    background: var(--gradient-warm);
+  }
+  
+  .bg-gradient-trust {
+    background: var(--gradient-trust);
+  }
+  
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .bg-gradient-card {
+    background: var(--gradient-card);
   }
 }

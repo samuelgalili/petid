@@ -23,7 +23,7 @@ export default {
         semibold: '600',  // Secondary headings
         bold: '700',      // Primary headings
         extrabold: '800', // Hero headings
-        black: '900',     // Special emphasis (optional)
+        black: '900',     // Special emphasis
       },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: '1.25', letterSpacing: '0' }],
@@ -48,42 +48,92 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        
+        /* Primary - Warm Yellow */
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          light: "hsl(var(--primary-light))",
+          dark: "hsl(var(--primary-dark))",
         },
+        
+        /* Secondary - Midnight Blue */
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+          light: "hsl(var(--secondary-light))",
+          dark: "hsl(var(--secondary-dark))",
         },
+        
+        /* Accent - Honey Gold (CTA) */
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+          hover: "hsl(var(--accent-hover))",
+          light: "hsl(var(--accent-light))",
+        },
+        
+        /* Success - Mint Green */
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+          light: "hsl(var(--success-light))",
+          dark: "hsl(var(--success-dark))",
+        },
+        
+        /* Warning */
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+          light: "hsl(var(--warning-light))",
+        },
+        
+        /* Error */
+        error: {
+          DEFAULT: "hsl(var(--error))",
+          foreground: "hsl(var(--error-foreground))",
+          light: "hsl(var(--error-light))",
+        },
+        
+        /* Info */
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+          light: "hsl(var(--info-light))",
+        },
+        
+        /* Destructive (legacy support) */
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        
+        /* Muted */
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
+        
+        /* Popover */
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
+        
+        /* Card */
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          border: "hsl(var(--card-border))",
         },
-        pastel: {
-          pink: "hsl(var(--pastel-pink))",
-          blue: "hsl(var(--pastel-blue))",
-          yellow: "hsl(var(--pastel-yellow))",
-          purple: "hsl(var(--pastel-purple))",
-          green: "hsl(var(--pastel-green))",
-          peach: "hsl(var(--pastel-peach))",
+        
+        /* Surface */
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          elevated: "hsl(var(--surface-elevated))",
         },
+        
+        /* Sidebar */
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -94,11 +144,52 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        
+        /* Component-specific colors */
+        header: {
+          bg: "hsl(var(--header-bg))",
+          text: "hsl(var(--header-text))",
+        },
+        
+        footer: {
+          bg: "hsl(var(--footer-bg))",
+          text: "hsl(var(--footer-text))",
+        },
+        
+        toast: {
+          bg: "hsl(var(--toast-bg))",
+          border: "hsl(var(--toast-border))",
+          text: "hsl(var(--toast-text))",
+        },
+        
+        tag: {
+          bg: "hsl(var(--tag-bg))",
+          text: "hsl(var(--tag-text))",
+          border: "hsl(var(--tag-border))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
+      },
+      boxShadow: {
+        sm: 'var(--shadow-sm)',
+        DEFAULT: 'var(--shadow-md)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        xl: 'var(--shadow-xl)',
+        card: 'var(--shadow-card)',
+        elevated: 'var(--shadow-elevated)',
+        button: 'var(--shadow-button)',
+        'button-hover': 'var(--shadow-button-hover)',
+      },
+      backgroundImage: {
+        'gradient-primary': 'var(--gradient-primary)',
+        'gradient-warm': 'var(--gradient-warm)',
+        'gradient-trust': 'var(--gradient-trust)',
+        'gradient-hero': 'var(--gradient-hero)',
+        'gradient-card': 'var(--gradient-card)',
       },
       keyframes: {
         "accordion-down": {
