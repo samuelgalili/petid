@@ -922,15 +922,15 @@ const Home = () => {
             </div>)}
         </motion.div>
 
-        {/* Original Loyalty Club Card - Yellow with Smiley Icon */}
+        {/* Original Loyalty Club Card - Yellow with Smiley Icon + Hover Details */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
-              className="mb-6 cursor-pointer px-4" 
+              className="mb-6 cursor-pointer px-4 relative" 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              whileHover={{ scale: 1.02, y: -2 }}
+              whileHover="hover"
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/order-history')} 
               role="button" 
@@ -938,9 +938,26 @@ const Home = () => {
               aria-label="View loyalty card"
             >
               {/* Card Container with Shadow */}
-              <div className="relative">
+              <motion.div 
+                className="relative"
+                variants={{
+                  hover: { 
+                    scale: 1.05, 
+                    y: -8,
+                    transition: { duration: 0.3, ease: "easeOut" }
+                  }
+                }}
+              >
                 {/* Yellow Loyalty Card */}
-                <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.4)] p-6 pt-10 overflow-hidden">
+                <motion.div 
+                  className="relative bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.4)] p-6 pt-10 overflow-hidden"
+                  variants={{
+                    hover: {
+                      boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                      transition: { duration: 0.3 }
+                    }
+                  }}
+                >
                   {/* Decorative Rainbow Arcs in Corners */}
                   <div className="absolute top-4 left-4 w-12 h-12 opacity-20">
                     <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1028,8 +1045,99 @@ const Home = () => {
                       </div>
                     </motion.div>
                   </div>
-                </div>
-              </div>
+
+                  {/* Hover-Only Achievement Details - Appears on Hover */}
+                  <motion.div
+                    className="mt-4"
+                    initial={{ opacity: 0, height: 0 }}
+                    variants={{
+                      hover: {
+                        opacity: 1,
+                        height: "auto",
+                        transition: { duration: 0.3, ease: "easeOut" }
+                      }
+                    }}
+                  >
+                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-3 shadow-lg">
+                      <div className="text-xs font-bold text-gray-700 mb-2 text-center font-jakarta">
+                        ההישגים שלך
+                      </div>
+                      
+                      {/* Achievement Progress Bar */}
+                      {achievementData.next && (
+                        <div className="mb-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-bold text-gray-600">
+                              עד הישג הבא
+                            </span>
+                            <span className="text-[10px] font-black text-[#FBD66A]">
+                              ₪{achievementData.next.threshold - walletBalance} נותרו
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-gradient-to-r from-[#FBD66A] to-[#F4C542] rounded-full"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${achievementData.progress}%` }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Achievement Badges */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {walletAchievements.slice(0, 4).map((achievement) => {
+                          const isAchieved = walletBalance >= achievement.threshold;
+                          return (
+                            <motion.div
+                              key={achievement.name}
+                              className={`flex items-center gap-2 p-2 rounded-lg ${
+                                isAchieved 
+                                  ? 'bg-gradient-to-r ' + achievement.color + ' shadow-md' 
+                                  : 'bg-gray-100'
+                              }`}
+                              whileHover={{ scale: 1.05 }}
+                            >
+                              <span className={`text-sm ${isAchieved ? '' : 'grayscale opacity-40'}`}>
+                                {achievement.icon}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-[9px] font-bold truncate ${
+                                  isAchieved ? 'text-white' : 'text-gray-400'
+                                }`}>
+                                  {achievement.name}
+                                </p>
+                                <p className={`text-[8px] truncate ${
+                                  isAchieved ? 'text-white/80' : 'text-gray-400'
+                                }`}>
+                                  ₪{achievement.threshold}
+                                </p>
+                              </div>
+                              {isAchieved && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="text-white text-xs"
+                                >
+                                  ✓
+                                </motion.div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Total Achievements Count */}
+                      <div className="mt-3 text-center pt-2 border-t border-gray-200">
+                        <span className="text-[10px] font-bold text-gray-600">
+                          השגת {achievementData.totalAchieved} מתוך {walletAchievements.length} הישגים
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
             </motion.div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
