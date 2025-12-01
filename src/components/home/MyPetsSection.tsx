@@ -40,10 +40,10 @@ export const MyPetsSection = ({
           transition={{ delay: 0.2 }}
           className="relative overflow-hidden"
         >
-          <div className="flex flex-col items-center justify-center py-10 text-center bg-gradient-to-br from-[#FFE8D6]/30 via-white to-[#E8F5E8]/30 rounded-3xl border-2 border-dashed border-gray-200 backdrop-blur-sm">
+          <div className="flex flex-col items-center justify-center py-10 text-center bg-gradient-to-br from-warning/30 via-white to-success/30 rounded-3xl border-2 border-dashed border-border backdrop-blur-sm">
             {/* Decorative Elements */}
-            <div className="absolute top-4 left-4 w-8 h-8 bg-[#7DD3C0]/10 rounded-full blur-xl" />
-            <div className="absolute bottom-6 right-6 w-12 h-12 bg-[#FBD66A]/10 rounded-full blur-xl" />
+            <div className="absolute top-4 left-4 w-8 h-8 bg-primary/10 rounded-full blur-xl" />
+            <div className="absolute bottom-6 right-6 w-12 h-12 bg-accent/10 rounded-full blur-xl" />
             
             <motion.button
               onClick={() => navigate('/add-pet')}
@@ -52,11 +52,11 @@ export const MyPetsSection = ({
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.9 }}
             >
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] flex items-center justify-center shadow-xl border-4 border-white relative z-10">
+              <div className="w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center shadow-xl border-4 border-white relative z-10">
                 <Plus className="w-9 h-9 text-white" strokeWidth={3} />
               </div>
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-[#7DD3C0] to-[#FBD66A] rounded-full blur-lg opacity-40"
+                className="absolute inset-0 bg-gradient-secondary rounded-full blur-lg opacity-40"
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.4, 0.6, 0.4]
@@ -73,7 +73,7 @@ export const MyPetsSection = ({
             </p>
             <Button
               onClick={() => navigate('/add-pet')}
-              className="bg-gradient-to-r from-[#7DD3C0] via-[#6BC4AD] to-[#5AB99C] hover:opacity-90 text-white rounded-full font-jakarta font-bold px-8 py-3 text-sm h-11 shadow-lg hover:shadow-xl transition-all"
+              className="bg-gradient-primary hover:opacity-90 text-white rounded-full font-jakarta font-bold px-8 py-3 text-sm h-11 shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5 ml-2" strokeWidth={2.5} />
               הוסף חיית מחמד
