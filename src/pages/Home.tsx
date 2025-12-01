@@ -619,38 +619,38 @@ const Home = () => {
           y: 0
         }} transition={{
           delay: 0.05
-        }} className="bg-white px-6 py-8 mb-4 mx-4 rounded-2xl shadow-lg border border-gray-100" dir="rtl">
-          <div className="flex items-start gap-6">
-            {/* Text Content - Left Side */}
-            <div className="flex-1 pt-2">
+        }} className="bg-white px-5 py-6 mb-4 mx-4 rounded-2xl shadow-md border border-gray-100" dir="rtl">
+          <div className="flex items-start gap-4">
+            {/* Text Content - Right Side */}
+            <div className="flex-1">
               {/* Small greeting - only name is clickable */}
-              <div className="text-lg text-gray-900 font-jakarta mb-3 text-right">
+              <div className="text-base text-gray-900 font-normal mb-2 text-right">
                 {getGreeting()},{" "}
-                <button onClick={() => setIsMenuOpen(true)} className="underline decoration-2 decoration-gray-900 hover:text-gray-700 transition-colors">
+                <button onClick={() => setIsMenuOpen(true)} className="underline decoration-2 decoration-gray-900 hover:text-gray-700 transition-colors font-normal">
                   {userName}
                 </button>
               </div>
               
-              {/* Main headline - Bold and Large */}
-              <h1 className="text-4xl font-extrabold text-gray-900 mb-4 leading-tight drop-shadow-sm">
+              {/* Main headline - Black and Large */}
+              <h1 className="text-4xl font-black text-gray-900 mb-3 leading-tight">
                 רבעון חדש, צבירה חדשה!
               </h1>
               
-              {/* Details text - Gray */}
-              <p className="text-base text-gray-700 leading-relaxed font-normal">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
+              {/* Details text - Smaller Gray */}
+              <p className="text-sm text-gray-600 leading-relaxed font-normal">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
             </div>
 
-            {/* Gift Icon - Right Side */}
-            <button onClick={() => navigate('/rewards')} className="flex-shrink-0 w-32 h-32 flex items-center justify-center hover:scale-110 transition-all duration-300 ease-out hover:rotate-6 bg-white" aria-label="מתנה">
-              <img src={giftIcon} alt="מתנה" className="w-full h-full object-contain mix-blend-multiply" style={{ background: 'transparent' }} />
+            {/* Gift Icon - Left Side with Circle Background */}
+            <button onClick={() => navigate('/rewards')} className="flex-shrink-0 w-24 h-24 flex items-center justify-center hover:scale-105 transition-all duration-300 ease-out bg-gray-100 rounded-full" aria-label="מתנה">
+              <img src={giftIcon} alt="מתנה" className="w-16 h-16 object-contain mix-blend-multiply" />
             </button>
           </div>
 
           {/* Bottom Link - Blue */}
-          <div className="mt-6 pt-5 border-t border-gray-200">
-            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-semibold text-base hover:underline hover:text-blue-700 transition-colors inline-flex items-center gap-1">
+          <div className="mt-5 pt-4 border-t border-gray-200">
+            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-medium text-sm hover:underline hover:text-blue-700 transition-colors inline-flex items-center gap-1">
               צבירה ומימוש
-              <span className="text-xl transform rotate-180 inline-block">›</span>
+              <span className="text-lg transform rotate-180 inline-block">‹</span>
             </button>
           </div>
         </motion.div>
