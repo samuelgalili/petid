@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ProductCard, PromoCard } from "./ProductCard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ComponentErrorFallback } from "@/components/ComponentErrorFallback";
 import dogFoodImg from "@/assets/products/dog-food.jpg";
 import dogTreatsImg from "@/assets/products/dog-treats.jpg";
 import dogToysImg from "@/assets/products/dog-toys.jpg";
@@ -16,12 +18,16 @@ export const ProductCarousel = () => {
   const navigate = useNavigate();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6 }}
-      className="mb-6 px-4"
+    <ErrorBoundary
+      fallback={<ComponentErrorFallback componentName="מוצרים מומלצים" />}
+      onReset={() => window.location.reload()}
     >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="mb-6 px-4"
+      >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">מוצרים מומלצים</h2>
         <Button
@@ -145,5 +151,6 @@ export const ProductCarousel = () => {
         צפה בכל המוצרים
       </Button>
     </motion.div>
+    </ErrorBoundary>
   );
 };

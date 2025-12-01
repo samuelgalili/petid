@@ -55,6 +55,8 @@ import Notifications from "./pages/Notifications";
 const Training = lazy(() => import("./pages/Training"));
 import Grooming from "./pages/Grooming";
 import { AdminRoute } from "./components/AdminRoute";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PageErrorBoundary } from "./components/PageErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -72,16 +74,16 @@ const AnimatedRoutes = () => {
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
         <Route path="/add-pet" element={<ProtectedRoute><PageTransition><AddPet /></PageTransition></ProtectedRoute>} />
-        <Route path="/home" element={<ProtectedRoute><PageTransition><Home /></PageTransition></ProtectedRoute>} />
+        <Route path="/home" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="עמוד הבית"><Home /></PageErrorBoundary></PageTransition></ProtectedRoute>} />
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
         <Route path="/pet/:petId" element={<ProtectedRoute><PageTransition><PetDetails /></PageTransition></ProtectedRoute>} />
         <Route path="/breed-history/:petId" element={<ProtectedRoute><PageTransition><BreedHistory /></PageTransition></ProtectedRoute>} />
-        <Route path="/feed" element={<ProtectedRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Feed /></Suspense></PageTransition></ProtectedRoute>} />
+        <Route path="/feed" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="הפיד"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Feed /></Suspense></PageErrorBoundary></PageTransition></ProtectedRoute>} />
         <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
         <Route path="/post/:postId" element={<ProtectedRoute><PageTransition><PostDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/story/:userId" element={<ProtectedRoute><StoryViewer /></ProtectedRoute>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
-        <Route path="/shop" element={<ProtectedRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageTransition></ProtectedRoute>} />
+        <Route path="/shop" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProtectedRoute><PageTransition><ProductDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/cart" element={<ProtectedRoute><PageTransition><Cart /></PageTransition></ProtectedRoute>} />
         <Route path="/checkout" element={<ProtectedRoute><PageTransition><Checkout /></PageTransition></ProtectedRoute>} />
@@ -101,7 +103,7 @@ const AnimatedRoutes = () => {
             <Route path="/parks" element={<ProtectedRoute><PageTransition><Parks /></PageTransition></ProtectedRoute>} />
             <Route path="/photos" element={<ProtectedRoute><PageTransition><Photos /></PageTransition></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><PageTransition><Documents /></PageTransition></ProtectedRoute>} />
-            <Route path="/training" element={<ProtectedRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Training /></Suspense></PageTransition></ProtectedRoute>} />
+            <Route path="/training" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="אימונים"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Training /></Suspense></PageErrorBoundary></PageTransition></ProtectedRoute>} />
             <Route path="/grooming" element={<ProtectedRoute><PageTransition><Grooming /></PageTransition></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><PageTransition><Notifications /></PageTransition></ProtectedRoute>} />
@@ -113,29 +115,31 @@ const AnimatedRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AccessibilityProvider>
-        <LanguageProvider>
-          <PetPreferenceProvider>
-            <GuestProvider>
-              <PointsProvider>
-                <CartProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <BrowserRouter>
-                      <AnimatedRoutes />
-                    </BrowserRouter>
-                  </TooltipProvider>
-                </CartProvider>
-              </PointsProvider>
-            </GuestProvider>
-          </PetPreferenceProvider>
-        </LanguageProvider>
-      </AccessibilityProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AccessibilityProvider>
+          <LanguageProvider>
+            <PetPreferenceProvider>
+              <GuestProvider>
+                <PointsProvider>
+                  <CartProvider>
+                    <TooltipProvider>
+                      <Toaster />
+                      <Sonner />
+                      <BrowserRouter>
+                        <AnimatedRoutes />
+                      </BrowserRouter>
+                    </TooltipProvider>
+                  </CartProvider>
+                </PointsProvider>
+              </GuestProvider>
+            </PetPreferenceProvider>
+          </LanguageProvider>
+        </AccessibilityProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
