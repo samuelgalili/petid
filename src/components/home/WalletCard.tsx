@@ -53,10 +53,10 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
           >
             {/* Yellow Loyalty Card */}
             <motion.div
-              className="relative bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.4)] p-6 pt-10 overflow-hidden"
+              className="relative bg-gradient-primary rounded-[24px] shadow-elevated p-6 pt-10 overflow-hidden"
               variants={{
                 hover: {
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                  boxShadow: "0 20px 60px rgba(34, 48, 72, 0.2)",
                   transition: { duration: 0.3 }
                 }
               }}
@@ -139,12 +139,12 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                 <div className="bg-gradient-to-br from-white via-white to-gray-50 backdrop-blur-md rounded-3xl p-5 shadow-2xl border border-white/50">
                   {/* Header */}
                   <div className="flex items-center justify-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-md">
-                      <span className="text-white text-lg">🏆</span>
-                    </div>
-                    <h3 className="text-base font-black text-gray-800 font-jakarta">
-                      ההישגים שלך
-                    </h3>
+                          <div className="w-8 h-8 bg-gradient-warm rounded-full flex items-center justify-center shadow-md">
+                            <span className="text-white text-lg">🏆</span>
+                          </div>
+                          <h3 className="text-base font-black text-foreground font-jakarta">
+                            ההישגים שלך
+                          </h3>
                   </div>
 
                   {/* Achievement Progress Bar */}
@@ -155,15 +155,15 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                           עד הישג הבא
                         </span>
                         <div className="flex items-center gap-1">
-                          <span className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-[#FFA500]">
+                          <span className="text-xs font-black text-transparent bg-clip-text bg-gradient-primary">
                             ₪{(next.threshold - walletBalance).toFixed(0)}
                           </span>
                           <span className="text-[10px] font-semibold text-gray-500">נותרו</span>
                         </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                      <div className="w-full bg-muted rounded-full h-3 overflow-hidden shadow-inner">
                         <motion.div
-                          className="h-full bg-gradient-to-r from-[#FFD700] via-[#FFC700] to-[#FFA500] rounded-full shadow-lg relative overflow-hidden"
+                          className="h-full bg-gradient-primary rounded-full shadow-lg relative overflow-hidden"
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}
                           transition={{ duration: 1.2, ease: "easeOut" }}
@@ -245,9 +245,9 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                   </div>
 
                   {/* Total Achievements Summary */}
-                  <div className="bg-gradient-to-r from-[#FFD700]/10 via-[#FFC700]/10 to-[#FFB700]/10 rounded-2xl p-3 text-center border border-[#FFD700]/20">
+                  <div className="bg-primary/10 rounded-2xl p-3 text-center border border-primary/20">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-[#FFA500]">
+                      <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-primary">
                         {totalAchieved}
                       </span>
                       <span className="text-gray-400 text-sm font-bold">/</span>

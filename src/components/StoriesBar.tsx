@@ -122,19 +122,19 @@ export const StoriesBar = () => {
               onClick={() => setCreateDialogOpen(true)}
             >
               <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FFD700] to-[#FFC107] p-[3px] shadow-lg">
+                <div className="w-20 h-20 rounded-full bg-gradient-primary p-[3px] shadow-lg">
                   <Avatar className="w-full h-full ring-2 ring-white">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-gray-700 to-gray-900 text-white font-black text-xl">
+                    <AvatarFallback className="bg-secondary text-secondary-foreground font-black text-xl">
                       {user.user_metadata?.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                <div className="absolute bottom-0 right-0 w-6 h-6 bg-gradient-to-r from-[#FFD700] to-[#FFC107] rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                  <Plus className="w-4 h-4 text-gray-900 font-bold" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 bg-accent rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <Plus className="w-4 h-4 text-accent-foreground font-bold" />
                 </div>
               </div>
-              <span className="text-xs font-jakarta font-bold text-gray-900">הסטורי שלך</span>
+              <span className="text-xs font-jakarta font-bold text-foreground">הסטורי שלך</span>
             </motion.div>
           )}
 
@@ -152,8 +152,8 @@ export const StoriesBar = () => {
             >
               <div className={`p-[3px] rounded-full shadow-lg ${
                 storyUser.has_viewed 
-                  ? 'bg-gradient-to-br from-gray-300 to-gray-400' 
-                  : 'bg-gradient-to-tr from-[#FFD700] via-[#FFC107] to-[#FFB700] animate-pulse'
+                  ? 'bg-muted' 
+                  : 'bg-gradient-primary animate-pulse'
               }`}>
                 <Avatar className="w-20 h-20 ring-[3px] ring-white">
                   <AvatarImage src={storyUser.avatar_url} />
@@ -162,7 +162,7 @@ export const StoriesBar = () => {
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <span className="text-xs font-jakarta font-semibold text-gray-900 max-w-[80px] truncate">
+              <span className="text-xs font-jakarta font-semibold text-foreground max-w-[80px] truncate">
                 {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}
               </span>
             </motion.div>

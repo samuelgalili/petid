@@ -5,22 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-[#FBD66A] text-gray-900 hover:bg-[#F4C542] transition-all",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        default: "bg-primary text-primary-foreground shadow-button hover:bg-primary-dark hover:shadow-button-hover active:scale-95",
+        accent: "bg-accent text-accent-foreground shadow-button hover:bg-accent-hover hover:shadow-button-hover active:scale-95",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-95",
+        outline: "border-2 border-border bg-transparent hover:bg-muted hover:border-primary active:scale-95",
+        secondary: "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary-light active:scale-95",
+        ghost: "bg-transparent hover:bg-muted active:scale-95",
         link: "text-primary underline-offset-4 hover:underline",
-        golden: "bg-[#FBD66A] text-gray-900 hover:bg-[#F4C542] font-semibold transition-all",
+        success: "bg-success text-success-foreground hover:bg-success-dark active:scale-95",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
+        default: "h-10 px-6 py-3",
+        sm: "h-9 rounded-lg px-4 py-2",
+        lg: "h-11 rounded-xl px-8 py-3",
         icon: "h-10 w-10",
       },
     },
