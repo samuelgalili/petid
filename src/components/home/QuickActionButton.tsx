@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 import { memo } from "react";
+import { buttonHover, buttonTap, ANIMATION_DURATION } from "@/lib/animations";
+import { getKeyboardAccessibleProps, TAP_TARGET } from "@/lib/accessibility";
 
 interface QuickActionButtonProps {
   icon: LucideIcon;
@@ -15,21 +17,30 @@ export const QuickActionButton = memo(({
   index, 
   onClick 
 }: QuickActionButtonProps) => {
+  const keyboardProps = getKeyboardAccessibleProps(onClick);
+  
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.35 + index * 0.05 }}
-      whileHover={{ scale: 1.05, y: -2 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={buttonHover}
+      whileTap={buttonTap}
       onClick={onClick}
-      className="flex-shrink-0 cursor-pointer"
+      className="flex-shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-2xl"
+      {...keyboardProps}
+      aria-label={title}
+      style={{ minWidth: TAP_TARGET.minimum, minHeight: TAP_TARGET.minimum }}
     >
       <div className="flex flex-col items-center gap-2">
-        <div className="w-[72px] h-[72px] rounded-full bg-white shadow-lg flex items-center justify-center hover:shadow-xl transition-all border border-gray-100">
-          <Icon className="w-8 h-8 text-gray-800" strokeWidth={1.5} />
-        </div>
-        <p className="text-[11px] font-bold text-gray-900 font-jakarta text-center max-w-[80px] leading-tight">
+        <motion.div 
+          className="w-[72px] h-[72px] rounded-full bg-white shadow-lg flex items-center justify-center border border-border/20 transition-all"
+          whileHover={{ 
+            boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.15)",
+            borderColor: "hsl(var(--primary) / 0.3)"
+          }}
+          transition={{ duration: ANIMATION_DURATION.fast }}
+        >
+          <Icon className="w-8 h-8 text-foreground" strokeWidth={1.5} />
+        </motion.div>
+        <p className="text-[11px] font-bold text-foreground font-jakarta text-center max-w-[80px] leading-tight">
           {title}
         </p>
       </div>
