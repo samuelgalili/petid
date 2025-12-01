@@ -9,10 +9,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Header = () => {
   const navigate = useNavigate();
@@ -24,8 +25,30 @@ export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showCartPreview, setShowCartPreview] = useState(false);
   const [leaveTimeout, setLeaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [userName, setUserName] = useState<string>("");
   
   const cartItemCount = getTotalItems();
+
+  // Fetch user name
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.full_name) {
+        const firstName = profile.full_name.split(' ')[0];
+        setUserName(firstName);
+      }
+    };
+
+    fetchUserName();
+  }, []);
 
   const handleMouseEnter = () => {
     if (leaveTimeout) {
@@ -75,9 +98,17 @@ export const Header = () => {
               </TooltipContent>
             </Tooltip>
             
-            {/* Center: Petid Logo */}
+            {/* Center: User Name (clickable) */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <img src={petidLogo} alt="Petid" className="h-6 w-auto" />
+              <button
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity focus-visible:ring-2 focus-visible:ring-[#7DD3C0] rounded-full px-3 py-1"
+                aria-label="Open settings"
+              >
+                <span className="text-sm font-bold text-gray-900 dark:text-white font-jakarta">
+                  {userName || "Settings"}
+                </span>
+              </button>
             </div>
             
             {/* Right: Cart, User, Notifications, Search - Close together */}
