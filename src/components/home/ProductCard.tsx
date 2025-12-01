@@ -31,7 +31,7 @@ export const ProductCard = memo(({
     >
       <div className={`${bgColor} p-3 flex items-center justify-center h-28 relative`}>
         {hasSaleBadge && (
-          <div className="absolute top-2 left-2 bg-white text-[#F44336] text-[8px] font-bold px-2 py-0.5 rounded-full z-10">
+          <div className="absolute top-2 left-2 bg-white text-error text-[8px] font-bold px-2 py-0.5 rounded-full z-10">
             SALE
           </div>
         )}
@@ -45,7 +45,7 @@ export const ProductCard = memo(({
       </div>
       <div className="bg-white p-2">
         <h3 className="text-xs font-bold text-gray-900 font-jakarta truncate">{title}</h3>
-        <p className="text-lg font-extrabold text-[#F44336]">{price}</p>
+        <p className="text-lg font-extrabold text-error">{price}</p>
       </div>
     </motion.div>
   );
@@ -106,7 +106,7 @@ export const PromoCard = memo(({
       <h3 className={`text-sm font-extrabold ${textColor} font-jakarta text-center`}>{title}</h3>
       <p className={`text-xs ${textColor === 'text-white' ? 'text-white/90' : 'text-gray-700'} font-jakarta mt-1`}>{subtitle}</p>
       <div className="absolute bottom-3 left-3">
-        <div className={`${textColor === 'text-white' ? 'text-white' : 'text-[#E53935]'} font-extrabold text-xs`}>
+        <div className={`${textColor === 'text-white' ? 'text-white' : 'text-error'} font-extrabold text-xs`}>
           {badgeText}
         </div>
       </div>
