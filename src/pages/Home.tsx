@@ -135,9 +135,11 @@ const Home = () => {
     const now = new Date();
     const month = now.getMonth() + 1; // 1-12
     const day = now.getDate();
-    
+
     // Check for Israeli holidays (approximate Gregorian dates for 2025)
-    const holidays: { [key: string]: string } = {
+    const holidays: {
+      [key: string]: string;
+    } = {
       // Format: "M-D": "Holiday Name"
       "4-13": "פסח",
       "4-14": "פסח",
@@ -161,25 +163,23 @@ const Home = () => {
       "12-20": "חנוכה",
       "12-21": "חנוכה",
       "12-22": "חנוכה",
-      "3-14": "פורים",
+      "3-14": "פורים"
     };
-    
+
     // Check for special pet days
-    const petDays: { [key: string]: string } = {
+    const petDays: {
+      [key: string]: string;
+    } = {
       "8-26": "יום הכלב הבינלאומי",
-      "8-8": "יום החתול הבינלאומי",
+      "8-8": "יום החתול הבינלאומי"
     };
-    
     const dateKey = `${month}-${day}`;
-    
     if (holidays[dateKey]) {
       return `חג ${holidays[dateKey]} שמח`;
     }
-    
     if (petDays[dateKey]) {
       return petDays[dateKey] === "יום הכלב הבינלאומי" ? "יום כלבים שמח" : "יום חתולים שמח";
     }
-    
     return null;
   };
 
@@ -188,18 +188,17 @@ const Home = () => {
     // Check for holidays first
     const holidayGreeting = getHolidayGreeting();
     if (holidayGreeting) return holidayGreeting;
-    
     const hour = new Date().getHours();
-    
+
     // 21:00-5:59 - לילה טוב
     if (hour >= 21 || hour < 6) return "לילה טוב";
-    
+
     // 6:00-11:59 - בוקר טוב
     if (hour >= 6 && hour < 12) return "בוקר טוב";
-    
+
     // 12:00-16:59 - צהריים טובים
     if (hour >= 12 && hour < 17) return "צהריים טובים";
-    
+
     // 17:00-21:00 - ערב טוב
     return "ערב טוב";
   };
@@ -611,26 +610,20 @@ const Home = () => {
       <div className="pt-0 pb-6">
         
         {/* Mobile-Only Rewards Header - RTL Pixel Perfect - Updated */}
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.05 }}
-          className="bg-white px-4 py-[18px] mb-3 mx-4 rounded-2xl shadow-sm shadow-neutral-200 max-w-[430px]"
-          dir="rtl"
-        >
+        <motion.div initial={{
+          opacity: 0,
+          y: -10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.05
+        }} className="bg-white px-4 py-[18px] mb-3 mx-4 rounded-2xl shadow-sm shadow-neutral-200 max-w-[430px]" dir="rtl">
           {/* Main Content: Icon (Right) + Text Column (Left) */}
           <div className="flex flex-row-reverse items-center gap-[14px]">
             {/* Gift Icon - Right Side - Clean & Aesthetic */}
-            <button 
-              onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-20 h-20 rounded-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center shadow-lg border-2 border-gray-100 hover:scale-105 hover:shadow-xl active:scale-95 transition-all duration-200 ease-out"
-              aria-label="עבור למתנות ותגמולים"
-            >
-              <img 
-                src={giftIcon} 
-                alt="מתנה" 
-                className="w-14 h-14 object-contain drop-shadow-sm"
-              />
+            <button onClick={() => navigate('/rewards')} className="flex-shrink-0 w-20 h-20 rounded-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center shadow-lg border-2 border-gray-100 hover:scale-105 hover:shadow-xl active:scale-95 transition-all duration-200 ease-out" aria-label="עבור למתנות ותגמולים">
+              <img src={giftIcon} alt="מתנה" className="w-14 h-14 object-contain drop-shadow-sm" />
             </button>
 
             {/* Text Column - Left Side */}
@@ -638,10 +631,7 @@ const Home = () => {
               {/* Greeting Line - Top - Slightly Larger */}
               <div className="text-[15px] leading-tight font-normal text-[#1A1A1A] mb-1">
                 {getGreeting()},{" "}
-                <button 
-                  onClick={() => setIsMenuOpen(true)} 
-                  className="hover:opacity-70 transition-opacity font-normal"
-                >
+                <button onClick={() => setIsMenuOpen(true)} className="hover:opacity-70 transition-opacity font-normal">
                   {userName}
                 </button>
               </div>
@@ -652,18 +642,13 @@ const Home = () => {
               </h1>
               
               {/* Small Info Line - 11px */}
-              <p className="text-[0.6875rem] leading-tight font-normal text-[#6E6E6E] truncate mb-2">
-                צוברים ₪50 עד ה-31.12.25 בפז, yellow ובסופרמרקטים
-              </p>
+              <p className="text-[0.6875rem] leading-tight font-normal text-[#6E6E6E] truncate mb-2">צוברים 5% מכל קנייה ב Petid  ונהנים</p>
             </div>
           </div>
 
           {/* Link Button - Bottom Left Corner */}
           <div className="mt-3 text-left">
-            <button 
-              onClick={() => navigate('/rewards')} 
-              className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]"
-            >
+            <button onClick={() => navigate('/rewards')} className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 min-h-[32px]">
               צבירה ומימוש
               <span className="text-sm">‹</span>
             </button>
