@@ -120,23 +120,26 @@ const Feed = () => {
           return acc;
         }, {}) || {};
 
-        // Format posts
-        const formattedPosts = postsData.map((post: any) => ({
-          id: post.id,
-          user_id: post.user_id,
-          image_url: post.image_url,
-          caption: post.caption,
-          created_at: post.created_at,
-          user: {
-            id: post.profiles?.id || post.user_id,
-            full_name: post.profiles?.full_name || "משתמש",
-            avatar_url: post.profiles?.avatar_url || "",
-          },
-          likes_count: likesCount[post.id] || 0,
-          comments_count: commentsCount[post.id] || 0,
-          is_liked: userLikes.includes(post.id),
-          is_saved: userSaves.includes(post.id),
-        }));
+        // Format posts - ensure profiles data is properly mapped
+        const formattedPosts = postsData.map((post: any) => {
+          const profile = post.profiles;
+          return {
+            id: post.id,
+            user_id: post.user_id,
+            image_url: post.image_url,
+            caption: post.caption,
+            created_at: post.created_at,
+            user: {
+              id: profile?.id || post.user_id,
+              full_name: profile?.full_name || "משתמש",
+              avatar_url: profile?.avatar_url || "",
+            },
+            likes_count: likesCount[post.id] || 0,
+            comments_count: commentsCount[post.id] || 0,
+            is_liked: userLikes.includes(post.id),
+            is_saved: userSaves.includes(post.id),
+          };
+        });
 
         setPosts(formattedPosts);
       }

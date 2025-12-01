@@ -66,7 +66,7 @@ export const PostCard = ({
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <p className="font-black text-gray-900 font-jakarta text-[15px]">{post.user.full_name}</p>
+            <p className="font-black text-gray-900 font-jakarta text-[15px]">{post.user.full_name || "משתמש"}</p>
             <p className="text-xs text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
           </div>
         </div>
@@ -185,7 +185,7 @@ export const PostCard = ({
                 className="font-black cursor-pointer hover:text-instagram-pink transition-colors"
                 onClick={() => navigate(`/user/${post.user.id}`)}
               >
-                {post.user.full_name}
+                {post.user.full_name || "משתמש"}
               </span>{" "}
               {post.caption}
             </p>
