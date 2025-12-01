@@ -153,7 +153,7 @@ const Home = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
   const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [userName, setUserName] = useState<string>("Friend");
+  const [userName, setUserName] = useState<string>("חבר");
   const [promotionalOffers, setPromotionalOffers] = useState<any[]>([]);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const previousPetIdsRef = useRef<Set<string>>(new Set());
@@ -163,9 +163,9 @@ const Home = () => {
   // Get greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
+    if (hour < 12) return "בוקר טוב";
+    if (hour < 18) return "אחר הצהריים טובים";
+    return "ערב טוב";
   };
 
   // Confetti effects - memoized
@@ -614,24 +614,72 @@ const Home = () => {
       {/* Content Container */}
       <div className="pt-4 pb-6">
         
-        {/* Gift Icon and Greeting - Top Left */}
+        {/* Yellow-Style Header Banner */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="px-4 mb-4 flex items-center gap-3"
+          className="px-4 mb-6 bg-white"
+          dir="rtl"
         >
-          <button
-            onClick={() => navigate('/rewards')}
-            className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center hover:shadow-lg transition-all active:scale-95 flex-shrink-0"
-            aria-label="View Rewards"
-          >
-            <Gift className="w-8 h-8 text-[#FFD700]" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 font-jakarta">
-              {getGreeting()}, {userName}
-            </h1>
+          <div className="flex items-start gap-4 py-6">
+            {/* Gift Icon - Left Side */}
+            <button
+              onClick={() => navigate('/rewards')}
+              className="flex-shrink-0 w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg flex items-center justify-center hover:shadow-xl transition-all active:scale-95 border-4 border-white"
+              aria-label="צפה בתגמולים"
+            >
+              <div className="relative w-16 h-16 flex items-center justify-center">
+                <div className="w-14 h-14 bg-white rounded-lg shadow-sm flex items-center justify-center">
+                  {/* Gift box illustration */}
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-white border-2 border-gray-300 rounded-sm relative">
+                      {/* Red ribbon vertical */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-full bg-red-500"></div>
+                      {/* Red ribbon horizontal */}
+                      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-1.5 bg-red-500"></div>
+                      {/* Yellow bottom part */}
+                      <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-300"></div>
+                      {/* Bow on top */}
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                        <div className="w-4 h-3 bg-red-500 rounded-full"></div>
+                        <div className="absolute -left-2 top-0.5 w-3 h-2 bg-red-500 rounded-full transform -rotate-12"></div>
+                        <div className="absolute -right-2 top-0.5 w-3 h-2 bg-red-500 rounded-full transform rotate-12"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            {/* Text Content - Right Side */}
+            <div className="flex-1 pt-2">
+              {/* Small greeting text */}
+              <p className="text-sm text-gray-600 font-jakarta mb-1">
+                {getGreeting()}, {userName}!
+              </p>
+              
+              {/* Main headline */}
+              <h1 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-2 leading-tight">
+                רבעון חדש, צבירה חדשה!
+              </h1>
+              
+              {/* Details text */}
+              <p className="text-sm text-gray-500 font-jakarta leading-relaxed">
+                צוברים 50₪ עד ה-31.12.25 ב-רפ, yellow ובסופרמרקטים
+              </p>
+            </div>
+          </div>
+
+          {/* Bottom Link */}
+          <div className="pb-4 border-t border-gray-100 pt-3">
+            <button
+              onClick={() => navigate('/rewards')}
+              className="text-blue-600 font-jakarta font-semibold text-sm hover:underline flex items-center gap-1"
+            >
+              צבירה ומימוש
+              <span className="text-lg">&lt;</span>
+            </button>
           </div>
         </motion.div>
 
