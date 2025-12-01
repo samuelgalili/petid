@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface TextOverlay {
   id: string;
@@ -246,49 +247,68 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden font-jakarta bg-gradient-to-br from-gray-50 to-white" dir="rtl">
-        {previewUrl ? (
-          editMode ? (
-            // Edit Mode
-            <div className="relative w-full aspect-[9/16] bg-black">
-              <canvas
-                ref={previewCanvasRef}
-                className="w-full h-full object-contain"
-              />
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden font-jakarta bg-gradient-to-br from-gray-50 to-white border-4 border-transparent bg-clip-padding" dir="rtl">
+        <AnimatePresence mode="wait">
+          {previewUrl ? (
+            editMode ? (
+              // Edit Mode
+              <motion.div 
+                key="edit-mode"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className="relative w-full aspect-[9/16] bg-black"
+              >
+                <canvas
+                  ref={previewCanvasRef}
+                  className="w-full h-full object-contain"
+                />
 
               {/* Edit Tools */}
-              <div className="absolute top-4 left-0 right-0 flex justify-center gap-2 px-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="bg-black/50 hover:bg-black/70 text-white rounded-full"
-                  onClick={() => setShowTextInput(!showTextInput)}
-                >
-                  <Type className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="bg-black/50 hover:bg-black/70 text-white rounded-full"
-                  onClick={() => {
-                    const dropdown = document.getElementById("sticker-dropdown");
-                    if (dropdown) dropdown.classList.toggle("hidden");
-                  }}
-                >
-                  <Smile className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="bg-black/50 hover:bg-black/70 text-white rounded-full"
-                  onClick={() => {
-                    const dropdown = document.getElementById("filter-dropdown");
-                    if (dropdown) dropdown.classList.toggle("hidden");
-                  }}
-                >
-                  <Sparkles className="w-5 h-5" />
-                </Button>
-              </div>
+              <motion.div 
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="absolute top-4 left-0 right-0 flex justify-center gap-2 px-4"
+              >
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md"
+                    onClick={() => setShowTextInput(!showTextInput)}
+                  >
+                    <Type className="w-5 h-5" />
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md"
+                    onClick={() => {
+                      const dropdown = document.getElementById("sticker-dropdown");
+                      if (dropdown) dropdown.classList.toggle("hidden");
+                    }}
+                  >
+                    <Smile className="w-5 h-5" />
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md"
+                    onClick={() => {
+                      const dropdown = document.getElementById("filter-dropdown");
+                      if (dropdown) dropdown.classList.toggle("hidden");
+                    }}
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </Button>
+                </motion.div>
+              </motion.div>
 
               {/* Sticker Dropdown */}
               <div
@@ -381,37 +401,58 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
               )}
 
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                <div className="flex gap-2">
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex gap-2"
+                >
                   <Button
                     variant="outline"
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl backdrop-blur-md"
                     onClick={() => setEditMode(false)}
                     disabled={uploading}
                   >
                     חזור
                   </Button>
-                  <Button
-                    className="flex-1 bg-accent hover:bg-accent-hover text-text-inverse font-black font-jakarta rounded-2xl shadow-lg"
-                    onClick={handleCreateStory}
-                    disabled={uploading}
+                  <motion.div 
+                    className="flex-1"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {uploading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-                        מפרסם...
-                      </>
-                    ) : (
-                      "פרסם סטורי"
-                    )}
-                  </Button>
-                </div>
+                    <Button
+                      className="w-full bg-gradient-to-r from-instagram-pink to-instagram-purple hover:from-instagram-purple hover:to-instagram-pink text-white font-black font-jakarta rounded-2xl shadow-2xl"
+                      onClick={handleCreateStory}
+                      disabled={uploading}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+                          מפרסם...
+                        </>
+                      ) : (
+                        "פרסם סטורי"
+                      )}
+                    </Button>
+                  </motion.div>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
           ) : (
             // Preview Mode
-            <div className="relative w-full aspect-[9/16] bg-black">
+            <motion.div 
+              key="preview-mode"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+              className="relative w-full aspect-[9/16] bg-black"
+            >
               {selectedMedia?.type.startsWith('image/') ? (
-                <img
+                <motion.img
+                  initial={{ scale: 1.1, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
                   src={previewUrl}
                   alt="Preview"
                   className="w-full h-full object-contain"
@@ -424,58 +465,107 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                 />
               )}
               
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 left-4 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={handleRemoveMedia}
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
               >
-                <X className="w-5 h-5" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-4 left-4 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md"
+                  onClick={handleRemoveMedia}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </motion.div>
 
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                <div className="flex gap-2">
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex gap-2"
+                >
                   <Button
                     variant="outline"
-                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl backdrop-blur-md"
                     onClick={handleRemoveMedia}
                     disabled={uploading}
                   >
                     בחר אחר
                   </Button>
                   {selectedMedia?.type.startsWith('image/') && (
+                    <motion.div 
+                      className="flex-1"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl backdrop-blur-md"
+                        onClick={() => setEditMode(true)}
+                        disabled={uploading}
+                      >
+                        ערוך
+                      </Button>
+                    </motion.div>
+                  )}
+                  <motion.div 
+                    className="flex-1"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <Button
-                      variant="outline"
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 font-bold font-jakarta rounded-2xl"
-                      onClick={() => setEditMode(true)}
+                      className="w-full bg-gradient-to-r from-instagram-pink to-instagram-purple hover:from-instagram-purple hover:to-instagram-pink text-white font-black font-jakarta rounded-2xl shadow-2xl"
+                      onClick={handleCreateStory}
                       disabled={uploading}
                     >
-                      ערוך
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+                          מפרסם...
+                        </>
+                      ) : (
+                        "פרסם סטורי"
+                      )}
                     </Button>
-                  )}
-                  <Button
-                    className="flex-1 bg-accent hover:bg-accent-hover text-text-inverse font-black font-jakarta rounded-2xl shadow-lg"
-                    onClick={handleCreateStory}
-                    disabled={uploading}
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-                        מפרסם...
-                      </>
-                    ) : (
-                      "פרסם סטורי"
-                    )}
-                  </Button>
-                </div>
+                  </motion.div>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
           )
         ) : (
-          <div className="p-8 bg-gradient-to-br from-white to-gray-50">
-            <h2 className="text-3xl font-black text-center mb-2 text-gray-900 font-jakarta">צור סטורי חדש</h2>
-            <p className="text-center text-gray-600 font-jakarta text-sm mb-8">שתף רגע מחיות המחמד שלך 📸</p>
-            <div className="grid grid-cols-2 gap-4">
+          <motion.div 
+            key="upload-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-8 bg-gradient-to-br from-white to-gray-50"
+          >
+            <motion.h2 
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-3xl font-black text-center mb-2 text-gray-900 font-jakarta"
+            >
+              צור סטורי חדש
+            </motion.h2>
+            <motion.p 
+              initial={{ y: -10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-center text-gray-600 font-jakarta text-sm mb-8"
+            >
+              שתף רגע מחיות המחמד שלך 📸
+            </motion.p>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="grid grid-cols-2 gap-4"
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -513,12 +603,18 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                 </div>
                 <span className="text-sm font-black text-gray-900 font-jakarta">צלם תמונה</span>
               </Button>
-            </div>
-            <p className="text-xs text-gray-500 text-center mt-4">
+            </motion.div>
+            <motion.p 
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-xs text-gray-500 text-center mt-4"
+            >
               הסטורי יהיה זמין ל-24 שעות
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
         )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );

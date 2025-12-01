@@ -116,23 +116,38 @@ export const StoriesBar = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ 
+                scale: 1.08,
+                transition: { duration: 0.2 }
+              }}
+              whileTap={{ scale: 0.92 }}
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
               onClick={() => setCreateDialogOpen(true)}
             >
               <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gradient-instagram p-[3px] shadow-lg">
+                <motion.div 
+                  className="w-20 h-20 rounded-full bg-gradient-instagram p-[3px] shadow-xl"
+                  whileHover={{
+                    boxShadow: "0 0 25px rgba(245, 96, 213, 0.6)"
+                  }}
+                >
                   <Avatar className="w-full h-full ring-2 ring-white">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-black text-xl">
                       {user.user_metadata?.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                </div>
-                <div className="absolute bottom-0 right-0 w-7 h-7 bg-instagram-pink rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                  <Plus className="w-4 h-4 text-white font-bold" strokeWidth={2} />
-                </div>
+                </motion.div>
+                <motion.div 
+                  className="absolute bottom-0 right-0 w-7 h-7 bg-instagram-pink rounded-full flex items-center justify-center shadow-lg border-2 border-white"
+                  whileHover={{ 
+                    scale: 1.2,
+                    rotate: 90,
+                    transition: { duration: 0.2 }
+                  }}
+                >
+                  <Plus className="w-4 h-4 text-white font-bold" strokeWidth={3} />
+                </motion.div>
               </div>
               <span className="text-xs font-jakarta font-bold text-foreground">הסטורי שלך</span>
             </motion.div>
@@ -142,27 +157,50 @@ export const StoriesBar = () => {
           {storyUsers.map((storyUser, index) => (
             <motion.div
               key={storyUser.user_id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ delay: index * 0.05 }}
+              initial={{ opacity: 0, scale: 0.8, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              whileHover={{ 
+                scale: 1.08,
+                y: -4,
+                transition: { duration: 0.2 }
+              }}
+              whileTap={{ scale: 0.92 }}
+              transition={{ 
+                delay: index * 0.05,
+                type: "spring",
+                stiffness: 300,
+                damping: 20
+              }}
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
               onClick={() => navigate(`/story/${storyUser.user_id}`)}
             >
               <div className="relative">
-                <div className={`p-[3px] rounded-full shadow-lg ${
-                  storyUser.has_viewed 
-                    ? 'bg-muted' 
-                    : 'bg-gradient-instagram'
-                }`}>
+                <motion.div 
+                  className={`p-[3px] rounded-full shadow-xl ${
+                    storyUser.has_viewed 
+                      ? 'bg-muted' 
+                      : 'bg-gradient-instagram'
+                  }`}
+                  whileHover={!storyUser.has_viewed ? {
+                    boxShadow: "0 0 25px rgba(245, 96, 213, 0.6)",
+                    transition: { duration: 0.2 }
+                  } : {}}
+                  animate={!storyUser.has_viewed ? {
+                    scale: [1, 1.02, 1],
+                    transition: {
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "reverse"
+                    }
+                  } : {}}
+                >
                   <Avatar className="w-20 h-20 ring-[3px] ring-white">
                     <AvatarImage src={storyUser.avatar_url} />
                     <AvatarFallback className="bg-gradient-instagram text-white font-black text-xl">
                       {storyUser.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                </div>
+                </motion.div>
               </div>
               <span className="text-xs font-jakarta font-semibold text-foreground max-w-[80px] truncate">
                 {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}

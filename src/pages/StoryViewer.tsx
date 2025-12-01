@@ -212,14 +212,20 @@ const StoryViewer = () => {
       {/* Progress bars */}
       <div className="absolute top-0 left-0 right-0 flex gap-1.5 p-3 z-10">
         {stories.map((_, index) => (
-          <div key={index} className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+          <div key={index} className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm shadow-md">
             <motion.div
-              className="h-full bg-gradient-primary shadow-lg"
+              className="h-full bg-gradient-to-r from-instagram-pink via-instagram-orange to-instagram-purple shadow-lg"
               initial={{ width: "0%" }}
               animate={{
                 width: index < currentIndex ? "100%" : index === currentIndex ? `${progress}%` : "0%",
               }}
-              transition={{ duration: 0 }}
+              transition={{ 
+                duration: 0,
+                ease: "linear" 
+              }}
+              style={{
+                boxShadow: index === currentIndex ? '0 0 10px rgba(255, 255, 255, 0.5)' : 'none'
+              }}
             />
           </div>
         ))}
@@ -314,17 +320,35 @@ const StoryViewer = () => {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStory.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          initial={{ 
+            opacity: 0, 
+            scale: 1.1,
+            filter: "blur(10px)"
+          }}
+          animate={{ 
+            opacity: 1, 
+            scale: 1,
+            filter: "blur(0px)"
+          }}
+          exit={{ 
+            opacity: 0,
+            scale: 0.95,
+            filter: "blur(5px)"
+          }}
+          transition={{ 
+            duration: 0.3,
+            ease: [0.4, 0, 0.2, 1]
+          }}
           className="w-full h-full flex items-center justify-center"
         >
           {currentStory.media_type === 'image' ? (
-            <img
+            <motion.img
               src={currentStory.media_url}
               alt="Story"
               className="max-w-full max-h-full object-contain"
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 5, ease: "easeOut" }}
             />
           ) : (
             <video
@@ -343,24 +367,30 @@ const StoryViewer = () => {
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-accent hover:bg-accent-hover text-text-inverse rounded-full shadow-2xl transition-all"
+          whileHover={{ 
+            scale: 1.15,
+            boxShadow: "0 0 20px rgba(255, 255, 255, 0.5)"
+          }}
+          whileTap={{ scale: 0.85 }}
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-instagram-pink to-instagram-orange text-white rounded-full shadow-2xl transition-all backdrop-blur-sm"
           onClick={handlePrevious}
         >
-          <ChevronRight className="w-8 h-8" />
+          <ChevronRight className="w-8 h-8" strokeWidth={3} />
         </motion.button>
       )}
       
       <motion.button
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-accent hover:bg-accent-hover text-text-inverse rounded-full shadow-2xl transition-all"
+        whileHover={{ 
+          scale: 1.15,
+          boxShadow: "0 0 20px rgba(255, 255, 255, 0.5)"
+        }}
+        whileTap={{ scale: 0.85 }}
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-instagram-orange to-instagram-purple text-white rounded-full shadow-2xl transition-all backdrop-blur-sm"
         onClick={handleNext}
       >
-        <ChevronLeft className="w-8 h-8" />
+        <ChevronLeft className="w-8 h-8" strokeWidth={3} />
       </motion.button>
 
       {/* Tap zones for mobile */}
