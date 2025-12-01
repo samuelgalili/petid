@@ -1,0 +1,203 @@
+import { motion, AnimatePresence } from "framer-motion";
+import { Heart, MessageCircle, Share2, Bookmark, MoreVertical } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { OptimizedImage } from "@/components/OptimizedImage";
+import { Button } from "@/components/ui/button";
+import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+
+interface PostCardProps {
+  post: {
+    id: string;
+    user_id: string;
+    image_url: string;
+    caption: string;
+    created_at: string;
+    user: {
+      id: string;
+      full_name: string;
+      avatar_url: string;
+    };
+    likes_count: number;
+    comments_count: number;
+    is_liked: boolean;
+    is_saved: boolean;
+  };
+  currentUserId?: string;
+  onLike: (postId: string) => void;
+  onSave: (postId: string) => void;
+  onDoubleTap: (postId: string) => void;
+  showDoubleTapAnimation: boolean;
+  getTimeAgo: (dateString: string) => string;
+}
+
+export const PostCard = ({
+  post,
+  currentUserId,
+  onLike,
+  onSave,
+  onDoubleTap,
+  showDoubleTapAnimation,
+  getTimeAgo,
+}: PostCardProps) => {
+  const navigate = useNavigate();
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-4"
+    >
+      {/* Post Header */}
+      <div className="flex items-center justify-between p-4">
+        <div 
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate(`/user/${post.user.id}`)}
+        >
+          <Avatar className="w-11 h-11 ring-2 ring-gray-100">
+            <AvatarImage src={post.user.avatar_url} />
+            <AvatarFallback className="bg-gradient-instagram text-white font-black text-sm">
+              {post.user.full_name?.charAt(0) || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-black text-gray-900 font-jakarta text-[15px]">{post.user.full_name}</p>
+            <p className="text-xs text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {currentUserId !== post.user_id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`text-xs font-black px-3 py-1 rounded-lg ${
+                isFollowing 
+                  ? 'text-gray-600 hover:text-gray-900' 
+                  : 'text-instagram-pink hover:text-instagram-purple'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsFollowing(!isFollowing);
+              }}
+            >
+              {isFollowing ? "עוקב" : "עקוב"}
+            </Button>
+          )}
+          <button className="text-icon-base hover:text-icon-active p-2 transition-colors">
+            <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+          </button>
+        </div>
+      </div>
+
+      {/* Post Image with Double Tap */}
+      <div 
+        className="relative cursor-pointer select-none"
+        onDoubleClick={() => onDoubleTap(post.id)}
+      >
+        <OptimizedImage
+          src={post.image_url}
+          alt={post.caption || "פוסט"}
+          className="w-full aspect-square"
+          objectFit="cover"
+          sizes="(max-width: 768px) 100vw, 672px"
+        />
+        
+        {/* Double Tap Heart Animation */}
+        {showDoubleTapAnimation && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1.2, opacity: 1 }}
+            exit={{ scale: 1.4, opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          >
+            <Heart className="w-24 h-24 text-white fill-current drop-shadow-2xl" strokeWidth={1.5} />
+          </motion.div>
+        )}
+      </div>
+
+      {/* Post Actions */}
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-5">
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onLike(post.id)}
+              className={`flex items-center gap-2 transition-all ${
+                post.is_liked ? 'text-instagram-pink' : 'text-icon-base hover:text-icon-active'
+              }`}
+            >
+              <Heart className={`w-7 h-7 ${post.is_liked ? 'fill-current' : ''}`} strokeWidth={1.5} />
+              {post.likes_count > 0 && (
+                <span className="font-black font-jakarta">{post.likes_count}</span>
+              )}
+            </motion.button>
+            
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              className="flex items-center gap-2 text-icon-base hover:text-icon-active transition-colors"
+              onClick={() => navigate(`/post/${post.id}`)}
+            >
+              <MessageCircle className="w-7 h-7" strokeWidth={1.5} />
+              {post.comments_count > 0 && (
+                <span className="font-black font-jakarta">{post.comments_count}</span>
+              )}
+            </motion.button>
+            
+            <motion.button 
+              whileTap={{ scale: 0.9 }}
+              className="text-icon-base hover:text-icon-active transition-colors"
+            >
+              <Share2 className="w-7 h-7" strokeWidth={1.5} />
+            </motion.button>
+          </div>
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => onSave(post.id)}
+            className={`transition-colors ${post.is_saved ? 'text-instagram-orange' : 'text-icon-base hover:text-icon-active'}`}
+          >
+            <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
+          </motion.button>
+        </div>
+
+        {/* Liked by */}
+        {post.likes_count > 0 && (
+          <div className="mb-3">
+            <p className="text-sm text-gray-900 font-jakarta">
+              <span className="font-black">
+                {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
+              </span>
+            </p>
+          </div>
+        )}
+
+        {/* Post Caption */}
+        {post.caption && (
+          <div className="mb-2">
+            <p className="text-gray-900 font-jakarta text-[15px]">
+              <span 
+                className="font-black cursor-pointer hover:text-instagram-pink transition-colors"
+                onClick={() => navigate(`/user/${post.user.id}`)}
+              >
+                {post.user.full_name}
+              </span>{" "}
+              {post.caption}
+            </p>
+          </div>
+        )}
+
+        {/* View Comments */}
+        {post.comments_count > 0 && (
+          <button 
+            className="text-gray-500 text-sm font-jakarta hover:text-gray-700 font-semibold transition-colors"
+            onClick={() => navigate(`/post/${post.id}`)}
+          >
+            הצג את כל {post.comments_count} התגובות
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+};

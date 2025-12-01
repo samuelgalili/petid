@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
-import { OptimizedImage } from "@/components/OptimizedImage";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
+import { PostCard } from "@/components/PostCard";
 
 interface Post {
   id: string;
@@ -38,6 +37,7 @@ const Feed = () => {
   const [loading, setLoading] = useState(true);
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
+  const [doubleTapLike, setDoubleTapLike] = useState<string | null>(null);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -86,6 +86,14 @@ const Feed = () => {
             .in("post_id", postIds);
           
           userLikes = userLikesData?.map(l => l.post_id) || [];
+          
+          const { data: userSavesData } = await supabase
+            .from("saved_posts")
+            .select("post_id")
+            .eq("user_id", user.id)
+            .in("post_id", postIds);
+          
+          userSaves = userSavesData?.map(s => s.post_id) || [];
         }
 
         // Count likes and comments
@@ -193,6 +201,55 @@ const Feed = () => {
       toast.error("שגיאה בעדכון הלייק");
     }
   }, [user, posts]);
+  
+  const handleSave = useCallback(async (postId: string) => {
+    if (!user) {
+      toast.error("יש להתחבר כדי לשמור פוסטים");
+      return;
+    }
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    // Optimistic update
+    setPosts(posts.map(p =>
+      p.id === postId ? { ...p, is_saved: !p.is_saved } : p
+    ));
+
+    try {
+      if (post.is_saved) {
+        await supabase
+          .from("saved_posts")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", user.id);
+        toast.success("הפוסט הוסר מהשמורים");
+      } else {
+        await supabase
+          .from("saved_posts")
+          .insert({ post_id: postId, user_id: user.id });
+        toast.success("הפוסט נשמר בהצלחה");
+      }
+    } catch (error: any) {
+      // Revert on error
+      setPosts(posts.map(p =>
+        p.id === postId ? { ...p, is_saved: post.is_saved } : p
+      ));
+      toast.error("שגיאה בשמירת הפוסט");
+    }
+  }, [user, posts]);
+  
+  const handleDoubleTap = useCallback((postId: string) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post || post.is_liked) return;
+    
+    // Show animation
+    setDoubleTapLike(postId);
+    setTimeout(() => setDoubleTapLike(null), 1000);
+    
+    // Trigger like
+    handleLike(postId);
+  }, [posts, handleLike]);
 
   const handleLoadNewPosts = () => {
     setNewPostsAvailable(false);
@@ -293,127 +350,16 @@ const Feed = () => {
         ) : (
           <div className="space-y-4 px-4 py-4">
             {posts.map((post, index) => (
-              <motion.div
+              <PostCard
                 key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white rounded-3xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
-              >
-                {/* Post Header */}
-                <div className="flex items-center justify-between p-4">
-                  <div 
-                    className="flex items-center gap-3 cursor-pointer"
-                    onClick={() => navigate(`/user/${post.user.id}`)}
-                  >
-                    <Avatar className="w-12 h-12 ring-2 ring-gray-100">
-                      <AvatarImage src={post.user.avatar_url} />
-                      <AvatarFallback className="bg-gradient-secondary text-white font-black">
-                        {post.user.full_name?.charAt(0) || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-black text-gray-900 font-jakarta">{post.user.full_name}</p>
-                      <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
-                    </div>
-                  </div>
-                  <button className="text-gray-600 hover:text-gray-900 p-2">
-                    <span className="text-2xl">⋯</span>
-                  </button>
-                </div>
-
-                {/* Post Image */}
-                <div className="relative">
-                  <OptimizedImage
-                    src={post.image_url}
-                    alt={post.caption || "פוסט"}
-                    className="w-full aspect-square cursor-pointer"
-                    objectFit="cover"
-                    sizes="(max-width: 768px) 100vw, 672px"
-                    onClick={() => navigate(`/post/${post.id}`)}
-                  />
-                </div>
-
-                {/* Post Actions */}
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-5">
-                      <motion.button 
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-2 transition-colors ${
-                          post.is_liked ? 'text-red-500' : 'text-gray-700'
-                        }`}
-                      >
-                        <Heart className={`w-7 h-7 ${post.is_liked ? 'fill-current' : ''}`} strokeWidth={1.5} />
-                        {post.likes_count > 0 && (
-                          <span className="font-black font-jakarta">{post.likes_count}</span>
-                        )}
-                      </motion.button>
-                      
-                      <motion.button 
-                        whileTap={{ scale: 0.9 }}
-                        className="flex items-center gap-2 text-gray-700"
-                        onClick={() => navigate(`/post/${post.id}`)}
-                      >
-                        <MessageCircle className="w-7 h-7" strokeWidth={1.5} />
-                        {post.comments_count > 0 && (
-                          <span className="font-black font-jakarta">{post.comments_count}</span>
-                        )}
-                      </motion.button>
-                      
-                      <motion.button 
-                        whileTap={{ scale: 0.9 }}
-                        className="text-gray-700"
-                      >
-                        <Share2 className="w-7 h-7" strokeWidth={1.5} />
-                      </motion.button>
-                    </div>
-                    <motion.button 
-                      whileTap={{ scale: 0.9 }}
-                      className={`${post.is_saved ? 'text-accent' : 'text-gray-700'}`}
-                    >
-                      <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
-                    </motion.button>
-                  </div>
-
-                  {/* Liked by */}
-                  {post.likes_count > 0 && (
-                    <div className="mb-3">
-                      <p className="text-sm text-gray-900 font-jakarta">
-                        <span className="font-black">
-                          {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
-                        </span>
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Post Caption */}
-                  {post.caption && (
-                    <div className="mb-2">
-                      <p className="text-gray-900 font-jakarta">
-                        <span 
-                          className="font-black cursor-pointer hover:underline"
-                          onClick={() => navigate(`/user/${post.user.id}`)}
-                        >
-                          {post.user.full_name}
-                        </span>{" "}
-                        {post.caption}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* View Comments */}
-                  {post.comments_count > 0 && (
-                    <button 
-                      className="text-gray-500 text-sm font-jakarta hover:text-gray-700 font-semibold"
-                      onClick={() => navigate(`/post/${post.id}`)}
-                    >
-                      הצג את כל {post.comments_count} התגובות
-                    </button>
-                  )}
-                </div>
-              </motion.div>
+                post={post}
+                currentUserId={user?.id}
+                onLike={handleLike}
+                onSave={handleSave}
+                onDoubleTap={handleDoubleTap}
+                showDoubleTapAnimation={doubleTapLike === post.id}
+                getTimeAgo={getTimeAgo}
+              />
             ))}
           </div>
         )}

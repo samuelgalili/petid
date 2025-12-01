@@ -122,7 +122,7 @@ export const StoriesBar = () => {
               onClick={() => setCreateDialogOpen(true)}
             >
               <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gradient-primary p-[3px] shadow-lg">
+                <div className="w-20 h-20 rounded-full bg-gradient-instagram p-[3px] shadow-lg">
                   <Avatar className="w-full h-full ring-2 ring-white">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-black text-xl">
@@ -130,8 +130,8 @@ export const StoriesBar = () => {
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                <div className="absolute bottom-0 right-0 w-6 h-6 bg-accent rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                  <Plus className="w-4 h-4 text-accent-foreground font-bold" />
+                <div className="absolute bottom-0 right-0 w-7 h-7 bg-instagram-pink rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <Plus className="w-4 h-4 text-white font-bold" strokeWidth={2} />
                 </div>
               </div>
               <span className="text-xs font-jakarta font-bold text-foreground">הסטורי שלך</span>
@@ -150,17 +150,19 @@ export const StoriesBar = () => {
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
               onClick={() => navigate(`/story/${storyUser.user_id}`)}
             >
-              <div className={`p-[3px] rounded-full shadow-lg ${
-                storyUser.has_viewed 
-                  ? 'bg-muted' 
-                  : 'bg-gradient-primary animate-pulse'
-              }`}>
-                <Avatar className="w-20 h-20 ring-[3px] ring-white">
-                  <AvatarImage src={storyUser.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black text-xl">
-                    {storyUser.full_name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="relative">
+                <div className={`p-[3px] rounded-full shadow-lg ${
+                  storyUser.has_viewed 
+                    ? 'bg-muted' 
+                    : 'bg-gradient-instagram'
+                }`}>
+                  <Avatar className="w-20 h-20 ring-[3px] ring-white">
+                    <AvatarImage src={storyUser.avatar_url} />
+                    <AvatarFallback className="bg-gradient-instagram text-white font-black text-xl">
+                      {storyUser.full_name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
               </div>
               <span className="text-xs font-jakarta font-semibold text-foreground max-w-[80px] truncate">
                 {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}
