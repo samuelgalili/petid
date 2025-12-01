@@ -619,38 +619,38 @@ const Home = () => {
           y: 0
         }} transition={{
           delay: 0.05
-        }} className="bg-white px-5 py-6 mb-4 mx-4 rounded-2xl shadow-md border border-gray-100" dir="rtl">
-          <div className="flex items-start gap-4">
-            {/* Text Content - Right Side */}
-            <div className="flex-1">
-              {/* Small greeting - only name is clickable */}
-              <div className="text-base text-gray-900 font-normal mb-2 text-right">
+        }} className="bg-white px-4 py-5 mb-4 mx-4 rounded-2xl shadow-md border border-gray-100" dir="rtl">
+          <div className="flex items-start justify-between gap-3">
+            {/* Gift Icon - Right Side with Circle Background */}
+            <button onClick={() => navigate('/rewards')} className="flex-shrink-0 w-20 h-20 flex items-center justify-center hover:scale-105 transition-all duration-300 ease-out bg-gray-100 rounded-full" aria-label="מתנה">
+              <img src={giftIcon} alt="מתנה" className="w-14 h-14 object-contain mix-blend-multiply" />
+            </button>
+
+            {/* Text Content - Left Side */}
+            <div className="flex-1 text-right">
+              {/* Small greeting - only name is clickable - Top Right */}
+              <div className="text-sm text-gray-900 font-normal mb-3">
                 {getGreeting()},{" "}
                 <button onClick={() => setIsMenuOpen(true)} className="underline decoration-2 decoration-gray-900 hover:text-gray-700 transition-colors font-normal">
                   {userName}
                 </button>
               </div>
               
-              {/* Main headline - Black and Large */}
-              <h1 className="text-4xl font-black text-gray-900 mb-3 leading-tight">
+              {/* Main headline - Very Large and Bold */}
+              <h1 className="text-[2rem] leading-tight font-black text-gray-900 mb-2">
                 רבעון חדש, צבירה חדשה!
               </h1>
               
               {/* Details text - Smaller Gray */}
-              <p className="text-sm text-gray-600 leading-relaxed font-normal">קונים, צוברים, נהנים — בכל רכישה מחדש!</p>
+              <p className="text-xs text-gray-600 leading-relaxed font-normal">צוברים 50ש עד ה-31.12.25 ב-פז, yellow ובסופרמרקטים</p>
             </div>
-
-            {/* Gift Icon - Left Side with Circle Background */}
-            <button onClick={() => navigate('/rewards')} className="flex-shrink-0 w-24 h-24 flex items-center justify-center hover:scale-105 transition-all duration-300 ease-out bg-gray-100 rounded-full" aria-label="מתנה">
-              <img src={giftIcon} alt="מתנה" className="w-16 h-16 object-contain mix-blend-multiply" />
-            </button>
           </div>
 
-          {/* Bottom Link - Blue */}
-          <div className="mt-5 pt-4 border-t border-gray-200">
-            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-medium text-sm hover:underline hover:text-blue-700 transition-colors inline-flex items-center gap-1">
+          {/* Bottom Link - Blue - Left Aligned */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <button onClick={() => navigate('/rewards')} className="text-blue-600 font-medium text-sm hover:text-blue-700 transition-colors inline-flex items-center gap-1">
               צבירה ומימוש
-              <span className="text-lg transform rotate-180 inline-block">‹</span>
+              <span className="text-base">‹</span>
             </button>
           </div>
         </motion.div>
