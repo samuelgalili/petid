@@ -50,6 +50,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
       supabase.auth.getUser().then(({ data }) => {
         setUser(data.user);
         if (data.user) {
+          // Fetch profile
           supabase
             .from("profiles")
             .select("*")
@@ -59,8 +60,15 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               setProfile(profileData);
             });
           
-          // Simulate unread notifications count - replace with actual DB query
-          setUnreadNotifications(3);
+          // Fetch unread notifications count
+          supabase
+            .from("notifications")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", data.user.id)
+            .eq("is_read", false)
+            .then(({ count }) => {
+              setUnreadNotifications(count || 0);
+            });
         }
       });
     }
