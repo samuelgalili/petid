@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, FileText, Trash2, Download } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 
 interface PetDocument {
   id: string;
@@ -279,12 +280,22 @@ export default function Documents() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 pt-20">
-      <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">מסמכים</h1>
-          <p className="text-gray-600">ניהול אישורי חיסון ומסמכים רפואיים</p>
-        </div>
+    <>
+      <AppHeader 
+        title="מסמכים" 
+        showBackButton={true}
+        showMenuButton={false}
+        extraAction={{
+          icon: Upload,
+          onClick: () => setIsDialogOpen(true)
+        }}
+      />
+      
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="container mx-auto px-4 py-6">
+          <div className="mb-6">
+            <p className="text-gray-600">ניהול אישורי חיסון ומסמכים רפואיים</p>
+          </div>
 
         {/* Filters and Upload Button */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -488,6 +499,7 @@ export default function Documents() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AppHeader } from "@/components/AppHeader";
 
 interface Pet {
   id: string;
@@ -190,13 +191,21 @@ export default function Photos() {
     : photos.filter(photo => photo.pet_id === selectedPetFilter);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-[72px] z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">אלבום התמונות</h1>
-            
+    <>
+      <AppHeader 
+        title="אלבום התמונות" 
+        showBackButton={true}
+        showMenuButton={false}
+        extraAction={{
+          icon: Upload,
+          onClick: () => setUploadDialogOpen(true)
+        }}
+      />
+      
+      <div className="min-h-screen bg-gray-50 pb-24">
+        {/* Filters Section */}
+        <div className="bg-white border-b sticky top-16 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-4">
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900">
@@ -303,10 +312,9 @@ export default function Photos() {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
 
-          {/* Filter */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
+            {/* Filter */}
+            <div className="flex gap-2 overflow-x-auto pb-2 mt-4">
             <Button
               variant={selectedPetFilter === "all" ? "default" : "outline"}
               size="sm"
@@ -391,6 +399,7 @@ export default function Photos() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
