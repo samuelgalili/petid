@@ -278,9 +278,9 @@ const Shop = () => {
             >
               קטגוריות
               {showCategories ? (
-                <ChevronUp className="w-4 h-4" />
+                <ChevronUp className="w-4 h-4" strokeWidth={1.5} />
               ) : (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4" strokeWidth={1.5} />
               )}
             </motion.button>
             
@@ -294,7 +294,7 @@ const Shop = () => {
                   : "bg-background text-foreground border-2 border-border hover:border-border-light"
               }`}
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
               סינון
               {(sortBy !== "none" || showDealsOnly) && (
                 <span className="w-2 h-2 bg-error rounded-full" />
@@ -316,7 +316,7 @@ const Shop = () => {
                   {/* Sort Options */}
                   <div className="mb-4">
                     <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 font-jakarta">
-                      <TrendingUp className="w-4 h-4 text-accent" />
+                      <TrendingUp className="w-4 h-4 text-accent" strokeWidth={1.5} />
                       מיון לפי
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -340,7 +340,7 @@ const Shop = () => {
                             : "bg-background text-foreground border border-border"
                         }`}
                       >
-                        <TrendingUp className="w-3 h-3" />
+                        <TrendingUp className="w-3 h-3" strokeWidth={1.5} />
                         פופולריים
                       </motion.button>
                       <motion.button
@@ -352,7 +352,7 @@ const Shop = () => {
                             : "bg-background text-foreground border border-border"
                         }`}
                       >
-                        <DollarSign className="w-3 h-3" />
+                        <DollarSign className="w-3 h-3" strokeWidth={1.5} />
                         מחיר נמוך
                       </motion.button>
                       <motion.button
@@ -364,7 +364,7 @@ const Shop = () => {
                             : "bg-background text-foreground border border-border"
                         }`}
                       >
-                        <DollarSign className="w-3 h-3" />
+                        <DollarSign className="w-3 h-3" strokeWidth={1.5} />
                         מחיר גבוה
                       </motion.button>
                     </div>
@@ -382,7 +382,7 @@ const Shop = () => {
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <Tag className="w-4 h-4" />
+                        <Tag className="w-4 h-4" strokeWidth={1.5} />
                         הצג מבצעים בלבד
                       </span>
                       <div className={`w-12 h-6 rounded-full transition-all ${
@@ -699,7 +699,7 @@ const Shop = () => {
                         onClick={decreaseQuantity}
                         className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
                       >
-                        <Minus className="w-5 h-5 text-gray-700" />
+                        <Minus className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
                       </motion.button>
                       <span className="text-2xl font-bold text-gray-900 w-12 text-center font-jakarta">
                         {quantity}
@@ -709,7 +709,7 @@ const Shop = () => {
                         onClick={increaseQuantity}
                         className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
                       >
-                        <Plus className="w-5 h-5 text-gray-700" />
+                        <Plus className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
                       </motion.button>
                     </div>
                   </div>
@@ -723,7 +723,7 @@ const Shop = () => {
                       onClick={handleAddToCart}
                       className="w-full h-14 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
                     >
-                      <ShoppingCart className="w-6 h-6" />
+                      <ShoppingCart className="w-6 h-6" strokeWidth={1.5} />
                       הוסף לעגלה - {(selectedProduct.price * quantity).toFixed(0)}₪
                     </Button>
                   </motion.div>
