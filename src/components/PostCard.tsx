@@ -5,6 +5,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFollow } from "@/hooks/useFollow";
 
 interface PostCardProps {
   post: {
@@ -41,7 +42,7 @@ export const PostCard = ({
   getTimeAgo,
 }: PostCardProps) => {
   const navigate = useNavigate();
-  const [isFollowing, setIsFollowing] = useState(false);
+  const { isFollowing, toggleFollow } = useFollow(post.user_id);
 
   return (
     <motion.div
@@ -82,7 +83,7 @@ export const PostCard = ({
               }`}
               onClick={(e) => {
                 e.stopPropagation();
-                setIsFollowing(!isFollowing);
+                toggleFollow();
               }}
             >
               {isFollowing ? "עוקב" : "עקוב"}
