@@ -308,7 +308,7 @@ const Feed = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
-            className="sticky top-[72px] z-10 px-4 py-3 bg-blue-500 text-white text-center cursor-pointer shadow-md"
+            className="fixed top-[56px] left-0 right-0 z-50 px-4 py-3 bg-blue-500 text-white text-center cursor-pointer shadow-md"
             onClick={handleLoadNewPosts}
           >
             <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
@@ -319,12 +319,14 @@ const Feed = () => {
         )}
       </AnimatePresence>
 
-      {/* Stories Bar and Filters */}
-      <div className="bg-white border-b border-gray-100">
+      {/* Stories Bar */}
+      <div className="bg-white">
         <StoriesBar />
-        
-        {/* Filter Tabs */}
-        <div className="max-w-2xl mx-auto px-4 pt-2 pb-2 bg-white">
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-2xl mx-auto px-4 py-2">
           <Tabs value={feedFilter} onValueChange={(value) => setFeedFilter(value as "all" | "following")}>
             <TabsList className="w-full grid grid-cols-2 font-jakarta bg-gray-100">
               <TabsTrigger value="all" className="font-black data-[state=active]:bg-white">
@@ -389,7 +391,7 @@ const Feed = () => {
           </motion.div>
         ) : (
           <div className="space-y-4 px-4 py-4">
-            {filteredPosts.map((post, index) => (
+            {filteredPosts.map((post) => (
               <PostCard
                 key={post.id}
                 post={post}
