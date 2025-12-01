@@ -653,7 +653,7 @@ const Home = () => {
             {/* Gift Icon - Right Side */}
             <button
               onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-32 h-32 flex items-center justify-center hover:scale-105 transition-transform"
+              className="flex-shrink-0 w-32 h-32 flex items-center justify-center hover:scale-110 transition-all duration-300 ease-out hover:rotate-6"
               aria-label="מתנה"
             >
               <img src={giftIcon} alt="מתנה" className="w-full h-full object-contain" />
