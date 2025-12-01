@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { X, ChevronLeft, ChevronRight, Trash2, MoreVertical } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, MoreVertical, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { StoryReplyDialog } from "@/components/StoryReplyDialog";
 
 interface Story {
   id: string;
@@ -36,6 +37,7 @@ const StoryViewer = () => {
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showReplyDialog, setShowReplyDialog] = useState(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const STORY_DURATION = 5000; // 5 seconds per story
 
@@ -248,6 +250,18 @@ const StoryViewer = () => {
           >
             <X className="w-6 h-6" />
           </Button>
+
+          {/* Reply Button - only show for other users' stories */}
+          {currentStory && currentStory.user_id !== user?.id && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 left-16 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              onClick={() => setShowReplyDialog(true)}
+            >
+              <MessageCircle className="w-6 h-6" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -306,6 +320,17 @@ const StoryViewer = () => {
           onClick={handleNext}
         />
       </div>
+
+      {/* Reply Dialog */}
+      {currentStory && (
+        <StoryReplyDialog
+          open={showReplyDialog}
+          onOpenChange={setShowReplyDialog}
+          storyId={currentStory.id}
+          storyOwnerId={currentStory.user_id}
+          storyOwnerName={currentStory.user?.full_name || undefined}
+        />
+      )}
     </div>
   );
 };
