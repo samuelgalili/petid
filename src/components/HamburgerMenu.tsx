@@ -30,6 +30,7 @@ import {
   Scissors,
   GraduationCap,
   MapPin,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -220,6 +221,12 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                 transition={{ delay: 0.2 }}
               >
                 <SmartPanel title="פעולות מהירות" icon={Grid3x3}>
+                  <SmartPanel.Item
+                    icon={MessageCircle}
+                    label="הודעות"
+                    value="צ'אט עם משתמשים"
+                    to="/messages"
+                  />
                   <SmartPanel.Item
                     icon={Bell}
                     label="התראות"
