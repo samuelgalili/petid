@@ -922,7 +922,7 @@ const Home = () => {
             </div>)}
         </motion.div>
 
-        {/* Minimalist Wallet Card - Balance and Icons Only */}
+        {/* Original Loyalty Club Card - Yellow with Smiley Icon */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
@@ -930,110 +930,111 @@ const Home = () => {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              whileHover={{ scale: 1.03, y: -3 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/order-history')} 
               role="button" 
               tabIndex={0} 
-              aria-label="View loyalty balance"
+              aria-label="View loyalty card"
             >
-              <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-[20px] shadow-xl overflow-hidden p-5">
-                {/* Subtle Background Pattern */}
-                <motion.div 
-                  className="absolute inset-0 opacity-5"
-                  animate={{ 
-                    backgroundPosition: ['0% 0%', '100% 100%'],
-                  }}
-                  transition={{ 
-                    duration: 30, 
-                    repeat: Infinity, 
-                    repeatType: "reverse" 
-                  }}
-                  style={{
-                    backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px)',
-                    backgroundSize: '40px 40px'
-                  }}
-                />
-
-                {/* Minimalist Layout: Icons + Balance */}
-                <div className="relative z-10 flex items-center justify-between">
-                  {/* Left Side: Animated Pet Icons */}
-                  <div className="flex items-center gap-2">
-                    <motion.div 
-                      className="w-16 h-16"
-                      animate={{ 
-                        y: [0, -4, 0],
-                        rotate: [0, -2, 0]
-                      }}
-                      transition={{ 
-                        duration: 2.5, 
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      <img src={dogIconGif} alt="Dog" className="w-full h-full object-contain drop-shadow-lg" />
-                    </motion.div>
-
-                    <motion.div 
-                      className="w-14 h-14 -ml-1"
-                      animate={{ 
-                        y: [0, -3, 0],
-                        rotate: [0, 3, 0]
-                      }}
-                      transition={{ 
-                        duration: 2, 
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 0.4
-                      }}
-                    >
-                      <img src={catIconGif} alt="Cat" className="w-full h-full object-contain drop-shadow-lg" />
-                    </motion.div>
+              {/* Card Container with Shadow */}
+              <div className="relative">
+                {/* Yellow Loyalty Card */}
+                <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFC700] to-[#FFB700] rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.4)] p-6 pt-10 overflow-hidden">
+                  {/* Decorative Rainbow Arcs in Corners */}
+                  <div className="absolute top-4 left-4 w-12 h-12 opacity-20">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 44 Q4 4 44 4" stroke="url(#grad1)" strokeWidth="8" strokeLinecap="round" fill="none"/>
+                      <defs>
+                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#FF6B6B"/>
+                          <stop offset="50%" stopColor="#FFA500"/>
+                          <stop offset="100%" stopColor="#FFD700"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </div>
+                  
+                  <div className="absolute bottom-4 right-4 w-12 h-12 opacity-20 rotate-180">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 44 Q4 4 44 4" stroke="url(#grad2)" strokeWidth="8" strokeLinecap="round" fill="none"/>
+                      <defs>
+                        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#FF6B6B"/>
+                          <stop offset="50%" stopColor="#FFA500"/>
+                          <stop offset="100%" stopColor="#FFD700"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
                   </div>
 
-                  {/* Right Side: Balance Display */}
+                  {/* Smiley Icon - Floating Above Card Center */}
                   <motion.div 
-                    className="text-right"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
+                    className="absolute -top-8 left-1/2 -translate-x-1/2 z-20"
+                    animate={{ 
+                      y: [0, -5, 0],
+                      rotate: [0, 5, 0, -5, 0]
+                    }}
+                    transition={{ 
+                      duration: 3, 
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
                   >
+                    <div className="w-16 h-16 bg-[#FFD700] rounded-full shadow-lg flex items-center justify-center border-4 border-white">
+                      <img src={giftIcon} alt="Club" className="w-10 h-10 object-contain" />
+                    </div>
+                  </motion.div>
+
+                  {/* White Field with Barcode */}
+                  <div className="relative bg-white rounded-2xl p-4 shadow-md">
+                    {/* Title Text */}
+                    <div className="text-center mb-3">
+                      <p className="text-sm font-bold text-gray-800 font-jakarta">
+                        קוד קלאב למימוש נקודות
+                      </p>
+                    </div>
+
+                    {/* Barcode Area */}
+                    <div className="flex justify-center items-center py-3 bg-gray-50 rounded-lg">
+                      <div className="flex gap-[2px] items-end" style={{ height: '50px' }}>
+                        {/* Barcode Lines */}
+                        {[3, 2, 4, 2, 3, 1, 4, 2, 3, 2, 4, 1, 3, 2, 4, 3, 2, 1, 4, 2, 3, 2, 4, 1, 3].map((height, i) => (
+                          <div 
+                            key={i} 
+                            className="bg-black"
+                            style={{ 
+                              width: i % 7 === 0 ? '3px' : '2px',
+                              height: `${height * 10}px`
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Balance Display Below Barcode */}
                     <motion.div 
-                      className="text-white text-3xl font-black leading-none tracking-tight mb-1"
+                      className="text-center mt-3 pt-3 border-t border-gray-200"
                       key={walletBalance}
-                      initial={{ scale: 1.2, opacity: 0 }}
+                      initial={{ scale: 1.1, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", stiffness: 200 }}
                     >
-                      ₪{walletBalance.toFixed(2)}
+                      <div className="text-2xl font-black text-gray-900 leading-none mb-1">
+                        ₪{walletBalance.toFixed(2)}
+                      </div>
+                      <div className="text-xs font-bold text-gray-600 font-jakarta">
+                        יתרת חיסכון
+                      </div>
                     </motion.div>
-                    <div className="text-white/90 text-xs font-bold font-jakarta flex items-center justify-end gap-1">
-                      <span>חיסכון</span>
-                      <div className="w-1 h-1 bg-white/80 rounded-full animate-pulse" />
-                    </div>
-                  </motion.div>
+                  </div>
                 </div>
-
-                {/* Minimal Achievement Indicator - Single Badge */}
-                {achievementData.current && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-3 flex items-center justify-center"
-                  >
-                    <div className={`inline-flex items-center gap-1.5 bg-gradient-to-r ${achievementData.current.color} px-3 py-1 rounded-full shadow-md border border-white/30`}>
-                      <span className="text-base">{achievementData.current.icon}</span>
-                      <span className="text-white text-[10px] font-bold font-jakarta">{achievementData.current.name}</span>
-                    </div>
-                  </motion.div>
-                )}
               </div>
             </motion.div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
-            <p className="font-bold text-sm">היסטוריית הזמנות</p>
-            <p className="text-xs opacity-90">לחץ לצפייה בהזמנות ובחיסכון המלא</p>
+            <p className="font-bold text-sm">כרטיס מועדון</p>
+            <p className="text-xs opacity-90">לחץ לצפייה בהיסטוריית הזמנות וחיסכון</p>
           </TooltipContent>
         </Tooltip>
 
