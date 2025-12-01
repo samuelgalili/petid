@@ -48,6 +48,7 @@ import Photos from "./pages/Photos";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
+import Training from "./pages/Training";
 import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,7 @@ const AnimatedRoutes = () => {
             <Route path="/parks" element={<ProtectedRoute><PageTransition><Parks /></PageTransition></ProtectedRoute>} />
             <Route path="/photos" element={<ProtectedRoute><PageTransition><Photos /></PageTransition></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><PageTransition><Documents /></PageTransition></ProtectedRoute>} />
+            <Route path="/training" element={<ProtectedRoute><PageTransition><Training /></PageTransition></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><PageTransition><Notifications /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
