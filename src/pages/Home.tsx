@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { HomePageSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
@@ -228,23 +228,23 @@ const Home = () => {
   }, []);
 
   // Pet long press handlers
-  const handlePetLongPressStart = (pet: any) => {
+  const handlePetLongPressStart = useCallback((pet: any) => {
     const timer = setTimeout(() => {
       setSelectedPetForEdit(pet);
       setEditFormData({ name: pet.name, breed: pet.breed || "" });
     }, 500);
     setLongPressTimer(timer);
-  };
+  }, []);
 
-  const handlePetLongPressEnd = () => {
+  const handlePetLongPressEnd = useCallback(() => {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
     }
-  };
+  }, [longPressTimer]);
 
   // Save pet edits
-  const handleSavePetEdit = async () => {
+  const handleSavePetEdit = useCallback(async () => {
     if (!selectedPetForEdit) return;
 
     try {
@@ -278,10 +278,10 @@ const Home = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [selectedPetForEdit, editFormData, pets, toast]);
 
   // Archive pet
-  const handleArchivePet = async () => {
+  const handleArchivePet = useCallback(async () => {
     if (!selectedPetForEdit) return;
 
     try {
@@ -311,7 +311,7 @@ const Home = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [selectedPetForEdit, pets, toast]);
 
   if (loading) {
     return (

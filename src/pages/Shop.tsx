@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -174,12 +174,12 @@ const Shop = () => {
     return result;
   }, [sortBy, showDealsOnly]);
 
-  const handleProductClick = (product: any) => {
+  const handleProductClick = useCallback((product: any) => {
     setSelectedProduct(product);
     setQuantity(1);
-  };
+  }, []);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     if (!selectedProduct) return;
 
     addToCart({
@@ -198,10 +198,18 @@ const Shop = () => {
 
     setSelectedProduct(null);
     setQuantity(1);
-  };
+  }, [selectedProduct, quantity, addToCart, toast]);
 
-  const increaseQuantity = () => setQuantity(prev => prev + 1);
-  const decreaseQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
+  const increaseQuantity = useCallback(() => setQuantity(prev => prev + 1), []);
+  const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
+
+  // Memoize active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (sortBy !== "none") count++;
+    if (showDealsOnly) count++;
+    return count;
+  }, [sortBy, showDealsOnly]);
 
   return (
     <div className="min-h-screen bg-white pb-20" dir="rtl">
