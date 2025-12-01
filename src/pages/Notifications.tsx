@@ -132,7 +132,7 @@ const Notifications = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted pb-20" dir="rtl">
+    <div className="min-h-screen bg-white pb-20" dir="rtl">
       <AppHeader 
         title="התראות" 
         showBackButton={true}
@@ -168,23 +168,23 @@ const Notifications = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className={`bg-white rounded-2xl p-4 shadow-md border-l-4 ${getNotificationColor(notification.type)} ${
-                !notification.is_read ? "border-l-8 shadow-lg" : ""
-              } hover:shadow-xl transition-shadow`}
+              className={`bg-white rounded-lg p-5 border border-border ${
+                !notification.is_read ? "border-l-4 border-l-primary" : ""
+              } hover:shadow-sm transition-shadow`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-2xl shadow-sm flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl flex-shrink-0">
                     {getNotificationIcon(notification.type)}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-black text-gray-900 mb-1 text-right">
+                    <h3 className="font-semibold text-foreground mb-1 text-right font-jakarta">
                       {notification.title}
                     </h3>
-                    <p className="text-sm text-gray-700 font-semibold mb-2 text-right">
+                    <p className="text-sm text-muted-foreground mb-2 text-right font-jakarta">
                       {notification.message}
                     </p>
-                    <p className="text-xs text-gray-400 font-semibold text-right">
+                    <p className="text-xs text-muted-foreground/70 text-right font-jakarta">
                       {format(new Date(notification.created_at), "dd/MM/yyyy HH:mm", { locale: he })}
                     </p>
                   </div>
@@ -196,18 +196,18 @@ const Notifications = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => markAsRead(notification.id)}
-                      className="hover:bg-green-100 rounded-full"
+                      className="hover:bg-primary/10 rounded-full"
                     >
-                      <Check className="w-5 h-5 text-green-600" />
+                      <Check className="w-4 h-4 text-primary" strokeWidth={1.5} />
                     </Button>
                   )}
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => deleteNotification(notification.id)}
-                    className="hover:bg-red-100 rounded-full"
+                    className="hover:bg-destructive/10 rounded-full"
                   >
-                    <Trash2 className="w-5 h-5 text-red-600" />
+                    <Trash2 className="w-4 h-4 text-destructive" strokeWidth={1.5} />
                   </Button>
                 </div>
               </div>

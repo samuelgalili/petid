@@ -133,7 +133,7 @@ const Insurance = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-background">
+    <div className="min-h-screen pb-20 bg-white">
       <AppHeader 
         title="ביטוח חיות מחמד" 
         showBackButton={true}
@@ -147,22 +147,22 @@ const Insurance = () => {
       {/* Tabs for Navigation */}
       <div className="px-4 -mt-6 relative z-20">
         <Tabs defaultValue="plans" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white shadow-lg rounded-2xl p-1 border border-gray-100">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 rounded-lg p-1 border border-border">
             <TabsTrigger 
               value="plans" 
-              className="rounded-xl font-jakarta font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+              className="rounded-md font-jakarta font-medium data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
               Plans
             </TabsTrigger>
             <TabsTrigger 
               value="claims" 
-              className="rounded-xl font-jakarta font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+              className="rounded-md font-jakarta font-medium data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
               Claims
             </TabsTrigger>
             <TabsTrigger 
               value="policies" 
-              className="rounded-xl font-jakarta font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+              className="rounded-md font-jakarta font-medium data-[state=active]:bg-white data-[state=active]:text-foreground data-[state=active]:shadow-sm"
             >
               Policies
             </TabsTrigger>
@@ -189,13 +189,13 @@ const Insurance = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.3 + index * 0.05 }}
-                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+                    className="bg-white rounded-lg p-5 border border-border"
                   >
-                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-3">
-                      <item.icon className="w-6 h-6 text-blue-500" />
+                    <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mb-3">
+                      <item.icon className="w-6 h-6 text-primary" strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-900 font-jakarta mb-1">{item.title}</h3>
-                    <p className="text-xs text-gray-600 font-jakarta">{item.desc}</p>
+                    <h3 className="text-sm font-medium text-foreground font-jakarta mb-1">{item.title}</h3>
+                    <p className="text-xs text-muted-foreground font-jakarta">{item.desc}</p>
                   </motion.div>
                 ))}
               </div>
@@ -212,9 +212,9 @@ const Insurance = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 + index * 0.1 }}
                   >
-                    <Card className={`relative overflow-hidden ${plan.popular ? 'border-2 border-blue-500' : 'border border-gray-200'}`}>
+                    <Card className={`relative overflow-hidden ${plan.popular ? 'border-2 border-primary' : 'border border-border'}`}>
                       {plan.popular && (
-                        <div className="absolute top-3 right-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        <div className="absolute top-3 right-3 bg-primary text-white text-xs font-medium px-3 py-1 rounded-full">
                           Most Popular
                         </div>
                       )}

@@ -291,14 +291,14 @@ export default function Documents() {
         }}
       />
       
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="min-h-screen bg-white pb-20">
         <div className="container mx-auto px-4 py-6">
           <div className="mb-6">
             <p className="text-gray-600">ניהול אישורי חיסון ומסמכים רפואיים</p>
           </div>
 
         {/* Filters and Upload Button */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-white border border-border rounded-lg p-5 mb-6">
           <div className="flex flex-col gap-4">
             <div className="flex gap-3 flex-wrap items-end">
               <div className="flex-1 min-w-[150px]">
@@ -335,8 +335,8 @@ export default function Documents() {
 
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900">
-                    <Upload className="ml-2 h-4 w-4" />
+                  <Button className="bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta">
+                    <Upload className="ml-2 h-4 w-4" strokeWidth={1.5} />
                     העלה מסמך
                   </Button>
                 </DialogTrigger>

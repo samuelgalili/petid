@@ -186,15 +186,15 @@ const Grooming = () => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <Scissors className="w-12 h-12 text-[#FFD700] animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-jakarta">טוען מספרות...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground font-jakarta">טוען מספרות...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-white pb-24">
       <AppHeader 
         title="מספרות לחיות מחמד" 
         showBackButton={true}
@@ -243,13 +243,13 @@ const Grooming = () => {
 
         <div className="space-y-4">
           {filteredSalons.map((salon, index) => (
-            <motion.div
-              key={salon.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-2xl shadow-md overflow-hidden"
-            >
+              <motion.div
+                key={salon.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white rounded-lg border border-border overflow-hidden hover:shadow-sm transition-shadow"
+              >
               {salon.image_url && (
                 <div className="w-full h-48 bg-gray-100 overflow-hidden">
                   <img
@@ -327,9 +327,9 @@ const Grooming = () => {
 
                 <Button
                   onClick={() => openBookingDialog(salon)}
-                  className="w-full bg-[#FFD700] hover:bg-[#FFC107] text-gray-900 rounded-2xl font-bold py-5 transition-all font-jakarta"
+                  className="w-full bg-primary hover:bg-primary/90 text-white rounded-lg font-medium py-4 transition-all font-jakarta"
                 >
-                  <Calendar className="w-5 h-5 ml-2" />
+                  <Calendar className="w-4 h-4 ml-2" strokeWidth={1.5} />
                   קבע תור
                 </Button>
               </div>

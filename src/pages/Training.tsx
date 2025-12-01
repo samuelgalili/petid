@@ -138,7 +138,7 @@ const Training = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted pb-20" dir="rtl">
+    <div className="min-h-screen bg-white pb-20" dir="rtl">
       <AppHeader 
         title="אילוף כלבים" 
         showBackButton={true}
@@ -159,17 +159,17 @@ const Training = () => {
 
         {/* Tabs */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-muted rounded-full p-1">
-            <TabsTrigger value="trainers" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/50 rounded-lg p-1">
+            <TabsTrigger value="trainers" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm font-jakarta">
               מאלפים
             </TabsTrigger>
-            <TabsTrigger value="courses" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <TabsTrigger value="courses" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm font-jakarta">
               קורסים
             </TabsTrigger>
-            <TabsTrigger value="tips" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <TabsTrigger value="tips" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm font-jakarta">
               טיפים
             </TabsTrigger>
-            <TabsTrigger value="videos" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <TabsTrigger value="videos" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm font-jakarta">
               סרטונים
             </TabsTrigger>
           </TabsList>
@@ -209,7 +209,7 @@ const Training = () => {
                 <p className="text-center text-gray-500 py-8">לא נמצאו מאלפים</p>
               ) : (
                 filteredTrainers.map((trainer) => (
-                  <Card key={trainer.id} className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-shadow rounded-2xl">
+                  <Card key={trainer.id} className="overflow-hidden bg-white border border-border hover:shadow-sm transition-shadow rounded-lg">
                     <div className="p-5">
                       <div className="flex items-start gap-4 mb-4">
                         <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
