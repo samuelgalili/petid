@@ -614,71 +614,51 @@ const Home = () => {
       {/* Content Container */}
       <div className="pt-4 pb-6">
         
-        {/* Yellow-Style Header Banner */}
+        {/* Yellow-Style Header Banner - Exact 1:1 Match */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="px-4 mb-6 bg-white"
+          className="bg-white px-4 py-6 mb-6"
           dir="rtl"
         >
-          <div className="flex items-start gap-4 py-6">
-            {/* Gift Icon - Left Side */}
+          <div className="flex items-start gap-5">
+            {/* Gift Icon - Left Side (Exact Match) */}
             <button
               onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg flex items-center justify-center hover:shadow-xl transition-all active:scale-95 border-4 border-white"
-              aria-label="צפה בתגמולים"
+              className="flex-shrink-0 w-28 h-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-100 shadow-lg flex items-center justify-center hover:shadow-xl transition-all"
+              aria-label="מתנה"
             >
-              <div className="relative w-16 h-16 flex items-center justify-center">
-                <div className="w-14 h-14 bg-white rounded-lg shadow-sm flex items-center justify-center">
-                  {/* Gift box illustration */}
-                  <div className="relative">
-                    <div className="w-10 h-10 bg-white border-2 border-gray-300 rounded-sm relative">
-                      {/* Red ribbon vertical */}
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-full bg-red-500"></div>
-                      {/* Red ribbon horizontal */}
-                      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full h-1.5 bg-red-500"></div>
-                      {/* Yellow bottom part */}
-                      <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-300"></div>
-                      {/* Bow on top */}
-                      <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                        <div className="w-4 h-3 bg-red-500 rounded-full"></div>
-                        <div className="absolute -left-2 top-0.5 w-3 h-2 bg-red-500 rounded-full transform -rotate-12"></div>
-                        <div className="absolute -right-2 top-0.5 w-3 h-2 bg-red-500 rounded-full transform rotate-12"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <Gift className="w-12 h-12 text-gray-600" strokeWidth={1.5} />
             </button>
 
             {/* Text Content - Right Side */}
-            <div className="flex-1 pt-2">
-              {/* Small greeting text */}
-              <p className="text-sm text-gray-600 font-jakarta mb-1">
-                {getGreeting()}, {userName}!
+            <div className="flex-1 pt-1">
+              {/* Small greeting - underlined */}
+              <p className="text-lg text-gray-900 font-jakarta mb-2 underline decoration-2 decoration-gray-900">
+                {getGreeting()} {userName}!
               </p>
               
-              {/* Main headline */}
-              <h1 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-2 leading-tight">
+              {/* Main headline - Bold and Large */}
+              <h1 className="text-3xl font-extrabold text-gray-900 font-jakarta mb-3 leading-tight">
                 רבעון חדש, צבירה חדשה!
               </h1>
               
-              {/* Details text */}
-              <p className="text-sm text-gray-500 font-jakarta leading-relaxed">
+              {/* Details text - Gray */}
+              <p className="text-base text-gray-600 font-jakarta leading-relaxed">
                 צוברים 50₪ עד ה-31.12.25 ב-רפ, yellow ובסופרמרקטים
               </p>
             </div>
           </div>
 
-          {/* Bottom Link */}
-          <div className="pb-4 border-t border-gray-100 pt-3">
+          {/* Bottom Link - Blue */}
+          <div className="mt-5 pt-4 border-t border-gray-100">
             <button
               onClick={() => navigate('/rewards')}
-              className="text-blue-600 font-jakarta font-semibold text-sm hover:underline flex items-center gap-1"
+              className="text-blue-600 font-jakarta font-bold text-base hover:underline inline-flex items-center gap-1"
             >
               צבירה ומימוש
-              <span className="text-lg">&lt;</span>
+              <span className="text-xl transform rotate-180 inline-block">›</span>
             </button>
           </div>
         </motion.div>
