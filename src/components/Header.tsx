@@ -109,7 +109,7 @@ export const Header = () => {
                               stiffness: 500,
                               damping: 25
                             }}
-                            className="absolute -top-1 -right-1 w-5 h-5 bg-[#FBD66A] text-gray-900 rounded-full text-xs font-bold flex items-center justify-center"
+                            className="absolute -top-1 -right-1 w-6 h-6 bg-white border-2 border-gray-200 text-gray-900 rounded-full text-xs font-bold flex items-center justify-center shadow-md"
                           >
                             {cartItemCount > 9 ? '9+' : cartItemCount}
                           </motion.span>
