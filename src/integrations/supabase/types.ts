@@ -677,6 +677,194 @@ export type Database = {
         }
         Relationships: []
       }
+      trainers: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city: string
+          created_at: string | null
+          email: string | null
+          experience_years: number | null
+          id: string
+          is_active: boolean | null
+          is_certified: boolean | null
+          name: string
+          phone: string | null
+          price_per_session: number | null
+          rating: number | null
+          specialty: string | null
+          total_reviews: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city: string
+          created_at?: string | null
+          email?: string | null
+          experience_years?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_certified?: boolean | null
+          name: string
+          phone?: string | null
+          price_per_session?: number | null
+          rating?: number | null
+          specialty?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string
+          created_at?: string | null
+          email?: string | null
+          experience_years?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_certified?: boolean | null
+          name?: string
+          phone?: string | null
+          price_per_session?: number | null
+          rating?: number | null
+          specialty?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      training_courses: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration_weeks: number | null
+          id: string
+          is_active: boolean | null
+          level: string | null
+          max_participants: number | null
+          price: number | null
+          sessions_per_week: number | null
+          title: string
+          trainer_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration_weeks?: number | null
+          id?: string
+          is_active?: boolean | null
+          level?: string | null
+          max_participants?: number | null
+          price?: number | null
+          sessions_per_week?: number | null
+          title: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration_weeks?: number | null
+          id?: string
+          is_active?: boolean | null
+          level?: string | null
+          max_participants?: number | null
+          price?: number | null
+          sessions_per_week?: number | null
+          title?: string
+          trainer_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_courses_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_tips: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          difficulty: string | null
+          id: string
+          likes: number | null
+          published_at: string | null
+          title: string
+          views: number | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string
+          likes?: number | null
+          published_at?: string | null
+          title: string
+          views?: number | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          difficulty?: string | null
+          id?: string
+          likes?: number | null
+          published_at?: string | null
+          title?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
+      training_videos: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          likes: number | null
+          published_at: string | null
+          thumbnail_url: string | null
+          title: string
+          video_url: string
+          views: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          likes?: number | null
+          published_at?: string | null
+          thumbnail_url?: string | null
+          title: string
+          video_url: string
+          views?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          likes?: number | null
+          published_at?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          video_url?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
