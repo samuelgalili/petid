@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
 import { toast } from "sonner";
-import { AppHeader } from "@/components/AppHeader";
 import { PostCard } from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -291,15 +290,15 @@ const Feed = () => {
   }, [posts, feedFilter, followingIds]);
 
   return (
-    <div className="min-h-screen bg-white pb-24" dir="rtl">
-      <AppHeader 
-        title="הפיד שלי" 
-        showBackButton={true}
-        extraAction={{
-          icon: Plus,
-          onClick: () => setCreatePostOpen(true)
-        }}
-      />
+    <div className="min-h-screen bg-white pb-24 pt-14" dir="rtl">
+      {/* Create Post FAB */}
+      <Button
+        onClick={() => setCreatePostOpen(true)}
+        className="fixed bottom-24 left-4 z-50 rounded-full w-14 h-14 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 shadow-xl"
+        size="icon"
+      >
+        <Plus className="w-6 h-6" />
+      </Button>
 
       {/* New Posts Banner */}
       <AnimatePresence>
@@ -308,7 +307,7 @@ const Feed = () => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
-            className="fixed top-[56px] left-0 right-0 z-50 px-4 py-3 bg-blue-500 text-white text-center cursor-pointer shadow-md"
+            className="fixed top-14 left-0 right-0 z-40 px-4 py-3 bg-blue-500 text-white text-center cursor-pointer shadow-md"
             onClick={handleLoadNewPosts}
           >
             <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
