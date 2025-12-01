@@ -56,12 +56,12 @@ const Feed = () => {
         setFollowingIds(ids);
       }
 
-      // Fetch posts with user profiles
+      // Fetch posts with user profiles - specify exact relationship
       const { data: postsData, error: postsError } = await supabase
         .from("posts")
         .select(`
           *,
-          profiles (
+          profiles!posts_user_id_fkey_profiles (
             id,
             full_name,
             avatar_url
