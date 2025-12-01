@@ -380,6 +380,47 @@ export type Database = {
         }
         Relationships: []
       }
+      park_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          park_id: string
+          photos: string[] | null
+          rating: number
+          review_text: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          park_id: string
+          photos?: string[] | null
+          rating: number
+          review_text?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          park_id?: string
+          photos?: string[] | null
+          rating?: number
+          review_text?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "park_reviews_park_id_fkey"
+            columns: ["park_id"]
+            isOneToOne: false
+            referencedRelation: "dog_parks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_documents: {
         Row: {
           description: string | null
