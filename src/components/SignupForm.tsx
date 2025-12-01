@@ -324,7 +324,7 @@ export const SignupForm = () => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-3 text-sm text-red-100 bg-red-500/20 border border-red-300/30 rounded-xl backdrop-blur-sm"
+          className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-xl backdrop-blur-sm"
           role="alert"
           aria-live="assertive"
         >
@@ -385,7 +385,7 @@ export const SignupForm = () => {
                 setFieldErrors({ ...fieldErrors, fullName: undefined });
               }}
               disabled={loading}
-              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.fullName ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.fullName ? "border-error focus-visible:ring-error" : ""}`}
               aria-invalid={!!fieldErrors.fullName}
               aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
               autoComplete="name"
@@ -395,7 +395,7 @@ export const SignupForm = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 id="fullName-error"
-                className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                className="text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg backdrop-blur-sm"
                 role="alert"
               >
                 {fieldErrors.fullName}
@@ -419,7 +419,7 @@ export const SignupForm = () => {
                   setFieldErrors({ ...fieldErrors, email: undefined });
                 }}
                 disabled={loading}
-                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-error focus-visible:ring-error" : ""}`}
                 aria-invalid={!!fieldErrors.email}
                 aria-describedby={fieldErrors.email ? "email-error" : undefined}
                 autoComplete="email"
@@ -429,7 +429,7 @@ export const SignupForm = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   id="email-error"
-                  className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                  className="text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg backdrop-blur-sm"
                   role="alert"
                 >
                   {fieldErrors.email}
@@ -452,7 +452,7 @@ export const SignupForm = () => {
                   setFieldErrors({ ...fieldErrors, phone: undefined });
                 }}
                 disabled={loading}
-                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-error focus-visible:ring-error" : ""}`}
                 aria-invalid={!!fieldErrors.phone}
                 aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
                 autoComplete="tel"
@@ -462,7 +462,7 @@ export const SignupForm = () => {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   id="phone-error"
-                  className="text-xs text-red-100 bg-red-500/30 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                  className="text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg backdrop-blur-sm"
                   role="alert"
                 >
                   {fieldErrors.phone}
@@ -492,13 +492,13 @@ export const SignupForm = () => {
                 disabled={loading}
                 animate={otp.every(d => d) ? {
                   scale: [1, 1.05, 1],
-                  borderColor: ["#e5e7eb", "#FBD66A", "#FBD66A"],
+                  borderColor: ["#e5e7eb", "hsl(var(--accent))", "hsl(var(--accent))"],
                 } : {}}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 className={`w-12 h-14 text-center text-2xl font-bold bg-gray-50/95 border-2 text-gray-900 rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_25px_rgba(0,0,0,0.2)] backdrop-blur-sm focus:outline-none ${
                   digit
                     ? otp.every(d => d)
-                      ? "border-[#FBD66A] bg-[#FBD66A]/10 focus:border-[#F4C542] focus:shadow-[0_6px_25px_rgba(251,214,106,0.4)]"
+                      ? "border-accent bg-accent/10 focus:border-accent-hover focus:shadow-lg"
                       : "border-gray-300 bg-gray-100 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
                     : "border-gray-200 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
                 }`}
@@ -511,7 +511,7 @@ export const SignupForm = () => {
             initial={{ opacity: 0.7 }}
             animate={otp.every(d => d) ? {
               opacity: [0.7, 1, 0.7],
-              color: ["#6b7280", "#F4C542", "#6b7280"]
+              color: ["#6b7280", "hsl(var(--accent-hover))", "#6b7280"]
             } : { opacity: 0.7 }}
             transition={{ duration: 0.5 }}
             className="text-xs font-jakarta text-center"
@@ -524,7 +524,7 @@ export const SignupForm = () => {
       {!showOTPInput && (
         <Button
           type="submit"
-          className="w-full h-12 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-jakarta font-semibold transition-all rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(251,191,36,0.4)] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+          className="w-full h-12 bg-accent hover:bg-accent-hover text-gray-900 font-jakarta font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
           disabled={loading}
           aria-busy={loading}
         >
@@ -541,7 +541,7 @@ export const SignupForm = () => {
 
       {showOTPInput && loading && (
         <div className="flex items-center justify-center py-3">
-          <Loader2 className="h-6 w-6 animate-spin text-[#FBD66A]" aria-hidden="true" />
+          <Loader2 className="h-6 w-6 animate-spin text-accent" aria-hidden="true" />
           <span className="ml-2 text-sm font-jakarta text-gray-700">Verifying...</span>
         </div>
       )}

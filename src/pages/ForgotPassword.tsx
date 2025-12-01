@@ -115,7 +115,7 @@ const ForgotPassword = () => {
                   <form onSubmit={handleSubmit} className="space-y-5">
                     {error && (
                       <div
-                        className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg"
+                        className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-lg"
                         role="alert"
                       >
                         {error}
@@ -145,20 +145,7 @@ const ForgotPassword = () => {
 
                     <Button
                       type="submit"
-                      className="w-full h-12 font-medium transition-all"
-                      style={{
-                        backgroundColor: loading ? "#E0C050" : "#FBD66A",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.backgroundColor = "#F4C542";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.backgroundColor = "#FBD66A";
-                        }
-                      }}
+                      className="w-full h-12 font-medium transition-all bg-accent hover:bg-accent-hover text-gray-900"
                       disabled={loading}
                     >
                       {loading ? (
@@ -195,16 +182,7 @@ const ForgotPassword = () => {
 
                   <Button
                     onClick={() => setEmailSent(false)}
-                    className="w-full h-12 font-medium transition-all"
-                    style={{
-                      backgroundColor: "#FBD66A",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#F4C542";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#FBD66A";
-                    }}
+                    className="w-full h-12 font-medium transition-all bg-accent hover:bg-accent-hover text-gray-900"
                   >
                     <span className="text-gray-900 font-jakarta">Try Another Email</span>
                   </Button>
