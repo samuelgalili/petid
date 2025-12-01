@@ -72,7 +72,7 @@ const BottomNav = () => {
 
       {/* Bottom Navigation */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 bg-[#F5F5F3] border-t border-[#E1E1E1] z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] h-16"
+        className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-50 h-16"
         role="navigation"
         aria-label={ARIA_LABELS.navigation}
       >
@@ -85,15 +85,15 @@ const BottomNav = () => {
             const content = (
               <>
                 <motion.div
-                  whileHover={{ scale: 1.1, y: -2 }}
+                  whileHover={{ scale: 1.05 }}
                   whileTap={buttonTap}
                   transition={{ duration: ANIMATION_DURATION.fast }}
                   className="relative"
                 >
                   <Icon 
                     className={cn(
-                      "w-[22px] h-[22px] transition-all",
-                      isActive ? "text-primary" : "text-secondary"
+                      "w-[22px] h-[22px] transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground"
                     )} 
                     strokeWidth={1.5}
                   />
@@ -107,8 +107,8 @@ const BottomNav = () => {
                 </motion.div>
                 
                 <span className={cn(
-                  "text-[10px] font-medium font-jakarta transition-colors text-center leading-tight",
-                  isActive ? "text-primary" : "text-secondary"
+                  "text-[10px] font-medium font-jakarta transition-colors text-center leading-tight mt-1",
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   {item.label}
                 </span>
@@ -120,7 +120,7 @@ const BottomNav = () => {
                 <button
                   key={key}
                   onClick={item.onClick}
-                  className="flex flex-col items-center justify-center gap-1 w-[20%] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+                  className="flex flex-col items-center justify-center w-[20%] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg py-2"
                   style={{ minHeight: TAP_TARGET.comfortable }}
                   aria-label={item.label}
                 >
@@ -133,7 +133,7 @@ const BottomNav = () => {
               <Link
                 key={key}
                 to={item.path!}
-                className="flex flex-col items-center justify-center gap-1 w-[20%] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+                className="flex flex-col items-center justify-center w-[20%] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg py-2"
                 style={{ minHeight: TAP_TARGET.comfortable }}
                 {...getAccessibleLinkProps(item.label)}
               >
@@ -146,13 +146,13 @@ const BottomNav = () => {
 
       {/* More Options Sheet */}
       <Sheet open={isMoreSheetOpen} onOpenChange={setIsMoreSheetOpen}>
-        <SheetContent side="bottom" className="h-[60vh] rounded-t-2xl">
-          <SheetHeader>
-            <SheetTitle className="text-center text-lg font-bold text-foreground">
+        <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl bg-surface border-border">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="text-center text-lg font-semibold text-foreground">
               כל הקטגוריות
             </SheetTitle>
           </SheetHeader>
-          <div className="grid grid-cols-3 gap-4 mt-6 px-2">
+          <div className="grid grid-cols-3 gap-6 px-2">
             {moreCategories.map((category) => {
               const CategoryIcon = category.icon;
               return (
@@ -160,10 +160,10 @@ const BottomNav = () => {
                   key={category.path}
                   to={category.path}
                   onClick={() => setIsMoreSheetOpen(false)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex flex-col items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
                 >
-                  <div className="w-14 h-14 rounded-full bg-muted border border-border flex items-center justify-center">
-                    <CategoryIcon className={cn("w-6 h-6", category.color)} strokeWidth={1.5} />
+                  <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
+                    <CategoryIcon className={cn("w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors")} strokeWidth={1.5} />
                   </div>
                   <span className="text-xs font-medium text-center text-foreground leading-tight">
                     {category.label}
