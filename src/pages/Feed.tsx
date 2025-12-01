@@ -11,6 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { Virtuoso } from "react-virtuoso";
 
 interface Post {
   id: string;
@@ -204,26 +205,28 @@ const Feed = () => {
       {/* Stories Bar */}
       <StoriesBar />
 
-      {/* Feed */}
+      {/* Feed with Virtual Scrolling */}
       <div className="max-w-2xl mx-auto">
         {loading ? (
           // Loading skeleton
-          [...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white mb-1 border-b border-gray-100 p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <Skeleton className="w-10 h-10 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-20" />
+          <div>
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white mb-1 border-b border-gray-100 p-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+                <Skeleton className="w-full aspect-square" />
+                <div className="mt-4 space-y-2">
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-4 w-full" />
                 </div>
               </div>
-              <Skeleton className="w-full aspect-square" />
-              <div className="mt-4 space-y-2">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : posts.length === 0 ? (
           // Empty state
           <div className="text-center py-16 px-4">
@@ -235,125 +238,132 @@ const Feed = () => {
             </p>
           </div>
         ) : (
-          posts.map((post, index) => (
-          <motion.div
-            key={post.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white mb-1 border-b border-gray-100"
-          >
-            {/* Post Header */}
-            <div className="flex items-center justify-between p-4">
-              <div 
-                className="flex items-center gap-3 cursor-pointer"
-                onClick={() => navigate(`/user/${post.user.id}`)}
-              >
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={post.user.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
-                    {post.user.full_name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-gray-900 font-jakarta">{post.user.full_name}</p>
-                  <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
-                </div>
-              </div>
-              <button className="text-gray-600 hover:text-gray-900">
-                <span className="text-2xl">⋯</span>
-              </button>
-            </div>
-
-            {/* Post Image */}
-            <OptimizedImage
-              src={post.image_url}
-              alt={post.caption || "פוסט"}
-              className="w-full aspect-square cursor-pointer"
-              objectFit="cover"
-              sizes="(max-width: 768px) 100vw, 672px"
-              onClick={() => navigate(`/post/${post.id}`)}
-            />
-
-            {/* Post Actions */}
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center gap-2 transition-colors ${
-                      post.is_liked ? 'text-red-500' : 'text-gray-700 hover:text-red-500'
-                    }`}
-                  >
-                    <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
-                    <span className="font-semibold font-jakarta">{post.likes_count}</span>
-                  </button>
-                  <button 
-                    className="flex items-center gap-2 text-gray-700 hover:text-blue-500 transition-colors"
-                    onClick={() => navigate(`/post/${post.id}`)}
-                  >
-                    <MessageCircle className="w-6 h-6" />
-                    <span className="font-semibold font-jakarta">{post.comments_count}</span>
-                  </button>
-                  <button className="text-gray-700 hover:text-green-500 transition-colors">
-                    <Share2 className="w-6 h-6" />
-                  </button>
-                </div>
-                <button className="text-gray-700 hover:text-yellow-500 transition-colors">
-                  <Bookmark className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Liked by */}
-              {post.likes_count > 0 && (
-                <div className="mb-2">
-                  <p className="text-sm text-gray-900 font-jakarta">
-                    אהבו על ידי{" "}
-                    <span className="font-semibold cursor-pointer hover:underline">
-                      {post.user.full_name}
-                    </span>
-                    {post.likes_count > 1 && (
-                      <>
-                        {" "}ועוד{" "}
-                        <span className="font-semibold">
-                          {post.likes_count - 1}
-                        </span>
-                      </>
-                    )}
-                  </p>
-                </div>
-              )}
-
-              {/* Post Caption */}
-              <div className="mb-2">
-                <p className="text-gray-900 font-jakarta">
-                  <span 
-                    className="font-semibold cursor-pointer hover:underline"
-                    onClick={() => navigate(`/user/${post.user.id}`)}
-                  >
-                    {post.user.full_name}
-                  </span>{" "}
-                  {post.caption}
-                </p>
-              </div>
-
-              {/* View Comments */}
-              {post.comments_count > 0 && (
-                <button 
-                  className="text-gray-500 text-sm font-jakarta hover:text-gray-700"
-                  onClick={() => navigate(`/post/${post.id}`)}
+          <Virtuoso
+            style={{ height: 'calc(100vh - 280px)' }}
+            totalCount={posts.length}
+            overscan={2}
+            itemContent={(index) => {
+              const post = posts[index];
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white mb-1 border-b border-gray-100"
                 >
-                  הצג את כל {post.comments_count} התגובות
-                </button>
-              )}
+                  {/* Post Header */}
+                  <div className="flex items-center justify-between p-4">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => navigate(`/user/${post.user.id}`)}
+                    >
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={post.user.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
+                          {post.user.full_name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-gray-900 font-jakarta">{post.user.full_name}</p>
+                        <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
+                      </div>
+                    </div>
+                    <button className="text-gray-600 hover:text-gray-900">
+                      <span className="text-2xl">⋯</span>
+                    </button>
+                  </div>
 
-              {/* Time ago */}
-              <p className="text-xs text-gray-400 font-jakarta mt-1">
-                {getTimeAgo(post.created_at)}
-              </p>
-            </div>
-          </motion.div>
-          ))
+                  {/* Post Image */}
+                  <OptimizedImage
+                    src={post.image_url}
+                    alt={post.caption || "פוסט"}
+                    className="w-full aspect-square cursor-pointer"
+                    objectFit="cover"
+                    sizes="(max-width: 768px) 100vw, 672px"
+                    onClick={() => navigate(`/post/${post.id}`)}
+                  />
+
+                  {/* Post Actions */}
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={() => handleLike(post.id)}
+                          className={`flex items-center gap-2 transition-colors ${
+                            post.is_liked ? 'text-red-500' : 'text-gray-700 hover:text-red-500'
+                          }`}
+                        >
+                          <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
+                          <span className="font-semibold font-jakarta">{post.likes_count}</span>
+                        </button>
+                        <button 
+                          className="flex items-center gap-2 text-gray-700 hover:text-blue-500 transition-colors"
+                          onClick={() => navigate(`/post/${post.id}`)}
+                        >
+                          <MessageCircle className="w-6 h-6" />
+                          <span className="font-semibold font-jakarta">{post.comments_count}</span>
+                        </button>
+                        <button className="text-gray-700 hover:text-green-500 transition-colors">
+                          <Share2 className="w-6 h-6" />
+                        </button>
+                      </div>
+                      <button className="text-gray-700 hover:text-yellow-500 transition-colors">
+                        <Bookmark className="w-6 h-6" />
+                      </button>
+                    </div>
+
+                    {/* Liked by */}
+                    {post.likes_count > 0 && (
+                      <div className="mb-2">
+                        <p className="text-sm text-gray-900 font-jakarta">
+                          אהבו על ידי{" "}
+                          <span className="font-semibold cursor-pointer hover:underline">
+                            {post.user.full_name}
+                          </span>
+                          {post.likes_count > 1 && (
+                            <>
+                              {" "}ועוד{" "}
+                              <span className="font-semibold">
+                                {post.likes_count - 1}
+                              </span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Post Caption */}
+                    <div className="mb-2">
+                      <p className="text-gray-900 font-jakarta">
+                        <span 
+                          className="font-semibold cursor-pointer hover:underline"
+                          onClick={() => navigate(`/user/${post.user.id}`)}
+                        >
+                          {post.user.full_name}
+                        </span>{" "}
+                        {post.caption}
+                      </p>
+                    </div>
+
+                    {/* View Comments */}
+                    {post.comments_count > 0 && (
+                      <button 
+                        className="text-gray-500 text-sm font-jakarta hover:text-gray-700"
+                        onClick={() => navigate(`/post/${post.id}`)}
+                      >
+                        הצג את כל {post.comments_count} התגובות
+                      </button>
+                    )}
+
+                    {/* Time ago */}
+                    <p className="text-xs text-gray-400 font-jakarta mt-1">
+                      {getTimeAgo(post.created_at)}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            }}
+          />
         )}
       </div>
 

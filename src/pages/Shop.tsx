@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { VirtuosoGrid } from "react-virtuoso";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -556,59 +557,67 @@ const Shop = () => {
             </motion.div>
           )}
 
-          {/* Products Grid - 2 Columns */}
-          <div className="grid grid-cols-2 gap-4 pb-8">
-            {filteredAndSortedProducts.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
-                <Card
-                  className="overflow-hidden cursor-pointer hover:shadow-2xl transition-all border-0 shadow-md"
-                  onClick={() => handleProductClick(product)}
-                >
-                  {/* Product Image */}
-                  <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
-                    {product.originalPrice && (
-                      <div className="absolute top-2 right-2 bg-[#E91E63] text-white px-2 py-1 rounded-full text-xs font-bold shadow-md font-jakarta z-10">
-                        מבצע
+          {/* Products Grid - 2 Columns with Virtual Scrolling */}
+          <div className="pb-8">
+            <VirtuosoGrid
+              style={{ height: '600px' }}
+              totalCount={filteredAndSortedProducts.length}
+              overscan={4}
+              listClassName="grid grid-cols-2 gap-4"
+              itemContent={(index) => {
+                const product = filteredAndSortedProducts[index];
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <Card
+                      className="overflow-hidden cursor-pointer hover:shadow-2xl transition-all border-0 shadow-md"
+                      onClick={() => handleProductClick(product)}
+                    >
+                      {/* Product Image */}
+                      <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
+                        {product.originalPrice && (
+                          <div className="absolute top-2 right-2 bg-[#E91E63] text-white px-2 py-1 rounded-full text-xs font-bold shadow-md font-jakarta z-10">
+                            מבצע
+                          </div>
+                        )}
+                        <OptimizedImage
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full"
+                          objectFit="contain"
+                          sizes="(max-width: 768px) 50vw, 300px"
+                        />
                       </div>
-                    )}
-                    <OptimizedImage
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full"
-                      objectFit="contain"
-                      sizes="(max-width: 768px) 50vw, 300px"
-                    />
-                  </div>
-                  
-                  {/* Product Info */}
-                  <div className="p-4 text-center bg-white">
-                    <h3 className="font-bold text-gray-900 mb-1 text-sm leading-tight font-jakarta">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-gray-600 mb-3 font-jakarta">
-                      {product.description}
-                    </p>
-                    
-                    {/* Price */}
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="text-2xl font-bold text-[#E91E63] font-jakarta">
-                        {product.price}₪
-                      </div>
-                      {product.originalPrice && (
-                        <div className="text-sm text-gray-400 line-through font-jakarta">
-                          {product.originalPrice}₪
+                      
+                      {/* Product Info */}
+                      <div className="p-4 text-center bg-white">
+                        <h3 className="font-bold text-gray-900 mb-1 text-sm leading-tight font-jakarta">
+                          {product.name}
+                        </h3>
+                        <p className="text-xs text-gray-600 mb-3 font-jakarta">
+                          {product.description}
+                        </p>
+                        
+                        {/* Price */}
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="text-2xl font-bold text-[#E91E63] font-jakarta">
+                            {product.price}₪
+                          </div>
+                          {product.originalPrice && (
+                            <div className="text-sm text-gray-400 line-through font-jakarta">
+                              {product.originalPrice}₪
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
+                      </div>
+                    </Card>
+                  </motion.div>
+                );
+              }}
+            />
           </div>
         </div>
       </div>
