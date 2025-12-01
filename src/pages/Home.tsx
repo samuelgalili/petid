@@ -985,23 +985,6 @@ const Home = () => {
                     </svg>
                   </div>
 
-                  {/* Smiley Icon - Floating Above Card Center */}
-                  <motion.div 
-                    className="absolute -top-8 left-1/2 -translate-x-1/2 z-20"
-                    animate={{ 
-                      y: [0, -5, 0],
-                      rotate: [0, 5, 0, -5, 0]
-                    }}
-                    transition={{ 
-                      duration: 3, 
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    <div className="w-16 h-16 bg-[#FFD700] rounded-full shadow-lg flex items-center justify-center border-4 border-white">
-                      <img src={giftIcon} alt="Club" className="w-10 h-10 object-contain" />
-                    </div>
-                  </motion.div>
 
                   {/* Direct Layout - Balance Right, Cat Icon Left, No Box */}
                   <div className="relative flex items-center justify-between px-4">
