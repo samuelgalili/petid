@@ -1,4 +1,4 @@
-import { Camera, Loader2, History, Plus, ShoppingCart, Package, Info, HelpCircle, Wallet, ShieldCheck, Heart, Store, ImageIcon, FileText, Gift, Scissors, GraduationCap } from "lucide-react";
+import { Camera, Loader2, History, Plus, ShoppingCart, Package, Info, HelpCircle, Wallet, ShieldCheck, Heart, Store, ImageIcon, FileText, Gift, Scissors, GraduationCap, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -362,7 +362,7 @@ const Home = () => {
     path: "/training",
     bgColor: "bg-white"
   }, {
-    icon: Package, // Dog parks
+    icon: MapPin,
     title: "גינות כלבים",
     path: "/parks",
     bgColor: "bg-white"
