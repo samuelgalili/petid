@@ -226,7 +226,10 @@ const Feed = () => {
             </div>
 
             {/* Post Image */}
-            <div className="w-full aspect-square bg-gray-100 relative overflow-hidden">
+            <div 
+              className="w-full aspect-square bg-gray-100 relative overflow-hidden cursor-pointer"
+              onClick={() => navigate(`/post/${post.id}`)}
+            >
               <img 
                 src={post.image_url} 
                 alt={post.caption || ""}
@@ -247,7 +250,10 @@ const Feed = () => {
                     <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
                     <span className="font-semibold font-jakarta">{post.likes_count}</span>
                   </button>
-                  <button className="flex items-center gap-2 text-gray-700 hover:text-blue-500 transition-colors">
+                  <button 
+                    className="flex items-center gap-2 text-gray-700 hover:text-blue-500 transition-colors"
+                    onClick={() => navigate(`/post/${post.id}`)}
+                  >
                     <MessageCircle className="w-6 h-6" />
                     <span className="font-semibold font-jakarta">{post.comments_count}</span>
                   </button>
@@ -275,7 +281,10 @@ const Feed = () => {
 
               {/* View Comments */}
               {post.comments_count > 0 && (
-                <button className="text-gray-500 text-sm mt-2 font-jakarta hover:text-gray-700">
+                <button 
+                  className="text-gray-500 text-sm mt-2 font-jakarta hover:text-gray-700"
+                  onClick={() => navigate(`/post/${post.id}`)}
+                >
                   הצג את כל {post.comments_count} התגובות
                 </button>
               )}
