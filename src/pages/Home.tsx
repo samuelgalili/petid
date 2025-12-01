@@ -772,7 +772,7 @@ const Home = () => {
           )}
         </motion.div>
 
-        {/* Loyalty Card - Yellow Style with Petid Branding */}
+        {/* Loyalty Card - Yellow Style matching reference image */}
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div 
@@ -787,50 +787,58 @@ const Home = () => {
               tabIndex={0}
               aria-label="View loyalty balance"
             >
-              <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] rounded-[24px] p-6 shadow-lg overflow-hidden min-h-[200px]">
-                {/* Top decorative shapes - small triangles and circles */}
-                <div className="absolute top-4 right-8 w-3 h-3 bg-pink-500 rotate-45 opacity-70"></div>
-                <div className="absolute top-8 right-16 w-2 h-2 bg-blue-500 rounded-full opacity-70"></div>
-                <div className="absolute top-6 right-24 w-2.5 h-2.5 bg-orange-500 rotate-12 opacity-70"></div>
+              <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] rounded-[24px] p-5 shadow-lg overflow-hidden min-h-[180px]">
                 
-                {/* White code field at top */}
-                <div className="relative z-10 bg-white rounded-xl px-4 py-3 mb-4 shadow-sm">
-                  <div className="text-center text-sm text-gray-600 font-jakarta">
-                    Your personal code for checkout
+                {/* White barcode card at top */}
+                <div className="relative z-10 bg-white rounded-xl px-4 py-3 mb-3 shadow-sm">
+                  <div className="text-center text-xs text-gray-700 font-jakarta mb-2">
+                    קוד אישי לתשלום בקופה
                   </div>
-                  <div className="text-center font-mono font-bold text-gray-900 text-xs mt-1">
-                    PETID-{Math.random().toString(36).substring(2, 8).toUpperCase()}
+                  {/* Barcode */}
+                  <div className="flex justify-center gap-[2px] mb-1">
+                    {[...Array(15)].map((_, i) => (
+                      <div 
+                        key={i}
+                        className="bg-black"
+                        style={{
+                          width: i % 3 === 0 ? '4px' : i % 2 === 0 ? '3px' : '2px',
+                          height: '32px'
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
 
-                {/* Dog illustration - bottom left */}
-                <div className="absolute left-4 bottom-4 w-24 h-24 z-10">
-                  <img src={dogIconGif} alt="Dog" className="w-full h-full object-contain drop-shadow-lg" />
+                {/* Goat/Dog with scarf illustration - bottom left */}
+                <div className="absolute left-4 bottom-4 w-20 h-20 z-10">
+                  <img src={dogIconGif} alt="Pet" className="w-full h-full object-contain drop-shadow-lg" />
                 </div>
 
-                {/* Cat illustration - bottom left, slightly offset */}
-                <div className="absolute left-20 bottom-6 w-20 h-20 z-10">
-                  <img src={catIconGif} alt="Cat" className="w-full h-full object-contain drop-shadow-lg" />
+                {/* Star reward icon - near pet */}
+                <div className="absolute left-20 bottom-6 w-10 h-10 z-10 bg-white rounded-full flex items-center justify-center shadow-md">
+                  <div className="text-xl">⭐</div>
                 </div>
 
                 {/* Balance - Right Side */}
-                <div className="relative z-10 text-right mt-2">
-                  <div className="text-gray-900 text-5xl font-extrabold leading-none mb-1">
+                <div className="relative z-10 text-left mt-2 mr-2">
+                  <div className="text-gray-900 text-4xl font-extrabold leading-none mb-1 font-jakarta">
                     ₪{walletBalance.toFixed(2)}
                   </div>
                   <div className="text-gray-800 text-sm font-bold font-jakarta">
-                    Savings on purchases
+                    זמינים לקניות במועדון
                   </div>
                 </div>
 
-                {/* Decorative circle bottom right */}
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white rounded-full opacity-20"></div>
+                {/* Decorative smile icon top right */}
+                <div className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-lg">😊</span>
+                </div>
               </div>
             </motion.div>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p className="font-semibold">View Order History</p>
-            <p className="text-xs opacity-80">Earn 5% back on every purchase</p>
+            <p className="font-semibold">הצג היסטוריית הזמנות</p>
+            <p className="text-xs opacity-80">צבור 5% החזר כספי על כל רכישה</p>
           </TooltipContent>
         </Tooltip>
 
