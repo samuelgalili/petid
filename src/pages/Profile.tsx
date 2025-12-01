@@ -163,7 +163,7 @@ const Profile = () => {
                       {profile?.full_name || "משתמש"}
                     </h2>
                     <div className="bg-gradient-to-r from-amber-400 to-orange-500 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Crown className="w-3.5 h-3.5 text-white" />
+                      <Crown className="w-3.5 h-3.5 text-white" strokeWidth={1.5} />
                       <span className="text-xs font-black text-white">VIP</span>
                     </div>
                   </div>
@@ -172,7 +172,7 @@ const Profile = () => {
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="bg-white/30 px-3 py-1 rounded-full flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 text-gray-900" />
+                      <Star className="w-3.5 h-3.5 text-gray-900" strokeWidth={1.5} />
                       <span className="text-xs font-bold text-gray-900">{profile?.points || 0} נקודות</span>
                     </div>
                   </div>
@@ -189,7 +189,7 @@ const Profile = () => {
                     onClick={() => setIsImageEditorOpen(true)}
                     className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-xl hover:bg-blue-700 transition-all hover:scale-110 active:scale-95 ring-2 ring-white"
                   >
-                    <Camera className="w-4 h-4 text-white" />
+                    <Camera className="w-4 h-4 text-white" strokeWidth={1.5} />
                   </button>
                 </div>
               </div>
@@ -197,7 +197,7 @@ const Profile = () => {
                 onClick={() => navigate('/settings')}
                 className="w-full bg-white text-gray-900 rounded-2xl py-3 font-bold font-jakarta hover:bg-gray-50 transition-all shadow-md hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-4 h-4" strokeWidth={1.5} />
                 עריכת פרופיל
               </button>
             </div>
@@ -206,19 +206,19 @@ const Profile = () => {
           {/* Statistics Cards */}
           <div className="grid grid-cols-3 gap-3 mb-5">
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95">
-              <PawPrint className="w-6 h-6 text-white mx-auto mb-2" />
+              <PawPrint className="w-6 h-6 text-white mx-auto mb-2" strokeWidth={1.5} />
               <p className="text-2xl font-black text-white mb-1">{pets.length}</p>
               <p className="text-xs text-blue-100 font-semibold">חיות מחמד</p>
             </div>
             
             <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95">
-              <Package className="w-6 h-6 text-white mx-auto mb-2" />
+              <Package className="w-6 h-6 text-white mx-auto mb-2" strokeWidth={1.5} />
               <p className="text-2xl font-black text-white mb-1">{totalOrders}</p>
               <p className="text-xs text-purple-100 font-semibold">הזמנות</p>
             </div>
             
             <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-4 text-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95">
-              <Star className="w-6 h-6 text-white mx-auto mb-2" />
+              <Star className="w-6 h-6 text-white mx-auto mb-2" strokeWidth={1.5} />
               <p className="text-2xl font-black text-white mb-1">{profile?.points || 0}</p>
               <p className="text-xs text-amber-100 font-semibold">נקודות</p>
             </div>
@@ -232,7 +232,7 @@ const Profile = () => {
                 onClick={() => navigate('/add-pet')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-full font-bold font-jakarta text-sm hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4" strokeWidth={1.5} />
                 הוסף חיית מחמד
               </button>
             </div>
@@ -269,7 +269,7 @@ const Profile = () => {
                         </p>
                       )}
                     </div>
-                    <ChevronRight className="w-6 h-6 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-6 h-6 text-gray-400 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                   </motion.div>
                 ))}
               </div>
@@ -280,7 +280,7 @@ const Profile = () => {
                 className="bg-white rounded-3xl p-8 shadow-md text-center border-2 border-dashed border-gray-200"
               >
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <PawPrint className="w-10 h-10 text-gray-400" />
+                  <PawPrint className="w-10 h-10 text-gray-400" strokeWidth={1.5} />
                 </div>
                 <p className="text-gray-500 text-base font-jakarta mb-4">אין חיות מחמד רשומות</p>
                 <button
@@ -304,7 +304,7 @@ const Profile = () => {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-green-200/30 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="relative">
                   <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                    <ShoppingCart className="w-7 h-7 text-white" />
+                    <ShoppingCart className="w-7 h-7 text-white" strokeWidth={1.5} />
                   </div>
                   <p className="text-gray-900 font-black font-jakarta text-center">עגלת קניות</p>
                 </div>
@@ -317,7 +317,7 @@ const Profile = () => {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-purple-200/30 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="relative">
                   <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                    <Package className="w-7 h-7 text-white" />
+                    <Package className="w-7 h-7 text-white" strokeWidth={1.5} />
                   </div>
                   <p className="text-gray-900 font-black font-jakarta text-center">ההזמנות שלי</p>
                 </div>
@@ -330,7 +330,7 @@ const Profile = () => {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-amber-200/30 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="relative">
                   <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                    <Award className="w-7 h-7 text-white" />
+                    <Award className="w-7 h-7 text-white" strokeWidth={1.5} />
                   </div>
                   <p className="text-gray-900 font-black font-jakarta text-center">תגמולים</p>
                 </div>
@@ -343,7 +343,7 @@ const Profile = () => {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-red-200/30 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="relative">
                   <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                    <Target className="w-7 h-7 text-white" />
+                    <Target className="w-7 h-7 text-white" strokeWidth={1.5} />
                   </div>
                   <p className="text-gray-900 font-black font-jakarta text-center">משימות</p>
                 </div>
@@ -356,7 +356,7 @@ const Profile = () => {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-blue-200/30 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="relative">
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                    <Shield className="w-7 h-7 text-white" />
+                    <Shield className="w-7 h-7 text-white" strokeWidth={1.5} />
                   </div>
                   <p className="text-gray-900 font-black font-jakarta text-center">ביטוח</p>
                 </div>
@@ -369,7 +369,7 @@ const Profile = () => {
                 <div className="absolute top-0 right-0 w-20 h-20 bg-pink-200/30 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="relative">
                   <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
-                    <Heart className="w-7 h-7 text-white" />
+                    <Heart className="w-7 h-7 text-white" strokeWidth={1.5} />
                   </div>
                   <p className="text-gray-900 font-black font-jakarta text-center">אימוץ</p>
                 </div>
@@ -386,7 +386,7 @@ const Profile = () => {
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-6 h-6 text-yellow-300 animate-pulse" />
+                    <Zap className="w-6 h-6 text-yellow-300 animate-pulse" strokeWidth={1.5} />
                     <h3 className="text-xl font-black text-white font-jakarta">יש לך קופונים פעילים!</h3>
                   </div>
                   <p className="text-white/90 text-sm font-jakarta mb-3">
@@ -399,7 +399,7 @@ const Profile = () => {
                     הצג קופונים
                   </button>
                 </div>
-                <Award className="w-20 h-20 text-white/20" />
+                <Award className="w-20 h-20 text-white/20" strokeWidth={1.5} />
               </div>
             </div>
           )}
@@ -414,14 +414,14 @@ const Profile = () => {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-700 rounded-2xl flex items-center justify-center shadow-md">
-                    <Settings className="w-6 h-6 text-white" />
+                    <Settings className="w-6 h-6 text-white" strokeWidth={1.5} />
                   </div>
                   <div className="text-right">
                     <p className="text-gray-900 font-bold font-jakarta">הגדרות כלליות</p>
                     <p className="text-xs text-gray-500 font-jakarta">ניהול העדפות ופרטיות</p>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
               </button>
 
               <button 
@@ -430,7 +430,7 @@ const Profile = () => {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-md relative">
-                    <Bell className="w-6 h-6 text-white" />
+                    <Bell className="w-6 h-6 text-white" strokeWidth={1.5} />
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white" />
                   </div>
                   <div className="text-right">
@@ -438,23 +438,23 @@ const Profile = () => {
                     <p className="text-xs text-gray-500 font-jakarta">עדכונים והתראות חשובות</p>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/support')}
                 className="w-full bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98] border-2 border-transparent hover:border-teal-200"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-md">
-                    <HelpCircle className="w-6 h-6 text-white" />
+                    <HelpCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
                   </div>
                   <div className="text-right">
                     <p className="text-gray-900 font-bold font-jakarta">תמיכה ועזרה</p>
                     <p className="text-xs text-gray-500 font-jakarta">שירות לקוחות 24/7</p>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
               </button>
             </div>
           </div>

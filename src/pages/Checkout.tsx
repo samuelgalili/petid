@@ -207,9 +207,9 @@ const Checkout = () => {
                     }`}
                   >
                     {isCompleted ? (
-                      <Check className="w-6 h-6" />
+                      <Check className="w-6 h-6" strokeWidth={1.5} />
                     ) : (
-                      <StepIcon className="w-5 h-5" />
+                      <StepIcon className="w-5 h-5" strokeWidth={1.5} />
                     )}
                   </div>
                   <span
@@ -245,7 +245,7 @@ const Checkout = () => {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
-                <MapPin className="w-5 h-5 text-accent" />
+                <MapPin className="w-5 h-5 text-accent" strokeWidth={1.5} />
                 <h2 className="text-lg font-bold text-gray-900 font-jakarta">כתובת למשלוח</h2>
               </div>
 
@@ -364,7 +364,7 @@ const Checkout = () => {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
-                <CreditCard className="w-5 h-5 text-accent" />
+                <CreditCard className="w-5 h-5 text-accent" strokeWidth={1.5} />
                 <h2 className="text-lg font-bold text-gray-900 font-jakarta">אמצעי תשלום</h2>
               </div>
 
@@ -452,7 +452,7 @@ const Checkout = () => {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
-                <Package className="w-5 h-5 text-[#FFC107]" />
+                <Package className="w-5 h-5 text-[#FFC107]" strokeWidth={1.5} />
                 <h2 className="text-lg font-bold text-gray-900 font-jakarta">סיכום הזמנה</h2>
               </div>
 
