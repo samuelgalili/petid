@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { StoriesBar } from "@/components/StoriesBar";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/AppHeader";
 import { PostCard } from "@/components/PostCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Post {
   id: string;
@@ -38,11 +39,24 @@ const Feed = () => {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
   const [doubleTapLike, setDoubleTapLike] = useState<string | null>(null);
+  const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
+  const [followingIds, setFollowingIds] = useState<string[]>([]);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     
     try {
+      // Fetch following IDs if user is authenticated
+      if (user) {
+        const { data: followingData } = await supabase
+          .from("user_follows")
+          .select("following_id")
+          .eq("follower_id", user.id);
+        
+        const ids = followingData?.map(f => f.following_id) || [];
+        setFollowingIds(ids);
+      }
+
       // Fetch posts with user profiles
       const { data: postsData, error: postsError } = await supabase
         .from("posts")
@@ -268,6 +282,14 @@ const Feed = () => {
     return date.toLocaleDateString("he-IL");
   }, []);
 
+  // Filter posts based on feed filter
+  const filteredPosts = useMemo(() => {
+    if (feedFilter === "following") {
+      return posts.filter(post => followingIds.includes(post.user_id));
+    }
+    return posts;
+  }, [posts, feedFilter, followingIds]);
+
   return (
     <div className="min-h-screen bg-white pb-24" dir="rtl">
       <AppHeader 
@@ -300,6 +322,20 @@ const Feed = () => {
       {/* Stories Bar */}
       <StoriesBar />
 
+      {/* Filter Tabs */}
+      <div className="max-w-2xl mx-auto px-4 pt-2 bg-white sticky top-[72px] z-10 border-b border-gray-100">
+        <Tabs value={feedFilter} onValueChange={(value) => setFeedFilter(value as "all" | "following")}>
+          <TabsList className="w-full grid grid-cols-2 font-jakarta bg-gray-100">
+            <TabsTrigger value="all" className="font-black data-[state=active]:bg-white">
+              הכל
+            </TabsTrigger>
+            <TabsTrigger value="following" className="font-black data-[state=active]:bg-white">
+              עוקבים ({followingIds.length})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       {/* Feed */}
       <div className="max-w-2xl mx-auto">
         {loading ? (
@@ -323,7 +359,7 @@ const Feed = () => {
               </div>
             ))}
           </div>
-        ) : posts.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           // Empty state
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
@@ -334,10 +370,12 @@ const Feed = () => {
               <Camera className="w-16 h-16 text-gray-400" strokeWidth={1.5} />
             </div>
             <h3 className="text-2xl font-black text-gray-900 font-jakarta mb-3">
-              אין פוסטים עדיין
+              {feedFilter === "following" ? "אין פוסטים מעוקבים" : "אין פוסטים עדיין"}
             </h3>
             <p className="text-gray-500 font-jakarta text-base mb-6">
-              התחל לשתף תמונות וסיפורים של חיות המחמד שלך 🐕🐈
+              {feedFilter === "following" 
+                ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם כאן"
+                : "התחל לשתף תמונות וסיפורים של חיות המחמד שלך 🐕🐈"}
             </p>
             <Button
               onClick={() => setCreatePostOpen(true)}
@@ -349,7 +387,7 @@ const Feed = () => {
           </motion.div>
         ) : (
           <div className="space-y-4 px-4 py-4">
-            {posts.map((post, index) => (
+            {filteredPosts.map((post, index) => (
               <PostCard
                 key={post.id}
                 post={post}
@@ -366,7 +404,7 @@ const Feed = () => {
       </div>
 
       {/* Bottom Hint */}
-      {!loading && posts.length > 0 && (
+      {!loading && filteredPosts.length > 0 && (
         <div className="text-center py-8 px-4">
           <p className="text-gray-400 font-jakarta text-sm">
             הגעת לסוף הפיד
