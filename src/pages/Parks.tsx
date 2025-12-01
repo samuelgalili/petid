@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, MapPin, Star, Check, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink, Map as MapIcon, List, Clock } from "lucide-react";
+import { Search, MapPin, Star, Check, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink, Map as MapIcon, List, Clock, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { APIProvider, Map, AdvancedMarker, InfoWindow } from "@vis.gl/react-google-maps";
+import { ParkReviewDialog } from "@/components/ParkReviewDialog";
+import { ParkReviewsList } from "@/components/ParkReviewsList";
 
 interface DogPark {
   id: string;
@@ -47,6 +49,9 @@ const Parks = () => {
   const [filterShade, setFilterShade] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [selectedPark, setSelectedPark] = useState<string | null>(null);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewsListOpen, setReviewsListOpen] = useState(false);
+  const [selectedParkForReview, setSelectedParkForReview] = useState<DogPark | null>(null);
   const { toast } = useToast();
 
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
@@ -62,15 +67,44 @@ const Parks = () => {
   const fetchParks = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch parks with review statistics
+      const { data: parksData, error: parksError } = await supabase
         .from("dog_parks")
         .select("*")
         .eq("status", "active")
         .order("city", { ascending: true })
         .order("name", { ascending: true });
 
-      if (error) throw error;
-      setParks(data || []);
+      if (parksError) throw parksError;
+
+      // Fetch review statistics for each park
+      const parksWithReviews = await Promise.all(
+        (parksData || []).map(async (park) => {
+          const { data: reviews, error: reviewsError } = await supabase
+            .from("park_reviews")
+            .select("rating")
+            .eq("park_id", park.id);
+
+          if (reviewsError) {
+            console.error("Error fetching reviews:", reviewsError);
+            return { ...park, rating: null, total_reviews: 0 };
+          }
+
+          const totalReviews = reviews?.length || 0;
+          const avgRating = totalReviews > 0
+            ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+            : null;
+
+          return {
+            ...park,
+            rating: avgRating,
+            total_reviews: totalReviews,
+          };
+        })
+      );
+
+      setParks(parksWithReviews);
     } catch (error) {
       console.error("Error fetching parks:", error);
       toast({
@@ -250,9 +284,32 @@ const Parks = () => {
         )}
 
         {/* Actions */}
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              setSelectedParkForReview(park);
+              setReviewsListOpen(true);
+            }}
+            variant="outline"
+            className="flex-1 rounded-full border-gray-300 text-gray-900 hover:bg-gray-100"
+          >
+            <MessageSquare className="w-4 h-4 ml-2" />
+            ביקורות
+          </Button>
+          <Button
+            onClick={() => {
+              setSelectedParkForReview(park);
+              setReviewDialogOpen(true);
+            }}
+            className="flex-1 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-full font-jakarta"
+          >
+            <Star className="w-4 h-4 ml-2" />
+            דרג
+          </Button>
+        </div>
         <Button
           onClick={() => openInMaps(park)}
-          className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full font-jakarta"
+          className="w-full mt-2 bg-gray-900 hover:bg-gray-800 text-white rounded-full font-jakarta"
         >
           <ExternalLink className="w-4 h-4 ml-2" />
           פתח בגוגל מפות
@@ -466,6 +523,30 @@ const Parks = () => {
       </div>
 
       <BottomNav />
+
+      {/* Review Dialog */}
+      {selectedParkForReview && (
+        <ParkReviewDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          parkId={selectedParkForReview.id}
+          parkName={selectedParkForReview.name}
+          onReviewSubmitted={() => {
+            fetchParks(); // Refresh parks to update ratings
+            setReviewDialogOpen(false);
+          }}
+        />
+      )}
+
+      {/* Reviews List Dialog */}
+      {selectedParkForReview && (
+        <ParkReviewsList
+          open={reviewsListOpen}
+          onOpenChange={setReviewsListOpen}
+          parkId={selectedParkForReview.id}
+          parkName={selectedParkForReview.name}
+        />
+      )}
     </div>
   );
 };
