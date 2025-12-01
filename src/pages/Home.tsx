@@ -666,9 +666,9 @@ const Home = () => {
           delay: 0.1
         }} className="mb-5 px-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-gray-900">My Pets</h2>
+            <h2 className="text-base font-bold text-gray-900">חיות המחמד שלי</h2>
             {pets.length > 0 && <Button variant="ghost" size="sm" onClick={() => navigate('/archived-pets')} className="text-gray-400 hover:text-gray-600 h-7 px-3 text-xs font-medium">
-                Archived
+                בארכיון
               </Button>}
           </div>
 
@@ -680,14 +680,14 @@ const Home = () => {
                 </div>
               </button>
               <h3 className="text-base font-bold text-gray-900 font-jakarta mb-1">
-                No Pets Yet
+                אין חיות מחמד עדיין
               </h3>
               <p className="text-xs text-gray-500 font-jakarta mb-4 max-w-[200px]">
-                Add your first pet to get started
+                הוסף את חיית המחמד הראשונה שלך כדי להתחיל
               </p>
               <Button onClick={() => navigate('/add-pet')} className="bg-gradient-to-r from-[#7DD3C0] to-[#6BC4AD] hover:opacity-90 text-white rounded-full font-jakarta font-bold px-6 py-2 text-sm h-9">
                 <Plus className="w-4 h-4 mr-1" />
-                Add Pet
+                הוסף חיית מחמד
               </Button>
             </div> : <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" style={{
             scrollbarWidth: 'none',
@@ -753,7 +753,7 @@ const Home = () => {
                     <Plus className="w-6 h-6 text-[#7DD3C0]" />
                   </div>
                   <p className="mt-1.5 text-[10px] font-bold text-[#7DD3C0] font-jakarta">
-                    Add
+                    הוסף
                   </p>
                 </div>
               </motion.div>
@@ -873,9 +873,9 @@ const Home = () => {
           delay: 0.5
         }} className="mb-6 px-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">Exclusive Offers</h2>
+            <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">מבצעים בלעדיים</h2>
             <Button variant="ghost" size="sm" onClick={() => navigate('/rewards')} className="text-primary hover:text-primary/80 font-jakarta text-sm font-bold">
-              View All →
+              צפה בהכל ←
             </Button>
           </div>
           
@@ -933,9 +933,9 @@ const Home = () => {
           delay: 0.6
         }} className="mb-6 px-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">Featured Products</h2>
+            <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">מוצרים מומלצים</h2>
             <Button variant="ghost" size="sm" onClick={() => navigate('/shop')} className="text-[#FFD700] hover:text-[#F4C542] font-jakarta text-sm font-bold">
-              View All →
+              צפה בהכל ←
             </Button>
           </div>
           
@@ -1153,7 +1153,7 @@ const Home = () => {
 
           {/* View More Button */}
           <Button onClick={() => navigate('/shop')} className="w-full mt-4 bg-[#FFD700] hover:bg-[#F4C542] text-gray-900 font-jakarta font-bold py-3 rounded-2xl shadow-md">
-            View All Products
+            צפה בכל המוצרים
           </Button>
         </motion.div>
 
@@ -1168,7 +1168,7 @@ const Home = () => {
           delay: 1.3
         }} className="px-4 mt-8 mb-32">
           <h2 className="text-2xl font-extrabold text-gray-900 font-jakarta mb-4">
-            Accumulation & Redemption
+            צבירה ומימוש
           </h2>
           
           {/* Scrollable Cards Row */}
@@ -1181,10 +1181,10 @@ const Home = () => {
                 </div>
               </div>
               <h3 className="text-lg font-bold text-gray-900 font-jakarta text-center mb-2">
-                10% Back
+                החזר של 10%
               </h3>
               <p className="text-sm text-gray-600 font-jakarta text-center">
-                Accumulate up to 10 credits for every liter
+                צברו עד 10 נקודות זכות בכל ליטר
               </p>
             </div>
 
@@ -1196,10 +1196,10 @@ const Home = () => {
                 </div>
               </div>
               <h3 className="text-lg font-bold text-gray-900 font-jakarta text-center mb-2">
-                10% Accumulation
+                צבירה של 10%
               </h3>
               <p className="text-sm text-gray-600 font-jakarta text-center">
-                For purchases made from our partners
+                על רכישות שבוצעו אצל השותפים שלנו
               </p>
             </div>
 
@@ -1211,10 +1211,10 @@ const Home = () => {
                 </div>
               </div>
               <h3 className="text-lg font-bold text-gray-900 font-jakarta text-center mb-2">
-                10% Accumulation
+                צבירה של 10%
               </h3>
               <p className="text-sm text-gray-600 font-jakarta text-center">
-                From local insurance providers
+                מספקי ביטוח מקומיים
               </p>
             </div>
           </div>

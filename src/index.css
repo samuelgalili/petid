@@ -173,6 +173,8 @@ All colors MUST be HSL.
     @apply bg-background text-foreground antialiased;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     font-weight: 400; /* Regular - default for all text */
+    direction: rtl;
+    text-align: right;
   }
   
   /* Typography System - Plus Jakarta Sans Only */
@@ -209,6 +211,8 @@ All colors MUST be HSL.
   input, textarea, select {
     @apply font-normal;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    direction: rtl;
+    text-align: right;
   }
   
   /* Labels should be medium weight for emphasis */
@@ -219,6 +223,7 @@ All colors MUST be HSL.
   
   html {
     scroll-behavior: smooth;
+    direction: rtl;
   }
 }
 
