@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { X, ChevronLeft, ChevronRight, Trash2, MoreVertical, MessageCircle, Eye } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, MoreVertical, MessageCircle, Eye, Bookmark } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { StoryReplyDialog } from "@/components/StoryReplyDialog";
 import { StoryViewersDialog } from "@/components/StoryViewersDialog";
+import { AddToHighlightDialog } from "@/components/AddToHighlightDialog";
 
 interface Story {
   id: string;
@@ -40,6 +41,7 @@ const StoryViewer = () => {
   const [loading, setLoading] = useState(true);
   const [showReplyDialog, setShowReplyDialog] = useState(false);
   const [showViewersDialog, setShowViewersDialog] = useState(false);
+  const [showHighlightDialog, setShowHighlightDialog] = useState(false);
   const [viewersCount, setViewersCount] = useState(0);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const STORY_DURATION = 5000; // 5 seconds per story
@@ -271,19 +273,30 @@ const StoryViewer = () => {
           )}
           
           {user && currentStory.user_id === user.id && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full">
-                  <MoreVertical className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="font-jakarta bg-white/95 backdrop-blur-lg">
-                <DropdownMenuItem onClick={handleDelete} className="text-red-600 font-bold cursor-pointer">
-                  <Trash2 className="w-4 h-4 ml-2" />
-                  מחק סטורי
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full shadow-lg"
+                onClick={() => setShowHighlightDialog(true)}
+              >
+                <Bookmark className="w-5 h-5" />
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full">
+                    <MoreVertical className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="font-jakarta bg-white/95 backdrop-blur-lg">
+                  <DropdownMenuItem onClick={handleDelete} className="text-red-600 font-bold cursor-pointer">
+                    <Trash2 className="w-4 h-4 ml-2" />
+                    מחק סטורי
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
           
           <Button
@@ -380,6 +393,16 @@ const StoryViewer = () => {
           open={showViewersDialog}
           onOpenChange={setShowViewersDialog}
           storyId={currentStory.id}
+        />
+      )}
+
+      {/* Add to Highlight Dialog */}
+      {currentStory && (
+        <AddToHighlightDialog
+          open={showHighlightDialog}
+          onOpenChange={setShowHighlightDialog}
+          storyId={currentStory.id}
+          storyMediaUrl={currentStory.media_url}
         />
       )}
     </div>

@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { FollowersDialog } from "@/components/FollowersDialog";
+import { HighlightsSection } from "@/components/HighlightsSection";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 
@@ -343,6 +344,9 @@ const UserProfile = () => {
             </Button>
           </div>
         )}
+
+        {/* Highlights Section */}
+        <HighlightsSection userId={userId!} isOwnProfile={isOwnProfile} />
 
         {/* Statistics Section */}
         <div className="grid grid-cols-4 gap-3 mb-6">
