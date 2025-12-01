@@ -109,7 +109,7 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-4 py-4 bg-white border-b border-gray-100 shadow-sm relative z-20">
+      <div className="px-4 py-4 bg-white border-b border-gray-100 shadow-sm">
         <div className="flex gap-5 overflow-x-auto no-scrollbar pb-1">
           {/* Add Story Button */}
           {user && (
