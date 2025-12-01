@@ -340,36 +340,46 @@ const Home = () => {
     }
   }, [walletBalance, triggerConfetti]);
 
-  // Quick action items for the home page - Yellow style
+  // Quick action items for the home page - Hebrew labels matching Yellow design
   const quickActions = [{
-    icon: ShieldCheck,
-    title: "Insurance",
-    description: "Protect your pet",
-    path: "/insurance",
-    bgColor: "bg-white"
-  }, {
-    icon: Heart,
-    title: "Adoption",
-    description: "Find a new friend",
-    path: "/adoption",
+    icon: FileText,
+    title: "מסמכים",
+    path: "/documents",
     bgColor: "bg-white"
   }, {
     icon: Store,
-    title: "Shop",
-    description: "Pet supplies",
+    title: "חנות",
     path: "/shop",
     bgColor: "bg-white"
   }, {
+    icon: Package, // Using Package icon for grooming salon
+    title: "מספרה",
+    path: "/grooming",
+    bgColor: "bg-white"
+  }, {
+    icon: Package, // Using Package icon for training
+    title: "אילוף",
+    path: "/training",
+    bgColor: "bg-white"
+  }, {
+    icon: Package, // Dog parks
+    title: "גינות כלבים",
+    path: "/parks",
+    bgColor: "bg-white"
+  }, {
     icon: ImageIcon,
-    title: "Photo Album",
-    description: "Pet memories",
+    title: "אלבום תמונות",
     path: "/photos",
     bgColor: "bg-white"
   }, {
-    icon: FileText,
-    title: "Documents",
-    description: "Medical records",
-    path: "/documents",
+    icon: Heart,
+    title: "אימוץ",
+    path: "/adoption",
+    bgColor: "bg-white"
+  }, {
+    icon: ShieldCheck,
+    title: "ביטוח",
+    path: "/insurance",
     bgColor: "bg-white"
   }];
 
@@ -1194,15 +1204,16 @@ const Home = () => {
             }} transition={{
               delay: 0.35 + index * 0.05
             }} whileHover={{
-              scale: 1.1
+              scale: 1.05,
+              y: -2
             }} whileTap={{
               scale: 0.95
             }} onClick={() => navigate(action.path)} className="flex-shrink-0 cursor-pointer">
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center mb-2 hover:shadow-lg transition-all">
-                    <action.icon className="w-7 h-7 text-gray-700" />
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-[72px] h-[72px] rounded-full bg-white shadow-lg flex items-center justify-center hover:shadow-xl transition-all border border-gray-100">
+                    <action.icon className="w-8 h-8 text-gray-800" strokeWidth={1.5} />
                   </div>
-                  <p className="text-[10px] font-bold text-gray-900 font-jakarta text-center max-w-[64px] leading-tight">
+                  <p className="text-[11px] font-bold text-gray-900 font-jakarta text-center max-w-[80px] leading-tight">
                     {action.title}
                   </p>
                 </div>
