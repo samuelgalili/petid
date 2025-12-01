@@ -75,7 +75,7 @@ export default function Documents() {
         .from("pets")
         .select("id, name")
         .eq("user_id", user.id)
-        .eq("is_archived", false) as any;
+        .eq("archived", false);
 
       if (error) throw error;
       setPets(data || []);
@@ -94,7 +94,7 @@ export default function Documents() {
         .from("pet_documents")
         .select("*")
         .eq("user_id", user.id)
-        .order("uploaded_at", { ascending: false }) as any;
+        .order("uploaded_at", { ascending: false });
 
       if (error) throw error;
       setDocuments(data || []);
