@@ -16,9 +16,17 @@ const Signup = () => {
   const [videoEnded, setVideoEnded] = useState(false);
 
   useEffect(() => {
-    if (!loading && isAuthenticated) {
-      navigate("/add-pet");
-    }
+    const checkOnboarding = async () => {
+      if (!loading && isAuthenticated) {
+        const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+        if (onboardingCompleted === 'true') {
+          navigate("/home");
+        } else {
+          navigate("/onboarding");
+        }
+      }
+    };
+    checkOnboarding();
   }, [isAuthenticated, loading, navigate]);
 
   const handleGuestMode = () => {
