@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { validateImageFile, compressImage } from "@/lib/validators";
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -23,23 +24,58 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
+    if (!file) return;
+
+    // Validate image file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error || "קובץ תמונה לא תקין");
+      return;
+    }
+
+    try {
+      // Compress image
+      const compressedBlob = await compressImage(file);
+      const compressedFile = new File([compressedBlob], file.name, { type: file.type });
+      
+      setSelectedImage(compressedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+      
+      toast.success("התמונה נטענה והועלתה בהצלחה");
+    } catch (error) {
+      console.error("Error processing image:", error);
+      toast.error("שגיאה בעיבוד התמונה");
     }
   };
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
     setPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    // Clear file input refs
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
+  };
+
+  const resetForm = () => {
+    setCaption("");
+    setSelectedImage(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
   };
 
   const handleCreatePost = async () => {
@@ -83,9 +119,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
       toast.success("🎉 הפוסט פורסם בהצלחה!");
       
       // Reset form
-      setCaption("");
-      setSelectedImage(null);
-      setPreviewUrl(null);
+      resetForm();
       onOpenChange(false);
       onPostCreated();
     } catch (error: any) {
