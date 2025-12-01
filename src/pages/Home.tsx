@@ -620,16 +620,16 @@ const Home = () => {
         >
           {/* Main Content: Icon (Right) + Text Column (Left) */}
           <div className="flex flex-row-reverse items-center gap-[14px]">
-            {/* Gift Icon - Right Side - Enhanced with gray background */}
+            {/* Gift Icon - Right Side - Enhanced with gray background - Larger */}
             <button 
               onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-300 ease-out group"
+              className="flex-shrink-0 w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-110 active:scale-95 transition-all duration-300 ease-out group"
               aria-label="עבור למתנות ותגמולים"
             >
               <img 
                 src={giftIcon} 
                 alt="מתנה" 
-                className="w-9 h-9 object-contain group-hover:rotate-12 transition-transform duration-300"
+                className="w-14 h-14 object-contain group-hover:rotate-12 transition-transform duration-300"
               />
             </button>
 
