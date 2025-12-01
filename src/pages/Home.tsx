@@ -830,66 +830,194 @@ const Home = () => {
             </div>)}
         </motion.div>
 
-        {/* Loyalty Card - Yellow Style with Petid Branding */}
+        {/* Premium Wallet Card - Enhanced Design */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <motion.div className="mb-6 cursor-pointer px-4" initial={{
-              opacity: 0,
-              y: -10
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: 0.2
-            }} whileHover={{
-              scale: 1.02
-            }} whileTap={{
-              scale: 0.98
-            }} onClick={() => navigate('/order-history')} role="button" tabIndex={0} aria-label="View loyalty balance">
-              <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] rounded-[24px] p-6 shadow-lg overflow-hidden min-h-[200px]">
-                {/* Top decorative shapes - small triangles and circles */}
-                <div className="absolute top-4 right-8 w-3 h-3 bg-pink-500 rotate-45 opacity-70"></div>
-                <div className="absolute top-8 right-16 w-2 h-2 bg-blue-500 rounded-full opacity-70"></div>
-                <div className="absolute top-6 right-24 w-2.5 h-2.5 bg-orange-500 rotate-12 opacity-70"></div>
+            <motion.div 
+              className="mb-6 cursor-pointer px-4" 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/order-history')} 
+              role="button" 
+              tabIndex={0} 
+              aria-label="View loyalty balance"
+            >
+              <div className="relative bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] rounded-[28px] p-6 shadow-2xl overflow-hidden min-h-[220px] border border-[#FFE082]/30">
+                {/* Animated Background Pattern */}
+                <motion.div 
+                  className="absolute inset-0 opacity-10"
+                  animate={{ 
+                    backgroundPosition: ['0% 0%', '100% 100%'],
+                  }}
+                  transition={{ 
+                    duration: 20, 
+                    repeat: Infinity, 
+                    repeatType: "reverse" 
+                  }}
+                  style={{
+                    backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 80%, white 1px, transparent 1px)',
+                    backgroundSize: '50px 50px'
+                  }}
+                />
                 
-                {/* White code field at top */}
-                <div className="relative z-10 bg-white rounded-xl px-4 py-3 mb-4 shadow-sm">
-                  <div className="text-center text-sm text-gray-600 font-jakarta">
-                    Your personal code for checkout
+                {/* Floating Glow Effects */}
+                <motion.div 
+                  className="absolute top-8 right-12 w-32 h-32 bg-white rounded-full blur-3xl opacity-20"
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.2, 0.3, 0.2]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity 
+                  }}
+                />
+                <motion.div 
+                  className="absolute bottom-8 left-12 w-40 h-40 bg-orange-300 rounded-full blur-3xl opacity-15"
+                  animate={{ 
+                    scale: [1, 1.3, 1],
+                    opacity: [0.15, 0.25, 0.15]
+                  }}
+                  transition={{ 
+                    duration: 5, 
+                    repeat: Infinity,
+                    delay: 1
+                  }}
+                />
+                
+                {/* Top decorative shapes - enhanced */}
+                <motion.div 
+                  className="absolute top-4 right-8 w-3 h-3 bg-pink-500 rotate-45"
+                  animate={{ rotate: [45, 135, 45], opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <motion.div 
+                  className="absolute top-8 right-16 w-2 h-2 bg-blue-500 rounded-full"
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+                />
+                <motion.div 
+                  className="absolute top-6 right-24 w-2.5 h-2.5 bg-orange-500 rotate-12"
+                  animate={{ rotate: [12, 72, 12], opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
+                />
+                
+                {/* Premium Code Field */}
+                <motion.div 
+                  className="relative z-10 bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-3.5 mb-4 shadow-lg border border-gray-100"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Wallet className="w-4 h-4 text-[#FFD700]" />
+                    <div className="text-center text-xs font-semibold text-gray-700 font-jakarta">
+                      קוד אישי לתשלום
+                    </div>
                   </div>
-                  <div className="text-center font-mono font-bold text-gray-900 text-xs mt-1">
+                  <div className="text-center font-mono font-bold text-gray-900 text-base tracking-wider">
                     PETID-{Math.random().toString(36).substring(2, 8).toUpperCase()}
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Dog illustration - bottom left */}
-                <div className="absolute left-4 bottom-4 w-24 h-24 z-10">
-                  <img src={dogIconGif} alt="Dog" className="w-full h-full object-contain drop-shadow-lg" />
-                </div>
+                {/* Animated Pet Illustrations */}
+                <motion.div 
+                  className="absolute left-4 bottom-4 w-28 h-28 z-10"
+                  animate={{ 
+                    y: [0, -8, 0],
+                    rotate: [0, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <img src={dogIconGif} alt="Dog" className="w-full h-full object-contain drop-shadow-2xl" />
+                </motion.div>
 
-                {/* Cat illustration - bottom left, slightly offset */}
-                <div className="absolute left-20 bottom-6 w-20 h-20 z-10">
-                  <img src={catIconGif} alt="Cat" className="w-full h-full object-contain drop-shadow-lg" />
-                </div>
+                <motion.div 
+                  className="absolute left-24 bottom-6 w-24 h-24 z-10"
+                  animate={{ 
+                    y: [0, -6, 0],
+                    rotate: [0, 5, 0]
+                  }}
+                  transition={{ 
+                    duration: 2.5, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.5
+                  }}
+                >
+                  <img src={catIconGif} alt="Cat" className="w-full h-full object-contain drop-shadow-2xl" />
+                </motion.div>
 
-                {/* Balance - Right Side */}
+                {/* Premium Balance Display - Right Side */}
                 <div className="relative z-10 text-right mt-2">
-                  <div className="text-gray-900 text-5xl font-extrabold leading-none mb-1">
-                    ₪{walletBalance.toFixed(2)}
-                  </div>
-                  <div className="text-gray-800 text-sm font-bold font-jakarta">
-                    Savings on purchases
-                  </div>
+                  <motion.div 
+                    className="inline-flex flex-col items-end bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/30 shadow-xl"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <motion.span 
+                        className="text-gray-900 text-6xl font-black leading-none tracking-tight"
+                        key={walletBalance}
+                        initial={{ scale: 1.2, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 200 }}
+                      >
+                        ₪{walletBalance.toFixed(2)}
+                      </motion.span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="text-gray-900 text-sm font-extrabold font-jakarta tracking-wide">
+                        חיסכון מרכישות
+                      </div>
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    </div>
+                    <div className="text-gray-800 text-xs font-medium font-jakarta mt-0.5 opacity-90">
+                      5% מכל קנייה
+                    </div>
+                  </motion.div>
                 </div>
 
-                {/* Decorative circle bottom right */}
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white rounded-full opacity-20"></div>
+                {/* Bottom decorative elements */}
+                <motion.div 
+                  className="absolute -bottom-6 -right-6 w-32 h-32 bg-white rounded-full opacity-15"
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 180, 360]
+                  }}
+                  transition={{ 
+                    duration: 8, 
+                    repeat: Infinity 
+                  }}
+                />
+                
+                {/* Sparkle effects */}
+                <motion.div 
+                  className="absolute top-1/2 left-1/2 w-2 h-2 bg-white rounded-full"
+                  animate={{ 
+                    opacity: [0, 1, 0],
+                    scale: [0, 1.5, 0]
+                  }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity,
+                    delay: 0.5
+                  }}
+                />
               </div>
             </motion.div>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p className="font-semibold">View Order History</p>
-            <p className="text-xs opacity-80">Earn 5% back on every purchase</p>
+          <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
+            <p className="font-bold text-sm">היסטוריית הזמנות</p>
+            <p className="text-xs opacity-90">לחץ לצפייה בהזמנות ובחיסכון המלא</p>
           </TooltipContent>
         </Tooltip>
 
