@@ -656,41 +656,51 @@ const Home = () => {
         </motion.div>
 
         {/* My Pets Section - Enhanced & Beautiful */}
-        <motion.div initial={{
-          opacity: 0,
-          y: -10
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 0.1
-        }} className="mb-6 px-4">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.1 }} 
+          className="mb-6 px-4"
+        >
           {/* Section Header with Gradient */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-1 h-6 bg-gradient-to-b from-[#7DD3C0] to-[#6BC4AD] rounded-full"></div>
+              <div className="w-1 h-6 bg-gradient-to-b from-[#7DD3C0] to-[#6BC4AD] rounded-full" />
               <h2 className="text-lg font-extrabold text-gray-900 font-jakarta">חיות המחמד שלי</h2>
             </div>
-            {pets.length > 0 && <Button variant="ghost" size="sm" onClick={() => navigate('/archived-pets')} className="text-gray-400 hover:text-gray-600 h-8 px-3 text-xs font-semibold hover:bg-gray-100 rounded-full transition-all">
+            {pets.length > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate('/archived-pets')} 
+                className="text-gray-400 hover:text-gray-600 h-8 px-3 text-xs font-semibold hover:bg-gray-100 rounded-full transition-all"
+              >
                 📦 ארכיון
-              </Button>}
+              </Button>
+            )}
           </div>
 
           {/* Empty State - Beautiful & Inviting */}
-          {pets.length === 0 ? <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="relative overflow-hidden">
+          {pets.length === 0 ? (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              transition={{ delay: 0.2 }} 
+              className="relative overflow-hidden"
+            >
               <div className="flex flex-col items-center justify-center py-10 text-center bg-gradient-to-br from-[#FFE8D6]/30 via-white to-[#E8F5E8]/30 rounded-3xl border-2 border-dashed border-gray-200 backdrop-blur-sm">
                 {/* Decorative Elements */}
-                <div className="absolute top-4 left-4 w-8 h-8 bg-[#7DD3C0]/10 rounded-full blur-xl"></div>
-                <div className="absolute bottom-6 right-6 w-12 h-12 bg-[#FBD66A]/10 rounded-full blur-xl"></div>
+                <div className="absolute top-4 left-4 w-8 h-8 bg-[#7DD3C0]/10 rounded-full blur-xl" />
+                <div className="absolute bottom-6 right-6 w-12 h-12 bg-[#FBD66A]/10 rounded-full blur-xl" />
                 
                 <motion.button 
                   onClick={() => navigate('/add-pet')} 
-                  className="relative mb-4 cursor-pointer group" 
+                  className="relative mb-4 cursor-pointer" 
                   aria-label="Add your first pet"
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] flex items-center justify-center shadow-xl border-4 border-white group-hover:shadow-2xl transition-all relative z-10">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#7DD3C0] to-[#6BC4AD] flex items-center justify-center shadow-xl border-4 border-white relative z-10">
                     <Plus className="w-9 h-9 text-white" strokeWidth={3} />
                   </div>
                   <motion.div 
@@ -714,110 +724,120 @@ const Home = () => {
                   הוסף חיית מחמד
                 </Button>
               </div>
-            </motion.div> : 
-            
+            </motion.div>
+          ) : (
             /* Pet Cards Grid - Modern & Feature-Rich */
-            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide" style={{
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
-            }}>
+            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {pets.map((pet, index) => {
                 const isNewPet = newlyAddedPetIds.has(pet.id);
-                const petAge = pet.birth_date ? Math.floor((new Date().getTime() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) : null;
+                const petAge = pet.birth_date 
+                  ? Math.floor((new Date().getTime() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365.25)) 
+                  : null;
                 
-                return <motion.div 
-                  key={pet.id} 
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }} 
-                  animate={{
-                    opacity: 1,
-                    scale: isNewPet ? [1, 1.05, 1] : 1,
-                    y: 0
-                  }} 
-                  transition={{
-                    delay: 0.05 + index * 0.05,
-                    scale: isNewPet ? {
-                      duration: 0.6,
-                      repeat: 3,
-                      repeatType: "reverse"
-                    } : {},
-                    type: "spring",
-                    stiffness: 260,
-                    damping: 20
-                  }} 
-                  whileHover={{ scale: 1.03, y: -4 }} 
-                  whileTap={{ scale: 0.97 }} 
-                  onTouchStart={() => handlePetLongPressStart(pet)} 
-                  onTouchEnd={handlePetLongPressEnd} 
-                  onMouseDown={() => handlePetLongPressStart(pet)} 
-                  onMouseUp={handlePetLongPressEnd} 
-                  onMouseLeave={handlePetLongPressEnd} 
-                  onClick={() => navigate(`/pet/${pet.id}`)} 
-                  className="flex-shrink-0 cursor-pointer relative group"
-                >
-                  {/* New Pet Glow Effect */}
-                  {isNewPet && <motion.div 
-                    className="absolute -inset-2 bg-gradient-to-r from-[#7DD3C0] via-[#FBD66A] to-[#7DD3C0] rounded-3xl blur-xl opacity-30 z-0" 
+                return (
+                  <motion.div 
+                    key={pet.id} 
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }} 
                     animate={{
-                      opacity: [0.3, 0.5, 0.3],
-                      scale: [1, 1.05, 1]
+                      opacity: 1,
+                      scale: isNewPet ? [1, 1.05, 1] : 1,
+                      y: 0
                     }} 
                     transition={{
-                      duration: 1.5,
-                      repeat: Infinity
+                      delay: 0.05 + index * 0.05,
+                      scale: isNewPet ? {
+                        duration: 0.6,
+                        repeat: 3,
+                        repeatType: "reverse"
+                      } : {},
+                      type: "spring",
+                      stiffness: 260,
+                      damping: 20
                     }} 
-                  />}
-                  
-                  {/* Pet Card */}
-                  <div className={`relative bg-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all min-w-[140px] z-10 ${isNewPet ? 'ring-2 ring-[#FBD66A] ring-offset-2' : ''}`}>
-                    {/* Pet Avatar with Status Badge */}
-                    <div className="relative mb-3 flex justify-center">
-                      <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-md overflow-hidden border-3 ${isNewPet ? 'border-[#FBD66A]' : 'border-white'} group-hover:shadow-lg transition-all`}>
-                        {pet.avatar_url ? 
-                          <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" /> : 
-                          <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] via-[#7DD3C0] to-[#6BC4AD]">
-                            {pet.type === 'dog' ? '🐕' : '🐈'}
+                    whileHover={{ scale: 1.03, y: -4 }} 
+                    whileTap={{ scale: 0.97 }} 
+                    onTouchStart={() => handlePetLongPressStart(pet)} 
+                    onTouchEnd={handlePetLongPressEnd} 
+                    onMouseDown={() => handlePetLongPressStart(pet)} 
+                    onMouseUp={handlePetLongPressEnd} 
+                    onMouseLeave={handlePetLongPressEnd} 
+                    onClick={() => navigate(`/pet/${pet.id}`)} 
+                    className="flex-shrink-0 cursor-pointer relative"
+                  >
+                    {/* New Pet Glow Effect */}
+                    {isNewPet && (
+                      <motion.div 
+                        className="absolute -inset-2 bg-gradient-to-r from-[#7DD3C0] via-[#FBD66A] to-[#7DD3C0] rounded-3xl blur-xl opacity-30 z-0" 
+                        animate={{
+                          opacity: [0.3, 0.5, 0.3],
+                          scale: [1, 1.05, 1]
+                        }} 
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity
+                        }} 
+                      />
+                    )}
+                    
+                    {/* Pet Card */}
+                    <div className={`relative bg-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all min-w-[140px] z-10 ${isNewPet ? 'ring-2 ring-[#FBD66A] ring-offset-2' : ''}`}>
+                      {/* Pet Avatar with Status Badge */}
+                      <div className="relative mb-3 flex justify-center">
+                        <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFE8D6] via-[#FFE5F0] to-[#E8F5E8] shadow-md overflow-hidden border-3 ${isNewPet ? 'border-[#FBD66A]' : 'border-white'} transition-all`}>
+                          {pet.avatar_url ? (
+                            <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-[#B8E3D5] via-[#7DD3C0] to-[#6BC4AD]">
+                              {pet.type === 'dog' ? '🐕' : '🐈'}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Type Badge */}
+                        <div className="absolute -top-1 -right-1 w-7 h-7 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-gray-100">
+                          <span className="text-sm">{pet.type === 'dog' ? '🐕' : '🐈'}</span>
+                        </div>
+                        
+                        {/* New Badge */}
+                        {isNewPet && (
+                          <motion.div 
+                            className="absolute -top-2 -left-2 bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-white text-[9px] font-bold px-2 py-1 rounded-full shadow-md"
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{ duration: 0.8, repeat: Infinity }}
+                          >
+                            ✨ חדש
+                          </motion.div>
+                        )}
+                      </div>
+                      
+                      {/* Pet Info */}
+                      <div className="text-center space-y-1">
+                        <h3 className="text-sm font-extrabold text-gray-900 font-jakarta truncate">
+                          {pet.name}
+                        </h3>
+                        
+                        {/* Breed */}
+                        {pet.breed && (
+                          <p className="text-[10px] font-semibold text-gray-500 truncate">
+                            {pet.breed}
+                          </p>
+                        )}
+                        
+                        {/* Age Badge */}
+                        {petAge !== null && (
+                          <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#E8F5E8] to-[#FFE8D6] px-2 py-1 rounded-full">
+                            <span className="text-[10px] font-bold text-gray-700">
+                              {petAge} {petAge === 1 ? 'שנה' : 'שנים'}
+                            </span>
                           </div>
-                        }
+                        )}
                       </div>
                       
-                      {/* Type Badge */}
-                      <div className="absolute -top-1 -right-1 w-7 h-7 bg-white rounded-full shadow-md flex items-center justify-center border-2 border-gray-100">
-                        <span className="text-sm">{pet.type === 'dog' ? '🐕' : '🐈'}</span>
-                      </div>
-                      
-                      {/* New Badge */}
-                      {isNewPet && <motion.div 
-                        className="absolute -top-2 -left-2 bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-white text-[9px] font-bold px-2 py-1 rounded-full shadow-md"
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 0.8, repeat: Infinity }}
-                      >
-                        ✨ חדש
-                      </motion.div>}
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#7DD3C0]/10 to-transparent opacity-0 hover:opacity-100 transition-opacity rounded-2xl pointer-events-none" />
                     </div>
-                    
-                    {/* Pet Info */}
-                    <div className="text-center space-y-1">
-                      <h3 className="text-sm font-extrabold text-gray-900 font-jakarta truncate">
-                        {pet.name}
-                      </h3>
-                      
-                      {/* Breed */}
-                      {pet.breed && <p className="text-[10px] font-semibold text-gray-500 truncate">
-                        {pet.breed}
-                      </p>}
-                      
-                      {/* Age Badge */}
-                      {petAge !== null && <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#E8F5E8] to-[#FFE8D6] px-2 py-1 rounded-full">
-                        <span className="text-[10px] font-bold text-gray-700">
-                          {petAge} {petAge === 1 ? 'שנה' : 'שנים'}
-                        </span>
-                      </div>}
-                    </div>
-                    
-                    {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#7DD3C0]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl pointer-events-none"></div>
-                  </div>
-                </motion.div>;
+                  </motion.div>
+                );
               })}
               
               {/* Add Pet Button - Enhanced */}
@@ -831,7 +851,7 @@ const Home = () => {
                 className="flex-shrink-0 cursor-pointer"
               >
                 <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-2xl p-4 shadow-md hover:shadow-lg transition-all min-w-[140px] border-2 border-dashed border-[#7DD3C0]/40 hover:border-[#7DD3C0] flex flex-col items-center justify-center h-full">
-                  <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#7DD3C0]/10 to-[#6BC4AD]/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#7DD3C0]/10 to-[#6BC4AD]/10 flex items-center justify-center mb-3 hover:scale-110 transition-transform">
                     <Plus className="w-8 h-8 text-[#7DD3C0]" strokeWidth={2.5} />
                   </div>
                   <p className="text-xs font-extrabold text-[#7DD3C0] font-jakarta">
@@ -840,7 +860,7 @@ const Home = () => {
                 </div>
               </motion.div>
             </div>
-          }
+          )}
         </motion.div>
 
         {/* Loyalty Card - Yellow Style with Petid Branding */}
