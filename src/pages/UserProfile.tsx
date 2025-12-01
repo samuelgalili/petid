@@ -203,24 +203,26 @@ const UserProfile = () => {
 
       {/* Profile Info */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-6 mb-6">
-          <Avatar className="w-24 h-24">
+        {/* Profile Header */}
+        <div className="flex items-start gap-6 mb-6">
+          <Avatar className="w-20 h-20 md:w-28 md:h-28">
             <AvatarImage src={profile.avatar_url} />
-            <AvatarFallback className="text-2xl bg-gradient-to-br from-pink-400 to-purple-400 text-white">
+            <AvatarFallback className="text-3xl bg-gradient-to-br from-pink-400 to-purple-400 text-white">
               {profile.full_name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-gray-900 font-jakarta mb-2">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-semibold text-gray-900 font-jakarta mb-4 truncate">
               {profile.full_name}
             </h2>
-            <div className="flex gap-6">
+            
+            <div className="flex justify-around mb-4">
               <div className="text-center">
-                <div className="text-xl font-bold text-gray-900 font-jakarta">
+                <div className="text-lg font-semibold text-gray-900 font-jakarta">
                   {posts.length}
                 </div>
-                <div className="text-sm text-gray-500 font-jakarta">פוסטים</div>
+                <div className="text-sm text-gray-600 font-jakarta">פוסטים</div>
               </div>
               <div 
                 className="text-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -229,10 +231,10 @@ const UserProfile = () => {
                   setFollowersDialogOpen(true);
                 }}
               >
-                <div className="text-xl font-bold text-gray-900 font-jakarta">
+                <div className="text-lg font-semibold text-gray-900 font-jakarta">
                   {followStats.followers}
                 </div>
-                <div className="text-sm text-gray-500 font-jakarta">עוקבים</div>
+                <div className="text-sm text-gray-600 font-jakarta">עוקבים</div>
               </div>
               <div 
                 className="text-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -241,48 +243,64 @@ const UserProfile = () => {
                   setFollowersDialogOpen(true);
                 }}
               >
-                <div className="text-xl font-bold text-gray-900 font-jakarta">
+                <div className="text-lg font-semibold text-gray-900 font-jakarta">
                   {followStats.following}
                 </div>
-                <div className="text-sm text-gray-500 font-jakarta">נעקבים</div>
+                <div className="text-sm text-gray-600 font-jakarta">נעקבים</div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Action Buttons */}
         {!isOwnProfile && (
-          <Button
-            onClick={handleFollowToggle}
-            className={`w-full mb-4 font-jakarta ${
-              isFollowing
-                ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-          >
-            {isFollowing ? (
-              <>
-                <UserMinus className="w-4 h-4 ml-2" />
-                הסר עוקב
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-4 h-4 ml-2" />
-                עקוב
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2 mb-6">
+            <Button
+              onClick={handleFollowToggle}
+              className={`flex-1 font-jakarta ${
+                isFollowing
+                  ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                  : "bg-blue-500 text-white hover:bg-blue-600"
+              }`}
+            >
+              {isFollowing ? "עוקב" : "עקוב"}
+            </Button>
+            <Button
+              onClick={() => navigate(`/chat`)}
+              variant="outline"
+              className="flex-1 font-jakarta"
+            >
+              שלח הודעה
+            </Button>
+          </div>
+        )}
+        
+        {isOwnProfile && (
+          <div className="flex gap-2 mb-6">
+            <Button
+              onClick={() => navigate('/settings')}
+              variant="outline"
+              className="flex-1 font-jakarta"
+            >
+              ערוך פרופיל
+            </Button>
+          </div>
         )}
 
         {/* Posts Grid */}
-        <Tabs defaultValue="posts" className="mt-6">
-          <TabsList className="w-full grid grid-cols-2 font-jakarta">
-            <TabsTrigger value="posts" className="gap-2">
-              <Grid3x3 className="w-4 h-4" />
-              פוסטים
+        <Tabs defaultValue="posts" className="mt-2">
+          <TabsList className="w-full grid grid-cols-2 font-jakarta border-t border-gray-200 bg-transparent rounded-none h-12">
+            <TabsTrigger 
+              value="posts" 
+              className="gap-2 data-[state=active]:border-t-2 data-[state=active]:border-gray-900 rounded-none"
+            >
+              <Grid3x3 className="w-5 h-5" />
             </TabsTrigger>
-            <TabsTrigger value="saved" className="gap-2">
-              <Heart className="w-4 h-4" />
-              שמורים
+            <TabsTrigger 
+              value="saved" 
+              className="gap-2 data-[state=active]:border-t-2 data-[state=active]:border-gray-900 rounded-none"
+            >
+              <Heart className="w-5 h-5" />
             </TabsTrigger>
           </TabsList>
 
