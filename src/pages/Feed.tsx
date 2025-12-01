@@ -319,12 +319,12 @@ const Feed = () => {
         )}
       </AnimatePresence>
 
-      {/* Stories Bar and Filters - Sticky Container */}
-      <div className="sticky top-[56px] z-30 bg-white">
+      {/* Stories Bar and Filters */}
+      <div className="bg-white border-b border-gray-100">
         <StoriesBar />
         
         {/* Filter Tabs */}
-        <div className="max-w-2xl mx-auto px-4 pt-2 bg-white border-b border-gray-100">
+        <div className="max-w-2xl mx-auto px-4 pt-2 pb-2 bg-white">
           <Tabs value={feedFilter} onValueChange={(value) => setFeedFilter(value as "all" | "following")}>
             <TabsList className="w-full grid grid-cols-2 font-jakarta bg-gray-100">
               <TabsTrigger value="all" className="font-black data-[state=active]:bg-white">
