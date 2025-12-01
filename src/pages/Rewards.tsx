@@ -202,7 +202,7 @@ const Rewards = () => {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ["#F4D35E", "#7DD3C0", "#FFE8D6", "#E8F5E8"],
+        colors: ["hsl(var(--accent))", "hsl(var(--secondary))", "hsl(var(--success))", "hsl(var(--accent-hover))"],
       });
 
       toast({
@@ -226,7 +226,7 @@ const Rewards = () => {
   const getStatusBadge = (status: RedeemedReward["status"]) => {
     switch (status) {
       case "active":
-        return <Badge className="bg-green-500">Active</Badge>;
+        return <Badge className="bg-success text-white">Active</Badge>;
       case "used":
         return <Badge variant="secondary">Used</Badge>;
       case "expired":
@@ -246,7 +246,7 @@ const Rewards = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-br from-[#F4D35E] via-[#FBD66A] to-[#F4E976] rounded-2xl p-6 shadow-lg relative overflow-hidden"
+              className="bg-gradient-primary rounded-2xl p-6 shadow-lg relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
@@ -323,7 +323,7 @@ const Rewards = () => {
 
                               <div className="flex items-center justify-between mt-4">
                                 <div className="flex items-center gap-2">
-                                  <Star className="w-4 h-4 text-[#F4D35E]" fill="#F4D35E" />
+                                  <Star className="w-4 h-4 text-accent" fill="hsl(var(--accent))" />
                                   <span className="text-sm font-bold text-gray-900">
                                     {reward.points} points
                                   </span>

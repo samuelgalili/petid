@@ -128,7 +128,7 @@ const Tasks = () => {
         particleCount: 50,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ["#F4D35E", "#E63946", "#7DD3C0"],
+        colors: ["hsl(var(--accent))", "hsl(var(--error))", "hsl(var(--secondary))"],
       });
 
       toast({
@@ -171,16 +171,16 @@ const Tasks = () => {
             </div>
 
             {/* Points & Streak Card */}
-            <div className="bg-gradient-to-r from-[#F4D35E] to-[#FBD66A] rounded-2xl p-4 shadow-lg">
+            <div className="bg-gradient-primary rounded-2xl p-4 shadow-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md">
                     <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
-                      <path d="M14 5C9.5 5 7 8 7 11.5C7 14 8.5 16.5 11 17.5L12 21L16 21L17 17.5C19.5 16.5 21 14 21 11.5C21 8 18.5 5 14 5Z" fill="#E63946"/>
+                      <path d="M14 5C9.5 5 7 8 7 11.5C7 14 8.5 16.5 11 17.5L12 21L16 21L17 17.5C19.5 16.5 21 14 21 11.5C21 8 18.5 5 14 5Z" fill="hsl(var(--error))"/>
                       <circle cx="11.5" cy="11" r="1.5" fill="white"/>
                       <circle cx="16.5" cy="11" r="1.5" fill="white"/>
-                      <path d="M8.5 7.5C8.5 6 7 5 5.5 6.5C4 8 5 10 6.5 10C7.5 10 8.5 9 8.5 7.5Z" fill="#E63946"/>
-                      <path d="M19.5 7.5C19.5 6 21 5 22.5 6.5C24 8 23 10 21.5 10C20.5 10 19.5 9 19.5 7.5Z" fill="#E63946"/>
+                      <path d="M8.5 7.5C8.5 6 7 5 5.5 6.5C4 8 5 10 6.5 10C7.5 10 8.5 9 8.5 7.5Z" fill="hsl(var(--error))"/>
+                      <path d="M19.5 7.5C19.5 6 21 5 22.5 6.5C24 8 23 10 21.5 10C20.5 10 19.5 9 19.5 7.5Z" fill="hsl(var(--error))"/>
                     </svg>
                   </div>
                   <div>
@@ -190,7 +190,7 @@ const Tasks = () => {
                 </div>
                 <div className="text-center">
                   <div className="flex items-center gap-1 mb-1">
-                    <Flame className="w-5 h-5 text-orange-500" />
+                    <Flame className="w-5 h-5 text-warning" />
                     <span className="text-2xl font-bold text-gray-900">{streak}</span>
                   </div>
                   <div className="text-xs text-gray-700">Day Streak</div>
@@ -217,7 +217,7 @@ const Tasks = () => {
               <Card className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-[#7DD3C0]" />
+                    <Calendar className="w-5 h-5 text-secondary" />
                     <span className="font-semibold text-gray-900 font-jakarta">Daily Progress</span>
                   </div>
                   <span className="text-sm text-gray-600">
@@ -239,7 +239,7 @@ const Tasks = () => {
                     <Card
                       className={`p-4 transition-all ${
                         task.completed
-                          ? "bg-green-50 border-green-200"
+                          ? "bg-success/10 border-success/20"
                           : "bg-white hover:shadow-md"
                       }`}
                     >
@@ -250,11 +250,11 @@ const Tasks = () => {
                           className="mt-1"
                         >
                           {task.completed ? (
-                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full bg-success flex items-center justify-center">
                               <Check className="w-4 h-4 text-white" />
                             </div>
                           ) : (
-                            <Circle className="w-6 h-6 text-gray-300 hover:text-[#F4D35E] transition-colors" />
+                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" />
                           )}
                         </button>
 
@@ -272,7 +272,7 @@ const Tasks = () => {
                             </h3>
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                          <Badge variant="secondary" className="bg-[#F4D35E]/20 text-gray-900">
+                          <Badge variant="secondary" className="bg-accent/20 text-gray-900">
                             +{task.points} points
                           </Badge>
                         </div>
@@ -288,7 +288,7 @@ const Tasks = () => {
               <Card className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-[#F4D35E]" />
+                    <Trophy className="w-5 h-5 text-accent" />
                     <span className="font-semibold text-gray-900 font-jakarta">Weekly Progress</span>
                   </div>
                   <span className="text-sm text-gray-600">
@@ -310,7 +310,7 @@ const Tasks = () => {
                     <Card
                       className={`p-4 transition-all ${
                         task.completed
-                          ? "bg-green-50 border-green-200"
+                          ? "bg-success/10 border-success/20"
                           : "bg-white hover:shadow-md"
                       }`}
                     >
@@ -321,11 +321,11 @@ const Tasks = () => {
                           className="mt-1"
                         >
                           {task.completed ? (
-                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full bg-success flex items-center justify-center">
                               <Check className="w-4 h-4 text-white" />
                             </div>
                           ) : (
-                            <Circle className="w-6 h-6 text-gray-300 hover:text-[#F4D35E] transition-colors" />
+                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" />
                           )}
                         </button>
 
@@ -343,7 +343,7 @@ const Tasks = () => {
                             </h3>
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                          <Badge variant="secondary" className="bg-[#F4D35E]/20 text-gray-900">
+                          <Badge variant="secondary" className="bg-accent/20 text-gray-900">
                             +{task.points} points
                           </Badge>
                         </div>
