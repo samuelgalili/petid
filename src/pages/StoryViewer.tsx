@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { X, ChevronLeft, ChevronRight, Trash2, MoreVertical, MessageCircle } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, MoreVertical, MessageCircle, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { StoryReplyDialog } from "@/components/StoryReplyDialog";
+import { StoryViewersDialog } from "@/components/StoryViewersDialog";
 
 interface Story {
   id: string;
@@ -38,6 +39,8 @@ const StoryViewer = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showReplyDialog, setShowReplyDialog] = useState(false);
+  const [showViewersDialog, setShowViewersDialog] = useState(false);
+  const [viewersCount, setViewersCount] = useState(0);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const STORY_DURATION = 5000; // 5 seconds per story
 
@@ -49,9 +52,10 @@ const StoryViewer = () => {
   useEffect(() => {
     if (stories.length === 0 || isPaused) return;
 
-    // Mark story as viewed
+    // Mark story as viewed and fetch viewers count
     if (user && stories[currentIndex]) {
       markStoryAsViewed(stories[currentIndex].id);
+      fetchViewersCount(stories[currentIndex].id);
     }
 
     // Progress bar animation
@@ -118,6 +122,17 @@ const StoryViewer = () => {
         { story_id: storyId, viewer_id: user.id },
         { onConflict: "story_id,viewer_id" }
       );
+  };
+
+  const fetchViewersCount = async (storyId: string) => {
+    const { data, error } = await supabase
+      .from("story_views")
+      .select("id", { count: "exact", head: true })
+      .eq("story_id", storyId);
+
+    if (!error && data !== null) {
+      setViewersCount(data.length || 0);
+    }
   };
 
   const handleNext = () => {
@@ -229,6 +244,21 @@ const StoryViewer = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Viewers count button - only for story owner */}
+          {user && currentStory.user_id === user.id && viewersCount > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 rounded-full shadow-lg relative"
+              onClick={() => setShowViewersDialog(true)}
+            >
+              <Eye className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-black rounded-full flex items-center justify-center shadow-md">
+                {viewersCount}
+              </span>
+            </Button>
+          )}
+          
           {user && currentStory.user_id !== user.id && (
             <Button
               variant="ghost"
@@ -341,6 +371,15 @@ const StoryViewer = () => {
           storyId={currentStory.id}
           storyOwnerId={currentStory.user_id}
           storyOwnerName={currentStory.user?.full_name || undefined}
+        />
+      )}
+
+      {/* Viewers Dialog */}
+      {currentStory && (
+        <StoryViewersDialog
+          open={showViewersDialog}
+          onOpenChange={setShowViewersDialog}
+          storyId={currentStory.id}
         />
       )}
     </div>
