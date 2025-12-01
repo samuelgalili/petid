@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { HomePageSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
@@ -12,10 +12,13 @@ import { MyPetsSection } from "@/components/home/MyPetsSection";
 import { RewardsHeader } from "@/components/home/RewardsHeader";
 import { WalletCard } from "@/components/home/WalletCard";
 import { QuickActions } from "@/components/home/QuickActions";
-import { PromotionalOffers } from "@/components/home/PromotionalOffers";
-import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { AchievementDialog } from "@/components/home/AchievementDialog";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load heavy components
+const PromotionalOffers = lazy(() => import("@/components/home/PromotionalOffers").then(m => ({ default: m.PromotionalOffers })));
+const ProductCarousel = lazy(() => import("@/components/home/ProductCarousel").then(m => ({ default: m.ProductCarousel })));
 import { 
   Store, 
   ImageIcon, 
@@ -351,11 +354,29 @@ const Home = () => {
 
         {/* Promotional Offers */}
         {promotionalOffers.length > 0 && (
-          <PromotionalOffers offers={promotionalOffers} />
+          <Suspense fallback={
+            <div className="px-4 py-6">
+              <Skeleton className="h-8 w-48 mb-4" />
+              <Skeleton className="h-40 w-full rounded-2xl" />
+            </div>
+          }>
+            <PromotionalOffers offers={promotionalOffers} />
+          </Suspense>
         )}
 
         {/* Product Carousel */}
-        <ProductCarousel />
+        <Suspense fallback={
+          <div className="px-4 py-6">
+            <Skeleton className="h-8 w-48 mb-4" />
+            <div className="flex gap-4 overflow-hidden">
+              <Skeleton className="h-64 w-48 rounded-2xl flex-shrink-0" />
+              <Skeleton className="h-64 w-48 rounded-2xl flex-shrink-0" />
+              <Skeleton className="h-64 w-48 rounded-2xl flex-shrink-0" />
+            </div>
+          </div>
+        }>
+          <ProductCarousel />
+        </Suspense>
       </main>
 
       {/* Bottom Navigation */}
