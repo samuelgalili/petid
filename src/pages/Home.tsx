@@ -628,16 +628,7 @@ const Home = () => {
           dir="rtl"
         >
           <div className="flex items-start gap-6">
-            {/* Gift Icon - Left Side (Exact Match) */}
-            <button
-              onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-md flex items-center justify-center hover:shadow-lg transition-all"
-              aria-label="מתנה"
-            >
-              <Gift className="w-16 h-16 text-gray-500" strokeWidth={1.5} />
-            </button>
-
-            {/* Text Content - Right Side */}
+            {/* Text Content - Left Side */}
             <div className="flex-1 pt-2">
               {/* Small greeting - underlined - clickable to open menu */}
               <button
@@ -657,6 +648,15 @@ const Home = () => {
                 צוברים 50₪ עד ה-31.12.25 ב-רפ, yellow ובסופרמרקטים
               </p>
             </div>
+
+            {/* Gift Icon - Right Side */}
+            <button
+              onClick={() => navigate('/rewards')}
+              className="flex-shrink-0 w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-md flex items-center justify-center hover:shadow-lg transition-all"
+              aria-label="מתנה"
+            >
+              <Gift className="w-16 h-16 text-gray-500" strokeWidth={1.5} />
+            </button>
           </div>
 
           {/* Bottom Link - Blue */}
