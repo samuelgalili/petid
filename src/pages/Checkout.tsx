@@ -262,9 +262,9 @@ const Checkout = () => {
                 <h2 className="text-lg font-bold text-gray-900 font-jakarta">כתובת למשלוח</h2>
               </div>
 
-              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg space-y-4 max-w-md mx-auto">
+              <Card className="p-5 bg-background border-0 rounded-2xl shadow-lg space-y-4 max-w-md mx-auto">
                 <div>
-                  <Label htmlFor="fullName" className="font-jakarta text-sm font-semibold text-gray-700">
+                  <Label htmlFor="fullName" className="font-jakarta text-sm font-semibold text-foreground">
                     שם מלא *
                   </Label>
                   <Input
@@ -280,7 +280,7 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="email" className="font-jakarta text-sm font-semibold text-gray-700">
+                  <Label htmlFor="email" className="font-jakarta text-sm font-semibold text-foreground">
                     אימייל *
                   </Label>
                   <Input
@@ -297,7 +297,7 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="font-jakarta text-sm font-semibold text-gray-700">
+                  <Label htmlFor="phone" className="font-jakarta text-sm font-semibold text-foreground">
                     מספר טלפון *
                   </Label>
                   <Input
@@ -314,7 +314,7 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="address" className="font-jakarta text-sm font-semibold text-gray-700">
+                  <Label htmlFor="address" className="font-jakarta text-sm font-semibold text-foreground">
                     כתובת רחוב *
                   </Label>
                   <Input
@@ -331,7 +331,7 @@ const Checkout = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="city" className="font-jakarta text-sm font-semibold text-gray-700">
+                    <Label htmlFor="city" className="font-jakarta text-sm font-semibold text-foreground">
                       עיר *
                     </Label>
                     <Input
@@ -347,7 +347,7 @@ const Checkout = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="zipCode" className="font-jakarta text-sm font-semibold text-gray-700">
+                    <Label htmlFor="zipCode" className="font-jakarta text-sm font-semibold text-foreground">
                       מיקוד *
                     </Label>
                     <Input
@@ -381,21 +381,21 @@ const Checkout = () => {
                 <h2 className="text-lg font-bold text-gray-900 font-jakarta">אמצעי תשלום</h2>
               </div>
 
-              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+              <Card className="p-5 bg-background border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="space-y-3">
                     <div
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "credit-card"
                           ? "border-accent bg-accent/10"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-border hover:border-border-light"
                       }`}
                       onClick={() => setPaymentMethod("credit-card")}
                     >
                       <RadioGroupItem value="credit-card" id="credit-card" />
                       <Label
                         htmlFor="credit-card"
-                        className="flex-1 cursor-pointer font-jakarta font-semibold text-gray-900"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-foreground"
                       >
                         כרטיס אשראי
                       </Label>
@@ -409,14 +409,14 @@ const Checkout = () => {
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "paypal"
                           ? "border-accent bg-accent/10"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-border hover:border-border-light"
                       }`}
                       onClick={() => setPaymentMethod("paypal")}
                     >
                       <RadioGroupItem value="paypal" id="paypal" />
                       <Label
                         htmlFor="paypal"
-                        className="flex-1 cursor-pointer font-jakarta font-semibold text-gray-900"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-foreground"
                       >
                         PayPal
                       </Label>
@@ -429,18 +429,18 @@ const Checkout = () => {
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "cash-on-delivery"
                           ? "border-accent bg-accent/10"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-border hover:border-border-light"
                       }`}
                       onClick={() => setPaymentMethod("cash-on-delivery")}
                     >
                       <RadioGroupItem value="cash-on-delivery" id="cash-on-delivery" />
                       <Label
                         htmlFor="cash-on-delivery"
-                        className="flex-1 cursor-pointer font-jakarta font-semibold text-gray-900"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-foreground"
                       >
                         מזומן במשלוח
                       </Label>
-                      <div className="text-xs text-gray-600 font-jakarta">+₪5 עמלה</div>
+                      <div className="text-xs text-muted-foreground font-jakarta">+₪5 עמלה</div>
                     </div>
                   </div>
                 </RadioGroup>

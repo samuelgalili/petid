@@ -264,8 +264,8 @@ const Shop = () => {
                 }}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all font-jakarta ${
                   selectedCategory === category.label
-                    ? "bg-gray-900 text-white shadow-md"
-                    : "bg-white text-gray-700 border-2 border-gray-300 hover:border-gray-400"
+                  ? "bg-foreground text-background shadow-md"
+                    : "bg-background text-foreground border-2 border-border hover:border-border-light"
                 }`}
               >
                 {category.label}
@@ -274,7 +274,7 @@ const Shop = () => {
             <motion.button 
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCategories(!showCategories)}
-              className="px-5 py-2.5 rounded-full text-sm font-medium bg-white text-gray-700 border-2 border-gray-300 flex items-center gap-2 hover:border-gray-400 transition-all font-jakarta"
+              className="px-5 py-2.5 rounded-full text-sm font-medium bg-background text-foreground border-2 border-border flex items-center gap-2 hover:border-border-light transition-all font-jakarta"
             >
               קטגוריות
               {showCategories ? (
@@ -290,8 +290,8 @@ const Shop = () => {
               onClick={() => setShowFilters(!showFilters)}
               className={`px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all font-jakarta ${
                 showFilters || sortBy !== "none" || showDealsOnly
-                  ? "bg-accent text-gray-900 shadow-md"
-                  : "bg-white text-gray-700 border-2 border-gray-300 hover:border-gray-400"
+                  ? "bg-accent text-foreground shadow-md"
+                  : "bg-background text-foreground border-2 border-border hover:border-border-light"
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -325,8 +325,8 @@ const Shop = () => {
                         onClick={() => setSortBy("none")}
                         className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta ${
                           sortBy === "none"
-                            ? "bg-gray-900 text-white shadow-md"
-                            : "bg-white text-gray-700 border border-gray-300"
+                            ? "bg-foreground text-background shadow-md"
+                            : "bg-background text-foreground border border-border"
                         }`}
                       >
                         ברירת מחדל
@@ -336,8 +336,8 @@ const Shop = () => {
                         onClick={() => setSortBy("popularity")}
                         className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
                           sortBy === "popularity"
-                            ? "bg-gray-900 text-white shadow-md"
-                            : "bg-white text-gray-700 border border-gray-300"
+                            ? "bg-foreground text-background shadow-md"
+                            : "bg-background text-foreground border border-border"
                         }`}
                       >
                         <TrendingUp className="w-3 h-3" />
@@ -348,8 +348,8 @@ const Shop = () => {
                         onClick={() => setSortBy("price-low")}
                         className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
                           sortBy === "price-low"
-                            ? "bg-gray-900 text-white shadow-md"
-                            : "bg-white text-gray-700 border border-gray-300"
+                            ? "bg-foreground text-background shadow-md"
+                            : "bg-background text-foreground border border-border"
                         }`}
                       >
                         <DollarSign className="w-3 h-3" />
@@ -360,8 +360,8 @@ const Shop = () => {
                         onClick={() => setSortBy("price-high")}
                         className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
                           sortBy === "price-high"
-                            ? "bg-gray-900 text-white shadow-md"
-                            : "bg-white text-gray-700 border border-gray-300"
+                            ? "bg-foreground text-background shadow-md"
+                            : "bg-background text-foreground border border-border"
                         }`}
                       >
                         <DollarSign className="w-3 h-3" />
@@ -377,8 +377,8 @@ const Shop = () => {
                       onClick={() => setShowDealsOnly(!showDealsOnly)}
                       className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all font-jakarta flex items-center justify-between ${
                         showDealsOnly
-                          ? "bg-error text-white shadow-lg"
-                          : "bg-white text-gray-700 border-2 border-gray-300"
+                          ? "bg-error text-error-foreground shadow-lg"
+                          : "bg-background text-foreground border-2 border-border"
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -386,12 +386,12 @@ const Shop = () => {
                         הצג מבצעים בלבד
                       </span>
                       <div className={`w-12 h-6 rounded-full transition-all ${
-                        showDealsOnly ? "bg-white" : "bg-gray-300"
+                        showDealsOnly ? "bg-background" : "bg-muted"
                       }`}>
                         <motion.div 
                           animate={{ x: showDealsOnly ? 24 : 2 }}
                           className={`w-5 h-5 rounded-full mt-0.5 ${
-                            showDealsOnly ? "bg-error" : "bg-white"
+                            showDealsOnly ? "bg-error" : "bg-background"
                           }`}
                         />
                       </div>
