@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { memo } from "react";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface ProductCardProps {
   image: string;
@@ -30,11 +31,17 @@ export const ProductCard = memo(({
     >
       <div className={`${bgColor} p-3 flex items-center justify-center h-28 relative`}>
         {hasSaleBadge && (
-          <div className="absolute top-2 left-2 bg-white text-[#F44336] text-[8px] font-bold px-2 py-0.5 rounded-full">
+          <div className="absolute top-2 left-2 bg-white text-[#F44336] text-[8px] font-bold px-2 py-0.5 rounded-full z-10">
             SALE
           </div>
         )}
-        <img src={image} alt={title} className="w-full h-full object-cover rounded-lg" />
+        <OptimizedImage 
+          src={image} 
+          alt={title}
+          className="w-full h-full rounded-lg"
+          objectFit="cover"
+          sizes="(max-width: 768px) 33vw, 200px"
+        />
       </div>
       <div className="bg-white p-2">
         <h3 className="text-xs font-bold text-gray-900 font-jakarta truncate">{title}</h3>
@@ -89,7 +96,13 @@ export const PromoCard = memo(({
       <div className="absolute top-3 right-6">
         <div className="w-1.5 h-1.5 bg-pink-500 rotate-45"></div>
       </div>
-      <img src={image} alt={title} className="w-20 h-20 object-contain mb-2" />
+      <OptimizedImage 
+        src={image} 
+        alt={title}
+        className="w-20 h-20 mb-2"
+        objectFit="contain"
+        sizes="80px"
+      />
       <h3 className={`text-sm font-extrabold ${textColor} font-jakarta text-center`}>{title}</h3>
       <p className={`text-xs ${textColor === 'text-white' ? 'text-white/90' : 'text-gray-700'} font-jakarta mt-1`}>{subtitle}</p>
       <div className="absolute bottom-3 left-3">
