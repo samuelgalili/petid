@@ -288,10 +288,13 @@ const Home = () => {
                 onClick={() => navigate(action.path)}
                 className="flex flex-col items-center gap-2 flex-1 group"
               >
-                <div className="w-14 h-14 rounded-xl border border-border bg-surface flex items-center justify-center hover:bg-muted hover:border-primary/30 transition-all">
-                  <action.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.5} />
+                <div className="w-14 h-14 rounded-full border border-border bg-white flex items-center justify-center hover:border-primary/20 hover:shadow-md transition-all">
+                  <action.icon 
+                    className="w-5 h-5 text-[#2D2D2D] group-hover:text-[#00A870] transition-colors duration-200" 
+                    strokeWidth={1.5} 
+                  />
                 </div>
-                <span className="text-[10px] text-muted-foreground text-center leading-tight">
+                <span className="text-[10px] font-medium text-foreground text-center leading-tight">
                   {action.title}
                 </span>
               </button>

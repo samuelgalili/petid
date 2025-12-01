@@ -31,16 +31,15 @@ export const QuickActionButton = memo(({
     >
       <div className="flex flex-col items-center gap-2">
         <motion.div 
-          className="w-[72px] h-[72px] rounded-full bg-white shadow-lg flex items-center justify-center border border-border/20 transition-all"
-          whileHover={{ 
-            boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.15)",
-            borderColor: "hsl(var(--primary) / 0.3)"
-          }}
+          className="w-[72px] h-[72px] rounded-full bg-white shadow-sm flex items-center justify-center border border-border transition-all hover:border-primary/20 hover:shadow-md group"
           transition={{ duration: ANIMATION_DURATION.fast }}
         >
-          <Icon className="w-8 h-8 text-foreground" strokeWidth={1.5} />
+          <Icon 
+            className="w-7 h-7 text-[#2D2D2D] group-hover:text-[#00A870] transition-colors duration-200" 
+            strokeWidth={1.5} 
+          />
         </motion.div>
-        <p className="text-[11px] font-bold text-foreground font-jakarta text-center max-w-[80px] leading-tight">
+        <p className="text-[11px] font-medium text-foreground font-jakarta text-center max-w-[80px] leading-tight">
           {title}
         </p>
       </div>
