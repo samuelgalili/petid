@@ -1,91 +1,39 @@
-import { 
-  Loader2, 
-  Plus, 
-  Camera, 
-  Heart, 
-  MapPin, 
+import {
+  Loader2,
+  Plus,
+  Camera,
+  Heart,
+  MapPin,
   Store,
   ImageIcon,
   FileText,
   ShieldCheck,
   Scissors,
   GraduationCap,
-  Trophy
+  Trophy,
+  Menu,
+  ChevronRight,
+  Check,
+  Star,
+  Navigation
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
-import { HomePageSkeleton } from "@/components/LoadingSkeleton";
-import BottomNav from "@/components/BottomNav";
+import { useState, useEffect, useCallback } from "react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
-import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { MyPetsSection } from "@/components/home/MyPetsSection";
-import { RewardsHeader } from "@/components/home/RewardsHeader";
-import { WalletCard } from "@/components/home/WalletCard";
-import { QuickActions } from "@/components/home/QuickActions";
-import { AchievementDialog } from "@/components/home/AchievementDialog";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
-import StreakIndicator from "@/components/home/StreakIndicator";
 import { useGame } from "@/contexts/GameContext";
 import { usePoints } from "@/contexts/PointsContext";
+import BottomNav from "@/components/BottomNav";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
-// Lazy load heavy components
-const PromotionalOffers = lazy(() => import("@/components/home/PromotionalOffers").then(m => ({ default: m.PromotionalOffers })));
-const ProductCarousel = lazy(() => import("@/components/home/ProductCarousel").then(m => ({ default: m.ProductCarousel })));
-
-// Quick action items for the home page
-const quickActions = [
-  { icon: FileText, title: "מסמכים", path: "/documents", bgColor: "bg-white" },
-  { icon: Store, title: "חנות", path: "/shop", bgColor: "bg-white" },
-  { icon: Scissors, title: "מספרה", path: "/grooming", bgColor: "bg-white" },
-  { icon: GraduationCap, title: "אילוף", path: "/training", bgColor: "bg-white" },
-  { icon: MapPin, title: "גינות כלבים", path: "/parks", bgColor: "bg-white" },
-  { icon: ImageIcon, title: "אלבום תמונות", path: "/photos", bgColor: "bg-white" },
-  { icon: Heart, title: "אימוץ", path: "/adoption", bgColor: "bg-white" },
-  { icon: ShieldCheck, title: "ביטוח", path: "/insurance", bgColor: "bg-white" }
-];
-
-// Israeli holidays with approximate dates
-const getHolidayGreeting = () => {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-
-  const holidays: { [key: string]: string } = {
-    "4-13": "פסח", "4-14": "פסח", "4-15": "פסח", "4-16": "פסח",
-    "4-17": "פסח", "4-18": "פסח", "4-19": "פסח", "4-20": "פסח",
-    "5-23": "שבועות",
-    "10-3": "ראש השנה", "10-4": "ראש השנה",
-    "10-12": "יום כיפור",
-    "10-17": "סוכות", "10-24": "שמחת תורה",
-    "12-15": "חנוכה", "12-16": "חנוכה", "12-17": "חנוכה", "12-18": "חנוכה",
-    "12-19": "חנוכה", "12-20": "חנוכה", "12-21": "חנוכה", "12-22": "חנוכה",
-    "3-14": "פורים"
-  };
-
-  const petDays: { [key: string]: string } = {
-    "8-26": "יום הכלב הבינלאומי",
-    "8-8": "יום החתול הבינלאומי"
-  };
-
-  const dateKey = `${month}-${day}`;
-  if (holidays[dateKey]) return `חג ${holidays[dateKey]} שמח`;
-  if (petDays[dateKey]) {
-    return petDays[dateKey] === "יום הכלב הבינלאומי" ? "יום כלבים שמח" : "יום חתולים שמח";
-  }
-  return null;
-};
-
-// Get greeting based on time of day
 const getGreeting = () => {
-  const holidayGreeting = getHolidayGreeting();
-  if (holidayGreeting) return holidayGreeting;
-  
   const hour = new Date().getHours();
   if (hour >= 21 || hour < 6) return "לילה טוב";
   if (hour >= 6 && hour < 12) return "בוקר טוב";
@@ -96,165 +44,94 @@ const getGreeting = () => {
 const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [petsLoading, setPetsLoading] = useState(true);
   const [pets, setPets] = useState<any[]>([]);
-  const [redetectingPetId, setRedetectingPetId] = useState<string | null>(null);
   const [selectedPetForEdit, setSelectedPetForEdit] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState({ name: "", breed: "" });
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
-  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [userName, setUserName] = useState<string>("חבר");
-  const [promotionalOffers, setPromotionalOffers] = useState<any[]>([]);
-  const [showAchievement, setShowAchievement] = useState(false);
-  const [currentAchievement, setCurrentAchievement] = useState<any>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
-  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
-  const previousPetIdsRef = useRef<Set<string>>(new Set());
+  const [dailyTasks, setDailyTasks] = useState([
+    { id: 1, title: "הליכה של 20 דקות", icon: "🚶", completed: false },
+    { id: 2, title: "שתיית מים טריים", icon: "💧", completed: false },
+    { id: 3, title: "ארוחת בוקר", icon: "🍽️", completed: false }
+  ]);
+  const [nearbyParks, setNearbyParks] = useState<any[]>([]);
+
   const { toast } = useToast();
-  const { streak, achievements, updateStreak } = useGame();
+  const { streak, updateStreak } = useGame();
   const { totalPoints } = usePoints();
 
-  // Wallet Achievements System
-  const walletAchievements = [
-    { id: 1, name: "מתחיל חסכן", threshold: 10, icon: "🌱", color: "from-success to-success-dark", description: "צברת ₪10 בחיסכון" },
-    { id: 2, name: "חוסך מתמיד", threshold: 50, icon: "💚", color: "from-success-dark to-primary", description: "צברת ₪50 בחיסכון" },
-    { id: 3, name: "חוסך מקצועי", threshold: 100, icon: "⭐", color: "from-warning to-accent", description: "צברת ₪100 בחיסכון" },
-    { id: 4, name: "מומחה חיסכון", threshold: 250, icon: "🏆", color: "from-accent to-error", description: "צברת ₪250 בחיסכון" },
-    { id: 5, name: "אלוף החיסכון", threshold: 500, icon: "👑", color: "from-secondary to-secondary-light", description: "צברת ₪500 בחיסכון" },
-    { id: 6, name: "אגדת החיסכון", threshold: 1000, icon: "💎", color: "from-primary to-secondary", description: "צברת ₪1000 בחיסכון" }
+  // Quick Actions
+  const quickActions = [
+    { icon: FileText, title: "מסמכים", path: "/documents" },
+    { icon: Store, title: "חנות", path: "/shop" },
+    { icon: MapPin, title: "גינות", path: "/parks" },
+    { icon: GraduationCap, title: "אילוף", path: "/training" },
+    { icon: Scissors, title: "מספרה", path: "/grooming" }
   ];
 
-  // Confetti effects
-  const triggerConfetti = useCallback(() => {
-    const count = 200;
-    const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
-    
-    function fire(particleRatio: number, opts: any) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio)
-      });
-    }
-    
-    fire(0.25, { spread: 26, startVelocity: 55, colors: ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))'] });
-    fire(0.2, { spread: 60, colors: ['hsl(var(--primary-dark))', 'hsl(var(--accent-hover))', 'hsl(var(--secondary-light))', 'hsl(var(--success-light))'] });
-    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--warning))'] });
-    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ['hsl(var(--primary-dark))', 'hsl(var(--accent-hover))'] });
-    fire(0.1, { spread: 120, startVelocity: 45, colors: ['hsl(var(--primary))', 'hsl(var(--success))'] });
-  }, []);
+  // Recommendations
+  const recommendations = [
+    { id: 1, title: "גן הכלבים בפארק", subtitle: "2.3 ק״מ ממך", image: "🏞️" },
+    { id: 2, title: "מזון פרימיום", subtitle: "20% הנחה", image: "🍖" },
+    { id: 3, title: "טיפ אילוף", subtitle: "בסיסי למתחילים", image: "🎓" }
+  ];
 
-  // Fetch user's pets and profile
+  // Fetch user data
   useEffect(() => {
-    const fetchPets = async () => {
-      setPetsLoading(true);
-
+    const fetchData = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setPetsLoading(false);
         setLoading(false);
         return;
       }
 
-      // Fetch user profile name
+      // Fetch profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', user.id)
         .single();
-      
+
       if (profile?.full_name) {
-        const firstName = profile.full_name.split(' ')[0];
-        setUserName(firstName);
+        setUserName(profile.full_name.split(' ')[0]);
       }
 
-      const { data, error } = await supabase
+      // Fetch pets
+      const { data: petsData } = await supabase
         .from('pets')
         .select('*')
         .eq('user_id', user.id)
         .eq('archived', false)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching pets:", error);
-        toast({
-          title: "שגיאה בטעינת חיות המחמד",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else if (data) {
-        // Detect newly added pets
-        const currentPetIds = new Set(data.map(p => p.id));
-        const previousPetIds = previousPetIdsRef.current;
-        const newPets = data.filter(p => !previousPetIds.has(p.id));
-        
-        if (newPets.length > 0) {
-          const newIds = new Set(newPets.map(p => p.id));
-          setNewlyAddedPetIds(newIds);
-          triggerConfetti();
-          
-          setTimeout(() => {
-            setNewlyAddedPetIds(new Set());
-          }, 5000);
-        }
-        
-        previousPetIdsRef.current = currentPetIds;
-        setPets(data);
-      }
-      
-      setPetsLoading(false);
+      if (petsData) setPets(petsData);
+
+      // Fetch nearby parks
+      const { data: parksData } = await supabase
+        .from('dog_parks')
+        .select('*')
+        .eq('status', 'active')
+        .limit(3);
+
+      if (parksData) setNearbyParks(parksData);
+
       setLoading(false);
     };
 
-    fetchPets();
-    updateStreak(); // Update streak on page load
-  }, [toast, triggerConfetti, updateStreak]);
+    fetchData();
+    updateStreak();
+  }, [updateStreak]);
 
-  // Fetch promotional offers
-  useEffect(() => {
-    const fetchOffers = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('promotional_offers')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order', { ascending: true });
+  const handleTaskToggle = (taskId: number) => {
+    setDailyTasks(tasks =>
+      tasks.map(task =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
 
-        if (error) throw error;
-        if (data) setPromotionalOffers(data);
-      } catch (error: any) {
-        console.error("Error fetching offers:", error);
-      }
-    };
-
-    fetchOffers();
-  }, []);
-
-  // Simulate wallet balance (in production, fetch from database)
-  useEffect(() => {
-    setWalletBalance(127.50);
-  }, []);
-
-  // Pet long press handlers
-  const handlePetLongPressStart = useCallback((pet: any) => {
-    const timer = setTimeout(() => {
-      setSelectedPetForEdit(pet);
-      setEditFormData({ name: pet.name, breed: pet.breed || "" });
-    }, 500);
-    setLongPressTimer(timer);
-  }, []);
-
-  const handlePetLongPressEnd = useCallback(() => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-  }, [longPressTimer]);
-
-  // Save pet edits
   const handleSavePetEdit = useCallback(async () => {
     if (!selectedPetForEdit) return;
 
@@ -270,8 +147,8 @@ const Home = () => {
 
       if (error) throw error;
 
-      setPets(pets.map(p => 
-        p.id === selectedPetForEdit.id 
+      setPets(pets.map(p =>
+        p.id === selectedPetForEdit.id
           ? { ...p, name: editFormData.name, breed: editFormData.breed }
           : p
       ));
@@ -291,7 +168,6 @@ const Home = () => {
     }
   }, [selectedPetForEdit, editFormData, pets, toast]);
 
-  // Archive pet
   const handleArchivePet = useCallback(async () => {
     if (!selectedPetForEdit) return;
 
@@ -307,7 +183,7 @@ const Home = () => {
       if (error) throw error;
 
       setPets(pets.filter(p => p.id !== selectedPetForEdit.id));
-      
+
       toast({
         title: "✅ הועבר לארכיון",
         description: `${selectedPetForEdit.name} הועבר לארכיון`
@@ -326,149 +202,247 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <HomePageSkeleton />
+      <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
+  const primaryPet = pets[0];
+
   return (
-    <div className="min-h-screen bg-[#F5F5F5]" dir="rtl">
+    <div className="min-h-screen bg-[#F5F5F3] pb-20" dir="rtl">
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Main Content */}
-      <main className="pb-20">
-        {/* Rewards Header */}
-        <RewardsHeader 
-          userName={userName}
-          greeting={getGreeting()}
-          onMenuOpen={() => setIsMenuOpen(true)}
-        />
+      <main className="px-4 py-5 space-y-5">
+        {/* Header Card - Greeting */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative w-full h-[140px] rounded-2xl overflow-hidden bg-gradient-to-br from-[#F4C542] to-[#FF9A76] shadow-sm"
+        >
+          {/* Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors z-10"
+          >
+            <Menu className="w-5 h-5 text-white" />
+          </button>
 
-        {/* Gamification Bar - Streak & Points */}
-        <div className="px-4 py-3 flex items-center justify-between gap-3">
-          {streak && (
-            <StreakIndicator 
-              currentStreak={streak.current_streak} 
-              level={streak.streak_level}
-            />
-          )}
-          
-          <div className="flex items-center gap-3">
-            {/* Points Display */}
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 bg-card rounded-full px-4 py-2 shadow-sm border border-border cursor-pointer"
-              onClick={() => navigate('/rewards')}
-            >
-              <span className="text-2xl">⭐</span>
-              <div className="flex flex-col items-start">
-                <div className="text-xs text-muted-foreground">נקודות</div>
-                <div className="text-sm font-bold">{totalPoints}</div>
+          <div className="flex items-center h-full px-6">
+            {/* Pet Avatar */}
+            {primaryPet && (
+              <div className="flex-shrink-0 w-16 h-16 rounded-full border-4 border-white/30 overflow-hidden bg-white shadow-lg">
+                {primaryPet.avatar_url ? (
+                  <img
+                    src={primaryPet.avatar_url}
+                    alt={primaryPet.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl">
+                    {primaryPet.type === 'dog' ? '🐕' : '🐈'}
+                  </div>
+                )}
               </div>
-            </motion.div>
+            )}
 
-            {/* Achievements Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/achievements')}
-              className="flex items-center justify-center w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-sm hover:shadow-md transition-shadow"
-            >
-              <Trophy className="w-5 h-5" />
-            </motion.button>
-          </div>
-        </div>
-
-        {/* My Pets Section */}
-        <MyPetsSection
-          pets={pets}
-          newlyAddedPetIds={newlyAddedPetIds}
-          onPetLongPressStart={handlePetLongPressStart}
-          onPetLongPressEnd={handlePetLongPressEnd}
-        />
-
-        {/* Wallet Card */}
-        <WalletCard 
-          walletBalance={walletBalance}
-          achievements={walletAchievements}
-          onNavigate={() => navigate('/rewards')}
-        />
-
-        {/* Quick Actions */}
-        <QuickActions actions={quickActions} />
-
-        {/* Promotional Offers */}
-        {promotionalOffers.length > 0 && (
-          <Suspense fallback={
-            <div className="px-4 py-6">
-              <Skeleton className="h-8 w-48 mb-4" />
-              <Skeleton className="h-40 w-full rounded-2xl" />
+            {/* Greeting Text */}
+            <div className="mr-4 flex-1">
+              <h1 className="text-white text-xl font-bold leading-tight">
+                {getGreeting()}, {userName}
+                {primaryPet && ` ו-${primaryPet.name}`} 🐾
+              </h1>
+              
+              {/* Points Indicator */}
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
+                  <span className="text-lg">⭐</span>
+                  <span className="text-white text-sm font-semibold">{totalPoints}</span>
+                  <span className="text-white/80 text-xs">נקודות</span>
+                </div>
+              </div>
             </div>
-          }>
-            <PromotionalOffers offers={promotionalOffers} />
-          </Suspense>
+          </div>
+        </motion.div>
+
+        {/* Quick Actions Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex justify-between items-center gap-2"
+        >
+          {quickActions.map((action, index) => (
+            <button
+              key={index}
+              onClick={() => navigate(action.path)}
+              className="flex flex-col items-center gap-2 flex-1 min-w-0"
+            >
+              <div className="w-14 h-14 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm hover:shadow-md hover:scale-105 transition-all">
+                <action.icon className="w-6 h-6 text-gray-800" strokeWidth={1.5} />
+              </div>
+              <span className="text-xs text-gray-700 font-medium text-center leading-tight truncate w-full">
+                {action.title}
+              </span>
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Tasks Widget */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="p-5 rounded-2xl shadow-sm border-0">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">המשימות שלי</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/tasks')}
+                className="text-xs text-primary hover:text-primary/80 h-auto p-0"
+              >
+                ראה הכל
+              </Button>
+            </div>
+
+            {dailyTasks.length > 0 ? (
+              <div className="space-y-3">
+                {dailyTasks.map(task => (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <Checkbox
+                      checked={task.completed}
+                      onCheckedChange={() => handleTaskToggle(task.id)}
+                      className="w-5 h-5"
+                    />
+                    <span className="text-2xl">{task.icon}</span>
+                    <span className={`text-sm flex-1 ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                      {task.title}
+                    </span>
+                    {task.completed && (
+                      <Check className="w-4 h-4 text-green-600" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <span className="text-4xl mb-2 block">😊</span>
+                <p className="text-sm">אין משימות פתוחות להיום!</p>
+              </div>
+            )}
+          </Card>
+        </motion.div>
+
+        {/* Recommendations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="p-5 rounded-2xl shadow-sm border-0">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">המלצות בשבילך</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-primary hover:text-primary/80 h-auto p-0"
+              >
+                עוד הצעות
+              </Button>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+              {recommendations.map(rec => (
+                <div
+                  key={rec.id}
+                  className="flex-shrink-0 w-[140px] bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-3 cursor-pointer hover:shadow-md transition-shadow"
+                >
+                  <div className="text-4xl mb-2">{rec.image}</div>
+                  <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1">
+                    {rec.title}
+                  </h3>
+                  <p className="text-xs text-gray-600">{rec.subtitle}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Nearby Park */}
+        {nearbyParks.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="p-5 rounded-2xl shadow-sm border-0 bg-gray-50">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    <h3 className="text-base font-bold text-gray-900">{nearbyParks[0].name}</h3>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">{nearbyParks[0].city}</p>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <Star
+                        key={star}
+                        className={`w-3 h-3 ${star <= (nearbyParks[0].rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                      />
+                    ))}
+                    <span className="text-xs text-gray-600 mr-1">
+                      ({nearbyParks[0].rating || 0})
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/parks')}
+                  className="bg-primary hover:bg-primary/90 text-white rounded-full h-8 px-4"
+                >
+                  <Navigation className="w-3 h-3 ml-1" />
+                  נווט
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
         )}
 
-        {/* Product Carousel */}
-        <Suspense fallback={
-          <div className="px-4 py-6">
-            <Skeleton className="h-8 w-48 mb-4" />
-            <div className="flex gap-4 overflow-hidden">
-              <Skeleton className="h-64 w-48 rounded-2xl flex-shrink-0" />
-              <Skeleton className="h-64 w-48 rounded-2xl flex-shrink-0" />
-              <Skeleton className="h-64 w-48 rounded-2xl flex-shrink-0" />
-            </div>
-          </div>
-        }>
-          <ProductCarousel />
-        </Suspense>
+        {/* Statistics */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="grid grid-cols-4 gap-3"
+        >
+          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
+            <div className="text-2xl font-bold text-primary">{streak?.current_streak || 0}</div>
+            <div className="text-xs text-gray-600 mt-1">ימים ברצף</div>
+          </Card>
+          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
+            <div className="text-2xl font-bold text-primary">{pets.length}</div>
+            <div className="text-xs text-gray-600 mt-1">חיות מחמד</div>
+          </Card>
+          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
+            <div className="text-2xl font-bold text-primary">{totalPoints}</div>
+            <div className="text-xs text-gray-600 mt-1">נקודות</div>
+          </Card>
+          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
+            <div className="text-2xl font-bold text-primary">3</div>
+            <div className="text-xs text-gray-600 mt-1">גינות</div>
+          </Card>
+        </motion.div>
       </main>
 
       {/* Bottom Navigation */}
       <BottomNav />
-
-      {/* Floating Action Button - Quick Actions */}
-      <FloatingActionButton
-        icon={Plus}
-        label="פעולות מהירות"
-        position="bottom-left"
-        actions={[
-          {
-            icon: Plus,
-            label: "הוסף חיית מחמד",
-            onClick: () => navigate("/add-pet"),
-          },
-          {
-            icon: Camera,
-            label: "העלה תמונה",
-            onClick: () => navigate("/photos"),
-          },
-          {
-            icon: Store,
-            label: "קנה מוצרים",
-            onClick: () => navigate("/shop"),
-          },
-          {
-            icon: MapPin,
-            label: "מצא גן כלבים",
-            onClick: () => navigate("/parks"),
-          },
-          {
-            icon: Heart,
-            label: "אמץ חיית מחמד",
-            onClick: () => navigate("/adoption"),
-          },
-        ]}
-      />
-
-      {/* Achievement Dialog */}
-      <AchievementDialog
-        isOpen={showAchievement}
-        achievement={currentAchievement}
-        onClose={() => setShowAchievement(false)}
-      />
 
       {/* Pet Edit Sheet */}
       <PetEditSheet
