@@ -3,6 +3,8 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { PetCard, AddPetCard } from "./PetCard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ComponentErrorFallback } from "@/components/ComponentErrorFallback";
 
 interface MyPetsSectionProps {
   pets: any[];
@@ -20,12 +22,16 @@ export const MyPetsSection = ({
   const navigate = useNavigate();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="mb-6 px-4"
+    <ErrorBoundary
+      fallback={<ComponentErrorFallback componentName="חיות המחמד שלי" />}
+      onReset={() => window.location.reload()}
     >
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-6 px-4"
+      >
       {/* Empty State - Beautiful & Inviting */}
       {pets.length === 0 ? (
         <motion.div
@@ -102,5 +108,6 @@ export const MyPetsSection = ({
         </div>
       )}
     </motion.div>
+    </ErrorBoundary>
   );
 };
