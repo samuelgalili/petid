@@ -203,8 +203,8 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" strokeWidth={1.5} />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" strokeWidth={1.5} />
       </div>
     );
   }
@@ -212,94 +212,102 @@ const Home = () => {
   const primaryPet = pets[0];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F3] pb-20" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Main Content */}
-      <main className="px-4 py-5 space-y-5">
-        {/* Header Card - Greeting */}
+      <main className="px-4 py-6 space-y-6 max-w-2xl mx-auto">
+        {/* Header - Minimalist Greeting */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative w-full h-[140px] rounded-2xl overflow-hidden bg-gradient-to-br from-[#F4C542] to-[#FF9A76] shadow-sm"
+          className="flex items-center justify-between"
         >
-          {/* Menu Button */}
+          <div className="flex-1">
+            <h1 className="text-2xl font-semibold text-foreground mb-1">
+              {getGreeting()}, {userName}
+            </h1>
+            {primaryPet && (
+              <p className="text-sm text-muted-foreground">
+                עם {primaryPet.name} {primaryPet.type === 'dog' ? '🐕' : '🐈'}
+              </p>
+            )}
+          </div>
+          
           <button
             onClick={() => setIsMenuOpen(true)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors z-10"
+            className="w-10 h-10 rounded-lg hover:bg-muted transition-colors flex items-center justify-center"
+            aria-label="תפריט"
           >
-            <Menu className="w-5 h-5 text-white" strokeWidth={1.5} />
+            <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
           </button>
-
-          <div className="flex items-center h-full px-6">
-            {/* Pet Avatar */}
-            {primaryPet && (
-              <div className="flex-shrink-0 w-16 h-16 rounded-full border-4 border-white/30 overflow-hidden bg-white shadow-lg">
-                {primaryPet.avatar_url ? (
-                  <img
-                    src={primaryPet.avatar_url}
-                    alt={primaryPet.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl">
-                    {primaryPet.type === 'dog' ? '🐕' : '🐈'}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Greeting Text */}
-            <div className="mr-4 flex-1">
-              <h1 className="text-white text-xl font-bold leading-tight">
-                {getGreeting()}, {userName}
-                {primaryPet && ` ו-${primaryPet.name}`} 🐾
-              </h1>
-              
-              {/* Points Indicator */}
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
-                  <span className="text-lg">⭐</span>
-                  <span className="text-white text-sm font-semibold">{totalPoints}</span>
-                  <span className="text-white/80 text-xs">נקודות</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </motion.div>
 
-        {/* Quick Actions Row */}
+        {/* Points Card - Clean & Minimal */}
+        {totalPoints > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <Card className="p-4 rounded-xl border border-border bg-surface shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Star className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">נקודות זמינות</p>
+                    <p className="text-2xl font-semibold text-foreground">{totalPoints}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/rewards')}
+                  className="text-xs text-primary hover:text-primary/80"
+                >
+                  מימוש
+                  <ChevronRight className="w-4 h-4 mr-1" strokeWidth={1.5} />
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Quick Actions - Minimal Icons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex justify-between items-center gap-2"
         >
-          {quickActions.map((action, index) => (
-            <button
-              key={index}
-              onClick={() => navigate(action.path)}
-              className="flex flex-col items-center gap-2 flex-1 min-w-0"
-            >
-              <div className="w-14 h-14 rounded-full bg-[#F5F5F3] border border-[#E1E1E1] flex items-center justify-center shadow-sm hover:shadow-md hover:scale-105 transition-all">
-                <action.icon className="w-6 h-6 text-[#1F2A44]" strokeWidth={1.5} />
-              </div>
-              <span className="text-xs text-[#333333] font-medium text-center leading-tight truncate w-full">
-                {action.title}
-              </span>
-            </button>
-          ))}
+          <div className="flex justify-between items-center gap-3">
+            {quickActions.map((action, index) => (
+              <button
+                key={index}
+                onClick={() => navigate(action.path)}
+                className="flex flex-col items-center gap-2 flex-1 group"
+              >
+                <div className="w-14 h-14 rounded-xl border border-border bg-surface flex items-center justify-center hover:bg-muted hover:border-primary/30 transition-all">
+                  <action.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={1.5} />
+                </div>
+                <span className="text-[10px] text-muted-foreground text-center leading-tight">
+                  {action.title}
+                </span>
+              </button>
+            ))}
+          </div>
         </motion.div>
 
-        {/* Tasks Widget */}
+        {/* Tasks Widget - Clean */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.15 }}
         >
-          <Card className="p-5 rounded-2xl shadow-sm border-0">
+          <Card className="p-5 rounded-xl border border-border bg-surface shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">המשימות שלי</h2>
+              <h2 className="text-base font-semibold text-foreground">המשימות שלי</h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -315,91 +323,82 @@ const Home = () => {
                 {dailyTasks.map(task => (
                   <div
                     key={task.id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <Checkbox
                       checked={task.completed}
                       onCheckedChange={() => handleTaskToggle(task.id)}
                       className="w-5 h-5"
                     />
-                    <span className="text-2xl">{task.icon}</span>
-                    <span className={`text-sm flex-1 ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                    <span className="text-xl">{task.icon}</span>
+                    <span className={`text-sm flex-1 ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                       {task.title}
                     </span>
                     {task.completed && (
-                      <Check className="w-4 h-4 text-green-600" strokeWidth={1.5} />
+                      <Check className="w-4 h-4 text-primary" strokeWidth={1.5} />
                     )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <span className="text-4xl mb-2 block">😊</span>
+              <div className="text-center py-8 text-muted-foreground">
+                <span className="text-3xl mb-2 block">😊</span>
                 <p className="text-sm">אין משימות פתוחות להיום!</p>
               </div>
             )}
           </Card>
         </motion.div>
 
-        {/* Recommendations */}
+        {/* Recommendations - Clean Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.2 }}
         >
-          <Card className="p-5 rounded-2xl shadow-sm border-0">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">המלצות בשבילך</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-primary hover:text-primary/80 h-auto p-0"
-              >
-                עוד הצעות
-              </Button>
-            </div>
+          <div className="mb-3">
+            <h2 className="text-base font-semibold text-foreground">המלצות</h2>
+          </div>
 
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
-              {recommendations.map(rec => (
-                <div
-                  key={rec.id}
-                  className="flex-shrink-0 w-[140px] bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-3 cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  <div className="text-4xl mb-2">{rec.image}</div>
-                  <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1">
-                    {rec.title}
-                  </h3>
-                  <p className="text-xs text-gray-600">{rec.subtitle}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+            {recommendations.map(rec => (
+              <div
+                key={rec.id}
+                className="flex-shrink-0 w-[140px] border border-border bg-surface rounded-xl p-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all"
+              >
+                <div className="text-3xl mb-2">{rec.image}</div>
+                <h3 className="text-sm font-medium text-foreground leading-tight mb-1">
+                  {rec.title}
+                </h3>
+                <p className="text-xs text-muted-foreground">{rec.subtitle}</p>
+              </div>
+            ))}
+          </div>
         </motion.div>
 
-        {/* Nearby Park */}
+        {/* Nearby Park - Minimal */}
         {nearbyParks.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.25 }}
           >
-            <Card className="p-5 rounded-2xl shadow-sm border-0 bg-gray-50">
-              <div className="flex items-start justify-between">
+            <Card className="p-4 rounded-xl border border-border bg-surface shadow-sm">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <MapPin className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                    <h3 className="text-base font-bold text-gray-900">{nearbyParks[0].name}</h3>
+                    <h3 className="text-sm font-semibold text-foreground">{nearbyParks[0].name}</h3>
                   </div>
-                  <p className="text-xs text-gray-600 mb-2">{nearbyParks[0].city}</p>
+                  <p className="text-xs text-muted-foreground mb-2">{nearbyParks[0].city}</p>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(star => (
                       <Star
                         key={star}
-                        className={`w-3 h-3 ${star <= (nearbyParks[0].rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                        className={`w-3 h-3 ${star <= (nearbyParks[0].rating || 0) ? 'fill-primary text-primary' : 'text-border'}`}
                         strokeWidth={1.5}
                       />
                     ))}
-                    <span className="text-xs text-gray-600 mr-1">
+                    <span className="text-xs text-muted-foreground mr-1">
                       ({nearbyParks[0].rating || 0})
                     </span>
                   </div>
@@ -407,38 +406,38 @@ const Home = () => {
                 <Button
                   size="sm"
                   onClick={() => navigate('/parks')}
-                  className="bg-primary hover:bg-primary/90 text-white rounded-full h-8 px-4"
+                  className="bg-foreground hover:bg-foreground/90 text-background rounded-lg h-8 px-3 text-xs"
                 >
-                  <Navigation className="w-3 h-3 ml-1" strokeWidth={1.5} />
                   נווט
+                  <Navigation className="w-3 h-3 mr-1" strokeWidth={1.5} />
                 </Button>
               </div>
             </Card>
           </motion.div>
         )}
 
-        {/* Statistics */}
+        {/* Statistics - Minimal Grid */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.3 }}
           className="grid grid-cols-4 gap-3"
         >
-          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
-            <div className="text-2xl font-bold text-primary">{streak?.current_streak || 0}</div>
-            <div className="text-xs text-gray-600 mt-1">ימים ברצף</div>
+          <Card className="p-4 rounded-xl border border-border bg-surface shadow-sm text-center">
+            <div className="text-2xl font-semibold text-foreground">{streak?.current_streak || 0}</div>
+            <div className="text-[10px] text-muted-foreground mt-1">ימים ברצף</div>
           </Card>
-          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
-            <div className="text-2xl font-bold text-primary">{pets.length}</div>
-            <div className="text-xs text-gray-600 mt-1">חיות מחמד</div>
+          <Card className="p-4 rounded-xl border border-border bg-surface shadow-sm text-center">
+            <div className="text-2xl font-semibold text-foreground">{pets.length}</div>
+            <div className="text-[10px] text-muted-foreground mt-1">חיות מחמד</div>
           </Card>
-          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
-            <div className="text-2xl font-bold text-primary">{totalPoints}</div>
-            <div className="text-xs text-gray-600 mt-1">נקודות</div>
+          <Card className="p-4 rounded-xl border border-border bg-surface shadow-sm text-center">
+            <div className="text-2xl font-semibold text-foreground">{totalPoints}</div>
+            <div className="text-[10px] text-muted-foreground mt-1">נקודות</div>
           </Card>
-          <Card className="p-3 rounded-xl shadow-sm border-0 text-center">
-            <div className="text-2xl font-bold text-primary">3</div>
-            <div className="text-xs text-gray-600 mt-1">גינות</div>
+          <Card className="p-4 rounded-xl border border-border bg-surface shadow-sm text-center">
+            <div className="text-2xl font-semibold text-foreground">3</div>
+            <div className="text-[10px] text-muted-foreground mt-1">גינות</div>
           </Card>
         </motion.div>
       </main>
