@@ -26,6 +26,7 @@ import { Heart, Search, Filter, Check, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { AppHeader } from "@/components/AppHeader";
 
 interface AdoptionPet {
   id: string;
@@ -202,19 +203,25 @@ const Adoption = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 pb-24 pt-20 px-4 dir-rtl">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl font-bold text-yellow-900 mb-2 flex items-center justify-center gap-3">
-            <Heart className="w-10 h-10 text-red-500" />
-            אימוץ חיות מחמד
-          </h1>
-          <p className="text-yellow-700 text-lg">תן בית חם לחבר חדש</p>
-        </motion.div>
+    <>
+      <AppHeader 
+        title="אימוץ חיות מחמד" 
+        showBackButton={true}
+        showMenuButton={false}
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 pb-24 px-4 dir-rtl">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
+            <p className="text-yellow-700 text-lg flex items-center justify-center gap-2">
+              <Heart className="w-6 h-6 text-red-500" />
+              תן בית חם לחבר חדש
+            </p>
+          </motion.div>
 
         {/* Search and Filters */}
         <Card className="bg-white/80 backdrop-blur-sm border-yellow-200 shadow-lg mb-6 p-6">
@@ -348,6 +355,7 @@ const Adoption = () => {
             <p className="text-yellow-700 text-lg">לא נמצאו חיות מחמד התואמות לחיפוש</p>
           </motion.div>
         )}
+        </div>
       </div>
 
       {/* Adoption Form Dialog */}
@@ -531,7 +539,7 @@ const Adoption = () => {
       </Dialog>
 
       <BottomNav />
-    </div>
+    </>
   );
 };
 
