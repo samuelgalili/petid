@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { lazy, Suspense } from "react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
 import { GuestProvider } from "@/contexts/GuestContext";
@@ -20,12 +21,12 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AddPet from "./pages/AddPet";
 import Home from "./pages/Home";
-import Feed from "./pages/Feed";
+const Feed = lazy(() => import("./pages/Feed"));
 import UserProfile from "./pages/UserProfile";
 import PostDetail from "./pages/PostDetail";
 import StoryViewer from "./pages/StoryViewer";
 import Tracker from "./pages/Tracker";
-import Shop from "./pages/Shop";
+const Shop = lazy(() => import("./pages/Shop"));
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -51,7 +52,7 @@ import Photos from "./pages/Photos";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
-import Training from "./pages/Training";
+const Training = lazy(() => import("./pages/Training"));
 import Grooming from "./pages/Grooming";
 import { AdminRoute } from "./components/AdminRoute";
 
@@ -75,12 +76,12 @@ const AnimatedRoutes = () => {
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
         <Route path="/pet/:petId" element={<ProtectedRoute><PageTransition><PetDetails /></PageTransition></ProtectedRoute>} />
         <Route path="/breed-history/:petId" element={<ProtectedRoute><PageTransition><BreedHistory /></PageTransition></ProtectedRoute>} />
-        <Route path="/feed" element={<ProtectedRoute><PageTransition><Feed /></PageTransition></ProtectedRoute>} />
+        <Route path="/feed" element={<ProtectedRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Feed /></Suspense></PageTransition></ProtectedRoute>} />
         <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
         <Route path="/post/:postId" element={<ProtectedRoute><PageTransition><PostDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/story/:userId" element={<ProtectedRoute><StoryViewer /></ProtectedRoute>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
-        <Route path="/shop" element={<ProtectedRoute><PageTransition><Shop /></PageTransition></ProtectedRoute>} />
+        <Route path="/shop" element={<ProtectedRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageTransition></ProtectedRoute>} />
         <Route path="/product/:id" element={<ProtectedRoute><PageTransition><ProductDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/cart" element={<ProtectedRoute><PageTransition><Cart /></PageTransition></ProtectedRoute>} />
         <Route path="/checkout" element={<ProtectedRoute><PageTransition><Checkout /></PageTransition></ProtectedRoute>} />
@@ -100,7 +101,7 @@ const AnimatedRoutes = () => {
             <Route path="/parks" element={<ProtectedRoute><PageTransition><Parks /></PageTransition></ProtectedRoute>} />
             <Route path="/photos" element={<ProtectedRoute><PageTransition><Photos /></PageTransition></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><PageTransition><Documents /></PageTransition></ProtectedRoute>} />
-            <Route path="/training" element={<ProtectedRoute><PageTransition><Training /></PageTransition></ProtectedRoute>} />
+            <Route path="/training" element={<ProtectedRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Training /></Suspense></PageTransition></ProtectedRoute>} />
             <Route path="/grooming" element={<ProtectedRoute><PageTransition><Grooming /></PageTransition></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><PageTransition><Notifications /></PageTransition></ProtectedRoute>} />
