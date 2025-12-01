@@ -61,8 +61,8 @@ export const SmartPanel = ({
         >
           <div className="flex items-center gap-3">
             {Icon && (
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                <Icon className="w-5 h-5 text-[#2D2D2D]" strokeWidth={1.5} />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -98,7 +98,7 @@ export const SmartPanelItem = ({
   variant = "default"
 }: SmartPanelItemProps) => {
   const variantStyles = {
-    default: "hover:bg-secondary/50",
+    default: "hover:bg-muted/50",
     highlighted: "bg-primary/5 hover:bg-primary/10 border-r-2 border-primary",
     warning: "bg-warning/5 hover:bg-warning/10",
     success: "bg-success/5 hover:bg-success/10"
@@ -108,17 +108,17 @@ export const SmartPanelItem = ({
     <>
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className={cn(
-          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-          variant === "default" && "bg-secondary",
+          "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors group-hover:bg-primary/10",
+          variant === "default" && "bg-muted",
           variant === "highlighted" && "bg-primary/20",
           variant === "warning" && "bg-warning/20",
           variant === "success" && "bg-success/20"
         )}>
           <Icon 
             className={cn(
-              "w-5 h-5",
-              variant === "default" && "text-[#1F2A44]",
-              variant === "highlighted" && "text-primary",
+              "w-5 h-5 transition-colors",
+              variant === "default" && "text-[#2D2D2D] group-hover:text-[#00A870]",
+              variant === "highlighted" && "text-[#00A870]",
               variant === "warning" && "text-warning",
               variant === "success" && "text-success"
             )} 
@@ -146,13 +146,13 @@ export const SmartPanelItem = ({
             {badge}
           </span>
         )}
-        <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+        <ChevronLeft className="w-5 h-5 text-[#2D2D2D] group-hover:text-[#00A870] transition-colors" strokeWidth={1.5} />
       </div>
     </>
   );
 
   const baseClasses = cn(
-    "flex items-center gap-3 px-4 transition-all",
+    "flex items-center gap-3 px-4 transition-all group",
     variantStyles[variant],
     disabled && "opacity-50 cursor-not-allowed"
   );

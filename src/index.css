@@ -28,6 +28,12 @@
     --primary-foreground: 0 0% 100%;  /* White text */
     --primary-light: 162 100% 43%;    /* Lighter Green */
     --primary-dark: 162 100% 28%;     /* Darker Green */
+    --primary-hover: 162 100% 37%;    /* #008F5E - Hover state */
+
+    /* Icon system colors - ChatGPT style */
+    --icon-base: 0 0% 18%;            /* #2D2D2D - base icon color */
+    --icon-active: 162 100% 33%;      /* #00A870 - active/hover icon color */
+    --icon-disabled: 0 0% 69%;        /* #B0B0B0 - disabled icon color */
 
     /* SECONDARY - Neutral text colors */
     --secondary: 0 0% 18%;            /* #2D2D2D - Dark grey text */

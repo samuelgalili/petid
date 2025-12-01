@@ -55,6 +55,14 @@ export default {
           foreground: "hsl(var(--primary-foreground))",
           light: "hsl(var(--primary-light))",
           dark: "hsl(var(--primary-dark))",
+          hover: "hsl(var(--primary-hover))",
+        },
+        
+        /* Icon colors - ChatGPT style */
+        icon: {
+          base: "hsl(var(--icon-base))",
+          active: "hsl(var(--icon-active))",
+          disabled: "hsl(var(--icon-disabled))",
         },
         
         /* Secondary - Midnight Blue */
