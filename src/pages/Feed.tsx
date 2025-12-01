@@ -270,8 +270,28 @@ const Feed = () => {
                 </button>
               </div>
 
+              {/* Liked by */}
+              {post.likes_count > 0 && (
+                <div className="mb-2">
+                  <p className="text-sm text-gray-900 font-jakarta">
+                    אהבו על ידי{" "}
+                    <span className="font-semibold cursor-pointer hover:underline">
+                      {post.user.full_name}
+                    </span>
+                    {post.likes_count > 1 && (
+                      <>
+                        {" "}ועוד{" "}
+                        <span className="font-semibold">
+                          {post.likes_count - 1}
+                        </span>
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
+
               {/* Post Caption */}
-              <div>
+              <div className="mb-2">
                 <p className="text-gray-900 font-jakarta">
                   <span 
                     className="font-semibold cursor-pointer hover:underline"
@@ -286,12 +306,17 @@ const Feed = () => {
               {/* View Comments */}
               {post.comments_count > 0 && (
                 <button 
-                  className="text-gray-500 text-sm mt-2 font-jakarta hover:text-gray-700"
+                  className="text-gray-500 text-sm font-jakarta hover:text-gray-700"
                   onClick={() => navigate(`/post/${post.id}`)}
                 >
                   הצג את כל {post.comments_count} התגובות
                 </button>
               )}
+
+              {/* Time ago */}
+              <p className="text-xs text-gray-400 font-jakarta mt-1">
+                {getTimeAgo(post.created_at)}
+              </p>
             </div>
           </motion.div>
           ))
