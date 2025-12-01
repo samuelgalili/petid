@@ -21,6 +21,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AddPet from "./pages/AddPet";
 import Home from "./pages/Home";
+import Install from "./pages/Install";
 const Feed = lazy(() => import("./pages/Feed"));
 import UserProfile from "./pages/UserProfile";
 import PostDetail from "./pages/PostDetail";
@@ -73,6 +74,7 @@ const AnimatedRoutes = () => {
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+        <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
         <Route path="/add-pet" element={<ProtectedRoute><PageTransition><AddPet /></PageTransition></ProtectedRoute>} />
         <Route path="/home" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="עמוד הבית"><Home /></PageErrorBoundary></PageTransition></ProtectedRoute>} />
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
