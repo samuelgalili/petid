@@ -153,7 +153,7 @@ const ResetPassword = () => {
                             setErrors({ ...errors, password: undefined });
                           }}
                           disabled={loading}
-                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.password ? "border-red-500" : ""}`}
+                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.password ? "border-error" : ""}`}
                           autoComplete="new-password"
                         />
                         <button
@@ -166,7 +166,7 @@ const ResetPassword = () => {
                         </button>
                       </div>
                       {errors.password && (
-                        <p className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
+                       <p className="text-sm text-error bg-error/10 px-2 py-1 rounded">
                           {errors.password}
                         </p>
                       )}
@@ -189,7 +189,7 @@ const ResetPassword = () => {
                             setErrors({ ...errors, confirmPassword: undefined });
                           }}
                           disabled={loading}
-                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.confirmPassword ? "border-red-500" : ""}`}
+                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.confirmPassword ? "border-error" : ""}`}
                           autoComplete="new-password"
                         />
                         <button
@@ -202,7 +202,7 @@ const ResetPassword = () => {
                         </button>
                       </div>
                       {errors.confirmPassword && (
-                        <p className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
+                       <p className="text-sm text-error bg-error/10 px-2 py-1 rounded">
                           {errors.confirmPassword}
                         </p>
                       )}
@@ -210,20 +210,7 @@ const ResetPassword = () => {
 
                     <Button
                       type="submit"
-                      className="w-full h-12 font-medium font-jakarta transition-all"
-                      style={{
-                        backgroundColor: loading ? "#E0C050" : "#FBD66A",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.backgroundColor = "#F4C542";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!loading) {
-                          e.currentTarget.style.backgroundColor = "#FBD66A";
-                        }
-                      }}
+                      className="w-full h-12 font-medium font-jakarta transition-all bg-accent hover:bg-accent-hover text-gray-900"
                       disabled={loading}
                     >
                       {loading ? (
@@ -240,7 +227,7 @@ const ResetPassword = () => {
               ) : (
                 <div className="text-center space-y-6">
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle className="h-10 w-10 text-green-600" />
+                    <CheckCircle className="h-10 w-10 text-success" />
                   </div>
                   
                   <div>
