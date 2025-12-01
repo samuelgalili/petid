@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CreateHighlightDialog } from "./CreateHighlightDialog";
+import { EditHighlightDialog } from "./EditHighlightDialog";
 import { useNavigate } from "react-router-dom";
 
 interface Highlight {
@@ -22,6 +23,10 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
   const navigate = useNavigate();
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [pressedHighlightId, setPressedHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHighlights();
@@ -48,6 +53,31 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
           story_count: h.highlight_stories?.[0]?.count || 0,
         }))
       );
+    }
+  };
+
+  const handleLongPressStart = (highlight: Highlight) => {
+    if (!isOwnProfile) return;
+    
+    setPressedHighlightId(highlight.id);
+    longPressTimerRef.current = setTimeout(() => {
+      setSelectedHighlight(highlight);
+      setEditDialogOpen(true);
+      setPressedHighlightId(null);
+    }, 500);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setPressedHighlightId(null);
+  };
+
+  const handleHighlightClick = (highlightId: string) => {
+    if (!pressedHighlightId) {
+      navigate(`/highlight/${highlightId}`);
     }
   };
 
@@ -83,11 +113,23 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
-            onClick={() => navigate(`/highlight/${highlight.id}`)}
+            className={`flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer ${
+              pressedHighlightId === highlight.id ? "opacity-70" : ""
+            }`}
+            onClick={() => handleHighlightClick(highlight.id)}
+            onMouseDown={() => handleLongPressStart(highlight)}
+            onMouseUp={handleLongPressEnd}
+            onMouseLeave={handleLongPressEnd}
+            onTouchStart={() => handleLongPressStart(highlight)}
+            onTouchEnd={handleLongPressEnd}
+            onTouchCancel={handleLongPressEnd}
           >
             <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 ring-2 ring-gray-300 overflow-hidden">
+              <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 overflow-hidden transition-all ${
+                isOwnProfile 
+                  ? "ring-2 ring-gray-300 hover:ring-4 hover:ring-purple-400" 
+                  : "ring-2 ring-gray-300"
+              }`}>
                 {highlight.cover_image ? (
                   <img
                     src={highlight.cover_image}
@@ -118,6 +160,17 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
         onOpenChange={setCreateDialogOpen}
         onSuccess={fetchHighlights}
       />
+
+      {selectedHighlight && (
+        <EditHighlightDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          highlightId={selectedHighlight.id}
+          currentTitle={selectedHighlight.title}
+          currentCoverImage={selectedHighlight.cover_image}
+          onSuccess={fetchHighlights}
+        />
+      )}
     </div>
   );
 };
