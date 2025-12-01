@@ -1,9 +1,22 @@
-import { Loader2 } from "lucide-react";
+import { 
+  Loader2, 
+  Plus, 
+  Camera, 
+  Heart, 
+  MapPin, 
+  Store,
+  ImageIcon,
+  FileText,
+  ShieldCheck,
+  Scissors,
+  GraduationCap
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { HomePageSkeleton } from "@/components/LoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -20,16 +33,6 @@ import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 // Lazy load heavy components
 const PromotionalOffers = lazy(() => import("@/components/home/PromotionalOffers").then(m => ({ default: m.PromotionalOffers })));
 const ProductCarousel = lazy(() => import("@/components/home/ProductCarousel").then(m => ({ default: m.ProductCarousel })));
-import { 
-  Store, 
-  ImageIcon, 
-  FileText, 
-  Heart, 
-  ShieldCheck, 
-  Scissors, 
-  GraduationCap, 
-  MapPin 
-} from "lucide-react";
 
 // Quick action items for the home page
 const quickActions = [
@@ -382,6 +385,40 @@ const Home = () => {
 
       {/* Bottom Navigation */}
       <BottomNav />
+
+      {/* Floating Action Button - Quick Actions */}
+      <FloatingActionButton
+        icon={Plus}
+        label="פעולות מהירות"
+        position="bottom-left"
+        actions={[
+          {
+            icon: Plus,
+            label: "הוסף חיית מחמד",
+            onClick: () => navigate("/add-pet"),
+          },
+          {
+            icon: Camera,
+            label: "העלה תמונה",
+            onClick: () => navigate("/photos"),
+          },
+          {
+            icon: Store,
+            label: "קנה מוצרים",
+            onClick: () => navigate("/shop"),
+          },
+          {
+            icon: MapPin,
+            label: "מצא גן כלבים",
+            onClick: () => navigate("/parks"),
+          },
+          {
+            icon: Heart,
+            label: "אמץ חיית מחמד",
+            onClick: () => navigate("/adoption"),
+          },
+        ]}
+      />
 
       {/* Achievement Dialog */}
       <AchievementDialog

@@ -31,9 +31,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SmartPanel } from "@/components/ui/smart-panel";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
+import { slideUp, ANIMATION_DURATION } from "@/lib/animations";
+import { MICROCOPY, ARIA_LABELS } from "@/lib/microcopy";
+import { getAccessibleButtonProps } from "@/lib/accessibility";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -80,8 +84,8 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast({
-      title: "התנתקת בהצלחה",
-      description: "נתראה בקרוב!",
+      title: MICROCOPY.success.profileUpdated,
+      description: "נתראה בקרוב! 👋",
     });
     navigate("/auth");
     onClose();
@@ -112,7 +116,9 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed top-0 left-0 h-full w-[85vw] max-w-md bg-white z-[101] overflow-y-auto shadow-2xl"
+            className="fixed top-0 left-0 h-full w-[85vw] max-w-md bg-background z-[101] overflow-y-auto shadow-2xl"
+            role="dialog"
+            aria-label={ARIA_LABELS.menu}
           >
             {/* Header - Enhanced Golden Gradient */}
             <div className="bg-gradient-primary p-6 pb-10 relative overflow-hidden">
@@ -180,222 +186,157 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               </div>
             </div>
 
-            {/* Content */}
-            <div className="p-5 space-y-5 bg-[#F5F5F5]">
-              {/* חיות המחמד שלי */}
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+            {/* Content - Smart Panels Organization */}
+            <div className="p-5 space-y-4 bg-[#F5F5F5]">
+              {/* My Pets - Smart Panel */}
+              <motion.div
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
                 transition={{ delay: 0.15 }}
               >
-                <h2 className="text-lg font-black text-gray-900 mb-2 text-right font-jakarta">
-                  חיות המחמד שלי
-                </h2>
-                <p className="text-sm text-gray-600 mb-3 text-right font-jakarta">
-                  ניהול פרופילי חיות המחמד שלך
-                </p>
-                <button
-                  onClick={() => handleNavigation("/add-pet")}
-                  className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
+                <SmartPanel
+                  title="חיות המחמד שלי"
+                  description="ניהול ומעקב אחר חיות המחמד"
+                  icon={PawPrint}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-                      <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
-                    </div>
-                    <span className="text-gray-900 font-bold font-jakarta">הוספת חיית מחמד</span>
-                  </div>
-                  <PawPrint className="w-6 h-6 text-error group-hover:scale-110 transition-transform" />
-                </button>
-              </motion.section>
+                  <SmartPanel.Item
+                    icon={Plus}
+                    label="הוספת חיית מחמד"
+                    value="צור פרופיל חדש"
+                    to="/add-pet"
+                    variant="highlighted"
+                  />
+                </SmartPanel>
+              </motion.div>
 
-              {/* קטגוריות ראשיות */}
-              <motion.section 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+              {/* Primary Actions - Smart Panel */}
+              <motion.div
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
                 transition={{ delay: 0.2 }}
-                className="space-y-2"
               >
-                <button
-                  onClick={() => handleNavigation("/notifications")}
-                  className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98] relative"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-warning rounded-full flex items-center justify-center relative">
-                      <Bell className="w-5 h-5 text-white" />
-                      {unreadNotifications > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-error text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse ring-2 ring-white">
-                          {unreadNotifications}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-gray-900 font-bold font-jakarta">התראות</span>
-                  </div>
-                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                </button>
+                <SmartPanel title="פעולות מהירות" icon={Grid3x3}>
+                  <SmartPanel.Item
+                    icon={Bell}
+                    label="התראות"
+                    badge={unreadNotifications > 0 ? unreadNotifications : undefined}
+                    to="/notifications"
+                    variant={unreadNotifications > 0 ? "warning" : "default"}
+                  />
+                  <SmartPanel.Item
+                    icon={ShoppingCart}
+                    label="עגלת קניות"
+                    value="מוצרים שנשמרו"
+                    to="/cart"
+                  />
+                  <SmartPanel.Item
+                    icon={Package}
+                    label="ההזמנות שלי"
+                    value="עקוב אחר משלוחים"
+                    to="/order-history"
+                  />
+                  <SmartPanel.Item
+                    icon={Star}
+                    label="תגמולים ונקודות"
+                    value="צבור והשתמש בנקודות"
+                    to="/rewards"
+                    variant="success"
+                  />
+                </SmartPanel>
+              </motion.div>
 
-                <button
-                  onClick={() => handleNavigation("/cart")}
-                  className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center">
-                      <ShoppingCart className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-gray-900 font-bold font-jakarta">עגלת קניות</span>
-                  </div>
-                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-                <button
-                  onClick={() => handleNavigation("/order-history")}
-                  className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                      <Package className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-gray-900 font-bold font-jakarta">ההזמנות שלי</span>
-                  </div>
-                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-                <button
-                  onClick={() => handleNavigation("/rewards")}
-                  className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-                      <Star className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-gray-900 font-bold font-jakarta">תגמולים ונקודות</span>
-                  </div>
-                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </motion.section>
-
-              {/* קישורים מהירים */}
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+              {/* Services - Smart Panel */}
+              <motion.div
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
                 transition={{ delay: 0.25 }}
               >
-                <h2 className="text-lg font-black text-gray-900 mb-3 text-right font-jakarta">
-                  קישורים מהירים
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => handleNavigation("/photos")}
-                    className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <div className="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Camera className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="text-sm font-bold text-gray-900 text-center font-jakarta">תמונות</p>
-                  </button>
+                <SmartPanel title="שירותים" icon={Store}>
+                  <SmartPanel.Item
+                    icon={Shield}
+                    label="ביטוח לחיות מחמד"
+                    value="הגנה מקיפה"
+                    to="/insurance"
+                  />
+                  <SmartPanel.Item
+                    icon={Heart}
+                    label="אימוץ"
+                    value="מצא חבר חדש"
+                    to="/adoption"
+                  />
+                  <SmartPanel.Item
+                    icon={Scissors}
+                    label="טיפוח ומספרות"
+                    value="קבע תור"
+                    to="/grooming"
+                  />
+                  <SmartPanel.Item
+                    icon={Camera}
+                    label="אלבום תמונות"
+                    value="זכרונים מתוקים"
+                    to="/photos"
+                  />
+                  <SmartPanel.Item
+                    icon={FileImage}
+                    label="מסמכים"
+                    value="חיסונים ותעודות"
+                    to="/documents"
+                  />
+                </SmartPanel>
+              </motion.div>
 
-                  <button
-                    onClick={() => handleNavigation("/documents")}
-                    className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <FileImage className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="text-sm font-bold text-gray-900 text-center font-jakarta">מסמכים</p>
-                  </button>
-
-                  <button
-                    onClick={() => handleNavigation("/insurance")}
-                    className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Shield className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="text-sm font-bold text-gray-900 text-center font-jakarta">ביטוח</p>
-                  </button>
-
-                  <button
-                    onClick={() => handleNavigation("/adoption")}
-                    className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <div className="w-10 h-10 bg-error rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Heart className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="text-sm font-bold text-gray-900 text-center font-jakarta">אימוץ</p>
-                  </button>
-
-                  <button
-                    onClick={() => handleNavigation("/grooming")}
-                    className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Scissors className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="text-sm font-bold text-gray-900 text-center font-jakarta">מספרות</p>
-                  </button>
-                </div>
-              </motion.section>
-
-              {/* הגדרות */}
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+              {/* Settings & Support - Smart Panel */}
+              <motion.div
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
                 transition={{ delay: 0.3 }}
-                className="space-y-2"
               >
-                <h2 className="text-lg font-black text-gray-900 mb-3 text-right font-jakarta">
-                  הגדרות
-                </h2>
-                <button
-                  onClick={() => handleNavigation("/settings")}
-                  className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
-                      <Settings className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-gray-900 font-bold font-jakarta">הגדרות</span>
-                  </div>
-                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-                <button
-                  onClick={() => handleNavigation("/support")}
-                  className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
-                      <HelpCircle className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-gray-900 font-bold font-jakarta">תמיכה ועזרה</span>
-                  </div>
-                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </motion.section>
+                <SmartPanel title="הגדרות ותמיכה" icon={Settings}>
+                  <SmartPanel.Item
+                    icon={Settings}
+                    label="הגדרות"
+                    value="התאמה אישית"
+                    to="/settings"
+                  />
+                  <SmartPanel.Item
+                    icon={HelpCircle}
+                    label="תמיכה ועזרה"
+                    value="שאלות נפוצות"
+                    to="/support"
+                  />
+                </SmartPanel>
+              </motion.div>
 
               {/* Logout */}
               {user && (
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                <motion.div
+                  variants={slideUp}
+                  initial="hidden"
+                  animate="visible"
                   transition={{ delay: 0.35 }}
                   className="pb-6 pt-2"
                 >
                   <Button
                     variant="ghost"
                     onClick={handleLogout}
-                    className="w-full bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all text-red-600 hover:text-red-700 hover:bg-red-50 justify-between text-base font-bold font-jakarta group hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full bg-background rounded-2xl p-5 shadow-md hover:shadow-xl transition-all text-error hover:text-error/80 hover:bg-error/5 justify-between text-base font-bold font-jakarta group"
+                    {...getAccessibleButtonProps("התנתק מהחשבון")}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                        <LogOut className="w-5 h-5 text-red-600" />
+                      <div className="w-10 h-10 bg-error/10 rounded-full flex items-center justify-center">
+                        <LogOut className="w-5 h-5 text-error" />
                       </div>
                       <span>התנתק מהחשבון</span>
                     </div>
                   </Button>
-                  <p className="text-xs text-gray-400 text-center mt-6 font-jakarta">
+                  <p className="text-xs text-muted-foreground text-center mt-6 font-jakarta">
                     Petid v1.0.0 • כל הזכויות שמורות
                   </p>
-                </motion.section>
+                </motion.div>
               )}
             </div>
           </motion.div>
