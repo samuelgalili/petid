@@ -43,6 +43,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,6 +58,9 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
             .then(({ data: profileData }) => {
               setProfile(profileData);
             });
+          
+          // Simulate unread notifications count - replace with actual DB query
+          setUnreadNotifications(3);
         }
       });
     }
@@ -164,6 +168,27 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     הוספת חיית מחמד
                   </span>
                   <PawPrint className="w-6 h-6 text-[#FF6B6B]" />
+                </button>
+              </section>
+
+              {/* התראות */}
+              <section>
+                <h2 className="text-xl font-black text-gray-900 mb-3 text-right">
+                  התראות
+                </h2>
+                <button
+                  onClick={() => handleNavigation("/notifications")}
+                  className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between relative"
+                >
+                  <span className="text-gray-900 font-semibold">ההתראות שלי</span>
+                  <div className="relative">
+                    <Bell className="w-6 h-6 text-[#FF9800]" />
+                    {unreadNotifications > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadNotifications}
+                      </span>
+                    )}
+                  </div>
                 </button>
               </section>
 
