@@ -138,7 +138,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     className="rounded-full hover:bg-white/30 transition-colors"
                     aria-label="Close menu"
                   >
-                    <ChevronLeft className="w-6 h-6 text-gray-900" />
+                    <ChevronLeft className="w-6 h-6 text-gray-900" strokeWidth={1.5} />
                   </Button>
                 </div>
 
@@ -161,7 +161,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                         onClick={() => setIsImageEditorOpen(true)}
                         className="absolute bottom-0 right-0 w-7 h-7 bg-secondary rounded-full flex items-center justify-center shadow-lg hover:bg-secondary-dark transition-all hover:scale-110 active:scale-95"
                       >
-                        <Camera className="w-3.5 h-3.5 text-white" />
+                        <Camera className="w-3.5 h-3.5 text-white" strokeWidth={1.5} />
                       </button>
                     </div>
                     <div className="flex-1">
@@ -173,7 +173,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                         className="text-sm text-gray-800 hover:text-gray-900 font-semibold font-jakarta flex items-center gap-1 transition-colors group"
                       >
                         <span className="group-hover:underline">הצג פרופיל</span>
-                        <ChevronLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <ChevronLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
                       </button>
                     </div>
                   </motion.div>
@@ -348,7 +348,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-error/10 rounded-full flex items-center justify-center">
-                        <LogOut className="w-5 h-5 text-error" />
+                        <LogOut className="w-5 h-5 text-error" strokeWidth={1.5} />
                       </div>
                       <span>התנתק מהחשבון</span>
                     </div>
