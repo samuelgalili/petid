@@ -56,6 +56,7 @@ import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
 const Training = lazy(() => import("./pages/Training"));
 import Grooming from "./pages/Grooming";
+import ColorSystemShowcase from "./pages/ColorSystemShowcase";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -113,6 +114,7 @@ const AnimatedRoutes = () => {
             <Route path="/grooming" element={<ProtectedRoute><PageTransition><Grooming /></PageTransition></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><PageTransition><Notifications /></PageTransition></ProtectedRoute>} />
+        <Route path="/color-system" element={<ProtectedRoute><PageTransition><ColorSystemShowcase /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>
