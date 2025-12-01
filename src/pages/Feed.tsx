@@ -41,70 +41,86 @@ const Feed = () => {
   const fetchPosts = async () => {
     setLoading(true);
     
-    // Fetch posts
-    const { data: postsData } = await supabase
-      .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(20);
+    try {
+      // Fetch posts with user profiles in a single query using joins
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts")
+        .select(`
+          *,
+          profiles!posts_user_id_fkey (
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
+        .order("created_at", { ascending: false })
+        .limit(20);
 
-    if (postsData) {
-      const formattedPosts = await Promise.all(
-        postsData.map(async (post: any) => {
-          // Fetch user profile for each post
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("id, full_name, avatar_url")
-            .eq("id", post.user_id)
-            .single();
+      if (postsError) throw postsError;
 
-          // Count likes
-          const { count: likesCount } = await supabase
+      if (postsData) {
+        // Get all post IDs for batch queries
+        const postIds = postsData.map(p => p.id);
+
+        // Batch fetch likes count for all posts
+        const { data: likesData } = await supabase
+          .from("post_likes")
+          .select("post_id")
+          .in("post_id", postIds);
+
+        // Batch fetch comments count for all posts
+        const { data: commentsData } = await supabase
+          .from("post_comments")
+          .select("post_id")
+          .in("post_id", postIds);
+
+        // Batch fetch user's likes if authenticated
+        let userLikes: string[] = [];
+        if (user) {
+          const { data: userLikesData } = await supabase
             .from("post_likes")
-            .select("*", { count: "exact", head: true })
-            .eq("post_id", post.id);
+            .select("post_id")
+            .eq("user_id", user.id)
+            .in("post_id", postIds);
+          
+          userLikes = userLikesData?.map(l => l.post_id) || [];
+        }
 
-          // Count comments
-          const { count: commentsCount } = await supabase
-            .from("post_comments")
-            .select("*", { count: "exact", head: true })
-            .eq("post_id", post.id);
+        // Count likes and comments per post
+        const likesCount = likesData?.reduce((acc: any, like: any) => {
+          acc[like.post_id] = (acc[like.post_id] || 0) + 1;
+          return acc;
+        }, {}) || {};
 
-          // Check if current user liked this post
-          let isLiked = false;
-          if (user) {
-            const { data: likeData } = await supabase
-              .from("post_likes")
-              .select("id")
-              .eq("post_id", post.id)
-              .eq("user_id", user.id)
-              .maybeSingle();
-            
-            isLiked = !!likeData;
-          }
+        const commentsCount = commentsData?.reduce((acc: any, comment: any) => {
+          acc[comment.post_id] = (acc[comment.post_id] || 0) + 1;
+          return acc;
+        }, {}) || {};
 
-          return {
-            id: post.id,
-            user_id: post.user_id,
-            image_url: post.image_url,
-            caption: post.caption,
-            created_at: post.created_at,
-            user: {
-              id: profileData?.id || post.user_id,
-              full_name: profileData?.full_name || "משתמש",
-              avatar_url: profileData?.avatar_url || "",
-            },
-            likes_count: likesCount || 0,
-            comments_count: commentsCount || 0,
-            is_liked: isLiked,
-          };
-        })
-      );
+        // Format posts with aggregated data
+        const formattedPosts = postsData.map((post: any) => ({
+          id: post.id,
+          user_id: post.user_id,
+          image_url: post.image_url,
+          caption: post.caption,
+          created_at: post.created_at,
+          user: {
+            id: post.profiles?.id || post.user_id,
+            full_name: post.profiles?.full_name || "משתמש",
+            avatar_url: post.profiles?.avatar_url || "",
+          },
+          likes_count: likesCount[post.id] || 0,
+          comments_count: commentsCount[post.id] || 0,
+          is_liked: userLikes.includes(post.id),
+        }));
 
-      setPosts(formattedPosts);
+        setPosts(formattedPosts);
+      }
+    } catch (error: any) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleLike = async (postId: string) => {
@@ -113,30 +129,43 @@ const Feed = () => {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    if (post.is_liked) {
-      // Unlike
-      await supabase
-        .from("post_likes")
-        .delete()
-        .eq("post_id", postId)
-        .eq("user_id", user.id);
-      
+    // Optimistic update
+    setPosts(posts.map(p =>
+      p.id === postId
+        ? { 
+            ...p, 
+            is_liked: !p.is_liked, 
+            likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 
+          }
+        : p
+    ));
+
+    try {
+      if (post.is_liked) {
+        // Unlike
+        const { error } = await supabase
+          .from("post_likes")
+          .delete()
+          .eq("post_id", postId)
+          .eq("user_id", user.id);
+        
+        if (error) throw error;
+      } else {
+        // Like
+        const { error } = await supabase
+          .from("post_likes")
+          .insert({ post_id: postId, user_id: user.id });
+        
+        if (error) throw error;
+      }
+    } catch (error: any) {
+      // Revert on error
       setPosts(posts.map(p =>
         p.id === postId
-          ? { ...p, is_liked: false, likes_count: p.likes_count - 1 }
+          ? { ...p, is_liked: post.is_liked, likes_count: post.likes_count }
           : p
       ));
-    } else {
-      // Like
-      await supabase
-        .from("post_likes")
-        .insert({ post_id: postId, user_id: user.id });
-      
-      setPosts(posts.map(p =>
-        p.id === postId
-          ? { ...p, is_liked: true, likes_count: p.likes_count + 1 }
-          : p
-      ));
+      console.error("Error toggling like:", error);
     }
   };
 

@@ -191,9 +191,9 @@ const Shop = () => {
     });
 
     toast({
-      title: "✅ נוסף לעגלה בהצלחה!",
-      description: `${selectedProduct.name} (${quantity} יח') נוסף לעגלה`,
-      duration: 3000,
+      title: "✅ נוסף לעגלה",
+      description: `${selectedProduct.name} (${quantity} יח') נוסף לעגלה שלך`,
+      duration: 2000,
     });
 
     setSelectedProduct(null);

@@ -393,8 +393,8 @@ const Home = () => {
       quantity: 1
     });
     toast({
-      title: "Added to cart!",
-      description: `${product.name} has been added to your cart`
+      title: "✅ נוסף לעגלה",
+      description: `${product.name} נוסף לעגלה שלך`
     });
 
     // Trigger confetti
