@@ -23,6 +23,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import giftIcon from "@/assets/gift-icon.gif";
 import {
   Sheet,
   SheetContent,
@@ -652,10 +653,10 @@ const Home = () => {
             {/* Gift Icon - Right Side */}
             <button
               onClick={() => navigate('/rewards')}
-              className="flex-shrink-0 w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-md flex items-center justify-center hover:shadow-lg transition-all"
+              className="flex-shrink-0 w-32 h-32 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 shadow-md flex items-center justify-center hover:shadow-lg transition-all overflow-hidden"
               aria-label="מתנה"
             >
-              <Gift className="w-16 h-16 text-gray-500" strokeWidth={1.5} />
+              <img src={giftIcon} alt="מתנה" className="w-20 h-20 object-contain" />
             </button>
           </div>
 
