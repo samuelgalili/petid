@@ -51,17 +51,20 @@ export const PostCard = ({
     >
       {/* Post Header */}
       <div className="flex items-center justify-between p-4">
-        <div 
-          className="flex items-center gap-3 cursor-pointer"
-          onClick={() => navigate(`/user/${post.user.id}`)}
-        >
-          <Avatar className="w-11 h-11 ring-2 ring-gray-100">
+        <div className="flex items-center gap-2">
+          <Avatar 
+            className="w-11 h-11 ring-2 ring-gray-100 cursor-pointer"
+            onClick={() => navigate(`/user/${post.user.id}`)}
+          >
             <AvatarImage src={post.user.avatar_url} />
             <AvatarFallback className="bg-gradient-instagram text-white font-black text-sm">
               {post.user.full_name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
-          <div>
+          <div 
+            className="cursor-pointer"
+            onClick={() => navigate(`/user/${post.user.id}`)}
+          >
             <p className="font-black text-gray-900 font-jakarta text-[15px]">{post.user.full_name}</p>
             <p className="text-xs text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
           </div>

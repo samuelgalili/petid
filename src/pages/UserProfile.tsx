@@ -24,6 +24,7 @@ interface UserProfile {
 interface Post {
   id: string;
   image_url: string;
+  media_urls: string[];
   caption: string;
   created_at: string;
   likes_count: number;
@@ -58,6 +59,7 @@ const UserProfile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [pets, setPets] = useState<Pet[]>([]);
   const [followStats, setFollowStats] = useState<FollowStats>({ followers: 0, following: 0 });
   const [userStats, setUserStats] = useState<UserStats>({
@@ -96,14 +98,7 @@ const UserProfile = () => {
     // Fetch user posts with counts
     const { data: postsData } = await supabase
       .from("posts")
-      .select(`
-        id,
-        image_url,
-        caption,
-        created_at,
-        post_likes(count),
-        post_comments(count)
-      `)
+      .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -111,22 +106,75 @@ const UserProfile = () => {
     let totalComments = 0;
 
     if (postsData) {
-      const mappedPosts = postsData.map((post: any) => {
-        const likesCount = post.post_likes?.[0]?.count || 0;
-        const commentsCount = post.post_comments?.[0]?.count || 0;
-        totalLikes += likesCount;
-        totalComments += commentsCount;
+      const mappedPosts = await Promise.all(postsData.map(async (post: any) => {
+        const { count: likesCount } = await supabase
+          .from("post_likes")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        const { count: commentsCount } = await supabase
+          .from("post_comments")
+          .select("*", { count: "exact", head: true })
+          .eq("post_id", post.id);
+
+        totalLikes += likesCount || 0;
+        totalComments += commentsCount || 0;
         
         return {
           id: post.id,
           image_url: post.image_url,
+          media_urls: post.media_urls || [],
           caption: post.caption,
           created_at: post.created_at,
-          likes_count: likesCount,
-          comments_count: commentsCount,
+          likes_count: likesCount || 0,
+          comments_count: commentsCount || 0,
         };
-      });
+      }));
       setPosts(mappedPosts);
+    }
+
+    // Fetch saved posts if viewing own profile
+    if (isOwnProfile && user) {
+      const { data: savedPostsData } = await supabase
+        .from("saved_posts")
+        .select("post_id")
+        .eq("user_id", user.id);
+
+      if (savedPostsData && savedPostsData.length > 0) {
+        const postIds = savedPostsData.map((sp) => sp.post_id);
+        const { data: savedPostsFullData } = await supabase
+          .from("posts")
+          .select("*")
+          .in("id", postIds)
+          .order("created_at", { ascending: false });
+
+        if (savedPostsFullData) {
+          const savedPostsWithCounts = await Promise.all(
+            savedPostsFullData.map(async (post) => {
+              const { count: likesCount } = await supabase
+                .from("post_likes")
+                .select("*", { count: "exact", head: true })
+                .eq("post_id", post.id);
+
+              const { count: commentsCount } = await supabase
+                .from("post_comments")
+                .select("*", { count: "exact", head: true })
+                .eq("post_id", post.id);
+
+              return {
+                id: post.id,
+                image_url: post.image_url,
+                media_urls: post.media_urls || [],
+                caption: post.caption,
+                created_at: post.created_at,
+                likes_count: likesCount || 0,
+                comments_count: commentsCount || 0,
+              };
+            })
+          );
+          setSavedPosts(savedPostsWithCounts);
+        }
+      }
     }
 
     // Fetch user's pets
@@ -263,12 +311,14 @@ const UserProfile = () => {
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Profile Header */}
         <div className="flex items-start gap-6 mb-6">
-          <Avatar className="w-20 h-20 md:w-28 md:h-28">
-            <AvatarImage src={profile.avatar_url} />
-            <AvatarFallback className="text-3xl bg-gradient-secondary text-white">
-              {profile.full_name?.charAt(0) || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-gradient-instagram p-[3px] shadow-lg">
+            <Avatar className="w-full h-full ring-2 ring-white">
+              <AvatarImage src={profile.avatar_url} />
+              <AvatarFallback className="text-3xl bg-gradient-instagram text-white font-black">
+                {profile.full_name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
 
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold text-gray-900 font-jakarta mb-4 truncate">
@@ -315,10 +365,10 @@ const UserProfile = () => {
           <div className="flex gap-2 mb-6">
             <Button
               onClick={handleFollowToggle}
-              className={`flex-1 font-jakarta ${
+              className={`flex-1 font-jakarta font-bold ${
                 isFollowing
                   ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                  : "bg-secondary hover:bg-secondary-dark text-white"
+                  : "bg-gradient-instagram text-white hover:opacity-90"
               }`}
             >
               {isFollowing ? "עוקב" : "עקוב"}
@@ -326,7 +376,7 @@ const UserProfile = () => {
             <Button
               onClick={() => navigate(`/chat`)}
               variant="outline"
-              className="flex-1 font-jakarta"
+              className="flex-1 font-jakarta font-bold"
             >
               שלח הודעה
             </Button>
@@ -350,23 +400,23 @@ const UserProfile = () => {
 
         {/* Statistics Section */}
         <div className="grid grid-cols-4 gap-3 mb-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 text-center shadow-md">
-            <Heart className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+          <div className="bg-gradient-to-br from-instagram-pink/10 to-instagram-purple/10 rounded-2xl p-4 text-center shadow-md">
+            <Heart className="w-5 h-5 text-instagram-pink mx-auto mb-2" />
             <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.totalLikes}</p>
             <p className="text-xs text-gray-600 font-jakarta">לייקים</p>
           </div>
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 text-center shadow-md">
-            <MessageCircle className="w-5 h-5 text-purple-600 mx-auto mb-2" />
+          <div className="bg-gradient-to-br from-instagram-purple/10 to-instagram-pink/10 rounded-2xl p-4 text-center shadow-md">
+            <MessageCircle className="w-5 h-5 text-instagram-purple mx-auto mb-2" />
             <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.totalComments}</p>
             <p className="text-xs text-gray-600 font-jakarta">תגובות</p>
           </div>
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-4 text-center shadow-md">
-            <PawPrint className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+          <div className="bg-gradient-to-br from-instagram-orange/10 to-instagram-pink/10 rounded-2xl p-4 text-center shadow-md">
+            <PawPrint className="w-5 h-5 text-instagram-orange mx-auto mb-2" />
             <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.petsCount}</p>
             <p className="text-xs text-gray-600 font-jakarta">חיות</p>
           </div>
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-4 text-center shadow-md">
-            <Calendar className="w-5 h-5 text-green-600 mx-auto mb-2" />
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 text-center shadow-md">
+            <Calendar className="w-5 h-5 text-purple-600 mx-auto mb-2" />
             <p className="text-xl font-black text-gray-900 font-jakarta mb-1">
               {userStats.joinedDate ? new Date(userStats.joinedDate).getFullYear() : "---"}
             </p>
@@ -413,11 +463,11 @@ const UserProfile = () => {
                     className="aspect-square bg-gray-100 relative cursor-pointer group"
                     onClick={() => navigate(`/post/${post.id}`)}
                   >
-                    <img
-                      src={post.image_url}
-                      alt={post.caption || ""}
-                      className="w-full h-full object-cover"
-                    />
+                      <img
+                        src={post.media_urls?.[0] || post.image_url}
+                        alt={post.caption || ""}
+                        className="w-full h-full object-cover"
+                      />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <div className="flex items-center gap-4 text-white">
                         <div className="flex items-center gap-1">
@@ -490,9 +540,48 @@ const UserProfile = () => {
           </TabsContent>
 
           <TabsContent value="saved" className="mt-4">
-            <div className="text-center py-12">
-              <p className="text-gray-500 font-jakarta">אין פוסטים שמורים</p>
-            </div>
+            {isOwnProfile ? (
+              savedPosts.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 font-jakarta">אין פוסטים שמורים</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-1">
+                  {savedPosts.map((post, index) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="aspect-square bg-gray-100 relative cursor-pointer group"
+                      onClick={() => navigate(`/post/${post.id}`)}
+                    >
+                      <img
+                        src={post.media_urls?.[0] || post.image_url}
+                        alt={post.caption || ""}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="flex items-center gap-4 text-white">
+                          <div className="flex items-center gap-1">
+                            <Heart className="w-5 h-5 fill-white" />
+                            <span className="font-semibold font-jakarta">{post.likes_count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="w-5 h-5 fill-white" />
+                            <span className="font-semibold font-jakarta">{post.comments_count}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500 font-jakarta">רק הבעלים יכול לראות פוסטים שמורים</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
