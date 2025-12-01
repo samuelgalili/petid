@@ -1003,8 +1003,24 @@ const Home = () => {
                     </div>
                   </motion.div>
 
-                  {/* Direct Layout - Cat Icon Left, Balance Right, No Box */}
+                  {/* Direct Layout - Balance Right, Cat Icon Left, No Box */}
                   <div className="relative flex items-center justify-between px-4">
+                    {/* Right Side: Balance Display on Yellow Background */}
+                    <motion.div 
+                      className="text-left"
+                      key={walletBalance}
+                      initial={{ scale: 1.1, opacity: 0, x: -20 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
+                      transition={{ type: "spring", stiffness: 200 }}
+                    >
+                      <div className="text-4xl font-black text-white leading-none mb-2 drop-shadow-lg">
+                        ₪{walletBalance.toFixed(2)}
+                      </div>
+                      <div className="text-sm font-bold text-white/90 font-jakarta drop-shadow">
+                        יתרת חיסכון
+                      </div>
+                    </motion.div>
+
                     {/* Left Side: Cat Icon Only */}
                     <motion.div 
                       className="w-20 h-20"
@@ -1019,22 +1035,6 @@ const Home = () => {
                       }}
                     >
                       <img src={catIconGif} alt="Cat" className="w-full h-full object-contain drop-shadow-xl" />
-                    </motion.div>
-
-                    {/* Right Side: Balance Display on Yellow Background */}
-                    <motion.div 
-                      className="text-right"
-                      key={walletBalance}
-                      initial={{ scale: 1.1, opacity: 0, x: 20 }}
-                      animate={{ scale: 1, opacity: 1, x: 0 }}
-                      transition={{ type: "spring", stiffness: 200 }}
-                    >
-                      <div className="text-4xl font-black text-white leading-none mb-2 drop-shadow-lg">
-                        ₪{walletBalance.toFixed(2)}
-                      </div>
-                      <div className="text-sm font-bold text-white/90 font-jakarta drop-shadow">
-                        יתרת חיסכון
-                      </div>
                     </motion.div>
                   </div>
 
