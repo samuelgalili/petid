@@ -48,6 +48,11 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        instagram: {
+          orange: "hsl(var(--instagram-orange))",
+          pink: "hsl(var(--instagram-pink))",
+          purple: "hsl(var(--instagram-purple))",
+        },
         
         /* Primary - Warm Yellow */
         primary: {
@@ -175,6 +180,12 @@ export default {
           text: "hsl(var(--tag-text))",
           border: "hsl(var(--tag-border))",
         },
+        
+        instagram: {
+          orange: "hsl(var(--instagram-orange))",
+          pink: "hsl(var(--instagram-pink))",
+          purple: "hsl(var(--instagram-purple))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -198,6 +209,8 @@ export default {
         'gradient-trust': 'var(--gradient-trust)',
         'gradient-hero': 'var(--gradient-hero)',
         'gradient-card': 'var(--gradient-card)',
+        'gradient-instagram': 'var(--gradient-instagram)',
+        'gradient-instagram-soft': 'var(--gradient-instagram-soft)',
       },
       keyframes: {
         "accordion-down": {

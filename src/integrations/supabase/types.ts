@@ -856,27 +856,36 @@ export type Database = {
           created_at: string
           id: string
           image_url: string
+          media_type: string | null
+          media_urls: string[] | null
           pet_id: string | null
           updated_at: string
           user_id: string
+          video_url: string | null
         }
         Insert: {
           caption?: string | null
           created_at?: string
           id?: string
           image_url: string
+          media_type?: string | null
+          media_urls?: string[] | null
           pet_id?: string | null
           updated_at?: string
           user_id: string
+          video_url?: string | null
         }
         Update: {
           caption?: string | null
           created_at?: string
           id?: string
           image_url?: string
+          media_type?: string | null
+          media_urls?: string[] | null
           pet_id?: string | null
           updated_at?: string
           user_id?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -1064,6 +1073,35 @@ export type Database = {
           value?: string
         }
         Relationships: []
+      }
+      saved_posts: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stories: {
         Row: {

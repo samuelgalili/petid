@@ -101,7 +101,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
       <DialogContent className="sm:max-w-lg font-jakarta bg-white rounded-3xl" dir="rtl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-black text-center text-gray-900 flex items-center justify-center gap-2">
-            <Sparkles className="w-6 h-6 text-accent" />
+            <Sparkles className="w-6 h-6 text-instagram-pink" strokeWidth={1.5} />
             פוסט חדש
           </DialogTitle>
         </DialogHeader>
@@ -125,7 +125,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
                 className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white rounded-full shadow-lg w-10 h-10"
                 onClick={handleRemoveImage}
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" strokeWidth={1.5} />
               </Button>
             </motion.div>
           ) : (
@@ -152,11 +152,11 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               >
                 <Button
                   variant="outline"
-                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-accent hover:bg-accent/10 rounded-2xl transition-all"
+                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-instagram-pink hover:bg-gradient-instagram-soft rounded-2xl transition-all"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <div className="w-16 h-16 bg-gradient-secondary rounded-full flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-gray-700" />
+                  <div className="w-16 h-16 bg-gradient-instagram rounded-full flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-white" strokeWidth={1.5} />
                   </div>
                   <span className="text-sm font-bold text-gray-700">בחר מהגלריה</span>
                 </Button>
@@ -168,11 +168,11 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               >
                 <Button
                   variant="outline"
-                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-accent hover:bg-accent/10 rounded-2xl transition-all"
+                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-instagram-pink hover:bg-gradient-instagram-soft rounded-2xl transition-all"
                   onClick={() => cameraInputRef.current?.click()}
                 >
-                  <div className="w-16 h-16 bg-gradient-secondary-reverse rounded-full flex items-center justify-center">
-                    <Camera className="w-8 h-8 text-gray-700" />
+                  <div className="w-16 h-16 bg-gradient-instagram rounded-full flex items-center justify-center">
+                    <Camera className="w-8 h-8 text-white" strokeWidth={1.5} />
                   </div>
                   <span className="text-sm font-bold text-gray-700">צלם תמונה</span>
                 </Button>
@@ -205,18 +205,18 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               ביטול
             </Button>
             <Button
-              className="flex-1 rounded-2xl font-bold font-jakarta h-12 bg-gradient-primary hover:bg-gradient-primary-hover text-gray-900 shadow-lg"
+              className="flex-1 rounded-2xl font-bold font-jakarta h-12 bg-gradient-instagram text-white shadow-lg hover:shadow-xl"
               onClick={handleCreatePost}
               disabled={!selectedImage || uploading}
             >
               {uploading ? (
                 <>
-                  <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+                  <Loader2 className="w-5 h-5 ml-2 animate-spin" strokeWidth={1.5} />
                   מפרסם...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5 ml-2" />
+                  <Sparkles className="w-5 h-5 ml-2" strokeWidth={1.5} />
                   פרסם
                 </>
               )}
