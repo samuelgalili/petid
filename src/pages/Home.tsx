@@ -15,6 +15,7 @@ import { QuickActions } from "@/components/home/QuickActions";
 import { AchievementDialog } from "@/components/home/AchievementDialog";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 
 // Lazy load heavy components
 const PromotionalOffers = lazy(() => import("@/components/home/PromotionalOffers").then(m => ({ default: m.PromotionalOffers })));
@@ -401,6 +402,9 @@ const Home = () => {
         showDeleteConfirm={showDeleteConfirm}
         onDeleteConfirmChange={setShowDeleteConfirm}
       />
+
+      {/* Push Notification Prompt */}
+      <PushNotificationPrompt />
     </div>
   );
 };

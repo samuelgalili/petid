@@ -1,4 +1,4 @@
-import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap } from "lucide-react";
+import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +19,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
   const { fontSize, highContrast, reduceMotion, setFontSize, setHighContrast, setReduceMotion } = useAccessibility();
   const { user, signOut } = useAuth();
+  const { isSubscribed, isLoading, subscribe, unsubscribe, sendTestNotification } = usePushNotifications();
   const [notifications, setNotifications] = useState(true);
   const [location, setLocation] = useState(true);
 
@@ -36,6 +38,14 @@ const Settings = () => {
       navigate("/auth");
     } catch (error) {
       toast.error("שגיאה בהתנתקות");
+    }
+  };
+
+  const handlePushNotificationToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+    } else {
+      await subscribe();
     }
   };
 
@@ -61,6 +71,14 @@ const Settings = () => {
     {
       title: t("settings.preferences"),
       items: [
+        {
+          icon: Bell,
+          label: "התראות Push",
+          description: isSubscribed ? "התראות Push מופעלות" : "הפעל התראות Push לעדכונים",
+          action: handlePushNotificationToggle,
+          type: "toggle",
+          value: isSubscribed,
+        },
         {
           icon: Bell,
           label: t("settings.notifications"),
