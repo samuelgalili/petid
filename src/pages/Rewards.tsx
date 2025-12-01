@@ -237,7 +237,7 @@ const Rewards = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-white pb-20">
         <AppHeader 
           title="פרסים והטבות" 
           showBackButton={false}
@@ -254,24 +254,21 @@ const Rewards = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-primary rounded-2xl p-6 shadow-lg relative overflow-hidden mb-6"
+            className="bg-white border border-border rounded-lg p-6 mb-6"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
-
-            <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-primary-foreground" />
-                  <span className="text-primary-foreground/90 text-sm font-jakarta">Your Points</span>
+                  <Sparkles className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                  <span className="text-muted-foreground text-sm font-jakarta">Your Points</span>
                 </div>
-                <div className="text-5xl font-bold text-primary-foreground">{totalPoints}</div>
-                <p className="text-primary-foreground/80 text-xs mt-2 font-jakarta">
+                <div className="text-4xl font-semibold text-foreground">{totalPoints}</div>
+                <p className="text-muted-foreground text-xs mt-2 font-jakarta">
                   Complete tasks to earn more points
                 </p>
               </div>
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <Gift className="w-10 h-10 text-primary-foreground" />
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                <Gift className="w-8 h-8 text-primary" strokeWidth={1.5} />
               </div>
             </div>
           </motion.div>
@@ -303,8 +300,8 @@ const Rewards = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className={`bg-gradient-to-br ${reward.bgGradient} p-4`}>
+                      <Card className="overflow-hidden hover:shadow-sm transition-shadow border border-border">
+                        <div className="bg-white p-5">
                           <div className="flex items-start gap-4">
                             <div className="text-5xl">{reward.icon}</div>
 
@@ -318,17 +315,15 @@ const Rewards = () => {
                                     {reward.description}
                                   </p>
                                 </div>
-                                <Badge
-                                  className={`bg-gradient-to-br ${reward.color} text-white border-0 whitespace-nowrap`}
-                                >
+                                <Badge className="bg-muted text-foreground border-border">
                                   {reward.value}
                                 </Badge>
                               </div>
 
                               <div className="flex items-center justify-between mt-4">
                                 <div className="flex items-center gap-2">
-                                  <Star className="w-4 h-4 text-accent" fill="hsl(var(--accent))" />
-                                  <span className="text-sm font-bold text-gray-900">
+                                  <Star className="w-4 h-4 text-primary" fill="currentColor" strokeWidth={1.5} />
+                                  <span className="text-sm font-medium text-foreground font-jakarta">
                                     {reward.points} points
                                   </span>
                                 </div>
@@ -336,7 +331,7 @@ const Rewards = () => {
                                 <Button
                                   onClick={() => handleRedeemReward(reward)}
                                   disabled={totalPoints < reward.points}
-                                  className={`bg-gradient-to-r ${reward.color} hover:opacity-90 text-white border-0 font-jakarta font-bold`}
+                                  className="bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta font-medium"
                                 >
                                   {totalPoints < reward.points ? "Not Enough Points" : "Redeem"}
                                 </Button>

@@ -218,9 +218,9 @@ const Shop = () => {
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       
       {/* Header Section */}
-      <div className="bg-accent pt-6 pb-8 shadow-md">
+      <div className="bg-white pt-6 pb-6 border-b border-border">
         <div className="max-w-md mx-auto px-4">
-          <h1 className="text-2xl font-bold text-gray-900 text-center mb-6 font-jakarta">
+          <h1 className="text-2xl font-semibold text-foreground text-center mb-6 font-jakarta">
             מבצעים והטבות
           </h1>
           
@@ -249,8 +249,8 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* White Content Area with Rounded Top */}
-      <div className="bg-white rounded-t-[32px] -mt-4 relative z-10 shadow-lg">
+      {/* Content Area */}
+      <div className="bg-white">
         <div className="max-w-md mx-auto px-4 pt-6">
           {/* Main Category Filters */}
           <div className="flex flex-wrap gap-3 mb-6">
@@ -264,8 +264,8 @@ const Shop = () => {
                 }}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all font-jakarta ${
                   selectedCategory === category.label
-                  ? "bg-foreground text-background shadow-md"
-                    : "bg-background text-foreground border-2 border-border hover:border-border-light"
+                  ? "bg-foreground text-background"
+                    : "bg-white text-foreground border border-border hover:bg-muted/50"
                 }`}
               >
                 {category.label}

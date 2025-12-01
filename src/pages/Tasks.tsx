@@ -160,7 +160,7 @@ const Tasks = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-white pb-20">
         <AppHeader 
           title="משימות טיפול" 
           showBackButton={false}
@@ -173,7 +173,7 @@ const Tasks = () => {
         
         <div className="px-4 pt-4">
           {/* Points & Streak Card */}
-          <div className="bg-gradient-primary rounded-2xl p-4 shadow-lg mb-6">
+          <div className="bg-white border border-border rounded-2xl p-5 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-md">
@@ -213,13 +213,13 @@ const Tasks = () => {
 
             <TabsContent value="daily" className="space-y-4">
               {/* Daily Progress */}
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-2">
+              <Card className="p-5 border border-border">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-secondary" strokeWidth={1.5} />
-                    <span className="font-semibold text-gray-900 font-jakarta">Daily Progress</span>
+                    <Calendar className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                    <span className="font-medium text-foreground font-jakarta">Daily Progress</span>
                   </div>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground font-jakarta">
                     {dailyCompleted}/{dailyTasks.length}
                   </span>
                 </div>
@@ -236,10 +236,10 @@ const Tasks = () => {
                     transition={{ duration: 0.3 }}
                   >
                     <Card
-                      className={`p-4 transition-all ${
+                      className={`p-5 transition-all border ${
                         task.completed
-                          ? "bg-success/10 border-success/20"
-                          : "bg-white hover:shadow-md"
+                          ? "bg-primary/5 border-primary/30"
+                          : "bg-white border-border hover:shadow-sm"
                       }`}
                     >
                       <div className="flex items-start gap-3">

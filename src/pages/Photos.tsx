@@ -202,14 +202,14 @@ export default function Photos() {
         }}
       />
       
-      <div className="min-h-screen bg-gray-50 pb-24">
+      <div className="min-h-screen bg-white pb-24">
         {/* Filters Section */}
         <div className="bg-white border-b sticky top-16 z-10">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900">
-                  <Upload className="ml-2 h-4 w-4" />
+                <Button className="bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta">
+                  <Upload className="ml-2 h-4 w-4" strokeWidth={1.5} />
                   העלאת תמונה
                 </Button>
               </DialogTrigger>
@@ -303,7 +303,7 @@ export default function Photos() {
                   </div>
 
                   <Button
-                    className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900"
+                    className="w-full bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta"
                     onClick={uploadPhoto}
                     disabled={!selectedFile || isUploading}
                   >
@@ -319,7 +319,7 @@ export default function Photos() {
               variant={selectedPetFilter === "all" ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedPetFilter("all")}
-              className={selectedPetFilter === "all" ? "bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900" : ""}
+              className={selectedPetFilter === "all" ? "bg-primary hover:bg-primary/90 text-white" : ""}
             >
               הכל ({photos.length})
             </Button>
@@ -331,7 +331,7 @@ export default function Photos() {
                   variant={selectedPetFilter === pet.id ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedPetFilter(pet.id)}
-                  className={selectedPetFilter === pet.id ? "bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900" : ""}
+                  className={selectedPetFilter === pet.id ? "bg-primary hover:bg-primary/90 text-white" : ""}
                 >
                   {pet.name} ({petPhotoCount})
                 </Button>
@@ -354,9 +354,9 @@ export default function Photos() {
             </p>
             <Button
               onClick={() => setUploadDialogOpen(true)}
-              className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900"
+              className="bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta"
             >
-              <Upload className="ml-2 h-4 w-4" />
+              <Upload className="ml-2 h-4 w-4" strokeWidth={1.5} />
               העלאת תמונה
             </Button>
           </div>

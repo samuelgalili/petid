@@ -194,7 +194,7 @@ const Parks = () => {
   const renderParkCard = (park: DogPark) => (
     <Card
       key={park.id}
-      className="overflow-hidden bg-white border-gray-200 hover:shadow-lg transition-shadow rounded-2xl"
+      className="overflow-hidden bg-white border border-border hover:shadow-sm transition-shadow rounded-lg"
     >
       <div className="p-5">
         {/* Header */}
@@ -292,9 +292,9 @@ const Parks = () => {
               setReviewsListOpen(true);
             }}
             variant="outline"
-            className="flex-1 rounded-full border-gray-300 text-gray-900 hover:bg-gray-100"
+            className="flex-1 rounded-lg border-border text-foreground hover:bg-muted/50"
           >
-            <MessageSquare className="w-4 h-4 ml-2" />
+            <MessageSquare className="w-4 h-4 ml-2" strokeWidth={1.5} />
             ביקורות
           </Button>
           <Button
@@ -302,17 +302,17 @@ const Parks = () => {
               setSelectedParkForReview(park);
               setReviewDialogOpen(true);
             }}
-            className="flex-1 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-full font-jakarta"
+            className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta"
           >
-            <Star className="w-4 h-4 ml-2" />
+            <Star className="w-4 h-4 ml-2" strokeWidth={1.5} />
             דרג
           </Button>
         </div>
         <Button
           onClick={() => openInMaps(park)}
-          className="w-full mt-2 bg-gray-900 hover:bg-gray-800 text-white rounded-full font-jakarta"
+          className="w-full mt-2 bg-foreground hover:bg-foreground/90 text-background rounded-lg font-jakarta"
         >
-          <ExternalLink className="w-4 h-4 ml-2" />
+          <ExternalLink className="w-4 h-4 ml-2" strokeWidth={1.5} />
           פתח בגוגל מפות
         </Button>
       </div>
@@ -320,7 +320,7 @@ const Parks = () => {
   );
 
   return (
-    <div className="min-h-screen bg-muted pb-20" dir="rtl">
+    <div className="min-h-screen bg-white pb-20" dir="rtl">
       <AppHeader 
         title="גינות כלבים" 
         showBackButton={true}
