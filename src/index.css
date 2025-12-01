@@ -20,53 +20,50 @@
   :root {
     /* ===========================
      * PRIMARY COLORS
-     * Soft Warm Yellow - Friendliness & Happiness
-     * Research: Yellow associates with joy and positive pet experiences
+     * Honey-Gold / Yellow - Main brand color for CTAs and highlights
      * =========================== */
-    --primary: 46 91% 65%;           /* #F8CE59 - Warm Yellow */
+    --primary: 45 100% 64%;           /* #FFC84A - Honey Gold */
     --primary-foreground: 222 37% 19%; /* Deep Blue text for contrast */
-    --primary-light: 47 92% 75%;      /* #FBD97C - Lighter Yellow */
-    --primary-dark: 45 88% 55%;       /* #F4C33E - Darker Yellow */
+    --primary-light: 45 100% 74%;     /* Lighter Gold */
+    --primary-dark: 45 100% 54%;      /* Darker Gold */
 
     /* ===========================
      * SECONDARY COLORS  
-     * Deep Midnight Blue - Trust & Innovation
-     * Research: Conveys reliability and tech credibility
+     * Deep Midnight Blue - Trust & professionalism
      * =========================== */
-    --secondary: 221 36% 21%;         /* #223048 - Midnight Blue */
+    --secondary: 222 37% 19%;         /* #1F2A44 - Deep Midnight Blue */
     --secondary-foreground: 0 0% 100%; /* White text */
-    --secondary-light: 221 36% 30%;   /* #334563 - Lighter Blue */
-    --secondary-dark: 222 37% 16%;    /* #1B2338 - Darker Blue */
+    --secondary-light: 222 37% 29%;   /* Lighter Blue */
+    --secondary-dark: 222 37% 14%;    /* Darker Blue */
 
     /* ===========================
      * CTA & ACCENT COLORS
-     * Honey-Gold - Drives interaction & engagement
-     * Research: Optimal for conversion without eye strain
+     * Honey-Gold for interactive elements
      * =========================== */
-    --accent: 47 100% 50%;            /* #FFC700 - Honey Gold */
+    --accent: 45 100% 64%;            /* #FFC84A - Honey Gold */
     --accent-foreground: 222 37% 19%; /* Deep Blue text */
-    --accent-hover: 47 100% 45%;      /* #E5B300 - Darker Gold */
-    --accent-light: 47 100% 60%;      /* #FFD633 - Lighter Gold */
+    --accent-hover: 45 100% 54%;      /* Darker Gold on hover */
+    --accent-light: 45 100% 74%;      /* Lighter Gold */
 
     /* ===========================
      * SUCCESS & HEALTH
-     * Mint-Green - Vitality & wellness association
+     * Mint-Green - positive states
      * =========================== */
     --success: 164 100% 38%;          /* #00C489 - Mint Green */
     --success-foreground: 0 0% 100%;
-    --success-light: 164 100% 50%;    /* #00F9AD - Lighter Mint */
-    --success-dark: 162 100% 32%;     /* #00A471 - Darker Mint */
+    --success-light: 164 100% 48%;    /* Lighter Mint */
+    --success-dark: 164 100% 28%;     /* Darker Mint */
 
     /* ===========================
      * SEMANTIC STATES
      * =========================== */
-    --warning: 38 92% 50%;            /* #F59E0B - Warm Amber */
+    --warning: 44 100% 50%;           /* #FFB300 - Amber Orange */
     --warning-foreground: 0 0% 100%;
-    --warning-light: 38 92% 65%;      /* Lighter Amber */
+    --warning-light: 44 100% 60%;     /* Lighter Amber */
     
-    --error: 0 72% 51%;               /* #DC2626 - Clear Red */
+    --error: 6 100% 69%;              /* #FF6F61 - Coral Red */
     --error-foreground: 0 0% 100%;
-    --error-light: 0 72% 65%;         /* Lighter Red */
+    --error-light: 6 100% 79%;        /* Lighter Red */
     
     --info: 199 89% 48%;              /* #0EA5E9 - Sky Blue */
     --info-foreground: 0 0% 100%;
@@ -80,84 +77,83 @@
 
     /* ===========================
      * NEUTRAL COLORS
-     * Soft Warm Greys - Calm, comfortable reading
-     * Research: Provides clean aesthetic for pet content
+     * Warm Grey Palette - Clean, professional surfaces
      * =========================== */
-    --background: 60 5% 98%;          /* #FBFBFA - Off-white warm */
-    --foreground: 222 37% 19%;        /* #223048 - Deep Blue text */
+    --background: 60 5% 96%;          /* #F5F5F3 - Warm Light Grey */
+    --foreground: 0 0% 20%;           /* #333333 - Near Black text */
     
     --surface: 0 0% 100%;             /* #FFFFFF - Pure white */
-    --surface-elevated: 60 5% 96%;    /* #F5F5F3 - Slightly elevated */
+    --surface-elevated: 60 5% 96%;    /* #F5F5F3 - Light Grey */
     
     --muted: 0 0% 92%;                /* #EAEAEA - Medium Grey */
-    --muted-foreground: 220 10% 45%;  /* #6B7280 - Muted text */
+    --muted-foreground: 0 0% 43%;     /* #6E6E6E - Neutral Grey text */
     
-    --border: 0 0% 88%;               /* #E0E0E0 - Border grey */
-    --border-light: 0 0% 93%;         /* #EDEDED - Light border */
+    --border: 0 0% 88%;               /* #E1E1E1 - Very Light Grey */
+    --border-light: 0 0% 93%;         /* Lighter border */
     
     --input: 0 0% 96%;                /* #F5F5F5 - Input background */
-    --ring: 46 91% 65%;               /* Matches primary */
+    --ring: 45 100% 64%;              /* Matches primary */
 
     /* ===========================
      * CARD & POPOVER
      * =========================== */
     --card: 0 0% 100%;                /* Pure white cards */
-    --card-foreground: 222 37% 19%;
-    --card-border: 0 0% 93%;          /* Subtle card border */
+    --card-foreground: 0 0% 20%;      /* Near Black text */
+    --card-border: 0 0% 88%;          /* Very Light Grey border */
     
     --popover: 0 0% 100%;
-    --popover-foreground: 222 37% 19%;
+    --popover-foreground: 0 0% 20%;   /* Near Black text */
 
     /* ===========================
      * SIDEBAR & NAVIGATION
      * =========================== */
-    --sidebar-background: 221 36% 21%;      /* Midnight Blue */
+    --sidebar-background: 222 37% 19%;      /* Deep Midnight Blue */
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 46 91% 65%;          /* Warm Yellow */
-    --sidebar-primary-foreground: 222 37% 19%;
-    --sidebar-accent: 221 36% 25%;          /* Slightly lighter blue */
+    --sidebar-primary: 45 100% 64%;         /* Honey Gold */
+    --sidebar-primary-foreground: 0 0% 20%;
+    --sidebar-accent: 222 37% 24%;          /* Slightly lighter blue */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 221 36% 30%;
-    --sidebar-ring: 46 91% 65%;
+    --sidebar-border: 222 37% 29%;
+    --sidebar-ring: 45 100% 64%;
 
     /* ===========================
      * GRADIENTS
-     * Research-backed combinations for warmth & trust
+     * Clean combinations using approved palette
      * =========================== */
-    --gradient-primary: linear-gradient(135deg, hsl(46, 91%, 65%) 0%, hsl(47, 100%, 60%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(46, 91%, 65%) 0%, hsl(38, 92%, 60%) 100%);
-    --gradient-trust: linear-gradient(135deg, hsl(221, 36%, 21%) 0%, hsl(221, 36%, 30%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(46, 91%, 70%) 0%, hsl(164, 100%, 45%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(60, 5%, 98%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(45, 100%, 64%) 0%, hsl(45, 100%, 54%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(45, 100%, 64%) 0%, hsl(44, 100%, 50%) 100%);
+    --gradient-trust: linear-gradient(135deg, hsl(222, 37%, 19%) 0%, hsl(222, 37%, 29%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(45, 100%, 64%) 0%, hsl(164, 100%, 38%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(60, 5%, 96%) 100%);
 
     /* ===========================
      * SHADOWS
-     * Warm, soft shadows that complement pet photos
+     * Soft shadows using secondary color
      * =========================== */
-    --shadow-sm: 0 1px 2px 0 rgba(34, 48, 72, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(34, 48, 72, 0.08), 0 2px 4px -1px rgba(34, 48, 72, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(34, 48, 72, 0.1), 0 4px 6px -2px rgba(34, 48, 72, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(34, 48, 72, 0.12), 0 10px 10px -5px rgba(34, 48, 72, 0.06);
-    --shadow-card: 0 4px 12px rgba(34, 48, 72, 0.08);
-    --shadow-elevated: 0 8px 20px rgba(34, 48, 72, 0.12);
-    --shadow-button: 0 4px 8px rgba(248, 206, 89, 0.3);
-    --shadow-button-hover: 0 6px 12px rgba(248, 206, 89, 0.4);
+    --shadow-sm: 0 1px 2px 0 rgba(31, 42, 68, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(31, 42, 68, 0.08), 0 2px 4px -1px rgba(31, 42, 68, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(31, 42, 68, 0.1), 0 4px 6px -2px rgba(31, 42, 68, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(31, 42, 68, 0.12), 0 10px 10px -5px rgba(31, 42, 68, 0.06);
+    --shadow-card: 0 4px 12px rgba(31, 42, 68, 0.08);
+    --shadow-elevated: 0 8px 20px rgba(31, 42, 68, 0.12);
+    --shadow-button: 0 4px 8px rgba(255, 200, 74, 0.3);
+    --shadow-button-hover: 0 6px 12px rgba(255, 200, 74, 0.4);
 
     /* ===========================
      * COMPONENT-SPECIFIC
      * =========================== */
     --header-bg: 0 0% 100%;
-    --header-text: 222 37% 19%;
-    --footer-bg: 221 36% 21%;
+    --header-text: 0 0% 20%;          /* Near Black */
+    --footer-bg: 222 37% 19%;         /* Deep Midnight Blue */
     --footer-text: 0 0% 100%;
     
     --toast-bg: 0 0% 100%;
-    --toast-border: 0 0% 88%;
-    --toast-text: 222 37% 19%;
+    --toast-border: 0 0% 88%;         /* Very Light Grey */
+    --toast-text: 0 0% 20%;           /* Near Black */
     
-    --tag-bg: 46 91% 90%;
-    --tag-text: 222 37% 19%;
-    --tag-border: 46 91% 75%;
+    --tag-bg: 45 100% 90%;
+    --tag-text: 0 0% 20%;             /* Near Black */
+    --tag-border: 45 100% 80%;
 
     --radius: 1rem;
   }
@@ -167,88 +163,88 @@
    * Maintains warmth while providing comfort for night usage
    * =========================== */
   .dark {
-    --background: 222 40% 10%;        /* Dark midnight blue */
-    --foreground: 60 5% 96%;          /* Warm off-white */
+    --background: 222 37% 10%;        /* Dark midnight blue */
+    --foreground: 0 0% 96%;           /* Light grey */
     
     --surface: 222 37% 13%;           /* Slightly elevated dark surface */
     --surface-elevated: 222 37% 16%;
     
-    --muted: 220 15% 20%;             /* Dark muted grey */
-    --muted-foreground: 220 10% 65%;  /* Muted text */
+    --muted: 0 0% 20%;                /* Dark grey */
+    --muted-foreground: 0 0% 65%;     /* Muted light text */
     
-    --primary: 46 91% 60%;            /* Slightly darker yellow for dark bg */
-    --primary-foreground: 222 40% 10%;
-    --primary-light: 47 92% 70%;
-    --primary-dark: 45 88% 50%;
+    --primary: 45 100% 60%;           /* Adjusted gold for dark bg */
+    --primary-foreground: 0 0% 10%;
+    --primary-light: 45 100% 70%;
+    --primary-dark: 45 100% 50%;
     
-    --secondary: 221 36% 25%;         /* Lighter midnight blue */
-    --secondary-foreground: 60 5% 96%;
-    --secondary-light: 221 36% 32%;
+    --secondary: 222 37% 24%;         /* Lighter midnight blue */
+    --secondary-foreground: 0 0% 96%;
+    --secondary-light: 222 37% 32%;
     --secondary-dark: 222 37% 19%;
     
-    --accent: 47 100% 55%;            /* Honey gold adjusted */
-    --accent-foreground: 222 40% 10%;
-    --accent-hover: 47 100% 50%;
-    --accent-light: 47 100% 65%;
+    --accent: 45 100% 60%;            /* Gold adjusted */
+    --accent-foreground: 0 0% 10%;
+    --accent-hover: 45 100% 50%;
+    --accent-light: 45 100% 70%;
     
-    --success: 164 100% 45%;
-    --success-foreground: 222 40% 10%;
-    --success-light: 164 100% 55%;
-    --success-dark: 162 100% 38%;
+    --success: 164 100% 42%;
+    --success-foreground: 0 0% 10%;
+    --success-light: 164 100% 52%;
+    --success-dark: 164 100% 32%;
     
-    --warning: 38 92% 55%;
-    --warning-foreground: 222 40% 10%;
-    --warning-light: 38 92% 70%;
+    --warning: 44 100% 55%;
+    --warning-foreground: 0 0% 10%;
+    --warning-light: 44 100% 65%;
     
-    --error: 0 72% 58%;
-    --error-foreground: 222 40% 10%;
-    --error-light: 0 72% 70%;
+    --error: 6 100% 73%;
+    --error-foreground: 0 0% 10%;
+    --error-light: 6 100% 83%;
     
     --info: 199 89% 55%;
-    --info-foreground: 222 40% 10%;
+    --info-foreground: 0 0% 10%;
     --info-light: 199 89% 70%;
     
-    --destructive: 0 72% 58%;
-    --destructive-foreground: 222 40% 10%;
+    --destructive: 6 100% 73%;
+    --destructive-foreground: 0 0% 10%;
     
-    --border: 220 15% 25%;
-    --border-light: 220 15% 30%;
+    --border: 0 0% 25%;
+    --border-light: 0 0% 30%;
     --input: 222 37% 16%;
-    --ring: 46 91% 60%;
+    --ring: 45 100% 60%;
     
     --card: 222 37% 13%;
-    --card-foreground: 60 5% 96%;
-    --card-border: 220 15% 25%;
+    --card-foreground: 0 0% 96%;
+    --card-border: 0 0% 25%;
     
     --popover: 222 37% 13%;
-    --popover-foreground: 60 5% 96%;
+    --popover-foreground: 0 0% 96%;
     
-    --sidebar-background: 222 40% 8%;
-    --sidebar-foreground: 60 5% 96%;
-    --sidebar-primary: 46 91% 60%;
-    --sidebar-primary-foreground: 222 40% 10%;
+    --sidebar-background: 222 37% 8%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 45 100% 60%;
+    --sidebar-primary-foreground: 0 0% 10%;
     --sidebar-accent: 222 37% 16%;
-    --sidebar-accent-foreground: 60 5% 96%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 46 91% 60%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 45 100% 60%;
     
     --header-bg: 222 37% 13%;
-    --header-text: 60 5% 96%;
-    --footer-bg: 222 40% 8%;
-    --footer-text: 60 5% 96%;
+    --header-text: 0 0% 96%;
+    --footer-bg: 222 37% 8%;
+    --footer-text: 0 0% 96%;
     
     --toast-bg: 222 37% 16%;
-    --toast-border: 220 15% 25%;
-    --toast-text: 60 5% 96%;
+    --toast-border: 0 0% 25%;
+    --toast-text: 0 0% 96%;
     
-    --tag-bg: 46 91% 25%;
-    --tag-text: 60 5% 96%;
-    --tag-border: 46 91% 35%;
+    --tag-bg: 45 100% 25%;
+    --tag-text: 0 0% 96%;
+    --tag-border: 45 100% 35%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(46, 91%, 60%) 0%, hsl(47, 100%, 55%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(46, 91%, 60%) 0%, hsl(38, 92%, 55%) 100%);
-    --gradient-trust: linear-gradient(135deg, hsl(222, 37%, 16%) 0%, hsl(221, 36%, 25%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(46, 91%, 60%) 0%, hsl(164, 100%, 40%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(45, 100%, 60%) 0%, hsl(45, 100%, 50%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(45, 100%, 60%) 0%, hsl(44, 100%, 50%) 100%);
+    --gradient-trust: linear-gradient(135deg, hsl(222, 37%, 16%) 0%, hsl(222, 37%, 24%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(45, 100%, 60%) 0%, hsl(164, 100%, 38%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(222, 37%, 13%) 0%, hsl(222, 37%, 16%) 100%);
     
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
@@ -257,8 +253,8 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.35), 0 10px 10px -5px rgba(0, 0, 0, 0.25);
     --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
     --shadow-elevated: 0 8px 20px rgba(0, 0, 0, 0.35);
-    --shadow-button: 0 4px 8px rgba(248, 206, 89, 0.25);
-    --shadow-button-hover: 0 6px 12px rgba(248, 206, 89, 0.35);
+    --shadow-button: 0 4px 8px rgba(255, 200, 74, 0.25);
+    --shadow-button-hover: 0 6px 12px rgba(255, 200, 74, 0.35);
   }
 
   /* ===========================
@@ -270,8 +266,8 @@
     --background: 0 0% 100%;
     --muted: 0 0% 70%;
     --border: 0 0% 15%;
-    --primary: 46 100% 40%;
-    --accent: 47 100% 35%;
+    --primary: 45 100% 50%;
+    --accent: 45 100% 45%;
   }
 
   .dark.high-contrast {
@@ -279,8 +275,8 @@
     --background: 0 0% 0%;
     --muted: 0 0% 40%;
     --border: 0 0% 85%;
-    --primary: 46 100% 60%;
-    --accent: 47 100% 60%;
+    --primary: 45 100% 64%;
+    --accent: 45 100% 64%;
   }
 
   /* ===========================

@@ -189,7 +189,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
             </div>
 
             {/* Content - Smart Panels Organization */}
-            <div className="p-5 space-y-4 bg-[#F5F5F5]">
+            <div className="p-5 space-y-4 bg-muted">
               {/* My Pets - Smart Panel */}
               <motion.div
                 variants={slideUp}

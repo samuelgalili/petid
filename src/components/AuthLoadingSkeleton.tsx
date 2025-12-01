@@ -11,7 +11,7 @@ export const AuthLoadingSkeleton = () => {
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-[420px] border-0 overflow-hidden bg-[#FEFEFE]/95 backdrop-blur-sm rounded-[32px] p-12"
+        className="w-full max-w-[420px] border-0 overflow-hidden bg-background/95 backdrop-blur-sm rounded-[32px] p-12"
         style={{ boxShadow: '0 8px 32px rgba(93, 213, 200, 0.15)' }}
       >
         {/* Header */}

@@ -369,7 +369,7 @@ export const LoginForm = () => {
           <div className="flex justify-center gap-2">
             {otp.map((digit, index) => <motion.input key={index} ref={el => otpInputRefs.current[index] = el} type="text" inputMode="numeric" maxLength={1} value={digit} onChange={e => handleOtpChange(index, e.target.value)} onKeyDown={e => handleOtpKeyDown(index, e)} onPaste={index === 0 ? handleOtpPaste : undefined} disabled={loading} animate={otp.every(d => d) ? {
           scale: [1, 1.05, 1],
-          borderColor: ["#e5e7eb", "hsl(var(--accent))", "hsl(var(--accent))"]
+          borderColor: ["hsl(var(--border))", "hsl(var(--accent))", "hsl(var(--accent))"]
         } : {}} transition={{
           duration: 0.3,
           delay: index * 0.05
@@ -380,7 +380,7 @@ export const LoginForm = () => {
         opacity: 0.7
       }} animate={otp.every(d => d) ? {
         opacity: [0.7, 1, 0.7],
-        color: ["#6b7280", "#F4C542", "#6b7280"]
+        color: ["hsl(var(--muted-foreground))", "hsl(var(--accent-hover))", "hsl(var(--muted-foreground))"]
       } : {
         opacity: 0.7
       }} transition={{

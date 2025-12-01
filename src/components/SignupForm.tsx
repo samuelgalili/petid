@@ -492,7 +492,7 @@ export const SignupForm = () => {
                 disabled={loading}
                 animate={otp.every(d => d) ? {
                   scale: [1, 1.05, 1],
-                  borderColor: ["#e5e7eb", "hsl(var(--accent))", "hsl(var(--accent))"],
+                  borderColor: ["hsl(var(--border))", "hsl(var(--accent))", "hsl(var(--accent))"],
                 } : {}}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 className={`w-12 h-14 text-center text-2xl font-bold bg-gray-50/95 border-2 text-gray-900 rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_25px_rgba(0,0,0,0.2)] backdrop-blur-sm focus:outline-none ${
@@ -511,7 +511,7 @@ export const SignupForm = () => {
             initial={{ opacity: 0.7 }}
             animate={otp.every(d => d) ? {
               opacity: [0.7, 1, 0.7],
-              color: ["#6b7280", "hsl(var(--accent-hover))", "#6b7280"]
+              color: ["hsl(var(--muted-foreground))", "hsl(var(--accent-hover))", "hsl(var(--muted-foreground))"]
             } : { opacity: 0.7 }}
             transition={{ duration: 0.5 }}
             className="text-xs font-jakarta text-center"
