@@ -1,7 +1,7 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, UserPlus } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,8 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Virtuoso } from "react-virtuoso";
-import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
+import { toast } from "sonner";
 
 interface Post {
   id: string;
@@ -28,6 +27,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   is_liked: boolean;
+  is_saved: boolean;
 }
 
 const Feed = () => {
@@ -36,12 +36,13 @@ const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [newPostsAvailable, setNewPostsAvailable] = useState(false);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     
     try {
-      // Fetch posts with user profiles in a single query using joins
+      // Fetch posts with user profiles
       const { data: postsData, error: postsError } = await supabase
         .from("posts")
         .select(`
@@ -53,28 +54,29 @@ const Feed = () => {
           )
         `)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (postsError) throw postsError;
 
       if (postsData) {
-        // Get all post IDs for batch queries
         const postIds = postsData.map(p => p.id);
 
-        // Batch fetch likes count for all posts
+        // Batch fetch likes
         const { data: likesData } = await supabase
           .from("post_likes")
           .select("post_id")
           .in("post_id", postIds);
 
-        // Batch fetch comments count for all posts
+        // Batch fetch comments
         const { data: commentsData } = await supabase
           .from("post_comments")
           .select("post_id")
           .in("post_id", postIds);
 
-        // Batch fetch user's likes if authenticated
+        // Fetch user's likes and saves if authenticated
         let userLikes: string[] = [];
+        let userSaves: string[] = [];
+        
         if (user) {
           const { data: userLikesData } = await supabase
             .from("post_likes")
@@ -85,7 +87,7 @@ const Feed = () => {
           userLikes = userLikesData?.map(l => l.post_id) || [];
         }
 
-        // Count likes and comments per post
+        // Count likes and comments
         const likesCount = likesData?.reduce((acc: any, like: any) => {
           acc[like.post_id] = (acc[like.post_id] || 0) + 1;
           return acc;
@@ -96,7 +98,7 @@ const Feed = () => {
           return acc;
         }, {}) || {};
 
-        // Format posts with aggregated data
+        // Format posts
         const formattedPosts = postsData.map((post: any) => ({
           id: post.id,
           user_id: post.user_id,
@@ -111,12 +113,14 @@ const Feed = () => {
           likes_count: likesCount[post.id] || 0,
           comments_count: commentsCount[post.id] || 0,
           is_liked: userLikes.includes(post.id),
+          is_saved: userSaves.includes(post.id),
         }));
 
         setPosts(formattedPosts);
       }
     } catch (error: any) {
       console.error("Error fetching posts:", error);
+      toast.error("שגיאה בטעינת הפיד");
     } finally {
       setLoading(false);
     }
@@ -124,10 +128,33 @@ const Feed = () => {
 
   useEffect(() => {
     fetchPosts();
+
+    // Setup realtime subscription for new posts
+    const channel = supabase
+      .channel('posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts'
+        },
+        () => {
+          setNewPostsAvailable(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchPosts]);
 
   const handleLike = useCallback(async (postId: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error("יש להתחבר כדי לאהוב פוסטים");
+      return;
+    }
 
     const post = posts.find(p => p.id === postId);
     if (!post) return;
@@ -145,21 +172,15 @@ const Feed = () => {
 
     try {
       if (post.is_liked) {
-        // Unlike
-        const { error } = await supabase
+        await supabase
           .from("post_likes")
           .delete()
           .eq("post_id", postId)
           .eq("user_id", user.id);
-        
-        if (error) throw error;
       } else {
-        // Like
-        const { error } = await supabase
+        await supabase
           .from("post_likes")
           .insert({ post_id: postId, user_id: user.id });
-        
-        if (error) throw error;
       }
     } catch (error: any) {
       // Revert on error
@@ -168,9 +189,14 @@ const Feed = () => {
           ? { ...p, is_liked: post.is_liked, likes_count: post.likes_count }
           : p
       ));
-      console.error("Error toggling like:", error);
+      toast.error("שגיאה בעדכון הלייק");
     }
   }, [user, posts]);
+
+  const handleLoadNewPosts = () => {
+    setNewPostsAvailable(false);
+    fetchPosts();
+  };
 
   const getTimeAgo = useCallback((dateString: string) => {
     const date = new Date(dateString);
@@ -185,96 +211,128 @@ const Feed = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white pb-24" dir="rtl">
+    <div className="min-h-screen bg-[#F5F5F5] pb-24" dir="rtl">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-4">
+      <div className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] sticky top-0 z-10 px-4 py-4 shadow-md">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 font-jakarta">
-            רשת חיות המחמד
-          </h1>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-gray-900" />
+            <h1 className="text-2xl font-black text-gray-900 font-jakarta">
+              הפיד שלי
+            </h1>
+          </div>
           <Button 
-            variant="ghost" 
             size="icon"
-            className="rounded-full"
+            className="rounded-full bg-gray-900 hover:bg-gray-800 text-white shadow-lg w-12 h-12"
             onClick={() => setCreatePostOpen(true)}
           >
-            <Camera className="w-6 h-6 text-gray-700" />
+            <Plus className="w-6 h-6" />
           </Button>
         </div>
       </div>
 
+      {/* New Posts Banner */}
+      <AnimatePresence>
+        {newPostsAvailable && (
+          <motion.div
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            className="sticky top-[72px] z-10 px-4 py-3 bg-blue-500 text-white text-center cursor-pointer shadow-md"
+            onClick={handleLoadNewPosts}
+          >
+            <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
+              <TrendingUp className="w-5 h-5" />
+              <span className="font-bold font-jakarta">פוסטים חדשים זמינים - לחץ לטעינה</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Stories Bar */}
       <StoriesBar />
 
-      {/* Feed with Virtual Scrolling */}
+      {/* Feed */}
       <div className="max-w-2xl mx-auto">
         {loading ? (
           // Loading skeleton
-          <div>
+          <div className="space-y-4 px-4 py-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-white mb-1 border-b border-gray-100 p-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <Skeleton className="w-10 h-10 rounded-full" />
-                  <div className="space-y-2">
+              <div key={i} className="bg-white rounded-3xl shadow-md overflow-hidden">
+                <div className="flex items-center gap-3 p-4">
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
                     <Skeleton className="h-4 w-32" />
                     <Skeleton className="h-3 w-20" />
                   </div>
                 </div>
                 <Skeleton className="w-full aspect-square" />
-                <div className="mt-4 space-y-2">
-                  <Skeleton className="h-6 w-40" />
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-8 w-40" />
                   <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
                 </div>
               </div>
             ))}
           </div>
         ) : posts.length === 0 ? (
           // Empty state
-          <div className="text-center py-16 px-4">
-            <p className="text-gray-500 font-jakarta text-lg mb-4">
-              עדיין אין פוסטים
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-20 px-4"
+          >
+            <div className="w-32 h-32 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Camera className="w-16 h-16 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 font-jakarta mb-3">
+              אין פוסטים עדיין
+            </h3>
+            <p className="text-gray-500 font-jakarta text-base mb-6">
+              התחל לשתף תמונות וסיפורים של חיות המחמד שלך 🐕🐈
             </p>
-            <p className="text-gray-400 font-jakarta text-sm">
-              שתפו תמונות וסיפורים של חיות המחמד שלכם 🐕🐈
-            </p>
-          </div>
+            <Button
+              onClick={() => setCreatePostOpen(true)}
+              className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-bold shadow-lg"
+            >
+              <Plus className="w-5 h-5 ml-2" />
+              צור פוסט ראשון
+            </Button>
+          </motion.div>
         ) : (
-          <Virtuoso
-            style={{ height: 'calc(100vh - 280px)' }}
-            totalCount={posts.length}
-            overscan={2}
-            itemContent={(index) => {
-              const post = posts[index];
-              return (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white mb-1 border-b border-gray-100"
-                >
-                  {/* Post Header */}
-                  <div className="flex items-center justify-between p-4">
-                    <div 
-                      className="flex items-center gap-3 cursor-pointer"
-                      onClick={() => navigate(`/user/${post.user.id}`)}
-                    >
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={post.user.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white">
-                          {post.user.full_name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold text-gray-900 font-jakarta">{post.user.full_name}</p>
-                        <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
-                      </div>
+          <div className="space-y-4 px-4 py-4">
+            {posts.map((post, index) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white rounded-3xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+              >
+                {/* Post Header */}
+                <div className="flex items-center justify-between p-4">
+                  <div 
+                    className="flex items-center gap-3 cursor-pointer"
+                    onClick={() => navigate(`/user/${post.user.id}`)}
+                  >
+                    <Avatar className="w-12 h-12 ring-2 ring-gray-100">
+                      <AvatarImage src={post.user.avatar_url} />
+                      <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white font-black">
+                        {post.user.full_name?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-black text-gray-900 font-jakarta">{post.user.full_name}</p>
+                      <p className="text-sm text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
                     </div>
-                    <button className="text-gray-600 hover:text-gray-900">
-                      <span className="text-2xl">⋯</span>
-                    </button>
                   </div>
+                  <button className="text-gray-600 hover:text-gray-900 p-2">
+                    <span className="text-2xl">⋯</span>
+                  </button>
+                </div>
 
-                  {/* Post Image */}
+                {/* Post Image */}
+                <div className="relative">
                   <OptimizedImage
                     src={post.image_url}
                     alt={post.caption || "פוסט"}
@@ -283,61 +341,68 @@ const Feed = () => {
                     sizes="(max-width: 768px) 100vw, 672px"
                     onClick={() => navigate(`/post/${post.id}`)}
                   />
+                </div>
 
-                  {/* Post Actions */}
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-4">
-                        <button 
-                          onClick={() => handleLike(post.id)}
-                          className={`flex items-center gap-2 transition-colors ${
-                            post.is_liked ? 'text-red-500' : 'text-gray-700 hover:text-red-500'
-                          }`}
-                        >
-                          <Heart className={`w-6 h-6 ${post.is_liked ? 'fill-current' : ''}`} />
-                          <span className="font-semibold font-jakarta">{post.likes_count}</span>
-                        </button>
-                        <button 
-                          className="flex items-center gap-2 text-gray-700 hover:text-blue-500 transition-colors"
-                          onClick={() => navigate(`/post/${post.id}`)}
-                        >
-                          <MessageCircle className="w-6 h-6" />
-                          <span className="font-semibold font-jakarta">{post.comments_count}</span>
-                        </button>
-                        <button className="text-gray-700 hover:text-green-500 transition-colors">
-                          <Share2 className="w-6 h-6" />
-                        </button>
-                      </div>
-                      <button className="text-gray-700 hover:text-yellow-500 transition-colors">
-                        <Bookmark className="w-6 h-6" />
-                      </button>
+                {/* Post Actions */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-5">
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center gap-2 transition-colors ${
+                          post.is_liked ? 'text-red-500' : 'text-gray-700'
+                        }`}
+                      >
+                        <Heart className={`w-7 h-7 ${post.is_liked ? 'fill-current' : ''}`} />
+                        {post.likes_count > 0 && (
+                          <span className="font-black font-jakarta">{post.likes_count}</span>
+                        )}
+                      </motion.button>
+                      
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        className="flex items-center gap-2 text-gray-700"
+                        onClick={() => navigate(`/post/${post.id}`)}
+                      >
+                        <MessageCircle className="w-7 h-7" />
+                        {post.comments_count > 0 && (
+                          <span className="font-black font-jakarta">{post.comments_count}</span>
+                        )}
+                      </motion.button>
+                      
+                      <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        className="text-gray-700"
+                      >
+                        <Share2 className="w-7 h-7" />
+                      </motion.button>
                     </div>
+                    <motion.button 
+                      whileTap={{ scale: 0.9 }}
+                      className={`${post.is_saved ? 'text-yellow-500' : 'text-gray-700'}`}
+                    >
+                      <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} />
+                    </motion.button>
+                  </div>
 
-                    {/* Liked by */}
-                    {post.likes_count > 0 && (
-                      <div className="mb-2">
-                        <p className="text-sm text-gray-900 font-jakarta">
-                          אהבו על ידי{" "}
-                          <span className="font-semibold cursor-pointer hover:underline">
-                            {post.user.full_name}
-                          </span>
-                          {post.likes_count > 1 && (
-                            <>
-                              {" "}ועוד{" "}
-                              <span className="font-semibold">
-                                {post.likes_count - 1}
-                              </span>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    )}
+                  {/* Liked by */}
+                  {post.likes_count > 0 && (
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-900 font-jakarta">
+                        <span className="font-black">
+                          {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
+                        </span>
+                      </p>
+                    </div>
+                  )}
 
-                    {/* Post Caption */}
+                  {/* Post Caption */}
+                  {post.caption && (
                     <div className="mb-2">
                       <p className="text-gray-900 font-jakarta">
                         <span 
-                          className="font-semibold cursor-pointer hover:underline"
+                          className="font-black cursor-pointer hover:underline"
                           onClick={() => navigate(`/user/${post.user.id}`)}
                         >
                           {post.user.full_name}
@@ -345,43 +410,38 @@ const Feed = () => {
                         {post.caption}
                       </p>
                     </div>
+                  )}
 
-                    {/* View Comments */}
-                    {post.comments_count > 0 && (
-                      <button 
-                        className="text-gray-500 text-sm font-jakarta hover:text-gray-700"
-                        onClick={() => navigate(`/post/${post.id}`)}
-                      >
-                        הצג את כל {post.comments_count} התגובות
-                      </button>
-                    )}
-
-                    {/* Time ago */}
-                    <p className="text-xs text-gray-400 font-jakarta mt-1">
-                      {getTimeAgo(post.created_at)}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            }}
-          />
+                  {/* View Comments */}
+                  {post.comments_count > 0 && (
+                    <button 
+                      className="text-gray-500 text-sm font-jakarta hover:text-gray-700 font-semibold"
+                      onClick={() => navigate(`/post/${post.id}`)}
+                    >
+                      הצג את כל {post.comments_count} התגובות
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Empty State Hint */}
-      <div className="text-center py-8 px-4">
-        <p className="text-gray-500 font-jakarta text-sm">
-          שתפו תמונות וסיפורים של חיות המחמד שלכם 🐕🐈
-        </p>
-      </div>
+      {/* Bottom Hint */}
+      {!loading && posts.length > 0 && (
+        <div className="text-center py-8 px-4">
+          <p className="text-gray-400 font-jakarta text-sm">
+            הגעת לסוף הפיד
+          </p>
+        </div>
+      )}
 
       <CreatePostDialog
         open={createPostOpen}
         onOpenChange={setCreatePostOpen}
         onPostCreated={fetchPosts}
       />
-
-      <PushNotificationPrompt />
 
       <BottomNav />
     </div>
