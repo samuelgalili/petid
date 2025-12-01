@@ -9,7 +9,6 @@ interface QuickAction {
   icon: LucideIcon;
   title: string;
   path: string;
-  bgColor: string;
 }
 
 interface QuickActionsProps {
