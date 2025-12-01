@@ -115,7 +115,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
             className="fixed top-0 left-0 h-full w-[85vw] max-w-md bg-white z-[101] overflow-y-auto shadow-2xl"
           >
             {/* Header - Enhanced Golden Gradient */}
-            <div className="bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] p-6 pb-10 relative overflow-hidden">
+            <div className="bg-gradient-primary p-6 pb-10 relative overflow-hidden">
               {/* Decorative circles */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -143,15 +143,15 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     className="flex items-center gap-4"
                   >
                     <div className="relative">
-                      <Avatar className="w-16 h-16 border-3 border-white shadow-xl ring-2 ring-yellow-400/50">
+                      <Avatar className="w-16 h-16 border-3 border-white shadow-xl ring-2 ring-primary/50">
                         <AvatarImage src={profile?.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-gray-900 to-gray-700 text-white font-black text-xl">
+                        <AvatarFallback className="bg-gradient-secondary text-white font-black text-xl">
                           {profile?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <button
                         onClick={() => setIsImageEditorOpen(true)}
-                        className="absolute bottom-0 right-0 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95"
+                        className="absolute bottom-0 right-0 w-7 h-7 bg-secondary rounded-full flex items-center justify-center shadow-lg hover:bg-secondary-dark transition-all hover:scale-110 active:scale-95"
                       >
                         <Camera className="w-3.5 h-3.5 text-white" />
                       </button>
@@ -199,12 +199,12 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
                       <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
                     </div>
                     <span className="text-gray-900 font-bold font-jakarta">הוספת חיית מחמד</span>
                   </div>
-                  <PawPrint className="w-6 h-6 text-[#FF6B6B] group-hover:scale-110 transition-transform" />
+                  <PawPrint className="w-6 h-6 text-error group-hover:scale-110 transition-transform" />
                 </button>
               </motion.section>
 
@@ -220,10 +220,10 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98] relative"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center relative">
+                    <div className="w-10 h-10 bg-warning rounded-full flex items-center justify-center relative">
                       <Bell className="w-5 h-5 text-white" />
                       {unreadNotifications > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse ring-2 ring-white">
+                        <span className="absolute -top-1 -right-1 bg-error text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse ring-2 ring-white">
                           {unreadNotifications}
                         </span>
                       )}
@@ -238,7 +238,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center">
                       <ShoppingCart className="w-5 h-5 text-white" />
                     </div>
                     <span className="text-gray-900 font-bold font-jakarta">עגלת קניות</span>
@@ -264,7 +264,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all flex items-center justify-between group hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
                       <Star className="w-5 h-5 text-white" />
                     </div>
                     <span className="text-gray-900 font-bold font-jakarta">תגמולים ונקודות</span>
@@ -307,7 +307,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     onClick={() => handleNavigation("/insurance")}
                     className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center mx-auto mb-2">
                       <Shield className="w-5 h-5 text-white" />
                     </div>
                     <p className="text-sm font-bold text-gray-900 text-center font-jakarta">ביטוח</p>
@@ -317,7 +317,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     onClick={() => handleNavigation("/adoption")}
                     className="bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all group hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <div className="w-10 h-10 bg-error rounded-full flex items-center justify-center mx-auto mb-2">
                       <Heart className="w-5 h-5 text-white" />
                     </div>
                     <p className="text-sm font-bold text-gray-900 text-center font-jakarta">אימוץ</p>
