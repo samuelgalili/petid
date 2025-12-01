@@ -1,4 +1,4 @@
-import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff } from "lucide-react";
+import { ChevronLeft, User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff, Palette } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -177,6 +177,13 @@ const Settings = () => {
           label: t("settings.about"),
           description: t("settings.aboutDesc"),
           action: () => {},
+          type: "link",
+        },
+        {
+          icon: Palette,
+          label: "מערכת צבעים",
+          description: "הצג את מערכת הצבעים והטוקנים הסמנטיים",
+          action: () => navigate("/color-system"),
           type: "link",
         },
       ],
