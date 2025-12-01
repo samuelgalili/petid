@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { PointsProvider } from "@/contexts/PointsContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { GameProvider } from "@/contexts/GameContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
 import { Header } from "@/components/Header";
@@ -57,6 +58,7 @@ import Notifications from "./pages/Notifications";
 const Training = lazy(() => import("./pages/Training"));
 import Grooming from "./pages/Grooming";
 import ColorSystemShowcase from "./pages/ColorSystemShowcase";
+import Onboarding from "./pages/Onboarding";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -79,6 +81,7 @@ const AnimatedRoutes = () => {
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
         <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
+        <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
         <Route path="/add-pet" element={<ProtectedRoute><PageTransition><AddPet /></PageTransition></ProtectedRoute>} />
         <Route path="/home" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="עמוד הבית"><Home /></PageErrorBoundary></PageTransition></ProtectedRoute>} />
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
@@ -131,15 +134,17 @@ const App = () => (
             <PetPreferenceProvider>
               <GuestProvider>
                 <PointsProvider>
-                  <CartProvider>
-                    <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <BrowserRouter>
-                        <AnimatedRoutes />
-                      </BrowserRouter>
-                    </TooltipProvider>
-                  </CartProvider>
+                  <GameProvider>
+                    <CartProvider>
+                      <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <BrowserRouter>
+                          <AnimatedRoutes />
+                        </BrowserRouter>
+                      </TooltipProvider>
+                    </CartProvider>
+                  </GameProvider>
                 </PointsProvider>
               </GuestProvider>
             </PetPreferenceProvider>
