@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { 
   ShieldCheck, 
   Check, 
@@ -43,6 +42,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import BottomNav from "@/components/BottomNav";
+import { AppHeader } from "@/components/AppHeader";
 
 interface InsurancePlan {
   name: string;
@@ -54,7 +54,6 @@ interface InsurancePlan {
 }
 
 const Insurance = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [claimFormData, setClaimFormData] = useState({
@@ -134,38 +133,16 @@ const Insurance = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-b from-blue-50 to-white">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white px-6 pt-8 pb-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-        <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-white/10 rounded-full blur-3xl"></div>
-        
-        <div className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 mb-6"
-          >
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-              <ShieldCheck className="w-9 h-9 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-extrabold font-jakarta mb-1">Pet Insurance</h1>
-              <p className="text-blue-100 text-sm font-jakarta">Protect your furry friends</p>
-            </div>
-          </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-blue-50 font-jakarta text-base leading-relaxed"
-          >
-            Comprehensive coverage for accidents, illness, and wellness care. Because your pet deserves the best protection.
-          </motion.p>
-        </div>
-      </div>
+    <div className="min-h-screen pb-20 bg-background">
+      <AppHeader 
+        title="ביטוח חיות מחמד" 
+        showBackButton={true}
+        showMenuButton={false}
+        extraAction={{
+          icon: ShieldCheck,
+          onClick: () => {}
+        }}
+      />
 
       {/* Tabs for Navigation */}
       <div className="px-4 -mt-6 relative z-20">

@@ -10,6 +10,7 @@ import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { AppHeader } from "@/components/AppHeader";
 
 interface Trainer {
   id: string;
@@ -137,17 +138,20 @@ const Training = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20" dir="rtl">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-6 pb-4 sticky top-0 z-20 shadow-sm">
-        <h1 className="text-3xl font-black text-gray-900 mb-4 font-jakarta">אילוף כלבים</h1>
-
+    <div className="min-h-screen bg-muted pb-20" dir="rtl">
+      <AppHeader 
+        title="אילוף כלבים" 
+        showBackButton={true}
+        showMenuButton={false}
+      />
+      
+      <div className="px-4 pt-4">
         {/* Search Bar */}
         <div className="relative mb-4">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             placeholder="חיפוש מאלפים, קורסים או טיפים..."
-            className="pr-10 rounded-full bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white"
+            className="pr-10 rounded-full bg-card border-border text-foreground placeholder:text-muted-foreground focus:bg-card"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -155,17 +159,17 @@ const Training = () => {
 
         {/* Tabs */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-100 rounded-full p-1">
-            <TabsTrigger value="trainers" className="rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-muted rounded-full p-1">
+            <TabsTrigger value="trainers" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
               מאלפים
             </TabsTrigger>
-            <TabsTrigger value="courses" className="rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="courses" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
               קורסים
             </TabsTrigger>
-            <TabsTrigger value="tips" className="rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="tips" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
               טיפים
             </TabsTrigger>
-            <TabsTrigger value="videos" className="rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="videos" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
               סרטונים
             </TabsTrigger>
           </TabsList>

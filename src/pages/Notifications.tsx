@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Bell, Check, Trash2, X } from "lucide-react";
+import { Bell, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useAuth } from "@/hooks/useAuth";
+import { AppHeader } from "@/components/AppHeader";
+import BottomNav from "@/components/BottomNav";
 
 const Notifications = () => {
   const { toast } = useToast();
@@ -130,39 +132,20 @@ const Notifications = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-20">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#FFD700] via-[#FFED4E] to-[#FFC107] p-6 pb-8 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md">
-              <Bell className="w-6 h-6 text-gray-900" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-gray-900">התראות</h1>
-              {unreadCount > 0 && (
-                <p className="text-sm font-bold text-gray-700">{unreadCount} התראות חדשות</p>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="rounded-full hover:bg-white/20"
-          >
-            <X className="w-6 h-6 text-gray-900" />
-          </Button>
-        </div>
-        
-        {notifications.some(n => !n.is_read) && (
-          <Button
-            onClick={markAllAsRead}
-            className="bg-white text-gray-900 hover:bg-gray-100 rounded-full font-bold shadow-md"
-          >
-            <Check className="w-5 h-5 ml-2" />
-            סמן הכל כנקרא
-          </Button>
+    <div className="min-h-screen bg-muted pb-20" dir="rtl">
+      <AppHeader 
+        title="התראות" 
+        showBackButton={true}
+        showMenuButton={false}
+        extraAction={notifications.some(n => !n.is_read) ? {
+          icon: Check,
+          onClick: markAllAsRead
+        } : undefined}
+      />
+      
+      <div className="px-4 pt-4">
+        {unreadCount > 0 && (
+          <p className="text-sm font-bold text-muted-foreground mb-4">{unreadCount} התראות חדשות</p>
         )}
       </div>
 
@@ -232,6 +215,8 @@ const Notifications = () => {
           ))
         )}
       </div>
+
+      <BottomNav />
     </div>
   );
 };

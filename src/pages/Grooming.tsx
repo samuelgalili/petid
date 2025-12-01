@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, MapPin, Star, Clock, Phone, Calendar, ChevronLeft, Scissors } from "lucide-react";
+import { Search, MapPin, Star, Clock, Phone, Calendar, Scissors } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
+import { AppHeader } from "@/components/AppHeader";
+import BottomNav from "@/components/BottomNav";
 
 interface GroomingSalon {
   id: string;
@@ -33,7 +34,6 @@ interface Pet {
 }
 
 const Grooming = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [salons, setSalons] = useState<GroomingSalon[]>([]);
   const [filteredSalons, setFilteredSalons] = useState<GroomingSalon[]>([]);
@@ -194,42 +194,33 @@ const Grooming = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[#FFD700] via-[#FFED4E] to-[#FFC107] p-6 pb-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-          <span className="font-semibold font-jakarta">חזרה</span>
-        </button>
-        
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
-            <Scissors className="w-6 h-6 text-[#FFD700]" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 font-jakarta">מספרות לחיות מחמד</h1>
-            <p className="text-sm text-gray-800 font-jakarta">מצא את המספרה המושלמת</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background pb-24">
+      <AppHeader 
+        title="מספרות לחיות מחמד" 
+        showBackButton={true}
+        showMenuButton={false}
+        extraAction={{
+          icon: Scissors,
+          onClick: () => {}
+        }}
+      />
 
+      <div className="px-4 pt-4">
         {/* Search and Filter */}
-        <div className="space-y-3">
+        <div className="space-y-3 mb-6">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
               placeholder="חיפוש מספרה..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10 bg-white rounded-2xl border-none shadow-md font-jakarta"
+              className="pr-10 bg-card rounded-2xl border-border shadow-md font-jakarta"
             />
           </div>
 
           <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="bg-white rounded-2xl border-none shadow-md font-jakarta">
+            <SelectTrigger className="bg-card rounded-2xl border-border shadow-md font-jakarta">
               <SelectValue placeholder="כל הערים" />
             </SelectTrigger>
             <SelectContent>
@@ -245,8 +236,8 @@ const Grooming = () => {
       </div>
 
       {/* Results */}
-      <div className="p-4">
-        <p className="text-sm text-gray-600 mb-4 font-jakarta">
+      <div className="px-4 pb-4">
+        <p className="text-sm text-muted-foreground mb-4 font-jakarta">
           נמצאו {filteredSalons.length} מספרות
         </p>
 
@@ -348,11 +339,13 @@ const Grooming = () => {
 
         {filteredSalons.length === 0 && (
           <div className="text-center py-12">
-            <Scissors className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 font-jakarta">לא נמצאו מספרות התואמות את החיפוש</p>
+            <Scissors className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground font-jakarta">לא נמצאו מספרות התואמות את החיפוש</p>
           </div>
         )}
       </div>
+
+      <BottomNav />
 
       {/* Booking Dialog */}
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
