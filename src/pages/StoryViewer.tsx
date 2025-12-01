@@ -214,7 +214,7 @@ const StoryViewer = () => {
         {stories.map((_, index) => (
           <div key={index} className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
             <motion.div
-              className="h-full bg-gradient-to-r from-[#FFD700] to-[#FFC107] shadow-lg"
+              className="h-full bg-gradient-primary shadow-lg"
               initial={{ width: "0%" }}
               animate={{
                 width: index < currentIndex ? "100%" : index === currentIndex ? `${progress}%` : "0%",
@@ -231,10 +231,10 @@ const StoryViewer = () => {
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate(`/user/${currentStory.user.id}`)}
         >
-          <div className="p-[2px] rounded-full bg-gradient-to-tr from-[#FFD700] to-[#FFC107]">
+          <div className="p-[2px] rounded-full bg-gradient-primary">
             <Avatar className="w-12 h-12 ring-2 ring-black">
               <AvatarImage src={currentStory.user.avatar_url} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black">
+              <AvatarFallback className="bg-gradient-secondary text-white font-black">
                 {currentStory.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
@@ -251,11 +251,11 @@ const StoryViewer = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 rounded-full shadow-lg relative"
+              className="bg-accent hover:bg-accent-hover text-text-inverse rounded-full shadow-lg relative"
               onClick={() => setShowViewersDialog(true)}
             >
               <Eye className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-black rounded-full flex items-center justify-center shadow-md">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white text-xs font-black rounded-full flex items-center justify-center shadow-md">
                 {viewersCount}
               </span>
             </Button>
@@ -265,7 +265,7 @@ const StoryViewer = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 rounded-full shadow-lg"
+              className="bg-accent hover:bg-accent-hover text-text-inverse rounded-full shadow-lg"
               onClick={() => setShowReplyDialog(true)}
             >
               <MessageCircle className="w-5 h-5" />
@@ -277,7 +277,7 @@ const StoryViewer = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full shadow-lg"
+                className="bg-secondary hover:bg-secondary-dark text-white rounded-full shadow-lg"
                 onClick={() => setShowHighlightDialog(true)}
               >
                 <Bookmark className="w-5 h-5" />
@@ -345,7 +345,7 @@ const StoryViewer = () => {
           animate={{ opacity: 1, x: 0 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-[#FFD700] to-[#FFC107] text-gray-900 rounded-full shadow-2xl transition-all"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-accent hover:bg-accent-hover text-text-inverse rounded-full shadow-2xl transition-all"
           onClick={handlePrevious}
         >
           <ChevronRight className="w-8 h-8" />
@@ -357,7 +357,7 @@ const StoryViewer = () => {
         animate={{ opacity: 1, x: 0 }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-gradient-to-r from-[#FFD700] to-[#FFC107] text-gray-900 rounded-full shadow-2xl transition-all"
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 flex items-center justify-center bg-accent hover:bg-accent-hover text-text-inverse rounded-full shadow-2xl transition-all"
         onClick={handleNext}
       >
         <ChevronLeft className="w-8 h-8" />

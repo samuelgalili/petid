@@ -391,7 +391,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                     חזור
                   </Button>
                   <Button
-                    className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-black font-jakarta rounded-2xl shadow-lg"
+                    className="flex-1 bg-accent hover:bg-accent-hover text-text-inverse font-black font-jakarta rounded-2xl shadow-lg"
                     onClick={handleCreateStory}
                     disabled={uploading}
                   >
@@ -454,7 +454,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                     </Button>
                   )}
                   <Button
-                    className="flex-1 bg-gradient-to-r from-[#FFD700] to-[#FFC107] hover:from-[#FFC107] hover:to-[#FFB700] text-gray-900 font-black font-jakarta rounded-2xl shadow-lg"
+                    className="flex-1 bg-accent hover:bg-accent-hover text-text-inverse font-black font-jakarta rounded-2xl shadow-lg"
                     onClick={handleCreateStory}
                     disabled={uploading}
                   >
@@ -494,22 +494,22 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
               
               <Button
                 variant="outline"
-                className="h-44 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-gradient-to-br hover:from-yellow-50 hover:to-amber-50 rounded-3xl shadow-sm hover:shadow-xl transition-all group"
+                className="h-44 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-300 hover:border-accent hover:bg-gradient-to-br hover:from-yellow-50 hover:to-amber-50 rounded-3xl shadow-sm hover:shadow-xl transition-all group"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-[#FFD700] group-hover:to-[#FFC107] flex items-center justify-center transition-all">
-                  <ImageIcon className="w-8 h-8 text-gray-600 group-hover:text-gray-900 transition-colors" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-accent group-hover:to-accent-hover flex items-center justify-center transition-all">
+                  <ImageIcon className="w-8 h-8 text-gray-600 group-hover:text-text-inverse transition-colors" />
                 </div>
                 <span className="text-sm font-black text-gray-900 font-jakarta">בחר מהגלריה</span>
               </Button>
 
               <Button
                 variant="outline"
-                className="h-44 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-300 hover:border-[#FFD700] hover:bg-gradient-to-br hover:from-yellow-50 hover:to-amber-50 rounded-3xl shadow-sm hover:shadow-xl transition-all group"
+                className="h-44 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-300 hover:border-accent hover:bg-gradient-to-br hover:from-yellow-50 hover:to-amber-50 rounded-3xl shadow-sm hover:shadow-xl transition-all group"
                 onClick={() => cameraInputRef.current?.click()}
               >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-[#FFD700] group-hover:to-[#FFC107] flex items-center justify-center transition-all">
-                  <Camera className="w-8 h-8 text-gray-600 group-hover:text-gray-900 transition-colors" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-accent group-hover:to-accent-hover flex items-center justify-center transition-all">
+                  <Camera className="w-8 h-8 text-gray-600 group-hover:text-text-inverse transition-colors" />
                 </div>
                 <span className="text-sm font-black text-gray-900 font-jakarta">צלם תמונה</span>
               </Button>
