@@ -110,12 +110,12 @@ const Home = () => {
 
   // Wallet Achievements System
   const walletAchievements = [
-    { id: 1, name: "מתחיל חסכן", threshold: 10, icon: "🌱", color: "from-green-400 to-emerald-500", description: "צברת ₪10 בחיסכון" },
-    { id: 2, name: "חוסך מתמיד", threshold: 50, icon: "💚", color: "from-green-500 to-teal-500", description: "צברת ₪50 בחיסכון" },
-    { id: 3, name: "חוסך מקצועי", threshold: 100, icon: "⭐", color: "from-yellow-400 to-orange-500", description: "צברת ₪100 בחיסכון" },
-    { id: 4, name: "מומחה חיסכון", threshold: 250, icon: "🏆", color: "from-orange-500 to-red-500", description: "צברת ₪250 בחיסכון" },
-    { id: 5, name: "אלוף החיסכון", threshold: 500, icon: "👑", color: "from-purple-500 to-pink-500", description: "צברת ₪500 בחיסכון" },
-    { id: 6, name: "אגדת החיסכון", threshold: 1000, icon: "💎", color: "from-blue-500 to-purple-600", description: "צברת ₪1000 בחיסכון" }
+    { id: 1, name: "מתחיל חסכן", threshold: 10, icon: "🌱", color: "from-success to-success-dark", description: "צברת ₪10 בחיסכון" },
+    { id: 2, name: "חוסך מתמיד", threshold: 50, icon: "💚", color: "from-success-dark to-primary", description: "צברת ₪50 בחיסכון" },
+    { id: 3, name: "חוסך מקצועי", threshold: 100, icon: "⭐", color: "from-warning to-accent", description: "צברת ₪100 בחיסכון" },
+    { id: 4, name: "מומחה חיסכון", threshold: 250, icon: "🏆", color: "from-accent to-error", description: "צברת ₪250 בחיסכון" },
+    { id: 5, name: "אלוף החיסכון", threshold: 500, icon: "👑", color: "from-secondary to-secondary-light", description: "צברת ₪500 בחיסכון" },
+    { id: 6, name: "אגדת החיסכון", threshold: 1000, icon: "💎", color: "from-primary to-secondary", description: "צברת ₪1000 בחיסכון" }
   ];
 
   // Confetti effects
@@ -131,11 +131,11 @@ const Home = () => {
       });
     }
     
-    fire(0.25, { spread: 26, startVelocity: 55, colors: ['#7DD3C0', '#FBD66A', '#FFE8D6', '#E8F5E8'] });
-    fire(0.2, { spread: 60, colors: ['#6BC4AD', '#F4C542', '#FFE5F0', '#B8E3D5'] });
-    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ['#7DD3C0', '#FBD66A', '#FFE8D6'] });
-    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ['#6BC4AD', '#F4C542'] });
-    fire(0.1, { spread: 120, startVelocity: 45, colors: ['#7DD3C0', '#E8F5E8'] });
+    fire(0.25, { spread: 26, startVelocity: 55, colors: ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))'] });
+    fire(0.2, { spread: 60, colors: ['hsl(var(--primary-dark))', 'hsl(var(--accent-hover))', 'hsl(var(--secondary-light))', 'hsl(var(--success-light))'] });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--warning))'] });
+    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ['hsl(var(--primary-dark))', 'hsl(var(--accent-hover))'] });
+    fire(0.1, { spread: 120, startVelocity: 45, colors: ['hsl(var(--primary))', 'hsl(var(--success))'] });
   }, []);
 
   // Fetch user's pets and profile
