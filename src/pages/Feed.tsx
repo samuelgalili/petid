@@ -1,7 +1,7 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ import { StoriesBar } from "@/components/StoriesBar";
 import { toast } from "sonner";
 import { PostCard } from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PostCardErrorBoundary } from "@/components/PostCardErrorBoundary";
 
 interface Post {
   id: string;
@@ -35,18 +36,31 @@ const Feed = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
   const [doubleTapLike, setDoubleTapLike] = useState<string | null>(null);
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const [followingIds, setFollowingIds] = useState<string[]>([]);
+  const [page, setPage] = useState(0);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  
+  const POSTS_PER_PAGE = 10;
 
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
+  const fetchPosts = useCallback(async (pageNum: number, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setPage(0);
+      setHasMore(true);
+    }
     
     try {
       // Fetch following IDs if user is authenticated
-      if (user) {
+      if (user && !append) {
         const { data: followingData } = await supabase
           .from("user_follows")
           .select("following_id")
@@ -68,11 +82,16 @@ const Feed = () => {
           )
         `)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .range(pageNum * POSTS_PER_PAGE, (pageNum + 1) * POSTS_PER_PAGE - 1);
 
       if (postsError) throw postsError;
 
-      if (postsData) {
+      // Check if we have more posts
+      if (!postsData || postsData.length < POSTS_PER_PAGE) {
+        setHasMore(false);
+      }
+
+      if (postsData && postsData.length > 0) {
         const postIds = postsData.map(p => p.id);
 
         // Batch fetch likes
@@ -141,20 +160,31 @@ const Feed = () => {
           };
         });
 
-        setPosts(formattedPosts);
+        if (append) {
+          setPosts(prev => [...prev, ...formattedPosts]);
+        } else {
+          setPosts(formattedPosts);
+        }
+      } else if (!append) {
+        setPosts([]);
       }
     } catch (error: any) {
       console.error("Error fetching posts:", error);
       toast.error("שגיאה בטעינת הפיד");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [user]);
+  }, [user, POSTS_PER_PAGE]);
 
   useEffect(() => {
-    fetchPosts();
+    fetchPosts(0, false);
 
     // Setup realtime subscription for new posts
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+    
     const channel = supabase
       .channel('posts-changes')
       .on(
@@ -170,10 +200,40 @@ const Feed = () => {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [fetchPosts]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore && hasMore && posts.length > 0) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchPosts(nextPage, true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [loadingMore, hasMore, posts.length, page, fetchPosts]);
 
   const handleLike = useCallback(async (postId: string) => {
     if (!user) {
@@ -181,22 +241,32 @@ const Feed = () => {
       return;
     }
 
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+    let previousState: { is_liked: boolean; likes_count: number } | null = null;
 
-    // Optimistic update
-    setPosts(posts.map(p =>
-      p.id === postId
-        ? { 
-            ...p, 
-            is_liked: !p.is_liked, 
-            likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 
-          }
-        : p
-    ));
+    // Optimistic update using functional setState
+    setPosts(prevPosts => {
+      const post = prevPosts.find(p => p.id === postId);
+      if (!post) return prevPosts;
+      
+      // Store previous state for potential revert
+      previousState = {
+        is_liked: post.is_liked,
+        likes_count: post.likes_count,
+      };
+
+      return prevPosts.map(p =>
+        p.id === postId
+          ? { 
+              ...p, 
+              is_liked: !p.is_liked, 
+              likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 
+            }
+          : p
+      );
+    });
 
     try {
-      if (post.is_liked) {
+      if (previousState?.is_liked) {
         await supabase
           .from("post_likes")
           .delete()
@@ -208,15 +278,19 @@ const Feed = () => {
           .insert({ post_id: postId, user_id: user.id });
       }
     } catch (error: any) {
-      // Revert on error
-      setPosts(posts.map(p =>
-        p.id === postId
-          ? { ...p, is_liked: post.is_liked, likes_count: post.likes_count }
-          : p
-      ));
+      // Revert on error using functional setState
+      if (previousState) {
+        setPosts(prevPosts =>
+          prevPosts.map(p =>
+            p.id === postId
+              ? { ...p, is_liked: previousState!.is_liked, likes_count: previousState!.likes_count }
+              : p
+          )
+        );
+      }
       toast.error("שגיאה בעדכון הלייק");
     }
-  }, [user, posts]);
+  }, [user]);
   
   const handleSave = useCallback(async (postId: string) => {
     if (!user) {
@@ -224,16 +298,23 @@ const Feed = () => {
       return;
     }
 
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+    let previousIsSaved: boolean | null = null;
 
-    // Optimistic update
-    setPosts(posts.map(p =>
-      p.id === postId ? { ...p, is_saved: !p.is_saved } : p
-    ));
+    // Optimistic update using functional setState
+    setPosts(prevPosts => {
+      const post = prevPosts.find(p => p.id === postId);
+      if (!post) return prevPosts;
+      
+      // Store previous state for potential revert
+      previousIsSaved = post.is_saved;
+
+      return prevPosts.map(p =>
+        p.id === postId ? { ...p, is_saved: !p.is_saved } : p
+      );
+    });
 
     try {
-      if (post.is_saved) {
+      if (previousIsSaved) {
         await supabase
           .from("saved_posts")
           .delete()
@@ -247,29 +328,39 @@ const Feed = () => {
         toast.success("הפוסט נשמר בהצלחה");
       }
     } catch (error: any) {
-      // Revert on error
-      setPosts(posts.map(p =>
-        p.id === postId ? { ...p, is_saved: post.is_saved } : p
-      ));
+      // Revert on error using functional setState
+      if (previousIsSaved !== null) {
+        setPosts(prevPosts =>
+          prevPosts.map(p =>
+            p.id === postId ? { ...p, is_saved: previousIsSaved! } : p
+          )
+        );
+      }
       toast.error("שגיאה בשמירת הפוסט");
     }
-  }, [user, posts]);
+  }, [user]);
   
   const handleDoubleTap = useCallback((postId: string) => {
-    const post = posts.find(p => p.id === postId);
-    if (!post || post.is_liked) return;
-    
-    // Show animation
-    setDoubleTapLike(postId);
-    setTimeout(() => setDoubleTapLike(null), 1000);
-    
-    // Trigger like
-    handleLike(postId);
-  }, [posts, handleLike]);
+    setPosts(prevPosts => {
+      const post = prevPosts.find(p => p.id === postId);
+      if (!post || post.is_liked) return prevPosts;
+      
+      // Show animation
+      setDoubleTapLike(postId);
+      setTimeout(() => setDoubleTapLike(null), 1000);
+      
+      // Trigger like
+      handleLike(postId);
+      
+      return prevPosts;
+    });
+  }, [handleLike]);
 
   const handleLoadNewPosts = () => {
     setNewPostsAvailable(false);
-    fetchPosts();
+    setPage(0);
+    setHasMore(true);
+    fetchPosts(0, false);
   };
 
   const getTimeAgo = useCallback((dateString: string) => {
@@ -394,23 +485,36 @@ const Feed = () => {
         ) : (
           <div className="space-y-4 px-4 py-4">
             {filteredPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                currentUserId={user?.id}
-                onLike={handleLike}
-                onSave={handleSave}
-                onDoubleTap={handleDoubleTap}
-                showDoubleTapAnimation={doubleTapLike === post.id}
-                getTimeAgo={getTimeAgo}
-              />
+              <PostCardErrorBoundary key={post.id}>
+                <PostCard
+                  post={post}
+                  currentUserId={user?.id}
+                  onLike={handleLike}
+                  onSave={handleSave}
+                  onDoubleTap={handleDoubleTap}
+                  showDoubleTapAnimation={doubleTapLike === post.id}
+                  getTimeAgo={getTimeAgo}
+                />
+              </PostCardErrorBoundary>
             ))}
+            
+            {/* Infinite Scroll Observer Target */}
+            {hasMore && (
+              <div ref={observerTarget} className="py-8 text-center">
+                {loadingMore && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                    <span className="text-gray-500 font-jakarta text-sm">טוען עוד פוסטים...</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
 
       {/* Bottom Hint */}
-      {!loading && filteredPosts.length > 0 && (
+      {!loading && !hasMore && filteredPosts.length > 0 && (
         <div className="text-center py-8 px-4">
           <p className="text-gray-400 font-jakarta text-sm">
             הגעת לסוף הפיד
@@ -421,7 +525,11 @@ const Feed = () => {
       <CreatePostDialog
         open={createPostOpen}
         onOpenChange={setCreatePostOpen}
-        onPostCreated={fetchPosts}
+        onPostCreated={() => {
+          setPage(0);
+          setHasMore(true);
+          fetchPosts(0, false);
+        }}
       />
 
       <BottomNav />
