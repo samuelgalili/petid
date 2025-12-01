@@ -70,7 +70,7 @@ const BottomNav = () => {
                     transition={{ duration: ANIMATION_DURATION.fast }}
                     className="w-16 h-16 rounded-full bg-accent flex items-center justify-center shadow-[0_4px_20px_rgba(251,214,106,0.4)] mb-1 ring-2 ring-accent/20"
                   >
-                    <MessageCircle className="w-7 h-7 text-error stroke-[2.5]" />
+                    <MessageCircle className="w-7 h-7 text-error" strokeWidth={1.5} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -79,10 +79,13 @@ const BottomNav = () => {
                     transition={{ duration: ANIMATION_DURATION.fast }}
                     className="relative"
                   >
-                    <Icon className={cn(
-                      "w-6 h-6 transition-all",
-                      isActive ? "stroke-[2.5] text-foreground" : "stroke-[2] text-muted-foreground"
-                    )} />
+                    <Icon 
+                      className={cn(
+                        "w-5 h-5 transition-all",
+                        isActive ? "text-[#1F2A44]" : "text-[#333333]"
+                      )} 
+                      strokeWidth={1.5}
+                    />
                     {/* Active indicator dot */}
                     {isActive && (
                       <motion.div
@@ -96,7 +99,7 @@ const BottomNav = () => {
                 
                 <span className={cn(
                   "text-[9px] font-medium font-jakarta transition-colors text-center leading-tight",
-                  item.isCenter ? "text-foreground font-bold" : (isActive ? "text-foreground" : "text-muted-foreground")
+                  item.isCenter ? "text-foreground font-bold" : (isActive ? "text-[#1F2A44]" : "text-[#333333]")
                 )}>
                   {item.label}
                 </span>
