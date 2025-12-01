@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { memo } from "react";
 
 interface PetCardProps {
   pet: any;
@@ -10,7 +11,7 @@ interface PetCardProps {
   onLongPressEnd: () => void;
 }
 
-export const PetCard = ({ 
+export const PetCard = memo(({ 
   pet, 
   index, 
   isNewPet, 
@@ -127,14 +128,23 @@ export const PetCard = ({
       </div>
     </motion.div>
   );
-};
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.pet.id === nextProps.pet.id &&
+    prevProps.isNewPet === nextProps.isNewPet &&
+    prevProps.pet.name === nextProps.pet.name &&
+    prevProps.pet.breed === nextProps.pet.breed &&
+    prevProps.pet.avatar_url === nextProps.pet.avatar_url &&
+    prevProps.pet.birth_date === nextProps.pet.birth_date
+  );
+});
 
 interface AddPetCardProps {
   index: number;
   onAddPet: () => void;
 }
 
-export const AddPetCard = ({ index, onAddPet }: AddPetCardProps) => {
+export const AddPetCard = memo(({ index, onAddPet }: AddPetCardProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -155,4 +165,4 @@ export const AddPetCard = ({ index, onAddPet }: AddPetCardProps) => {
       </div>
     </motion.div>
   );
-};
+});
