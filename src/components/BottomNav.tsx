@@ -31,7 +31,7 @@ const BottomNav = () => {
   const navItems = [
     { icon: Home, label: "בית", path: "/home" },
     { icon: ShoppingBag, label: "חנות", path: "/shop" },
-    { icon: Users, label: "רשת חברתית", path: "/feed" },
+    { icon: Users, label: "רשת חברתית", path: "/profile" },
     { 
       icon: Grid3x3, 
       label: "אפשרויות", 
