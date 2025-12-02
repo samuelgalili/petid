@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Heart, MessageCircle, Grid3x3, Settings, PawPrint, Award, TrendingUp, Calendar } from "lucide-react";
+import { ArrowRight, Heart, MessageCircle, Grid3x3, Settings, PawPrint, Award, TrendingUp, Calendar, Plus, MoreVertical, Share2, Send, Sparkles, Play, Video, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,14 @@ import { FollowersDialog } from "@/components/FollowersDialog";
 import { HighlightsSection } from "@/components/HighlightsSection";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
+import { toast } from "sonner";
 
 interface UserProfile {
   id: string;
   full_name: string;
   avatar_url: string;
   email: string;
+  bio: string | null;
 }
 
 interface Post {
@@ -309,28 +311,51 @@ const UserProfile = () => {
 
       {/* Profile Info */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* Profile Header */}
-        <div className="flex items-start gap-6 mb-6">
-          <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-gradient-instagram p-[3px] shadow-lg">
-            <Avatar className="w-full h-full ring-2 ring-white">
-              <AvatarImage src={profile.avatar_url} />
-              <AvatarFallback className="text-3xl bg-gradient-instagram text-white font-black">
-                {profile.full_name?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+        {/* Profile Header with Avatar and Stats */}
+        <div className="flex items-start gap-6 mb-4">
+          {/* Avatar */}
+          <div className="flex-shrink-0">
+            <div className="relative">
+              <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden ring-1 ring-gray-200">
+                <Avatar className="w-full h-full">
+                  <AvatarImage src={profile.avatar_url} />
+                  <AvatarFallback className="text-2xl bg-gray-200 text-gray-600 font-black">
+                    {profile.full_name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              {isOwnProfile && (
+                <button className="absolute bottom-0 right-0 w-6 h-6 bg-[#0095F6] rounded-full flex items-center justify-center shadow-md border-2 border-white">
+                  <Plus className="w-4 h-4 text-white" />
+                </button>
+              )}
+            </div>
           </div>
 
+          {/* Stats */}
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-semibold text-gray-900 font-jakarta mb-4 truncate">
-              {profile.full_name}
-            </h2>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 font-jakarta truncate">
+                {profile.full_name}
+              </h2>
+              {isOwnProfile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/settings")}
+                  className="rounded-full w-8 h-8"
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+              )}
+            </div>
             
-            <div className="flex justify-around mb-4">
+            <div className="flex justify-start gap-8 mb-4">
               <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900 font-jakarta">
+                <div className="text-base font-semibold text-gray-900 font-jakarta">
                   {posts.length}
                 </div>
-                <div className="text-sm text-gray-600 font-jakarta">פוסטים</div>
+                <div className="text-sm text-gray-600 font-jakarta">posts</div>
               </div>
               <div 
                 className="text-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -339,10 +364,10 @@ const UserProfile = () => {
                   setFollowersDialogOpen(true);
                 }}
               >
-                <div className="text-lg font-semibold text-gray-900 font-jakarta">
-                  {followStats.followers}
+                <div className="text-base font-semibold text-gray-900 font-jakarta">
+                  {followStats.followers.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600 font-jakarta">עוקבים</div>
+                <div className="text-sm text-gray-600 font-jakarta">followers</div>
               </div>
               <div 
                 className="text-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -351,46 +376,106 @@ const UserProfile = () => {
                   setFollowersDialogOpen(true);
                 }}
               >
-                <div className="text-lg font-semibold text-gray-900 font-jakarta">
-                  {followStats.following}
+                <div className="text-base font-semibold text-gray-900 font-jakarta">
+                  {followStats.following.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600 font-jakarta">נעקבים</div>
+                <div className="text-sm text-gray-600 font-jakarta">following</div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Biography */}
+        {profile.bio && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-900 font-jakarta whitespace-pre-wrap">
+              {profile.bio}
+            </p>
+          </div>
+        )}
+
+        {/* Professional Dashboard - Only for own profile */}
+        {isOwnProfile && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-200"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 font-jakarta">Professional dashboard</p>
+                  <p className="text-xs text-gray-600 font-jakarta">New tools are now available.</p>
+                </div>
+              </div>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Action Buttons */}
         {!isOwnProfile && (
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-4">
             <Button
               onClick={handleFollowToggle}
-              className={`flex-1 font-jakarta font-bold ${
+              className={`flex-1 font-jakarta font-bold rounded-lg h-9 ${
                 isFollowing
                   ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                  : "bg-gradient-instagram text-white hover:opacity-90"
+                  : "bg-[#0095F6] text-white hover:bg-[#0082d9]"
               }`}
             >
-              {isFollowing ? "עוקב" : "עקוב"}
+              {isFollowing ? "Following" : "Follow"}
             </Button>
             <Button
               onClick={() => navigate(`/messages/${userId}`)}
               variant="outline"
-              className="flex-1 font-jakarta font-bold"
+              className="flex-1 font-jakarta font-bold rounded-lg h-9"
             >
-              שלח הודעה
+              Message
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-lg h-9 w-9"
+              onClick={() => toast.info("Share profile coming soon")}
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-lg h-9 w-9"
+            >
+              <MoreVertical className="w-4 h-4" />
             </Button>
           </div>
         )}
         
         {isOwnProfile && (
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-4">
             <Button
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/edit-profile')}
               variant="outline"
-              className="flex-1 font-jakarta"
+              className="flex-1 font-jakarta font-bold rounded-lg h-9"
             >
-              ערוך פרופיל
+              Edit profile
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 font-jakarta font-bold rounded-lg h-9"
+              onClick={() => toast.info("Share profile coming soon")}
+            >
+              Share profile
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-lg h-9 w-9"
+            >
+              <User className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -398,52 +483,32 @@ const UserProfile = () => {
         {/* Highlights Section */}
         <HighlightsSection userId={userId!} isOwnProfile={isOwnProfile} />
 
-        {/* Statistics Section */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          <div className="bg-gradient-to-br from-instagram-pink/10 to-instagram-purple/10 rounded-2xl p-4 text-center shadow-md">
-            <Heart className="w-5 h-5 text-instagram-pink mx-auto mb-2" />
-            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.totalLikes}</p>
-            <p className="text-xs text-gray-600 font-jakarta">לייקים</p>
-          </div>
-          <div className="bg-gradient-to-br from-instagram-purple/10 to-instagram-pink/10 rounded-2xl p-4 text-center shadow-md">
-            <MessageCircle className="w-5 h-5 text-instagram-purple mx-auto mb-2" />
-            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.totalComments}</p>
-            <p className="text-xs text-gray-600 font-jakarta">תגובות</p>
-          </div>
-          <div className="bg-gradient-to-br from-instagram-orange/10 to-instagram-pink/10 rounded-2xl p-4 text-center shadow-md">
-            <PawPrint className="w-5 h-5 text-instagram-orange mx-auto mb-2" />
-            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">{userStats.petsCount}</p>
-            <p className="text-xs text-gray-600 font-jakarta">חיות</p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 text-center shadow-md">
-            <Calendar className="w-5 h-5 text-purple-600 mx-auto mb-2" />
-            <p className="text-xl font-black text-gray-900 font-jakarta mb-1">
-              {userStats.joinedDate ? new Date(userStats.joinedDate).getFullYear() : "---"}
-            </p>
-            <p className="text-xs text-gray-600 font-jakarta">הצטרף</p>
-          </div>
-        </div>
-
-        {/* Posts Grid */}
-        <Tabs defaultValue="posts" className="mt-2">
-          <TabsList className="w-full grid grid-cols-3 font-jakarta border-t border-gray-200 bg-transparent rounded-none h-12">
+        {/* Content Tabs - Instagram Style */}
+        <Tabs defaultValue="posts" className="mt-4">
+          <TabsList className="w-full grid grid-cols-4 font-jakarta border-t border-gray-200 bg-transparent rounded-none h-12">
             <TabsTrigger 
               value="posts" 
-              className="gap-2 data-[state=active]:border-t-2 data-[state=active]:border-gray-900 rounded-none"
+              className="gap-1 data-[state=active]:border-t-[1.5px] data-[state=active]:border-gray-900 rounded-none"
             >
-              <Grid3x3 className="w-5 h-5" />
+              <Grid3x3 className="w-6 h-6" strokeWidth={1.5} />
+            </TabsTrigger>
+            <TabsTrigger 
+              value="reels" 
+              className="gap-1 data-[state=active]:border-t-[1.5px] data-[state=active]:border-gray-900 rounded-none"
+            >
+              <Video className="w-6 h-6" strokeWidth={1.5} />
             </TabsTrigger>
             <TabsTrigger 
               value="pets" 
-              className="gap-2 data-[state=active]:border-t-2 data-[state=active]:border-gray-900 rounded-none"
+              className="gap-1 data-[state=active]:border-t-[1.5px] data-[state=active]:border-gray-900 rounded-none"
             >
-              <PawPrint className="w-5 h-5" />
+              <PawPrint className="w-6 h-6" strokeWidth={1.5} />
             </TabsTrigger>
             <TabsTrigger 
-              value="saved" 
-              className="gap-2 data-[state=active]:border-t-2 data-[state=active]:border-gray-900 rounded-none"
+              value="tagged" 
+              className="gap-1 data-[state=active]:border-t-[1.5px] data-[state=active]:border-gray-900 rounded-none"
             >
-              <Heart className="w-5 h-5" />
+              <User className="w-6 h-6" strokeWidth={1.5} />
             </TabsTrigger>
           </TabsList>
 
@@ -537,6 +602,22 @@ const UserProfile = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="reels" className="mt-4">
+            <div className="text-center py-12">
+              <Video className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-jakarta text-lg font-semibold mb-2">Share your moments</p>
+              <p className="text-gray-400 font-jakarta text-sm">Reels you share will appear here</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tagged" className="mt-4">
+            <div className="text-center py-12">
+              <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-jakarta text-lg font-semibold mb-2">Photos and videos of you</p>
+              <p className="text-gray-400 font-jakarta text-sm">When people tag you in photos and videos, they'll appear here</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="saved" className="mt-4">
