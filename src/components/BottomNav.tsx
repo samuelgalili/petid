@@ -36,6 +36,34 @@ const BottomNav = () => {
   const socialRoutes = ['/feed', '/user/', '/post/', '/story/', '/highlight/', '/messages', '/profile'];
   const isSocialPage = socialRoutes.some(route => location.pathname.startsWith(route));
 
+  // Play notification sound using Web Audio API
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Create a pleasant notification tone
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+      oscillator.frequency.setValueAtTime(1047, audioContext.currentTime + 0.1); // C6 note
+      
+      oscillator.type = 'sine';
+      
+      // Fade in and out for a softer sound
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.log('Could not play notification sound:', error);
+    }
+  };
+
   // Fetch unread notifications count with realtime updates
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
@@ -52,9 +80,10 @@ const BottomNav = () => {
 
       const newCount = count || 0;
       
-      // Trigger pulse animation if count increased (not on initial load)
+      // Trigger pulse animation and sound if count increased (not on initial load)
       if (!isInitial && newCount > prevCountRef.current) {
         setIsPulsing(true);
+        playNotificationSound();
         setTimeout(() => setIsPulsing(false), 1000);
       }
       
