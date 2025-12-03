@@ -194,6 +194,11 @@ const Shop = () => {
       quantity: quantity,
     });
 
+    // Play success sound
+    const audio = new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_805cb46880.mp3');
+    audio.volume = 0.3;
+    audio.play().catch(() => {}); // Ignore errors if autoplay is blocked
+
     // Trigger confetti animation
     confetti({
       particleCount: 80,
