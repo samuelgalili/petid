@@ -1,7 +1,7 @@
 import { Home, ShoppingBag, Users, Grid3x3, MessageCircle, Mail, User, Newspaper, Bell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { buttonTap, ANIMATION_DURATION } from "@/lib/animations";
 import { getAccessibleLinkProps, TAP_TARGET } from "@/lib/accessibility";
@@ -29,6 +29,8 @@ const BottomNav = () => {
   const location = useLocation();
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isPulsing, setIsPulsing] = useState(false);
+  const prevCountRef = useRef(0);
 
   // Check if we're on social network pages
   const socialRoutes = ['/feed', '/user/', '/post/', '/story/', '/highlight/', '/messages', '/profile'];
@@ -38,7 +40,7 @@ const BottomNav = () => {
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    const fetchUnreadCount = async () => {
+    const fetchUnreadCount = async (isInitial = false) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
@@ -48,12 +50,21 @@ const BottomNav = () => {
         .eq('user_id', user.id)
         .eq('is_read', false);
 
-      setUnreadCount(count || 0);
+      const newCount = count || 0;
+      
+      // Trigger pulse animation if count increased (not on initial load)
+      if (!isInitial && newCount > prevCountRef.current) {
+        setIsPulsing(true);
+        setTimeout(() => setIsPulsing(false), 1000);
+      }
+      
+      prevCountRef.current = newCount;
+      setUnreadCount(newCount);
       return user.id;
     };
 
     const setupRealtime = async () => {
-      const userId = await fetchUnreadCount();
+      const userId = await fetchUnreadCount(true);
       if (!userId) return;
 
       // Subscribe to realtime changes on notifications table
@@ -69,7 +80,7 @@ const BottomNav = () => {
           },
           () => {
             // Refetch count on any change
-            fetchUnreadCount();
+            fetchUnreadCount(false);
           }
         )
         .subscribe();
@@ -153,9 +164,24 @@ const BottomNav = () => {
                   />
                   {/* Badge for unread count */}
                   {item.badge && item.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                    <motion.span 
+                      className={cn(
+                        "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center",
+                        isPulsing && item.path === '/notifications' && "animate-pulse"
+                      )}
+                      initial={false}
+                      animate={isPulsing && item.path === '/notifications' ? {
+                        scale: [1, 1.3, 1],
+                        boxShadow: [
+                          "0 0 0 0 rgba(239, 68, 68, 0)",
+                          "0 0 0 8px rgba(239, 68, 68, 0.3)",
+                          "0 0 0 0 rgba(239, 68, 68, 0)"
+                        ]
+                      } : {}}
+                      transition={{ duration: 0.6, repeat: isPulsing ? 2 : 0 }}
+                    >
                       {item.badge > 99 ? '99+' : item.badge}
-                    </span>
+                    </motion.span>
                   )}
                   {isActive && (
                     <motion.div
