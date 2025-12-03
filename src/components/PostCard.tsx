@@ -145,14 +145,63 @@ export const PostCard = ({
   const { isFollowing, toggleFollow } = useFollow(post.user_id);
   const [isLicking, setIsLicking] = useState(false);
 
+  // Play lick sound using Web Audio API
+  const playLickSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Create a "slurp/lick" sound with multiple oscillators
+      const oscillator1 = audioContext.createOscillator();
+      const oscillator2 = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      
+      // Setup filter for wet sound
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, audioContext.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(2000, audioContext.currentTime + 0.1);
+      filter.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.2);
+      
+      oscillator1.connect(filter);
+      oscillator2.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Sweeping frequency for lick effect
+      oscillator1.type = 'sine';
+      oscillator1.frequency.setValueAtTime(300, audioContext.currentTime);
+      oscillator1.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.08);
+      oscillator1.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+      
+      oscillator2.type = 'triangle';
+      oscillator2.frequency.setValueAtTime(150, audioContext.currentTime);
+      oscillator2.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+      
+      // Volume envelope
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+      
+      oscillator1.start(audioContext.currentTime);
+      oscillator2.start(audioContext.currentTime);
+      oscillator1.stop(audioContext.currentTime + 0.2);
+      oscillator2.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Could not play lick sound:', error);
+    }
+  };
+
   const handleLike = () => {
     setIsLicking(true);
+    playLickSound();
     onLike(post.id);
     setTimeout(() => setIsLicking(false), 500);
   };
 
   const handleDoubleTap = () => {
     setIsLicking(true);
+    playLickSound();
     onDoubleTap(post.id);
     setTimeout(() => setIsLicking(false), 500);
   };
