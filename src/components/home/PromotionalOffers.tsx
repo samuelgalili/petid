@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Sparkles } from "lucide-react";
+import Autoplay from "embla-carousel-autoplay";
+import { useRef } from "react";
 
 interface PromotionalOffer {
   id: string;
@@ -22,6 +23,9 @@ interface PromotionalOffersProps {
 
 export const PromotionalOffers = ({ offers }: PromotionalOffersProps) => {
   const navigate = useNavigate();
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
+  );
 
   if (offers.length === 0) return null;
 
@@ -34,8 +38,10 @@ export const PromotionalOffers = ({ offers }: PromotionalOffersProps) => {
       <Carousel
         opts={{
           align: "start",
-          loop: true
+          loop: true,
+          direction: "rtl"
         }}
+        plugins={[autoplayPlugin.current]}
         className="w-full"
       >
         <CarouselContent className="-ml-3">
