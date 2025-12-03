@@ -358,7 +358,7 @@ const UserProfile = () => {
                 <div className="text-base font-semibold text-gray-900 font-jakarta">
                   {posts.length}
                 </div>
-                <div className="text-sm text-gray-600 font-jakarta">posts</div>
+                <div className="text-sm text-gray-600 font-jakarta">פוסטים</div>
               </div>
               <div 
                 className="text-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -370,7 +370,7 @@ const UserProfile = () => {
                 <div className="text-base font-semibold text-gray-900 font-jakarta">
                   {followStats.followers.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600 font-jakarta">followers</div>
+                <div className="text-sm text-gray-600 font-jakarta">עוקבים</div>
               </div>
               <div 
                 className="text-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -382,7 +382,7 @@ const UserProfile = () => {
                 <div className="text-base font-semibold text-gray-900 font-jakarta">
                   {followStats.following.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600 font-jakarta">following</div>
+                <div className="text-sm text-gray-600 font-jakarta">נעקבים</div>
               </div>
             </div>
           </div>
@@ -410,8 +410,8 @@ const UserProfile = () => {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-gray-900 font-jakarta">Professional dashboard</p>
-                  <p className="text-xs text-gray-600 font-jakarta">New tools are now available.</p>
+                  <p className="text-sm font-bold text-gray-900 font-jakarta">לוח מקצועי</p>
+                  <p className="text-xs text-gray-600 font-jakarta">כלים חדשים זמינים כעת.</p>
                 </div>
               </div>
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -430,20 +430,21 @@ const UserProfile = () => {
                   : "bg-[#0095F6] text-white hover:bg-[#0082d9]"
               }`}
             >
-              {isFollowing ? "Following" : "Follow"}
+              {isFollowing ? "עוקב" : "עקוב"}
             </Button>
             <Button
               onClick={() => navigate(`/messages/${userId}`)}
               variant="outline"
               className="flex-1 font-jakarta font-bold rounded-lg h-9"
             >
-              Message
+              הודעה
             </Button>
             <Button
               variant="outline"
               size="icon"
               className="rounded-lg h-9 w-9"
-              onClick={() => toast.info("Share profile coming soon")}
+              onClick={() => toast.info("שיתוף פרופיל בקרוב")}
+              aria-label="שתף פרופיל"
             >
               <Send className="w-4 h-4" />
             </Button>
@@ -451,6 +452,7 @@ const UserProfile = () => {
               variant="outline"
               size="icon"
               className="rounded-lg h-9 w-9"
+              aria-label="אפשרויות נוספות"
             >
               <MoreVertical className="w-4 h-4" />
             </Button>
@@ -464,19 +466,20 @@ const UserProfile = () => {
               variant="outline"
               className="flex-1 font-jakarta font-bold rounded-lg h-9"
             >
-              Edit profile
+              ערוך פרופיל
             </Button>
             <Button
               variant="outline"
               className="flex-1 font-jakarta font-bold rounded-lg h-9"
-              onClick={() => toast.info("Share profile coming soon")}
+              onClick={() => toast.info("שיתוף פרופיל בקרוב")}
             >
-              Share profile
+              שתף פרופיל
             </Button>
             <Button
               variant="outline"
               size="icon"
               className="rounded-lg h-9 w-9"
+              aria-label="הוסף חשבון"
             >
               <User className="w-4 h-4" />
             </Button>
