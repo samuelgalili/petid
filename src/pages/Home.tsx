@@ -33,6 +33,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { WalletCard } from "@/components/home/WalletCard";
+import { ProductCarousel } from "@/components/home/ProductCarousel";
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -51,6 +53,7 @@ const Home = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userName, setUserName] = useState<string>("חבר");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(127.50);
   const [dailyTasks, setDailyTasks] = useState([
     { id: 1, title: "הליכה של 20 דקות", icon: "🚶", completed: false },
     { id: 2, title: "שתיית מים טריים", icon: "💧", completed: false },
@@ -61,6 +64,14 @@ const Home = () => {
   const { toast } = useToast();
   const { streak, updateStreak } = useGame();
   const { totalPoints } = usePoints();
+
+  // Wallet achievements
+  const walletAchievements = [
+    { id: 1, name: "מתחיל", threshold: 50, icon: "🌱", color: "from-green-400 to-green-500", description: "חסכת ₪50" },
+    { id: 2, name: "חוסך", threshold: 100, icon: "💰", color: "from-blue-400 to-blue-500", description: "חסכת ₪100" },
+    { id: 3, name: "מומחה", threshold: 200, icon: "⭐", color: "from-purple-400 to-purple-500", description: "חסכת ₪200" },
+    { id: 4, name: "אלוף", threshold: 500, icon: "👑", color: "from-yellow-400 to-orange-500", description: "חסכת ₪500" },
+  ];
 
   // Quick Actions - Updated with consistent icon set
   const quickActions = [
@@ -243,37 +254,12 @@ const Home = () => {
           </button>
         </motion.div>
 
-        {/* Points Card - Clean & Minimal */}
-        {totalPoints > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-          >
-            <Card className="p-4 rounded-xl border border-border bg-surface shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Star className="w-5 h-5 text-primary" strokeWidth={1.5} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">נקודות זמינות</p>
-                    <p className="text-2xl font-semibold text-foreground">{totalPoints}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/rewards')}
-                  className="text-xs text-primary hover:text-primary/80"
-                >
-                  מימוש
-                  <ChevronRight className="w-4 h-4 mr-1" strokeWidth={1.5} />
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
-        )}
+        {/* Wallet Card - Sales Focus */}
+        <WalletCard 
+          walletBalance={walletBalance}
+          achievements={walletAchievements}
+          onNavigate={() => navigate('/rewards')}
+        />
 
         {/* Quick Actions - Minimal Icons */}
         <motion.div
@@ -418,6 +404,9 @@ const Home = () => {
             </Card>
           </motion.div>
         )}
+
+        {/* Product Carousel - Sales Focus */}
+        <ProductCarousel />
 
         {/* Statistics - Minimal Grid */}
         <motion.div
