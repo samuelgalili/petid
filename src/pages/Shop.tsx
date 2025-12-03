@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, DollarSign, Tag } from "lucide-react";
+import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, DollarSign, Tag, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -628,11 +628,23 @@ const Shop = () => {
           {selectedProduct && (
             <div className="flex flex-col h-full" dir="rtl">
               <div className="flex-1 overflow-y-auto pb-32">
-                {/* Petid Logo */}
-                <div className="flex justify-center pt-6 pb-6 sticky top-0 bg-white z-10">
+                {/* Petid Logo + Info Button */}
+                <div className="flex items-center justify-between pt-6 pb-6 sticky top-0 bg-white z-10 px-4">
+                  <div className="w-10" /> {/* Spacer for centering */}
                   <div className="bg-[#FFC107] px-8 py-2.5 rounded-xl shadow-lg">
                     <span className="text-2xl font-bold text-gray-900 font-jakarta">Petid</span>
                   </div>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      navigate(`/product/${selectedProduct.id}`);
+                    }}
+                    className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                    aria-label="פרטי מוצר מלאים"
+                  >
+                    <Info className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+                  </motion.button>
                 </div>
 
                 {/* Product Image */}
