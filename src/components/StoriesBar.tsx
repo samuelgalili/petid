@@ -149,7 +149,7 @@ export const StoriesBar = () => {
                   <Plus className="w-4 h-4 text-white font-bold" strokeWidth={3} />
                 </motion.div>
               </div>
-              <span className="text-xs font-jakarta font-bold text-foreground">הסטורי שלך</span>
+              <span className="text-xs font-jakarta font-bold text-foreground">Petish Story</span>
             </motion.div>
           )}
 
@@ -210,7 +210,7 @@ export const StoriesBar = () => {
 
           {storyUsers.length === 0 && !user && (
             <div className="text-center py-6 w-full">
-              <p className="text-gray-500 font-jakarta text-sm font-semibold">אין סטוריז פעילים כרגע 📸</p>
+              <p className="text-gray-500 font-jakarta text-sm font-semibold">אין Petish Stories פעילים כרגע 📸</p>
             </div>
           )}
         </div>

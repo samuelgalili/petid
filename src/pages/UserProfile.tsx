@@ -281,7 +281,7 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen bg-white pb-24" dir="rtl">
-      {/* Header */}
+      {/* Petish Profile Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <Button
@@ -292,9 +292,12 @@ const UserProfile = () => {
           >
             <ArrowRight className="w-6 h-6" />
           </Button>
-          <h1 className="text-xl font-bold text-gray-900 font-jakarta">
-            {profile.full_name}
-          </h1>
+          <div className="text-center">
+            <span className="text-xs text-gray-500 font-medium">Petish Profile</span>
+            <h1 className="text-xl font-bold text-gray-900 font-jakarta">
+              {profile.full_name}
+            </h1>
+          </div>
           {isOwnProfile && (
             <Button
               variant="ghost"
@@ -515,7 +518,7 @@ const UserProfile = () => {
           <TabsContent value="posts" className="mt-4">
             {posts.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 font-jakarta">אין פוסטים עדיין</p>
+                <p className="text-gray-500 font-jakarta">אין Petish Posts עדיין</p>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-1">
@@ -607,8 +610,8 @@ const UserProfile = () => {
           <TabsContent value="reels" className="mt-4">
             <div className="text-center py-12">
               <Video className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-jakarta text-lg font-semibold mb-2">Share your moments</p>
-              <p className="text-gray-400 font-jakarta text-sm">Reels you share will appear here</p>
+              <p className="text-gray-500 font-jakarta text-lg font-semibold mb-2">Share your Petish moments</p>
+              <p className="text-gray-400 font-jakarta text-sm">Petish Reels you share will appear here</p>
             </div>
           </TabsContent>
 
@@ -616,7 +619,7 @@ const UserProfile = () => {
             <div className="text-center py-12">
               <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 font-jakarta text-lg font-semibold mb-2">Photos and videos of you</p>
-              <p className="text-gray-400 font-jakarta text-sm">When people tag you in photos and videos, they'll appear here</p>
+              <p className="text-gray-400 font-jakarta text-sm">When people tag you in Petish posts, they'll appear here</p>
             </div>
           </TabsContent>
 
@@ -624,7 +627,7 @@ const UserProfile = () => {
             {isOwnProfile ? (
               savedPosts.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 font-jakarta">אין פוסטים שמורים</p>
+                  <p className="text-gray-500 font-jakarta">אין Petish Posts שמורים</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-1">
@@ -660,7 +663,7 @@ const UserProfile = () => {
               )
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 font-jakarta">רק הבעלים יכול לראות פוסטים שמורים</p>
+                <p className="text-gray-500 font-jakarta">רק הבעלים יכול לראות Petish Posts שמורים</p>
               </div>
             )}
           </TabsContent>
