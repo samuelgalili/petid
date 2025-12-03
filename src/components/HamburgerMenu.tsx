@@ -248,6 +248,12 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     to="/cart"
                   />
                   <SmartPanel.Item
+                    icon={Heart}
+                    label="מועדפים"
+                    value="המוצרים האהובים עליך"
+                    to="/favorites"
+                  />
+                  <SmartPanel.Item
                     icon={Package}
                     label="ההזמנות שלי"
                     value="עקוב אחר משלוחים"
