@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock } from "lucide-react";
+import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -19,38 +19,38 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState("Chicken & Rice");
-  const [selectedSize, setSelectedSize] = useState("2.5kg");
+  const [selectedVariant, setSelectedVariant] = useState("עוף ואורז");
+  const [selectedSize, setSelectedSize] = useState("2.5 ק״ג");
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   // Get product from location state or use default
   const product = location.state?.product || {
-    name: "Premium Dog Food",
-    subtitle: "Better health. Better taste. Happier pets.",
+    name: "מזון פרימיום לכלבים",
+    subtitle: "בריאות טובה יותר. טעם מעולה. חיות מחמד מאושרות.",
     price: "₪207.84",
     originalPrice: "₪259.80",
-    discount: "20% OFF",
+    discount: "20% הנחה",
     image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=600&h=600&fit=crop",
     color: "bg-[#B8E3D5]",
-    category: "intop-ribet",
-    description: "High-quality premium dog food made with natural ingredients. Perfect for all breeds and life stages. Contains essential vitamins, minerals, and proteins for optimal health.",
+    category: "מזון",
+    description: "מזון פרימיום איכותי לכלבים עשוי ממרכיבים טבעיים. מתאים לכל הגזעים ושלבי החיים. מכיל ויטמינים, מינרלים וחלבונים חיוניים לבריאות מיטבית.",
     rating: 4.8,
     reviewCount: 234,
   };
 
   const benefits = [
-    { icon: Sparkles, title: "Great for sensitive pets", description: "Gentle on stomach, easy to digest" },
-    { icon: Award, title: "Premium quality", description: "Fair price, exceptional ingredients" },
-    { icon: Truck, title: "Fresh delivery", description: "Delivered fresh to your home" },
-    { icon: Shield, title: "Vet-approved", description: "Trusted by veterinarians" },
-    { icon: Heart, title: "Boosts happiness", description: "Energy & joy in every bite" },
+    { icon: Sparkles, title: "מתאים לחיות רגישות", description: "עדין לקיבה, קל לעיכול" },
+    { icon: Award, title: "איכות פרימיום", description: "מחיר הוגן, רכיבים יוצאי דופן" },
+    { icon: Truck, title: "משלוח טרי", description: "נמסר טרי עד הבית" },
+    { icon: Shield, title: "מאושר ע״י וטרינרים", description: "מהימן על ידי וטרינרים" },
+    { icon: Heart, title: "משפר את האושר", description: "אנרגיה ושמחה בכל ביס" },
   ];
 
   const relatedProducts = [
-    { id: 1, name: "Dog Treats", price: "₪45.00", image: "https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=300&h=300&fit=crop" },
-    { id: 2, name: "Pet Vitamins", price: "₪89.00", image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop" },
-    { id: 3, name: "Dog Toy Set", price: "₪65.00", image: "https://images.unsplash.com/photo-1591769225440-811ad7d6eab3?w=300&h=300&fit=crop" },
-    { id: 4, name: "Pet Bowl", price: "₪55.00", image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop" },
+    { id: 1, name: "חטיפים לכלבים", price: "₪45.00", image: "https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=300&h=300&fit=crop" },
+    { id: 2, name: "ויטמינים לחיות", price: "₪89.00", image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop" },
+    { id: 3, name: "צעצועים לכלבים", price: "₪65.00", image: "https://images.unsplash.com/photo-1591769225440-811ad7d6eab3?w=300&h=300&fit=crop" },
+    { id: 4, name: "קערת אוכל", price: "₪55.00", image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop" },
   ];
 
   const images = [
@@ -62,29 +62,29 @@ const ProductDetail = () => {
   const reviews = [
     {
       id: 1,
-      author: "Sarah M.",
+      author: "שרה מ.",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
       rating: 5,
-      date: "2 weeks ago",
-      comment: "Amazing product! My dog absolutely loves it. The quality is exceptional and I've noticed a significant improvement in his coat.",
+      date: "לפני שבועיים",
+      comment: "מוצר מדהים! הכלב שלי פשוט מת על זה. האיכות יוצאת דופן ושמתי לב לשיפור משמעותי בפרווה שלו.",
       petImage: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300&h=300&fit=crop",
     },
     {
       id: 2,
-      author: "John D.",
+      author: "יוחנן ד.",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
       rating: 4,
-      date: "1 month ago",
-      comment: "Great value for money. My pet has been healthier since switching to this product. Highly recommend!",
+      date: "לפני חודש",
+      comment: "תמורה מעולה לכסף. חיית המחמד שלי בריאה יותר מאז שעברנו למוצר הזה. ממליץ בחום!",
       petImage: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&h=300&fit=crop",
     },
     {
       id: 3,
-      author: "Emily R.",
+      author: "אמילי ר.",
       avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emily",
       rating: 5,
-      date: "1 month ago",
-      comment: "Best purchase I've made for my pet. The ingredients are natural and my dog's energy levels have improved.",
+      date: "לפני חודש",
+      comment: "הרכישה הטובה ביותר שעשיתי עבור חיית המחמד שלי. הרכיבים טבעיים ורמות האנרגיה של הכלב שלי השתפרו.",
       petImage: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop",
     },
   ];
@@ -101,8 +101,8 @@ const ProductDetail = () => {
       size: selectedSize,
     });
     toast({
-      title: "Added to cart",
-      description: `${product.name} x${quantity} added successfully`,
+      title: "נוסף לעגלה",
+      description: `${product.name} x${quantity} נוסף בהצלחה`,
     });
   };
 
@@ -114,8 +114,8 @@ const ProductDetail = () => {
   const toggleWishlist = () => {
     setIsWishlisted(!isWishlisted);
     toast({
-      title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
-      description: isWishlisted ? `${product.name} removed` : `${product.name} saved for later`,
+      title: isWishlisted ? "הוסר מהמועדפים" : "נוסף למועדפים",
+      description: isWishlisted ? `${product.name} הוסר` : `${product.name} נשמר למועדפים`,
     });
   };
 
@@ -128,166 +128,169 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="min-h-screen pb-32 bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen pb-32 bg-gray-50" dir="rtl">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full hover:bg-gray-100"
+            className="rounded-full hover:bg-gray-100 w-10 h-10"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowRight className="w-5 h-5 text-gray-700" />
           </Button>
-          <h1 className="text-base font-bold font-jakarta text-gray-900">Product Details</h1>
+          <h1 className="text-base font-bold font-jakarta text-gray-900">פרטי מוצר</h1>
           <div className="flex items-center gap-1">
             <Button 
               variant="ghost" 
               size="icon"
-              className="rounded-full hover:bg-gray-100"
-              onClick={() => toast({ title: "Share", description: "Product link copied!" })}
+              className="rounded-full hover:bg-gray-100 w-10 h-10"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast({ title: "הקישור הועתק", description: "קישור למוצר הועתק ללוח" });
+              }}
             >
-              <Share2 className="w-4 h-4 text-gray-700" />
+              <Share2 className="w-5 h-5 text-gray-700" />
             </Button>
             <Button 
               variant="ghost" 
               size="icon"
-              className={`rounded-full hover:bg-gray-100 ${isWishlisted ? 'text-red-500' : 'text-gray-700'}`}
+              className={`rounded-full hover:bg-gray-100 w-10 h-10 transition-colors ${isWishlisted ? 'text-red-500' : 'text-gray-700'}`}
               onClick={toggleWishlist}
             >
-              <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
+              <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
             </Button>
           </div>
         </div>
       </header>
 
       {/* Product Images Gallery */}
-      <div className="bg-gradient-primary relative">
-        <div className="aspect-square max-w-2xl mx-auto relative overflow-hidden">
+      <div className="bg-white relative">
+        <div className="aspect-square max-w-lg mx-auto relative overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.img
               key={selectedImage}
               src={images[selectedImage]}
               alt={product.name}
               className="w-full h-full object-cover"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
             />
           </AnimatePresence>
+          
+          {/* Discount Badge */}
+          {product.discount && (
+            <div className="absolute top-4 right-4">
+              <Badge className="bg-red-500 text-white font-bold px-3 py-1.5 rounded-full text-sm shadow-lg">
+                <Percent className="w-3.5 h-3.5 ml-1" />
+                {product.discount}
+              </Badge>
+            </div>
+          )}
+          
           {images.length > 1 && (
             <>
               <button
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
+                onClick={nextImage}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-900" />
+                <ChevronLeft className="w-5 h-5 text-gray-700" />
               </button>
               <button
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
+                onClick={prevImage}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105"
               >
-                <ChevronRight className="w-5 h-5 text-gray-900" />
+                <ChevronRight className="w-5 h-5 text-gray-700" />
               </button>
             </>
           )}
+          
+          {/* Image Counter */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
+            {selectedImage + 1} / {images.length}
+          </div>
         </div>
+        
         {/* Image Thumbnails */}
-        <div className="flex gap-2 justify-center py-3 px-4">
+        <div className="flex gap-2 justify-center py-4 px-4">
           {images.map((img, idx) => (
             <button
               key={idx}
               onClick={() => setSelectedImage(idx)}
-              className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
+              className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
                 selectedImage === idx
-                  ? "border-foreground scale-110 shadow-md"
-                  : "border-background/50 opacity-60 hover:opacity-80"
+                  ? "border-accent ring-2 ring-accent/30 scale-105"
+                  : "border-gray-200 opacity-70 hover:opacity-100"
               }`}
             >
               <img src={img} alt="" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
-        
-        {/* Trust Badges */}
-        <div className="flex justify-center gap-3 pb-4 px-4">
-          <Badge className="bg-background/90 text-foreground border-none shadow-sm font-jakarta text-xs">
-            <Check className="w-3 h-3 mr-1" />
-            Pet Owner Recommended
-          </Badge>
-          <Badge className="bg-background/90 text-foreground border-none shadow-sm font-jakarta text-xs">
-            <Shield className="w-3 h-3 mr-1" />
-            100% Secure
-          </Badge>
-        </div>
       </div>
 
       {/* Product Info */}
-      <div className="px-4 py-5 space-y-5">
+      <div className="px-4 py-5 space-y-5 bg-white mt-2 rounded-t-3xl -mt-4 relative z-10">
         {/* Title & Price */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.1 }}
         >
-          <h1 className="text-2xl font-bold mb-1 text-gray-900 font-jakarta leading-tight">{product.name}</h1>
-          <p className="text-sm text-gray-600 mb-3 font-jakarta">{product.subtitle}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-900 font-jakarta leading-tight mb-1">{product.name}</h1>
+              <p className="text-sm text-gray-500 font-jakarta">{product.subtitle}</p>
+            </div>
+            <div className="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full">
+              <Star className="w-4 h-4 fill-warning text-warning" />
+              <span className="font-bold text-gray-900 font-jakarta text-sm">{product.rating}</span>
+              <span className="text-gray-500 text-xs font-jakarta">({product.reviewCount})</span>
+            </div>
+          </div>
           
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-baseline gap-3 mt-4">
             <span className="text-3xl font-bold text-gray-900 font-jakarta">{product.price}</span>
             {product.originalPrice && (
-              <>
-                <span className="text-lg text-gray-400 line-through font-jakarta">{product.originalPrice}</span>
-                <Badge className="bg-accent text-gray-900 hover:bg-accent font-jakarta text-xs">
-                  {product.discount}
-                </Badge>
-              </>
+              <span className="text-lg text-gray-400 line-through font-jakarta">{product.originalPrice}</span>
             )}
           </div>
           
-          <div className="flex items-center gap-4 text-sm mb-3">
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-4 h-4 ${
-                    i < Math.floor(product.rating)
-                      ? "fill-warning text-warning"
-                      : "fill-gray-200 text-gray-200"
-                  }`}
-                />
-              ))}
-              <span className="font-semibold text-gray-900 ml-1 font-jakarta">{product.rating}</span>
-              <span className="text-gray-600 font-jakarta">({product.reviewCount})</span>
+          <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-1.5 text-sm text-gray-600 bg-green-50 px-3 py-1.5 rounded-full">
+              <Truck className="w-4 h-4 text-green-600" />
+              <span className="font-jakarta text-green-700">משלוח חינם מעל ₪199</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-sm text-gray-600 bg-blue-50 px-3 py-1.5 rounded-full">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <span className="font-jakarta text-blue-700">2-4 ימי עסקים</span>
             </div>
           </div>
-
-          <p className="text-xs text-gray-600 font-jakarta flex items-center gap-1">
-            <Truck className="w-3 h-3" />
-            Fast delivery across Israel 🐾
-          </p>
         </motion.div>
+
+        <Separator className="bg-gray-100" />
 
         {/* Variant Selectors */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-3"
+          transition={{ delay: 0.2 }}
+          className="space-y-4"
         >
           <div>
-            <label className="text-sm font-semibold mb-2 block text-gray-900 font-jakarta">Flavor</label>
+            <label className="text-sm font-bold mb-3 block text-gray-900 font-jakarta">בחר טעם</label>
             <div className="flex gap-2 flex-wrap">
-              {["Chicken & Rice", "Beef & Vegetables", "Salmon & Sweet Potato"].map((variant) => (
+              {["עוף ואורז", "בקר וירקות", "סלמון ובטטה"].map((variant) => (
                 <button
                   key={variant}
                   onClick={() => setSelectedVariant(variant)}
-                  className={`px-4 py-2 rounded-lg text-sm font-jakarta transition-all ${
+                  className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all ${
                     selectedVariant === variant
-                      ? "bg-secondary text-foreground font-semibold shadow-md"
-                      : "bg-background border border-border text-foreground hover:border-border-light"
+                      ? "bg-accent text-gray-900 font-bold shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   {variant}
@@ -297,16 +300,16 @@ const ProductDetail = () => {
           </div>
 
           <div>
-            <label className="text-sm font-semibold mb-2 block text-gray-900 font-jakarta">Size</label>
+            <label className="text-sm font-bold mb-3 block text-gray-900 font-jakarta">בחר גודל</label>
             <div className="flex gap-2">
-              {["1kg", "2.5kg", "5kg", "10kg"].map((size) => (
+              {["1 ק״ג", "2.5 ק״ג", "5 ק״ג", "10 ק״ג"].map((size) => (
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
-                  className={`px-4 py-2 rounded-lg text-sm font-jakarta transition-all ${
+                  className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all ${
                     selectedSize === size
-                      ? "bg-secondary text-foreground font-semibold shadow-md"
-                      : "bg-background border border-border text-foreground hover:border-border-light"
+                      ? "bg-accent text-gray-900 font-bold shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   {size}
@@ -316,276 +319,276 @@ const ProductDetail = () => {
           </div>
         </motion.div>
 
-        <Separator />
+        <Separator className="bg-gray-100" />
 
         {/* Key Benefits */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.3 }}
         >
-          <h3 className="text-lg font-bold mb-3 text-gray-900 font-jakarta">Why Your Pet Will Love It</h3>
-          <div className="space-y-3">
+          <h3 className="text-lg font-bold mb-4 text-gray-900 font-jakarta">למה חיית המחמד שלך תאהב את זה</h3>
+          <div className="grid grid-cols-1 gap-3">
             {benefits.map((benefit, idx) => {
               const Icon = benefit.icon;
               return (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+                <motion.div 
+                  key={idx} 
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + idx * 0.05 }}
+                >
                   <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-5 h-5 text-accent" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 text-sm font-jakarta">{benefit.title}</h4>
-                    <p className="text-xs text-gray-600 font-jakarta">{benefit.description}</p>
+                    <h4 className="font-bold text-gray-900 text-sm font-jakarta">{benefit.title}</h4>
+                    <p className="text-xs text-gray-500 font-jakarta">{benefit.description}</p>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
         </motion.div>
 
-        <Separator />
+        <Separator className="bg-gray-100" />
 
         {/* Product Details Accordion */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.4 }}
         >
-          <h3 className="text-lg font-bold mb-3 text-gray-900 font-jakarta">Product Details</h3>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="description" className="border-border">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
-                Full Description
+          <h3 className="text-lg font-bold mb-3 text-gray-900 font-jakarta">פרטי המוצר</h3>
+          <Accordion type="single" collapsible className="w-full space-y-2">
+            <AccordionItem value="description" className="border border-gray-100 rounded-xl px-4 bg-white">
+              <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-900 hover:no-underline py-4">
+                תיאור מלא
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-gray-600 font-jakarta leading-relaxed">
+              <AccordionContent className="text-sm text-gray-600 font-jakarta leading-relaxed pb-4">
                 {product.description}
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="ingredients" className="border-border">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
-                Ingredients & Nutrition
+            <AccordionItem value="ingredients" className="border border-gray-100 rounded-xl px-4 bg-white">
+              <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-900 hover:no-underline py-4">
+                רכיבים וערכים תזונתיים
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2">
-                <p><strong>Main Ingredients:</strong> Chicken (30%), Rice (25%), Vegetables (15%), Essential Vitamins & Minerals</p>
-                <p><strong>Nutritional Value:</strong> Protein 28%, Fat 15%, Fiber 3%, Moisture 10%</p>
-                <p><strong>No:</strong> Artificial preservatives, colors, or flavors</p>
+              <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2 pb-4">
+                <p><strong>רכיבים עיקריים:</strong> עוף (30%), אורז (25%), ירקות (15%), ויטמינים ומינרלים חיוניים</p>
+                <p><strong>ערך תזונתי:</strong> חלבון 28%, שומן 15%, סיבים 3%, לחות 10%</p>
+                <p><strong>ללא:</strong> חומרים משמרים, צבעים או טעמים מלאכותיים</p>
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="usage" className="border-border">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
-                Usage Instructions
+            <AccordionItem value="usage" className="border border-gray-100 rounded-xl px-4 bg-white">
+              <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-900 hover:no-underline py-4">
+                הוראות שימוש
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2">
-                <p>Feed according to your pet's weight:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>Small dogs (up to 10kg): 100-150g per day</li>
-                  <li>Medium dogs (10-25kg): 150-300g per day</li>
-                  <li>Large dogs (25kg+): 300-500g per day</li>
+              <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2 pb-4">
+                <p>האכילו בהתאם למשקל חיית המחמד:</p>
+                <ul className="list-disc list-inside space-y-1 mr-2">
+                  <li>כלבים קטנים (עד 10 ק״ג): 100-150 גרם ליום</li>
+                  <li>כלבים בינוניים (10-25 ק״ג): 150-300 גרם ליום</li>
+                  <li>כלבים גדולים (מעל 25 ק״ג): 300-500 גרם ליום</li>
                 </ul>
-                <p className="mt-2">Always provide fresh water. Adjust portions based on activity level.</p>
+                <p className="mt-2">תמיד ספקו מים טריים. התאימו מנות בהתאם לרמת הפעילות.</p>
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="suitability" className="border-border">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
-                Pet Suitability
+            <AccordionItem value="shipping" className="border border-gray-100 rounded-xl px-4 bg-white">
+              <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-900 hover:no-underline py-4">
+                משלוח והחזרות
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-gray-600 font-jakarta">
-                <p>Suitable for all dog breeds and life stages (puppies, adults, seniors).</p>
-                <p className="mt-2">Especially recommended for pets with sensitive stomachs or allergies.</p>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="shipping" className="border-border">
-              <AccordionTrigger className="font-jakarta text-sm font-semibold text-foreground hover:no-underline">
-                Shipping & Returns
-              </AccordionTrigger>
-              <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2">
-                <p><strong>Shipping:</strong> Free delivery on orders over ₪199. Standard delivery 2-4 business days.</p>
-                <p><strong>Returns:</strong> 30-day money-back guarantee. Contact us for easy returns.</p>
+              <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2 pb-4">
+                <p><strong>משלוח:</strong> משלוח חינם בהזמנות מעל ₪199. משלוח רגיל 2-4 ימי עסקים.</p>
+                <p><strong>החזרות:</strong> אחריות החזר כספי של 30 יום. צרו קשר להחזרות קלות.</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </motion.div>
 
-        <Separator />
-
+        <Separator className="bg-gray-100" />
 
         {/* Reviews Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.5 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900 font-jakarta">Happy Pet Parents</h3>
-            <div className="flex items-center gap-1 text-sm">
-              <Star className="w-4 h-4 fill-[#FBD66A] text-[#FBD66A]" />
-              <span className="font-bold text-gray-900 font-jakarta">{product.rating}/5</span>
-              <span className="text-gray-600 font-jakarta">({product.reviewCount})</span>
-            </div>
+            <h3 className="text-lg font-bold text-gray-900 font-jakarta">ביקורות לקוחות</h3>
+            <Button variant="ghost" className="text-accent hover:text-accent font-jakarta text-sm font-bold">
+              הצג הכל
+            </Button>
           </div>
           <div className="space-y-3">
-            {reviews.map((review) => (
-              <Card key={review.id} className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="flex items-start gap-3">
-                  <Avatar className="w-10 h-10 ring-2 ring-[#7DD3C0]/30">
-                    <AvatarImage src={review.avatar} />
-                    <AvatarFallback className="bg-[#7DD3C0] text-gray-900">{review.author[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-gray-900 font-jakarta text-sm">{review.author}</span>
-                      <span className="text-xs text-gray-500 font-jakarta">{review.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3 h-3 ${
-                            i < review.rating
-                              ? "fill-[#FBD66A] text-[#FBD66A]"
-                              : "fill-gray-200 text-gray-200"
-                          }`}
+            {reviews.map((review, idx) => (
+              <motion.div
+                key={review.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + idx * 0.1 }}
+              >
+                <Card className="p-4 bg-gray-50 border-0 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="w-10 h-10 ring-2 ring-accent/20">
+                      <AvatarImage src={review.avatar} />
+                      <AvatarFallback className="bg-accent text-gray-900 font-bold">{review.author[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-gray-900 font-jakarta text-sm">{review.author}</span>
+                        <span className="text-xs text-gray-400 font-jakarta">{review.date}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5 mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-3.5 h-3.5 ${
+                              i < review.rating
+                                ? "fill-warning text-warning"
+                                : "fill-gray-200 text-gray-200"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed font-jakarta">
+                        {review.comment}
+                      </p>
+                      {review.petImage && (
+                        <img 
+                          src={review.petImage} 
+                          alt="Pet" 
+                          className="mt-3 w-20 h-20 rounded-xl object-cover"
                         />
-                      ))}
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 leading-relaxed font-jakarta">
-                      {review.comment}
-                    </p>
-                    {review.petImage && (
-                      <img 
-                        src={review.petImage} 
-                        alt="Pet" 
-                        className="mt-2 w-20 h-20 rounded-lg object-cover"
-                      />
-                    )}
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </motion.div>
 
-        <Separator />
+        <Separator className="bg-gray-100" />
 
         {/* Recommended Products */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.6 }}
         >
-          <h3 className="text-lg font-bold mb-3 text-gray-900 font-jakarta">Customers Also Bought</h3>
+          <h3 className="text-lg font-bold mb-4 text-gray-900 font-jakarta">לקוחות גם קנו</h3>
           <div className="grid grid-cols-2 gap-3">
-            {relatedProducts.map((item) => (
-              <Card 
-                key={item.id} 
-                className="p-3 bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            {relatedProducts.map((item, idx) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 + idx * 0.05 }}
               >
-                <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                </div>
-                <h4 className="font-semibold text-sm text-gray-900 font-jakarta mb-1">{item.name}</h4>
-                <p className="text-sm font-bold text-gray-900 font-jakarta">{item.price}</p>
-              </Card>
+                <Card 
+                  className="p-3 bg-white border border-gray-100 rounded-xl cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5"
+                  onClick={() => navigate('/product', { state: { product: { ...item, price: item.price } } })}
+                >
+                  <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                  </div>
+                  <h4 className="font-bold text-sm text-gray-900 font-jakarta mb-1 truncate">{item.name}</h4>
+                  <p className="text-sm font-bold text-accent font-jakarta">{item.price}</p>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </motion.div>
-
-        <Separator />
 
         {/* Trust Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="bg-gradient-to-r from-[#B8E3D5]/20 to-[#FBD66A]/20 rounded-xl p-4"
+          transition={{ delay: 0.7 }}
+          className="bg-gradient-to-br from-accent/10 to-secondary/10 rounded-2xl p-5"
         >
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-3 gap-4 text-center">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-2">
-                <Shield className="w-6 h-6 text-[#7DD3C0]" />
+                <Shield className="w-5 h-5 text-green-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-900 font-jakarta">Secure Payment</p>
+              <p className="text-xs font-bold text-gray-900 font-jakarta">תשלום מאובטח</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-2">
-                <Truck className="w-6 h-6 text-[#F4C542]" />
+                <Truck className="w-5 h-5 text-blue-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-900 font-jakarta">Fast Delivery</p>
+              <p className="text-xs font-bold text-gray-900 font-jakarta">משלוח מהיר</p>
             </div>
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-2">
-                <PackageCheck className="w-6 h-6 text-[#7DD3C0]" />
+                <PackageCheck className="w-5 h-5 text-purple-600" />
               </div>
-              <p className="text-xs font-semibold text-gray-900 font-jakarta">Easy Returns</p>
+              <p className="text-xs font-bold text-gray-900 font-jakarta">החזרות קלות</p>
             </div>
           </div>
-          <div className="mt-4 text-center">
-            <Badge className="bg-[#FBD66A] text-gray-900 hover:bg-[#FBD66A] font-jakarta text-xs">
-              Free shipping on orders over ₪199
-            </Badge>
-            <p className="text-xs text-gray-600 font-jakarta mt-2">
-              We care for your four-legged family members 🐶🐱
-            </p>
-          </div>
+          <p className="text-center text-xs text-gray-500 font-jakarta mt-4">
+            אנחנו דואגים לבני המשפחה בעלי הארבע שלכם 🐶🐱
+          </p>
         </motion.div>
       </div>
 
       {/* Sticky Bottom CTA */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 p-3 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="max-w-2xl mx-auto">
-          {/* Quantity Selector */}
+      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-100 p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <div className="max-w-lg mx-auto">
+          {/* Quantity & Total */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <label className="text-xs font-semibold text-gray-700 font-jakarta">Qty:</label>
-              <div className="flex items-center border border-gray-300 rounded-lg">
+              <span className="text-sm font-bold text-gray-700 font-jakarta">כמות:</span>
+              <div className="flex items-center bg-gray-100 rounded-xl">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="h-8 w-8 hover:bg-gray-100"
+                  className="h-9 w-9 rounded-xl hover:bg-gray-200"
                 >
-                  <Minus className="w-3 h-3 text-gray-700" />
+                  <Minus className="w-4 h-4 text-gray-700" />
                 </Button>
-                <span className="w-10 text-center text-sm font-bold text-gray-900 font-jakarta">{quantity}</span>
+                <span className="w-10 text-center text-base font-bold text-gray-900 font-jakarta">{quantity}</span>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="h-8 w-8 hover:bg-gray-100"
+                  className="h-9 w-9 rounded-xl hover:bg-gray-200"
                 >
-                  <Plus className="w-3 h-3 text-gray-700" />
+                  <Plus className="w-4 h-4 text-gray-700" />
                 </Button>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-600 font-jakarta">Total</p>
-              <p className="text-lg font-bold text-gray-900 font-jakarta">
+            <div className="text-left">
+              <p className="text-xs text-gray-500 font-jakarta">סה״כ</p>
+              <p className="text-xl font-bold text-gray-900 font-jakarta">
                 ₪{(parseFloat(product.price.replace('₪', '')) * quantity).toFixed(2)}
               </p>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-2 border-gray-900 text-gray-900 hover:bg-gray-100 rounded-xl font-bold font-jakarta shadow-sm h-12"
+              className="flex-1 border-2 border-gray-900 text-gray-900 hover:bg-gray-100 rounded-xl font-bold font-jakarta h-12"
               onClick={handleAddToCart}
             >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Add to Cart
+              <ShoppingCart className="w-4 h-4 ml-2" />
+              הוסף לעגלה
             </Button>
             <Button
               size="lg"
-              className="flex-1 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-bold font-jakarta shadow-md h-12"
+              className="flex-1 bg-accent hover:bg-accent-hover text-gray-900 rounded-xl font-bold font-jakarta shadow-md h-12"
               onClick={handleBuyNow}
             >
-              Buy Now
+              קנה עכשיו
             </Button>
           </div>
         </div>
