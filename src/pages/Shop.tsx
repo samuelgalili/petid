@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { VirtuosoGrid } from "react-virtuoso";
 import petidLogo from "@/assets/petid-logo.png";
+import confetti from "canvas-confetti";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -193,8 +194,16 @@ const Shop = () => {
       quantity: quantity,
     });
 
+    // Trigger confetti animation
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.8 },
+      colors: ['#FFC107', '#FF9800', '#E91E63', '#4CAF50', '#2196F3'],
+    });
+
     toast({
-      title: "✅ נוסף לעגלה",
+      title: "🎉 נוסף לעגלה",
       description: `${selectedProduct.name} (${quantity} יח') נוסף לעגלה שלך`,
       duration: 2000,
     });
