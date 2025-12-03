@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, DollarSign, Tag, Info, Check } from "lucide-react";
+import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, DollarSign, Tag, Info, Check, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,27 @@ const Shop = () => {
   const [showDealsOnly, setShowDealsOnly] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<number[]>(() => {
+    const saved = localStorage.getItem("petid-favorites");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const toggleFavorite = useCallback((productId: number) => {
+    setFavorites(prev => {
+      const newFavorites = prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId];
+      localStorage.setItem("petid-favorites", JSON.stringify(newFavorites));
+      return newFavorites;
+    });
+    
+    const isFavorite = favorites.includes(productId);
+    toast({
+      title: isFavorite ? "הוסר מהמועדפים" : "❤️ נוסף למועדפים",
+      description: isFavorite ? "המוצר הוסר מרשימת המועדפים" : "המוצר נשמר למועדפים שלך",
+      duration: 2000,
+    });
+  }, [favorites, toast]);
 
   const sizes = ["S", "M", "L", "XL"];
   const colors = [
@@ -666,9 +687,23 @@ const Shop = () => {
                     <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
                   </div>
                   
-                  {/* Logo + Info Button Row */}
+                  {/* Logo + Action Buttons Row */}
                   <div className="flex items-center justify-between px-4 pb-4">
-                    <div className="w-10" />
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => toggleFavorite(selectedProduct.id)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                        favorites.includes(selectedProduct.id)
+                          ? "bg-red-50 text-red-500"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                      aria-label={favorites.includes(selectedProduct.id) ? "הסר ממועדפים" : "הוסף למועדפים"}
+                    >
+                      <Heart 
+                        className={`w-5 h-5 transition-all ${favorites.includes(selectedProduct.id) ? "fill-current" : ""}`} 
+                        strokeWidth={1.5} 
+                      />
+                    </motion.button>
                     <img 
                       src={petidLogo} 
                       alt="Petid" 
