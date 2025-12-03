@@ -15,52 +15,94 @@ const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; 
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    {/* Dog face outline */}
-    <motion.ellipse
-      cx="12"
-      cy="10"
-      rx="8"
-      ry="7"
+    {/* Dog face - rounded shape */}
+    <motion.path
+      d="M4 11C4 7 7 4 12 4C17 4 20 7 20 11C20 15 17 17 12 17C7 17 4 15 4 11Z"
       stroke="currentColor"
       strokeWidth="1.5"
       fill={isLiked ? "currentColor" : "none"}
       initial={false}
     />
-    {/* Left ear */}
+    {/* Left floppy ear */}
     <path
-      d="M5 6C4 3 6 1 8 3"
+      d="M5.5 8C4.5 5 3 3.5 2 4C1 4.5 1.5 7 3 9"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       fill={isLiked ? "currentColor" : "none"}
     />
-    {/* Right ear */}
+    {/* Right floppy ear */}
     <path
-      d="M19 6C20 3 18 1 16 3"
+      d="M18.5 8C19.5 5 21 3.5 22 4C23 4.5 22.5 7 21 9"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       fill={isLiked ? "currentColor" : "none"}
     />
     {/* Left eye */}
-    <circle cx="9" cy="9" r="1.2" fill={isLiked ? "white" : "currentColor"} />
+    <circle cx="8.5" cy="9.5" r="1.5" fill={isLiked ? "white" : "currentColor"} />
+    {/* Left eye sparkle */}
+    <circle cx="8" cy="9" r="0.5" fill={isLiked ? "currentColor" : "white"} />
     {/* Right eye */}
-    <circle cx="15" cy="9" r="1.2" fill={isLiked ? "white" : "currentColor"} />
-    {/* Nose */}
-    <ellipse cx="12" cy="12" rx="1.5" ry="1" fill={isLiked ? "white" : "currentColor"} />
+    <circle cx="15.5" cy="9.5" r="1.5" fill={isLiked ? "white" : "currentColor"} />
+    {/* Right eye sparkle */}
+    <circle cx="15" cy="9" r="0.5" fill={isLiked ? "currentColor" : "white"} />
+    {/* Nose - heart shaped */}
+    <path
+      d="M12 11.5C12 11.5 10.5 11 10.5 12.5C10.5 13.5 12 14.5 12 14.5C12 14.5 13.5 13.5 13.5 12.5C13.5 11 12 11.5 12 11.5Z"
+      fill={isLiked ? "#333" : "currentColor"}
+    />
+    {/* Nose highlight */}
+    <ellipse cx="11.5" cy="12" rx="0.4" ry="0.3" fill={isLiked ? "#666" : "white"} opacity="0.6" />
+    {/* Left whiskers */}
+    <g stroke={isLiked ? "white" : "currentColor"} strokeWidth="0.5" strokeLinecap="round" opacity="0.7">
+      <line x1="6" y1="11" x2="3" y2="10" />
+      <line x1="6" y1="12" x2="3" y2="12" />
+      <line x1="6" y1="13" x2="3" y2="14" />
+    </g>
+    {/* Right whiskers */}
+    <g stroke={isLiked ? "white" : "currentColor"} strokeWidth="0.5" strokeLinecap="round" opacity="0.7">
+      <line x1="18" y1="11" x2="21" y2="10" />
+      <line x1="18" y1="12" x2="21" y2="12" />
+      <line x1="18" y1="13" x2="21" y2="14" />
+    </g>
+    {/* Mouth line */}
+    <path
+      d="M10 14.5C10.5 15 11.5 15.5 12 15.5C12.5 15.5 13.5 15 14 14.5"
+      stroke={isLiked ? "white" : "currentColor"}
+      strokeWidth="0.8"
+      strokeLinecap="round"
+      fill="none"
+    />
     {/* Tongue with licking animation */}
     <motion.path
-      d="M12 14C12 14 10 16 10 18C10 19.5 11 20.5 12 20.5C13 20.5 14 19.5 14 18C14 16 12 14 12 14Z"
+      d="M12 15.5C12 15.5 10.5 17 10.5 19C10.5 20.5 11 21.5 12 21.5C13 21.5 13.5 20.5 13.5 19C13.5 17 12 15.5 12 15.5Z"
       fill={isLiked ? "#FF69B4" : "#FF9999"}
       stroke={isLiked ? "#FF1493" : "#FF6B6B"}
       strokeWidth="0.5"
       initial={false}
       animate={isLicking ? {
-        scaleY: [1, 1.3, 1, 1.2, 1],
-        y: [0, 2, 0, 1, 0],
-        rotate: [0, -5, 5, -3, 0]
+        scaleY: [1, 1.4, 0.9, 1.3, 1],
+        y: [0, 3, -1, 2, 0],
+        rotate: [0, -8, 8, -5, 0]
       } : {}}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
+      transition={{ duration: 0.6, ease: "easeInOut" }}
+    />
+    {/* Tongue center line */}
+    <motion.line
+      x1="12"
+      y1="16"
+      x2="12"
+      y2="20"
+      stroke={isLiked ? "#FF1493" : "#FF6B6B"}
+      strokeWidth="0.3"
+      opacity="0.5"
+      initial={false}
+      animate={isLicking ? {
+        scaleY: [1, 1.4, 0.9, 1.3, 1],
+        y: [0, 3, -1, 2, 0],
+      } : {}}
+      transition={{ duration: 0.6, ease: "easeInOut" }}
     />
   </svg>
 );
