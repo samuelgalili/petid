@@ -55,21 +55,6 @@ const BottomNav = () => {
 
   return (
     <>
-      {/* Footer Links - Above Bottom Nav */}
-      <div className="fixed bottom-[72px] left-0 right-0 bg-background border-t border-border/30 z-40">
-        <div className="max-w-md mx-auto px-4 py-3">
-          <div className="flex justify-center items-center gap-3 flex-wrap text-xs">
-            <a href="#" className="text-muted-foreground hover:text-primary hover:underline font-jakarta transition-colors">הצהרת נגישות</a>
-            <span className="text-border">|</span>
-            <a href="#" className="text-muted-foreground hover:text-primary hover:underline font-jakarta transition-colors">תנאי המועדון</a>
-            <span className="text-border">|</span>
-            <a href="#" className="text-muted-foreground hover:text-primary hover:underline font-jakarta transition-colors">מדיניות פרטיות</a>
-            <span className="text-border">|</span>
-            <a href="#" className="text-muted-foreground hover:text-primary hover:underline font-jakarta transition-colors">תנאי שימוש</a>
-          </div>
-        </div>
-      </div>
-
       {/* Bottom Navigation */}
       <nav 
         className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-50 h-16"
