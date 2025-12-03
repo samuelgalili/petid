@@ -31,8 +31,8 @@ const Tasks = () => {
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: "1",
-      title: "Morning Feeding",
-      description: "Feed your pet their morning meal",
+      title: "האכלת בוקר",
+      description: "האכל את חיית המחמד שלך את ארוחת הבוקר",
       points: 10,
       completed: false,
       type: "daily",
@@ -40,8 +40,8 @@ const Tasks = () => {
     },
     {
       id: "2",
-      title: "30-Minute Walk",
-      description: "Take your dog for a walk",
+      title: "הליכה של 30 דקות",
+      description: "קח את הכלב להליכה",
       points: 20,
       completed: false,
       type: "daily",
@@ -49,8 +49,8 @@ const Tasks = () => {
     },
     {
       id: "3",
-      title: "Brush Fur",
-      description: "Brush your pet's coat",
+      title: "הברשת פרווה",
+      description: "הברש את הפרווה של חיית המחמד",
       points: 15,
       completed: false,
       type: "daily",
@@ -58,8 +58,8 @@ const Tasks = () => {
     },
     {
       id: "4",
-      title: "Play Time",
-      description: "Interactive play session (15 mins)",
+      title: "זמן משחק",
+      description: "משחק אינטראקטיבי (15 דקות)",
       points: 15,
       completed: false,
       type: "daily",
@@ -67,8 +67,8 @@ const Tasks = () => {
     },
     {
       id: "5",
-      title: "Evening Feeding",
-      description: "Feed your pet their evening meal",
+      title: "האכלת ערב",
+      description: "האכל את חיית המחמד שלך את ארוחת הערב",
       points: 10,
       completed: false,
       type: "daily",
@@ -76,8 +76,8 @@ const Tasks = () => {
     },
     {
       id: "6",
-      title: "Weekly Vet Check",
-      description: "Schedule or complete vet appointment",
+      title: "בדיקה וטרינרית שבועית",
+      description: "קבע או השלם תור לווטרינר",
       points: 100,
       completed: false,
       type: "weekly",
@@ -85,8 +85,8 @@ const Tasks = () => {
     },
     {
       id: "7",
-      title: "Deep Grooming",
-      description: "Bath and nail trim",
+      title: "טיפוח מעמיק",
+      description: "רחצה וגיזום ציפורניים",
       points: 50,
       completed: false,
       type: "weekly",
@@ -94,8 +94,8 @@ const Tasks = () => {
     },
     {
       id: "8",
-      title: "Training Session",
-      description: "Practice commands (30 mins)",
+      title: "אימון",
+      description: "תרגול פקודות (30 דקות)",
       points: 30,
       completed: false,
       type: "weekly",
@@ -133,8 +133,8 @@ const Tasks = () => {
       });
 
       toast({
-        title: "Task Completed! 🎉",
-        description: `You earned ${task.points} points!`,
+        title: "משימה הושלמה! 🎉",
+        description: `צברת ${task.points} נקודות!`,
       });
     } catch (error) {
       // Error already handled in context
@@ -160,7 +160,7 @@ const Tasks = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-white pb-20">
+      <div className="min-h-screen bg-white pb-20" dir="rtl">
         <AppHeader 
           title="משימות טיפול" 
           showBackButton={false}
@@ -187,7 +187,7 @@ const Tasks = () => {
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-foreground">{totalPoints}</div>
-                  <div className="text-sm text-foreground/70">Total Points</div>
+                  <div className="text-sm text-foreground/70">סה״כ נקודות</div>
                 </div>
               </div>
               <div className="text-center">
@@ -195,7 +195,7 @@ const Tasks = () => {
                   <Flame className="w-5 h-5 text-warning" strokeWidth={1.5} />
                   <span className="text-2xl font-bold text-foreground">{streak}</span>
                 </div>
-                <div className="text-xs text-foreground/70">Day Streak</div>
+                <div className="text-xs text-foreground/70">ימים ברצף</div>
               </div>
             </div>
         </div>
@@ -204,10 +204,10 @@ const Tasks = () => {
         <Tabs defaultValue="daily" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="daily" className="font-jakarta">
-                Daily Tasks
+                משימות יומיות
               </TabsTrigger>
               <TabsTrigger value="weekly" className="font-jakarta">
-                Weekly Tasks
+                משימות שבועיות
               </TabsTrigger>
             </TabsList>
 
@@ -217,7 +217,7 @@ const Tasks = () => {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-                    <span className="font-medium text-foreground font-jakarta">Daily Progress</span>
+                    <span className="font-medium text-foreground font-jakarta">התקדמות יומית</span>
                   </div>
                   <span className="text-sm text-muted-foreground font-jakarta">
                     {dailyCompleted}/{dailyTasks.length}
@@ -272,7 +272,7 @@ const Tasks = () => {
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                           <Badge variant="secondary" className="bg-accent/20 text-gray-900">
-                            +{task.points} points
+                            +{task.points} נקודות
                           </Badge>
                         </div>
                       </div>
@@ -288,7 +288,7 @@ const Tasks = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-accent" strokeWidth={1.5} />
-                    <span className="font-semibold text-gray-900 font-jakarta">Weekly Progress</span>
+                    <span className="font-semibold text-gray-900 font-jakarta">התקדמות שבועית</span>
                   </div>
                   <span className="text-sm text-gray-600">
                     {weeklyCompleted}/{weeklyTasks.length}
@@ -343,7 +343,7 @@ const Tasks = () => {
                           </div>
                           <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                           <Badge variant="secondary" className="bg-accent/20 text-gray-900">
-                            +{task.points} points
+                            +{task.points} נקודות
                           </Badge>
                         </div>
                       </div>
