@@ -67,6 +67,7 @@ import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
 
@@ -74,11 +75,15 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   useAdminNotifications();
   
+  const authPages = ['/auth', '/signup', '/forgot-password', '/reset-password', '/install'];
+  const showFooter = !authPages.includes(location.pathname);
+  
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+      <div className="flex-1">
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
@@ -127,9 +132,11 @@ const AnimatedRoutes = () => {
         <Route path="/messages/:userId" element={<ProtectedRoute><PageTransition><MessageThread /></PageTransition></ProtectedRoute>} />
         <Route path="/color-system" element={<ProtectedRoute><PageTransition><ColorSystemShowcase /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-        </Routes>
-      </AnimatePresence>
-    </>
+          </Routes>
+        </AnimatePresence>
+      </div>
+      {showFooter && <Footer />}
+    </div>
   );
 };
 
