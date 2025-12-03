@@ -35,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { WalletCard } from "@/components/home/WalletCard";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
+import { PromotionalOffers } from "@/components/home/PromotionalOffers";
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -60,6 +61,7 @@ const Home = () => {
     { id: 3, title: "ארוחת בוקר", icon: "🍽️", completed: false }
   ]);
   const [nearbyParks, setNearbyParks] = useState<any[]>([]);
+  const [promotionalOffers, setPromotionalOffers] = useState<any[]>([]);
 
   const { toast } = useToast();
   const { streak, updateStreak } = useGame();
@@ -128,6 +130,15 @@ const Home = () => {
         .limit(3);
 
       if (parksData) setNearbyParks(parksData);
+
+      // Fetch promotional offers
+      const { data: offersData } = await supabase
+        .from('promotional_offers')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (offersData) setPromotionalOffers(offersData);
 
       setLoading(false);
     };
@@ -254,8 +265,13 @@ const Home = () => {
           </button>
         </motion.div>
 
+        {/* Promotional Banner - Sales Focus */}
+        {promotionalOffers.length > 0 && (
+          <PromotionalOffers offers={promotionalOffers} />
+        )}
+
         {/* Wallet Card - Sales Focus */}
-        <WalletCard 
+        <WalletCard
           walletBalance={walletBalance}
           achievements={walletAchievements}
           onNavigate={() => navigate('/rewards')}
