@@ -28,6 +28,16 @@ const Shop = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"none" | "price-low" | "price-high" | "popularity">("none");
   const [showDealsOnly, setShowDealsOnly] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+
+  const sizes = ["S", "M", "L", "XL"];
+  const colors = [
+    { name: "שחור", value: "#1a1a1a" },
+    { name: "לבן", value: "#ffffff" },
+    { name: "כחול", value: "#3b82f6" },
+    { name: "אדום", value: "#ef4444" },
+  ];
 
   const tabs = [
     { id: "petid", label: "Petid" },
@@ -181,17 +191,21 @@ const Shop = () => {
   const handleProductClick = useCallback((product: any) => {
     setSelectedProduct(product);
     setQuantity(1);
+    setSelectedSize(null);
+    setSelectedColor(null);
   }, []);
 
   const handleAddToCart = useCallback(() => {
     if (!selectedProduct) return;
 
     addToCart({
-      id: selectedProduct.id.toString(),
+      id: `${selectedProduct.id}-${selectedSize || 'default'}-${selectedColor || 'default'}`,
       name: selectedProduct.name,
       price: selectedProduct.price,
       image: selectedProduct.image,
       quantity: quantity,
+      size: selectedSize || undefined,
+      variant: selectedColor ? colors.find(c => c.value === selectedColor)?.name : undefined,
     });
 
     // Play success sound
@@ -215,7 +229,9 @@ const Shop = () => {
 
     setSelectedProduct(null);
     setQuantity(1);
-  }, [selectedProduct, quantity, addToCart, toast]);
+    setSelectedSize(null);
+    setSelectedColor(null);
+  }, [selectedProduct, quantity, addToCart, toast, selectedSize, selectedColor, colors]);
 
   const increaseQuantity = useCallback(() => setQuantity(prev => prev + 1), []);
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
@@ -736,6 +752,55 @@ const Shop = () => {
                       </div>
                     )}
                   </motion.div>
+
+                  {/* Variant Selectors */}
+                  <div className="space-y-4 mb-6 text-right">
+                    {/* Size Selector */}
+                    <div>
+                      <label className="text-sm font-bold text-gray-700 mb-2 block font-jakarta">גודל</label>
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {sizes.map((size) => (
+                          <motion.button
+                            key={size}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setSelectedSize(size)}
+                            className={`w-12 h-12 rounded-xl text-sm font-bold transition-all font-jakarta ${
+                              selectedSize === size
+                                ? "bg-[#FFC107] text-gray-900 shadow-md"
+                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                          >
+                            {size}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Color Selector */}
+                    <div>
+                      <label className="text-sm font-bold text-gray-700 mb-2 block font-jakarta">צבע</label>
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {colors.map((color) => (
+                          <motion.button
+                            key={color.value}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setSelectedColor(color.value)}
+                            className={`w-10 h-10 rounded-full transition-all border-2 ${
+                              selectedColor === color.value
+                                ? "ring-2 ring-[#FFC107] ring-offset-2 border-[#FFC107]"
+                                : "border-gray-300 hover:border-gray-400"
+                            }`}
+                            style={{ backgroundColor: color.value }}
+                            aria-label={color.name}
+                          >
+                            {selectedColor === color.value && (
+                              <Check className={`w-5 h-5 mx-auto ${color.value === '#ffffff' ? 'text-gray-900' : 'text-white'}`} strokeWidth={2.5} />
+                            )}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Quick Info Pills */}
                   <div className="flex flex-wrap justify-center gap-2 mb-6">
