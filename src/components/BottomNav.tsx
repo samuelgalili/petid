@@ -1,11 +1,12 @@
-import { Home, ShoppingBag, Users, Grid3x3, MessageCircle, Mail, User, Newspaper } from "lucide-react";
+import { Home, ShoppingBag, Users, Grid3x3, MessageCircle, Mail, User, Newspaper, Bell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { buttonTap, ANIMATION_DURATION } from "@/lib/animations";
 import { getAccessibleLinkProps, TAP_TARGET } from "@/lib/accessibility";
 import { ARIA_LABELS } from "@/lib/microcopy";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -27,10 +28,31 @@ import {
 const BottomNav = () => {
   const location = useLocation();
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Check if we're on social network pages
   const socialRoutes = ['/feed', '/user/', '/post/', '/story/', '/highlight/', '/messages', '/profile'];
   const isSocialPage = socialRoutes.some(route => location.pathname.startsWith(route));
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      setUnreadCount(count || 0);
+    };
+
+    if (isSocialPage) {
+      fetchUnreadCount();
+    }
+  }, [isSocialPage, location.pathname]);
 
   // Regular app navigation
   const appNavItems = [
@@ -50,6 +72,7 @@ const BottomNav = () => {
   const socialNavItems = [
     { icon: Home, label: "חזרה לאפליקציה", path: "/home" },
     { icon: Mail, label: "הודעות", path: "/messages" },
+    { icon: Bell, label: "התראות", path: "/notifications", badge: unreadCount },
     { icon: User, label: "הפרופיל שלי", path: "/profile" },
     { icon: Newspaper, label: "פיד", path: "/feed" },
   ];
@@ -81,7 +104,7 @@ const BottomNav = () => {
             const Icon = item.icon;
             const isActive = !item.isButton && location.pathname === item.path;
             const key = item.path || `button-${index}`;
-            const itemWidth = isSocialPage ? "w-[25%]" : "w-[20%]";
+            const itemWidth = isSocialPage ? "w-[20%]" : "w-[20%]";
             
             const content = (
               <>
@@ -98,6 +121,12 @@ const BottomNav = () => {
                     )} 
                     strokeWidth={1.5}
                   />
+                  {/* Badge for unread count */}
+                  {item.badge && item.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
                   {isActive && (
                     <motion.div
                       layoutId={isSocialPage ? "activeSocialNavDot" : "activeNavDot"}
