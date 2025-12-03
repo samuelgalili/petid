@@ -226,7 +226,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
 
       if (insertError) throw insertError;
 
-      toast.success("הסטורי פורסם בהצלחה!");
+      toast.success("Petish Story פורסם בהצלחה!");
       
       // Reset form
       setSelectedMedia(null);
@@ -239,7 +239,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
       onStoryCreated();
     } catch (error: any) {
       console.error("Error creating story:", error);
-      toast.error("שגיאה בפרסום הסטורי");
+      toast.error("שגיאה בפרסום ה-Petish Story");
     } finally {
       setUploading(false);
     }

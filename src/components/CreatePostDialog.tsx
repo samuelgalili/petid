@@ -116,7 +116,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
 
       if (insertError) throw insertError;
 
-      toast.success("🎉 הפוסט פורסם בהצלחה!");
+      toast.success("🎉 Petish Post פורסם בהצלחה!");
       
       // Reset form
       resetForm();
@@ -124,7 +124,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
       onPostCreated();
     } catch (error: any) {
       console.error("Error creating post:", error);
-      toast.error("שגיאה בפרסום הפוסט");
+      toast.error("שגיאה בפרסום ה-Petish Post");
     } finally {
       setUploading(false);
     }
@@ -136,7 +136,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         <DialogHeader>
           <DialogTitle className="text-2xl font-black text-center text-gray-900 flex items-center justify-center gap-2">
             <Sparkles className="w-6 h-6 text-instagram-pink" strokeWidth={1.5} />
-            פוסט חדש
+            פוסט Petish חדש
           </DialogTitle>
         </DialogHeader>
 

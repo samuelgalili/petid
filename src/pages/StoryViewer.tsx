@@ -163,7 +163,7 @@ const StoryViewer = () => {
 
       if (error) throw error;
 
-      toast.success("הסטורי נמחק בהצלחה");
+      toast.success("Petish Story נמחק בהצלחה");
       
       // Remove from local state
       const newStories = stories.filter((_, i) => i !== currentIndex);
@@ -177,7 +177,7 @@ const StoryViewer = () => {
       }
     } catch (error) {
       console.error("Error deleting story:", error);
-      toast.error("שגיאה במחיקת הסטורי");
+      toast.error("שגיאה במחיקת ה-Petish Story");
     }
   };
 

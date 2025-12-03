@@ -222,8 +222,15 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               >
                 <SmartPanel title="פעולות מהירות" icon={Grid3x3}>
                   <SmartPanel.Item
+                    icon={PawPrint}
+                    label="Petish"
+                    value="הרשת החברתית לחיות מחמד"
+                    to="/feed"
+                    variant="highlighted"
+                  />
+                  <SmartPanel.Item
                     icon={MessageCircle}
-                    label="הודעות"
+                    label="Petish Inbox"
                     value="צ'אט עם משתמשים"
                     to="/messages"
                   />

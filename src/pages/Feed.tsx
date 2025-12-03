@@ -170,7 +170,7 @@ const Feed = () => {
       }
     } catch (error: any) {
       console.error("Error fetching posts:", error);
-      toast.error("שגיאה בטעינת הפיד");
+      toast.error("שגיאה בטעינת ה-Petish Feed");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -384,7 +384,19 @@ const Feed = () => {
   }, [posts, feedFilter, followingIds]);
 
   return (
-    <div className="min-h-screen bg-white pb-24 pt-14" dir="rtl">
+    <div className="min-h-screen bg-white pb-24" dir="rtl">
+      {/* Petish Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-center">
+          <h1 className="text-2xl font-black font-jakarta text-gray-900 tracking-tight">
+            Petish
+          </h1>
+        </div>
+      </div>
+
+      {/* Spacer for fixed header */}
+      <div className="h-14" />
+
       {/* Create Post FAB */}
       <Button
         onClick={() => setCreatePostOpen(true)}
@@ -406,7 +418,7 @@ const Feed = () => {
           >
             <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
               <TrendingUp className="w-5 h-5" strokeWidth={1.5} />
-              <span className="font-bold font-jakarta">פוסטים חדשים זמינים - לחץ לטעינה</span>
+              <span className="font-bold font-jakarta">Petish Posts חדשים זמינים - לחץ לטעינה</span>
             </div>
           </motion.div>
         )}
@@ -467,19 +479,19 @@ const Feed = () => {
               <Camera className="w-16 h-16 text-gray-400" strokeWidth={1.5} />
             </div>
             <h3 className="text-2xl font-black text-gray-900 font-jakarta mb-3">
-              {feedFilter === "following" ? "אין פוסטים מעוקבים" : "אין פוסטים עדיין"}
+              {feedFilter === "following" ? "אין Petish Posts מעוקבים" : "אין Petish Posts עדיין"}
             </h3>
             <p className="text-gray-500 font-jakarta text-base mb-6">
               {feedFilter === "following" 
                 ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם כאן"
-                : "התחל לשתף תמונות וסיפורים של חיות המחמד שלך 🐕🐈"}
+                : "התחל לשתף תמונות וסיפורים של חיות המחמד שלך ב-Petish 🐕🐈"}
             </p>
             <Button
               onClick={() => setCreatePostOpen(true)}
               className="bg-accent hover:bg-accent-hover text-text-inverse font-bold shadow-lg"
             >
               <Plus className="w-5 h-5 ml-2" strokeWidth={1.5} />
-              צור פוסט ראשון
+              צור Petish Post ראשון
             </Button>
           </motion.div>
         ) : (

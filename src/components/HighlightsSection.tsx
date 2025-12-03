@@ -87,7 +87,7 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
 
   return (
     <div className="mb-6" dir="rtl">
-      <h3 className="text-sm font-black text-gray-900 font-jakarta mb-3 px-1">הדגשות</h3>
+      <h3 className="text-sm font-black text-gray-900 font-jakarta mb-3 px-1">Petish Highlights</h3>
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
         {/* Create new highlight button (only for own profile) */}
         {isOwnProfile && (

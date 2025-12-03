@@ -149,7 +149,7 @@ const HighlightViewer = () => {
 
       if (error) throw error;
 
-      toast.success("הסטורי הוסר מההדגשה");
+      toast.success("Petish Story הוסר מה-Highlight");
       
       const newStories = stories.filter((_, i) => i !== currentIndex);
       if (newStories.length === 0) {
@@ -162,7 +162,7 @@ const HighlightViewer = () => {
       }
     } catch (error) {
       console.error("Error removing story from highlight:", error);
-      toast.error("שגיאה בהסרת הסטורי");
+      toast.error("שגיאה בהסרת ה-Petish Story");
     }
   };
 
