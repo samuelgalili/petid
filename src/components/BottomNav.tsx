@@ -34,11 +34,13 @@ const BottomNav = () => {
   const socialRoutes = ['/feed', '/user/', '/post/', '/story/', '/highlight/', '/messages', '/profile'];
   const isSocialPage = socialRoutes.some(route => location.pathname.startsWith(route));
 
-  // Fetch unread notifications count
+  // Fetch unread notifications count with realtime updates
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
     const fetchUnreadCount = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) return null;
 
       const { count } = await supabase
         .from('notifications')
@@ -47,12 +49,40 @@ const BottomNav = () => {
         .eq('is_read', false);
 
       setUnreadCount(count || 0);
+      return user.id;
     };
 
-    if (isSocialPage) {
-      fetchUnreadCount();
-    }
-  }, [isSocialPage, location.pathname]);
+    const setupRealtime = async () => {
+      const userId = await fetchUnreadCount();
+      if (!userId) return;
+
+      // Subscribe to realtime changes on notifications table
+      channel = supabase
+        .channel('notifications-count')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`
+          },
+          () => {
+            // Refetch count on any change
+            fetchUnreadCount();
+          }
+        )
+        .subscribe();
+    };
+
+    setupRealtime();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [location.pathname]);
 
   // Regular app navigation
   const appNavItems = [
