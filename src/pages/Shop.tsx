@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, DollarSign, Tag, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, DollarSign, Tag, Info, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { VirtuosoGrid } from "react-virtuoso";
+import petidLogo from "@/assets/petid-logo.png";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -624,77 +625,126 @@ const Shop = () => {
 
       {/* Product Details Sheet */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-white">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl bg-white p-0">
           {selectedProduct && (
             <div className="flex flex-col h-full" dir="rtl">
-              <div className="flex-1 overflow-y-auto pb-32">
-                {/* Petid Logo + Info Button */}
-                <div className="flex items-center justify-between pt-6 pb-6 sticky top-0 bg-white z-10 px-4">
-                  <div className="w-10" /> {/* Spacer for centering */}
-                  <div className="bg-[#FFC107] px-8 py-2.5 rounded-xl shadow-lg">
-                    <span className="text-2xl font-bold text-gray-900 font-jakarta">Petid</span>
+              <div className="flex-1 overflow-y-auto pb-36">
+                {/* Header with Logo */}
+                <div className="sticky top-0 bg-white z-10 border-b border-gray-100">
+                  {/* Drag Handle */}
+                  <div className="flex justify-center pt-3 pb-2">
+                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => {
-                      setSelectedProduct(null);
-                      navigate(`/product/${selectedProduct.id}`);
-                    }}
-                    className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                    aria-label="פרטי מוצר מלאים"
-                  >
-                    <Info className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
-                  </motion.button>
+                  
+                  {/* Logo + Info Button Row */}
+                  <div className="flex items-center justify-between px-4 pb-4">
+                    <div className="w-10" />
+                    <img 
+                      src={petidLogo} 
+                      alt="Petid" 
+                      className="h-10 object-contain"
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => {
+                        setSelectedProduct(null);
+                        navigate(`/product/${selectedProduct.id}`);
+                      }}
+                      className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                      aria-label="פרטי מוצר מלאים"
+                    >
+                      <Info className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+                    </motion.button>
+                  </div>
                 </div>
 
-                {/* Product Image */}
-                <div className="flex justify-center py-6">
+                {/* Product Image with Sale Badge */}
+                <div className="relative flex justify-center py-6 px-4">
+                  {selectedProduct.originalPrice && (
+                    <motion.div 
+                      initial={{ scale: 0, rotate: -12 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      className="absolute top-4 right-6 z-10"
+                    >
+                      <div className="bg-red-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg font-jakarta">
+                        {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}% הנחה
+                      </div>
+                    </motion.div>
+                  )}
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="w-56 h-56"
+                    className="w-52 h-52 bg-gradient-to-b from-gray-50 to-white rounded-3xl p-4 shadow-sm"
                   >
                     <OptimizedImage
                       src={selectedProduct.image}
                       alt={selectedProduct.name}
-                      className="w-full h-full"
+                      className="w-full h-full rounded-2xl"
                       objectFit="contain"
-                      sizes="224px"
+                      sizes="208px"
                       priority
                     />
                   </motion.div>
                 </div>
 
-                {/* Dotted Separator */}
-                <div className="border-t-2 border-dashed border-gray-300 my-4" />
-
                 {/* Product Details */}
                 <div className="text-center px-6">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-3 font-jakarta">
+                  <motion.h2 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-2xl font-bold text-gray-900 mb-2 font-jakarta"
+                  >
                     {selectedProduct.name}
-                  </h2>
-                  <p className="text-lg text-gray-600 mb-6 font-jakarta">
+                  </motion.h2>
+                  <p className="text-base text-gray-500 mb-5 font-jakarta">
                     {selectedProduct.description}
                   </p>
 
-                  {/* Price */}
-                  <div className="flex items-center justify-center gap-3 mb-8">
-                    <div className="text-5xl font-bold text-[#E91E63] font-jakarta">
-                      {selectedProduct.price}₪
+                  {/* Price Section */}
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="flex items-center justify-center gap-3 mb-6"
+                  >
+                    <div className="text-4xl font-black text-[#E91E63] font-jakarta">
+                      ₪{selectedProduct.price}
                     </div>
                     {selectedProduct.originalPrice && (
-                      <div className="text-xl text-gray-400 line-through font-jakarta">
-                        {selectedProduct.originalPrice}₪
+                      <div className="flex flex-col items-start">
+                        <div className="text-lg text-gray-400 line-through font-jakarta">
+                          ₪{selectedProduct.originalPrice}
+                        </div>
+                        <div className="text-xs text-green-600 font-medium font-jakarta">
+                          חסכת ₪{selectedProduct.originalPrice - selectedProduct.price}
+                        </div>
                       </div>
                     )}
+                  </motion.div>
+
+                  {/* Quick Info Pills */}
+                  <div className="flex flex-wrap justify-center gap-2 mb-6">
+                    <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-medium font-jakarta">
+                      <Check className="w-3.5 h-3.5" strokeWidth={2} />
+                      במלאי
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-medium font-jakarta">
+                      <ShoppingCart className="w-3.5 h-3.5" strokeWidth={2} />
+                      משלוח חינם מעל ₪199
+                    </div>
                   </div>
 
                   {/* Terms */}
                   {selectedProduct.terms && (
-                    <div className="text-sm text-gray-500 leading-relaxed bg-gray-50 p-4 rounded-2xl font-jakarta mb-6">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-xs text-gray-500 leading-relaxed bg-gray-50 p-4 rounded-2xl font-jakarta text-right"
+                    >
                       {selectedProduct.terms}
-                    </div>
+                    </motion.div>
                   )}
                 </div>
               </div>
