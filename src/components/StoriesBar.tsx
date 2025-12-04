@@ -94,12 +94,12 @@ export const StoriesBar = () => {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 bg-white border-b border-gray-100">
+      <div className="px-4 py-4 bg-surface border-b border-petid-border">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
-              <div className="w-14 h-3 bg-gray-200 rounded-full animate-pulse" />
+              <div className="w-20 h-20 rounded-full bg-gradient-petish opacity-30 animate-pulse" />
+              <div className="w-14 h-3 bg-muted rounded-full animate-pulse" />
             </div>
           ))}
         </div>
@@ -109,7 +109,7 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-4 py-4 bg-white border-b border-gray-100 shadow-sm">
+      <div className="px-4 py-4 bg-surface border-b border-petid-border shadow-sm">
         <div className="flex gap-5 overflow-x-auto no-scrollbar pb-1">
           {/* Add Story Button */}
           {user && (
@@ -125,21 +125,22 @@ export const StoriesBar = () => {
               onClick={() => setCreateDialogOpen(true)}
             >
               <div className="relative">
+                {/* Petish Story Ring with Gradient */}
                 <motion.div 
-                  className="w-20 h-20 rounded-full bg-gradient-instagram p-[3px] shadow-xl"
+                  className="petish-story-ring w-20 h-20 shadow-petish"
                   whileHover={{
-                    boxShadow: "0 0 25px rgba(245, 96, 213, 0.6)"
+                    boxShadow: "0 0 25px hsla(342, 100%, 69%, 0.5)"
                   }}
                 >
                   <Avatar className="w-full h-full ring-2 ring-white">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback className="bg-secondary text-secondary-foreground font-black text-xl">
+                    <AvatarFallback className="bg-gradient-petish text-white font-black text-xl">
                       {user.user_metadata?.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </motion.div>
                 <motion.div 
-                  className="absolute bottom-0 right-0 w-7 h-7 bg-instagram-pink rounded-full flex items-center justify-center shadow-lg border-2 border-white"
+                  className="absolute bottom-0 right-0 w-7 h-7 bg-petish-primary rounded-full flex items-center justify-center shadow-lg border-2 border-white"
                   whileHover={{ 
                     scale: 1.2,
                     rotate: 90,
@@ -175,14 +176,16 @@ export const StoriesBar = () => {
               onClick={() => navigate(`/story/${storyUser.user_id}`)}
             >
               <div className="relative">
+                {/* Petish Story Ring - Gradient for unviewed, muted for viewed */}
                 <motion.div 
-                  className={`p-[3px] rounded-full shadow-xl ${
+                  className={`p-[3px] rounded-full ${
                     storyUser.has_viewed 
-                      ? 'bg-muted' 
-                      : 'bg-gradient-instagram'
+                      ? 'petish-story-ring-viewed' 
+                      : 'petish-story-ring'
                   }`}
+                  style={!storyUser.has_viewed ? { boxShadow: '0 4px 12px hsla(342, 100%, 69%, 0.25)' } : {}}
                   whileHover={!storyUser.has_viewed ? {
-                    boxShadow: "0 0 25px rgba(245, 96, 213, 0.6)",
+                    boxShadow: "0 0 25px hsla(342, 100%, 69%, 0.5)",
                     transition: { duration: 0.2 }
                   } : {}}
                   animate={!storyUser.has_viewed ? {
@@ -196,7 +199,7 @@ export const StoriesBar = () => {
                 >
                   <Avatar className="w-20 h-20 ring-[3px] ring-white">
                     <AvatarImage src={storyUser.avatar_url} />
-                    <AvatarFallback className="bg-gradient-instagram text-white font-black text-xl">
+                    <AvatarFallback className="bg-gradient-petish text-white font-black text-xl">
                       {storyUser.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -210,7 +213,7 @@ export const StoriesBar = () => {
 
           {storyUsers.length === 0 && !user && (
             <div className="text-center py-6 w-full">
-              <p className="text-gray-500 font-jakarta text-sm font-semibold">אין Petish Stories פעילים כרגע 📸</p>
+              <p className="text-muted-foreground font-jakarta text-sm font-semibold">אין Petish Stories פעילים כרגע 📸</p>
             </div>
           )}
         </div>

@@ -18,12 +18,12 @@ export default {
         jakarta: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       fontWeight: {
-        normal: '400',    // Body text
-        medium: '500',    // Buttons, emphasized text
-        semibold: '600',  // Secondary headings
-        bold: '700',      // Primary headings
-        extrabold: '800', // Hero headings
-        black: '900',     // Special emphasis
+        normal: '400',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
+        extrabold: '800',
+        black: '900',
       },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: '1.25', letterSpacing: '0' }],
@@ -48,13 +48,45 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        instagram: {
-          orange: "hsl(var(--instagram-orange))",
-          pink: "hsl(var(--instagram-pink))",
-          purple: "hsl(var(--instagram-purple))",
+        
+        /* ===========================
+         * PETID - Commercial Brand
+         * =========================== */
+        petid: {
+          primary: "hsl(var(--petid-primary))",
+          "primary-light": "hsl(var(--petid-primary-light))",
+          "primary-dark": "hsl(var(--petid-primary-dark))",
+          "primary-foreground": "hsl(var(--petid-primary-foreground))",
+          text: "hsl(var(--petid-text))",
+          "text-muted": "hsl(var(--petid-text-muted))",
+          bg: "hsl(var(--petid-bg))",
+          surface: "hsl(var(--petid-surface))",
+          border: "hsl(var(--petid-border))",
+          "accent-green": "hsl(var(--petid-accent-green))",
+          "accent-coral": "hsl(var(--petid-accent-coral))",
         },
         
-        /* Primary - Warm Yellow */
+        /* ===========================
+         * PETISH - Social Network Brand
+         * =========================== */
+        petish: {
+          primary: "hsl(var(--petish-primary))",
+          "primary-light": "hsl(var(--petish-primary-light))",
+          "primary-dark": "hsl(var(--petish-primary-dark))",
+          "primary-foreground": "hsl(var(--petish-primary-foreground))",
+          purple: "hsl(var(--petish-purple))",
+          "purple-light": "hsl(var(--petish-purple-light))",
+          "purple-dark": "hsl(var(--petish-purple-dark))",
+          yellow: "hsl(var(--petish-yellow))",
+          "yellow-light": "hsl(var(--petish-yellow-light))",
+          "yellow-dark": "hsl(var(--petish-yellow-dark))",
+          teal: "hsl(var(--petish-teal))",
+          "teal-light": "hsl(var(--petish-teal-light))",
+          "teal-dark": "hsl(var(--petish-teal-dark))",
+          dark: "hsl(var(--petish-dark))",
+        },
+        
+        /* Primary - Petid Blue */
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -63,14 +95,14 @@ export default {
           hover: "hsl(var(--primary-hover))",
         },
         
-        /* Icon colors - ChatGPT style */
+        /* Icon colors */
         icon: {
           base: "hsl(var(--icon-base))",
           active: "hsl(var(--icon-active))",
           disabled: "hsl(var(--icon-disabled))",
         },
         
-        /* Secondary - Midnight Blue */
+        /* Secondary */
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -78,7 +110,7 @@ export default {
           dark: "hsl(var(--secondary-dark))",
         },
         
-        /* Accent - Honey Gold (CTA) */
+        /* Accent */
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
@@ -86,7 +118,7 @@ export default {
           light: "hsl(var(--accent-light))",
         },
         
-        /* Success - Mint Green */
+        /* Success */
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
@@ -115,7 +147,7 @@ export default {
           light: "hsl(var(--info-light))",
         },
         
-        /* Destructive (legacy support) */
+        /* Destructive */
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -180,12 +212,6 @@ export default {
           text: "hsl(var(--tag-text))",
           border: "hsl(var(--tag-border))",
         },
-        
-        instagram: {
-          orange: "hsl(var(--instagram-orange))",
-          pink: "hsl(var(--instagram-pink))",
-          purple: "hsl(var(--instagram-purple))",
-        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -202,6 +228,7 @@ export default {
         elevated: 'var(--shadow-elevated)',
         button: 'var(--shadow-button)',
         'button-hover': 'var(--shadow-button-hover)',
+        petish: 'var(--shadow-petish)',
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
@@ -209,30 +236,28 @@ export default {
         'gradient-trust': 'var(--gradient-trust)',
         'gradient-hero': 'var(--gradient-hero)',
         'gradient-card': 'var(--gradient-card)',
-        'gradient-instagram': 'var(--gradient-instagram)',
-        'gradient-instagram-soft': 'var(--gradient-instagram-soft)',
+        'gradient-petish': 'var(--petish-gradient)',
+        'gradient-petish-soft': 'var(--petish-gradient-soft)',
+        'gradient-petid': 'linear-gradient(135deg, hsl(var(--petid-primary)) 0%, hsl(var(--petid-primary-dark)) 100%)',
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "pulse-petish": {
+          "0%, 100%": { boxShadow: "0 0 0 0 hsla(342, 100%, 69%, 0.4)" },
+          "50%": { boxShadow: "0 0 0 10px hsla(342, 100%, 69%, 0)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-petish": "pulse-petish 2s ease-in-out infinite",
       },
     },
   },
