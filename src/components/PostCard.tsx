@@ -77,8 +77,8 @@ const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; 
     {/* Tongue with licking animation */}
     <motion.path
       d="M12 15.5C12 15.5 10.5 17 10.5 19C10.5 20.5 11 21.5 12 21.5C13 21.5 13.5 20.5 13.5 19C13.5 17 12 15.5 12 15.5Z"
-      fill={isLiked ? "#FF69B4" : "#FF9999"}
-      stroke={isLiked ? "#FF1493" : "#FF6B6B"}
+      fill={isLiked ? "hsl(342, 100%, 69%)" : "#FF9999"}
+      stroke={isLiked ? "hsl(342, 100%, 59%)" : "#FF6B6B"}
       strokeWidth="0.5"
       initial={false}
       animate={isLicking ? {
@@ -94,7 +94,7 @@ const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; 
       y1="16"
       x2="12"
       y2="20"
-      stroke={isLiked ? "#FF1493" : "#FF6B6B"}
+      stroke={isLiked ? "hsl(342, 100%, 59%)" : "#FF6B6B"}
       strokeWidth="0.3"
       opacity="0.5"
       initial={false}
@@ -210,17 +210,17 @@ export const PostCard = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-4"
+      className="bg-surface rounded-3xl shadow-sm border border-petid-border overflow-hidden mb-4"
     >
       {/* Post Header */}
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
           <Avatar 
-            className="w-11 h-11 ring-2 ring-gray-100 cursor-pointer"
+            className="w-11 h-11 ring-2 ring-petid-border cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
             <AvatarImage src={post.user.avatar_url} />
-            <AvatarFallback className="bg-gradient-instagram text-white font-black text-sm">
+            <AvatarFallback className="bg-gradient-petish text-white font-black text-sm">
               {post.user.full_name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
@@ -228,8 +228,8 @@ export const PostCard = ({
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <p className="font-black text-gray-900 font-jakarta text-[15px]">{post.user.full_name || "משתמש"}</p>
-            <p className="text-xs text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
+            <p className="font-black text-petid-text font-jakarta text-[15px]">{post.user.full_name || "משתמש"}</p>
+            <p className="text-xs text-petid-text-muted font-jakarta">{getTimeAgo(post.created_at)}</p>
           </div>
         </div>
         
@@ -240,8 +240,8 @@ export const PostCard = ({
               size="sm"
               className={`text-xs font-black px-3 py-1 rounded-lg ${
                 isFollowing 
-                  ? 'text-gray-600 hover:text-gray-900' 
-                  : 'text-instagram-pink hover:text-instagram-purple'
+                  ? 'text-muted-foreground hover:text-foreground' 
+                  : 'text-petish-primary hover:text-petish-purple'
               }`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -251,7 +251,7 @@ export const PostCard = ({
               {isFollowing ? "עוקב" : "עקוב"}
             </Button>
           )}
-          <button className="text-icon-base hover:text-icon-active p-2 transition-colors">
+          <button className="text-icon-base hover:text-petish-primary p-2 transition-colors">
             <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
           </button>
         </div>
@@ -292,7 +292,7 @@ export const PostCard = ({
               whileTap={{ scale: 0.9 }}
               onClick={handleLike}
               className={`flex items-center gap-2 transition-all ${
-                post.is_liked ? 'text-instagram-pink' : 'text-icon-base hover:text-icon-active'
+                post.is_liked ? 'text-petish-primary' : 'text-icon-base hover:text-petish-primary'
               }`}
             >
               <DogTongueIcon isLicking={isLicking} isLiked={post.is_liked} className="w-7 h-7" />
@@ -303,7 +303,7 @@ export const PostCard = ({
             
             <motion.button 
               whileTap={{ scale: 0.9 }}
-              className="flex items-center gap-2 text-icon-base hover:text-icon-active transition-colors"
+              className="flex items-center gap-2 text-icon-base hover:text-petish-purple transition-colors"
               onClick={() => navigate(`/post/${post.id}`)}
             >
               <MessageCircle className="w-7 h-7" strokeWidth={1.5} />
@@ -314,7 +314,7 @@ export const PostCard = ({
             
             <motion.button 
               whileTap={{ scale: 0.9 }}
-              className="text-icon-base hover:text-icon-active transition-colors"
+              className="text-icon-base hover:text-petish-teal transition-colors"
             >
               <Share2 className="w-7 h-7" strokeWidth={1.5} />
             </motion.button>
@@ -322,7 +322,7 @@ export const PostCard = ({
           <motion.button 
             whileTap={{ scale: 0.9 }}
             onClick={() => onSave(post.id)}
-            className={`transition-colors ${post.is_saved ? 'text-instagram-orange' : 'text-icon-base hover:text-icon-active'}`}
+            className={`transition-colors ${post.is_saved ? 'text-petish-yellow' : 'text-icon-base hover:text-petish-yellow'}`}
           >
             <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
           </motion.button>
@@ -331,7 +331,7 @@ export const PostCard = ({
         {/* Liked by */}
         {post.likes_count > 0 && (
           <div className="mb-3">
-            <p className="text-sm text-gray-900 font-jakarta">
+            <p className="text-sm text-petid-text font-jakarta">
               <span className="font-black">
                 {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
               </span>
@@ -342,9 +342,9 @@ export const PostCard = ({
         {/* Post Caption */}
         {post.caption && (
           <div className="mb-2">
-            <p className="text-gray-900 font-jakarta text-[15px]">
+            <p className="text-petid-text font-jakarta text-[15px]">
               <span 
-                className="font-black cursor-pointer hover:text-instagram-pink transition-colors"
+                className="font-black cursor-pointer hover:text-petish-primary transition-colors"
                 onClick={() => navigate(`/user/${post.user.id}`)}
               >
                 {post.user.full_name || "משתמש"}
@@ -357,7 +357,7 @@ export const PostCard = ({
         {/* View Comments */}
         {post.comments_count > 0 && (
           <button 
-            className="text-gray-500 text-sm font-jakarta hover:text-gray-700 font-semibold transition-colors"
+            className="text-muted-foreground text-sm font-jakarta hover:text-petish-primary font-semibold transition-colors"
             onClick={() => navigate(`/post/${post.id}`)}
           >
             הצג את כל {post.comments_count} התגובות
