@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import catIconGif from "@/assets/cat-icon.gif";
+import { PetidAnimations } from "@/animations/petid";
 
 interface Achievement {
   id: number;
@@ -51,25 +52,27 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
               }
             }}
           >
-            {/* Yellow Loyalty Card */}
+            {/* Petid Loyalty Card - Blue themed */}
             <motion.div
-              className="relative bg-gradient-primary rounded-[24px] shadow-elevated p-6 pt-10 overflow-hidden"
-              variants={{
-                hover: {
-                  boxShadow: "0 20px 60px rgba(34, 48, 72, 0.2)",
-                  transition: { duration: 0.3 }
-                }
+              className="relative bg-gradient-petid rounded-[24px] shadow-elevated p-6 pt-10 overflow-hidden"
+              animate={{
+                boxShadow: [
+                  '0 4px 12px hsla(209, 79%, 52%, 0.1)',
+                  '0 4px 24px hsla(209, 79%, 52%, 0.2)',
+                  '0 4px 12px hsla(209, 79%, 52%, 0.1)',
+                ],
               }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              {/* Decorative Rainbow Arcs in Corners */}
+              {/* Decorative Arcs - Petid blue themed */}
               <div className="absolute top-4 left-4 w-12 h-12 opacity-20">
                 <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 44 Q4 4 44 4" stroke="url(#grad1)" strokeWidth="8" strokeLinecap="round" fill="none" />
+                  <path d="M4 44 Q4 4 44 4" stroke="url(#petid-grad1)" strokeWidth="8" strokeLinecap="round" fill="none" />
                   <defs>
-                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FF6B6B" />
-                      <stop offset="50%" stopColor="#FFA500" />
-                      <stop offset="100%" stopColor="#FFD700" />
+                    <linearGradient id="petid-grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#37B679" />
+                      <stop offset="50%" stopColor="#2688E6" />
+                      <stop offset="100%" stopColor="#1C5BB9" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -77,20 +80,20 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
 
               <div className="absolute bottom-4 right-4 w-12 h-12 opacity-20 rotate-180">
                 <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 44 Q4 4 44 4" stroke="url(#grad2)" strokeWidth="8" strokeLinecap="round" fill="none" />
+                  <path d="M4 44 Q4 4 44 4" stroke="url(#petid-grad2)" strokeWidth="8" strokeLinecap="round" fill="none" />
                   <defs>
-                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FF6B6B" />
-                      <stop offset="50%" stopColor="#FFA500" />
-                      <stop offset="100%" stopColor="#FFD700" />
+                    <linearGradient id="petid-grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#37B679" />
+                      <stop offset="50%" stopColor="#2688E6" />
+                      <stop offset="100%" stopColor="#1C5BB9" />
                     </linearGradient>
                   </defs>
                 </svg>
               </div>
 
-              {/* Direct Layout - Balance Right, Cat Icon Left, No Box */}
+              {/* Direct Layout - Balance Right, Cat Icon Left */}
               <div className="relative flex items-center justify-between px-4">
-                {/* Right Side: Balance Display on Yellow Background */}
+                {/* Right Side: Balance Display */}
                 <motion.div
                   className="text-left"
                   key={walletBalance}
@@ -106,7 +109,7 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                   </div>
                 </motion.div>
 
-                {/* Left Side: Cat Icon Only */}
+                {/* Left Side: Cat Icon */}
                 <motion.div
                   className="w-20 h-20"
                   animate={{
@@ -123,7 +126,7 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                 </motion.div>
               </div>
 
-              {/* Hover-Only Achievement Details - Enhanced Design */}
+              {/* Hover-Only Achievement Details */}
               <motion.div
                 className="mt-4"
                 initial={{ opacity: 0, height: 0, y: -10 }}
@@ -136,34 +139,34 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                   }
                 }}
               >
-                <div className="bg-gradient-to-br from-white via-white to-gray-50 backdrop-blur-md rounded-3xl p-5 shadow-2xl border border-white/50">
+                <div className="bg-gradient-to-br from-white via-white to-petid-bg backdrop-blur-md rounded-3xl p-5 shadow-2xl border border-white/50">
                   {/* Header */}
                   <div className="flex items-center justify-center gap-2 mb-4">
-                          <div className="w-8 h-8 bg-gradient-warm rounded-full flex items-center justify-center shadow-md">
-                            <span className="text-white text-lg">🏆</span>
-                          </div>
-                          <h3 className="text-base font-black text-foreground font-jakarta">
-                            ההישגים שלך
-                          </h3>
+                    <div className="w-8 h-8 bg-petid-primary rounded-full flex items-center justify-center shadow-md">
+                      <span className="text-white text-lg">🏆</span>
+                    </div>
+                    <h3 className="text-base font-black text-petid-text font-jakarta">
+                      ההישגים שלך
+                    </h3>
                   </div>
 
                   {/* Achievement Progress Bar */}
                   {next && (
                     <div className="mb-4 bg-white/80 rounded-2xl p-3 shadow-sm">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-bold text-gray-700 font-jakarta">
+                        <span className="text-xs font-bold text-petid-text font-jakarta">
                           עד הישג הבא
                         </span>
                         <div className="flex items-center gap-1">
-                          <span className="text-xs font-black text-transparent bg-clip-text bg-gradient-primary">
+                          <span className="text-xs font-black text-petid-primary">
                             ₪{(next.threshold - walletBalance).toFixed(0)}
                           </span>
-                          <span className="text-[10px] font-semibold text-gray-500">נותרו</span>
+                          <span className="text-[10px] font-semibold text-petid-text-muted">נותרו</span>
                         </div>
                       </div>
                       <div className="w-full bg-muted rounded-full h-3 overflow-hidden shadow-inner">
                         <motion.div
-                          className="h-full bg-gradient-primary rounded-full shadow-lg relative overflow-hidden"
+                          className="h-full bg-gradient-petid rounded-full shadow-lg relative overflow-hidden"
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}
                           transition={{ duration: 1.2, ease: "easeOut" }}
@@ -177,7 +180,7 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                         </motion.div>
                       </div>
                       <div className="text-center mt-1">
-                        <span className="text-[10px] font-bold text-gray-500">
+                        <span className="text-[10px] font-bold text-petid-text-muted">
                           {progress.toFixed(0)}% הושלם
                         </span>
                       </div>
@@ -218,12 +221,12 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={`text-[10px] font-extrabold leading-tight mb-0.5 ${
-                                isAchieved ? 'text-white' : 'text-gray-500'
+                                isAchieved ? 'text-white' : 'text-petid-text-muted'
                               } font-jakarta`}>
                                 {achievement.name}
                               </p>
                               <p className={`text-[9px] font-bold ${
-                                isAchieved ? 'text-white/90' : 'text-gray-400'
+                                isAchieved ? 'text-white/90' : 'text-petid-text-muted'
                               }`}>
                                 ₪{achievement.threshold}
                               </p>
@@ -235,7 +238,7 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                                 transition={{ type: "spring", stiffness: 200, delay: 0.2 + index * 0.05 }}
                                 className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md"
                               >
-                                <span className="text-green-600 text-xs font-bold">✓</span>
+                                <span className="text-petid-accent-green text-xs font-bold">✓</span>
                               </motion.div>
                             )}
                           </div>
@@ -245,17 +248,17 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                   </div>
 
                   {/* Total Achievements Summary */}
-                  <div className="bg-primary/10 rounded-2xl p-3 text-center border border-primary/20">
+                  <div className="bg-petid-primary/10 rounded-2xl p-3 text-center border border-petid-primary/20">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-primary">
+                      <span className="text-2xl font-black text-petid-primary">
                         {totalAchieved}
                       </span>
-                      <span className="text-gray-400 text-sm font-bold">/</span>
-                      <span className="text-lg font-bold text-gray-500">
+                      <span className="text-petid-text-muted text-sm font-bold">/</span>
+                      <span className="text-lg font-bold text-petid-text-muted">
                         {achievements.length}
                       </span>
                     </div>
-                    <p className="text-[10px] font-bold text-gray-600 mt-1 font-jakarta">
+                    <p className="text-[10px] font-bold text-petid-text mt-1 font-jakarta">
                       הישגים שהשגת
                     </p>
                   </div>
@@ -265,8 +268,8 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
           </motion.div>
         </motion.div>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="bg-gray-900 text-white border-gray-700">
-        <p className="font-bold text-sm">כרטיס מועדון</p>
+      <TooltipContent side="bottom" className="bg-petish-dark text-white border-petish-dark/50">
+        <p className="font-bold text-sm">כרטיס מועדון Petid</p>
         <p className="text-xs opacity-90">לחץ לצפייה בהיסטוריית הזמנות וחיסכון</p>
       </TooltipContent>
     </Tooltip>
