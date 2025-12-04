@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { PostCard } from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCardErrorBoundary } from "@/components/PostCardErrorBoundary";
+import { PetishAnimations } from "@/animations/petish";
 
 interface Post {
   id: string;
@@ -384,11 +385,11 @@ const Feed = () => {
   }, [posts, feedFilter, followingIds]);
 
   return (
-    <div className="min-h-screen bg-white pb-24" dir="rtl">
-      {/* Petish Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+    <div className="min-h-screen bg-petid-bg pb-24" dir="rtl">
+      {/* Petish Header - Dark themed */}
+      <div className="fixed top-0 left-0 right-0 z-50 petish-header border-b border-petish-dark/50 shadow-petish">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-center">
-          <h1 className="text-2xl font-black font-jakarta text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-black font-jakarta tracking-tight text-gradient-petish">
             Petish
           </h1>
         </div>
@@ -397,23 +398,23 @@ const Feed = () => {
       {/* Spacer for fixed header */}
       <div className="h-14" />
 
-      {/* Create Post FAB */}
+      {/* Create Post FAB - Petish gradient */}
       <Button
         onClick={() => setCreatePostOpen(true)}
-        className="fixed bottom-24 left-4 z-50 rounded-full w-14 h-14 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 shadow-xl"
+        className="fixed bottom-24 left-4 z-50 rounded-full w-14 h-14 btn-petish-primary shadow-petish"
         size="icon"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-6 h-6 text-white" />
       </Button>
 
-      {/* New Posts Banner */}
+      {/* New Posts Banner - Petish themed */}
       <AnimatePresence>
         {newPostsAvailable && (
           <motion.div
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
-            className="fixed top-14 left-0 right-0 z-40 px-4 py-3 bg-blue-500 text-white text-center cursor-pointer shadow-md"
+            className="fixed top-14 left-0 right-0 z-40 px-4 py-3 bg-gradient-petish text-white text-center cursor-pointer shadow-petish"
             onClick={handleLoadNewPosts}
           >
             <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
@@ -429,15 +430,15 @@ const Feed = () => {
         <StoriesBar />
       </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-white border-b border-gray-100">
+      {/* Filter Tabs - Petish themed */}
+      <div className="bg-surface border-b border-petid-border">
         <div className="max-w-2xl mx-auto px-4 py-2">
           <Tabs value={feedFilter} onValueChange={(value) => setFeedFilter(value as "all" | "following")}>
-            <TabsList className="w-full grid grid-cols-2 font-jakarta bg-gray-100">
-              <TabsTrigger value="all" className="font-black data-[state=active]:bg-white">
+            <TabsList className="w-full grid grid-cols-2 font-jakarta bg-muted">
+              <TabsTrigger value="all" className="font-black data-[state=active]:bg-white data-[state=active]:text-petish-primary">
                 הכל
               </TabsTrigger>
-              <TabsTrigger value="following" className="font-black data-[state=active]:bg-white">
+              <TabsTrigger value="following" className="font-black data-[state=active]:bg-white data-[state=active]:text-petish-primary">
                 עוקבים ({followingIds.length})
               </TabsTrigger>
             </TabsList>

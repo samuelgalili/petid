@@ -24,6 +24,8 @@ import {
   CheckSquare,
   Gift
 } from "lucide-react";
+import { PetidIcons } from "@/icons/petid";
+import { PetishIcons } from "@/icons/petish";
 
 const BottomNav = () => {
   const location = useLocation();
@@ -165,7 +167,10 @@ const BottomNav = () => {
     <>
       {/* Bottom Navigation */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-50 h-16"
+        className={cn(
+          "fixed bottom-0 left-0 right-0 border-t z-50 h-16",
+          isSocialPage ? "bg-petish-dark border-petish-dark/50" : "bg-surface border-border"
+        )}
         role="navigation"
         aria-label={isSocialPage ? "ניווט רשת חברתית" : ARIA_LABELS.navigation}
       >
@@ -187,7 +192,9 @@ const BottomNav = () => {
                   <Icon 
                     className={cn(
                       "w-[22px] h-[22px] transition-colors",
-                      isActive ? "text-primary" : "text-foreground"
+                      isSocialPage 
+                        ? isActive ? "text-petish-primary" : "text-white/80"
+                        : isActive ? "text-petid-primary" : "text-foreground"
                     )} 
                     strokeWidth={1.5}
                   />
@@ -215,7 +222,10 @@ const BottomNav = () => {
                   {isActive && (
                     <motion.div
                       layoutId={isSocialPage ? "activeSocialNavDot" : "activeNavDot"}
-                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"
+                      className={cn(
+                        "absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full",
+                        isSocialPage ? "bg-petish-primary" : "bg-petid-primary"
+                      )}
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     />
                   )}
@@ -223,7 +233,9 @@ const BottomNav = () => {
                 
                 <span className={cn(
                   "text-[10px] font-medium font-jakarta transition-colors text-center leading-tight mt-1",
-                  isActive ? "text-primary" : "text-foreground"
+                  isSocialPage
+                    ? isActive ? "text-petish-primary" : "text-white/80"
+                    : isActive ? "text-petid-primary" : "text-foreground"
                 )}>
                   {item.label}
                 </span>
