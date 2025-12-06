@@ -50,56 +50,41 @@ export default {
         foreground: "hsl(var(--foreground))",
         
         /* ===========================
-         * PETID - Commercial Brand
+         * YELLOW BRAND COLORS
          * =========================== */
-        petid: {
-          primary: "hsl(var(--petid-primary))",
-          "primary-light": "hsl(var(--petid-primary-light))",
-          "primary-dark": "hsl(var(--petid-primary-dark))",
-          "primary-foreground": "hsl(var(--petid-primary-foreground))",
-          text: "hsl(var(--petid-text))",
-          "text-muted": "hsl(var(--petid-text-muted))",
-          bg: "hsl(var(--petid-bg))",
-          surface: "hsl(var(--petid-surface))",
-          border: "hsl(var(--petid-border))",
-          "accent-green": "hsl(var(--petid-accent-green))",
-          "accent-coral": "hsl(var(--petid-accent-coral))",
+        yellow: {
+          primary: "hsl(var(--yellow-primary))",
+          "gradient-top": "hsl(var(--yellow-gradient-top))",
+          "gradient-bottom": "hsl(var(--yellow-gradient-bottom))",
+          hover: "hsl(var(--yellow-hover))",
+          pressed: "hsl(var(--yellow-pressed))",
+          red: "hsl(var(--yellow-red))",
+          dark: "hsl(var(--yellow-dark))",
+          "gray-600": "hsl(var(--yellow-gray-600))",
+          "gray-400": "hsl(var(--yellow-gray-400))",
+          white: "hsl(var(--yellow-white))",
+          "gray-100": "hsl(var(--yellow-gray-100))",
+          "gray-200": "hsl(var(--yellow-gray-200))",
         },
         
-        /* ===========================
-         * PETISH - Social Network Brand
-         * =========================== */
-        petish: {
-          primary: "hsl(var(--petish-primary))",
-          "primary-light": "hsl(var(--petish-primary-light))",
-          "primary-dark": "hsl(var(--petish-primary-dark))",
-          "primary-foreground": "hsl(var(--petish-primary-foreground))",
-          purple: "hsl(var(--petish-purple))",
-          "purple-light": "hsl(var(--petish-purple-light))",
-          "purple-dark": "hsl(var(--petish-purple-dark))",
-          yellow: "hsl(var(--petish-yellow))",
-          "yellow-light": "hsl(var(--petish-yellow-light))",
-          "yellow-dark": "hsl(var(--petish-yellow-dark))",
-          teal: "hsl(var(--petish-teal))",
-          "teal-light": "hsl(var(--petish-teal-light))",
-          "teal-dark": "hsl(var(--petish-teal-dark))",
-          dark: "hsl(var(--petish-dark))",
+        /* Icon Colors */
+        icon: {
+          base: "hsl(var(--icon-base))",
+          blue: "hsl(var(--icon-blue))",
+          "dark-blue": "hsl(var(--icon-dark-blue))",
+          orange: "hsl(var(--icon-orange))",
+          active: "hsl(var(--icon-active))",
+          disabled: "hsl(var(--icon-disabled))",
         },
         
-        /* Primary - Petid Blue */
+        /* Primary - Yellow */
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
           light: "hsl(var(--primary-light))",
           dark: "hsl(var(--primary-dark))",
           hover: "hsl(var(--primary-hover))",
-        },
-        
-        /* Icon colors */
-        icon: {
-          base: "hsl(var(--icon-base))",
-          active: "hsl(var(--icon-active))",
-          disabled: "hsl(var(--icon-disabled))",
+          pressed: "hsl(var(--primary-pressed))",
         },
         
         /* Secondary */
@@ -110,7 +95,7 @@ export default {
           dark: "hsl(var(--secondary-dark))",
         },
         
-        /* Accent */
+        /* Accent - Red */
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
@@ -217,6 +202,9 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 4px)",
         sm: "calc(var(--radius) - 8px)",
+        xl: "var(--radius-lg)",
+        "2xl": "1.375rem",
+        "3xl": "1.75rem",
       },
       boxShadow: {
         sm: 'var(--shadow-sm)',
@@ -228,17 +216,14 @@ export default {
         elevated: 'var(--shadow-elevated)',
         button: 'var(--shadow-button)',
         'button-hover': 'var(--shadow-button-hover)',
-        petish: 'var(--shadow-petish)',
+        yellow: 'var(--shadow-yellow)',
       },
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
-        'gradient-warm': 'var(--gradient-warm)',
-        'gradient-trust': 'var(--gradient-trust)',
+        'gradient-yellow': 'var(--gradient-yellow)',
         'gradient-hero': 'var(--gradient-hero)',
+        'gradient-warm': 'var(--gradient-warm)',
         'gradient-card': 'var(--gradient-card)',
-        'gradient-petish': 'var(--petish-gradient)',
-        'gradient-petish-soft': 'var(--petish-gradient-soft)',
-        'gradient-petid': 'linear-gradient(135deg, hsl(var(--petid-primary)) 0%, hsl(var(--petid-primary-dark)) 100%)',
       },
       keyframes: {
         "accordion-down": {
@@ -249,15 +234,37 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-petish": {
-          "0%, 100%": { boxShadow: "0 0 0 0 hsla(342, 100%, 69%, 0.4)" },
-          "50%": { boxShadow: "0 0 0 10px hsla(342, 100%, 69%, 0)" },
+        "pulse-yellow": {
+          "0%, 100%": { boxShadow: "0 0 0 0 hsla(45, 100%, 48%, 0.4)" },
+          "50%": { boxShadow: "0 0 0 12px hsla(45, 100%, 48%, 0)" },
+        },
+        "bounce-in": {
+          "0%": { opacity: "0", transform: "scale(0.3)" },
+          "50%": { transform: "scale(1.05)" },
+          "70%": { transform: "scale(0.9)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(20px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-petish": "pulse-petish 2s ease-in-out infinite",
+        "pulse-yellow": "pulse-yellow 2s ease-in-out infinite",
+        "bounce-in": "bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+        "slide-up": "slide-up 0.3s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "shimmer": "shimmer 1.5s infinite",
       },
     },
   },
