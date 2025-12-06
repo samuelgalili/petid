@@ -24,8 +24,6 @@ import {
   CheckSquare,
   Gift
 } from "lucide-react";
-import { PetidIcons } from "@/icons/petid";
-import { PetishIcons } from "@/icons/petish";
 
 const BottomNav = () => {
   const location = useLocation();
@@ -49,8 +47,8 @@ const BottomNav = () => {
       gainNode.connect(audioContext.destination);
       
       // Create a pleasant notification tone
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
-      oscillator.frequency.setValueAtTime(1047, audioContext.currentTime + 0.1); // C6 note
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(1047, audioContext.currentTime + 0.1);
       
       oscillator.type = 'sine';
       
@@ -110,7 +108,6 @@ const BottomNav = () => {
             filter: `user_id=eq.${userId}`
           },
           () => {
-            // Refetch count on any change
             fetchUnreadCount(false);
           }
         )
@@ -130,10 +127,10 @@ const BottomNav = () => {
   const appNavItems = [
     { icon: Home, label: "בית", path: "/home" },
     { icon: ShoppingBag, label: "חנות", path: "/shop" },
-    { icon: Users, label: "Petish", path: "/feed" },
+    { icon: Users, label: "קהילה", path: "/feed" },
     { 
       icon: Grid3x3, 
-      label: "אפשרויות", 
+      label: "עוד", 
       onClick: () => setIsMoreSheetOpen(true),
       isButton: true 
     },
@@ -142,10 +139,10 @@ const BottomNav = () => {
 
   // Social network navigation
   const socialNavItems = [
-    { icon: Home, label: "חזרה לאפליקציה", path: "/home" },
+    { icon: Home, label: "חזרה", path: "/home" },
     { icon: Mail, label: "הודעות", path: "/messages" },
     { icon: Bell, label: "התראות", path: "/notifications", badge: unreadCount },
-    { icon: User, label: "הפרופיל שלי", path: "/profile" },
+    { icon: User, label: "פרופיל", path: "/profile" },
     { icon: Newspaper, label: "פיד", path: "/feed" },
   ];
 
@@ -169,7 +166,7 @@ const BottomNav = () => {
       <nav 
         className={cn(
           "fixed bottom-0 left-0 right-0 border-t z-50 h-16",
-          isSocialPage ? "bg-petish-dark border-petish-dark/50" : "bg-surface border-border"
+          isSocialPage ? "bg-secondary border-border" : "bg-surface border-border"
         )}
         role="navigation"
         aria-label={isSocialPage ? "ניווט רשת חברתית" : ARIA_LABELS.navigation}
@@ -179,7 +176,7 @@ const BottomNav = () => {
             const Icon = item.icon;
             const isActive = !item.isButton && location.pathname === item.path;
             const key = item.path || `button-${index}`;
-            const itemWidth = isSocialPage ? "w-[20%]" : "w-[20%]";
+            const itemWidth = "w-[20%]";
             
             const content = (
               <>
@@ -193,8 +190,8 @@ const BottomNav = () => {
                     className={cn(
                       "w-[22px] h-[22px] transition-colors",
                       isSocialPage 
-                        ? isActive ? "text-petish-primary" : "text-white/80"
-                        : isActive ? "text-petid-primary" : "text-foreground"
+                        ? isActive ? "text-primary" : "text-secondary-foreground/80"
+                        : isActive ? "text-primary" : "text-foreground"
                     )} 
                     strokeWidth={1.5}
                   />
@@ -202,16 +199,16 @@ const BottomNav = () => {
                   {item.badge && item.badge > 0 && (
                     <motion.span 
                       className={cn(
-                        "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center",
+                        "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center",
                         isPulsing && item.path === '/notifications' && "animate-pulse"
                       )}
                       initial={false}
                       animate={isPulsing && item.path === '/notifications' ? {
                         scale: [1, 1.3, 1],
                         boxShadow: [
-                          "0 0 0 0 rgba(239, 68, 68, 0)",
-                          "0 0 0 8px rgba(239, 68, 68, 0.3)",
-                          "0 0 0 0 rgba(239, 68, 68, 0)"
+                          "0 0 0 0 rgba(200, 16, 46, 0)",
+                          "0 0 0 8px rgba(200, 16, 46, 0.3)",
+                          "0 0 0 0 rgba(200, 16, 46, 0)"
                         ]
                       } : {}}
                       transition={{ duration: 0.6, repeat: isPulsing ? 2 : 0 }}
@@ -222,10 +219,7 @@ const BottomNav = () => {
                   {isActive && (
                     <motion.div
                       layoutId={isSocialPage ? "activeSocialNavDot" : "activeNavDot"}
-                      className={cn(
-                        "absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full",
-                        isSocialPage ? "bg-petish-primary" : "bg-petid-primary"
-                      )}
+                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary"
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     />
                   )}
@@ -234,8 +228,8 @@ const BottomNav = () => {
                 <span className={cn(
                   "text-[10px] font-medium font-jakarta transition-colors text-center leading-tight mt-1",
                   isSocialPage
-                    ? isActive ? "text-petish-primary" : "text-white/80"
-                    : isActive ? "text-petid-primary" : "text-foreground"
+                    ? isActive ? "text-primary" : "text-secondary-foreground/80"
+                    : isActive ? "text-primary" : "text-foreground"
                 )}>
                   {item.label}
                 </span>
@@ -271,10 +265,10 @@ const BottomNav = () => {
         </div>
       </nav>
 
-      {/* More Options Sheet - Only for regular navigation */}
+      {/* More Options Sheet */}
       {!isSocialPage && (
         <Sheet open={isMoreSheetOpen} onOpenChange={setIsMoreSheetOpen}>
-          <SheetContent side="bottom" className="h-[60vh] rounded-t-3xl bg-surface border-border">
+          <SheetContent side="bottom" className="h-[60vh] rounded-t-[22px] bg-surface border-border">
             <SheetHeader className="mb-6">
               <SheetTitle className="text-center text-lg font-semibold text-foreground">
                 כל הקטגוריות
@@ -288,10 +282,10 @@ const BottomNav = () => {
                     key={category.path}
                     to={category.path}
                     onClick={() => setIsMoreSheetOpen(false)}
-                    className="flex flex-col items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
+                    className="flex flex-col items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors group"
                   >
                     <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
-                      <CategoryIcon className={cn("w-6 h-6 text-foreground group-hover:text-primary transition-colors")} strokeWidth={1.5} />
+                      <CategoryIcon className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" strokeWidth={1.5} />
                     </div>
                     <span className="text-xs font-medium text-center text-foreground leading-tight">
                       {category.label}

@@ -3,317 +3,271 @@
 @tailwind utilities;
 
 /* 
- * PETID & PETISH DUAL-BRAND COLOR SYSTEM
- * =====================================
+ * PETID - YELLOW BRAND COLOR SYSTEM
+ * =================================
  * 
- * PETID: Commercial Module (Shop, Wallet, Checkout, Rewards, Products)
- * - Clean, trustworthy, professional
- * - Blue-based primary palette
+ * Based on Yellow Design System
+ * Primary Yellow: #F7BF00
+ * Brand Red: #C8102E (for headlines and highlights only)
  * 
- * PETISH: Social Network Module (Feed, Stories, Messages, Profiles)
- * - Young, vibrant, Instagram-style
- * - Pink/Purple gradient-based palette
- *
  * All colors MUST be HSL format.
  */
 
 @layer base {
   :root {
     /* ===========================
-     * PETID - COMMERCIAL BRAND COLORS
-     * Used in: Home, Shop, Cart, Checkout, Wallet, Rewards, Products
+     * YELLOW BRAND COLORS
      * =========================== */
     
-    /* Primary Blue - Main brand color */
-    --petid-primary: 209 79% 52%;           /* #2688E6 */
-    --petid-primary-light: 209 79% 62%;     /* Lighter variant */
-    --petid-primary-dark: 209 79% 42%;      /* Darker variant */
-    --petid-primary-foreground: 0 0% 100%;  /* White text */
+    /* Primary Yellow */
+    --yellow-primary: 45 100% 48%;           /* #F7BF00 */
+    --yellow-gradient-top: 46 96% 49%;       /* #F9C600 */
+    --yellow-gradient-bottom: 44 93% 48%;    /* #F4B400 */
+    --yellow-primary-foreground: 0 0% 15%;   /* Dark text on yellow */
+    --yellow-hover: 46 96% 52%;              /* #F9C600 hover */
+    --yellow-pressed: 44 87% 45%;            /* #E3A700 pressed */
     
-    /* Text Colors */
-    --petid-text: 240 6% 12%;               /* #1C1C1E - Dark text */
-    --petid-text-muted: 240 2% 48%;         /* #7A7A7C - Muted text */
+    /* Brand Red - Headlines & Highlights ONLY */
+    --yellow-red: 350 86% 43%;               /* #C8102E */
+    --yellow-red-foreground: 0 0% 100%;
     
-    /* Background & Surface */
-    --petid-bg: 220 20% 97%;                /* #F7F8FA - Light background */
-    --petid-surface: 0 0% 100%;             /* #FFFFFF - White surface */
-    --petid-border: 225 14% 91%;            /* #E6E7EB - Soft border */
+    /* Neutral Palette */
+    --yellow-dark: 0 0% 18%;                 /* #2F2F2F */
+    --yellow-gray-600: 0 0% 33%;             /* #555555 */
+    --yellow-gray-400: 0 0% 46%;             /* #767676 */
+    --yellow-white: 0 0% 100%;               /* #FFFFFF */
+    --yellow-gray-100: 0 0% 96%;             /* #F6F6F6 */
+    --yellow-gray-200: 0 0% 87%;             /* #DDDDDD */
     
-    /* Accent Colors */
-    --petid-accent-green: 153 52% 46%;      /* #37B679 - Success/Positive */
-    --petid-accent-coral: 1 100% 71%;       /* #FF6E6C - Attention/Warning */
+    /* Icon Colors */
+    --yellow-icon-blue: 213 97% 62%;         /* #3E8DFB */
+    --yellow-icon-dark-blue: 211 65% 33%;    /* #1D4E89 */
+    --yellow-icon-orange: 33 100% 50%;       /* #FF8A00 */
     
     /* ===========================
-     * PETISH - SOCIAL NETWORK BRAND COLORS
-     * Used in: Feed, Stories, Messages, Profile, Notifications
+     * SEMANTIC TOKENS
      * =========================== */
     
-    /* Primary Pink */
-    --petish-primary: 342 100% 69%;         /* #FF5F8F */
-    --petish-primary-light: 342 100% 79%;   /* Lighter variant */
-    --petish-primary-dark: 342 100% 59%;    /* Darker variant */
-    --petish-primary-foreground: 0 0% 100%; /* White text */
-    
-    /* Secondary Colors */
-    --petish-purple: 263 100% 71%;          /* #A06CFF */
-    --petish-purple-light: 263 100% 81%;
-    --petish-purple-dark: 263 100% 61%;
-    
-    --petish-yellow: 45 100% 64%;           /* #FFD748 */
-    --petish-yellow-light: 45 100% 74%;
-    --petish-yellow-dark: 45 100% 54%;
-    
-    --petish-teal: 173 56% 56%;             /* #4ED2C7 */
-    --petish-teal-light: 173 56% 66%;
-    --petish-teal-dark: 173 56% 46%;
-    
-    --petish-dark: 210 13% 8%;              /* #111315 - Dark mode bg */
-    
-    /* Petish Gradients */
-    --petish-gradient: linear-gradient(135deg, hsl(342, 100%, 69%) 0%, hsl(263, 100%, 71%) 100%);
-    --petish-gradient-soft: linear-gradient(135deg, hsla(342, 100%, 69%, 0.1) 0%, hsla(263, 100%, 71%, 0.1) 100%);
-    --petish-gradient-vibrant: linear-gradient(135deg, hsl(342, 100%, 69%) 0%, hsl(263, 100%, 71%) 50%, hsl(45, 100%, 64%) 100%);
-    
-    /* ===========================
-     * SEMANTIC TOKENS - PETID AS DEFAULT
-     * =========================== */
-    
-    /* Primary - Uses Petid Blue */
-    --primary: var(--petid-primary);
-    --primary-foreground: var(--petid-primary-foreground);
-    --primary-light: var(--petid-primary-light);
-    --primary-dark: var(--petid-primary-dark);
-    --primary-hover: var(--petid-primary-dark);
+    /* Primary - Yellow */
+    --primary: var(--yellow-primary);
+    --primary-foreground: var(--yellow-primary-foreground);
+    --primary-light: var(--yellow-gradient-top);
+    --primary-dark: var(--yellow-gradient-bottom);
+    --primary-hover: var(--yellow-hover);
+    --primary-pressed: var(--yellow-pressed);
 
-    /* Secondary */
-    --secondary: var(--petid-text);
-    --secondary-foreground: 0 0% 100%;
-    --secondary-light: 240 6% 22%;
-    --secondary-dark: 240 6% 8%;
+    /* Secondary - Dark Gray */
+    --secondary: var(--yellow-dark);
+    --secondary-foreground: var(--yellow-white);
+    --secondary-light: var(--yellow-gray-600);
+    --secondary-dark: 0 0% 12%;
 
-    /* Accent - Uses Petid Green */
-    --accent: var(--petid-accent-green);
-    --accent-foreground: 0 0% 100%;
-    --accent-hover: 153 52% 36%;
-    --accent-light: 153 52% 56%;
+    /* Accent - Brand Red (use sparingly!) */
+    --accent: var(--yellow-red);
+    --accent-foreground: var(--yellow-red-foreground);
+    --accent-hover: 350 86% 38%;
+    --accent-light: 350 86% 53%;
 
     /* Icon system colors */
-    --icon-base: 240 6% 12%;              /* Petid Dark */
-    --icon-active: var(--petid-primary);  /* Petid Blue */
-    --icon-disabled: 240 2% 69%;          /* Muted */
+    --icon-base: var(--yellow-dark);
+    --icon-blue: var(--yellow-icon-blue);
+    --icon-dark-blue: var(--yellow-icon-dark-blue);
+    --icon-orange: var(--yellow-icon-orange);
+    --icon-active: var(--yellow-primary);
+    --icon-disabled: var(--yellow-gray-400);
 
-    /* Success - Petid Green */
-    --success: var(--petid-accent-green);
+    /* Success - Green */
+    --success: 153 52% 46%;
     --success-foreground: 0 0% 100%;
     --success-light: 153 52% 56%;
     --success-dark: 153 52% 36%;
 
-    /* Warning */
-    --warning: 44 100% 50%;
+    /* Warning - Orange */
+    --warning: 33 100% 50%;
     --warning-foreground: 0 0% 100%;
-    --warning-light: 44 100% 60%;
+    --warning-light: 33 100% 60%;
     
-    /* Error - Petid Coral */
-    --error: var(--petid-accent-coral);
+    /* Error - Red */
+    --error: var(--yellow-red);
     --error-foreground: 0 0% 100%;
-    --error-light: 1 100% 81%;
+    --error-light: 350 86% 53%;
     
-    /* Info - Petid Primary */
-    --info: var(--petid-primary);
+    /* Info - Blue */
+    --info: var(--yellow-icon-blue);
     --info-foreground: 0 0% 100%;
-    --info-light: var(--petid-primary-light);
+    --info-light: 213 97% 72%;
 
     /* Destructive */
-    --destructive: var(--petid-accent-coral);
+    --destructive: var(--yellow-red);
     --destructive-foreground: 0 0% 100%;
 
     /* Background & Surface */
-    --background: var(--petid-bg);
-    --foreground: var(--petid-text);
+    --background: var(--yellow-gray-100);    /* #F6F6F6 */
+    --foreground: var(--yellow-dark);        /* #2F2F2F */
     
-    --surface: var(--petid-surface);
-    --surface-elevated: 220 14% 96%;
+    --surface: var(--yellow-white);          /* #FFFFFF */
+    --surface-elevated: var(--yellow-white);
     
-    --muted: 220 14% 96%;
-    --muted-foreground: var(--petid-text-muted);
+    --muted: var(--yellow-gray-200);
+    --muted-foreground: var(--yellow-gray-400);
     
-    --border: var(--petid-border);
-    --border-light: 225 14% 94%;
+    --border: var(--yellow-gray-200);        /* #DDDDDD */
+    --border-light: var(--yellow-gray-100);
     
-    --input: var(--petid-surface);
-    --ring: var(--petid-primary);
+    --input: var(--yellow-white);
+    --ring: var(--yellow-primary);
 
     /* Card & Popover */
-    --card: var(--petid-surface);
-    --card-foreground: var(--petid-text);
-    --card-border: var(--petid-border);
+    --card: var(--yellow-white);
+    --card-foreground: var(--yellow-dark);
+    --card-border: var(--yellow-gray-200);
     
-    --popover: var(--petid-surface);
-    --popover-foreground: var(--petid-text);
+    --popover: var(--yellow-white);
+    --popover-foreground: var(--yellow-dark);
 
     /* Sidebar & Navigation */
-    --sidebar-background: var(--petid-surface);
-    --sidebar-foreground: var(--petid-text);
-    --sidebar-primary: var(--petid-primary);
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: var(--petid-text);
-    --sidebar-border: var(--petid-border);
-    --sidebar-ring: var(--petid-primary);
+    --sidebar-background: var(--yellow-white);
+    --sidebar-foreground: var(--yellow-dark);
+    --sidebar-primary: var(--yellow-primary);
+    --sidebar-primary-foreground: var(--yellow-primary-foreground);
+    --sidebar-accent: var(--yellow-gray-100);
+    --sidebar-accent-foreground: var(--yellow-dark);
+    --sidebar-border: var(--yellow-gray-200);
+    --sidebar-ring: var(--yellow-primary);
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--petid-primary)) 0%, hsl(var(--petid-primary-dark)) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(var(--petid-surface)) 0%, hsl(var(--petid-bg)) 100%);
-    --gradient-trust: linear-gradient(135deg, hsl(var(--petid-primary)) 0%, hsl(var(--petid-primary-light)) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--petid-primary)) 0%, hsl(153, 52%, 46%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(var(--petid-surface)) 0%, hsl(var(--petid-bg)) 100%);
-    
-    /* Petish Gradient Tokens */
-    --gradient-petish: var(--petish-gradient);
-    --gradient-petish-soft: var(--petish-gradient-soft);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--yellow-gradient-top)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
+    --gradient-yellow: linear-gradient(180deg, hsl(var(--yellow-gradient-top)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--yellow-primary)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 8px 16px 0 rgba(0, 0, 0, 0.12);
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
-    --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.1);
-    --shadow-button-hover: 0 2px 4px rgba(0, 0, 0, 0.15);
-    --shadow-petish: 0 4px 12px hsla(342, 100%, 69%, 0.25);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-button-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --shadow-yellow: 0 4px 12px hsla(45, 100%, 48%, 0.35);
 
     /* Component-specific */
-    --header-bg: var(--petid-surface);
-    --header-text: var(--petid-text);
-    --footer-bg: var(--petid-surface);
-    --footer-text: var(--petid-text);
+    --header-bg: var(--yellow-white);
+    --header-text: var(--yellow-dark);
+    --footer-bg: var(--yellow-white);
+    --footer-text: var(--yellow-dark);
     
-    --toast-bg: var(--petid-surface);
-    --toast-border: var(--petid-border);
-    --toast-text: var(--petid-text);
+    --toast-bg: var(--yellow-white);
+    --toast-border: var(--yellow-gray-200);
+    --toast-text: var(--yellow-dark);
     
-    --tag-bg: 220 14% 96%;
-    --tag-text: var(--petid-text);
-    --tag-border: var(--petid-border);
+    --tag-bg: var(--yellow-gray-100);
+    --tag-text: var(--yellow-dark);
+    --tag-border: var(--yellow-gray-200);
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;                      /* 14px default */
+    --radius-lg: 1.375rem;                   /* 22px for cards */
   }
 
   /* DARK MODE */
   .dark {
-    /* Petid Dark Mode */
-    --petid-primary: 209 79% 58%;
-    --petid-primary-light: 209 79% 68%;
-    --petid-primary-dark: 209 79% 48%;
-    --petid-text: 0 0% 92%;
-    --petid-text-muted: 0 0% 65%;
-    --petid-bg: 220 13% 10%;
-    --petid-surface: 220 13% 14%;
-    --petid-border: 220 13% 22%;
+    --yellow-primary: 45 100% 52%;
+    --yellow-gradient-top: 46 96% 55%;
+    --yellow-gradient-bottom: 44 93% 52%;
+    --yellow-primary-foreground: 0 0% 10%;
     
-    /* Petish Dark Mode - More vibrant */
-    --petish-primary: 342 100% 72%;
-    --petish-purple: 263 100% 75%;
-    --petish-yellow: 45 100% 68%;
-    --petish-teal: 173 56% 62%;
-    --petish-dark: 210 13% 6%;
+    --yellow-dark: 0 0% 90%;
+    --yellow-gray-600: 0 0% 75%;
+    --yellow-gray-400: 0 0% 60%;
+    --yellow-white: 0 0% 12%;
+    --yellow-gray-100: 0 0% 8%;
+    --yellow-gray-200: 0 0% 18%;
     
-    --petish-gradient: linear-gradient(135deg, hsl(342, 100%, 72%) 0%, hsl(263, 100%, 75%) 100%);
-    --petish-gradient-soft: linear-gradient(135deg, hsla(342, 100%, 72%, 0.15) 0%, hsla(263, 100%, 75%, 0.15) 100%);
+    --primary: var(--yellow-primary);
+    --primary-foreground: var(--yellow-primary-foreground);
+    --primary-light: var(--yellow-gradient-top);
+    --primary-dark: var(--yellow-gradient-bottom);
     
-    /* Update semantic tokens */
-    --primary: var(--petid-primary);
-    --primary-foreground: 0 0% 100%;
-    --primary-light: var(--petid-primary-light);
-    --primary-dark: var(--petid-primary-dark);
+    --secondary: var(--yellow-dark);
+    --secondary-foreground: 0 0% 10%;
+    --secondary-light: var(--yellow-gray-600);
     
-    --secondary: var(--petid-text);
-    --secondary-foreground: 220 13% 10%;
-    --secondary-light: 0 0% 85%;
-    --secondary-dark: 0 0% 75%;
-    
-    --accent: 153 52% 52%;
+    --accent: 350 86% 50%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 153 52% 42%;
-    --accent-light: 153 52% 62%;
     
     --success: 153 52% 52%;
     --success-foreground: 0 0% 100%;
-    --success-light: 153 52% 62%;
-    --success-dark: 153 52% 42%;
     
-    --warning: 44 100% 55%;
-    --warning-foreground: 220 13% 10%;
-    --warning-light: 44 100% 65%;
+    --warning: 33 100% 55%;
+    --warning-foreground: 0 0% 10%;
     
-    --error: 1 100% 75%;
+    --error: 350 86% 55%;
     --error-foreground: 0 0% 100%;
-    --error-light: 1 100% 85%;
     
-    --info: var(--petid-primary);
+    --info: 213 97% 68%;
     --info-foreground: 0 0% 100%;
-    --info-light: var(--petid-primary-light);
     
-    --destructive: 1 100% 75%;
+    --destructive: 350 86% 55%;
     --destructive-foreground: 0 0% 100%;
     
-    --background: var(--petid-bg);
-    --foreground: var(--petid-text);
+    --background: var(--yellow-gray-100);
+    --foreground: var(--yellow-dark);
     
-    --surface: var(--petid-surface);
-    --surface-elevated: 220 13% 18%;
+    --surface: var(--yellow-white);
+    --surface-elevated: 0 0% 15%;
     
-    --muted: 220 13% 18%;
-    --muted-foreground: var(--petid-text-muted);
+    --muted: var(--yellow-gray-200);
+    --muted-foreground: var(--yellow-gray-400);
     
-    --border: var(--petid-border);
-    --border-light: 220 13% 28%;
-    --input: var(--petid-surface);
-    --ring: var(--petid-primary);
+    --border: var(--yellow-gray-200);
+    --border-light: 0 0% 22%;
+    --input: var(--yellow-white);
+    --ring: var(--yellow-primary);
     
-    --card: var(--petid-surface);
-    --card-foreground: var(--petid-text);
-    --card-border: var(--petid-border);
+    --card: var(--yellow-white);
+    --card-foreground: var(--yellow-dark);
+    --card-border: var(--yellow-gray-200);
     
-    --popover: var(--petid-surface);
-    --popover-foreground: var(--petid-text);
+    --popover: var(--yellow-white);
+    --popover-foreground: var(--yellow-dark);
     
-    --sidebar-background: var(--petid-bg);
-    --sidebar-foreground: var(--petid-text);
-    --sidebar-primary: var(--petid-primary);
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 18%;
-    --sidebar-accent-foreground: var(--petid-text);
-    --sidebar-border: var(--petid-border);
-    --sidebar-ring: var(--petid-primary);
+    --sidebar-background: var(--yellow-gray-100);
+    --sidebar-foreground: var(--yellow-dark);
+    --sidebar-primary: var(--yellow-primary);
+    --sidebar-primary-foreground: var(--yellow-primary-foreground);
+    --sidebar-accent: var(--yellow-gray-200);
+    --sidebar-accent-foreground: var(--yellow-dark);
+    --sidebar-border: var(--yellow-gray-200);
+    --sidebar-ring: var(--yellow-primary);
     
-    --header-bg: var(--petid-surface);
-    --header-text: var(--petid-text);
-    --footer-bg: var(--petid-bg);
-    --footer-text: var(--petid-text);
+    --header-bg: var(--yellow-white);
+    --header-text: var(--yellow-dark);
+    --footer-bg: var(--yellow-gray-100);
+    --footer-text: var(--yellow-dark);
     
-    --toast-bg: var(--petid-surface);
-    --toast-border: var(--petid-border);
-    --toast-text: var(--petid-text);
+    --toast-bg: var(--yellow-white);
+    --toast-border: var(--yellow-gray-200);
+    --toast-text: var(--yellow-dark);
     
-    --tag-bg: 220 13% 18%;
-    --tag-text: var(--petid-text);
-    --tag-border: var(--petid-border);
+    --tag-bg: var(--yellow-gray-200);
+    --tag-text: var(--yellow-dark);
+    --tag-border: var(--yellow-gray-200);
     
-    --gradient-primary: linear-gradient(135deg, hsl(var(--petid-primary)) 0%, hsl(var(--petid-primary-dark)) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(var(--petid-surface)) 0%, hsl(var(--petid-bg)) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(var(--petid-surface)) 0%, hsl(var(--petid-bg)) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--yellow-gradient-top)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
     
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 4px 8px 0 rgba(0, 0, 0, 0.5);
     --shadow-xl: 0 8px 16px 0 rgba(0, 0, 0, 0.6);
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
-    --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.5);
-    --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-button-hover: 0 2px 4px rgba(0, 0, 0, 0.4);
-    --shadow-petish: 0 4px 12px hsla(342, 100%, 72%, 0.35);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-button-hover: 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-yellow: 0 4px 12px hsla(45, 100%, 52%, 0.4);
   }
 
   /* High Contrast Mode */
@@ -322,8 +276,7 @@
     --background: 0 0% 100%;
     --muted: 0 0% 70%;
     --border: 0 0% 15%;
-    --primary: var(--petid-primary);
-    --accent: var(--petid-accent-green);
+    --primary: var(--yellow-primary);
   }
 
   .dark.high-contrast {
@@ -331,8 +284,7 @@
     --background: 0 0% 0%;
     --muted: 0 0% 40%;
     --border: 0 0% 85%;
-    --primary: var(--petid-primary-light);
-    --accent: 153 52% 56%;
+    --primary: 45 100% 55%;
   }
 
   /* Reduce Motion */
@@ -395,55 +347,30 @@
 
 @layer components {
   /* ===========================
-   * PETID BUTTON VARIANTS
+   * YELLOW BUTTON VARIANTS
    * =========================== */
   
-  .btn-petid-primary {
-    @apply font-medium rounded-xl px-6 py-3 
+  .btn-primary {
+    @apply font-semibold rounded-xl px-6 py-3 
            transition-all duration-200 active:scale-95 
            focus-visible:outline-none focus-visible:ring-2 
            focus-visible:ring-offset-2;
-    background: hsl(var(--petid-primary));
-    color: hsl(var(--petid-primary-foreground));
+    background: hsl(var(--yellow-primary));
+    color: hsl(var(--yellow-primary-foreground));
     box-shadow: var(--shadow-button);
   }
   
-  .btn-petid-primary:hover {
-    background: hsl(var(--petid-primary-dark));
-    box-shadow: var(--shadow-button-hover);
-  }
-
-  .btn-petid-accent {
-    @apply font-medium rounded-xl px-6 py-3 
-           transition-all duration-200 active:scale-95;
-    background: hsl(var(--petid-accent-green));
-    color: white;
-  }
-  
-  .btn-petid-accent:hover {
-    background: hsl(153, 52%, 36%);
-  }
-
-  /* Legacy button support */
-  .btn-primary {
-    @apply btn-petid-primary;
-  }
-  
-  .btn-accent {
-    @apply font-medium rounded-xl px-6 py-3 
-           transition-all duration-200 active:scale-95;
-    background: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
-    box-shadow: var(--shadow-button);
-  }
-  
-  .btn-accent:hover {
-    background: hsl(var(--accent-hover));
+  .btn-primary:hover {
+    background: hsl(var(--yellow-hover));
     box-shadow: var(--shadow-button-hover);
   }
   
+  .btn-primary:active {
+    background: hsl(var(--yellow-pressed));
+  }
+
   .btn-secondary {
-    @apply font-medium rounded-xl px-6 py-3 
+    @apply font-semibold rounded-xl px-6 py-3 
            transition-all duration-200 active:scale-95;
     background: hsl(var(--secondary));
     color: hsl(var(--secondary-foreground));
@@ -455,9 +382,10 @@
   }
   
   .btn-outline {
-    @apply bg-transparent font-medium rounded-xl px-6 py-3 
-           border-2 border-border transition-all duration-200 
+    @apply bg-transparent font-semibold rounded-xl px-6 py-3 
+           border-2 transition-all duration-200 
            hover:bg-muted active:scale-95;
+    border-color: hsl(var(--border));
     color: hsl(var(--foreground));
   }
   
@@ -467,109 +395,15 @@
     color: hsl(var(--foreground));
   }
 
-  /* ===========================
-   * PETISH BUTTON VARIANTS
-   * =========================== */
-  
-  .btn-petish-primary {
-    @apply font-medium rounded-full px-6 py-3 
+  .btn-accent {
+    @apply font-semibold rounded-xl px-6 py-3 
            transition-all duration-200 active:scale-95;
-    background: var(--petish-gradient);
-    color: white;
-    box-shadow: var(--shadow-petish);
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
   }
   
-  .btn-petish-primary:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-  }
-
-  .btn-petish-follow {
-    @apply font-semibold rounded-lg px-4 py-2 text-sm
-           transition-all duration-200 active:scale-95;
-    background: hsl(var(--petish-primary));
-    color: white;
-  }
-  
-  .btn-petish-follow:hover {
-    background: hsl(var(--petish-primary-dark));
-  }
-
-  .btn-petish-outline {
-    @apply font-medium rounded-full px-6 py-3 
-           border-2 transition-all duration-200 active:scale-95;
-    border-color: hsl(var(--petish-primary));
-    color: hsl(var(--petish-primary));
-    background: transparent;
-  }
-  
-  .btn-petish-outline:hover {
-    background: hsl(var(--petish-primary));
-    color: white;
-  }
-
-  /* ===========================
-   * PETISH STORY RING
-   * =========================== */
-  
-  .petish-story-ring {
-    position: relative;
-    padding: 3px;
-    border-radius: 50%;
-    background: var(--petish-gradient);
-  }
-  
-  .petish-story-ring::before {
-    content: '';
-    position: absolute;
-    inset: 2px;
-    background: hsl(var(--background));
-    border-radius: 50%;
-    z-index: 0;
-  }
-  
-  .petish-story-ring > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .petish-story-ring-viewed {
-    background: hsl(var(--border));
-  }
-
-  /* ===========================
-   * PETISH LIKE ICON
-   * =========================== */
-  
-  .petish-like-active {
-    color: hsl(var(--petish-primary));
-    fill: hsl(var(--petish-primary));
-  }
-
-  .petish-like-gradient {
-    background: var(--petish-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* ===========================
-   * PETISH HIGHLIGHT BADGE
-   * =========================== */
-  
-  .petish-highlight-badge {
-    @apply px-3 py-1 rounded-full text-xs font-semibold;
-    background: hsl(var(--petish-yellow));
-    color: hsl(var(--petish-dark));
-  }
-
-  /* ===========================
-   * PETISH HEADER
-   * =========================== */
-  
-  .petish-header {
-    background: hsl(var(--petish-dark));
-    color: white;
+  .btn-accent:hover {
+    background: hsl(var(--accent-hover));
   }
 
   /* ===========================
@@ -577,299 +411,466 @@
    * =========================== */
   
   .card-elevated {
-    @apply rounded-2xl p-6;
+    @apply rounded-[22px] p-4;
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--card-border));
     box-shadow: var(--shadow-card);
   }
   
   .card-interactive {
-    @apply rounded-2xl p-6 
-           transition-all duration-200 hover:-translate-y-1 cursor-pointer;
+    @apply rounded-[22px] p-4 transition-all duration-200 cursor-pointer;
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--card-border));
+    box-shadow: var(--shadow-card);
   }
   
   .card-interactive:hover {
     box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
   }
 
-  .card-petish {
-    @apply rounded-2xl p-6;
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--card-border));
-    box-shadow: 0 2px 8px hsla(342, 100%, 69%, 0.1);
+  .card-yellow {
+    @apply rounded-[22px] p-5;
+    background: var(--gradient-yellow);
+    box-shadow: var(--shadow-yellow);
   }
 
   /* ===========================
-   * TAG & BADGE STYLES
+   * BADGES & TAGS
    * =========================== */
-  
-  .tag-primary {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+
+  .badge-yellow {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold;
+    background: hsl(var(--yellow-primary));
+    color: hsl(var(--yellow-primary-foreground));
+  }
+
+  .badge-red {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold;
+    background: hsl(var(--yellow-red));
+    color: hsl(var(--yellow-red-foreground));
+  }
+
+  .tag-default {
+    @apply inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium;
     background: hsl(var(--tag-bg));
     color: hsl(var(--tag-text));
-    border: 1px solid hsl(var(--tag-border));
-  }
-  
-  .tag-success {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
-    background: hsl(var(--success-light));
-    color: hsl(var(--success-dark));
-    border: 1px solid hsl(var(--success));
-  }
-
-  .tag-petish {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
-    background: var(--petish-gradient-soft);
-    color: hsl(var(--petish-primary));
-    border: 1px solid hsl(var(--petish-primary) / 0.3);
   }
 
   /* ===========================
-   * TOAST STYLES
+   * FORM ELEMENTS
    * =========================== */
-  
-  .toast-container {
-    @apply rounded-xl p-4 border;
-    background: hsl(var(--toast-bg));
-    border-color: hsl(var(--toast-border));
-    color: hsl(var(--toast-text));
-    box-shadow: var(--shadow-lg);
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-offset-0;
+    background: hsl(var(--input));
+    border-color: hsl(var(--border));
+    color: hsl(var(--foreground));
   }
 
-  .toast-petish {
-    @apply rounded-xl p-4;
-    background: hsl(var(--petish-dark));
-    color: white;
-    box-shadow: var(--shadow-petish);
+  .input-field:focus {
+    border-color: hsl(var(--yellow-primary));
+    --tw-ring-color: hsla(45, 100%, 48%, 0.3);
+  }
+
+  .input-field::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ===========================
+   * NAVIGATION
+   * =========================== */
+
+  .nav-item {
+    @apply flex items-center gap-2 px-4 py-3 rounded-xl 
+           transition-all duration-200 cursor-pointer;
+    color: hsl(var(--foreground));
+  }
+
+  .nav-item:hover {
+    background: hsl(var(--muted));
+  }
+
+  .nav-item.active {
+    background: hsla(45, 100%, 48%, 0.15);
+    color: hsl(var(--yellow-dark));
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-1 py-2 px-3 
+           rounded-xl transition-all duration-200;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .bottom-nav-item:hover {
+    color: hsl(var(--foreground));
+  }
+
+  .bottom-nav-item.active {
+    color: hsl(var(--yellow-primary));
+  }
+
+  /* ===========================
+   * FLOATING CTA
+   * =========================== */
+
+  .floating-cta {
+    @apply fixed bottom-24 left-1/2 -translate-x-1/2 z-40
+           px-6 py-4 rounded-full font-semibold shadow-lg
+           transition-all duration-300 active:scale-95;
+    background: hsl(var(--yellow-primary));
+    color: hsl(var(--yellow-primary-foreground));
+    box-shadow: var(--shadow-yellow);
+  }
+
+  .floating-cta:hover {
+    background: hsl(var(--yellow-hover));
+    transform: translateX(-50%) translateY(-2px);
+  }
+
+  /* ===========================
+   * MODALS & TOASTS
+   * =========================== */
+
+  .modal-overlay {
+    @apply fixed inset-0 z-50 bg-black/50 backdrop-blur-sm
+           flex items-center justify-center p-4;
+  }
+
+  .modal-content {
+    @apply w-full max-w-md rounded-[22px] p-6;
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-xl);
+  }
+
+  .toast-success {
+    @apply rounded-xl p-4 border;
+    background: hsl(var(--success) / 0.1);
+    border-color: hsl(var(--success));
+    color: hsl(var(--success-dark));
+  }
+
+  .toast-error {
+    @apply rounded-xl p-4 border;
+    background: hsl(var(--error) / 0.1);
+    border-color: hsl(var(--error));
+    color: hsl(var(--error));
+  }
+
+  .toast-warning {
+    @apply rounded-xl p-4 border;
+    background: hsl(var(--warning) / 0.1);
+    border-color: hsl(var(--warning));
+    color: hsl(var(--warning));
+  }
+
+  .toast-info {
+    @apply rounded-xl p-4 border;
+    background: hsl(var(--info) / 0.1);
+    border-color: hsl(var(--info));
+    color: hsl(var(--info));
+  }
+
+  /* ===========================
+   * LOADING & EMPTY STATES
+   * =========================== */
+
+  .loading-spinner {
+    @apply w-8 h-8 rounded-full border-4 border-t-transparent animate-spin;
+    border-color: hsl(var(--yellow-primary));
+    border-top-color: transparent;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-6 text-center;
+  }
+
+  .empty-state-icon {
+    @apply w-16 h-16 mb-4 rounded-full flex items-center justify-center;
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* ===========================
+   * HERO & BANNERS
+   * =========================== */
+
+  .hero-gradient {
+    @apply rounded-[22px] p-6 relative overflow-hidden;
+    background: var(--gradient-hero);
+  }
+
+  .banner-yellow {
+    @apply rounded-xl p-4 relative;
+    background: var(--gradient-yellow);
+  }
+
+  /* ===========================
+   * COUPON & OFFER CARDS
+   * =========================== */
+
+  .coupon-card {
+    @apply rounded-[22px] p-5 relative overflow-hidden;
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-card);
+    border: 2px dashed hsl(var(--yellow-primary));
+  }
+
+  .offer-card {
+    @apply rounded-[22px] p-5 relative overflow-hidden;
+    background: var(--gradient-yellow);
+    box-shadow: var(--shadow-yellow);
+  }
+
+  .offer-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-20;
+    background: radial-gradient(circle at 70% 30%, white 0%, transparent 60%);
+  }
+
+  /* ===========================
+   * WALLET & LOYALTY CARDS
+   * =========================== */
+
+  .wallet-card {
+    @apply rounded-[22px] p-6 relative overflow-hidden;
+    background: var(--gradient-yellow);
+    box-shadow: var(--shadow-yellow);
+  }
+
+  .loyalty-badge {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold;
+    background: hsla(0, 0%, 100%, 0.25);
+    color: hsl(var(--yellow-dark));
+    backdrop-filter: blur(4px);
+  }
+
+  /* ===========================
+   * ICON CONTAINERS
+   * =========================== */
+
+  .icon-container {
+    @apply flex items-center justify-center w-12 h-12 rounded-xl;
+    background: hsl(var(--muted));
+  }
+
+  .icon-container-blue {
+    @apply flex items-center justify-center w-12 h-12 rounded-xl;
+    background: hsla(213, 97%, 62%, 0.1);
+    color: hsl(var(--yellow-icon-blue));
+  }
+
+  .icon-container-orange {
+    @apply flex items-center justify-center w-12 h-12 rounded-xl;
+    background: hsla(33, 100%, 50%, 0.1);
+    color: hsl(var(--yellow-icon-orange));
+  }
+
+  .icon-container-yellow {
+    @apply flex items-center justify-center w-12 h-12 rounded-xl;
+    background: hsla(45, 100%, 48%, 0.15);
+    color: hsl(var(--yellow-primary));
   }
 }
 
+/* ===========================
+ * ANIMATIONS
+ * =========================== */
+
 @layer utilities {
-  /* Animation Utilities */
+  /* Press Animation */
   .animate-press {
-    @apply active:scale-95 transition-transform duration-150;
+    @apply transition-transform active:scale-95;
+  }
+
+  /* Hover Effects */
+  .hover-lift {
+    @apply transition-all duration-200;
   }
   
-  .animate-hover-lift {
-    @apply hover:-translate-y-1 transition-all duration-200;
-    &:hover {
-      box-shadow: var(--shadow-elevated);
-    }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
   }
-  
+
+  /* Fade Animations */
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.3s ease-out forwards;
   }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+
+  .animate-fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
   }
-  
+
+  /* Slide Animations */
   .animate-slide-up {
-    animation: slideUp 0.4s ease-out;
-  }
-  
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .animate-scale-in {
-    animation: scaleIn 0.2s ease-out;
-  }
-  
-  @keyframes scaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-  
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-6px);
-    }
+    animation: slideUp 0.3s ease-out forwards;
   }
 
-  .animate-shimmer {
-    animation: shimmer 2s infinite linear;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    background-size: 200% 100%;
-  }
-  
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out forwards;
   }
 
-  .animate-pulse-petish {
-    animation: pulsePetish 2s ease-in-out infinite;
-  }
-  
-  @keyframes pulsePetish {
-    0%, 100% {
-      box-shadow: 0 0 0 0 hsla(342, 100%, 69%, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 0 10px hsla(342, 100%, 69%, 0);
-    }
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
   }
 
   .animate-slide-in-left {
-    animation: slideInLeft 0.3s ease-out;
-  }
-  
-  @keyframes slideInLeft {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    animation: slideInLeft 0.3s ease-out forwards;
   }
 
-  /* Scrollbar Utilities */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* Scale Animations */
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out forwards;
   }
 
-  /* Smooth Scroll */
-  .smooth-scroll {
-    scroll-behavior: smooth;
+  /* Bounce Animation */
+  .animate-bounce-in {
+    animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
   }
 
-  /* Focus Styles */
-  .focus-visible-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 
-           focus-visible:ring-ring focus-visible:ring-offset-2;
+  /* Pulse Yellow */
+  .animate-pulse-yellow {
+    animation: pulseYellow 2s ease-in-out infinite;
   }
 
-  /* Skeleton Loading */
-  .skeleton-shimmer {
+  /* Shimmer Loading */
+  .animate-shimmer {
     background: linear-gradient(
       90deg,
       hsl(var(--muted)) 0%,
-      hsl(var(--muted) / 0.6) 50%,
+      hsl(var(--surface)) 50%,
       hsl(var(--muted)) 100%
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
 
-  /* Gradient Backgrounds */
-  .bg-gradient-petid {
-    background: linear-gradient(135deg, hsl(var(--petid-primary)) 0%, hsl(var(--petid-primary-dark)) 100%);
+  /* Float Animation */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
   }
 
-  .bg-gradient-petish {
-    background: var(--petish-gradient);
+  /* Glow Effect */
+  .glow-yellow {
+    box-shadow: 0 0 20px hsla(45, 100%, 48%, 0.4);
   }
+}
 
-  .bg-gradient-petish-soft {
-    background: var(--petish-gradient-soft);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-  /* Text Gradients */
-  .text-gradient-petish {
-    background: var(--petish-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(8px); }
+}
 
-  /* Petish Specific */
-  .border-petish {
-    border-color: hsl(var(--petish-primary));
-  }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-  .text-petish-primary {
-    color: hsl(var(--petish-primary));
-  }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-  .text-petish-purple {
-    color: hsl(var(--petish-purple));
-  }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
-  .text-petish-yellow {
-    color: hsl(var(--petish-yellow));
-  }
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
-  .text-petish-teal {
-    color: hsl(var(--petish-teal));
-  }
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
 
-  .bg-petish-dark {
-    background: hsl(var(--petish-dark));
-  }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
 
-  /* Petid Specific */
-  .text-petid-primary {
-    color: hsl(var(--petid-primary));
-  }
+@keyframes pulseYellow {
+  0%, 100% { box-shadow: 0 0 0 0 hsla(45, 100%, 48%, 0.4); }
+  50% { box-shadow: 0 0 0 12px hsla(45, 100%, 48%, 0); }
+}
 
-  .text-petid-text {
-    color: hsl(var(--petid-text));
-  }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
 
-  .text-petid-muted {
-    color: hsl(var(--petid-text-muted));
-  }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
 
-  .bg-petid-primary {
-    background: hsl(var(--petid-primary));
-  }
+/* ===========================
+ * SCROLLBAR STYLES
+ * =========================== */
 
-  .bg-petid-surface {
-    background: hsl(var(--petid-surface));
-  }
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-  .bg-petid-bg {
-    background: hsl(var(--petid-bg));
-  }
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
-  .border-petid {
-    border-color: hsl(var(--petid-border));
-  }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground));
+}
+
+/* ===========================
+ * FOCUS STYLES
+ * =========================== */
+
+.focus-ring {
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  --tw-ring-color: hsl(var(--yellow-primary));
+}
+
+/* ===========================
+ * SKELETON LOADING
+ * =========================== */
+
+.skeleton {
+  @apply rounded-lg animate-shimmer;
+  background: hsl(var(--muted));
+}
+
+.skeleton-text {
+  @apply h-4 w-full rounded skeleton;
+}
+
+.skeleton-avatar {
+  @apply w-12 h-12 rounded-full skeleton;
+}
+
+.skeleton-card {
+  @apply rounded-[22px] p-4 skeleton;
 }
