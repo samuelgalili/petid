@@ -274,9 +274,9 @@ const Home = () => {
       <div style={{ transform: `translateY(${pullDistance}px)`, transition: isRefreshing ? 'none' : 'transform 0.2s ease' }}>
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
-      {/* Main Content */}
-      <main className="px-4 py-6 space-y-6 max-w-2xl mx-auto">
-        {/* Header - Minimalist Greeting */}
+      {/* Main Content - with padding for fixed header */}
+      <main className="px-4 pt-20 pb-6 space-y-6 max-w-2xl mx-auto">
+        {/* Greeting Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -292,14 +292,6 @@ const Home = () => {
               </p>
             )}
           </div>
-          
-          <button
-            onClick={() => setIsMenuOpen(true)}
-            className="w-10 h-10 rounded-lg hover:bg-muted transition-colors flex items-center justify-center"
-            aria-label="תפריט"
-          >
-            <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-          </button>
         </motion.div>
 
         {/* Promotional Banner - Sales Focus */}
