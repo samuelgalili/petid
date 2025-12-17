@@ -722,62 +722,132 @@ const Shop = () => {
       {/* Instagram-style Products Grid */}
       <div className="bg-white">
         <div className="max-w-lg mx-auto">
-          <div className="grid grid-cols-3 gap-[1px] bg-[#DBDBDB]">
+          <motion.div 
+            className="grid grid-cols-3 gap-[1px] bg-[#DBDBDB]"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.06,
+                  delayChildren: 0.1,
+                }
+              }
+            }}
+          >
             {filteredAndSortedProducts.map((product, index) => (
               <motion.div
                 key={product.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.03 }}
-                className="relative aspect-square bg-white cursor-pointer group"
+                variants={{
+                  hidden: { 
+                    opacity: 0, 
+                    scale: 0.8,
+                    y: 30,
+                    rotateX: -15,
+                  },
+                  visible: { 
+                    opacity: 1, 
+                    scale: 1,
+                    y: 0,
+                    rotateX: 0,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 24,
+                    }
+                  }
+                }}
+                whileHover={{ 
+                  scale: 1.03, 
+                  zIndex: 10,
+                  transition: { duration: 0.2 }
+                }}
+                whileTap={{ scale: 0.97 }}
+                className="relative aspect-square bg-white cursor-pointer group overflow-hidden"
                 onClick={() => handleProductClick(product)}
               >
-                <OptimizedImage
-                  src={product.image}
-                  alt={product.name}
+                <motion.div
                   className="w-full h-full"
-                  objectFit="cover"
-                  sizes="(max-width: 768px) 33vw, 200px"
-                />
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <OptimizedImage
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full"
+                    objectFit="cover"
+                    sizes="(max-width: 768px) 33vw, 200px"
+                  />
+                </motion.div>
                 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                  <div className="flex items-center gap-1 text-white text-[13px] font-semibold">
+                {/* Hover Overlay with animation */}
+                <motion.div 
+                  className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <motion.div 
+                    className="flex items-center gap-1 text-white text-[13px] font-semibold"
+                    initial={{ scale: 0, y: 10 }}
+                    whileHover={{ scale: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
                     <Heart className="w-4 h-4 fill-white" />
                     {product.likes}
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
 
-                {/* Sale Badge */}
+                {/* Sale Badge with bounce animation */}
                 {product.originalPrice && (
-                  <div className="absolute top-2 right-2 bg-[#ED4956] text-white px-1.5 py-0.5 rounded text-[10px] font-semibold">
+                  <motion.div 
+                    className="absolute top-2 right-2 bg-[#ED4956] text-white px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                    initial={{ scale: 0, rotate: -20 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ 
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 15,
+                      delay: index * 0.05 + 0.3
+                    }}
+                  >
                     SALE
-                  </div>
+                  </motion.div>
                 )}
 
-                {/* Price Tag */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                {/* Price Tag with slide-up animation */}
+                <motion.div 
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: index * 0.05 + 0.2 }}
+                >
                   <div className="flex items-center gap-1.5">
                     <span className="text-white text-[13px] font-bold">₪{product.price}</span>
                     {product.originalPrice && (
                       <span className="text-white/70 text-[10px] line-through">₪{product.originalPrice}</span>
                     )}
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Save Button */}
-                <button
+                {/* Save Button with pop animation */}
+                <motion.button
                   onClick={(e) => toggleFavorite(product.id, e)}
-                  className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 left-2"
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileHover={{ opacity: 1, scale: 1 }}
+                  whileTap={{ scale: 1.3 }}
                 >
                   <Bookmark 
                     className={`w-5 h-5 ${favorites.includes(product.id) ? "fill-white text-white" : "text-white"}`} 
                     strokeWidth={1.5} 
                   />
-                </button>
+                </motion.button>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Empty State for Saved */}
           {activeTab === "saved" && filteredAndSortedProducts.length === 0 && (
