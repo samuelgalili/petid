@@ -80,6 +80,7 @@ interface InsurancePlan {
 const Insurance = () => {
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [shakeButton, setShakeButton] = useState(false);
   const [claimFormData, setClaimFormData] = useState({
     petName: "",
     claimType: "",
@@ -188,6 +189,23 @@ const Insurance = () => {
 
   const handleClaimSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    const requiredFields = ['petName', 'claimType', 'claimDate', 'claimAmount'];
+    const emptyFields = requiredFields.filter(field => !claimFormData[field as keyof typeof claimFormData]);
+    
+    if (emptyFields.length > 0) {
+      // Trigger shake animation
+      setShakeButton(true);
+      setTimeout(() => setShakeButton(false), 500);
+      
+      toast({
+        title: "יש למלא את כל השדות הנדרשים",
+        description: "אנא מלא את חיית המחמד, סוג התביעה, תאריך וסכום.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Trigger confetti celebration
     const duration = 3000;
@@ -747,13 +765,18 @@ const Insurance = () => {
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold py-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+                  <motion.div
+                    animate={shakeButton ? { x: [0, -10, 10, -10, 10, -5, 5, 0] } : {}}
+                    transition={{ duration: 0.5 }}
                   >
-                    הגש תביעה
-                    <ChevronRight className="w-5 h-5 mr-2 rotate-180" />
-                  </Button>
+                    <Button
+                      type="submit"
+                      className={`w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold py-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 ${shakeButton ? 'ring-2 ring-red-400 ring-offset-2' : ''}`}
+                    >
+                      הגש תביעה
+                      <ChevronRight className="w-5 h-5 mr-2 rotate-180" />
+                    </Button>
+                  </motion.div>
                 </form>
               </Card>
             </motion.div>
