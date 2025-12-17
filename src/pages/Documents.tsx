@@ -340,15 +340,26 @@ export default function Documents() {
                     העלה מסמך
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>העלאת מסמך חדש</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <Label htmlFor="upload-pet">חיית מחמד *</Label>
+                <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-white">
+                  {/* Instagram-style gradient header */}
+                  <div className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-white font-bold text-lg font-jakarta">העלאת מסמך חדש</h2>
+                      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <Upload className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <p className="text-white/80 text-sm mt-1">שמור את המסמכים החשובים של חיית המחמד שלך</p>
+                  </div>
+                  
+                  <div className="p-5 space-y-4">
+                    {/* Pet Selection */}
+                    <div className="space-y-2">
+                      <Label htmlFor="upload-pet" className="text-gray-700 font-medium flex items-center gap-1">
+                        <span className="text-[#DD2A7B]">🐾</span> חיית מחמד
+                      </Label>
                       <Select value={uploadPetId} onValueChange={setUploadPetId}>
-                        <SelectTrigger id="upload-pet">
+                        <SelectTrigger id="upload-pet" className="h-12 rounded-xl border-gray-200 focus:border-[#DD2A7B] focus:ring-[#DD2A7B]/20">
                           <SelectValue placeholder="בחר חיית מחמד" />
                         </SelectTrigger>
                         <SelectContent>
@@ -361,68 +372,117 @@ export default function Documents() {
                       </Select>
                     </div>
 
-                    <div>
-                      <Label htmlFor="upload-type">סוג מסמך *</Label>
+                    {/* Document Type */}
+                    <div className="space-y-2">
+                      <Label htmlFor="upload-type" className="text-gray-700 font-medium flex items-center gap-1">
+                        <span className="text-[#8134AF]">📄</span> סוג מסמך
+                      </Label>
                       <Select value={uploadDocType} onValueChange={setUploadDocType}>
-                        <SelectTrigger id="upload-type">
+                        <SelectTrigger id="upload-type" className="h-12 rounded-xl border-gray-200 focus:border-[#8134AF] focus:ring-[#8134AF]/20">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="vaccination">אישור חיסון</SelectItem>
-                          <SelectItem value="medical">מסמך רפואי</SelectItem>
-                          <SelectItem value="other">אחר</SelectItem>
+                          <SelectItem value="vaccination">💉 אישור חיסון</SelectItem>
+                          <SelectItem value="medical">🏥 מסמך רפואי</SelectItem>
+                          <SelectItem value="other">📎 אחר</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div>
-                      <Label htmlFor="upload-title">כותרת *</Label>
+                    {/* Title */}
+                    <div className="space-y-2">
+                      <Label htmlFor="upload-title" className="text-gray-700 font-medium flex items-center gap-1">
+                        <span className="text-[#F58529]">✏️</span> כותרת
+                      </Label>
                       <Input
                         id="upload-title"
                         value={uploadTitle}
                         onChange={(e) => setUploadTitle(e.target.value)}
                         placeholder="לדוגמה: חיסון כלבת 2024"
+                        className="h-12 rounded-xl border-gray-200 focus:border-[#F58529] focus:ring-[#F58529]/20"
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="upload-description">תיאור</Label>
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <Label htmlFor="upload-description" className="text-gray-700 font-medium">תיאור (אופציונלי)</Label>
                       <Textarea
                         id="upload-description"
                         value={uploadDescription}
                         onChange={(e) => setUploadDescription(e.target.value)}
                         placeholder="הוסף פרטים נוספים..."
-                        rows={3}
+                        rows={2}
+                        className="rounded-xl border-gray-200 focus:border-[#DD2A7B] focus:ring-[#DD2A7B]/20 resize-none"
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="upload-file">קובץ *</Label>
-                      <Input
-                        id="upload-file"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        onChange={handleFileChange}
-                      />
-                      {selectedFile && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
-                        </p>
-                      )}
+                    {/* File Upload - Instagram Style */}
+                    <div className="space-y-2">
+                      <Label className="text-gray-700 font-medium flex items-center gap-1">
+                        <span className="text-[#DD2A7B]">📁</span> קובץ
+                      </Label>
+                      <label
+                        htmlFor="upload-file"
+                        className={`
+                          relative flex flex-col items-center justify-center w-full h-28 
+                          border-2 border-dashed rounded-2xl cursor-pointer
+                          transition-all duration-300 group
+                          ${selectedFile 
+                            ? 'border-[#DD2A7B] bg-gradient-to-br from-[#DD2A7B]/5 to-[#8134AF]/5' 
+                            : 'border-gray-300 hover:border-[#DD2A7B] hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        <input
+                          id="upload-file"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        {selectedFile ? (
+                          <div className="flex flex-col items-center text-center px-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center mb-2 animate-scale-in">
+                              <FileText className="w-6 h-6 text-white" />
+                            </div>
+                            <p className="text-sm font-medium text-gray-800 truncate max-w-full">{selectedFile.name}</p>
+                            <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center text-center">
+                            <div className="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-gradient-to-r group-hover:from-[#F58529]/20 group-hover:via-[#DD2A7B]/20 group-hover:to-[#8134AF]/20 flex items-center justify-center mb-2 transition-all duration-300">
+                              <Upload className="w-5 h-5 text-gray-400 group-hover:text-[#DD2A7B] transition-colors" />
+                            </div>
+                            <p className="text-sm text-gray-600">גרור קובץ לכאן או <span className="text-[#DD2A7B] font-medium">לחץ לבחירה</span></p>
+                            <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, DOC (עד 10MB)</p>
+                          </div>
+                        )}
+                      </label>
                     </div>
 
+                    {/* Submit Button - Instagram Gradient */}
                     <Button
                       onClick={handleUpload}
-                      disabled={uploading}
-                      className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900"
+                      disabled={uploading || !selectedFile || !uploadPetId || !uploadTitle}
+                      className={`
+                        w-full h-12 rounded-xl font-bold text-white text-base
+                        transition-all duration-300 transform
+                        ${uploading || !selectedFile || !uploadPetId || !uploadTitle
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#DD2A7B]/25'
+                        }
+                      `}
                     >
                       {uploading ? (
-                        <>
-                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                          מעלה...
-                        </>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span>מעלה...</span>
+                        </div>
                       ) : (
-                        "העלה מסמך"
+                        <div className="flex items-center gap-2">
+                          <Upload className="w-5 h-5" />
+                          <span>העלה מסמך</span>
+                        </div>
                       )}
                     </Button>
                   </div>
