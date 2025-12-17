@@ -17,6 +17,7 @@ import {
   Copy
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { HighlightsSection } from "@/components/HighlightsSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { toast } from "sonner";
@@ -237,6 +238,11 @@ export default function Photos() {
       />
       
       <div className="min-h-screen bg-background pb-24">
+        {/* Highlights Section - Instagram Style */}
+        {user && (
+          <HighlightsSection userId={user.id} isOwnProfile={true} />
+        )}
+
         {/* Stats Section - Instagram Style */}
         <div className="px-4 py-5 border-b border-border/50">
           <div className="flex justify-around text-center">
