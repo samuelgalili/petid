@@ -198,54 +198,54 @@ const BottomNav = () => {
                   />
                 )}
                 
+                {/* Badge for unread count - positioned at top */}
+                {item.badge && item.badge > 0 && (
+                  <motion.span 
+                    className={cn(
+                      "absolute -top-1 right-1 min-w-[18px] h-[18px] px-1",
+                      "bg-accent text-white text-[10px] font-bold",
+                      "rounded-full flex items-center justify-center",
+                      "shadow-lg shadow-accent/40 border-2 border-white",
+                      isPulsing && item.path === '/notifications' && "animate-bounce"
+                    )}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                  >
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </motion.span>
+                )}
+                
                 <div className="relative z-10">
                   <motion.div
                     initial={false}
                     animate={isActive ? { y: -2 } : { y: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={cn(
+                      "p-2 rounded-xl transition-colors",
+                      isActive && "bg-primary/15"
+                    )}
                   >
                     <Icon 
                       className={cn(
-                        "w-6 h-6 transition-all duration-200",
+                        "w-[22px] h-[22px] transition-all duration-200",
                         isActive 
                           ? "text-primary" 
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground"
                       )} 
-                      strokeWidth={isActive ? 2 : 1.5}
-                      fill={isActive ? "currentColor" : "none"}
-                      style={{ fillOpacity: isActive ? 0.15 : 0 }}
+                      strokeWidth={isActive ? 2.5 : 1.8}
                     />
                   </motion.div>
-                  
-                  {/* Badge for unread count */}
-                  {item.badge && item.badge > 0 && (
-                    <motion.span 
-                      className={cn(
-                        "absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1",
-                        "bg-accent text-white text-[10px] font-bold",
-                        "rounded-full flex items-center justify-center",
-                        "shadow-lg shadow-accent/30",
-                        isPulsing && item.path === '/notifications' && "animate-bounce"
-                      )}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                    >
-                      {item.badge > 99 ? '99+' : item.badge}
-                    </motion.span>
-                  )}
                 </div>
                 
-                <motion.span 
+                <span 
                   className={cn(
-                    "text-[10px] font-semibold font-jakarta text-center leading-tight mt-1 relative z-10",
+                    "text-[10px] font-semibold font-jakarta text-center leading-tight mt-0.5 relative z-10",
                     isActive ? "text-primary" : "text-muted-foreground"
                   )}
-                  initial={false}
-                  animate={isActive ? { fontWeight: 700 } : { fontWeight: 600 }}
                 >
                   {item.label}
-                </motion.span>
+                </span>
               </motion.div>
             );
 
