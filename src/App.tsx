@@ -24,6 +24,7 @@ import AddPet from "./pages/AddPet";
 import Home from "./pages/Home";
 import Install from "./pages/Install";
 const Feed = lazy(() => import("./pages/Feed"));
+const Explore = lazy(() => import("./pages/Explore"));
 import UserProfile from "./pages/UserProfile";
 import PostDetail from "./pages/PostDetail";
 import StoryViewer from "./pages/StoryViewer";
@@ -116,6 +117,7 @@ const AnimatedRoutes = () => {
         <Route path="/story/:userId" element={<StoryViewer />} />
         <Route path="/highlight/:highlightId" element={<HighlightViewer />} />
         <Route path="/adoption" element={<PageTransition><Adoption /></PageTransition>} />
+        <Route path="/explore" element={<PageTransition><PageErrorBoundary pageName="גילוי"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Explore /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
         <Route path="/shop" element={<PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
