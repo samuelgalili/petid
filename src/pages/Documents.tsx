@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, FileText, Filter } from "lucide-react";
+import { Loader2, Upload, FileText, Filter, Search, X } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SwipeableDocumentCard } from "@/components/SwipeableDocumentCard";
 
@@ -39,6 +39,7 @@ export default function Documents() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPetId, setSelectedPetId] = useState<string>("all");
   const [selectedDocType, setSelectedDocType] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [pendingDelete, setPendingDelete] = useState<{ id: string; fileUrl: string; doc: any } | null>(null);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -59,6 +60,15 @@ export default function Documents() {
   useEffect(() => {
     let filtered = [...documents];
 
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((doc) => 
+        doc.title.toLowerCase().includes(query) ||
+        doc.description?.toLowerCase().includes(query)
+      );
+    }
+
     if (selectedPetId !== "all") {
       filtered = filtered.filter((doc) => doc.pet_id === selectedPetId);
     }
@@ -68,7 +78,7 @@ export default function Documents() {
     }
 
     setFilteredDocuments(filtered);
-  }, [selectedPetId, selectedDocType, documents]);
+  }, [selectedPetId, selectedDocType, documents, searchQuery]);
 
   const fetchPets = async () => {
     try {
@@ -361,38 +371,60 @@ export default function Documents() {
             <p className="text-gray-500 text-sm">ניהול אישורי חיסון ומסמכים רפואיים</p>
           </div>
 
-          {/* Filters Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Filter className="w-4 h-4 text-[#DD2A7B]" />
-              <span className="text-sm font-medium text-gray-700">סינון מסמכים</span>
+          {/* Search & Filters Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 space-y-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="חיפוש מסמך לפי שם..."
+                className="h-12 pr-11 pl-10 rounded-xl border-gray-200 text-sm focus:border-[#DD2A7B] focus:ring-[#DD2A7B]/20"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-3.5 h-3.5 text-gray-500" />
+                </button>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Select value={selectedPetId} onValueChange={setSelectedPetId}>
-                <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                  <SelectValue placeholder="חיית מחמד" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">כל חיות המחמד</SelectItem>
-                  {pets.map((pet) => (
-                    <SelectItem key={pet.id} value={pet.id}>
-                      🐾 {pet.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
 
-              <Select value={selectedDocType} onValueChange={setSelectedDocType}>
-                <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                  <SelectValue placeholder="סוג מסמך" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">כל הסוגים</SelectItem>
-                  <SelectItem value="vaccination">💉 חיסון</SelectItem>
-                  <SelectItem value="medical">🏥 רפואי</SelectItem>
-                  <SelectItem value="other">📄 אחר</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Filters */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Filter className="w-4 h-4 text-[#DD2A7B]" />
+                <span className="text-sm font-medium text-gray-700">סינון</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Select value={selectedPetId} onValueChange={setSelectedPetId}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                    <SelectValue placeholder="חיית מחמד" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל חיות המחמד</SelectItem>
+                    {pets.map((pet) => (
+                      <SelectItem key={pet.id} value={pet.id}>
+                        🐾 {pet.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                    <SelectValue placeholder="סוג מסמך" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל הסוגים</SelectItem>
+                    <SelectItem value="vaccination">💉 חיסון</SelectItem>
+                    <SelectItem value="medical">🏥 רפואי</SelectItem>
+                    <SelectItem value="other">📄 אחר</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
