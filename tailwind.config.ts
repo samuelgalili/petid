@@ -371,6 +371,92 @@ export default {
   					transform: 'scale(1)',
   					opacity: '0'
   				}
+  			},
+  			'dialog-scale-in': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -50%) scale(0.9)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%) scale(1)'
+  				}
+  			},
+  			'dialog-scale-out': {
+  				'0%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%) scale(1)'
+  				},
+  				'100%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -50%) scale(0.95)'
+  				}
+  			},
+  			'dialog-slide-in': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -40%)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%)'
+  				}
+  			},
+  			'dialog-slide-out': {
+  				'0%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%)'
+  				},
+  				'100%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -45%)'
+  				}
+  			},
+  			'dialog-flip-in': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -50%) perspective(1000px) rotateX(-15deg) scale(0.95)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%) perspective(1000px) rotateX(0) scale(1)'
+  				}
+  			},
+  			'dialog-flip-out': {
+  				'0%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%) perspective(1000px) rotateX(0) scale(1)'
+  				},
+  				'100%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -50%) perspective(1000px) rotateX(10deg) scale(0.95)'
+  				}
+  			},
+  			'dialog-bounce-in': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -50%) scale(0.3)'
+  				},
+  				'50%': {
+  					transform: 'translate(-50%, -50%) scale(1.05)'
+  				},
+  				'70%': {
+  					transform: 'translate(-50%, -50%) scale(0.95)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%) scale(1)'
+  				}
+  			},
+  			'dialog-bounce-out': {
+  				'0%': {
+  					opacity: '1',
+  					transform: 'translate(-50%, -50%) scale(1)'
+  				},
+  				'100%': {
+  					opacity: '0',
+  					transform: 'translate(-50%, -50%) scale(0.5)'
+  				}
   			}
   		},
 		animation: {
@@ -382,7 +468,15 @@ export default {
 			'slide-up': 'slide-up 0.3s ease-out',
 			'fade-in': 'fade-in 0.3s ease-out',
 			'shimmer': 'shimmer 1.5s infinite',
-			'ripple': 'ripple 0.6s ease-out forwards'
+			'ripple': 'ripple 0.6s ease-out forwards',
+			'dialog-scale-in': 'dialog-scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+			'dialog-scale-out': 'dialog-scale-out 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+			'dialog-slide-in': 'dialog-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+			'dialog-slide-out': 'dialog-slide-out 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+			'dialog-flip-in': 'dialog-flip-in 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+			'dialog-flip-out': 'dialog-flip-out 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+			'dialog-bounce-in': 'dialog-bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+			'dialog-bounce-out': 'dialog-bounce-out 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 		}
   	}
   },
