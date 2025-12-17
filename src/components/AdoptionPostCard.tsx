@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Share2, MapPin, Calendar, Ruler } from "lucide-react";
+import { Heart, Calendar, Ruler } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useNavigate } from "react-router-dom";
@@ -83,7 +82,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         </div>
       </div>
 
-      {/* Image with gradient overlay */}
+      {/* Image with CTA strip */}
       <div className="relative aspect-square overflow-hidden">
         <OptimizedImage
           src={pet.image_url || "/placeholder.svg"}
@@ -92,10 +91,10 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         />
         
         {/* Gradient overlay at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent h-32 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent h-36 pointer-events-none" />
         
         {/* Pet info overlay */}
-        <div className="absolute bottom-3 left-3 right-3 text-white">
+        <div className="absolute bottom-14 left-3 right-3 text-white">
           <h3 className="text-xl font-bold mb-1">{pet.name}</h3>
           <div className="flex items-center gap-3 text-sm">
             <span className="flex items-center gap-1">
@@ -108,6 +107,21 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
             </span>
           </div>
         </div>
+
+        {/* CTA Strip at bottom of image */}
+        <motion.button
+          onClick={handleAdoptClick}
+          className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors"
+          whileTap={{ scale: 0.99 }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center">
+              <Heart className="w-3.5 h-3.5 text-white" fill="white" />
+            </div>
+            <span className="text-sm font-semibold text-[#262626]">אמץ את {pet.name}</span>
+          </div>
+          <span className="text-[#0095F6] text-sm font-semibold">לאימוץ ←</span>
+        </motion.button>
 
         {/* Heart icon floating */}
         <motion.div 
@@ -159,19 +173,6 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
             💡 צרכים מיוחדים: {pet.special_needs}
           </p>
         )}
-
-        {/* CTA Button - Instagram style */}
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Button
-            onClick={handleAdoptClick}
-            className="w-full bg-[#0095F6] hover:bg-[#1877F2] text-white font-semibold rounded-lg h-10 transition-colors text-sm"
-          >
-            אמץ את {pet.name}
-          </Button>
-        </motion.div>
 
         {/* Hashtags */}
         <p className="text-xs text-[#0095F6]" dir="rtl">
