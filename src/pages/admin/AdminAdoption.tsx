@@ -125,6 +125,10 @@ const AdminAdoption = () => {
 
   const handleRequestStatusChange = async (requestId: string, newStatus: string, petId: string) => {
     try {
+      // Find the request to get user_id and pet name
+      const request = requests.find(r => r.id === requestId);
+      if (!request) throw new Error("Request not found");
+
       // Update request status
       const { error: requestError } = await supabase
         .from("adoption_requests")
@@ -144,11 +148,32 @@ const AdminAdoption = () => {
         fetchPets();
       }
 
+      // Send notification to the requester
+      const petName = request.pet?.name || "החיה";
+      const notificationTitle = newStatus === "approved" 
+        ? "🎉 בקשת האימוץ אושרה!" 
+        : "בקשת האימוץ נדחתה";
+      const notificationMessage = newStatus === "approved"
+        ? `מזל טוב! בקשתך לאמץ את ${petName} אושרה. ניצור איתך קשר בהקדם לתיאום המשך התהליך.`
+        : `לצערנו, בקשתך לאמץ את ${petName} לא אושרה. אל תתייאש, יש עוד הרבה חיות שמחכות לבית חם!`;
+
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: request.user_id,
+          title: notificationTitle,
+          message: notificationMessage,
+          type: "adoption",
+          is_read: false,
+        });
+
+      if (notificationError) {
+        console.error("Error sending notification:", notificationError);
+      }
+
       toast({
         title: newStatus === "approved" ? "הבקשה אושרה!" : "הבקשה נדחתה",
-        description: newStatus === "approved" 
-          ? "החיה סומנה כאומצה והמבקש יקבל הודעה" 
-          : "המבקש יקבל הודעה על הדחייה",
+        description: "המבקש יקבל התראה על עדכון הסטטוס",
       });
 
       fetchRequests();
