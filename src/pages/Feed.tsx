@@ -15,6 +15,8 @@ import { PostCard } from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCardErrorBoundary } from "@/components/PostCardErrorBoundary";
 import { PetishAnimations } from "@/animations/petish";
+import { MyPetsSection } from "@/components/home/MyPetsSection";
+import { PetEditSheet } from "@/components/home/PetEditSheet";
 
 interface Post {
   id: string;
@@ -48,6 +50,12 @@ const Feed = () => {
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [userAvatar, setUserAvatar] = useState<string>("");
+  const [pets, setPets] = useState<any[]>([]);
+  const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
+  const [editingPet, setEditingPet] = useState<any | null>(null);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({ name: "", breed: "" });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   
@@ -201,22 +209,92 @@ const Feed = () => {
     }
   }, [user, POSTS_PER_PAGE]);
 
-  // Fetch user avatar
+  // Fetch user avatar and pets
   useEffect(() => {
-    const fetchUserAvatar = async () => {
+    const fetchUserData = async () => {
       if (user) {
-        const { data } = await supabase
+        // Fetch avatar
+        const { data: profileData } = await supabase
           .from("profiles")
           .select("avatar_url")
           .eq("id", user.id)
           .single();
-        if (data?.avatar_url) {
-          setUserAvatar(data.avatar_url);
+        if (profileData?.avatar_url) {
+          setUserAvatar(profileData.avatar_url);
+        }
+
+        // Fetch pets
+        const { data: petsData, error: petsError } = await supabase
+          .from("pets")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("archived", false)
+          .order("created_at", { ascending: false });
+
+        if (!petsError && petsData) {
+          setPets(petsData);
         }
       }
     };
-    fetchUserAvatar();
+    fetchUserData();
   }, [user]);
+
+  const handlePetLongPressStart = (pet: any) => {
+    setEditingPet(pet);
+    setEditFormData({ name: pet.name || "", breed: pet.breed || "" });
+    setIsEditSheetOpen(true);
+  };
+
+  const handlePetLongPressEnd = () => {
+    // Long press ended without action
+  };
+
+  const handleCloseEditSheet = () => {
+    setIsEditSheetOpen(false);
+    setEditingPet(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleSavePetEdit = async () => {
+    if (!editingPet) return;
+    try {
+      const { error } = await supabase
+        .from("pets")
+        .update({
+          name: editFormData.name,
+          breed: editFormData.breed,
+        })
+        .eq("id", editingPet.id);
+
+      if (error) throw error;
+
+      setPets(prev => prev.map(p => p.id === editingPet.id ? { ...p, name: editFormData.name, breed: editFormData.breed } : p));
+      toast.success("פרטי חיית המחמד עודכנו בהצלחה");
+      handleCloseEditSheet();
+    } catch (error) {
+      console.error("Error updating pet:", error);
+      toast.error("שגיאה בעדכון פרטי חיית המחמד");
+    }
+  };
+
+  const handleArchivePet = async () => {
+    if (!editingPet) return;
+    try {
+      const { error } = await supabase
+        .from("pets")
+        .update({ archived: true, archived_at: new Date().toISOString() })
+        .eq("id", editingPet.id);
+
+      if (error) throw error;
+
+      setPets(prev => prev.filter(p => p.id !== editingPet.id));
+      toast.success("חיית המחמד הועברה לארכיון");
+      handleCloseEditSheet();
+    } catch (error) {
+      console.error("Error archiving pet:", error);
+      toast.error("שגיאה בהעברת חיית המחמד לארכיון");
+    }
+  };
 
   useEffect(() => {
     fetchPosts(0, false);
@@ -507,6 +585,21 @@ const Feed = () => {
         <StoriesBar />
       </div>
 
+      {/* My Pets Section */}
+      {isAuthenticated && (
+        <div className="py-4 border-b border-gray-200">
+          <div className="max-w-lg mx-auto">
+            <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3">חיות המחמד שלי</h2>
+            <MyPetsSection
+              pets={pets}
+              newlyAddedPetIds={newlyAddedPetIds}
+              onPetLongPressStart={handlePetLongPressStart}
+              onPetLongPressEnd={handlePetLongPressEnd}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Filter Tabs */}
       <div className="bg-white border-b border-gray-200 sticky top-11 z-30">
         <div className="max-w-lg mx-auto flex">
@@ -623,6 +716,19 @@ const Feed = () => {
           setHasMore(true);
           fetchPosts(0, false);
         }}
+      />
+
+      {/* Pet Edit Sheet */}
+      <PetEditSheet
+        pet={editingPet}
+        isOpen={isEditSheetOpen}
+        onClose={handleCloseEditSheet}
+        editFormData={editFormData}
+        onFormDataChange={setEditFormData}
+        onSave={handleSavePetEdit}
+        onDelete={handleArchivePet}
+        showDeleteConfirm={showDeleteConfirm}
+        onDeleteConfirmChange={setShowDeleteConfirm}
       />
 
       <BottomNav />
