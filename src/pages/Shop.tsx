@@ -705,6 +705,16 @@ const Shop = () => {
                   >
                     <Heart className={`w-5 h-5 ${favorites.includes(selectedProduct.id) ? "fill-current" : ""}`} strokeWidth={1.5} />
                   </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      navigate(`/product/${selectedProduct.id}`);
+                    }}
+                    className="absolute top-3 left-14 z-10 w-10 h-10 rounded-full flex items-center justify-center shadow-lg bg-white/90 text-gray-600 hover:bg-white hover:text-[#FFC107] transition-colors"
+                  >
+                    <Info className="w-5 h-5" strokeWidth={1.5} />
+                  </motion.button>
                   <div className="w-full h-52 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden">
                     <OptimizedImage
                       src={selectedProduct.image}
