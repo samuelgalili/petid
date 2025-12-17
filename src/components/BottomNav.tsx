@@ -256,12 +256,12 @@ const BottomNav = () => {
           <div className="h-[env(safe-area-inset-bottom)] bg-white" />
         </nav>
 
-        {/* Floating Action Button for Create Post */}
+        {/* Floating Action Button for Create Post - positioned above nav */}
         <button
           onClick={() => setCreatePostOpen(true)}
-          className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+          className="fixed bottom-[70px] left-4 z-40 w-12 h-12 bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
         >
-          <Camera className="w-6 h-6 text-white" strokeWidth={2} />
+          <Camera className="w-5 h-5 text-white" strokeWidth={2} />
         </button>
 
         {/* Create Post Dialog */}
