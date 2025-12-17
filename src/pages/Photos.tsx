@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, Play, Heart, MessageCircle, Plus, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Grid3X3, Play, Heart, MessageCircle, Plus, Image as ImageIcon, Trash2, CheckCircle2, X } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { motion } from "framer-motion";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
@@ -39,6 +39,9 @@ export default function Photos() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [showMultiDeleteDialog, setShowMultiDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -98,7 +101,32 @@ export default function Photos() {
   });
 
   const handlePostClick = (postId: string) => {
-    navigate(`/post/${postId}`);
+    if (selectionMode) {
+      togglePostSelection(postId);
+    } else {
+      navigate(`/post/${postId}`);
+    }
+  };
+
+  const togglePostSelection = (postId: string) => {
+    setSelectedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedPosts(new Set());
+  };
+
+  const selectAll = () => {
+    setSelectedPosts(new Set(filteredPosts.map(p => p.id)));
   };
 
   const handleCreatePost = () => {
@@ -149,6 +177,47 @@ export default function Photos() {
   const handleDeleteClick = (e: React.MouseEvent, postId: string) => {
     e.stopPropagation();
     setDeletePostId(postId);
+  };
+
+  const handleMultiDelete = async () => {
+    if (selectedPosts.size === 0) return;
+    
+    setDeleting(true);
+    try {
+      const postIds = Array.from(selectedPosts);
+      
+      // Delete likes for all selected posts
+      await supabase
+        .from("post_likes")
+        .delete()
+        .in("post_id", postIds);
+      
+      // Delete comments for all selected posts
+      await supabase
+        .from("post_comments")
+        .delete()
+        .in("post_id", postIds);
+      
+      // Delete all selected posts
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .in("id", postIds)
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+
+      toast.success(`${selectedPosts.size} פוסטים נמחקו בהצלחה`);
+      setPosts(posts.filter(p => !selectedPosts.has(p.id)));
+      setSelectedPosts(new Set());
+      setSelectionMode(false);
+    } catch (error) {
+      console.error("Error deleting posts:", error);
+      toast.error("שגיאה במחיקת הפוסטים");
+    } finally {
+      setDeleting(false);
+      setShowMultiDeleteDialog(false);
+    }
   };
 
   return (
@@ -205,26 +274,77 @@ export default function Photos() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats / Selection Mode Bar */}
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-center gap-8 text-center">
-            <div>
-              <p className="text-xl font-bold text-foreground">{posts.length}</p>
-              <p className="text-sm text-muted-foreground">פוסטים</p>
+          {selectionMode ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleSelectionMode}
+                  className="text-muted-foreground"
+                >
+                  <X className="w-4 h-4 ml-1" />
+                  ביטול
+                </Button>
+                <span className="text-sm font-medium">
+                  {selectedPosts.size} נבחרו
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAll}
+                  disabled={selectedPosts.size === filteredPosts.length}
+                >
+                  בחר הכל
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowMultiDeleteDialog(true)}
+                  disabled={selectedPosts.size === 0}
+                >
+                  <Trash2 className="w-4 h-4 ml-1" />
+                  מחק ({selectedPosts.size})
+                </Button>
+              </div>
             </div>
-            <div>
-              <p className="text-xl font-bold text-foreground">
-                {posts.reduce((sum, post) => sum + post.likes_count, 0)}
-              </p>
-              <p className="text-sm text-muted-foreground">לייקים</p>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex justify-center gap-8 text-center flex-1">
+                <div>
+                  <p className="text-xl font-bold text-foreground">{posts.length}</p>
+                  <p className="text-sm text-muted-foreground">פוסטים</p>
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-foreground">
+                    {posts.reduce((sum, post) => sum + post.likes_count, 0)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">לייקים</p>
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-foreground">
+                    {posts.reduce((sum, post) => sum + post.comments_count, 0)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">תגובות</p>
+                </div>
+              </div>
+              {posts.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectionMode}
+                  className="text-muted-foreground"
+                >
+                  <CheckCircle2 className="w-4 h-4 ml-1" />
+                  בחירה
+                </Button>
+              )}
             </div>
-            <div>
-              <p className="text-xl font-bold text-foreground">
-                {posts.reduce((sum, post) => sum + post.comments_count, 0)}
-              </p>
-              <p className="text-sm text-muted-foreground">תגובות</p>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Gallery Grid */}
@@ -262,14 +382,31 @@ export default function Photos() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  className="relative aspect-square bg-muted cursor-pointer group"
+                  className={`relative aspect-square bg-muted cursor-pointer group ${
+                    selectionMode && selectedPosts.has(post.id) ? "ring-4 ring-primary ring-inset" : ""
+                  }`}
                   onClick={() => handlePostClick(post.id)}
                 >
                   <img
                     src={post.image_url || post.video_url || ""}
                     alt={post.caption || "Post"}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover transition-opacity ${
+                      selectionMode && selectedPosts.has(post.id) ? "opacity-70" : ""
+                    }`}
                   />
+                  
+                  {/* Selection indicator */}
+                  {selectionMode && (
+                    <div className={`absolute top-2 left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      selectedPosts.has(post.id)
+                        ? "bg-primary border-primary"
+                        : "bg-black/30 border-white"
+                    }`}>
+                      {selectedPosts.has(post.id) && (
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                      )}
+                    </div>
+                  )}
                   
                   {/* Video indicator */}
                   {(post.media_type === "video" || post.video_url) && (
@@ -278,25 +415,29 @@ export default function Photos() {
                     </div>
                   )}
                   
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
-                    <div className="flex items-center gap-1.5 text-white">
-                      <Heart className="w-5 h-5" fill="white" />
-                      <span className="font-semibold">{post.likes_count}</span>
+                  {/* Hover overlay - only show when not in selection mode */}
+                  {!selectionMode && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
+                      <div className="flex items-center gap-1.5 text-white">
+                        <Heart className="w-5 h-5" fill="white" />
+                        <span className="font-semibold">{post.likes_count}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-white">
+                        <MessageCircle className="w-5 h-5" fill="white" />
+                        <span className="font-semibold">{post.comments_count}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-white">
-                      <MessageCircle className="w-5 h-5" fill="white" />
-                      <span className="font-semibold">{post.comments_count}</span>
-                    </div>
-                  </div>
+                  )}
                   
-                  {/* Delete button */}
-                  <button
-                    onClick={(e) => handleDeleteClick(e, post.id)}
-                    className="absolute top-2 left-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-4 h-4 text-white" />
-                  </button>
+                  {/* Delete button - only show when not in selection mode */}
+                  {!selectionMode && (
+                    <button
+                      onClick={(e) => handleDeleteClick(e, post.id)}
+                      className="absolute top-2 left-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-white" />
+                    </button>
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -328,6 +469,28 @@ export default function Photos() {
               className="bg-red-500 hover:bg-red-600"
             >
               {deleting ? "מוחק..." : "מחק"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Multi-Delete Confirmation Dialog */}
+      <AlertDialog open={showMultiDeleteDialog} onOpenChange={setShowMultiDeleteDialog}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת {selectedPosts.size} פוסטים</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם אתה בטוח שברצונך למחוק {selectedPosts.size} פוסטים? פעולה זו לא ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel disabled={deleting}>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleMultiDelete}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {deleting ? "מוחק..." : `מחק ${selectedPosts.size} פוסטים`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
