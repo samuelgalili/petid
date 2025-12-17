@@ -409,71 +409,118 @@ const Parks = () => {
     const gradient = parkGradients[index % parkGradients.length];
     const isLiked = likedParks.has(park.id);
     const isSaved = savedParks.has(park.id);
+    const checkins = parkCheckins[park.id] || [];
 
     return (
       <motion.div
         key={park.id}
+        className="bg-white border-b border-gray-200"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
+        whileHover={{ backgroundColor: "rgba(0,0,0,0.01)" }}
+        transition={{ duration: 0.3, delay: index * 0.03 }}
       >
-        <Card className="overflow-hidden border-0 shadow-lg rounded-3xl bg-white">
-          {/* Card Header - Instagram Style */}
-          <div className={`relative h-48 bg-gradient-to-br ${gradient} p-4`}>
-            {/* Top Row */}
-            <div className="flex items-center justify-between">
+        {/* Post Header */}
+        <div className="flex items-center justify-between px-3 py-2.5">
+          <div className="flex items-center gap-3">
+            <motion.div 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
+            >
+              <span className="text-lg">🐕</span>
+            </motion.div>
+            <div>
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <span className="text-xl">🐕</span>
-                </div>
-                <div>
-                  <p className="text-white font-bold text-sm">{park.city}</p>
-                  <p className="text-white/80 text-xs">{getSizeLabel(park.size)}</p>
-                </div>
+                <p className="font-semibold text-[#262626] text-[13px] leading-tight">{park.name}</p>
+                {park.verified && (
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Check className="w-2.5 h-2.5 text-white" />
+                  </div>
+                )}
               </div>
-              {park.verified && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1"
-                >
-                  <Check className="w-3 h-3 text-white" />
-                  <span className="text-white text-xs font-medium">מאומת</span>
-                </motion.div>
-              )}
+              <p className="text-gray-500 text-xs flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {park.city} • {getSizeLabel(park.size)}
+              </p>
             </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {checkins.length > 0 && (
+              <motion.button
+                onClick={() => {
+                  setSelectedParkForCheckins(park);
+                  setCheckinsDialogOpen(true);
+                }}
+                className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 rounded-full"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-emerald-600 text-xs font-semibold">{checkins.length}</span>
+              </motion.button>
+            )}
+          </div>
+        </div>
 
-            {/* Center Content */}
-            <div className="absolute inset-0 flex items-center justify-center">
+        {/* Post Image - Park Visual */}
+        <div 
+          className="relative cursor-pointer select-none"
+          onClick={() => {
+            setSelectedParkForReview(park);
+            setReviewsListOpen(true);
+          }}
+        >
+          <div className={`w-full aspect-square bg-gradient-to-br ${gradient} relative overflow-hidden`}>
+            {/* Park Info Overlay */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6">
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.1 }}
                 className="text-center"
               >
-                <h3 className="text-white font-black text-2xl drop-shadow-lg mb-1">{park.name}</h3>
-                <div className="flex items-center justify-center gap-1 text-white/90">
+                <div className="text-6xl mb-4">🏞️</div>
+                <h3 className="font-black text-2xl drop-shadow-lg mb-2">{park.name}</h3>
+                <p className="text-white/90 text-sm flex items-center justify-center gap-1 mb-4">
                   <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{park.address}</span>
-                </div>
+                  {park.address}
+                </p>
+                
+                {/* Rating in center */}
+                {park.rating && park.rating > 0 && (
+                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                    <Star className="w-5 h-5 fill-yellow-300 text-yellow-300" />
+                    <span className="font-bold text-lg">{park.rating.toFixed(1)}</span>
+                    <span className="text-white/70 text-sm">({park.total_reviews} ביקורות)</span>
+                  </div>
+                )}
               </motion.div>
             </div>
 
-            {/* Rating Badge */}
-            {park.rating && park.rating > 0 && (
-              <motion.div
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                className="absolute bottom-4 left-4 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1"
-              >
-                <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" />
-                <span className="text-white font-bold">{park.rating.toFixed(1)}</span>
-                <span className="text-white/70 text-xs">({park.total_reviews})</span>
-              </motion.div>
+            {/* Who's Here Avatars on Image */}
+            {checkins.length > 0 && (
+              <div className="absolute bottom-4 right-4 flex -space-x-2 rtl:space-x-reverse">
+                {checkins.slice(0, 4).map((checkin) => (
+                  <Avatar key={checkin.id} className="w-10 h-10 border-2 border-white shadow-lg">
+                    <AvatarImage src={checkin.pet?.avatar_url || checkin.profile?.avatar_url || ''} />
+                    <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs">
+                      {checkin.pet?.name?.[0] || '🐕'}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+                {checkins.length > 4 && (
+                  <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                    +{checkins.length - 4}
+                  </div>
+                )}
+              </div>
             )}
 
-            {/* Facilities Preview */}
-            <div className="absolute bottom-4 right-4 flex gap-1">
+            {/* Facilities Icons */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
               {park.water && (
                 <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                   <Droplets className="w-4 h-4 text-white" />
@@ -484,165 +531,123 @@ const Parks = () => {
                   <Trees className="w-4 h-4 text-white" />
                 </div>
               )}
-              {park.fencing && (
+              {park.agility && (
                 <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white" />
+                  <Activity className="w-4 h-4 text-white" />
                 </div>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Card Body */}
-          <div className="p-4">
-            {/* Action Row - Instagram Style */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  onClick={() => toggleLike(park.id)}
-                  className="flex items-center gap-1"
-                >
-                  <Heart 
-                    className={`w-6 h-6 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
-                  />
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    setSelectedParkForReview(park);
-                    setReviewsListOpen(true);
-                  }}
-                >
-                  <MessageSquare className="w-6 h-6 text-gray-700" />
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => openInMaps(park)}
-                >
-                  <ExternalLink className="w-6 h-6 text-gray-700" />
-                </motion.button>
-              </div>
-              <motion.button
+        {/* Post Actions */}
+        <div className="px-3 pt-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+              <motion.button 
+                onClick={() => toggleLike(park.id)}
+                whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.8 }}
-                onClick={() => toggleSave(park.id)}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
               >
-                <Bookmark 
-                  className={`w-6 h-6 transition-colors ${isSaved ? 'fill-gray-900 text-gray-900' : 'text-gray-700'}`}
+                <Heart 
+                  className={`w-6 h-6 transition-colors ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-[#262626]'}`}
                 />
               </motion.button>
-            </div>
-
-            {/* Who's Here Section */}
-            {parkCheckins[park.id] && parkCheckins[park.id].length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4"
-              >
-                <button
-                  onClick={() => {
-                    setSelectedParkForCheckins(park);
-                    setCheckinsDialogOpen(true);
-                  }}
-                  className="flex items-center gap-2 w-full"
-                >
-                  <div className="flex -space-x-2 rtl:space-x-reverse">
-                    {parkCheckins[park.id].slice(0, 4).map((checkin, idx) => (
-                      <Avatar key={checkin.id} className="w-8 h-8 border-2 border-white">
-                        <AvatarImage src={checkin.pet?.avatar_url || checkin.profile?.avatar_url || ''} />
-                        <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs">
-                          {checkin.pet?.name?.[0] || checkin.profile?.full_name?.[0] || '🐕'}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                    {parkCheckins[park.id].length > 4 && (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-bold text-gray-600">
-                        +{parkCheckins[park.id].length - 4}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm text-emerald-600 font-bold flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {parkCheckins[park.id].length} כאן עכשיו
-                  </span>
-                </button>
-              </motion.div>
-            )}
-
-            {/* Likes Count */}
-            {isLiked && (
-              <motion.p 
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-sm font-bold text-gray-900 mb-2"
-              >
-                אהבת את הגינה הזו 🐾
-              </motion.p>
-            )}
-
-            {/* Facilities Tags */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {park.fencing && (
-                <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">גדר מאובטחת</span>
-              )}
-              {park.water && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">נקודת מים</span>
-              )}
-              {park.shade && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">צל</span>
-              )}
-              {park.agility && (
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">מתקני אג׳יליטי</span>
-              )}
-              {park.lighting && (
-                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">תאורת לילה</span>
-              )}
-              {park.parking && (
-                <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">חניה</span>
-              )}
-            </div>
-
-            {/* Notes */}
-            {park.notes && (
-              <p className="text-sm text-gray-600 mb-4 line-clamp-2">{park.notes}</p>
-            )}
-
-            {/* Opening Hours */}
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-              <Clock className="w-4 h-4" />
-              <span>פתוח 24/7</span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <Button
+              
+              <motion.button 
+                className="text-[#262626] p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
                 onClick={() => {
                   setSelectedParkForReview(park);
-                  setReviewDialogOpen(true);
+                  setReviewsListOpen(true);
                 }}
-                className="bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white rounded-xl font-bold"
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.8 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <Star className="w-4 h-4 ml-2" />
-                דרג
-              </Button>
-              <Button
+                <MessageSquare className="w-6 h-6" strokeWidth={1.5} />
+              </motion.button>
+              
+              <motion.button 
+                className="text-[#262626] p-1 rounded-full hover:bg-gray-50 transition-colors duration-200"
                 onClick={() => openInMaps(park)}
-                variant="outline"
-                className="border-2 border-gray-200 rounded-xl font-bold hover:bg-gray-50"
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.8 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <MapPin className="w-4 h-4 ml-2" />
-                נווט
-              </Button>
+                <ExternalLink className="w-6 h-6" strokeWidth={1.5} />
+              </motion.button>
             </div>
+            
+            <motion.button 
+              onClick={() => toggleSave(park.id)}
+              className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Bookmark 
+                className={`w-6 h-6 ${isSaved ? 'fill-[#262626]' : ''}`}
+                strokeWidth={1.5}
+              />
+            </motion.button>
+          </div>
 
-            {/* Check-in/out Button */}
+          {/* Likes & Who's Here */}
+          <div className="mb-2">
+            {checkins.length > 0 && (
+              <button
+                onClick={() => {
+                  setSelectedParkForCheckins(park);
+                  setCheckinsDialogOpen(true);
+                }}
+                className="text-sm mb-1 flex items-center gap-1"
+              >
+                <span className="font-semibold text-[#262626]">{checkins.length} כלבים</span>
+                <span className="text-emerald-600">כאן עכשיו</span>
+                <span className="text-2xl">🐾</span>
+              </button>
+            )}
+            {isLiked && (
+              <p className="text-sm font-semibold text-[#262626]">אהבת את הגינה הזו ❤️</p>
+            )}
+          </div>
+
+          {/* Caption - Park Info */}
+          <div className="mb-2">
+            <p className="text-sm text-[#262626]">
+              <span className="font-semibold">{park.city}</span>
+              {' '}
+              {park.notes || `גינת כלבים ${getSizeLabel(park.size)} ב${park.address}`}
+            </p>
+          </div>
+
+          {/* Hashtags - Facilities */}
+          <div className="flex flex-wrap gap-1 mb-2">
+            {park.fencing && <span className="text-sm text-[#00376B]">#גדור</span>}
+            {park.water && <span className="text-sm text-[#00376B]">#מים</span>}
+            {park.shade && <span className="text-sm text-[#00376B]">#צל</span>}
+            {park.agility && <span className="text-sm text-[#00376B]">#אג׳יליטי</span>}
+            {park.lighting && <span className="text-sm text-[#00376B]">#תאורה</span>}
+            {park.parking && <span className="text-sm text-[#00376B]">#חניה</span>}
+          </div>
+
+          {/* Time */}
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-3">
+            <Clock className="w-3 h-3 inline ml-1" />
+            פתוח 24/7
+          </p>
+
+          {/* Action Buttons - Check-in Style */}
+          <div className="flex gap-2 pb-3">
             {user && (
               userCheckin?.park_id === park.id ? (
                 <Button
                   onClick={handleCheckout}
-                  className="w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white rounded-xl font-bold"
+                  size="sm"
+                  className="flex-1 bg-[#ED4956] hover:bg-[#DC2743] text-white rounded-lg font-semibold text-sm"
                 >
-                  <LogOut className="w-4 h-4 ml-2" />
+                  <LogOut className="w-4 h-4 ml-1" />
                   צ'ק-אאוט
                 </Button>
               ) : !userCheckin && (
@@ -651,15 +656,36 @@ const Parks = () => {
                     setSelectedParkForCheckin(park);
                     setCheckinDialogOpen(true);
                   }}
-                  className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold"
+                  size="sm"
+                  className="flex-1 bg-[#0095F6] hover:bg-[#1877F2] text-white rounded-lg font-semibold text-sm"
                 >
-                  <LogIn className="w-4 h-4 ml-2" />
-                  צ'ק-אין - אני כאן!
+                  <LogIn className="w-4 h-4 ml-1" />
+                  צ'ק-אין
                 </Button>
               )
             )}
+            <Button
+              onClick={() => {
+                setSelectedParkForReview(park);
+                setReviewDialogOpen(true);
+              }}
+              size="sm"
+              variant="outline"
+              className="flex-1 border-gray-300 rounded-lg font-semibold text-sm hover:bg-gray-50"
+            >
+              <Star className="w-4 h-4 ml-1" />
+              דרג
+            </Button>
+            <Button
+              onClick={() => openInMaps(park)}
+              size="sm"
+              variant="outline"
+              className="border-gray-300 rounded-lg font-semibold text-sm hover:bg-gray-50 px-3"
+            >
+              <MapPin className="w-4 h-4" />
+            </Button>
           </div>
-        </Card>
+        </div>
       </motion.div>
     );
   };
