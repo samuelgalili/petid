@@ -44,8 +44,8 @@ export const Header = () => {
     setLeaveTimeout(timeout);
   };
 
-  // Don't render header on auth, signup, add-pet pages (but show on home)
-  const hideHeaderPaths = ['/auth', '/signup', '/add-pet', '/forgot-password', '/reset-password'];
+  // Don't render header on auth, signup, add-pet, or home pages
+  const hideHeaderPaths = ['/auth', '/signup', '/add-pet', '/forgot-password', '/reset-password', '/home'];
   if (hideHeaderPaths.includes(location.pathname)) {
     return null;
   }
