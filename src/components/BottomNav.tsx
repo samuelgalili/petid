@@ -161,6 +161,7 @@ const BottomNav = () => {
   ];
 
   const moreCategories = [
+    { icon: Home, label: "בית", path: "/home", color: "#262626" },
     { icon: FileText, label: "מסמכים", path: "/documents", color: "#0095F6" },
     { icon: Camera, label: "אלבום תמונות", path: "/photos", color: "#8134AF" },
     { icon: Heart, label: "אימוץ", path: "/adoption", color: "#ED4956" },
@@ -170,6 +171,7 @@ const BottomNav = () => {
     { icon: Scissors, label: "מספרה", path: "/grooming", color: "#DD2A7B" },
     { icon: CheckSquare, label: "משימות", path: "/tasks", color: "#515BD4" },
     { icon: Gift, label: "פרסים", path: "/rewards", color: "#F58529" },
+    { icon: MessageCircle, label: "צ'אט AI", path: "/chat", color: "#0095F6" },
   ];
 
   // Instagram-style social navigation render
@@ -182,7 +184,7 @@ const BottomNav = () => {
           aria-label="ניווט רשת חברתית"
         >
           <div className="flex justify-around items-center h-[50px] max-w-lg mx-auto px-2">
-            {/* Home */}
+            {/* Home/Feed */}
             <Link
               to="/feed"
               className="flex items-center justify-center p-2 active:opacity-50"
@@ -206,9 +208,9 @@ const BottomNav = () => {
               />
             </Link>
 
-            {/* Create Post - Instagram gradient border */}
+            {/* Categories - Opens More Sheet */}
             <button
-              onClick={() => setCreatePostOpen(true)}
+              onClick={() => setIsMoreSheetOpen(true)}
               className="flex items-center justify-center p-2 active:opacity-50"
             >
               <div className="relative">
@@ -219,15 +221,15 @@ const BottomNav = () => {
               </div>
             </button>
 
-            {/* Reels/Videos */}
+            {/* Shop */}
             <Link
-              to="/story/view"
+              to="/shop"
               className="flex items-center justify-center p-2 active:opacity-50"
             >
-              <Clapperboard 
-                className={`w-[26px] h-[26px] ${location.pathname.includes('/story') ? 'text-[#262626]' : 'text-[#262626]'}`}
-                strokeWidth={location.pathname.includes('/story') ? 2.5 : 1.5}
-                fill={location.pathname.includes('/story') ? '#262626' : 'none'}
+              <ShoppingBag 
+                className={`w-[26px] h-[26px] ${location.pathname === '/shop' ? 'text-[#262626]' : 'text-[#262626]'}`}
+                strokeWidth={location.pathname === '/shop' ? 2.5 : 1.5}
+                fill={location.pathname === '/shop' ? '#262626' : 'none'}
               />
             </Link>
 
@@ -254,6 +256,14 @@ const BottomNav = () => {
           <div className="h-[env(safe-area-inset-bottom)] bg-white" />
         </nav>
 
+        {/* Floating Action Button for Create Post */}
+        <button
+          onClick={() => setCreatePostOpen(true)}
+          className="fixed bottom-20 right-4 z-50 w-14 h-14 bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+        >
+          <Camera className="w-6 h-6 text-white" strokeWidth={2} />
+        </button>
+
         {/* Create Post Dialog */}
         <CreatePostDialog
           open={createPostOpen}
@@ -262,6 +272,37 @@ const BottomNav = () => {
             // Refresh will be handled by realtime subscription
           }}
         />
+
+        {/* Categories Sheet */}
+        <Sheet open={isMoreSheetOpen} onOpenChange={setIsMoreSheetOpen}>
+          <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl bg-white border-0">
+            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-4" />
+            
+            <div className="grid grid-cols-4 gap-2 px-4 pb-8">
+              {moreCategories.map((category) => {
+                const CategoryIcon = category.icon;
+                return (
+                  <Link
+                    key={category.path}
+                    to={category.path}
+                    onClick={() => setIsMoreSheetOpen(false)}
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-gray-100 transition-colors"
+                  >
+                    <div 
+                      className="w-12 h-12 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${category.color}15` }}
+                    >
+                      <CategoryIcon className="w-5 h-5" style={{ color: category.color }} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-[11px] font-normal text-center text-[#262626] leading-tight">
+                      {category.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
       </>
     );
   }
