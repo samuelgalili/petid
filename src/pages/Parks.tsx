@@ -808,7 +808,7 @@ const Parks = () => {
             <motion.button
               onClick={() => {
                 setSelectedParkForGallery(park);
-                photoInputRef.current?.click();
+                setPhotoGalleryOpen(true);
               }}
               className="flex items-center gap-2 text-[#0095F6] text-sm font-semibold mb-2 hover:text-[#1877F2] transition-colors"
               whileHover={{ scale: 1.02 }}
@@ -1347,28 +1347,40 @@ const Parks = () => {
           </DialogHeader>
           
           <div className="py-4">
-            {/* Upload Button */}
+            {/* Upload Buttons */}
             {user && (
-              <motion.button
-                onClick={() => photoInputRef.current?.click()}
-                disabled={uploadingPhoto}
-                className="w-full mb-4 flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-[#0095F6] hover:text-[#0095F6] transition-colors"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                {uploadingPhoto ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-5 h-5 border-2 border-[#0095F6] border-t-transparent rounded-full"
-                  />
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5" />
-                    העלה תמונה חדשה
-                  </>
-                )}
-              </motion.button>
+              <div className="flex gap-2 mb-4">
+                <motion.button
+                  onClick={() => document.getElementById('camera-input')?.click()}
+                  disabled={uploadingPhoto}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#0095F6] text-white rounded-xl font-semibold hover:bg-[#1877F2] transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  {uploadingPhoto ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                    />
+                  ) : (
+                    <>
+                      <Camera className="w-5 h-5" />
+                      צלם תמונה
+                    </>
+                  )}
+                </motion.button>
+                <motion.button
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-gray-300 rounded-xl text-gray-600 hover:border-[#0095F6] hover:text-[#0095F6] transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <Image className="w-5 h-5" />
+                  מהגלריה
+                </motion.button>
+              </div>
             )}
 
             {/* Photo Grid */}
@@ -1411,11 +1423,27 @@ const Parks = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden File Input */}
+      {/* Hidden File Input - Gallery */}
       <input
         type="file"
         ref={photoInputRef}
         accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && selectedParkForGallery) {
+            handlePhotoUpload(selectedParkForGallery.id, file);
+          }
+          e.target.value = '';
+        }}
+      />
+      
+      {/* Hidden File Input - Camera */}
+      <input
+        type="file"
+        id="camera-input"
+        accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
