@@ -675,232 +675,157 @@ const Shop = () => {
       </div>
 
       {/* Product Details Sheet */}
+      {/* Product Details Sheet - Compact Layout */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl bg-white p-0">
+        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-3xl bg-white p-0">
           {selectedProduct && (
-            <div className="flex flex-col h-full" dir="rtl">
-              <div className="flex-1 overflow-y-auto pb-36">
-                {/* Header with Logo */}
-                <div className="sticky top-0 bg-white z-10 border-b border-gray-100">
-                  {/* Drag Handle */}
-                  <div className="flex justify-center pt-3 pb-2">
-                    <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-                  </div>
-                  
-                  {/* Logo + Action Buttons Row */}
-                  <div className="flex items-center justify-between px-4 pb-4">
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => toggleFavorite(selectedProduct.id)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                        favorites.includes(selectedProduct.id)
-                          ? "bg-red-50 text-red-500"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                      aria-label={favorites.includes(selectedProduct.id) ? "הסר ממועדפים" : "הוסף למועדפים"}
-                    >
-                      <Heart 
-                        className={`w-5 h-5 transition-all ${favorites.includes(selectedProduct.id) ? "fill-current" : ""}`} 
-                        strokeWidth={1.5} 
-                      />
-                    </motion.button>
-                    <img 
-                      src={petidLogo} 
-                      alt="Petid" 
-                      className="h-10 object-contain"
-                    />
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => {
-                        setSelectedProduct(null);
-                        navigate(`/product/${selectedProduct.id}`);
-                      }}
-                      className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                      aria-label="פרטי מוצר מלאים"
-                    >
-                      <Info className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Product Image with Sale Badge */}
-                <div className="relative flex justify-center py-6 px-4">
-                  {selectedProduct.originalPrice && (
-                    <motion.div 
-                      initial={{ scale: 0, rotate: -12 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      className="absolute top-4 right-6 z-10"
-                    >
-                      <div className="bg-red-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg font-jakarta">
-                        {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}% הנחה
-                      </div>
-                    </motion.div>
-                  )}
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-52 h-52 bg-gradient-to-b from-gray-50 to-white rounded-3xl p-4 shadow-sm"
-                  >
-                    <OptimizedImage
-                      src={selectedProduct.image}
-                      alt={selectedProduct.name}
-                      className="w-full h-full rounded-2xl"
-                      objectFit="contain"
-                      sizes="208px"
-                      priority
-                    />
-                  </motion.div>
-                </div>
-
-                {/* Product Details */}
-                <div className="text-center px-6">
-                  <motion.h2 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-2xl font-bold text-gray-900 mb-2 font-jakarta"
-                  >
-                    {selectedProduct.name}
-                  </motion.h2>
-                  <p className="text-base text-gray-500 mb-5 font-jakarta">
-                    {selectedProduct.description}
-                  </p>
-
-                  {/* Price Section */}
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="flex items-center justify-center gap-3 mb-6"
-                  >
-                    <div className="text-4xl font-black text-[#E91E63] font-jakarta">
-                      ₪{selectedProduct.price}
-                    </div>
-                    {selectedProduct.originalPrice && (
-                      <div className="flex flex-col items-start">
-                        <div className="text-lg text-gray-400 line-through font-jakarta">
-                          ₪{selectedProduct.originalPrice}
-                        </div>
-                        <div className="text-xs text-green-600 font-medium font-jakarta">
-                          חסכת ₪{selectedProduct.originalPrice - selectedProduct.price}
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-
-                  {/* Variant Selectors */}
-                  <div className="space-y-4 mb-6 text-right">
-                    {/* Size Selector */}
-                    <div>
-                      <label className="text-sm font-bold text-gray-700 mb-2 block font-jakarta">גודל</label>
-                      <div className="flex flex-wrap gap-2 justify-end">
-                        {sizes.map((size) => (
-                          <motion.button
-                            key={size}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setSelectedSize(size)}
-                            className={`w-12 h-12 rounded-xl text-sm font-bold transition-all font-jakarta ${
-                              selectedSize === size
-                                ? "bg-[#FFC107] text-gray-900 shadow-md"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            }`}
-                          >
-                            {size}
-                          </motion.button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Color Selector */}
-                    <div>
-                      <label className="text-sm font-bold text-gray-700 mb-2 block font-jakarta">צבע</label>
-                      <div className="flex flex-wrap gap-2 justify-end">
-                        {colors.map((color) => (
-                          <motion.button
-                            key={color.value}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setSelectedColor(color.value)}
-                            className={`w-10 h-10 rounded-full transition-all border-2 ${
-                              selectedColor === color.value
-                                ? "ring-2 ring-[#FFC107] ring-offset-2 border-[#FFC107]"
-                                : "border-gray-300 hover:border-gray-400"
-                            }`}
-                            style={{ backgroundColor: color.value }}
-                            aria-label={color.name}
-                          >
-                            {selectedColor === color.value && (
-                              <Check className={`w-5 h-5 mx-auto ${color.value === '#ffffff' ? 'text-gray-900' : 'text-white'}`} strokeWidth={2.5} />
-                            )}
-                          </motion.button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Info Pills */}
-                  <div className="flex flex-wrap justify-center gap-2 mb-6">
-                    <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-medium font-jakarta">
-                      <Check className="w-3.5 h-3.5" strokeWidth={2} />
-                      במלאי
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-medium font-jakarta">
-                      <ShoppingCart className="w-3.5 h-3.5" strokeWidth={2} />
-                      משלוח חינם מעל ₪199
-                    </div>
-                  </div>
-
-                  {/* Terms */}
-                  {selectedProduct.terms && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="text-xs text-gray-500 leading-relaxed bg-gray-50 p-4 rounded-2xl font-jakarta text-right"
-                    >
-                      {selectedProduct.terms}
-                    </motion.div>
-                  )}
-                </div>
+            <div className="flex flex-col" dir="rtl">
+              {/* Drag Handle */}
+              <div className="flex justify-center pt-2 pb-1">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
               </div>
 
-              {/* Fixed Bottom Section with Quantity and Add to Cart */}
-              <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 shadow-2xl z-50">
-                <div className="max-w-md mx-auto">
-                  {/* Quantity Selector */}
-                  <div className="flex items-center justify-center gap-4 mb-4">
-                    <span className="text-base font-medium text-gray-700 font-jakarta">כמות:</span>
-                    <div className="flex items-center gap-3 bg-gray-100 rounded-full px-2 py-1">
+              {/* Compact Content - Single scrollable area */}
+              <div className="px-4 pb-4 overflow-y-auto max-h-[calc(70vh-80px)]">
+                {/* Top Row: Image + Details side by side */}
+                <div className="flex gap-4 mb-3">
+                  {/* Product Image - Smaller */}
+                  <div className="relative flex-shrink-0">
+                    {selectedProduct.originalPrice && (
+                      <div className="absolute -top-1 -right-1 z-10 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-bold font-jakarta">
+                        {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%-
+                      </div>
+                    )}
+                    <div className="w-28 h-28 bg-gray-50 rounded-2xl p-2">
+                      <OptimizedImage
+                        src={selectedProduct.image}
+                        alt={selectedProduct.name}
+                        className="w-full h-full rounded-xl"
+                        objectFit="contain"
+                        sizes="112px"
+                        priority
+                      />
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-1">
+                      <h2 className="text-lg font-bold text-gray-900 font-jakarta leading-tight">
+                        {selectedProduct.name}
+                      </h2>
                       <motion.button
                         whileTap={{ scale: 0.9 }}
-                        onClick={decreaseQuantity}
-                        className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        onClick={() => toggleFavorite(selectedProduct.id)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          favorites.includes(selectedProduct.id)
+                            ? "bg-red-50 text-red-500"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
                       >
-                        <Minus className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
-                      </motion.button>
-                      <span className="text-2xl font-bold text-gray-900 w-12 text-center font-jakarta">
-                        {quantity}
-                      </span>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={increaseQuantity}
-                        className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      >
-                        <Plus className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
+                        <Heart className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-current" : ""}`} strokeWidth={1.5} />
                       </motion.button>
                     </div>
+                    <p className="text-sm text-gray-500 mb-2 font-jakarta">{selectedProduct.description}</p>
+                    
+                    {/* Price */}
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-[#E91E63] font-jakarta">₪{selectedProduct.price}</span>
+                      {selectedProduct.originalPrice && (
+                        <span className="text-sm text-gray-400 line-through font-jakarta">₪{selectedProduct.originalPrice}</span>
+                      )}
+                    </div>
+
+                    {/* Quick Info */}
+                    <div className="flex gap-2 mt-2">
+                      <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium font-jakarta">במלאי</span>
+                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium font-jakarta">משלוח חינם</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compact Variant Selectors - Horizontal */}
+                <div className="flex gap-4 mb-3">
+                  {/* Size */}
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-gray-600 mb-1.5 block font-jakarta">גודל</label>
+                    <div className="flex gap-1.5">
+                      {sizes.map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          className={`w-9 h-9 rounded-lg text-xs font-bold transition-all font-jakarta ${
+                            selectedSize === size
+                              ? "bg-[#FFC107] text-gray-900"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Color */}
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 mb-1.5 block font-jakarta">צבע</label>
+                    <div className="flex gap-1.5">
+                      {colors.map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={() => setSelectedColor(color.value)}
+                          className={`w-9 h-9 rounded-full border-2 ${
+                            selectedColor === color.value
+                              ? "ring-2 ring-[#FFC107] ring-offset-1 border-[#FFC107]"
+                              : "border-gray-200"
+                          }`}
+                          style={{ backgroundColor: color.value }}
+                        >
+                          {selectedColor === color.value && (
+                            <Check className={`w-4 h-4 mx-auto ${color.value === '#ffffff' ? 'text-gray-900' : 'text-white'}`} strokeWidth={2.5} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Terms - Collapsed */}
+                {selectedProduct.terms && (
+                  <p className="text-xs text-gray-400 mb-3 font-jakarta line-clamp-2">{selectedProduct.terms}</p>
+                )}
+              </div>
+
+              {/* Bottom Action Bar - Quantity + Add to Cart in one row */}
+              <div className="border-t border-gray-100 px-4 py-3 bg-white">
+                <div className="flex items-center gap-3">
+                  {/* Compact Quantity Selector */}
+                  <div className="flex items-center gap-2 bg-gray-100 rounded-full px-1 py-1">
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={decreaseQuantity}
+                      className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center"
+                    >
+                      <Minus className="w-4 h-4 text-gray-600" strokeWidth={2} />
+                    </motion.button>
+                    <span className="text-lg font-bold text-gray-900 w-8 text-center font-jakarta">{quantity}</span>
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={increaseQuantity}
+                      className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center"
+                    >
+                      <Plus className="w-4 h-4 text-gray-600" strokeWidth={2} />
+                    </motion.button>
                   </div>
 
                   {/* Add to Cart Button */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
+                  <motion.div className="flex-1" whileTap={{ scale: 0.98 }}>
                     <Button
                       onClick={handleAddToCart}
-                      className="w-full h-14 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
+                      className="w-full h-12 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 text-base font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 font-jakarta"
                     >
-                      <ShoppingCart className="w-6 h-6" strokeWidth={1.5} />
-                      הוסף לעגלה - {(selectedProduct.price * quantity).toFixed(0)}₪
+                      <ShoppingCart className="w-5 h-5" strokeWidth={2} />
+                      הוסף לעגלה - ₪{(selectedProduct.price * quantity).toFixed(0)}
                     </Button>
                   </motion.div>
                 </div>
