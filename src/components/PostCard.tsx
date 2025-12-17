@@ -291,7 +291,7 @@ export const PostCard = ({
           sizes="(max-width: 768px) 100vw, 672px"
         />
         
-        {/* Double Tap Like Animation - Instagram Style Heart */}
+        {/* Double Tap Like Animation - Enhanced Heart Effect */}
         <AnimatePresence>
           {showDoubleTapAnimation && (
             <motion.div
@@ -301,37 +301,61 @@ export const PostCard = ({
               transition={{ duration: 0.15 }}
               className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
             >
+              {/* Glow effect behind heart */}
+              <motion.div
+                className="absolute w-40 h-40 rounded-full"
+                style={{
+                  background: "radial-gradient(circle, rgba(237,73,86,0.4) 0%, rgba(237,73,86,0) 70%)"
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 2, 2.5], opacity: [0, 0.8, 0] }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+              
+              {/* Main heart */}
               <motion.svg
                 viewBox="0 0 24 24"
-                className="w-28 h-28 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+                className="w-32 h-32 drop-shadow-[0_4px_20px_rgba(237,73,86,0.6)]"
                 initial={{ scale: 0, rotate: -15 }}
                 animate={{ 
-                  scale: [0, 1.3, 1.1, 1.2, 1],
+                  scale: [0, 1.4, 0.95, 1.15, 1],
                   rotate: [-15, 10, -5, 5, 0]
                 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ 
-                  duration: 0.6,
-                  times: [0, 0.3, 0.5, 0.7, 1],
+                  duration: 0.7,
+                  times: [0, 0.25, 0.45, 0.65, 1],
                   ease: "easeOut"
                 }}
               >
+                <defs>
+                  <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#FF6B8A" />
+                    <stop offset="50%" stopColor="#ED4956" />
+                    <stop offset="100%" stopColor="#C13584" />
+                  </linearGradient>
+                  <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="1" result="glow"/>
+                    <feMerge>
+                      <feMergeNode in="glow"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
                 <motion.path
                   d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                  fill="white"
+                  fill="url(#heartGradient)"
+                  filter="url(#heartGlow)"
                   stroke="white"
-                  strokeWidth="0.5"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 0.3 }}
+                  strokeWidth="0.3"
                 />
               </motion.svg>
               
-              {/* Particle effects */}
-              {[...Array(8)].map((_, i) => (
+              {/* Heart burst particles */}
+              {[...Array(12)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="absolute w-3 h-3 rounded-full bg-white"
+                  className="absolute"
                   initial={{ 
                     scale: 0,
                     x: 0,
@@ -339,17 +363,60 @@ export const PostCard = ({
                     opacity: 1
                   }}
                   animate={{ 
-                    scale: [0, 1, 0],
-                    x: Math.cos((i / 8) * Math.PI * 2) * 80,
-                    y: Math.sin((i / 8) * Math.PI * 2) * 80,
-                    opacity: [1, 1, 0]
+                    scale: [0, 1.2, 0.8],
+                    x: Math.cos((i / 12) * Math.PI * 2) * (60 + Math.random() * 40),
+                    y: Math.sin((i / 12) * Math.PI * 2) * (60 + Math.random() * 40),
+                    opacity: [1, 1, 0],
+                    rotate: [0, Math.random() * 360]
                   }}
                   transition={{ 
-                    duration: 0.6,
-                    delay: 0.1,
+                    duration: 0.7,
+                    delay: 0.05 + (i * 0.02),
                     ease: "easeOut"
                   }}
-                />
+                >
+                  {i % 2 === 0 ? (
+                    <svg viewBox="0 0 24 24" className="w-4 h-4">
+                      <path
+                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                        fill={i % 4 === 0 ? "#FF6B8A" : "#ED4956"}
+                      />
+                    </svg>
+                  ) : (
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ 
+                        background: i % 3 === 0 ? "#FF6B8A" : i % 3 === 1 ? "#ED4956" : "#FFB8C6"
+                      }}
+                    />
+                  )}
+                </motion.div>
+              ))}
+              
+              {/* Sparkles */}
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={`sparkle-${i}`}
+                  className="absolute text-2xl"
+                  initial={{ 
+                    scale: 0,
+                    opacity: 0,
+                    x: (Math.random() - 0.5) * 40,
+                    y: (Math.random() - 0.5) * 40,
+                  }}
+                  animate={{ 
+                    scale: [0, 1, 0],
+                    opacity: [0, 1, 0],
+                    y: [(Math.random() - 0.5) * 40, (Math.random() - 0.5) * 100 - 30],
+                  }}
+                  transition={{ 
+                    duration: 0.8,
+                    delay: 0.2 + (i * 0.05),
+                    ease: "easeOut"
+                  }}
+                >
+                  ✨
+                </motion.div>
               ))}
             </motion.div>
           )}
