@@ -552,11 +552,14 @@ const Feed = () => {
                   const petsSection = document.querySelector('[data-pets-section]');
                   petsSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="active:opacity-50 transition-opacity relative"
+                className={`active:opacity-50 transition-opacity relative ${newlyAddedPetIds.size > 0 ? 'animate-pulse' : ''}`}
               >
-                <PawPrint className="w-6 h-6 text-[#262626] hover:text-[#F58529] transition-colors" strokeWidth={1.5} />
+                <PawPrint 
+                  className={`w-6 h-6 transition-colors ${newlyAddedPetIds.size > 0 ? 'text-[#F58529]' : 'text-[#262626] hover:text-[#F58529]'}`} 
+                  strokeWidth={1.5} 
+                />
                 {pets.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F58529] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className={`absolute -top-1 -right-1 w-4 h-4 bg-[#F58529] text-white text-[10px] font-bold rounded-full flex items-center justify-center ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}>
                     {pets.length}
                   </span>
                 )}
