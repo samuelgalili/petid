@@ -179,18 +179,17 @@ const BottomNav = () => {
                 <Icon 
                   className={cn(
                     "w-6 h-6 transition-transform active:scale-90",
-                    isActive ? "text-black" : "text-black"
+                    isActive ? "text-[#262626]" : "text-[#262626]"
                   )} 
                   strokeWidth={isActive ? 2.5 : 1.5}
-                  fill={isActive ? "currentColor" : "none"}
                 />
                 
-                {/* Notification badge */}
+                {/* Notification badge - Instagram red */}
                 {item.badge && item.badge > 0 && (
                   <span 
                     className={cn(
                       "absolute top-1 right-1 min-w-[18px] h-[18px] px-1",
-                      "bg-red-500 text-white text-[11px] font-semibold",
+                      "bg-[#FF3040] text-white text-[11px] font-semibold",
                       "rounded-full flex items-center justify-center",
                       isPulsing && item.path === '/notifications' && "animate-pulse"
                     )}
