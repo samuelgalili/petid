@@ -1,4 +1,5 @@
 import { useState } from "react";
+import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, 
@@ -188,6 +189,41 @@ const Insurance = () => {
   const handleClaimSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Trigger confetti celebration
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    const colors = ['#F7BF00', '#FF6B35', '#4ECDC4', '#45B7D1', '#96CEB4'];
+
+    (function frame() {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: colors
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: colors
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+
+    // Also fire a burst from center
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: colors
+    });
+
     toast({
       title: "התביעה הוגשה בהצלחה! 🎉",
       description: "נחזור אליך תוך 2-3 ימי עסקים.",
