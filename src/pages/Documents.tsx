@@ -492,70 +492,130 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* Documents List */}
+        {/* Documents List - Instagram Style */}
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[3px] animate-spin">
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                <FileText className="w-6 h-6 text-[#DD2A7B]" />
+              </div>
+            </div>
+            <p className="mt-4 text-gray-500 text-sm">טוען מסמכים...</p>
           </div>
         ) : filteredDocuments.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <FileText className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">אין מסמכים</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
+              <FileText className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">אין מסמכים</h3>
+            <p className="text-gray-500 text-center max-w-xs mb-6">
               {documents.length === 0
-                ? "התחל בהעלאת המסמכים הראשונים שלך"
-                : "לא נמצאו מסמכים התואמים לסינון"}
+                ? "העלה את המסמכים החשובים של חיית המחמד שלך כמו אישורי חיסון ומסמכים רפואיים"
+                : "לא נמצאו מסמכים התואמים לסינון שבחרת"}
             </p>
+            {documents.length === 0 && (
+              <Button 
+                onClick={() => setIsDialogOpen(true)}
+                className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white rounded-xl px-6 py-3 font-medium hover:opacity-90 transition-opacity"
+              >
+                <Upload className="w-4 h-4 ml-2" />
+                העלה מסמך ראשון
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredDocuments.map((doc) => (
-              <div
-                key={doc.id}
-                className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="bg-gray-100 rounded-lg p-3">
-                      <FileText className="h-6 w-6 text-gray-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-1">{doc.title}</h3>
-                      <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
-                        <span className="bg-gray-100 px-2 py-1 rounded">
-                          {getDocumentTypeLabel(doc.document_type)}
-                        </span>
-                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                          {getPetName(doc.pet_id)}
-                        </span>
+          <div className="grid gap-4">
+            {filteredDocuments.map((doc, index) => {
+              const getDocTypeGradient = (type: string) => {
+                switch (type) {
+                  case "vaccination": return "from-[#10B981] to-[#059669]";
+                  case "medical": return "from-[#3B82F6] to-[#2563EB]";
+                  default: return "from-[#8B5CF6] to-[#7C3AED]";
+                }
+              };
+              
+              const getDocTypeIcon = (type: string) => {
+                switch (type) {
+                  case "vaccination": return "💉";
+                  case "medical": return "🏥";
+                  default: return "📄";
+                }
+              };
+
+              return (
+                <div
+                  key={doc.id}
+                  className="group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-transparent hover:shadow-xl transition-all duration-300"
+                  style={{ 
+                    animationDelay: `${index * 50}ms`,
+                    animation: 'fade-in 0.4s ease-out forwards'
+                  }}
+                >
+                  {/* Instagram-style gradient border on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
+                  <div className="absolute inset-[2px] bg-white rounded-[14px]" />
+                  
+                  <div className="relative p-4">
+                    <div className="flex items-start gap-4">
+                      {/* Document Icon with gradient ring */}
+                      <div className="relative flex-shrink-0">
+                        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${getDocTypeGradient(doc.document_type)} p-[2px] shadow-lg`}>
+                          <div className="w-full h-full rounded-[10px] bg-white flex items-center justify-center">
+                            <span className="text-2xl">{getDocTypeIcon(doc.document_type)}</span>
+                          </div>
+                        </div>
                       </div>
-                      {doc.description && (
-                        <p className="text-sm text-gray-600 mb-2">{doc.description}</p>
-                      )}
-                      <p className="text-xs text-gray-500">
-                        הועלה ב-{new Date(doc.uploaded_at).toLocaleDateString("he-IL")}
-                      </p>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-bold text-gray-900 text-base leading-tight mb-1 group-hover:text-[#DD2A7B] transition-colors">
+                              {doc.title}
+                            </h3>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getDocTypeGradient(doc.document_type)} text-white`}>
+                                {getDocumentTypeLabel(doc.document_type)}
+                              </span>
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                🐾 {getPetName(doc.pet_id)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {doc.description && (
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">{doc.description}</p>
+                        )}
+                        
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#F58529] to-[#DD2A7B]" />
+                            הועלה ב-{new Date(doc.uploaded_at).toLocaleDateString("he-IL")}
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDownload(doc.file_url, doc.file_name)}
+                              className="w-9 h-9 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-[#F58529] hover:via-[#DD2A7B] hover:to-[#8134AF] flex items-center justify-center transition-all duration-200 group/btn"
+                            >
+                              <Download className="w-4 h-4 text-gray-600 group-hover/btn:text-white transition-colors" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(doc.id, doc.file_url)}
+                              className="w-9 h-9 rounded-full bg-gray-50 hover:bg-red-500 flex items-center justify-center transition-all duration-200 group/btn"
+                            >
+                              <Trash2 className="w-4 h-4 text-gray-600 group-hover/btn:text-white transition-colors" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2 mr-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDownload(doc.file_url, doc.file_name)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(doc.id, doc.file_url)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
