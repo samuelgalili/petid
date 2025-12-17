@@ -85,18 +85,32 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
   }
 
   return (
-    <div className="py-3 border-t border-gray-100" dir="rtl">
+    <motion.div 
+      className="py-3 border-t border-gray-100" 
+      dir="rtl"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
       <div className="flex gap-4 overflow-x-auto pb-2 px-4 scrollbar-hide">
         {/* Create new highlight button (only for own profile) */}
         {isOwnProfile && (
           <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer"
             onClick={() => setCreateDialogOpen(true)}
           >
-            <div className="w-[64px] h-[64px] rounded-full border border-gray-300 border-dashed flex items-center justify-center bg-white">
+            <motion.div 
+              className="w-[64px] h-[64px] rounded-full border border-gray-300 border-dashed flex items-center justify-center bg-white"
+              whileHover={{ borderColor: "#9ca3af", rotate: 90 }}
+              transition={{ duration: 0.2 }}
+            >
               <Plus className="w-6 h-6 text-gray-400" strokeWidth={1.5} />
-            </div>
+            </motion.div>
             <span className="text-[11px] text-[#262626] max-w-[64px] text-center truncate">
               חדש
             </span>
@@ -107,9 +121,14 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
         {highlights.map((highlight, index) => (
           <motion.div
             key={highlight.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: index * 0.05 }}
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ 
+              duration: 0.3, 
+              delay: isOwnProfile ? (index + 1) * 0.08 + 0.1 : index * 0.08,
+              ease: "easeOut"
+            }}
+            whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             className={`flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer ${
               pressedHighlightId === highlight.id ? "opacity-70" : ""
@@ -122,9 +141,16 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
             onTouchEnd={handleLongPressEnd}
             onTouchCancel={handleLongPressEnd}
           >
-            <div className={`w-[64px] h-[64px] rounded-full border-2 border-gray-200 overflow-hidden bg-gray-50 ${
-              isOwnProfile ? "hover:border-gray-400" : ""
-            }`}>
+            <motion.div 
+              className={`w-[64px] h-[64px] rounded-full border-2 border-gray-200 overflow-hidden bg-gray-50 ${
+                isOwnProfile ? "hover:border-gray-400" : ""
+              }`}
+              whileHover={{ 
+                borderColor: "#9ca3af",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              }}
+              transition={{ duration: 0.2 }}
+            >
               {highlight.cover_image ? (
                 <img
                   src={highlight.cover_image}
@@ -136,7 +162,7 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
                   ✨
                 </div>
               )}
-            </div>
+            </motion.div>
             <span className="text-[11px] font-medium text-[#262626] max-w-[64px] text-center truncate">
               {highlight.title}
             </span>
@@ -160,6 +186,6 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
           onSuccess={fetchHighlights}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
