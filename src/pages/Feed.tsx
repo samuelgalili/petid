@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
@@ -35,6 +36,7 @@ interface Post {
 const Feed = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { checkAuth, isAuthenticated } = useRequireAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -50,6 +52,26 @@ const Feed = () => {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   
   const POSTS_PER_PAGE = 10;
+
+  const handleCreatePost = () => {
+    if (!checkAuth("כדי לפרסם פוסט, יש להתחבר")) return;
+    setCreatePostOpen(true);
+  };
+
+  const handleNavigateToNotifications = () => {
+    if (!checkAuth("כדי לצפות בהתראות, יש להתחבר")) return;
+    navigate('/notifications');
+  };
+
+  const handleNavigateToMessages = () => {
+    if (!checkAuth("כדי לשלוח הודעות, יש להתחבר")) return;
+    navigate('/messages');
+  };
+
+  const handleFollowingFilter = () => {
+    if (!checkAuth("כדי לצפות בפוסטים של העוקבים שלך, יש להתחבר")) return;
+    setFeedFilter("following");
+  };
 
   const fetchPosts = useCallback(async (pageNum: number, append = false) => {
     if (append) {
@@ -447,13 +469,13 @@ const Feed = () => {
           {/* Right icons */}
           <div className="flex items-center gap-5">
             <button
-              onClick={() => navigate('/notifications')}
+              onClick={handleNavigateToNotifications}
               className="active:opacity-50 transition-opacity relative"
             >
               <Heart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
             </button>
             <button
-              onClick={() => navigate('/messages')}
+              onClick={handleNavigateToMessages}
               className="active:opacity-50 transition-opacity"
             >
               <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
@@ -499,7 +521,7 @@ const Feed = () => {
             הכל
           </button>
           <button
-            onClick={() => setFeedFilter("following")}
+            onClick={handleFollowingFilter}
             className={`flex-1 py-3 text-[13px] font-semibold border-b-2 transition-colors ${
               feedFilter === "following"
                 ? "border-[#262626] text-[#262626]"
@@ -550,7 +572,7 @@ const Feed = () => {
                 : "כשתשתף תמונות, הן יופיעו בפרופיל שלך"}
             </p>
             <button
-              onClick={() => setCreatePostOpen(true)}
+              onClick={handleCreatePost}
               className="text-[#0095F6] font-semibold text-[14px]"
             >
               שתף את התמונה הראשונה שלך
