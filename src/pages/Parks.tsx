@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { Search, MapPin, Star, Check, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink, Map as MapIcon, List, Clock, MessageSquare, Heart, Bookmark, Share2, ChevronLeft, Sparkles, Filter, X, Users, LogIn, LogOut } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Search, MapPin, Star, Check, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink, Map as MapIcon, List, Clock, MessageSquare, Heart, Bookmark, Share2, ChevronLeft, Sparkles, Filter, X, Users, LogIn, LogOut, Camera, Image, Plus, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +65,15 @@ interface ParkCheckin {
   };
 }
 
+interface ParkPhoto {
+  id: string;
+  park_id: string;
+  user_id: string;
+  photo_url: string;
+  caption: string | null;
+  created_at: string;
+}
+
 // Park images array
 const parkImages = [parkImage1, parkImage2, parkImage3, parkImage4, parkImage5, parkImage6];
 
@@ -108,6 +117,13 @@ const Parks = () => {
   const [checkinsDialogOpen, setCheckinsDialogOpen] = useState(false);
   const [selectedParkForCheckins, setSelectedParkForCheckins] = useState<DogPark | null>(null);
   
+  // Photo upload state
+  const [parkPhotos, setParkPhotos] = useState<Record<string, ParkPhoto[]>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
+  const [selectedParkForGallery, setSelectedParkForGallery] = useState<DogPark | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -115,6 +131,7 @@ const Parks = () => {
 
   useEffect(() => {
     fetchParks();
+    fetchParkPhotos();
     if (user) {
       fetchUserPets();
       fetchUserCheckin();
@@ -202,6 +219,107 @@ const Parks = () => {
       setParkCheckins(grouped);
     } else {
       setParkCheckins({});
+    }
+  };
+
+  // Fetch all photos for parks
+  const fetchParkPhotos = async () => {
+    const { data, error } = await supabase
+      .from('park_photos')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (data) {
+      const grouped: Record<string, ParkPhoto[]> = {};
+      data.forEach((photo: ParkPhoto) => {
+        if (!grouped[photo.park_id]) grouped[photo.park_id] = [];
+        grouped[photo.park_id].push(photo);
+      });
+      setParkPhotos(grouped);
+    }
+  };
+
+  // Upload photo to park
+  const handlePhotoUpload = async (parkId: string, file: File) => {
+    if (!user) {
+      toast({
+        title: "נדרשת התחברות",
+        description: "יש להתחבר כדי להעלות תמונות",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${parkId}/${Date.now()}.${fileExt}`;
+
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('park-photos')
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('park-photos')
+        .getPublicUrl(fileName);
+
+      // Save to database
+      const { error: dbError } = await supabase
+        .from('park_photos')
+        .insert({
+          park_id: parkId,
+          user_id: user.id,
+          photo_url: publicUrl,
+        });
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "התמונה הועלתה בהצלחה! 📸",
+        description: "התמונה נוספה לגלריה",
+      });
+
+      fetchParkPhotos();
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      toast({
+        title: "שגיאה בהעלאת התמונה",
+        description: "נסה שוב מאוחר יותר",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Delete photo
+  const handleDeletePhoto = async (photo: ParkPhoto) => {
+    if (!user || user.id !== photo.user_id) return;
+
+    try {
+      // Extract file path from URL
+      const urlParts = photo.photo_url.split('/park-photos/');
+      if (urlParts.length > 1) {
+        const filePath = urlParts[1];
+        await supabase.storage.from('park-photos').remove([filePath]);
+      }
+
+      // Delete from database
+      await supabase.from('park_photos').delete().eq('id', photo.id);
+
+      toast({ title: "התמונה נמחקה" });
+      fetchParkPhotos();
+    } catch (error) {
+      console.error('Delete photo error:', error);
+      toast({
+        title: "שגיאה במחיקת התמונה",
+        variant: "destructive",
+      });
     }
   };
 
@@ -420,6 +538,7 @@ const Parks = () => {
     const isLiked = likedParks.has(park.id);
     const isSaved = savedParks.has(park.id);
     const checkins = parkCheckins[park.id] || [];
+    const photos = parkPhotos[park.id] || [];
 
     return (
       <motion.div
@@ -639,6 +758,66 @@ const Parks = () => {
               <p className="text-sm font-semibold text-[#262626]">אהבת את הגינה הזו ❤️</p>
             )}
           </div>
+
+          {/* User Photos Section */}
+          {photos.length > 0 && (
+            <div className="mb-3">
+              <button
+                onClick={() => {
+                  setSelectedParkForGallery(park);
+                  setPhotoGalleryOpen(true);
+                }}
+                className="flex items-center gap-2 mb-2"
+              >
+                <Image className="w-4 h-4 text-[#0095F6]" />
+                <span className="text-sm font-semibold text-[#262626]">{photos.length} תמונות מהגינה</span>
+              </button>
+              <div className="flex gap-1 overflow-x-auto pb-1">
+                {photos.slice(0, 4).map((photo, idx) => (
+                  <motion.div
+                    key={photo.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.1 }}
+                    onClick={() => {
+                      setSelectedParkForGallery(park);
+                      setPhotoGalleryOpen(true);
+                    }}
+                    className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                  >
+                    <img src={photo.photo_url} alt="" className="w-full h-full object-cover" />
+                  </motion.div>
+                ))}
+                {photos.length > 4 && (
+                  <div 
+                    onClick={() => {
+                      setSelectedParkForGallery(park);
+                      setPhotoGalleryOpen(true);
+                    }}
+                    className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors"
+                  >
+                    <span className="text-sm font-bold text-gray-600">+{photos.length - 4}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Upload Photo Button */}
+          {user && (
+            <motion.button
+              onClick={() => {
+                setSelectedParkForGallery(park);
+                photoInputRef.current?.click();
+              }}
+              className="flex items-center gap-2 text-[#0095F6] text-sm font-semibold mb-2 hover:text-[#1877F2] transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Camera className="w-4 h-4" />
+              הוסף תמונה מהגינה
+            </motion.button>
+          )}
 
           {/* Caption - Park Info */}
           <div className="mb-2">
@@ -1156,6 +1335,96 @@ const Parks = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Photo Gallery Dialog */}
+      <Dialog open={photoGalleryOpen} onOpenChange={setPhotoGalleryOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-black flex items-center justify-center gap-2">
+              <Image className="w-6 h-6 text-[#0095F6]" />
+              תמונות מ{selectedParkForGallery?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {/* Upload Button */}
+            {user && (
+              <motion.button
+                onClick={() => photoInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="w-full mb-4 flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-[#0095F6] hover:text-[#0095F6] transition-colors"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                {uploadingPhoto ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-5 h-5 border-2 border-[#0095F6] border-t-transparent rounded-full"
+                  />
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    העלה תמונה חדשה
+                  </>
+                )}
+              </motion.button>
+            )}
+
+            {/* Photo Grid */}
+            <div className="grid grid-cols-3 gap-1">
+              {selectedParkForGallery && parkPhotos[selectedParkForGallery.id]?.map((photo, idx) => (
+                <motion.div
+                  key={photo.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="aspect-square relative group"
+                >
+                  <img 
+                    src={photo.photo_url} 
+                    alt="" 
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                  {user && user.id === photo.user_id && (
+                    <motion.button
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      onClick={() => handleDeletePhoto(photo)}
+                      className="absolute top-1 left-1 p-1.5 bg-red-500/80 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </motion.button>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {selectedParkForGallery && (!parkPhotos[selectedParkForGallery.id] || parkPhotos[selectedParkForGallery.id].length === 0) && (
+              <div className="text-center py-12">
+                <Camera className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">אין תמונות עדיין</p>
+                <p className="text-sm text-gray-400">היה הראשון להעלות תמונה מהגינה!</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={photoInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && selectedParkForGallery) {
+            handlePhotoUpload(selectedParkForGallery.id, file);
+          }
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 };
