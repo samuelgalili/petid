@@ -1,404 +1,238 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Camera, Upload, X, Trash2, Image as ImageIcon } from "lucide-react";
-import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Grid3X3, Play, Heart, MessageCircle, Plus, Image as ImageIcon } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { motion } from "framer-motion";
 
-interface Pet {
+interface Post {
   id: string;
-  name: string;
-  avatar_url: string | null;
-}
-
-interface Photo {
-  id: string;
-  photo_url: string;
+  image_url: string | null;
+  video_url: string | null;
   caption: string | null;
-  pet_id: string | null;
+  media_type: string;
   created_at: string;
-  pets?: {
-    name: string;
-  };
+  likes_count: number;
+  comments_count: number;
 }
 
 export default function Photos() {
   const { user } = useAuth();
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [photos, setPhotos] = useState<Photo[]>([]);
-  const [selectedPetFilter, setSelectedPetFilter] = useState<string>("all");
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedPet, setSelectedPet] = useState<string>("");
-  const [caption, setCaption] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "images" | "videos">("all");
 
   useEffect(() => {
     if (user) {
-      fetchPets();
-      fetchPhotos();
+      fetchPosts();
     }
   }, [user]);
 
-  const fetchPets = async () => {
-    const { data, error } = await supabase
-      .from("pets")
-      .select("id, name, avatar_url")
-      .eq("user_id", user?.id)
-      .eq("archived", false);
-
-    if (error) {
-      toast.error("שגיאה בטעינת חיות המחמד");
-      return;
-    }
-
-    setPets(data || []);
-  };
-
-  const fetchPhotos = async () => {
-    const { data, error } = await supabase
-      .from("pet_photos")
-      .select(`
-        id,
-        photo_url,
-        caption,
-        pet_id,
-        created_at,
-        pets:pet_id (name)
-      `)
-      .eq("user_id", user?.id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("שגיאה בטעינת התמונות");
-      return;
-    }
-
-    setPhotos(data || []);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("יש להעלות קובץ תמונה בלבד");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("גודל הקובץ לא יכול לעבור 5MB");
-      return;
-    }
-
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const uploadPhoto = async () => {
-    if (!selectedFile || !user) return;
-
-    setIsUploading(true);
-
+  const fetchPosts = async () => {
+    if (!user) return;
+    
+    setLoading(true);
     try {
-      // Upload to storage
-      const fileExt = selectedFile.name.split(".").pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("pet-photos")
-        .upload(fileName, selectedFile);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("pet-photos")
-        .getPublicUrl(fileName);
-
-      // Save to database
-      const { error: dbError } = await supabase
-        .from("pet_photos")
-        .insert({
-          user_id: user.id,
-          pet_id: selectedPet || null,
-          photo_url: publicUrl,
-          caption: caption || null,
-        });
-
-      if (dbError) throw dbError;
-
-      toast.success("התמונה הועלתה בהצלחה!");
-      setUploadDialogOpen(false);
-      resetUploadForm();
-      fetchPhotos();
-    } catch (error) {
-      console.error("Error uploading photo:", error);
-      toast.error("שגיאה בהעלאת התמונה");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const deletePhoto = async (photo: Photo) => {
-    try {
-      // Delete from storage
-      const filePath = photo.photo_url.split("/pet-photos/")[1];
-      if (filePath) {
-        await supabase.storage.from("pet-photos").remove([filePath]);
-      }
-
-      // Delete from database
-      const { error } = await supabase
-        .from("pet_photos")
-        .delete()
-        .eq("id", photo.id);
+      // Fetch user's posts
+      const { data: postsData, error } = await supabase
+        .from("posts")
+        .select("id, image_url, video_url, caption, media_type, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      toast.success("התמונה נמחקה בהצלחה");
-      fetchPhotos();
+      // Fetch likes and comments counts for each post
+      const postsWithCounts = await Promise.all(
+        (postsData || []).map(async (post) => {
+          const [likesResult, commentsResult] = await Promise.all([
+            supabase
+              .from("post_likes")
+              .select("id", { count: "exact", head: true })
+              .eq("post_id", post.id),
+            supabase
+              .from("post_comments")
+              .select("id", { count: "exact", head: true })
+              .eq("post_id", post.id),
+          ]);
+
+          return {
+            ...post,
+            likes_count: likesResult.count || 0,
+            comments_count: commentsResult.count || 0,
+          };
+        })
+      );
+
+      setPosts(postsWithCounts);
     } catch (error) {
-      console.error("Error deleting photo:", error);
-      toast.error("שגיאה במחיקת התמונה");
+      console.error("Error fetching posts:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const resetUploadForm = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setSelectedPet("");
-    setCaption("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (cameraInputRef.current) cameraInputRef.current.value = "";
+  const filteredPosts = posts.filter((post) => {
+    if (filter === "all") return true;
+    if (filter === "images") return post.media_type === "image" || !post.video_url;
+    if (filter === "videos") return post.media_type === "video" || post.video_url;
+    return true;
+  });
+
+  const handlePostClick = (postId: string) => {
+    navigate(`/post/${postId}`);
   };
 
-  const filteredPhotos = selectedPetFilter === "all"
-    ? photos
-    : photos.filter(photo => photo.pet_id === selectedPetFilter);
+  const handleCreatePost = () => {
+    navigate("/feed");
+  };
 
   return (
     <>
       <AppHeader 
-        title="אלבום התמונות" 
+        title="האלבום שלי" 
         showBackButton={true}
         showMenuButton={false}
         extraAction={{
-          icon: Upload,
-          onClick: () => setUploadDialogOpen(true)
+          icon: Plus,
+          onClick: handleCreatePost
         }}
       />
       
-      <div className="min-h-screen bg-white pb-24">
-        {/* Filters Section */}
-        <div className="bg-white border-b sticky top-16 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta">
-                  <Upload className="ml-2 h-4 w-4" strokeWidth={1.5} />
-                  העלאת תמונה
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>העלאת תמונה חדשה</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  {/* Preview */}
-                  {previewUrl ? (
-                    <div className="relative">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="w-full h-64 object-cover rounded-lg"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 left-2"
-                        onClick={resetUploadForm}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <Upload className="ml-2 h-4 w-4" />
-                          בחר קובץ
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => cameraInputRef.current?.click()}
-                        >
-                          <Camera className="ml-2 h-4 w-4" />
-                          צלם תמונה
-                        </Button>
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileSelect}
-                      />
-                      <input
-                        ref={cameraInputRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        className="hidden"
-                        onChange={handleFileSelect}
-                      />
-                    </div>
-                  )}
-
-                  {/* Pet Selection */}
-                  <div className="space-y-2">
-                    <Label>חיית מחמד (אופציונלי)</Label>
-                    <Select value={selectedPet} onValueChange={setSelectedPet}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר חיית מחמד" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">ללא חיית מחמד</SelectItem>
-                        {pets.map((pet) => (
-                          <SelectItem key={pet.id} value={pet.id}>
-                            {pet.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Caption */}
-                  <div className="space-y-2">
-                    <Label>כיתוב (אופציונלי)</Label>
-                    <Textarea
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      placeholder="הוסף כיתוב לתמונה..."
-                      rows={3}
-                    />
-                  </div>
-
-                  <Button
-                    className="w-full bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta"
-                    onClick={uploadPhoto}
-                    disabled={!selectedFile || isUploading}
-                  >
-                    {isUploading ? "מעלה..." : "העלאת תמונה"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Filter */}
-            <div className="flex gap-2 overflow-x-auto pb-2 mt-4">
-            <Button
-              variant={selectedPetFilter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedPetFilter("all")}
-              className={selectedPetFilter === "all" ? "bg-primary hover:bg-primary/90 text-white" : ""}
-            >
-              הכל ({photos.length})
-            </Button>
-            {pets.map((pet) => {
-              const petPhotoCount = photos.filter(p => p.pet_id === pet.id).length;
-              return (
-                <Button
-                  key={pet.id}
-                  variant={selectedPetFilter === pet.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedPetFilter(pet.id)}
-                  className={selectedPetFilter === pet.id ? "bg-primary hover:bg-primary/90 text-white" : ""}
-                >
-                  {pet.name} ({petPhotoCount})
-                </Button>
-              );
-            })}
+      <div className="min-h-screen bg-background pb-24">
+        {/* Filter Tabs */}
+        <div className="bg-background border-b sticky top-16 z-10">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex justify-center gap-8 py-3">
+              <button
+                onClick={() => setFilter("all")}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  filter === "all"
+                    ? "text-foreground border-b-2 border-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Grid3X3 className="w-5 h-5" />
+                <span>הכל</span>
+              </button>
+              <button
+                onClick={() => setFilter("images")}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  filter === "images"
+                    ? "text-foreground border-b-2 border-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <ImageIcon className="w-5 h-5" />
+                <span>תמונות</span>
+              </button>
+              <button
+                onClick={() => setFilter("videos")}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                  filter === "videos"
+                    ? "text-foreground border-b-2 border-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Play className="w-5 h-5" />
+                <span>סרטונים</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Gallery */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {filteredPhotos.length === 0 ? (
-          <div className="text-center py-12">
-            <ImageIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              אין תמונות עדיין
-            </h3>
-            <p className="text-gray-600 mb-4">
-              העלה את התמונה הראשונה של חיית המחמד שלך
-            </p>
-            <Button
-              onClick={() => setUploadDialogOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-white rounded-lg font-jakarta"
-            >
-              <Upload className="ml-2 h-4 w-4" strokeWidth={1.5} />
-              העלאת תמונה
-            </Button>
+        {/* Stats */}
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex justify-center gap-8 text-center">
+            <div>
+              <p className="text-xl font-bold text-foreground">{posts.length}</p>
+              <p className="text-sm text-muted-foreground">פוסטים</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-foreground">
+                {posts.reduce((sum, post) => sum + post.likes_count, 0)}
+              </p>
+              <p className="text-sm text-muted-foreground">לייקים</p>
+            </div>
+            <div>
+              <p className="text-xl font-bold text-foreground">
+                {posts.reduce((sum, post) => sum + post.comments_count, 0)}
+              </p>
+              <p className="text-sm text-muted-foreground">תגובות</p>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {filteredPhotos.map((photo) => (
-              <div
-                key={photo.id}
-                className="group relative aspect-square bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-              >
-                <img
-                  src={photo.photo_url}
-                  alt={photo.caption || "Pet photo"}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    {photo.pets && (
-                      <p className="text-white text-sm font-medium mb-1">
-                        {photo.pets.name}
-                      </p>
-                    )}
-                    {photo.caption && (
-                      <p className="text-white text-xs line-clamp-2">
-                        {photo.caption}
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 left-2"
-                    onClick={() => deletePhoto(photo)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+        </div>
+
+        {/* Gallery Grid */}
+        <div className="max-w-7xl mx-auto px-1">
+          {loading ? (
+            <div className="grid grid-cols-3 gap-0.5">
+              {[...Array(9)].map((_, i) => (
+                <div key={i} className="aspect-square bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <ImageIcon className="w-10 h-10 text-muted-foreground" />
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {filter === "all" ? "עדיין אין פוסטים" : filter === "images" ? "אין תמונות" : "אין סרטונים"}
+              </h3>
+              <p className="text-muted-foreground mb-6 text-sm">
+                שתף את הרגעים המיוחדים עם חיות המחמד שלך
+              </p>
+              <Button
+                onClick={handleCreatePost}
+                className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl"
+              >
+                <Plus className="w-4 h-4 ml-2" />
+                צור פוסט חדש
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-0.5">
+              {filteredPosts.map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="relative aspect-square bg-muted cursor-pointer group"
+                  onClick={() => handlePostClick(post.id)}
+                >
+                  <img
+                    src={post.image_url || post.video_url || ""}
+                    alt={post.caption || "Post"}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Video indicator */}
+                  {(post.media_type === "video" || post.video_url) && (
+                    <div className="absolute top-2 right-2">
+                      <Play className="w-5 h-5 text-white drop-shadow-lg" fill="white" />
+                    </div>
+                  )}
+                  
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
+                    <div className="flex items-center gap-1.5 text-white">
+                      <Heart className="w-5 h-5" fill="white" />
+                      <span className="font-semibold">{post.likes_count}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white">
+                      <MessageCircle className="w-5 h-5" fill="white" />
+                      <span className="font-semibold">{post.comments_count}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
