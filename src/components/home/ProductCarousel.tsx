@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ProductCard, PromoCard } from "./ProductCard";
+import { useState, useEffect } from "react";
+import { ProductCard, PromoCard, ProductCardSkeleton, PromoCardSkeleton } from "./ProductCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ComponentErrorFallback } from "@/components/ComponentErrorFallback";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { Gift, Tag, Percent } from "lucide-react";
+import { Gift, Tag } from "lucide-react";
 import dogFoodImg from "@/assets/products/dog-food.jpg";
 import dogTreatsImg from "@/assets/products/dog-treats.jpg";
 import dogToysImg from "@/assets/products/dog-toys.jpg";
@@ -27,9 +28,32 @@ const products = [
   { id: "8", image: petBedImg, title: "מיטה מפנקת", price: "₪208.00", originalPrice: "₪259.00", hasSale: true },
 ];
 
+// Loading skeleton grid
+const ProductGridSkeleton = () => (
+  <div className="grid grid-cols-3 gap-3">
+    <ProductCardSkeleton index={0} />
+    <ProductCardSkeleton index={1} />
+    <PromoCardSkeleton index={0} />
+    <ProductCardSkeleton index={2} />
+    <ProductCardSkeleton index={3} />
+    <ProductCardSkeleton index={4} />
+    <ProductCardSkeleton index={5} />
+    <PromoCardSkeleton index={1} />
+    <ProductCardSkeleton index={6} />
+    <ProductCardSkeleton index={7} />
+  </div>
+);
+
 export const ProductCarousel = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading for demo (in real app this would be from data fetching)
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleAddToCart = (product: typeof products[0]) => {
     addToCart({
@@ -66,6 +90,9 @@ export const ProductCarousel = () => {
         </div>
 
         {/* Products Grid - Yellow Style */}
+        {isLoading ? (
+          <ProductGridSkeleton />
+        ) : (
         <div className="grid grid-cols-3 gap-3">
           {/* First row - 2 products + promo */}
           <ProductCard
@@ -167,6 +194,7 @@ export const ProductCarousel = () => {
             onAddToCart={() => handleAddToCart(products[7])}
           />
         </div>
+        )}
 
         {/* CTA Button */}
         <Button

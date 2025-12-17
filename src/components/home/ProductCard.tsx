@@ -1,7 +1,53 @@
 import { motion } from "framer-motion";
 import { memo } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { ShoppingCart, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Skeleton component for loading state
+export const ProductCardSkeleton = memo(({ index = 0 }: { index?: number }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: index * 0.05 }}
+      className="bg-card rounded-2xl overflow-hidden shadow-card"
+    >
+      {/* Image Skeleton */}
+      <div className="bg-surface p-3 flex items-center justify-center h-24">
+        <Skeleton className="w-full h-full rounded-lg animate-pulse" />
+      </div>
+      
+      {/* Content Skeleton */}
+      <div className="p-3 space-y-2">
+        <Skeleton className="h-3 w-3/4 rounded animate-pulse" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-12 rounded animate-pulse" />
+          <Skeleton className="w-7 h-7 rounded-full animate-pulse" />
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
+ProductCardSkeleton.displayName = 'ProductCardSkeleton';
+
+export const PromoCardSkeleton = memo(({ index = 0 }: { index?: number }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: index * 0.05 }}
+      className="rounded-2xl overflow-hidden shadow-card row-span-2 bg-muted p-4 flex flex-col items-center justify-center"
+    >
+      <Skeleton className="w-10 h-10 rounded-full mb-3 animate-pulse" />
+      <Skeleton className="h-4 w-20 rounded mb-2 animate-pulse" />
+      <Skeleton className="h-3 w-16 rounded animate-pulse" />
+    </motion.div>
+  );
+});
+
+PromoCardSkeleton.displayName = 'PromoCardSkeleton';
 
 interface ProductCardProps {
   image: string;
