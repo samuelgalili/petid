@@ -3,10 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, Play, Heart, MessageCircle, Plus, Image as ImageIcon } from "lucide-react";
+import { Grid3X3, Play, Heart, MessageCircle, Plus, Image as ImageIcon, Trash2 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { motion } from "framer-motion";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Post {
   id: string;
@@ -26,6 +37,8 @@ export default function Photos() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "images" | "videos">("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -94,6 +107,48 @@ export default function Photos() {
 
   const handlePostCreated = () => {
     fetchPosts();
+  };
+
+  const handleDeletePost = async () => {
+    if (!deletePostId) return;
+    
+    setDeleting(true);
+    try {
+      // Delete likes first
+      await supabase
+        .from("post_likes")
+        .delete()
+        .eq("post_id", deletePostId);
+      
+      // Delete comments
+      await supabase
+        .from("post_comments")
+        .delete()
+        .eq("post_id", deletePostId);
+      
+      // Delete the post
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", deletePostId)
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+
+      toast.success("הפוסט נמחק בהצלחה");
+      setPosts(posts.filter(p => p.id !== deletePostId));
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("שגיאה במחיקת הפוסט");
+    } finally {
+      setDeleting(false);
+      setDeletePostId(null);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, postId: string) => {
+    e.stopPropagation();
+    setDeletePostId(postId);
   };
 
   return (
@@ -234,6 +289,14 @@ export default function Photos() {
                       <span className="font-semibold">{post.comments_count}</span>
                     </div>
                   </div>
+                  
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => handleDeleteClick(e, post.id)}
+                    className="absolute top-2 left-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                  </button>
                 </motion.div>
               ))}
             </div>
@@ -247,6 +310,28 @@ export default function Photos() {
         onOpenChange={setShowCreateDialog}
         onPostCreated={handlePostCreated}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת פוסט</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם אתה בטוח שברצונך למחוק את הפוסט? פעולה זו לא ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel disabled={deleting}>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {deleting ? "מוחק..." : "מחק"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
