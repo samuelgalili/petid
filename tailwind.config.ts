@@ -361,6 +361,16 @@ export default {
   				'100%': {
   					backgroundPosition: '200% 0'
   				}
+  			},
+  			'ripple': {
+  				'0%': {
+  					transform: 'scale(0)',
+  					opacity: '0.6'
+  				},
+  				'100%': {
+  					transform: 'scale(1)',
+  					opacity: '0'
+  				}
   			}
   		},
 		animation: {
@@ -371,7 +381,8 @@ export default {
 			'bounce-in': 'bounce-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
 			'slide-up': 'slide-up 0.3s ease-out',
 			'fade-in': 'fade-in 0.3s ease-out',
-			'shimmer': 'shimmer 1.5s infinite'
+			'shimmer': 'shimmer 1.5s infinite',
+			'ripple': 'ripple 0.6s ease-out forwards'
 		}
   	}
   },
