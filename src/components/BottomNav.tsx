@@ -90,13 +90,13 @@ const BottomNav = () => {
 
           {/* Search/Explore */}
           <Link
-            to="/adoption"
+            to="/explore"
             className="flex items-center justify-center p-2 active:opacity-50"
           >
             <Compass 
-              className={`w-[26px] h-[26px] ${location.pathname === '/adoption' ? 'text-[#262626]' : 'text-[#262626]'}`}
-              strokeWidth={location.pathname === '/adoption' ? 2.5 : 1.5}
-              fill={location.pathname === '/adoption' ? '#262626' : 'none'}
+              className={`w-[26px] h-[26px] ${location.pathname === '/explore' ? 'text-[#262626]' : 'text-[#262626]'}`}
+              strokeWidth={location.pathname === '/explore' ? 2.5 : 1.5}
+              fill={location.pathname === '/explore' ? '#262626' : 'none'}
             />
           </Link>
 
