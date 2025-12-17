@@ -55,6 +55,15 @@ const Shop = () => {
 
   const sizes = ["S", "M", "L", "XL"];
 
+  const quickTags = [
+    { id: "food", label: "מזון", icon: "🍖", color: "#FF6B6B" },
+    { id: "toys", label: "צעצועים", icon: "🎾", color: "#4ECDC4" },
+    { id: "beds", label: "מיטות", icon: "🛏️", color: "#9B59B6" },
+    { id: "grooming", label: "טיפוח", icon: "✨", color: "#F39C12" },
+    { id: "treats", label: "חטיפים", icon: "🦴", color: "#E74C3C" },
+    { id: "accessories", label: "אביזרים", icon: "🎀", color: "#3498DB" },
+  ];
+
   const categories = [
     { id: "all", label: "הכל" },
     { id: "food", label: "מזון" },
@@ -226,6 +235,13 @@ const Shop = () => {
     setShowSearchResults(true);
   }, []);
 
+  const handleTagClick = useCallback((tag: typeof quickTags[0]) => {
+    setSearchQuery(tag.label);
+    addToSearchHistory(tag.label);
+    setShowSearchResults(false);
+    searchInputRef.current?.blur();
+  }, [addToSearchHistory]);
+
   const clearSearch = useCallback(() => {
     setSearchQuery("");
     setShowSearchResults(false);
@@ -329,43 +345,70 @@ const Shop = () => {
               )}
             </div>
             
-            {/* Recent Searches - Show when focused and no query */}
+            {/* Search Dropdown - Show when focused and no query */}
             <AnimatePresence>
-              {isSearchFocused && !searchQuery.trim() && searchHistory.length > 0 && (
+              {isSearchFocused && !searchQuery.trim() && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-[#DBDBDB] shadow-lg overflow-hidden z-50"
                 >
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-[#EFEFEF]">
-                    <span className="text-[12px] font-semibold text-[#262626]">חיפושים אחרונים</span>
-                    <button 
-                      onClick={clearSearchHistory}
-                      className="text-[11px] text-[#0095F6] font-medium"
-                    >
-                      נקה הכל
-                    </button>
+                  {/* Quick Category Tags */}
+                  <div className="px-3 py-3 border-b border-[#EFEFEF]">
+                    <span className="text-[12px] font-semibold text-[#262626] mb-2 block">חיפוש מהיר</span>
+                    <div className="flex flex-wrap gap-2">
+                      {quickTags.map((tag, index) => (
+                        <motion.button
+                          key={tag.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.03 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleTagClick(tag)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium text-white transition-all hover:opacity-90"
+                          style={{ backgroundColor: tag.color }}
+                        >
+                          <span>{tag.icon}</span>
+                          <span>{tag.label}</span>
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
-                  {searchHistory.map((query, index) => (
-                    <motion.button
-                      key={query}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      onClick={() => handleHistorySelect(query)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#FAFAFA] transition-colors text-right"
-                    >
-                      <Clock className="w-4 h-4 text-[#8E8E8E]" strokeWidth={1.5} />
-                      <span className="flex-1 text-[13px] text-[#262626]">{query}</span>
-                      <button
-                        onClick={(e) => removeFromHistory(query, e)}
-                        className="p-1 hover:bg-[#EFEFEF] rounded-full"
-                      >
-                        <X className="w-3.5 h-3.5 text-[#8E8E8E]" strokeWidth={1.5} />
-                      </button>
-                    </motion.button>
-                  ))}
+                  
+                  {/* Recent Searches */}
+                  {searchHistory.length > 0 && (
+                    <>
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-[#EFEFEF]">
+                        <span className="text-[12px] font-semibold text-[#262626]">חיפושים אחרונים</span>
+                        <button 
+                          onClick={clearSearchHistory}
+                          className="text-[11px] text-[#0095F6] font-medium"
+                        >
+                          נקה הכל
+                        </button>
+                      </div>
+                      {searchHistory.map((query, index) => (
+                        <motion.button
+                          key={query}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: index * 0.05 }}
+                          onClick={() => handleHistorySelect(query)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#FAFAFA] transition-colors text-right"
+                        >
+                          <Clock className="w-4 h-4 text-[#8E8E8E]" strokeWidth={1.5} />
+                          <span className="flex-1 text-[13px] text-[#262626]">{query}</span>
+                          <button
+                            onClick={(e) => removeFromHistory(query, e)}
+                            className="p-1 hover:bg-[#EFEFEF] rounded-full"
+                          >
+                            <X className="w-3.5 h-3.5 text-[#8E8E8E]" strokeWidth={1.5} />
+                          </button>
+                        </motion.button>
+                      ))}
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
