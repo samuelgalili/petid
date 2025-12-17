@@ -94,12 +94,12 @@ export const StoriesBar = () => {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 bg-surface border-b border-petid-border">
+      <div className="px-4 py-4 bg-white">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="w-20 h-20 rounded-full bg-gradient-petish opacity-30 animate-pulse" />
-              <div className="w-14 h-3 bg-muted rounded-full animate-pulse" />
+              <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 animate-pulse" />
+              <div className="w-12 h-3 bg-gray-100 rounded-full animate-pulse" />
             </div>
           ))}
         </div>
@@ -109,48 +109,35 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-4 py-4 bg-surface border-b border-petid-border shadow-sm">
-        <div className="flex gap-5 overflow-x-auto no-scrollbar pb-1">
+      <div className="px-4 py-4 bg-white">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1">
           {/* Add Story Button */}
           {user && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ 
-                scale: 1.08,
-                transition: { duration: 0.2 }
-              }}
-              whileTap={{ scale: 0.92 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
               onClick={() => setCreateDialogOpen(true)}
             >
               <div className="relative">
-                {/* Petish Story Ring with Gradient */}
-                <motion.div 
-                  className="petish-story-ring w-20 h-20 shadow-petish"
-                  whileHover={{
-                    boxShadow: "0 0 25px hsla(342, 100%, 69%, 0.5)"
-                  }}
-                >
+                <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-gray-100 to-gray-50 p-[3px]">
                   <Avatar className="w-full h-full ring-2 ring-white">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback className="bg-gradient-petish text-white font-black text-xl">
+                    <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black text-lg">
                       {user.user_metadata?.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                </motion.div>
+                </div>
                 <motion.div 
-                  className="absolute bottom-0 right-0 w-7 h-7 bg-petish-primary rounded-full flex items-center justify-center shadow-lg border-2 border-white"
-                  whileHover={{ 
-                    scale: 1.2,
-                    rotate: 90,
-                    transition: { duration: 0.2 }
-                  }}
+                  className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-gradient-to-r from-[#FF6B9D] to-[#C44FE2] rounded-full flex items-center justify-center shadow-md border-2 border-white"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
                 >
-                  <Plus className="w-4 h-4 text-white font-bold" strokeWidth={3} />
+                  <Plus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                 </motion.div>
               </div>
-              <span className="text-xs font-jakarta font-bold text-foreground">Petish Story</span>
+              <span className="text-[11px] font-jakarta font-semibold text-gray-600">הסטורי שלי</span>
             </motion.div>
           )}
 
@@ -160,60 +147,44 @@ export const StoriesBar = () => {
               key={storyUser.user_id}
               initial={{ opacity: 0, scale: 0.8, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              whileHover={{ 
-                scale: 1.08,
-                y: -4,
-                transition: { duration: 0.2 }
-              }}
-              whileTap={{ scale: 0.92 }}
-              transition={{ 
-                delay: index * 0.05,
-                type: "spring",
-                stiffness: 300,
-                damping: 20
-              }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 20 }}
               className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
               onClick={() => navigate(`/story/${storyUser.user_id}`)}
             >
               <div className="relative">
-                {/* Petish Story Ring - Gradient for unviewed, muted for viewed */}
-                <motion.div 
-                  className={`p-[3px] rounded-full ${
+                <div 
+                  className={`w-[72px] h-[72px] rounded-full p-[3px] ${
                     storyUser.has_viewed 
-                      ? 'petish-story-ring-viewed' 
-                      : 'petish-story-ring'
+                      ? 'bg-gray-200' 
+                      : 'bg-gradient-to-tr from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE]'
                   }`}
-                  style={!storyUser.has_viewed ? { boxShadow: '0 4px 12px hsla(342, 100%, 69%, 0.25)' } : {}}
-                  whileHover={!storyUser.has_viewed ? {
-                    boxShadow: "0 0 25px hsla(342, 100%, 69%, 0.5)",
-                    transition: { duration: 0.2 }
-                  } : {}}
-                  animate={!storyUser.has_viewed ? {
-                    scale: [1, 1.02, 1],
-                    transition: {
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatType: "reverse"
-                    }
-                  } : {}}
                 >
-                  <Avatar className="w-20 h-20 ring-[3px] ring-white">
+                  <Avatar className="w-full h-full ring-[3px] ring-white">
                     <AvatarImage src={storyUser.avatar_url} />
-                    <AvatarFallback className="bg-gradient-petish text-white font-black text-xl">
+                    <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black text-lg">
                       {storyUser.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
-                </motion.div>
+                </div>
+                {!storyUser.has_viewed && (
+                  <motion.div
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF6B9D] rounded-full border-2 border-white"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                  />
+                )}
               </div>
-              <span className="text-xs font-jakarta font-semibold text-foreground max-w-[80px] truncate">
+              <span className="text-[11px] font-jakarta font-semibold text-gray-600 max-w-[72px] truncate text-center">
                 {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}
               </span>
             </motion.div>
           ))}
 
           {storyUsers.length === 0 && !user && (
-            <div className="text-center py-6 w-full">
-              <p className="text-muted-foreground font-jakarta text-sm font-semibold">אין Petish Stories פעילים כרגע 📸</p>
+            <div className="text-center py-4 w-full">
+              <p className="text-gray-400 font-jakarta text-sm">אין סטוריז פעילים 📸</p>
             </div>
           )}
         </div>
