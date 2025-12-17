@@ -69,6 +69,7 @@ import Terms from "./pages/Terms";
 import ClubTerms from "./pages/ClubTerms";
 import Favorites from "./pages/Favorites";
 import Splash from "./pages/Splash";
+import Welcome from "./pages/Welcome";
 import Support from "./pages/Support";
 import Deals from "./pages/Deals";
 import { AdminRoute } from "./components/AdminRoute";
@@ -98,6 +99,7 @@ const AnimatedRoutes = () => {
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
         <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
+        <Route path="/welcome" element={<ProtectedRoute><PageTransition><Welcome /></PageTransition></ProtectedRoute>} />
         <Route path="/support" element={<ProtectedRoute><PageTransition><Support /></PageTransition></ProtectedRoute>} />
         <Route path="/deals" element={<ProtectedRoute><PageTransition><Deals /></PageTransition></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
