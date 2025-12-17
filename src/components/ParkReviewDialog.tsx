@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Star, X, Upload, Camera } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Star, X, Upload, Camera, Sparkles, Image } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ParkReviewDialogProps {
   open: boolean;
@@ -30,6 +30,8 @@ export const ParkReviewDialog = ({
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
+  const ratingLabels = ["", "😕 לא טוב", "😐 בסדר", "🙂 טוב", "😊 מעולה", "🤩 מושלם!"];
+
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length + photos.length > 5) {
@@ -43,7 +45,6 @@ export const ParkReviewDialog = ({
 
     setPhotos([...photos, ...files]);
     
-    // Create previews
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -81,12 +82,11 @@ export const ParkReviewDialog = ({
         return;
       }
 
-      // Upload photos to storage
       const photoUrls: string[] = [];
       for (const photo of photos) {
         const fileExt = photo.name.split('.').pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('park-photos')
           .upload(fileName, photo);
 
@@ -99,7 +99,6 @@ export const ParkReviewDialog = ({
         photoUrls.push(publicUrl);
       }
 
-      // Insert review
       const { error: insertError } = await supabase
         .from('park_reviews')
         .insert({
@@ -113,14 +112,13 @@ export const ParkReviewDialog = ({
       if (insertError) throw insertError;
 
       toast({
-        title: "הביקורת נשמרה בהצלחה",
+        title: "🎉 הביקורת נשמרה בהצלחה",
         description: "תודה על שיתוף הפעולה!",
       });
 
       onReviewSubmitted();
       onOpenChange(false);
       
-      // Reset form
       setRating(0);
       setReviewText("");
       setPhotos([]);
@@ -139,105 +137,207 @@ export const ParkReviewDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-white text-gray-900 rounded-3xl" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-black text-gray-900 font-jakarta">
-            ביקורת עבור {parkName}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-md p-0 bg-white text-gray-900 rounded-3xl overflow-hidden border-0" dir="rtl">
+        {/* Header with gradient */}
+        <div className="relative bg-gradient-to-l from-amber-400 via-orange-400 to-pink-500 p-6 pb-12">
+          <button 
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 left-4 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full mb-3">
+              <Sparkles className="w-4 h-4 text-white" />
+              <span className="text-white text-sm font-medium">שתף את החוויה שלך</span>
+            </div>
+            <h2 className="text-2xl font-black text-white drop-shadow-sm">
+              {parkName}
+            </h2>
+          </motion.div>
+        </div>
 
-        <div className="space-y-6 py-4">
-          {/* Star Rating */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-900">דירוג</label>
-            <div className="flex gap-2 justify-center">
+        {/* Content */}
+        <div className="px-6 pb-6 -mt-6">
+          {/* Rating Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5 mb-5"
+          >
+            <p className="text-center text-gray-600 text-sm mb-4">איך הייתה החוויה?</p>
+            
+            <div className="flex gap-2 justify-center mb-3">
               {[1, 2, 3, 4, 5].map((star) => (
                 <motion.button
                   key={star}
                   type="button"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.15, rotate: star % 2 === 0 ? 5 : -5 }}
+                  whileTap={{ scale: 0.85 }}
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
-                  className="transition-transform"
+                  className="relative"
                 >
                   <Star
-                    className={`w-10 h-10 ${
+                    className={`w-11 h-11 transition-all duration-200 ${
                       star <= (hoveredRating || rating)
-                        ? "fill-warning text-warning"
-                        : "text-gray-300"
+                        ? "fill-amber-400 text-amber-400 drop-shadow-[0_2px_4px_rgba(251,191,36,0.4)]"
+                        : "text-gray-200"
                     }`}
                   />
+                  {star <= rating && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute inset-0 flex items-center justify-center"
+                    >
+                      <div className="w-2 h-2 bg-amber-200 rounded-full animate-ping" />
+                    </motion.div>
+                  )}
                 </motion.button>
               ))}
             </div>
-          </div>
+
+            <AnimatePresence mode="wait">
+              {(hoveredRating || rating) > 0 && (
+                <motion.p
+                  key={hoveredRating || rating}
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  className="text-center text-lg font-bold text-gray-800"
+                >
+                  {ratingLabels[hoveredRating || rating]}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
           {/* Review Text */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-900">הביקורת שלך (אופציונלי)</label>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-5"
+          >
+            <label className="text-sm font-semibold text-gray-700 mb-2 block">
+              ספר לנו עוד (אופציונלי)
+            </label>
             <Textarea
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
-              placeholder="שתף את חוויית הביקור שלך בגינה..."
-              className="min-h-[120px] rounded-2xl border-gray-300 focus:border-gray-900"
+              placeholder="מה אהבת? מה פחות? איך הייתה האווירה? 🐕"
+              className="min-h-[100px] rounded-2xl border-gray-200 focus:border-amber-400 focus:ring-amber-400/20 resize-none bg-gray-50"
               maxLength={500}
             />
-            <p className="text-xs text-gray-500 text-left">{reviewText.length}/500</p>
-          </div>
+            <div className="flex justify-between mt-2">
+              <span className="text-xs text-gray-400">💡 ביקורות מפורטות עוזרות לאחרים</span>
+              <span className="text-xs text-gray-400">{reviewText.length}/500</span>
+            </div>
+          </motion.div>
 
           {/* Photo Upload */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-900">תמונות (עד 5)</label>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mb-6"
+          >
+            <label className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              הוסף תמונות (עד 5)
+            </label>
             
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-2">
               {photoPreviews.map((preview, index) => (
-                <div key={index} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                <motion.div 
+                  key={index} 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden shadow-md"
+                >
                   <img src={preview} alt={`תמונה ${index + 1}`} className="w-full h-full object-cover" />
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => removePhoto(index)}
-                    className="absolute top-1 left-1 bg-error text-white rounded-full p-1 hover:bg-error-dark"
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-lg"
                   >
                     <X className="w-3 h-3" />
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
               ))}
               
               {photos.length < 5 && (
-                <label className="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer flex flex-col items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <Upload className="w-6 h-6 text-gray-400" />
-                  <span className="text-xs text-gray-500">העלה תמונה</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </label>
+                <div className="flex gap-2 flex-shrink-0">
+                  <label className="w-20 h-20 rounded-xl border-2 border-dashed border-amber-300 hover:border-amber-400 cursor-pointer flex flex-col items-center justify-center gap-1 bg-amber-50/50 hover:bg-amber-50 transition-all group">
+                    <Camera className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] text-amber-600 font-medium">צלם</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </label>
+                  <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-300 cursor-pointer flex flex-col items-center justify-center gap-1 bg-gray-50/50 hover:bg-gray-50 transition-all group">
+                    <Image className="w-5 h-5 text-gray-400 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] text-gray-500 font-medium">גלריה</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex gap-3"
+          >
             <Button
               onClick={handleSubmit}
               disabled={uploading || rating === 0}
-              className="flex-1 bg-gray-900 hover:bg-gray-800 text-white rounded-full font-jakarta"
+              className="flex-1 bg-gradient-to-l from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl h-12 font-bold text-base shadow-lg shadow-amber-500/25 disabled:opacity-50 disabled:shadow-none"
             >
-              {uploading ? "שומר..." : "פרסם ביקורת"}
+              {uploading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                />
+              ) : (
+                <>
+                  <Star className="w-5 h-5 ml-2 fill-white" />
+                  פרסם ביקורת
+                </>
+              )}
             </Button>
             <Button
               onClick={() => onOpenChange(false)}
               variant="outline"
               disabled={uploading}
-              className="flex-1 rounded-full border-gray-300 text-gray-900 hover:bg-gray-100"
+              className="rounded-xl h-12 px-6 border-gray-200 text-gray-600 hover:bg-gray-50"
             >
               ביטול
             </Button>
-          </div>
+          </motion.div>
         </div>
       </DialogContent>
     </Dialog>
