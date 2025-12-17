@@ -55,6 +55,7 @@ const FEATURED_DOCUMENTS: FeedDocument[] = [
     pet_name: "מקס",
     uploaded_at: new Date(Date.now() - 2 * 3600000).toISOString(),
     description: "חיסון שנתי הושלם בהצלחה",
+    file_url: "https://xcauajpfrmalzhhiodcb.supabase.co/storage/v1/object/public/documents/sample-vaccination.pdf",
   },
   {
     id: "doc-2",
@@ -63,6 +64,7 @@ const FEATURED_DOCUMENTS: FeedDocument[] = [
     pet_name: "לונה",
     uploaded_at: new Date(Date.now() - 5 * 3600000).toISOString(),
     description: "תוצאות תקינות",
+    file_url: "https://xcauajpfrmalzhhiodcb.supabase.co/storage/v1/object/public/documents/sample-medical.pdf",
   },
 ];
 
@@ -119,6 +121,7 @@ interface FeedDocument {
   pet_avatar?: string;
   uploaded_at: string;
   description?: string;
+  file_url?: string;
 }
 
 type FeedItem = 
