@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -546,6 +546,22 @@ const Feed = () => {
           
           {/* Right icons with Instagram colors */}
           <div className="flex items-center gap-5">
+            {isAuthenticated && (
+              <button
+                onClick={() => {
+                  const petsSection = document.querySelector('[data-pets-section]');
+                  petsSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="active:opacity-50 transition-opacity relative"
+              >
+                <PawPrint className="w-6 h-6 text-[#262626] hover:text-[#F58529] transition-colors" strokeWidth={1.5} />
+                {pets.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F58529] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {pets.length}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={handleNavigateToNotifications}
               className="active:opacity-50 transition-opacity relative"
@@ -587,7 +603,7 @@ const Feed = () => {
 
       {/* My Pets Section */}
       {isAuthenticated && (
-        <div className="py-4 border-b border-gray-200">
+        <div data-pets-section className="py-4 border-b border-gray-200">
           <div className="max-w-lg mx-auto">
             <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3">חיות המחמד שלי</h2>
             <MyPetsSection
