@@ -765,36 +765,31 @@ const Feed = () => {
           </motion.div>}
       </AnimatePresence>
 
-      {/* Stories Bar with enhanced styling */}
+      {/* Stories Bar */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
+        className="border-b border-gray-100 bg-white"
       >
-        <ParallaxScroll speed={0.3} opacity>
-          <div className="border-b border-gray-100 bg-white/80 backdrop-blur-sm">
-            <StoriesBar />
-          </div>
-        </ParallaxScroll>
+        <StoriesBar />
       </motion.div>
 
-      {/* My Pets Section with enhanced Parallax */}
+      {/* My Pets Section */}
       {isAuthenticated && <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
       >
-        <ParallaxScroll speed={0.2} scale>
-          <div data-pets-section className="py-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
-            <div className="max-w-lg mx-auto">
-              <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3 flex items-center gap-2">
-                <PawPrint className="w-4 h-4 text-[#F58529]" />
-                חיות המחמד שלי
-              </h2>
-              <MyPetsSection pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
-            </div>
+        <div data-pets-section className="py-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+          <div className="max-w-lg mx-auto">
+            <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3 flex items-center gap-2">
+              <PawPrint className="w-4 h-4 text-[#F58529]" />
+              חיות המחמד שלי
+            </h2>
+            <MyPetsSection pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
           </div>
-        </ParallaxScroll>
+        </div>
       </motion.div>}
 
       {/* Filter Tabs with enhanced styling */}
