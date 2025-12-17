@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,8 @@ export default function Documents() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPetId, setSelectedPetId] = useState<string>("all");
   const [selectedDocType, setSelectedDocType] = useState<string>("all");
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; fileUrl: string; doc: any } | null>(null);
+  const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Upload form state
   const [uploadPetId, setUploadPetId] = useState<string>("");
@@ -202,8 +204,62 @@ export default function Documents() {
   };
 
   const handleDelete = async (docId: string, fileUrl: string) => {
-    if (!confirm("האם אתה בטוח שברצונך למחוק מסמך זה?")) return;
+    // Find the document to delete
+    const docToDelete = documents.find(d => d.id === docId);
+    if (!docToDelete) return;
 
+    // Clear any existing timeout
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+    }
+
+    // Remove from UI immediately
+    setDocuments(prev => prev.filter(d => d.id !== docId));
+    setPendingDelete({ id: docId, fileUrl, doc: docToDelete });
+
+    // Show undo toast
+    toast({
+      title: "🗑️ המסמך נמחק",
+      description: (
+        <div className="flex items-center justify-between gap-4">
+          <span>"{docToDelete.title}" נמחק</span>
+          <button
+            onClick={() => handleUndoDelete()}
+            className="px-3 py-1.5 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+          >
+            ביטול
+          </button>
+        </div>
+      ),
+      duration: 5000,
+    });
+
+    // Set timeout for actual deletion
+    deleteTimeoutRef.current = setTimeout(() => {
+      performActualDelete(docId, fileUrl);
+    }, 5000);
+  };
+
+  const handleUndoDelete = () => {
+    if (!pendingDelete) return;
+
+    // Clear the timeout
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+      deleteTimeoutRef.current = null;
+    }
+
+    // Restore the document
+    setDocuments(prev => [pendingDelete.doc, ...prev]);
+    setPendingDelete(null);
+
+    toast({
+      title: "↩️ המסמך שוחזר",
+      description: "המסמך הוחזר בהצלחה",
+    });
+  };
+
+  const performActualDelete = async (docId: string, fileUrl: string) => {
     try {
       // Extract file path from URL
       const urlParts = fileUrl.split("/pet-documents/");
@@ -223,20 +279,20 @@ export default function Documents() {
         .eq("id", docId);
 
       if (error) throw error;
-
-      toast({
-        title: "הצלחה!",
-        description: "המסמך נמחק בהצלחה",
-      });
-
-      fetchDocuments();
+      
+      setPendingDelete(null);
     } catch (error) {
       console.error("Error deleting document:", error);
+      // Restore document on error
+      if (pendingDelete?.doc) {
+        setDocuments(prev => [pendingDelete.doc, ...prev]);
+      }
       toast({
         title: "שגיאה",
         description: "לא ניתן למחוק את המסמך",
         variant: "destructive",
       });
+      setPendingDelete(null);
     }
   };
 
