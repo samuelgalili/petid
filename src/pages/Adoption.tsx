@@ -205,26 +205,33 @@ const Adoption = () => {
   return (
     <>
       <AppHeader 
-        title="גלה" 
+        title="אימוץ" 
         showBackButton={true}
         showMenuButton={false}
       />
       
-      <div className="min-h-screen bg-white pb-24 px-4 dir-rtl">
+      <div className="min-h-screen bg-[#FAFAFA] pb-24 px-4 dir-rtl">
         <div className="max-w-7xl mx-auto">
+          {/* Hero Section with Instagram gradient */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-6 mt-2"
+            className="text-center mb-6 mt-2 py-4 rounded-2xl bg-gradient-to-r from-[#F58529]/10 via-[#DD2A7B]/10 to-[#8134AF]/10"
           >
-            <p className="text-[#8E8E8E] text-sm flex items-center justify-center gap-2 font-jakarta">
-              <Heart className="w-4 h-4 text-[#ED4956]" strokeWidth={1.5} fill="#ED4956" />
-              תן בית חם לחבר חדש
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Heart className="w-5 h-5 text-[#ED4956]" strokeWidth={1.5} fill="#ED4956" />
+              <h2 className="text-lg font-bold bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent">
+                תן בית חם לחבר חדש
+              </h2>
+              <Heart className="w-5 h-5 text-[#ED4956]" strokeWidth={1.5} fill="#ED4956" />
+            </div>
+            <p className="text-[#8E8E8E] text-sm font-jakarta">
+              חיות מחמד מחכות למשפחה אוהבת
             </p>
           </motion.div>
 
-        {/* Search and Filters */}
-        <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4 shadow-sm">
+        {/* Search and Filters - Instagram style */}
+        <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2">
               <div className="relative">
@@ -233,23 +240,23 @@ const Adoption = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="חיפוש לפי שם או גזע..."
-                  className="pr-10 border-gray-200 focus:border-[#0095F6] rounded-lg bg-[#FAFAFA] text-[#262626] placeholder:text-[#8E8E8E]"
+                  className="pr-10 border-0 bg-[#EFEFEF] rounded-xl text-[#262626] placeholder:text-[#8E8E8E] focus-visible:ring-2 focus-visible:ring-[#0095F6]"
                   dir="rtl"
                 />
               </div>
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="border-gray-200 rounded-lg bg-[#FAFAFA] text-[#262626]">
+              <SelectTrigger className="border-0 rounded-xl bg-[#EFEFEF] text-[#262626]">
                 <SelectValue placeholder="סוג חיה" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">כל הסוגים</SelectItem>
-                <SelectItem value="כלב">כלבים</SelectItem>
-                <SelectItem value="חתול">חתולים</SelectItem>
+                <SelectItem value="כלב">🐕 כלבים</SelectItem>
+                <SelectItem value="חתול">🐱 חתולים</SelectItem>
               </SelectContent>
             </Select>
             <Select value={sizeFilter} onValueChange={setSizeFilter}>
-              <SelectTrigger className="border-gray-200 rounded-lg bg-[#FAFAFA] text-[#262626]">
+              <SelectTrigger className="border-0 rounded-xl bg-[#EFEFEF] text-[#262626]">
                 <SelectValue placeholder="גודל" />
               </SelectTrigger>
               <SelectContent>
@@ -262,7 +269,7 @@ const Adoption = () => {
           </div>
         </div>
 
-        {/* Pets Grid */}
+        {/* Pets Grid - Instagram style cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
           <AnimatePresence>
             {filteredPets.map((pet) => (
@@ -274,18 +281,28 @@ const Adoption = () => {
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.2 }}
               >
-                <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm">
-                  <div className="aspect-square overflow-hidden bg-[#FAFAFA]">
+                <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  {/* Image with gradient overlay */}
+                  <div className="aspect-square overflow-hidden bg-[#FAFAFA] relative">
                     <img
                       src={pet.image_url || "/placeholder.svg"}
                       alt={pet.name}
                       className="w-full h-full object-cover"
                     />
+                    {/* Gradient overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent h-16" />
+                    {/* Heart icon */}
+                    <div className="absolute top-2 right-2">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+                        <Heart className="w-4 h-4 text-[#ED4956]" strokeWidth={1.5} />
+                      </div>
+                    </div>
                   </div>
+                  
                   <div className="p-3">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="text-sm font-semibold text-[#262626] font-jakarta">{pet.name}</h3>
+                        <h3 className="text-sm font-bold text-[#262626] font-jakarta">{pet.name}</h3>
                         <p className="text-xs text-[#8E8E8E]">{pet.breed || pet.type}</p>
                       </div>
                     </div>
@@ -300,22 +317,23 @@ const Adoption = () => {
 
                     <div className="flex gap-1 mb-3 flex-wrap">
                       {pet.is_vaccinated && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0095F6]/10 text-[#0095F6]">
-                          מחוסן
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00C853]/10 text-[#00C853] font-medium">
+                          ✓ מחוסן
                         </span>
                       )}
                       {pet.is_neutered && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0095F6]/10 text-[#0095F6]">
-                          מסורס
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00C853]/10 text-[#00C853] font-medium">
+                          ✓ מסורס
                         </span>
                       )}
                     </div>
 
+                    {/* Instagram gradient button */}
                     <Button
                       onClick={() => handleAdoptClick(pet)}
-                      className="w-full bg-[#0095F6] hover:bg-[#0095F6]/90 text-white rounded-lg text-xs py-2 h-8"
+                      className="w-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl text-xs py-2 h-9 font-semibold shadow-md"
                     >
-                      <Heart className="w-3 h-3 ml-1" strokeWidth={1.5} />
+                      <Heart className="w-3.5 h-3.5 ml-1" strokeWidth={1.5} />
                       אמץ אותי
                     </Button>
                   </div>

@@ -21,6 +21,7 @@ import { playPetAddedSound } from "@/lib/sounds";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AdoptionPostCard } from "@/components/AdoptionPostCard";
 interface Post {
   id: string;
   user_id: string;
@@ -37,6 +38,28 @@ interface Post {
   is_liked: boolean;
   is_saved: boolean;
 }
+
+interface AdoptionPet {
+  id: string;
+  name: string;
+  type: string;
+  breed: string | null;
+  age_years: number | null;
+  age_months: number | null;
+  gender: string | null;
+  size: string;
+  description: string | null;
+  special_needs: string | null;
+  is_vaccinated: boolean;
+  is_neutered: boolean;
+  image_url: string | null;
+  status: string;
+  created_at: string | null;
+}
+
+type FeedItem = 
+  | { type: 'post'; data: Post; created_at: string }
+  | { type: 'adoption'; data: AdoptionPet; created_at: string };
 const Feed = () => {
   const navigate = useNavigate();
   const {
@@ -47,6 +70,7 @@ const Feed = () => {
     isAuthenticated
   } = useRequireAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -70,6 +94,23 @@ const Feed = () => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const POSTS_PER_PAGE = 10;
+
+  // Fetch adoption pets
+  const fetchAdoptionPets = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("adoption_pets")
+        .select("*")
+        .eq("status", "available")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      setAdoptionPets(data || []);
+    } catch (error) {
+      console.error("Error fetching adoption pets:", error);
+    }
+  }, []);
   const handleCreatePost = () => {
     if (!checkAuth("כדי לפרסם פוסט, יש להתחבר")) return;
     setCreatePostOpen(true);
@@ -289,6 +330,7 @@ const Feed = () => {
   };
   useEffect(() => {
     fetchPosts(0, false);
+    fetchAdoptionPets();
 
     // Setup realtime subscription for new posts
     if (channelRef.current) {
@@ -300,6 +342,13 @@ const Feed = () => {
       table: 'posts'
     }, () => {
       setNewPostsAvailable(true);
+    }).on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'adoption_pets'
+    }, () => {
+      fetchAdoptionPets();
+      setNewPostsAvailable(true);
     }).subscribe();
     channelRef.current = channel;
     return () => {
@@ -308,7 +357,7 @@ const Feed = () => {
         channelRef.current = null;
       }
     };
-  }, [fetchPosts]);
+  }, [fetchPosts, fetchAdoptionPets]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -472,13 +521,38 @@ const Feed = () => {
     return date.toLocaleDateString("he-IL");
   }, []);
 
-  // Filter posts based on feed filter
-  const filteredPosts = useMemo(() => {
+  // Create mixed feed with posts and adoption pets
+  const mixedFeed = useMemo((): FeedItem[] => {
+    // Convert posts to FeedItems
+    const postItems: FeedItem[] = posts.map(post => ({
+      type: 'post' as const,
+      data: post,
+      created_at: post.created_at
+    }));
+
+    // Convert adoption pets to FeedItems (only show in "all" feed)
+    const adoptionItems: FeedItem[] = feedFilter === "all" 
+      ? adoptionPets.map(pet => ({
+          type: 'adoption' as const,
+          data: pet,
+          created_at: pet.created_at || new Date().toISOString()
+        }))
+      : [];
+
+    // Merge and sort by date
+    const merged = [...postItems, ...adoptionItems].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    // If following filter, only show posts from followed users
     if (feedFilter === "following") {
-      return posts.filter(post => followingIds.includes(post.user_id));
+      return merged.filter(item => 
+        item.type === 'post' && followingIds.includes(item.data.user_id)
+      );
     }
-    return posts;
-  }, [posts, feedFilter, followingIds]);
+
+    return merged;
+  }, [posts, adoptionPets, feedFilter, followingIds]);
   return <div className="min-h-screen bg-white pb-14" dir="rtl">
       {/* Instagram-style Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
@@ -612,7 +686,7 @@ const Feed = () => {
                   <Skeleton className="h-3 w-full" />
                 </div>
               </div>)}
-          </div> : filteredPosts.length === 0 ?
+          </div> : mixedFeed.length === 0 ?
       // Empty state
       <div className="text-center py-16 px-6">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -628,9 +702,29 @@ const Feed = () => {
               שתף את התמונה הראשונה שלך
             </button>
           </div> : <div>
-            {filteredPosts.map(post => <PostCardErrorBoundary key={post.id}>
-                <PostCard post={post} currentUserId={user?.id} currentUserAvatar={userAvatar} onLike={handleLike} onSave={handleSave} onDoubleTap={handleDoubleTap} onComment={handleComment} showDoubleTapAnimation={doubleTapLike === post.id} getTimeAgo={getTimeAgo} />
-              </PostCardErrorBoundary>)}
+            {mixedFeed.map((item) => (
+              item.type === 'post' ? (
+                <PostCardErrorBoundary key={`post-${item.data.id}`}>
+                  <PostCard 
+                    post={item.data} 
+                    currentUserId={user?.id} 
+                    currentUserAvatar={userAvatar} 
+                    onLike={handleLike} 
+                    onSave={handleSave} 
+                    onDoubleTap={handleDoubleTap} 
+                    onComment={handleComment} 
+                    showDoubleTapAnimation={doubleTapLike === item.data.id} 
+                    getTimeAgo={getTimeAgo} 
+                  />
+                </PostCardErrorBoundary>
+              ) : (
+                <AdoptionPostCard 
+                  key={`adoption-${item.data.id}`}
+                  pet={item.data}
+                  getTimeAgo={getTimeAgo}
+                />
+              )
+            ))}
             
             {/* Infinite Scroll Observer Target */}
             {hasMore && <div ref={observerTarget} className="py-4 text-center">
@@ -640,7 +734,7 @@ const Feed = () => {
       </div>
 
       {/* End of Feed */}
-      {!loading && !hasMore && filteredPosts.length > 0 && <div className="text-center py-6 border-t border-gray-200">
+      {!loading && !hasMore && mixedFeed.length > 0 && <div className="text-center py-6 border-t border-gray-200">
           <p className="text-[#8E8E8E] text-[13px]">סיימת לראות הכל</p>
         </div>}
 
