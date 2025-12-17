@@ -1,6 +1,6 @@
 import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, ChevronDown, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AdoptionPostCard } from "@/components/AdoptionPostCard";
 import { ProductPostCard } from "@/components/ProductPostCard";
 import { DocumentPostCard } from "@/components/DocumentPostCard";
+import { ParallaxScroll } from "@/components/ParallaxScroll";
 
 // Featured products for feed
 const FEATURED_PRODUCTS = [
@@ -728,18 +729,22 @@ const Feed = () => {
           </motion.div>}
       </AnimatePresence>
 
-      {/* Stories Bar */}
-      <div className="border-b border-gray-200">
-        <StoriesBar />
-      </div>
+      {/* Stories Bar with Parallax */}
+      <ParallaxScroll speed={0.3} opacity>
+        <div className="border-b border-gray-200">
+          <StoriesBar />
+        </div>
+      </ParallaxScroll>
 
-      {/* My Pets Section */}
-      {isAuthenticated && <div data-pets-section className="py-4 border-b border-gray-200">
+      {/* My Pets Section with Parallax */}
+      {isAuthenticated && <ParallaxScroll speed={0.2} scale>
+        <div data-pets-section className="py-4 border-b border-gray-200">
           <div className="max-w-lg mx-auto">
             <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3">חיות המחמד שלי</h2>
             <MyPetsSection pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
           </div>
-        </div>}
+        </div>
+      </ParallaxScroll>}
 
       {/* Filter Tabs */}
       <div className="bg-white border-b border-gray-200 sticky top-11 z-30">
