@@ -269,30 +269,37 @@ const Shop = () => {
     <div className="min-h-screen bg-white pb-20" dir="rtl">
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       
-      {/* Header Section */}
-      <div className="bg-white pt-6 pb-6 border-b border-border">
-        <div className="max-w-md mx-auto px-4">
-          <h1 className="text-2xl font-semibold text-foreground text-center mb-6 font-jakarta">
-            מבצעים והטבות
+      {/* Instagram-style Header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-lg mx-auto px-4 h-[44px] flex items-center justify-center">
+          <h1 
+            className="text-[24px] font-semibold bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent"
+            style={{ fontFamily: "'Billabong', cursive, -apple-system, BlinkMacSystemFont, sans-serif" }}
+          >
+            Petid Shop
           </h1>
-          
-          {/* Tabs */}
-          <div className="flex justify-center gap-8 mb-6">
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
+        <div className="max-w-lg mx-auto px-4">
+          <div className="flex justify-center gap-8 py-3">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setSelectedTab(tab.id)}
-                className={`text-base font-medium pb-2 transition-all relative font-jakarta ${
+                className={`text-[13px] font-semibold pb-2 transition-all relative ${
                   selectedTab === tab.id
-                    ? "text-gray-900"
-                    : "text-gray-700"
+                    ? "text-[#262626]"
+                    : "text-[#8E8E8E]"
                 }`}
               >
                 {tab.label}
                 {selectedTab === tab.id && (
                   <motion.div 
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-[3px] bg-gray-900 rounded-full" 
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626] rounded-full" 
                   />
                 )}
               </button>
@@ -303,9 +310,9 @@ const Shop = () => {
 
       {/* Content Area */}
       <div className="bg-white">
-        <div className="max-w-md mx-auto px-4 pt-6">
-          {/* Main Category Filters */}
-          <div className="flex flex-wrap gap-3 mb-6">
+        <div className="max-w-lg mx-auto px-4 pt-4">
+          {/* Main Category Filters - Instagram style */}
+          <div className="flex flex-wrap gap-2 mb-4">
             {mainCategories.map((category) => (
               <motion.button
                 key={category.id}
@@ -314,10 +321,10 @@ const Shop = () => {
                   setSelectedCategory(category.label);
                   setShowCategories(false);
                 }}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all font-jakarta ${
+                className={`px-4 py-2 rounded-full text-[13px] font-medium transition-all ${
                   selectedCategory === category.label
-                  ? "bg-foreground text-background"
-                    : "bg-white text-foreground border border-border hover:bg-muted/50"
+                    ? "bg-[#262626] text-white"
+                    : "bg-white text-[#262626] border border-gray-300"
                 }`}
               >
                 {category.label}
@@ -326,7 +333,7 @@ const Shop = () => {
             <motion.button 
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCategories(!showCategories)}
-              className="px-5 py-2.5 rounded-full text-sm font-medium bg-background text-foreground border-2 border-border flex items-center gap-2 hover:border-border-light transition-all font-jakarta"
+              className="px-4 py-2 rounded-full text-[13px] font-medium bg-white text-[#262626] border border-gray-300 flex items-center gap-1.5"
             >
               קטגוריות
               {showCategories ? (
@@ -336,25 +343,25 @@ const Shop = () => {
               )}
             </motion.button>
             
-            {/* Filter Button */}
+            {/* Filter Button - Instagram blue */}
             <motion.button 
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all font-jakarta ${
+              className={`px-4 py-2 rounded-full text-[13px] font-medium flex items-center gap-1.5 transition-all ${
                 showFilters || sortBy !== "none" || showDealsOnly
-                  ? "bg-accent text-foreground shadow-md"
-                  : "bg-background text-foreground border-2 border-border hover:border-border-light"
+                  ? "bg-[#0095F6] text-white"
+                  : "bg-white text-[#262626] border border-gray-300"
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" strokeWidth={1.5} />
               סינון
               {(sortBy !== "none" || showDealsOnly) && (
-                <span className="w-2 h-2 bg-error rounded-full" />
+                <span className="w-2 h-2 bg-white rounded-full" />
               )}
             </motion.button>
           </div>
 
-          {/* Filter Options Panel */}
+          {/* Filter Options Panel - Instagram style */}
           <AnimatePresence>
             {showFilters && (
               <motion.div 
@@ -362,23 +369,23 @@ const Shop = () => {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="overflow-hidden mb-6"
+                className="overflow-hidden mb-4"
               >
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-5 border-2 border-gray-200 shadow-lg">
+                <div className="bg-[#FAFAFA] rounded-2xl p-4 border border-gray-200">
                   {/* Sort Options */}
                   <div className="mb-4">
-                    <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 font-jakarta">
-                      <TrendingUp className="w-4 h-4 text-accent" strokeWidth={1.5} />
+                    <h3 className="text-[13px] font-semibold text-[#262626] mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-[#0095F6]" strokeWidth={1.5} />
                       מיון לפי
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSortBy("none")}
-                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta ${
+                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
                           sortBy === "none"
-                            ? "bg-foreground text-background shadow-md"
-                            : "bg-background text-foreground border border-border"
+                            ? "bg-[#262626] text-white"
+                            : "bg-white text-[#262626] border border-gray-300"
                         }`}
                       >
                         ברירת מחדל
@@ -386,10 +393,10 @@ const Shop = () => {
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSortBy("popularity")}
-                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
+                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all flex items-center gap-1 ${
                           sortBy === "popularity"
-                            ? "bg-foreground text-background shadow-md"
-                            : "bg-background text-foreground border border-border"
+                            ? "bg-[#262626] text-white"
+                            : "bg-white text-[#262626] border border-gray-300"
                         }`}
                       >
                         <TrendingUp className="w-3 h-3" strokeWidth={1.5} />
@@ -398,10 +405,10 @@ const Shop = () => {
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSortBy("price-low")}
-                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
+                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all flex items-center gap-1 ${
                           sortBy === "price-low"
-                            ? "bg-foreground text-background shadow-md"
-                            : "bg-background text-foreground border border-border"
+                            ? "bg-[#262626] text-white"
+                            : "bg-white text-[#262626] border border-gray-300"
                         }`}
                       >
                         <DollarSign className="w-3 h-3" strokeWidth={1.5} />
@@ -410,10 +417,10 @@ const Shop = () => {
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSortBy("price-high")}
-                        className={`px-4 py-2 rounded-xl text-xs font-medium transition-all font-jakarta flex items-center gap-1 ${
+                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all flex items-center gap-1 ${
                           sortBy === "price-high"
-                            ? "bg-foreground text-background shadow-md"
-                            : "bg-background text-foreground border border-border"
+                            ? "bg-[#262626] text-white"
+                            : "bg-white text-[#262626] border border-gray-300"
                         }`}
                       >
                         <DollarSign className="w-3 h-3" strokeWidth={1.5} />
@@ -422,28 +429,28 @@ const Shop = () => {
                     </div>
                   </div>
 
-                  {/* Deals Only Toggle */}
-                  <div className="border-t border-gray-200 pt-4">
+                  {/* Deals Only Toggle - Instagram red */}
+                  <div className="border-t border-gray-200 pt-3">
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setShowDealsOnly(!showDealsOnly)}
-                      className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all font-jakarta flex items-center justify-between ${
+                      className={`w-full px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all flex items-center justify-between ${
                         showDealsOnly
-                          ? "bg-error text-error-foreground shadow-lg"
-                          : "bg-background text-foreground border-2 border-border"
+                          ? "bg-[#ED4956] text-white"
+                          : "bg-white text-[#262626] border border-gray-300"
                       }`}
                     >
                       <span className="flex items-center gap-2">
                         <Tag className="w-4 h-4" strokeWidth={1.5} />
                         הצג מבצעים בלבד
                       </span>
-                      <div className={`w-12 h-6 rounded-full transition-all ${
-                        showDealsOnly ? "bg-background" : "bg-muted"
+                      <div className={`w-10 h-5 rounded-full transition-all ${
+                        showDealsOnly ? "bg-white/30" : "bg-gray-200"
                       }`}>
                         <motion.div 
-                          animate={{ x: showDealsOnly ? 24 : 2 }}
-                          className={`w-5 h-5 rounded-full mt-0.5 ${
-                            showDealsOnly ? "bg-error" : "bg-background"
+                          animate={{ x: showDealsOnly ? 20 : 2 }}
+                          className={`w-4 h-4 rounded-full mt-0.5 ${
+                            showDealsOnly ? "bg-white" : "bg-gray-400"
                           }`}
                         />
                       </div>
@@ -455,7 +462,7 @@ const Shop = () => {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mt-4 text-xs text-gray-600 text-center font-jakarta"
+                      className="mt-3 text-[11px] text-[#8E8E8E] text-center"
                     >
                       {[sortBy !== "none" && "מיון פעיל", showDealsOnly && "מבצעים בלבד"]
                         .filter(Boolean)
@@ -467,7 +474,7 @@ const Shop = () => {
             )}
           </AnimatePresence>
 
-          {/* Product Categories Section with Animation */}
+          {/* Product Categories Section - Instagram style */}
           <AnimatePresence>
             {showCategories && (
               <motion.div 
@@ -475,18 +482,18 @@ const Shop = () => {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="overflow-hidden mb-8"
+                className="overflow-hidden mb-4"
               >
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  {/* Pet Type Selector */}
-                  <div className="flex gap-3 mb-6">
+                <div className="bg-[#FAFAFA] rounded-2xl p-4">
+                  {/* Pet Type Selector - Instagram gradient active */}
+                  <div className="flex gap-3 mb-4">
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setSelectedPetType("dog")}
-                      className={`flex-1 py-3 rounded-xl text-base font-medium transition-all font-jakarta ${
+                      className={`flex-1 py-2.5 rounded-xl text-[14px] font-semibold transition-all ${
                         selectedPetType === "dog"
-                          ? "bg-gray-900 text-white shadow-lg"
-                          : "bg-white text-gray-700 border-2 border-gray-300"
+                          ? "bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white"
+                          : "bg-white text-[#262626] border border-gray-300"
                       }`}
                     >
                       🐕 כלבים
@@ -494,10 +501,10 @@ const Shop = () => {
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setSelectedPetType("cat")}
-                      className={`flex-1 py-3 rounded-xl text-base font-medium transition-all font-jakarta ${
+                      className={`flex-1 py-2.5 rounded-xl text-[14px] font-semibold transition-all ${
                         selectedPetType === "cat"
-                          ? "bg-gray-900 text-white shadow-lg"
-                          : "bg-white text-gray-700 border-2 border-gray-300"
+                          ? "bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white"
+                          : "bg-white text-[#262626] border border-gray-300"
                       }`}
                     >
                       🐱 חתולים
@@ -505,16 +512,15 @@ const Shop = () => {
                   </div>
 
                   {/* Categories Grid */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     {productCategories[selectedPetType].map((category) => (
                       <motion.button
                         key={category.id}
-                        whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="bg-white border-2 border-gray-200 rounded-2xl p-4 hover:shadow-lg transition-all hover:border-gray-400 text-right"
+                        className="bg-white border border-gray-200 rounded-xl p-3 active:bg-gray-50 transition-all text-center"
                       >
-                        <div className="text-2xl mb-2">{category.icon}</div>
-                        <div className="text-xs font-medium text-gray-900 font-jakarta leading-tight">
+                        <div className="text-xl mb-1">{category.icon}</div>
+                        <div className="text-[10px] font-medium text-[#262626] leading-tight">
                           {category.label}
                         </div>
                       </motion.button>
@@ -526,21 +532,21 @@ const Shop = () => {
           </AnimatePresence>
 
           {/* Section Title */}
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-6 font-jakarta">
+          <h2 className="text-[16px] font-semibold text-[#262626] text-center mb-4">
             {selectedCategory}
           </h2>
 
-          {/* Offer Card */}
+          {/* Offer Card - Instagram style */}
           {selectedCategory === "קופונים והטבות" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <Card className="mb-6 overflow-hidden border-0 shadow-xl">
-                <div className="relative p-6 bg-gradient-to-br from-white to-gray-50">
-                  {/* Badge */}
-                  <div className="absolute top-4 right-4 bg-[#FFC107] text-gray-900 px-4 py-1.5 rounded-full text-xs font-bold shadow-md font-jakarta">
+              <Card className="mb-4 overflow-hidden border border-gray-200 shadow-sm">
+                <div className="relative p-4 bg-white">
+                  {/* Badge with Instagram gradient */}
+                  <div className="absolute top-3 right-3 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white px-3 py-1 rounded-full text-[11px] font-semibold">
                     {offerCard.badge}
                   </div>
                   
@@ -550,56 +556,51 @@ const Shop = () => {
                       <motion.div 
                         animate={{ rotate: [0, 5, -5, 0] }}
                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="w-32 h-32 rounded-full bg-gradient-to-br from-[#FFD700] via-[#FFC107] to-[#FFA500] flex items-center justify-center shadow-2xl"
+                        className="w-24 h-24 rounded-full bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center shadow-lg"
                       >
-                        <span className="text-3xl font-bold text-white drop-shadow-lg font-jakarta">
+                        <span className="text-2xl font-bold text-white">
                           50₪
                         </span>
                       </motion.div>
-                      {/* Decorative Elements */}
+                      {/* Decorative Elements - Instagram colors */}
                       <motion.div 
                         animate={{ scale: [1, 1.2, 1], opacity: [0.8, 1, 0.8] }}
                         transition={{ duration: 2, repeat: Infinity }}
-                        className="absolute -top-2 -right-2 w-5 h-5 bg-pink-400 rounded-full shadow-lg" 
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-[#DD2A7B] rounded-full" 
                       />
                       <motion.div 
                         animate={{ rotate: 360 }}
                         transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        className="absolute top-1/2 -right-4 w-4 h-4 bg-blue-400 rotate-45 shadow-lg" 
+                        className="absolute top-1/2 -right-3 w-3 h-3 bg-[#0095F6] rotate-45" 
                       />
                       <motion.div 
                         animate={{ scale: [1, 1.3, 1] }}
                         transition={{ duration: 2.5, repeat: Infinity }}
-                        className="absolute -bottom-2 right-8 w-4 h-4 bg-green-400 rotate-45 shadow-lg" 
-                      />
-                      <motion.div 
-                        animate={{ y: [-2, 2, -2] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className="absolute bottom-4 -left-2 w-5 h-5 bg-orange-400 shadow-lg" 
+                        className="absolute -bottom-1 right-6 w-3 h-3 bg-[#8134AF] rotate-45" 
                       />
                     </div>
                     
                     {/* Text Content */}
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 font-jakarta">
+                      <h3 className="text-[15px] font-semibold text-[#262626] mb-1">
                         {offerCard.title}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-2 font-jakarta">
+                      <p className="text-[12px] text-[#8E8E8E] mb-1">
                         {offerCard.subtitle}
                       </p>
-                      <p className="text-sm text-gray-500 font-jakarta">
+                      <p className="text-[11px] text-[#8E8E8E]">
                         {offerCard.validUntil}
                       </p>
                     </div>
                   </div>
                   
                   {/* Dotted Separator */}
-                  <div className="border-t-2 border-dashed border-gray-300 my-4" />
+                  <div className="border-t border-dashed border-gray-200 my-3" />
                   
-                  {/* Link */}
+                  {/* Link - Instagram blue */}
                   <motion.button 
                     whileHover={{ x: -5 }}
-                    className="text-blue-600 text-sm font-bold flex items-center gap-2 hover:text-blue-700 transition-colors font-jakarta"
+                    className="text-[#0095F6] text-[13px] font-semibold flex items-center gap-1"
                   >
                     <span>{"<"}</span>
                     לפרטים נוספים
@@ -609,13 +610,13 @@ const Shop = () => {
             </motion.div>
           )}
 
-          {/* Products Grid - 2 Columns with Virtual Scrolling */}
+          {/* Products Grid - Instagram style */}
           <div className="pb-8">
             <VirtuosoGrid
               style={{ height: '600px' }}
               totalCount={filteredAndSortedProducts.length}
               overscan={4}
-              listClassName="grid grid-cols-2 gap-4"
+              listClassName="grid grid-cols-2 gap-3"
               itemContent={(index) => {
                 const product = filteredAndSortedProducts[index];
                 return (
@@ -625,13 +626,13 @@ const Shop = () => {
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
                     <Card
-                      className="overflow-hidden cursor-pointer hover:shadow-2xl transition-all border-0 shadow-md"
+                      className="overflow-hidden cursor-pointer active:opacity-70 transition-all border border-gray-200"
                       onClick={() => handleProductClick(product)}
                     >
                       {/* Product Image */}
-                      <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 relative">
+                      <div className="aspect-square bg-[#FAFAFA] flex items-center justify-center p-3 relative">
                         {product.originalPrice && (
-                          <div className="absolute top-2 right-2 bg-[#E91E63] text-white px-2 py-1 rounded-full text-xs font-bold shadow-md font-jakarta z-10">
+                          <div className="absolute top-2 right-2 bg-[#ED4956] text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10">
                             מבצע
                           </div>
                         )}
@@ -645,21 +646,21 @@ const Shop = () => {
                       </div>
                       
                       {/* Product Info */}
-                      <div className="p-4 text-center bg-white">
-                        <h3 className="font-bold text-gray-900 mb-1 text-sm leading-tight font-jakarta">
+                      <div className="p-3 text-center bg-white">
+                        <h3 className="font-semibold text-[#262626] mb-0.5 text-[13px] leading-tight">
                           {product.name}
                         </h3>
-                        <p className="text-xs text-gray-600 mb-3 font-jakarta">
+                        <p className="text-[11px] text-[#8E8E8E] mb-2">
                           {product.description}
                         </p>
                         
-                        {/* Price */}
+                        {/* Price - Instagram red for deals */}
                         <div className="flex items-center justify-center gap-2">
-                          <div className="text-2xl font-bold text-[#E91E63] font-jakarta">
+                          <div className={`text-lg font-bold ${product.originalPrice ? 'text-[#ED4956]' : 'text-[#262626]'}`}>
                             {product.price}₪
                           </div>
                           {product.originalPrice && (
-                            <div className="text-sm text-gray-400 line-through font-jakarta">
+                            <div className="text-[12px] text-[#8E8E8E] line-through">
                               {product.originalPrice}₪
                             </div>
                           )}
