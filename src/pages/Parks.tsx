@@ -159,22 +159,40 @@ const Parks = () => {
   };
 
   const fetchAllCheckins = async () => {
-    const { data } = await supabase
+    // Fetch checkins with pet data
+    const { data: checkinsData } = await supabase
       .from('park_checkins')
       .select(`
         *,
-        profile:profiles!park_checkins_user_id_fkey(full_name, avatar_url),
         pet:pets(name, avatar_url, type)
       `)
       .is('checked_out_at', null);
     
-    if (data) {
+    if (checkinsData && checkinsData.length > 0) {
+      // Fetch profiles for all users in checkins
+      const userIds = [...new Set(checkinsData.map(c => c.user_id))];
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', userIds);
+      
+      const profilesMap: Record<string, any> = {};
+      profilesData?.forEach(p => { profilesMap[p.id] = p; });
+      
+      // Merge profile data with checkins
+      const checkinsWithProfiles = checkinsData.map(checkin => ({
+        ...checkin,
+        profile: profilesMap[checkin.user_id] || null
+      }));
+      
       const grouped: Record<string, ParkCheckin[]> = {};
-      data.forEach((checkin: any) => {
+      checkinsWithProfiles.forEach((checkin: any) => {
         if (!grouped[checkin.park_id]) grouped[checkin.park_id] = [];
         grouped[checkin.park_id].push(checkin);
       });
       setParkCheckins(grouped);
+    } else {
+      setParkCheckins({});
     }
   };
 
