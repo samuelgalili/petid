@@ -69,7 +69,7 @@ export const Header = () => {
                   onClick={() => setIsMenuOpen(true)}
                   aria-label="Open menu"
                 >
-                  <Menu className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
+                  <Menu className="w-5 h-5 text-[#262626] dark:text-gray-300" strokeWidth={1.5} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
@@ -98,7 +98,7 @@ export const Header = () => {
                       onClick={() => navigate('/cart')}
                       aria-label="Shopping cart"
                     >
-                      <ShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
+                      <ShoppingCart className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
                       <AnimatePresence mode="wait">
                         {cartItemCount > 0 && (
                           <motion.span
@@ -217,7 +217,7 @@ export const Header = () => {
                     onClick={() => navigate('/settings')}
                     aria-label="User profile"
                   >
-                    <User className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
+                    <User className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -234,7 +234,7 @@ export const Header = () => {
                     onClick={() => navigate('/notifications')}
                     aria-label="View notifications"
                   >
-                    <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
+                    <Bell className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#ED4956] transition-colors" strokeWidth={1.5} />
                     <AnimatePresence mode="wait">
                       {unreadCount > 0 && (
                         <motion.span
@@ -272,7 +272,7 @@ export const Header = () => {
                       onClick={() => setIsSearchOpen(true)}
                       aria-label="Open search"
                     >
-                      <Search className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.5} />
+                      <Search className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">

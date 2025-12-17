@@ -11,17 +11,21 @@ export const PetidLogo = ({
   className = ""
 }: PetidLogoProps) => {
   return <div className={className}>
-      {/* Logo */}
+      {/* Logo with Instagram gradient glow effect */}
       <div className="flex justify-center relative" style={{
       marginBottom: showAnimals ? '2rem' : '1.5rem'
     }}>
-        <img 
-          src={petidLogo} 
-          alt="Petid Logo" 
-          className="h-16 w-auto object-contain"
-        />
+        <div className="relative">
+          {/* Gradient glow behind logo */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] opacity-20 blur-xl rounded-full" />
+          <img 
+            src={petidLogo} 
+            alt="Petid Logo" 
+            className="h-16 w-auto object-contain relative z-10"
+          />
+        </div>
         
-        {/* Blinking Paw over the "i" */}
+        {/* Blinking Paw over the "i" with Instagram gradient */}
         <motion.div className="absolute" style={{
         top: '-8px',
         left: '50%',
