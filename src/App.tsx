@@ -15,7 +15,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { GameProvider } from "@/contexts/GameContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
-import { Header } from "@/components/Header";
+
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -88,7 +88,6 @@ const AnimatedRoutes = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <div className="flex-1">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
