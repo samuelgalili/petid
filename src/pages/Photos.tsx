@@ -1,11 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Grid3X3, Play, Heart, MessageCircle, Plus, Image as ImageIcon, Trash2, CheckCircle2, X } from "lucide-react";
+import { 
+  Grid3X3, 
+  Play, 
+  Heart, 
+  MessageCircle, 
+  Plus, 
+  Image as ImageIcon, 
+  Trash2, 
+  Check,
+  Camera,
+  Bookmark,
+  Copy
+} from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { toast } from "sonner";
 import {
@@ -35,13 +47,15 @@ export default function Photos() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "images" | "videos">("all");
+  const [filter, setFilter] = useState<"posts" | "saved" | "tagged">("posts");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [showMultiDeleteDialog, setShowMultiDeleteDialog] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const [pressedPostId, setPressedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -54,7 +68,6 @@ export default function Photos() {
     
     setLoading(true);
     try {
-      // Fetch user's posts
       const { data: postsData, error } = await supabase
         .from("posts")
         .select("id, image_url, video_url, caption, media_type, created_at")
@@ -63,7 +76,6 @@ export default function Photos() {
 
       if (error) throw error;
 
-      // Fetch likes and comments counts for each post
       const postsWithCounts = await Promise.all(
         (postsData || []).map(async (post) => {
           const [likesResult, commentsResult] = await Promise.all([
@@ -93,12 +105,28 @@ export default function Photos() {
     }
   };
 
-  const filteredPosts = posts.filter((post) => {
-    if (filter === "all") return true;
-    if (filter === "images") return post.media_type === "image" || !post.video_url;
-    if (filter === "videos") return post.media_type === "video" || post.video_url;
-    return true;
-  });
+  // Long press handlers for selection mode
+  const handleTouchStart = useCallback((postId: string) => {
+    setPressedPostId(postId);
+    longPressTimer.current = setTimeout(() => {
+      if (!selectionMode) {
+        setSelectionMode(true);
+        setSelectedPosts(new Set([postId]));
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      }
+    }, 500);
+  }, [selectionMode]);
+
+  const handleTouchEnd = useCallback(() => {
+    setPressedPostId(null);
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
 
   const handlePostClick = (postId: string) => {
     if (selectionMode) {
@@ -113,6 +141,10 @@ export default function Photos() {
       const newSet = new Set(prev);
       if (newSet.has(postId)) {
         newSet.delete(postId);
+        // Exit selection mode if no posts selected
+        if (newSet.size === 0) {
+          setSelectionMode(false);
+        }
       } else {
         newSet.add(postId);
       }
@@ -120,21 +152,13 @@ export default function Photos() {
     });
   };
 
-  const toggleSelectionMode = () => {
-    setSelectionMode(!selectionMode);
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
     setSelectedPosts(new Set());
   };
 
   const selectAll = () => {
-    setSelectedPosts(new Set(filteredPosts.map(p => p.id)));
-  };
-
-  const handleCreatePost = () => {
-    setShowCreateDialog(true);
-  };
-
-  const handlePostCreated = () => {
-    fetchPosts();
+    setSelectedPosts(new Set(posts.map(p => p.id)));
   };
 
   const handleDeletePost = async () => {
@@ -142,19 +166,9 @@ export default function Photos() {
     
     setDeleting(true);
     try {
-      // Delete likes first
-      await supabase
-        .from("post_likes")
-        .delete()
-        .eq("post_id", deletePostId);
+      await supabase.from("post_likes").delete().eq("post_id", deletePostId);
+      await supabase.from("post_comments").delete().eq("post_id", deletePostId);
       
-      // Delete comments
-      await supabase
-        .from("post_comments")
-        .delete()
-        .eq("post_id", deletePostId);
-      
-      // Delete the post
       const { error } = await supabase
         .from("posts")
         .delete()
@@ -174,11 +188,6 @@ export default function Photos() {
     }
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, postId: string) => {
-    e.stopPropagation();
-    setDeletePostId(postId);
-  };
-
   const handleMultiDelete = async () => {
     if (selectedPosts.size === 0) return;
     
@@ -186,19 +195,9 @@ export default function Photos() {
     try {
       const postIds = Array.from(selectedPosts);
       
-      // Delete likes for all selected posts
-      await supabase
-        .from("post_likes")
-        .delete()
-        .in("post_id", postIds);
+      await supabase.from("post_likes").delete().in("post_id", postIds);
+      await supabase.from("post_comments").delete().in("post_id", postIds);
       
-      // Delete comments for all selected posts
-      await supabase
-        .from("post_comments")
-        .delete()
-        .in("post_id", postIds);
-      
-      // Delete all selected posts
       const { error } = await supabase
         .from("posts")
         .delete()
@@ -220,241 +219,316 @@ export default function Photos() {
     }
   };
 
+  const totalLikes = posts.reduce((sum, post) => sum + post.likes_count, 0);
+
   return (
     <>
       <AppHeader 
-        title="האלבום שלי" 
-        showBackButton={true}
+        title={selectionMode ? `${selectedPosts.size} נבחרו` : "האלבום שלי"}
+        showBackButton={!selectionMode}
         showMenuButton={false}
-        extraAction={{
+        extraAction={selectionMode ? {
+          icon: Check,
+          onClick: exitSelectionMode
+        } : {
           icon: Plus,
-          onClick: handleCreatePost
+          onClick: () => setShowCreateDialog(true)
         }}
       />
       
       <div className="min-h-screen bg-background pb-24">
-        {/* Filter Tabs */}
-        <div className="bg-background border-b sticky top-16 z-10">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex justify-center gap-8 py-3">
-              <button
-                onClick={() => setFilter("all")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  filter === "all"
-                    ? "text-foreground border-b-2 border-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Grid3X3 className="w-5 h-5" />
-                <span>הכל</span>
-              </button>
-              <button
-                onClick={() => setFilter("images")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  filter === "images"
-                    ? "text-foreground border-b-2 border-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <ImageIcon className="w-5 h-5" />
-                <span>תמונות</span>
-              </button>
-              <button
-                onClick={() => setFilter("videos")}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  filter === "videos"
-                    ? "text-foreground border-b-2 border-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Play className="w-5 h-5" />
-                <span>סרטונים</span>
-              </button>
-            </div>
+        {/* Stats Section - Instagram Style */}
+        <div className="px-4 py-5 border-b border-border/50">
+          <div className="flex justify-around text-center">
+            <motion.div 
+              className="flex flex-col"
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="text-xl font-bold text-foreground">{posts.length}</span>
+              <span className="text-xs text-muted-foreground">פוסטים</span>
+            </motion.div>
+            <motion.div 
+              className="flex flex-col"
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="text-xl font-bold text-foreground">{totalLikes}</span>
+              <span className="text-xs text-muted-foreground">לייקים</span>
+            </motion.div>
+            <motion.div 
+              className="flex flex-col cursor-pointer"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <span className="text-xl font-bold text-primary">+</span>
+              <span className="text-xs text-muted-foreground">חדש</span>
+            </motion.div>
           </div>
         </div>
 
-        {/* Stats / Selection Mode Bar */}
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          {selectionMode ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleSelectionMode}
-                  className="text-muted-foreground"
-                >
-                  <X className="w-4 h-4 ml-1" />
-                  ביטול
-                </Button>
-                <span className="text-sm font-medium">
-                  {selectedPosts.size} נבחרו
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAll}
-                  disabled={selectedPosts.size === filteredPosts.length}
-                >
-                  בחר הכל
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowMultiDeleteDialog(true)}
-                  disabled={selectedPosts.size === 0}
-                >
-                  <Trash2 className="w-4 h-4 ml-1" />
-                  מחק ({selectedPosts.size})
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex justify-center gap-8 text-center flex-1">
-                <div>
-                  <p className="text-xl font-bold text-foreground">{posts.length}</p>
-                  <p className="text-sm text-muted-foreground">פוסטים</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">
-                    {posts.reduce((sum, post) => sum + post.likes_count, 0)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">לייקים</p>
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">
-                    {posts.reduce((sum, post) => sum + post.comments_count, 0)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">תגובות</p>
-                </div>
-              </div>
-              {posts.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleSelectionMode}
-                  className="text-muted-foreground"
-                >
-                  <CheckCircle2 className="w-4 h-4 ml-1" />
-                  בחירה
-                </Button>
-              )}
-            </div>
-          )}
+        {/* Instagram Style Tabs */}
+        <div className="flex border-b border-border/50 sticky top-16 z-10 bg-background">
+          <button
+            onClick={() => setFilter("posts")}
+            className={`flex-1 py-3 flex justify-center transition-all relative ${
+              filter === "posts" ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <Grid3X3 className="w-6 h-6" strokeWidth={filter === "posts" ? 2 : 1.5} />
+            {filter === "posts" && (
+              <motion.div
+                layoutId="tab-indicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
+              />
+            )}
+          </button>
+          <button
+            onClick={() => setFilter("saved")}
+            className={`flex-1 py-3 flex justify-center transition-all relative ${
+              filter === "saved" ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <Bookmark className="w-6 h-6" strokeWidth={filter === "saved" ? 2 : 1.5} />
+            {filter === "saved" && (
+              <motion.div
+                layoutId="tab-indicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
+              />
+            )}
+          </button>
+          <button
+            onClick={() => setFilter("tagged")}
+            className={`flex-1 py-3 flex justify-center transition-all relative ${
+              filter === "tagged" ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <Copy className="w-6 h-6" strokeWidth={filter === "tagged" ? 2 : 1.5} />
+            {filter === "tagged" && (
+              <motion.div
+                layoutId="tab-indicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
+              />
+            )}
+          </button>
         </div>
 
         {/* Gallery Grid */}
-        <div className="max-w-7xl mx-auto px-1">
+        <div className="w-full">
           {loading ? (
-            <div className="grid grid-cols-3 gap-0.5">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="aspect-square bg-muted animate-pulse" />
-              ))}
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <ImageIcon className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                {filter === "all" ? "עדיין אין פוסטים" : filter === "images" ? "אין תמונות" : "אין סרטונים"}
-              </h3>
-              <p className="text-muted-foreground mb-6 text-sm">
-                שתף את הרגעים המיוחדים עם חיות המחמד שלך
-              </p>
-              <Button
-                onClick={handleCreatePost}
-                className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl"
-              >
-                <Plus className="w-4 h-4 ml-2" />
-                צור פוסט חדש
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-0.5">
-              {filteredPosts.map((post, index) => (
-                <motion.div
-                  key={post.id}
+            <div className="grid grid-cols-3 gap-px bg-border/30">
+              {[...Array(12)].map((_, i) => (
+                <motion.div 
+                  key={i} 
+                  className="aspect-square bg-muted"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`relative aspect-square bg-muted cursor-pointer group ${
-                    selectionMode && selectedPosts.has(post.id) ? "ring-4 ring-primary ring-inset" : ""
-                  }`}
-                  onClick={() => handlePostClick(post.id)}
+                  transition={{ delay: i * 0.05 }}
                 >
-                  <img
-                    src={post.image_url || post.video_url || ""}
-                    alt={post.caption || "Post"}
-                    className={`w-full h-full object-cover transition-opacity ${
-                      selectionMode && selectedPosts.has(post.id) ? "opacity-70" : ""
-                    }`}
-                  />
-                  
-                  {/* Selection indicator */}
-                  {selectionMode && (
-                    <div className={`absolute top-2 left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                      selectedPosts.has(post.id)
-                        ? "bg-primary border-primary"
-                        : "bg-black/30 border-white"
-                    }`}>
-                      {selectedPosts.has(post.id) && (
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Video indicator */}
-                  {(post.media_type === "video" || post.video_url) && (
-                    <div className="absolute top-2 right-2">
-                      <Play className="w-5 h-5 text-white drop-shadow-lg" fill="white" />
-                    </div>
-                  )}
-                  
-                  {/* Hover overlay - only show when not in selection mode */}
-                  {!selectionMode && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
-                      <div className="flex items-center gap-1.5 text-white">
-                        <Heart className="w-5 h-5" fill="white" />
-                        <span className="font-semibold">{post.likes_count}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-white">
-                        <MessageCircle className="w-5 h-5" fill="white" />
-                        <span className="font-semibold">{post.comments_count}</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Delete button - only show when not in selection mode */}
-                  {!selectionMode && (
-                    <button
-                      onClick={(e) => handleDeleteClick(e, post.id)}
-                      className="absolute top-2 left-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="w-4 h-4 text-white" />
-                    </button>
-                  )}
+                  <div className="w-full h-full animate-pulse bg-gradient-to-br from-muted to-muted-foreground/10" />
                 </motion.div>
               ))}
+            </div>
+          ) : posts.length === 0 ? (
+            <motion.div 
+              className="flex flex-col items-center justify-center py-20 px-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="w-24 h-24 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
+                <Camera className="w-12 h-12 text-foreground" strokeWidth={1} />
+              </div>
+              <h3 className="text-2xl font-light text-foreground mb-2">שתף תמונות</h3>
+              <p className="text-muted-foreground text-center text-sm mb-6 max-w-xs">
+                כשתשתף תמונות, הן יופיעו בפרופיל שלך
+              </p>
+              <Button
+                onClick={() => setShowCreateDialog(true)}
+                variant="link"
+                className="text-primary font-semibold"
+              >
+                שתף את התמונה הראשונה שלך
+              </Button>
+            </motion.div>
+          ) : filter !== "posts" ? (
+            <motion.div 
+              className="flex flex-col items-center justify-center py-20 px-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
+                {filter === "saved" ? (
+                  <Bookmark className="w-10 h-10 text-foreground" strokeWidth={1} />
+                ) : (
+                  <Copy className="w-10 h-10 text-foreground" strokeWidth={1} />
+                )}
+              </div>
+              <h3 className="text-xl font-light text-foreground">
+                {filter === "saved" ? "אין פוסטים שמורים" : "אין תיוגים"}
+              </h3>
+            </motion.div>
+          ) : (
+            <div className="grid grid-cols-3 gap-px bg-border/30">
+              <AnimatePresence>
+                {posts.map((post, index) => (
+                  <motion.div
+                    key={post.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ 
+                      opacity: 1, 
+                      scale: pressedPostId === post.id ? 0.95 : 1 
+                    }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ 
+                      delay: index * 0.02,
+                      duration: 0.2
+                    }}
+                    className="relative aspect-square bg-muted cursor-pointer overflow-hidden"
+                    onClick={() => handlePostClick(post.id)}
+                    onTouchStart={() => handleTouchStart(post.id)}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchCancel={handleTouchEnd}
+                    onMouseDown={() => handleTouchStart(post.id)}
+                    onMouseUp={handleTouchEnd}
+                    onMouseLeave={handleTouchEnd}
+                  >
+                    <img
+                      src={post.image_url || post.video_url || ""}
+                      alt={post.caption || "Post"}
+                      className={`w-full h-full object-cover transition-all duration-200 ${
+                        selectionMode && selectedPosts.has(post.id) 
+                          ? "scale-90 rounded-lg opacity-70" 
+                          : ""
+                      }`}
+                      loading="lazy"
+                    />
+                    
+                    {/* Selection Overlay */}
+                    <AnimatePresence>
+                      {selectionMode && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 bg-black/20"
+                        />
+                      )}
+                    </AnimatePresence>
+                    
+                    {/* Selection Indicator */}
+                    <AnimatePresence>
+                      {selectionMode && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            selectedPosts.has(post.id)
+                              ? "bg-primary border-primary"
+                              : "bg-black/40 border-white"
+                          }`}
+                        >
+                          {selectedPosts.has(post.id) && (
+                            <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    
+                    {/* Video Indicator */}
+                    {(post.media_type === "video" || post.video_url) && !selectionMode && (
+                      <div className="absolute top-2 right-2">
+                        <Play className="w-5 h-5 text-white drop-shadow-lg" fill="white" />
+                      </div>
+                    )}
+                    
+                    {/* Hover Overlay - Desktop only */}
+                    {!selectionMode && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-6 max-sm:hidden">
+                        <div className="flex items-center gap-1.5 text-white">
+                          <Heart className="w-5 h-5" fill="white" />
+                          <span className="font-bold">{post.likes_count}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-white">
+                          <MessageCircle className="w-5 h-5" fill="white" />
+                          <span className="font-bold">{post.comments_count}</span>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </div>
       </div>
 
+      {/* Floating Selection Bar - Instagram Style */}
+      <AnimatePresence>
+        {selectionMode && selectedPosts.size > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-20 left-4 right-4 bg-background/95 backdrop-blur-lg border border-border rounded-2xl shadow-2xl p-4 z-50"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={exitSelectionMode}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ביטול
+                </Button>
+                <div className="h-4 w-px bg-border" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={selectAll}
+                  className="text-primary"
+                  disabled={selectedPosts.size === posts.length}
+                >
+                  בחר הכל
+                </Button>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowMultiDeleteDialog(true)}
+                className="rounded-full px-4"
+              >
+                <Trash2 className="w-4 h-4 ml-1" />
+                מחק {selectedPosts.size}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Long Press Hint */}
+      <AnimatePresence>
+        {!selectionMode && posts.length > 0 && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed bottom-24 left-0 right-0 text-center text-xs text-muted-foreground"
+          >
+            לחץ ארוך לבחירה מרובה
+          </motion.p>
+        )}
+      </AnimatePresence>
+
       {/* Create Post Dialog */}
       <CreatePostDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        onPostCreated={handlePostCreated}
+        onPostCreated={fetchPosts}
       />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>מחיקת פוסט</AlertDialogTitle>
             <AlertDialogDescription>
@@ -462,11 +536,11 @@ export default function Photos() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel disabled={deleting}>ביטול</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting} className="rounded-xl">ביטול</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeletePost}
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-red-500 hover:bg-red-600 rounded-xl"
             >
               {deleting ? "מוחק..." : "מחק"}
             </AlertDialogAction>
@@ -476,7 +550,7 @@ export default function Photos() {
 
       {/* Multi-Delete Confirmation Dialog */}
       <AlertDialog open={showMultiDeleteDialog} onOpenChange={setShowMultiDeleteDialog}>
-        <AlertDialogContent dir="rtl">
+        <AlertDialogContent dir="rtl" className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>מחיקת {selectedPosts.size} פוסטים</AlertDialogTitle>
             <AlertDialogDescription>
@@ -484,11 +558,11 @@ export default function Photos() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel disabled={deleting}>ביטול</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting} className="rounded-xl">ביטול</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleMultiDelete}
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-red-500 hover:bg-red-600 rounded-xl"
             >
               {deleting ? "מוחק..." : `מחק ${selectedPosts.size} פוסטים`}
             </AlertDialogAction>
