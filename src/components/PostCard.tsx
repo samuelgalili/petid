@@ -77,8 +77,8 @@ const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; 
     {/* Tongue with licking animation */}
     <motion.path
       d="M12 15.5C12 15.5 10.5 17 10.5 19C10.5 20.5 11 21.5 12 21.5C13 21.5 13.5 20.5 13.5 19C13.5 17 12 15.5 12 15.5Z"
-      fill={isLiked ? "hsl(342, 100%, 69%)" : "#FF9999"}
-      stroke={isLiked ? "hsl(342, 100%, 59%)" : "#FF6B6B"}
+      fill={isLiked ? "#ED4956" : "#FF9999"}
+      stroke={isLiked ? "#D62839" : "#FF6B6B"}
       strokeWidth="0.5"
       initial={false}
       animate={isLicking ? {
@@ -94,7 +94,7 @@ const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; 
       y1="16"
       x2="12"
       y2="20"
-      stroke={isLiked ? "hsl(342, 100%, 59%)" : "#FF6B6B"}
+      stroke={isLiked ? "#D62839" : "#FF6B6B"}
       strokeWidth="0.3"
       opacity="0.5"
       initial={false}
@@ -221,7 +221,7 @@ export const PostCard = ({
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
               <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-bold text-sm">
+              <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold text-sm">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
@@ -241,17 +241,17 @@ export const PostCard = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg ${
                   isFollowing 
-                    ? 'text-gray-500 hover:text-gray-700 bg-gray-100' 
-                    : 'text-white bg-gradient-to-r from-[#FF6B9D] to-[#C44FE2] hover:opacity-90'
+                    ? 'text-[#262626] bg-gray-100 hover:bg-gray-200' 
+                    : 'text-[#0095F6] hover:text-[#1877F2] bg-transparent'
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleFollow();
                 }}
               >
-                {isFollowing ? "עוקב ✓" : "עקוב"}
+                {isFollowing ? "עוקב" : "עקוב"}
               </Button>
             </motion.div>
           )}
@@ -297,30 +297,32 @@ export const PostCard = ({
             <motion.button 
               whileTap={{ scale: 0.85 }}
               onClick={handleLike}
-              className={`flex items-center gap-1.5 transition-all ${
-                post.is_liked ? 'text-[#FF6B9D]' : 'text-gray-600 hover:text-[#FF6B9D]'
-              }`}
+              className="flex items-center gap-1.5 transition-all"
             >
-              <DogTongueIcon isLicking={isLicking} isLiked={post.is_liked} className="w-6 h-6" />
+              <DogTongueIcon 
+                isLicking={isLicking} 
+                isLiked={post.is_liked} 
+                className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956]' : 'text-[#262626]'}`} 
+              />
               {post.likes_count > 0 && (
-                <span className="font-bold font-jakarta text-sm">{post.likes_count}</span>
+                <span className="font-semibold font-jakarta text-sm text-[#262626]">{post.likes_count}</span>
               )}
             </motion.button>
             
             <motion.button 
               whileTap={{ scale: 0.85 }}
-              className="flex items-center gap-1.5 text-gray-600 hover:text-[#C44FE2] transition-colors"
+              className="flex items-center gap-1.5 text-[#262626] transition-colors"
               onClick={() => navigate(`/post/${post.id}`)}
             >
               <MessageCircle className="w-6 h-6" strokeWidth={1.5} />
               {post.comments_count > 0 && (
-                <span className="font-bold font-jakarta text-sm">{post.comments_count}</span>
+                <span className="font-semibold font-jakarta text-sm">{post.comments_count}</span>
               )}
             </motion.button>
             
             <motion.button 
               whileTap={{ scale: 0.85 }}
-              className="text-gray-600 hover:text-[#7B68EE] transition-colors"
+              className="text-[#262626] transition-colors"
             >
               <Share2 className="w-6 h-6" strokeWidth={1.5} />
             </motion.button>
@@ -328,24 +330,24 @@ export const PostCard = ({
           <motion.button 
             whileTap={{ scale: 0.85 }}
             onClick={() => onSave(post.id)}
-            className={`transition-colors ${post.is_saved ? 'text-[#FFC107]' : 'text-gray-600 hover:text-[#FFC107]'}`}
+            className="text-[#262626] transition-colors"
           >
-            <Bookmark className={`w-6 h-6 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
+            <Bookmark className={`w-6 h-6 ${post.is_saved ? 'fill-[#262626]' : ''}`} strokeWidth={1.5} />
           </motion.button>
         </div>
 
         {/* Likes count */}
         {post.likes_count > 0 && (
-          <p className="text-sm text-gray-900 font-bold font-jakarta mb-2">
+          <p className="text-sm text-[#262626] font-semibold font-jakarta mb-2">
             {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
           </p>
         )}
 
         {/* Post Caption */}
         {post.caption && (
-          <p className="text-gray-800 font-jakarta text-sm leading-relaxed mb-2">
+          <p className="text-[#262626] font-jakarta text-sm leading-relaxed mb-2">
             <span 
-              className="font-bold cursor-pointer hover:text-[#C44FE2] transition-colors"
+              className="font-semibold cursor-pointer"
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
               {post.user.full_name || "משתמש"}
@@ -357,7 +359,7 @@ export const PostCard = ({
         {/* View Comments */}
         {post.comments_count > 0 && (
           <button 
-            className="text-gray-400 text-sm font-jakarta hover:text-[#C44FE2] transition-colors"
+            className="text-[#8E8E8E] text-sm font-jakarta"
             onClick={() => navigate(`/post/${post.id}`)}
           >
             צפה בכל {post.comments_count} התגובות
