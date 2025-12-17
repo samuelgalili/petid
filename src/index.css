@@ -901,6 +901,26 @@
   }
 }
 
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+@keyframes sparkle-move {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .story-ring {
   position: relative;
 }
@@ -934,4 +954,51 @@
 .story-ring-viewed::before {
   background: #DBDBDB;
   animation: none;
+}
+
+/* Sparkle container */
+.story-sparkle {
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+  animation: sparkle-move 4s linear infinite;
+}
+
+/* Individual sparkles */
+.story-sparkle::before,
+.story-sparkle::after {
+  content: '✦';
+  position: absolute;
+  font-size: 12px;
+  color: #FEDA77;
+  text-shadow: 0 0 4px #F58529, 0 0 8px #DD2A7B;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.story-sparkle::before {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+
+.story-sparkle::after {
+  bottom: 0;
+  right: 0;
+  animation-delay: 1s;
+}
+
+.story-sparkle-2::before {
+  top: 50%;
+  right: 0;
+  left: auto;
+  animation-delay: 0.5s;
+}
+
+.story-sparkle-2::after {
+  top: 50%;
+  left: 0;
+  right: auto;
+  bottom: auto;
+  animation-delay: 1.5s;
 }

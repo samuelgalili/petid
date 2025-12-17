@@ -165,6 +165,13 @@ export const StoriesBar = () => {
                     </AvatarFallback>
                   </Avatar>
                 </div>
+                {/* Sparkle effect for unwatched stories */}
+                {!storyUser.has_viewed && (
+                  <>
+                    <div className="story-sparkle" />
+                    <div className="story-sparkle story-sparkle-2" />
+                  </>
+                )}
               </div>
               <span className="text-[11px] font-jakarta font-medium text-[#262626] max-w-[72px] truncate text-center">
                 {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}
