@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, FileText, Filter, Search, X } from "lucide-react";
+import { Loader2, Upload, FileText, Filter, Search, X, ArrowUpDown } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SwipeableDocumentCard } from "@/components/SwipeableDocumentCard";
 
@@ -40,6 +40,7 @@ export default function Documents() {
   const [selectedPetId, setSelectedPetId] = useState<string>("all");
   const [selectedDocType, setSelectedDocType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("date-desc");
   const [pendingDelete, setPendingDelete] = useState<{ id: string; fileUrl: string; doc: any } | null>(null);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -77,8 +78,24 @@ export default function Documents() {
       filtered = filtered.filter((doc) => doc.document_type === selectedDocType);
     }
 
+    // Sort
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "date-desc":
+          return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
+        case "date-asc":
+          return new Date(a.uploaded_at).getTime() - new Date(b.uploaded_at).getTime();
+        case "name-asc":
+          return a.title.localeCompare(b.title, 'he');
+        case "name-desc":
+          return b.title.localeCompare(a.title, 'he');
+        default:
+          return 0;
+      }
+    });
+
     setFilteredDocuments(filtered);
-  }, [selectedPetId, selectedDocType, documents, searchQuery]);
+  }, [selectedPetId, selectedDocType, documents, searchQuery, sortBy]);
 
   const fetchPets = async () => {
     try {
@@ -392,36 +409,58 @@ export default function Documents() {
               )}
             </div>
 
-            {/* Filters */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Filter className="w-4 h-4 text-[#DD2A7B]" />
-                <span className="text-sm font-medium text-gray-700">סינון</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Select value={selectedPetId} onValueChange={setSelectedPetId}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                    <SelectValue placeholder="חיית מחמד" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">כל חיות המחמד</SelectItem>
-                    {pets.map((pet) => (
-                      <SelectItem key={pet.id} value={pet.id}>
-                        🐾 {pet.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Filters & Sort */}
+            <div className="flex flex-col gap-4">
+              {/* Filters Row */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Filter className="w-4 h-4 text-[#DD2A7B]" />
+                  <span className="text-sm font-medium text-gray-700">סינון</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Select value={selectedPetId} onValueChange={setSelectedPetId}>
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder="חיית מחמד" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל חיות המחמד</SelectItem>
+                      {pets.map((pet) => (
+                        <SelectItem key={pet.id} value={pet.id}>
+                          🐾 {pet.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+                  <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
+                      <SelectValue placeholder="סוג מסמך" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל הסוגים</SelectItem>
+                      <SelectItem value="vaccination">💉 חיסון</SelectItem>
+                      <SelectItem value="medical">🏥 רפואי</SelectItem>
+                      <SelectItem value="other">📄 אחר</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Sort Row */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ArrowUpDown className="w-4 h-4 text-[#8134AF]" />
+                  <span className="text-sm font-medium text-gray-700">מיון</span>
+                </div>
+                <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                    <SelectValue placeholder="סוג מסמך" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">כל הסוגים</SelectItem>
-                    <SelectItem value="vaccination">💉 חיסון</SelectItem>
-                    <SelectItem value="medical">🏥 רפואי</SelectItem>
-                    <SelectItem value="other">📄 אחר</SelectItem>
+                    <SelectItem value="date-desc">📅 תאריך (חדש לישן)</SelectItem>
+                    <SelectItem value="date-asc">📅 תאריך (ישן לחדש)</SelectItem>
+                    <SelectItem value="name-asc">🔤 שם (א-ת)</SelectItem>
+                    <SelectItem value="name-desc">🔤 שם (ת-א)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
