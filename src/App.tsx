@@ -68,6 +68,9 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ClubTerms from "./pages/ClubTerms";
 import Favorites from "./pages/Favorites";
+import Splash from "./pages/Splash";
+import Support from "./pages/Support";
+import Deals from "./pages/Deals";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -89,12 +92,15 @@ const AnimatedRoutes = () => {
       <div className="flex-1">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="/" element={<Navigate to="/splash" replace />} />
+        <Route path="/splash" element={<PageTransition><Splash /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
         <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
         <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
+        <Route path="/support" element={<ProtectedRoute><PageTransition><Support /></PageTransition></ProtectedRoute>} />
+        <Route path="/deals" element={<ProtectedRoute><PageTransition><Deals /></PageTransition></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
         <Route path="/add-pet" element={<ProtectedRoute><PageTransition><AddPet /></PageTransition></ProtectedRoute>} />
         <Route path="/home" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="עמוד הבית"><Home /></PageErrorBoundary></PageTransition></ProtectedRoute>} />
