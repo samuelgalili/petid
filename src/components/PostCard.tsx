@@ -233,32 +233,43 @@ export const PostCard = ({
   };
 
   return (
-    <div className="bg-white border-b border-gray-200">
+    <motion.div 
+      className="bg-white border-b border-gray-200"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ backgroundColor: "rgba(0,0,0,0.01)" }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Post Header */}
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-3">
-          <div 
+          <motion.div 
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <Avatar className="w-8 h-8">
+            <Avatar className="w-8 h-8 ring-2 ring-transparent hover:ring-gray-200 transition-all duration-200">
               <AvatarImage src={post.user.avatar_url} />
               <AvatarFallback className="bg-gray-100 text-gray-600 text-xs font-medium">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
-          </div>
-          <div 
+          </motion.div>
+          <motion.div 
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
+            whileHover={{ x: 2 }}
+            transition={{ type: "spring", stiffness: 300 }}
           >
-            <p className="font-semibold text-[#262626] text-[13px] leading-tight">{post.user.full_name || "משתמש"}</p>
-          </div>
+            <p className="font-semibold text-[#262626] text-[13px] leading-tight hover:text-[#0095F6] transition-colors duration-200">{post.user.full_name || "משתמש"}</p>
+          </motion.div>
         </div>
         
         <div className="flex items-center gap-2">
           {currentUserId !== post.user_id && (
-            <button
+            <motion.button
               className={`text-[13px] font-semibold ${
                 isFollowing 
                   ? 'text-[#262626]' 
@@ -268,13 +279,20 @@ export const PostCard = ({
                 e.stopPropagation();
                 handleFollow();
               }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               {isFollowing ? "" : "עקוב"}
-            </button>
+            </motion.button>
           )}
-          <button className="text-[#262626] p-1">
+          <motion.button 
+            className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -427,34 +445,48 @@ export const PostCard = ({
       <div className="px-3 pt-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
-            <button 
+            <motion.button 
               onClick={handleLike}
-              className="active:opacity-50 transition-opacity"
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
             >
               <DogTongueIcon 
                 isLicking={isLicking} 
                 isLiked={post.is_liked} 
                 className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956]' : 'text-[#262626]'}`} 
               />
-            </button>
+            </motion.button>
             
-            <button 
-              className="text-[#262626] active:opacity-50 transition-opacity"
+            <motion.button 
+              className="text-[#262626] p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
               onClick={() => navigate(`/post/${post.id}`)}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <MessageCircle className="w-6 h-6" strokeWidth={1.5} />
-            </button>
+            </motion.button>
             
-            <button className="text-[#262626] active:opacity-50 transition-opacity">
+            <motion.button 
+              className="text-[#262626] p-1 rounded-full hover:bg-green-50 transition-colors duration-200"
+              whileHover={{ scale: 1.2, rotate: -15 }}
+              whileTap={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
               <Share2 className="w-6 h-6" strokeWidth={1.5} />
-            </button>
+            </motion.button>
           </div>
-          <button 
+          <motion.button 
             onClick={handleSave}
-            className="text-[#262626] active:opacity-50 transition-opacity"
+            className="text-[#262626] p-1 rounded-full hover:bg-yellow-50 transition-colors duration-200"
+            whileHover={{ scale: 1.2, y: -2 }}
+            whileTap={{ scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
             <Bookmark className={`w-6 h-6 ${post.is_saved ? 'fill-[#262626]' : ''}`} strokeWidth={1.5} />
-          </button>
+          </motion.button>
         </div>
 
         {/* Likes count */}
@@ -523,6 +555,6 @@ export const PostCard = ({
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
