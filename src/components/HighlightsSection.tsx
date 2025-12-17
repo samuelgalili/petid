@@ -141,28 +141,37 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
             onTouchEnd={handleLongPressEnd}
             onTouchCancel={handleLongPressEnd}
           >
-            <motion.div 
-              className={`w-[64px] h-[64px] rounded-full border-2 border-gray-200 overflow-hidden bg-gray-50 ${
-                isOwnProfile ? "hover:border-gray-400" : ""
+            {/* Instagram-style gradient ring */}
+            <div 
+              className={`relative p-[3px] rounded-full ${
+                highlight.story_count > 0 
+                  ? "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]" 
+                  : "bg-gray-200"
               }`}
-              whileHover={{ 
-                borderColor: "#9ca3af",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-              }}
-              transition={{ duration: 0.2 }}
             >
-              {highlight.cover_image ? (
-                <img
-                  src={highlight.cover_image}
-                  alt={highlight.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-gray-100 to-gray-200">
-                  ✨
+              <motion.div 
+                className="w-[64px] h-[64px] rounded-full overflow-hidden bg-white p-[2px]"
+                whileHover={{ 
+                  scale: 1.02,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-full h-full rounded-full overflow-hidden bg-gray-50">
+                  {highlight.cover_image ? (
+                    <img
+                      src={highlight.cover_image}
+                      alt={highlight.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-gray-100 to-gray-200">
+                      ✨
+                    </div>
+                  )}
                 </div>
-              )}
-            </motion.div>
+              </motion.div>
+            </div>
             <span className="text-[11px] font-medium text-[#262626] max-w-[64px] text-center truncate">
               {highlight.title}
             </span>
