@@ -38,8 +38,10 @@ const BottomNav = () => {
   const prevCountRef = useRef(0);
 
   // Check if we're on social network pages
-  const socialRoutes = ['/feed', '/user/', '/post/', '/story/', '/highlight/', '/messages', '/profile'];
-  const isSocialPage = socialRoutes.some(route => location.pathname.startsWith(route));
+  const socialRoutes = ['/', '/feed', '/user/', '/post/', '/story/', '/highlight/', '/messages', '/profile'];
+  const isSocialPage = socialRoutes.some(route => 
+    route === '/' ? location.pathname === '/' : location.pathname.startsWith(route)
+  );
 
   // Fetch user avatar
   useEffect(() => {
@@ -148,9 +150,9 @@ const BottomNav = () => {
 
   // Regular app navigation
   const appNavItems = [
-    { icon: Home, label: "בית", path: "/home" },
+    { icon: Home, label: "בית", path: "/" },
     { icon: ShoppingBag, label: "חנות", path: "/shop" },
-    { icon: Users, label: "קהילה", path: "/feed" },
+    { icon: Users, label: "קהילה", path: "/" },
     { 
       icon: Grid3x3, 
       label: "עוד", 
@@ -186,13 +188,13 @@ const BottomNav = () => {
           <div className="flex justify-around items-center h-[50px] max-w-lg mx-auto px-2">
             {/* Home/Feed */}
             <Link
-              to="/feed"
+              to="/"
               className="flex items-center justify-center p-2 active:opacity-50"
             >
               <Home 
-                className={`w-[26px] h-[26px] ${location.pathname === '/feed' ? 'text-[#262626]' : 'text-[#262626]'}`}
-                strokeWidth={location.pathname === '/feed' ? 2.5 : 1.5}
-                fill={location.pathname === '/feed' ? '#262626' : 'none'}
+                className={`w-[26px] h-[26px] ${location.pathname === '/' ? 'text-[#262626]' : 'text-[#262626]'}`}
+                strokeWidth={location.pathname === '/' ? 2.5 : 1.5}
+                fill={location.pathname === '/' ? '#262626' : 'none'}
               />
             </Link>
 
