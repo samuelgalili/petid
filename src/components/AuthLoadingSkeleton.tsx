@@ -1,68 +1,79 @@
 import { motion } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
+import petidLogo from "@/assets/petid-logo.png";
 
 export const AuthLoadingSkeleton = () => {
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4" 
-      dir="ltr" 
-      style={{ background: 'linear-gradient(135deg, hsl(174 43% 88%) 0%, hsl(180 40% 92%) 100%)' }}
-    >
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+      {/* Centered Logo with Pulse Animation */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-[420px] border-0 overflow-hidden bg-background/95 backdrop-blur-sm rounded-[32px] p-12"
-        style={{ boxShadow: '0 8px 32px rgba(93, 213, 200, 0.15)' }}
+        transition={{ duration: 0.3 }}
+        className="relative"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <Skeleton className="w-6 h-6 rounded-full" />
-          <Skeleton className="w-24 h-8 rounded-full" />
-          <Skeleton className="w-6 h-6 rounded-full" />
-        </div>
+        {/* Gradient glow behind logo */}
+        <motion.div
+          className="absolute inset-0 blur-2xl opacity-30"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.2, 0.4, 0.2],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          style={{
+            background: "linear-gradient(45deg, #F58529, #DD2A7B, #8134AF, #515BD4)",
+            borderRadius: "50%",
+          }}
+        />
+        
+        {/* Logo */}
+        <motion.img
+          src={petidLogo}
+          alt="Petid"
+          className="h-20 w-auto relative z-10"
+          animate={{
+            scale: [1, 1.02, 1],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      </motion.div>
 
-        {/* Banner */}
-        <Skeleton className="w-full h-16 rounded-[20px] mb-5" />
+      {/* Loading dots */}
+      <div className="mt-8 flex gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-2 h-2 rounded-full bg-gray-300"
+            animate={{
+              scale: [1, 1.3, 1],
+              backgroundColor: ["#d1d5db", "#9ca3af", "#d1d5db"],
+            }}
+            transition={{
+              duration: 0.8,
+              repeat: Infinity,
+              delay: i * 0.15,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
 
-        {/* Image */}
-        <div className="flex justify-center mb-6">
-          <Skeleton className="w-[230px] h-[230px] rounded-full" />
-        </div>
-
-        {/* Title */}
-        <div className="text-center mb-8 space-y-2">
-          <Skeleton className="h-10 w-32 mx-auto rounded-lg" />
-          <Skeleton className="h-4 w-24 mx-auto rounded-lg" />
-        </div>
-
-        {/* Welcome */}
-        <div className="mb-6 space-y-2">
-          <Skeleton className="h-8 w-40 mx-auto rounded-lg" />
-          <Skeleton className="h-4 w-48 mx-auto rounded-lg" />
-          <Skeleton className="h-4 w-44 mx-auto rounded-lg" />
-        </div>
-
-        {/* Form */}
-        <div className="space-y-4 mb-6">
-          <Skeleton className="h-12 w-full rounded-xl" />
-          <Skeleton className="h-12 w-full rounded-xl" />
-        </div>
-
-        {/* Button */}
-        <Skeleton className="h-12 w-full rounded-full mb-6" />
-
-        {/* Social */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <Skeleton className="h-20 rounded-[1.25rem]" />
-          <Skeleton className="h-20 rounded-[1.25rem]" />
-          <Skeleton className="h-20 rounded-[1.25rem]" />
-        </div>
-
-        {/* Links */}
-        <div className="space-y-3">
-          <Skeleton className="h-4 w-32 mx-auto rounded-lg" />
-          <Skeleton className="h-4 w-40 mx-auto rounded-lg" />
-        </div>
+      {/* Bottom text - Instagram style */}
+      <motion.div
+        className="absolute bottom-10 text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <p className="text-xs text-gray-400 font-semibold tracking-wide">from</p>
+        <p className="text-sm text-gray-500 font-semibold mt-0.5">Petid</p>
       </motion.div>
     </div>
   );
