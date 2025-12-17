@@ -443,6 +443,27 @@ export type Database = {
         }
         Relationships: []
       }
+      hashtags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          post_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          post_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          post_count?: number | null
+        }
+        Relationships: []
+      }
       highlight_stories: {
         Row: {
           added_at: string | null
@@ -482,33 +503,104 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          post_count: number | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          post_count?: number | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          post_count?: number | null
+        }
+        Relationships: []
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           created_at: string | null
           id: string
           is_read: boolean | null
           message_text: string
+          message_type: string | null
           receiver_id: string
           sender_id: string
           updated_at: string | null
+          voice_duration: number | null
+          voice_url: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           is_read?: boolean | null
           message_text: string
+          message_type?: string | null
           receiver_id: string
           sender_id: string
           updated_at?: string | null
+          voice_duration?: number | null
+          voice_url?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           is_read?: boolean | null
           message_text?: string
+          message_type?: string | null
           receiver_id?: string
           sender_id?: string
           updated_at?: string | null
+          voice_duration?: number | null
+          voice_url?: string | null
         }
         Relationships: [
           {
@@ -874,6 +966,42 @@ export type Database = {
         }
         Relationships: []
       }
+      post_hashtags: {
+        Row: {
+          created_at: string
+          hashtag_id: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          hashtag_id: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          hashtag_id?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_hashtags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -901,6 +1029,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string
+          location_id: string | null
           media_type: string | null
           media_urls: string[] | null
           pet_id: string | null
@@ -913,6 +1042,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url: string
+          location_id?: string | null
           media_type?: string | null
           media_urls?: string[] | null
           pet_id?: string | null
@@ -925,6 +1055,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string
+          location_id?: string | null
           media_type?: string | null
           media_urls?: string[] | null
           pet_id?: string | null
@@ -933,6 +1064,13 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]
@@ -1098,6 +1236,109 @@ export type Database = {
           },
         ]
       }
+      reel_comments: {
+        Row: {
+          comment_text: string
+          created_at: string
+          id: string
+          reel_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string
+          id?: string
+          reel_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string
+          id?: string
+          reel_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reel_comments_reel_id_fkey"
+            columns: ["reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reel_likes: {
+        Row: {
+          created_at: string
+          id: string
+          reel_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reel_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reel_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reel_likes_reel_id_fkey"
+            columns: ["reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reels: {
+        Row: {
+          audio_id: string | null
+          caption: string | null
+          created_at: string
+          duration: number | null
+          id: string
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+          video_url: string
+          view_count: number | null
+        }
+        Insert: {
+          audio_id?: string | null
+          caption?: string | null
+          created_at?: string
+          duration?: number | null
+          id?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+          video_url: string
+          view_count?: number | null
+        }
+        Update: {
+          audio_id?: string | null
+          caption?: string | null
+          created_at?: string
+          duration?: number | null
+          id?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       rewards: {
         Row: {
           created_at: string
@@ -1223,6 +1464,70 @@ export type Database = {
         }
         Relationships: []
       }
+      story_poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_index: number
+          sticker_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_index: number
+          sticker_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_index?: number
+          sticker_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_poll_votes_sticker_id_fkey"
+            columns: ["sticker_id"]
+            isOneToOne: false
+            referencedRelation: "story_stickers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_question_answers: {
+        Row: {
+          answer_text: string
+          created_at: string
+          id: string
+          sticker_id: string
+          user_id: string
+        }
+        Insert: {
+          answer_text: string
+          created_at?: string
+          id?: string
+          sticker_id: string
+          user_id: string
+        }
+        Update: {
+          answer_text?: string
+          created_at?: string
+          id?: string
+          sticker_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_question_answers_sticker_id_fkey"
+            columns: ["sticker_id"]
+            isOneToOne: false
+            referencedRelation: "story_stickers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       story_replies: {
         Row: {
           created_at: string | null
@@ -1257,6 +1562,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "story_replies_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_stickers: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          position_x: number | null
+          position_y: number | null
+          sticker_type: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          sticker_type: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          sticker_type?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_stickers_story_id_fkey"
             columns: ["story_id"]
             isOneToOne: false
             referencedRelation: "stories"
