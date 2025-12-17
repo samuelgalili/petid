@@ -107,7 +107,7 @@ const AnimatedRoutes = () => {
         <Route path="/deals" element={<ProtectedRoute><PageTransition><Deals /></PageTransition></ProtectedRoute>} />
         <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
         <Route path="/add-pet" element={<ProtectedRoute><PageTransition><AddPet /></PageTransition></ProtectedRoute>} />
-        <Route path="/home" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="עמוד הבית"><Home /></PageErrorBoundary></PageTransition></ProtectedRoute>} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
         <Route path="/pet/:petId" element={<ProtectedRoute><PageTransition><PetDetails /></PageTransition></ProtectedRoute>} />
         <Route path="/breed-history/:petId" element={<ProtectedRoute><PageTransition><BreedHistory /></PageTransition></ProtectedRoute>} />

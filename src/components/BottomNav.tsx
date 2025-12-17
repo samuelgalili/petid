@@ -54,7 +54,6 @@ const BottomNav = () => {
   }, []);
 
   const moreCategories = [
-    { icon: Home, label: "בית", path: "/home", color: "#262626" },
     { icon: FileText, label: "מסמכים", path: "/documents", color: "#0095F6" },
     { icon: Camera, label: "אלבום תמונות", path: "/photos", color: "#8134AF" },
     { icon: Heart, label: "אימוץ", path: "/adoption", color: "#ED4956" },
