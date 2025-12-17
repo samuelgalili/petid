@@ -685,62 +685,57 @@ const Shop = () => {
                 <div className="w-10 h-1 bg-gray-300 rounded-full" />
               </div>
 
-              {/* Compact Content - Single scrollable area */}
+              {/* Content - Single scrollable area */}
               <div className="px-4 pb-4 overflow-y-auto max-h-[calc(70vh-80px)]">
-                {/* Top Row: Image + Details side by side */}
-                <div className="flex gap-4 mb-3">
-                  {/* Product Image - Smaller */}
-                  <div className="relative flex-shrink-0">
-                    {selectedProduct.originalPrice && (
-                      <div className="absolute -top-1 -right-1 z-10 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-bold font-jakarta">
-                        {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%-
-                      </div>
-                    )}
-                    <div className="w-28 h-28 bg-gray-50 rounded-2xl p-2">
-                      <OptimizedImage
-                        src={selectedProduct.image}
-                        alt={selectedProduct.name}
-                        className="w-full h-full rounded-xl"
-                        objectFit="contain"
-                        sizes="112px"
-                        priority
-                      />
+                {/* Large Product Image */}
+                <div className="relative mb-4">
+                  {selectedProduct.originalPrice && (
+                    <div className="absolute top-3 right-3 z-10 bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-sm font-bold font-jakarta shadow-lg">
+                      {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%-
                     </div>
+                  )}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => toggleFavorite(selectedProduct.id)}
+                    className={`absolute top-3 left-3 z-10 w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${
+                      favorites.includes(selectedProduct.id)
+                        ? "bg-white text-red-500"
+                        : "bg-white/90 text-gray-500"
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${favorites.includes(selectedProduct.id) ? "fill-current" : ""}`} strokeWidth={1.5} />
+                  </motion.button>
+                  <div className="w-full h-52 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden">
+                    <OptimizedImage
+                      src={selectedProduct.image}
+                      alt={selectedProduct.name}
+                      className="w-full h-full"
+                      objectFit="contain"
+                      sizes="(max-width: 768px) 100vw, 400px"
+                      priority
+                    />
+                  </div>
+                </div>
+
+                {/* Product Info */}
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 font-jakarta leading-tight mb-1">
+                    {selectedProduct.name}
+                  </h2>
+                  <p className="text-sm text-gray-500 font-jakarta mb-3">{selectedProduct.description}</p>
+                  
+                  {/* Price */}
+                  <div className="flex items-baseline gap-3 mb-3">
+                    <span className="text-3xl font-black text-[#E91E63] font-jakarta">₪{selectedProduct.price}</span>
+                    {selectedProduct.originalPrice && (
+                      <span className="text-base text-gray-400 line-through font-jakarta">₪{selectedProduct.originalPrice}</span>
+                    )}
                   </div>
 
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-1">
-                      <h2 className="text-lg font-bold text-gray-900 font-jakarta leading-tight">
-                        {selectedProduct.name}
-                      </h2>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => toggleFavorite(selectedProduct.id)}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          favorites.includes(selectedProduct.id)
-                            ? "bg-red-50 text-red-500"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        <Heart className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-current" : ""}`} strokeWidth={1.5} />
-                      </motion.button>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-2 font-jakarta">{selectedProduct.description}</p>
-                    
-                    {/* Price */}
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-[#E91E63] font-jakarta">₪{selectedProduct.price}</span>
-                      {selectedProduct.originalPrice && (
-                        <span className="text-sm text-gray-400 line-through font-jakarta">₪{selectedProduct.originalPrice}</span>
-                      )}
-                    </div>
-
-                    {/* Quick Info */}
-                    <div className="flex gap-2 mt-2">
-                      <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium font-jakarta">במלאי</span>
-                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium font-jakarta">משלוח חינם</span>
-                    </div>
+                  {/* Quick Info */}
+                  <div className="flex gap-2">
+                    <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-semibold font-jakarta">במלאי</span>
+                    <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold font-jakarta">משלוח חינם</span>
                   </div>
                 </div>
 
