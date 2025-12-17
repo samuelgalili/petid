@@ -1007,28 +1007,131 @@ const Insurance = () => {
               </Accordion>
             </div>
 
-            {/* Comparison Table - Chayuta Style */}
-            <div>
+            {/* Comparison Table - Chayuta Style with Progress Bars */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5 }}
+            >
               <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-blue-500" />
                 טבלת השוואת מסלולים
               </h2>
+              
+              {/* Coverage Progress Overview */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Card className="p-4 border-0 shadow-lg bg-gradient-to-br from-amber-50 to-orange-50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
+                        <Shield className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">מסלול 1</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">כיסוי מלא</p>
+                    <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "100%" }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <span className="text-xs text-gray-500">כיסוי</span>
+                      <motion.span
+                        className="text-xs font-bold text-amber-600"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 1.5 }}
+                      >
+                        100%
+                      </motion.span>
+                    </div>
+                  </Card>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <Card className="p-4 border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center">
+                        <Shield className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">מסלול 2</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">תאונות בלבד</p>
+                    <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "64%" }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 1.2, ease: "easeOut", delay: 0.4 }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <span className="text-xs text-gray-500">כיסוי</span>
+                      <motion.span
+                        className="text-xs font-bold text-blue-600"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 1.6 }}
+                      >
+                        64%
+                      </motion.span>
+                    </div>
+                  </Card>
+                </motion.div>
+              </div>
+
               <Card className="border-0 shadow-xl overflow-hidden">
                 <div className="grid grid-cols-3 gap-0">
                   {/* Header */}
-                  <div className="bg-gray-50 p-3 border-b border-gray-100">
+                  <motion.div 
+                    className="bg-gray-50 p-3 border-b border-gray-100"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 }}
+                  >
                     <span className="text-xs font-bold text-gray-500">כיסויים</span>
-                  </div>
-                  <div className="bg-gradient-to-r from-amber-400 to-orange-400 p-3 border-b border-amber-300 text-center">
+                  </motion.div>
+                  <motion.div 
+                    className="bg-gradient-to-r from-amber-400 to-orange-400 p-3 border-b border-amber-300 text-center"
+                    initial={{ opacity: 0, y: -10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2, type: "spring" }}
+                  >
                     <span className="text-xs font-black text-white">מסלול 1</span>
                     <div className="text-[10px] text-white/80">תאונות + מחלות</div>
-                  </div>
-                  <div className="bg-gradient-to-r from-blue-400 to-indigo-400 p-3 border-b border-blue-300 text-center">
+                  </motion.div>
+                  <motion.div 
+                    className="bg-gradient-to-r from-blue-400 to-indigo-400 p-3 border-b border-blue-300 text-center"
+                    initial={{ opacity: 0, y: -10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3, type: "spring" }}
+                  >
                     <span className="text-xs font-black text-white">מסלול 2</span>
                     <div className="text-[10px] text-white/80">תאונות בלבד</div>
-                  </div>
+                  </motion.div>
 
-                  {/* Rows */}
+                  {/* Rows with Progress Animation */}
                   {[
                     { feature: "תאונות ופציעות", plan1: true, plan2: true },
                     { feature: "מחלות", plan1: true, plan2: false },
@@ -1043,44 +1146,150 @@ const Insurance = () => {
                     { feature: "השתתפות עצמית", plan1: "₪250-500", plan2: "₪250-500" },
                   ].map((row, idx) => (
                     <React.Fragment key={idx}>
-                      <div className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <motion.div 
+                        className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.05 + 0.4 }}
+                      >
                         <span className="text-xs font-medium text-gray-700">{row.feature}</span>
-                      </div>
-                      <div className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} flex items-center justify-center`}>
+                      </motion.div>
+                      <motion.div 
+                        className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} flex items-center justify-center`}
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.05 + 0.5, type: "spring", stiffness: 200 }}
+                      >
                         {typeof row.plan1 === 'boolean' ? (
                           row.plan1 ? (
-                            <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                            <motion.div 
+                              className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center"
+                              whileHover={{ scale: 1.2 }}
+                              initial={{ rotate: -180, opacity: 0 }}
+                              whileInView={{ rotate: 0, opacity: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: idx * 0.05 + 0.6, type: "spring" }}
+                            >
                               <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} />
-                            </div>
+                            </motion.div>
                           ) : (
-                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                            <motion.div 
+                              className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center"
+                              initial={{ scale: 0 }}
+                              whileInView={{ scale: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: idx * 0.05 + 0.6 }}
+                            >
                               <X className="w-4 h-4 text-gray-400" strokeWidth={3} />
-                            </div>
+                            </motion.div>
                           )
                         ) : (
-                          <span className="text-xs font-bold text-amber-600">{row.plan1}</span>
+                          <motion.span 
+                            className="text-xs font-bold text-amber-600"
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: idx * 0.05 + 0.6 }}
+                          >
+                            {row.plan1}
+                          </motion.span>
                         )}
-                      </div>
-                      <div className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} flex items-center justify-center`}>
+                      </motion.div>
+                      <motion.div 
+                        className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} flex items-center justify-center`}
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.05 + 0.55, type: "spring", stiffness: 200 }}
+                      >
                         {typeof row.plan2 === 'boolean' ? (
                           row.plan2 ? (
-                            <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                            <motion.div 
+                              className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center"
+                              whileHover={{ scale: 1.2 }}
+                              initial={{ rotate: -180, opacity: 0 }}
+                              whileInView={{ rotate: 0, opacity: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: idx * 0.05 + 0.65, type: "spring" }}
+                            >
                               <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} />
-                            </div>
+                            </motion.div>
                           ) : (
-                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                            <motion.div 
+                              className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center"
+                              initial={{ scale: 0 }}
+                              whileInView={{ scale: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: idx * 0.05 + 0.65 }}
+                            >
                               <X className="w-4 h-4 text-gray-400" strokeWidth={3} />
-                            </div>
+                            </motion.div>
                           )
                         ) : (
-                          <span className="text-xs font-bold text-blue-600">{row.plan2}</span>
+                          <motion.span 
+                            className="text-xs font-bold text-blue-600"
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: idx * 0.05 + 0.65 }}
+                          >
+                            {row.plan2}
+                          </motion.span>
                         )}
-                      </div>
+                      </motion.div>
                     </React.Fragment>
                   ))}
                 </div>
+                
+                {/* Bottom Progress Summary */}
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 1 }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-600">מסלול 1 - מקיף</span>
+                        <span className="text-xs font-bold text-amber-600">9/9</span>
+                      </div>
+                      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <motion.div
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"
+                          initial={{ width: 0 }}
+                          whileInView={{ width: "100%" }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1.5, ease: "easeOut", delay: 1.2 }}
+                        />
+                      </div>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 1.1 }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-600">מסלול 2 - תאונות</span>
+                        <span className="text-xs font-bold text-blue-600">6/9</span>
+                      </div>
+                      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <motion.div
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full"
+                          initial={{ width: 0 }}
+                          whileInView={{ width: "66.7%" }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1.5, ease: "easeOut", delay: 1.3 }}
+                        />
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
               </Card>
-            </div>
+            </motion.div>
 
             {/* Important Notes */}
             <Card className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 border-0 shadow-md">
