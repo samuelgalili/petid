@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
-import { Search, MapPin, Star, Check, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink, Map as MapIcon, List, Clock, MessageSquare, Heart, Bookmark, Share2, ChevronLeft, Sparkles, Filter, X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, MapPin, Star, Check, Droplets, Trees, Activity, Car, Lightbulb, SlidersHorizontal, ExternalLink, Map as MapIcon, List, Clock, MessageSquare, Heart, Bookmark, Share2, ChevronLeft, Sparkles, Filter, X, Users, LogIn, LogOut } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { APIProvider, Map, AdvancedMarker, InfoWindow } from "@vis.gl/react-google-maps";
 import { ParkReviewDialog } from "@/components/ParkReviewDialog";
@@ -34,6 +37,24 @@ interface DogPark {
   verified: boolean;
   rating: number | null;
   total_reviews: number;
+}
+
+interface ParkCheckin {
+  id: string;
+  park_id: string;
+  user_id: string;
+  pet_id: string | null;
+  checked_in_at: string;
+  checked_out_at: string | null;
+  profile?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+  pet?: {
+    name: string;
+    avatar_url: string | null;
+    type: string;
+  };
 }
 
 // Instagram-style gradient backgrounds for park cards
@@ -66,17 +87,160 @@ const Parks = () => {
   const [selectedParkForReview, setSelectedParkForReview] = useState<DogPark | null>(null);
   const [likedParks, setLikedParks] = useState<Set<string>>(new Set());
   const [savedParks, setSavedParks] = useState<Set<string>>(new Set());
+  
+  // Check-in state
+  const [parkCheckins, setParkCheckins] = useState<Record<string, ParkCheckin[]>>({});
+  const [userCheckin, setUserCheckin] = useState<ParkCheckin | null>(null);
+  const [userPets, setUserPets] = useState<{id: string; name: string; avatar_url: string | null; type: string}[]>([]);
+  const [checkinDialogOpen, setCheckinDialogOpen] = useState(false);
+  const [selectedParkForCheckin, setSelectedParkForCheckin] = useState<DogPark | null>(null);
+  const [selectedPetForCheckin, setSelectedPetForCheckin] = useState<string | null>(null);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [checkinsDialogOpen, setCheckinsDialogOpen] = useState(false);
+  const [selectedParkForCheckins, setSelectedParkForCheckins] = useState<DogPark | null>(null);
+  
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
   useEffect(() => {
     fetchParks();
-  }, []);
+    if (user) {
+      fetchUserPets();
+      fetchUserCheckin();
+    }
+  }, [user]);
 
   useEffect(() => {
     applyFilters();
   }, [parks, searchQuery, selectedCity, selectedSize, filterFencing, filterWater, filterShade]);
+
+  // Real-time check-in updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('park-checkins')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'park_checkins' },
+        () => {
+          fetchAllCheckins();
+          if (user) fetchUserCheckin();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const fetchUserPets = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('pets')
+      .select('id, name, avatar_url, type')
+      .eq('user_id', user.id)
+      .eq('archived', false);
+    
+    if (data) setUserPets(data);
+  };
+
+  const fetchUserCheckin = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('park_checkins')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('checked_out_at', null)
+      .single();
+    
+    setUserCheckin(data);
+  };
+
+  const fetchAllCheckins = async () => {
+    const { data } = await supabase
+      .from('park_checkins')
+      .select(`
+        *,
+        profile:profiles!park_checkins_user_id_fkey(full_name, avatar_url),
+        pet:pets(name, avatar_url, type)
+      `)
+      .is('checked_out_at', null);
+    
+    if (data) {
+      const grouped: Record<string, ParkCheckin[]> = {};
+      data.forEach((checkin: any) => {
+        if (!grouped[checkin.park_id]) grouped[checkin.park_id] = [];
+        grouped[checkin.park_id].push(checkin);
+      });
+      setParkCheckins(grouped);
+    }
+  };
+
+  const handleCheckin = async () => {
+    if (!user || !selectedParkForCheckin) return;
+    
+    setCheckingIn(true);
+    try {
+      const { error } = await supabase
+        .from('park_checkins')
+        .insert({
+          park_id: selectedParkForCheckin.id,
+          user_id: user.id,
+          pet_id: selectedPetForCheckin || null
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "צ'ק-אין בוצע! 🐾",
+        description: `אתה עכשיו ב${selectedParkForCheckin.name}`,
+      });
+      
+      setCheckinDialogOpen(false);
+      setSelectedPetForCheckin(null);
+      fetchUserCheckin();
+      fetchAllCheckins();
+    } catch (error) {
+      console.error('Check-in error:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא הצלחנו לבצע צ'ק-אין",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingIn(false);
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!userCheckin) return;
+
+    try {
+      const { error } = await supabase
+        .from('park_checkins')
+        .update({ checked_out_at: new Date().toISOString() })
+        .eq('id', userCheckin.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "צ'ק-אאוט בוצע! 👋",
+        description: "להתראות בפעם הבאה!",
+      });
+      
+      setUserCheckin(null);
+      fetchAllCheckins();
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא הצלחנו לבצע צ'ק-אאוט",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchParks = async () => {
     try {
@@ -116,6 +280,7 @@ const Parks = () => {
       );
 
       setParks(parksWithReviews);
+      fetchAllCheckins();
     } catch (error) {
       console.error("Error fetching parks:", error);
       toast({
@@ -349,6 +514,43 @@ const Parks = () => {
               </motion.button>
             </div>
 
+            {/* Who's Here Section */}
+            {parkCheckins[park.id] && parkCheckins[park.id].length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4"
+              >
+                <button
+                  onClick={() => {
+                    setSelectedParkForCheckins(park);
+                    setCheckinsDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 w-full"
+                >
+                  <div className="flex -space-x-2 rtl:space-x-reverse">
+                    {parkCheckins[park.id].slice(0, 4).map((checkin, idx) => (
+                      <Avatar key={checkin.id} className="w-8 h-8 border-2 border-white">
+                        <AvatarImage src={checkin.pet?.avatar_url || checkin.profile?.avatar_url || ''} />
+                        <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs">
+                          {checkin.pet?.name?.[0] || checkin.profile?.full_name?.[0] || '🐕'}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {parkCheckins[park.id].length > 4 && (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-bold text-gray-600">
+                        +{parkCheckins[park.id].length - 4}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm text-emerald-600 font-bold flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    {parkCheckins[park.id].length} כאן עכשיו
+                  </span>
+                </button>
+              </motion.div>
+            )}
+
             {/* Likes Count */}
             {isLiked && (
               <motion.p 
@@ -394,7 +596,7 @@ const Parks = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <Button
                 onClick={() => {
                   setSelectedParkForReview(park);
@@ -414,6 +616,30 @@ const Parks = () => {
                 נווט
               </Button>
             </div>
+
+            {/* Check-in/out Button */}
+            {user && (
+              userCheckin?.park_id === park.id ? (
+                <Button
+                  onClick={handleCheckout}
+                  className="w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white rounded-xl font-bold"
+                >
+                  <LogOut className="w-4 h-4 ml-2" />
+                  צ'ק-אאוט
+                </Button>
+              ) : !userCheckin && (
+                <Button
+                  onClick={() => {
+                    setSelectedParkForCheckin(park);
+                    setCheckinDialogOpen(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold"
+                >
+                  <LogIn className="w-4 h-4 ml-2" />
+                  צ'ק-אין - אני כאן!
+                </Button>
+              )
+            )}
           </div>
         </Card>
       </motion.div>
@@ -748,6 +974,117 @@ const Parks = () => {
           parkName={selectedParkForReview.name}
         />
       )}
+
+      {/* Check-in Dialog */}
+      <Dialog open={checkinDialogOpen} onOpenChange={setCheckinDialogOpen}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-black">
+              צ'ק-אין ב{selectedParkForCheckin?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-center text-gray-600 mb-4">בחר את חיית המחמד שאיתך (אופציונלי)</p>
+            
+            <div className="flex flex-wrap gap-3 justify-center mb-6">
+              {userPets.map((pet) => (
+                <motion.button
+                  key={pet.id}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedPetForCheckin(selectedPetForCheckin === pet.id ? null : pet.id)}
+                  className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${
+                    selectedPetForCheckin === pet.id 
+                      ? 'bg-emerald-100 ring-2 ring-emerald-500' 
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                >
+                  <Avatar className="w-16 h-16">
+                    <AvatarImage src={pet.avatar_url || ''} />
+                    <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white text-2xl">
+                      {pet.type === 'dog' ? '🐕' : '🐈'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">{pet.name}</span>
+                </motion.button>
+              ))}
+              
+              {userPets.length === 0 && (
+                <p className="text-gray-500 text-sm">אין לך חיות מחמד רשומות</p>
+              )}
+            </div>
+
+            <Button
+              onClick={handleCheckin}
+              disabled={checkingIn}
+              className="w-full bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-bold py-6 text-lg"
+            >
+              {checkingIn ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                />
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5 ml-2" />
+                  אישור צ'ק-אין
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Who's Here Dialog */}
+      <Dialog open={checkinsDialogOpen} onOpenChange={setCheckinsDialogOpen}>
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-black flex items-center justify-center gap-2">
+              <Users className="w-6 h-6 text-emerald-500" />
+              מי בגינה עכשיו?
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-3">
+            {selectedParkForCheckins && parkCheckins[selectedParkForCheckins.id]?.map((checkin) => (
+              <motion.div
+                key={checkin.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl"
+              >
+                <Avatar className="w-12 h-12">
+                  <AvatarImage src={checkin.pet?.avatar_url || checkin.profile?.avatar_url || ''} />
+                  <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white">
+                    {checkin.pet?.type === 'dog' ? '🐕' : checkin.pet?.type === 'cat' ? '🐈' : '👤'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900">
+                    {checkin.pet?.name || checkin.profile?.full_name || 'משתמש'}
+                  </p>
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {new Date(checkin.checked_in_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <div className="text-2xl">
+                  {checkin.pet?.type === 'dog' ? '🐕' : checkin.pet?.type === 'cat' ? '🐈' : '🐾'}
+                </div>
+              </motion.div>
+            ))}
+
+            {selectedParkForCheckins && (!parkCheckins[selectedParkForCheckins.id] || parkCheckins[selectedParkForCheckins.id].length === 0) && (
+              <div className="text-center py-8">
+                <span className="text-4xl mb-2 block">🐕</span>
+                <p className="text-gray-500">אין אף אחד בגינה כרגע</p>
+                <p className="text-sm text-gray-400">היה הראשון לעשות צ'ק-אין!</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

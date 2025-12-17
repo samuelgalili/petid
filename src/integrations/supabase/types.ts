@@ -744,6 +744,51 @@ export type Database = {
         }
         Relationships: []
       }
+      park_checkins: {
+        Row: {
+          checked_in_at: string
+          checked_out_at: string | null
+          created_at: string
+          id: string
+          park_id: string
+          pet_id: string | null
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          id?: string
+          park_id: string
+          pet_id?: string | null
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          id?: string
+          park_id?: string
+          pet_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "park_checkins_park_id_fkey"
+            columns: ["park_id"]
+            isOneToOne: false
+            referencedRelation: "dog_parks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "park_checkins_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       park_reviews: {
         Row: {
           created_at: string
