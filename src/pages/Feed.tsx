@@ -453,9 +453,9 @@ const Feed = () => {
       {/* Instagram-style Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
         <div className="max-w-lg mx-auto px-4 h-[44px] flex items-center justify-between">
-          {/* Logo */}
+          {/* Logo with Instagram gradient */}
           <h1 
-            className="text-[24px] font-semibold text-[#262626] cursor-pointer"
+            className="text-[24px] font-semibold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent"
             style={{ fontFamily: "'Billabong', cursive, -apple-system, BlinkMacSystemFont, sans-serif" }}
             onClick={() => {
               setPage(0);
@@ -466,19 +466,19 @@ const Feed = () => {
             Petish
           </h1>
           
-          {/* Right icons */}
+          {/* Right icons with Instagram colors */}
           <div className="flex items-center gap-5">
             <button
               onClick={handleNavigateToNotifications}
               className="active:opacity-50 transition-opacity relative"
             >
-              <Heart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <Heart className="w-6 h-6 text-[#262626] hover:text-[#ED4956] transition-colors" strokeWidth={1.5} />
             </button>
             <button
               onClick={handleNavigateToMessages}
               className="active:opacity-50 transition-opacity"
             >
-              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <Send className="w-6 h-6 text-[#262626] hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
             </button>
           </div>
         </div>

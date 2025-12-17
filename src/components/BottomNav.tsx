@@ -161,15 +161,15 @@ const BottomNav = () => {
   ];
 
   const moreCategories = [
-    { icon: FileText, label: "מסמכים", path: "/documents" },
-    { icon: Camera, label: "אלבום תמונות", path: "/photos" },
-    { icon: Heart, label: "אימוץ", path: "/adoption" },
-    { icon: Shield, label: "ביטוח", path: "/insurance" },
-    { icon: Trees, label: "גינות כלבים", path: "/parks" },
-    { icon: GraduationCap, label: "אילוף", path: "/training" },
-    { icon: Scissors, label: "מספרה", path: "/grooming" },
-    { icon: CheckSquare, label: "משימות", path: "/tasks" },
-    { icon: Gift, label: "פרסים", path: "/rewards" },
+    { icon: FileText, label: "מסמכים", path: "/documents", color: "#0095F6" },
+    { icon: Camera, label: "אלבום תמונות", path: "/photos", color: "#8134AF" },
+    { icon: Heart, label: "אימוץ", path: "/adoption", color: "#ED4956" },
+    { icon: Shield, label: "ביטוח", path: "/insurance", color: "#0095F6" },
+    { icon: Trees, label: "גינות כלבים", path: "/parks", color: "#00A676" },
+    { icon: GraduationCap, label: "אילוף", path: "/training", color: "#F58529" },
+    { icon: Scissors, label: "מספרה", path: "/grooming", color: "#DD2A7B" },
+    { icon: CheckSquare, label: "משימות", path: "/tasks", color: "#515BD4" },
+    { icon: Gift, label: "פרסים", path: "/rewards", color: "#F58529" },
   ];
 
   // Instagram-style social navigation render
@@ -188,7 +188,7 @@ const BottomNav = () => {
               className="flex items-center justify-center p-2 active:opacity-50"
             >
               <Home 
-                className="w-[26px] h-[26px] text-[#262626]" 
+                className={`w-[26px] h-[26px] ${location.pathname === '/feed' ? 'text-[#262626]' : 'text-[#262626]'}`}
                 strokeWidth={location.pathname === '/feed' ? 2.5 : 1.5}
                 fill={location.pathname === '/feed' ? '#262626' : 'none'}
               />
@@ -200,20 +200,23 @@ const BottomNav = () => {
               className="flex items-center justify-center p-2 active:opacity-50"
             >
               <Compass 
-                className="w-[26px] h-[26px] text-[#262626]" 
+                className={`w-[26px] h-[26px] ${location.pathname === '/adoption' ? 'text-[#262626]' : 'text-[#262626]'}`}
                 strokeWidth={location.pathname === '/adoption' ? 2.5 : 1.5}
+                fill={location.pathname === '/adoption' ? '#262626' : 'none'}
               />
             </Link>
 
-            {/* Create Post */}
+            {/* Create Post - Instagram gradient border */}
             <button
               onClick={() => setCreatePostOpen(true)}
               className="flex items-center justify-center p-2 active:opacity-50"
             >
-              <PlusSquare 
-                className="w-[26px] h-[26px] text-[#262626]" 
-                strokeWidth={1.5}
-              />
+              <div className="relative">
+                <PlusSquare 
+                  className="w-[26px] h-[26px] text-[#262626]" 
+                  strokeWidth={1.5}
+                />
+              </div>
             </button>
 
             {/* Reels/Videos */}
@@ -222,8 +225,9 @@ const BottomNav = () => {
               className="flex items-center justify-center p-2 active:opacity-50"
             >
               <Clapperboard 
-                className="w-[26px] h-[26px] text-[#262626]" 
-                strokeWidth={1.5}
+                className={`w-[26px] h-[26px] ${location.pathname.includes('/story') ? 'text-[#262626]' : 'text-[#262626]'}`}
+                strokeWidth={location.pathname.includes('/story') ? 2.5 : 1.5}
+                fill={location.pathname.includes('/story') ? '#262626' : 'none'}
               />
             </Link>
 
@@ -333,10 +337,13 @@ const BottomNav = () => {
                   onClick={() => setIsMoreSheetOpen(false)}
                   className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-gray-100 transition-colors"
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                    <CategoryIcon className="w-5 h-5 text-black" strokeWidth={1.5} />
+                  <div 
+                    className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${category.color}15` }}
+                  >
+                    <CategoryIcon className="w-5 h-5" style={{ color: category.color }} strokeWidth={1.5} />
                   </div>
-                  <span className="text-[11px] font-normal text-center text-black leading-tight">
+                  <span className="text-[11px] font-normal text-center text-[#262626] leading-tight">
                     {category.label}
                   </span>
                 </Link>
