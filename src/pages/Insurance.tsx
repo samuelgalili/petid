@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -83,6 +83,7 @@ const Insurance = () => {
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [shakeButton, setShakeButton] = useState(false);
+  const [showFloatingCTA, setShowFloatingCTA] = useState(false);
   const [calculatorData, setCalculatorData] = useState({
     petType: 'dog' as 'dog' | 'cat',
     petAge: 1,
@@ -97,6 +98,17 @@ const Insurance = () => {
     vetName: "",
     vetContact: "",
   });
+
+  // Scroll listener for floating CTA
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setShowFloatingCTA(scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const insurancePlans: InsurancePlan[] = [
     {
@@ -1567,6 +1579,51 @@ const Insurance = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Floating CTA Button */}
+      <AnimatePresence>
+        {showFloatingCTA && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed bottom-24 left-4 right-4 z-50"
+          >
+            <motion.button
+              onClick={() => {
+                toast({
+                  title: "מצוין! 🎉",
+                  description: "נציג יצור איתך קשר בהקדם לקבלת הצעת מחיר",
+                });
+                confetti({
+                  particleCount: 100,
+                  spread: 70,
+                  origin: { y: 0.9 }
+                });
+              }}
+              className="w-full py-4 px-6 bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 text-white font-black text-lg rounded-2xl shadow-2xl flex items-center justify-center gap-3 relative overflow-hidden"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {/* Animated shine effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                animate={{ x: ['-200%', '200%'] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              />
+              <ShieldCheck className="w-6 h-6" />
+              <span className="relative z-10">קבל הצעת מחיר עכשיו</span>
+              <motion.div
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <ChevronRight className="w-5 h-5 rotate-180" />
+              </motion.div>
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BottomNav />
     </div>
