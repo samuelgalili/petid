@@ -1,11 +1,13 @@
-import { motion } from "framer-motion";
-import { ShoppingBag, Tag } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingBag, Tag, Check } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
+import { useState, useRef } from "react";
 
 interface Product {
   id: string;
@@ -24,12 +26,53 @@ interface ProductPostCardProps {
 export const ProductPostCard = ({ product }: ProductPostCardProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [showAddedAnimation, setShowAddedAnimation] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleShopClick = () => {
     navigate('/shop');
   };
 
+  const triggerConfetti = () => {
+    // Get button position for origin
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+      // Shopping bag themed confetti
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { x, y },
+        colors: ['#F7BF00', '#F4B400', '#FFD700', '#FFA500', '#FF8C00'],
+        shapes: ['circle', 'square'],
+        gravity: 0.8,
+        scalar: 0.9,
+        drift: 0,
+        ticks: 150,
+      });
+
+      // Second burst with different angle
+      setTimeout(() => {
+        confetti({
+          particleCount: 30,
+          spread: 80,
+          origin: { x, y: y - 0.05 },
+          colors: ['#F7BF00', '#FFD700', '#FFED4A', '#FFF3B0'],
+          shapes: ['circle'],
+          gravity: 1,
+          scalar: 0.7,
+          startVelocity: 25,
+        });
+      }, 100);
+    }
+  };
+
   const handleAddToCart = () => {
+    setShowAddedAnimation(true);
+    triggerConfetti();
+    
     addToCart({
       id: product.id,
       name: product.title,
@@ -37,7 +80,10 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
       image: product.image,
       quantity: 1,
     });
-    toast.success(`${product.title} נוסף לסל`);
+    
+    toast.success(`${product.title} נוסף לסל 🛒`);
+    
+    setTimeout(() => setShowAddedAnimation(false), 1500);
   };
 
   return (
@@ -108,17 +154,88 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
 
         {/* CTA Strip at bottom of image */}
         <motion.button
+          ref={buttonRef}
           onClick={handleAddToCart}
-          className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors"
-          whileTap={{ scale: 0.99 }}
+          className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors overflow-hidden"
+          whileTap={{ scale: 0.98 }}
+          animate={showAddedAnimation ? { backgroundColor: "rgba(247, 191, 0, 0.2)" } : {}}
         >
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-[#F7BF00] flex items-center justify-center">
-              <ShoppingBag className="w-3.5 h-3.5 text-[#262626]" />
-            </div>
-            <span className="text-sm font-semibold text-[#262626]">הוסף לסל</span>
+            <motion.div 
+              className="w-6 h-6 rounded-full bg-[#F7BF00] flex items-center justify-center"
+              animate={showAddedAnimation ? { 
+                scale: [1, 1.3, 1],
+                rotate: [0, 10, -10, 0]
+              } : {}}
+              transition={{ duration: 0.5 }}
+            >
+              <AnimatePresence mode="wait">
+                {showAddedAnimation ? (
+                  <motion.div
+                    key="check"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Check className="w-3.5 h-3.5 text-[#262626]" strokeWidth={3} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="bag"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 text-[#262626]" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+            <AnimatePresence mode="wait">
+              {showAddedAnimation ? (
+                <motion.span 
+                  key="added"
+                  className="text-sm font-semibold text-[#00C853]"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  נוסף לסל! ✓
+                </motion.span>
+              ) : (
+                <motion.span 
+                  key="add"
+                  className="text-sm font-semibold text-[#262626]"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  הוסף לסל
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
-          <span className="text-[#F7BF00] text-sm font-bold">{product.price} ←</span>
+          <motion.span 
+            className="text-[#F7BF00] text-sm font-bold"
+            animate={showAddedAnimation ? { scale: [1, 1.2, 1] } : {}}
+          >
+            {product.price} ←
+          </motion.span>
+          
+          {/* Success ripple effect */}
+          <AnimatePresence>
+            {showAddedAnimation && (
+              <motion.div
+                className="absolute inset-0 bg-[#F7BF00]/20"
+                initial={{ scale: 0, opacity: 1 }}
+                animate={{ scale: 3, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                style={{ borderRadius: "50%", transformOrigin: "center" }}
+              />
+            )}
+          </AnimatePresence>
         </motion.button>
       </div>
 
