@@ -802,7 +802,12 @@ const Insurance = () => {
           {/* Coverage Tab */}
           <TabsContent value="coverage" className="space-y-6">
             {/* Coverage Categories - Chayuta Bubbles Style */}
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5 }}
+            >
               <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
                 <Shield className="w-5 h-5 text-amber-500" />
                 אם אחד מהתרחישים הללו יקרה...
@@ -814,31 +819,53 @@ const Insurance = () => {
                 {coverageCategories.map((category, index) => (
                   <motion.div
                     key={index}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
+                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-30px" }}
+                    transition={{ 
+                      delay: index * 0.1,
+                      type: "spring",
+                      stiffness: 100,
+                      damping: 15
+                    }}
                   >
                     <Card className="p-4 border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full group">
-                      <div className={`w-14 h-14 bg-gradient-to-br ${category.gradient} rounded-2xl flex items-center justify-center mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <motion.div 
+                        className={`w-14 h-14 bg-gradient-to-br ${category.gradient} rounded-2xl flex items-center justify-center mb-3 shadow-lg`}
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
                         <category.icon className="w-7 h-7 text-white" />
-                      </div>
+                      </motion.div>
                       <h4 className="font-black text-gray-900 text-sm mb-1">{category.title}</h4>
                       <p className="text-xs text-gray-500 mb-3 leading-relaxed">{category.description}</p>
                       <div className="flex flex-wrap gap-1">
                         {category.items.slice(0, 3).map((item, idx) => (
-                          <span key={idx} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          <motion.span 
+                            key={idx} 
+                            className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.1 + idx * 0.05 + 0.3 }}
+                          >
                             {item}
-                          </span>
+                          </motion.span>
                         ))}
                       </div>
                     </Card>
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Medical Procedures - Instagram Grid Style */}
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5 }}
+            >
               <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
                 <Stethoscope className="w-5 h-5 text-emerald-500" />
                 מה מכוסה?
@@ -850,15 +877,24 @@ const Insurance = () => {
                 {medicalProcedures.map((proc, index) => (
                   <motion.div
                     key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + index * 0.05 }}
+                    initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, margin: "-30px" }}
+                    transition={{ 
+                      delay: index * 0.08,
+                      type: "spring",
+                      stiffness: 100
+                    }}
                   >
                     <Card className="p-3 border-0 shadow-md hover:shadow-lg transition-all duration-300 group">
                       <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 bg-gradient-to-br ${proc.gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                        <motion.div 
+                          className={`w-10 h-10 bg-gradient-to-br ${proc.gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-md`}
+                          whileHover={{ scale: 1.15, rotate: -5 }}
+                          transition={{ type: "spring", stiffness: 400 }}
+                        >
                           <proc.icon className="w-5 h-5 text-white" />
-                        </div>
+                        </motion.div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-gray-900 text-xs mb-0.5">{proc.title}</h4>
                           <p className="text-[10px] text-gray-500 leading-tight">{proc.desc}</p>
@@ -868,10 +904,15 @@ const Insurance = () => {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Special Add-ons - Chayuta Style */}
-            <div>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5 }}
+            >
               <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-violet-500" />
                 תוספות מיוחדות
@@ -883,29 +924,54 @@ const Insurance = () => {
                 {specialAddons.map((addon, index) => (
                   <motion.div
                     key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + index * 0.08 }}
+                    initial={{ opacity: 0, x: -50, scale: 0.95 }}
+                    whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                    viewport={{ once: true, margin: "-20px" }}
+                    transition={{ 
+                      delay: index * 0.1,
+                      type: "spring",
+                      stiffness: 80,
+                      damping: 15
+                    }}
                   >
                     <Card className="p-4 border-0 shadow-md hover:shadow-lg transition-all duration-300 group overflow-hidden relative">
-                      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${addon.gradient} opacity-10 rounded-full blur-2xl transform translate-x-8 -translate-y-8`} />
+                      <motion.div 
+                        className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${addon.gradient} opacity-10 rounded-full blur-2xl`}
+                        animate={{ 
+                          x: [8, 16, 8],
+                          y: [-8, -16, -8],
+                        }}
+                        transition={{ 
+                          duration: 4,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
                       <div className="flex items-center gap-4 relative z-10">
-                        <div className={`w-12 h-12 bg-gradient-to-br ${addon.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        <motion.div 
+                          className={`w-12 h-12 bg-gradient-to-br ${addon.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg`}
+                          whileHover={{ scale: 1.1, rotate: 10 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        >
                           <addon.icon className="w-6 h-6 text-white" />
-                        </div>
+                        </motion.div>
                         <div className="flex-1">
                           <h4 className="font-bold text-gray-900 text-sm mb-0.5">{addon.title}</h4>
                           <p className="text-xs text-gray-500 leading-relaxed">{addon.description}</p>
                         </div>
-                        <div className={`bg-gradient-to-br ${addon.gradient} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md`}>
+                        <motion.div 
+                          className={`bg-gradient-to-br ${addon.gradient} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md`}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
                           {addon.amount}
-                        </div>
+                        </motion.div>
                       </div>
                     </Card>
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Exclusions */}
             <div>
