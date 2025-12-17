@@ -17,7 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, Search, Calendar, Ruler, MapPin, Syringe, Scissors, Info, X } from "lucide-react";
+import { Heart, Search, Calendar, Ruler, Syringe, Scissors, Info, X, Share2, Copy, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,6 +50,7 @@ const Adoption = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sizeFilter, setSizeFilter] = useState("all");
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -133,6 +134,42 @@ const Adoption = () => {
     }
     setShowPetDetails(false);
     setShowAdoptionForm(true);
+  };
+
+  const handleSharePet = async (pet: AdoptionPet) => {
+    const shareUrl = `${window.location.origin}/adoption?pet=${pet.id}`;
+    const shareText = `מכירים מישהו שמחפש חבר חדש? ${pet.name} מחכה לבית חם! 🐾`;
+    
+    // Try Web Share API first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${pet.name} מחפש בית`,
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // User cancelled or error - fall through to copy
+      }
+    }
+    
+    // Fallback to clipboard
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      setCopied(true);
+      toast({
+        title: "הקישור הועתק!",
+        description: "עכשיו אפשר לשתף עם חברים",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן להעתיק את הקישור",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmitAdoption = async (e: React.FormEvent) => {
@@ -464,14 +501,27 @@ const Adoption = () => {
                   </div>
                 )}
 
-                {/* Adopt Button */}
-                <Button
-                  onClick={handleProceedToAdopt}
-                  className="w-full h-11 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl text-sm font-bold shadow-lg"
-                >
-                  <Heart className="w-4 h-4 ml-2" fill="white" />
-                  אני רוצה לאמץ את {selectedPet.name}
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleProceedToAdopt}
+                    className="flex-1 h-11 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl text-sm font-bold shadow-lg"
+                  >
+                    <Heart className="w-4 h-4 ml-2" fill="white" />
+                    אמץ את {selectedPet.name}
+                  </Button>
+                  <Button
+                    onClick={() => handleSharePet(selectedPet)}
+                    variant="outline"
+                    className="h-11 w-11 rounded-xl border-gray-200 hover:bg-gray-50 flex-shrink-0"
+                  >
+                    {copied ? (
+                      <Check className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <Share2 className="w-5 h-5 text-gray-600" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </>
           )}
