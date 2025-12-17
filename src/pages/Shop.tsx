@@ -1,9 +1,9 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronDown, ChevronUp, ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X } from "lucide-react";
+import { ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -17,13 +17,16 @@ const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState("הכל");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedPetType, setSelectedPetType] = useState<"all" | "dog" | "cat">("all");
-  const [showCategories, setShowCategories] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<"none" | "price-low" | "price-high" | "popularity">("none");
   const [showDealsOnly, setShowDealsOnly] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"grid" | "saved">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [favorites, setFavorites] = useState<number[]>(() => {
     const saved = localStorage.getItem("petid-favorites");
     return saved ? JSON.parse(saved) : [];
@@ -142,8 +145,23 @@ const Shop = () => {
     },
   ];
 
+  // Search suggestions based on query
+  const searchSuggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return products.filter(p => 
+      p.name.toLowerCase().includes(query)
+    ).slice(0, 5);
+  }, [searchQuery]);
+
   const filteredAndSortedProducts = useMemo(() => {
     let result = [...products];
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p => p.name.toLowerCase().includes(query));
+    }
 
     if (showDealsOnly) {
       result = result.filter(p => p.originalPrice);
@@ -166,7 +184,19 @@ const Shop = () => {
     }
 
     return result;
-  }, [sortBy, showDealsOnly, activeTab, favorites]);
+  }, [sortBy, showDealsOnly, activeTab, favorites, searchQuery]);
+
+  const handleSearchSelect = useCallback((product: any) => {
+    setSearchQuery(product.name);
+    setShowSearchResults(false);
+    handleProductClick(product);
+  }, []);
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery("");
+    setShowSearchResults(false);
+    searchInputRef.current?.blur();
+  }, []);
 
   const handleProductClick = useCallback((product: any) => {
     setSelectedProduct(product);
@@ -209,11 +239,12 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-white pb-20" dir="rtl">
-      {/* Instagram-style Header */}
+      {/* Instagram-style Header with Search */}
       <div className="bg-white border-b border-[#DBDBDB] sticky top-0 z-50">
-        <div className="max-w-lg mx-auto px-4 h-[44px] flex items-center justify-between">
-          <h1 className="text-[22px] font-semibold text-[#262626]">חנות</h1>
-          <div className="flex items-center gap-4">
+        <div className="max-w-lg mx-auto px-4 py-2">
+          {/* Top Row: Title + Cart */}
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-[20px] font-semibold text-[#262626]">חנות</h1>
             <button 
               onClick={() => navigate('/cart')}
               className="relative"
@@ -225,6 +256,100 @@ const Shop = () => {
                 </span>
               )}
             </button>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <div className={`flex items-center gap-2 bg-[#FAFAFA] rounded-xl px-3 py-2.5 border transition-all ${
+              isSearchFocused ? 'border-[#262626]' : 'border-transparent'
+            }`}>
+              <Search className="w-4 h-4 text-[#8E8E8E]" strokeWidth={1.5} />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSearchResults(true);
+                }}
+                onFocus={() => {
+                  setIsSearchFocused(true);
+                  if (searchQuery) setShowSearchResults(true);
+                }}
+                onBlur={() => {
+                  setIsSearchFocused(false);
+                  // Delay hiding to allow click on suggestions
+                  setTimeout(() => setShowSearchResults(false), 200);
+                }}
+                placeholder="חיפוש מוצרים..."
+                className="flex-1 bg-transparent text-[14px] text-[#262626] placeholder:text-[#8E8E8E] outline-none"
+              />
+              {searchQuery && (
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={clearSearch}
+                  className="p-1"
+                >
+                  <X className="w-4 h-4 text-[#8E8E8E]" strokeWidth={1.5} />
+                </motion.button>
+              )}
+            </div>
+            
+            {/* Autocomplete Suggestions */}
+            <AnimatePresence>
+              {showSearchResults && searchSuggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-[#DBDBDB] shadow-lg overflow-hidden z-50"
+                >
+                  {searchSuggestions.map((product, index) => (
+                    <motion.button
+                      key={product.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => handleSearchSelect(product)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-[#FAFAFA] transition-colors text-right"
+                    >
+                      <div className="w-10 h-10 bg-[#FAFAFA] rounded-lg overflow-hidden flex-shrink-0">
+                        <OptimizedImage
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full"
+                          objectFit="cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-[#262626] truncate">{product.name}</p>
+                        <p className="text-[12px] text-[#8E8E8E]">₪{product.price}</p>
+                      </div>
+                      {product.originalPrice && (
+                        <span className="bg-[#ED4956] text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                          מבצע
+                        </span>
+                      )}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* No Results */}
+            <AnimatePresence>
+              {showSearchResults && searchQuery.trim() && searchSuggestions.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-[#DBDBDB] shadow-lg p-4 text-center z-50"
+                >
+                  <Search className="w-8 h-8 text-[#DBDBDB] mx-auto mb-2" strokeWidth={1} />
+                  <p className="text-[13px] text-[#8E8E8E]">לא נמצאו מוצרים עבור "{searchQuery}"</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
