@@ -489,9 +489,7 @@ const Feed = () => {
               <Menu className="w-6 h-6 text-[#262626] hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
             </button>
             {/* Logo with Instagram gradient */}
-            <h1 className="text-[24px] font-semibold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent" style={{
-            fontFamily: "'Billabong', cursive, -apple-system, BlinkMacSystemFont, sans-serif"
-          }} onClick={() => {
+            <h1 className="text-[24px] font-bold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent font-sans" onClick={() => {
             setPage(0);
             setHasMore(true);
             fetchPosts(0, false);
