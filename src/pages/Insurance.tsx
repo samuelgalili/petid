@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -143,6 +143,96 @@ const Insurance = () => {
     },
   ];
 
+  // Coverage Categories - Chayuta Style
+  const coverageCategories = [
+    {
+      icon: AlertCircle,
+      title: "תאונות ופציעות",
+      description: "נשיכות, קריעת רצועות, הכשת נחש, תאונות דרכים",
+      gradient: "from-rose-400 to-red-500",
+      items: ["נשיכות וקרעים", "שברים ונקעים", "הכשות נחשים", "תאונות דרכים", "פציעות ספורט"],
+    },
+    {
+      icon: Activity,
+      title: "מחלות",
+      description: "בדיקות, ביופסיה, הדמיות - מאבחון עד החלמה",
+      gradient: "from-blue-400 to-indigo-500",
+      items: ["זיהומים בקטריאליים", "מחלות ויראליות", "דלקות", "הרעלות", "מחלות פנימיות"],
+    },
+    {
+      icon: Heart,
+      title: "מצבים כרוניים",
+      description: "אלרגיות, סוכרת, כשל כלייתי, מצבי לב",
+      gradient: "from-purple-400 to-violet-500",
+      items: ["אלרגיות ואטופיה", "סוכרת", "כשל כלייתי", "מחלות לב", "אפילפסיה"],
+    },
+    {
+      icon: Star,
+      title: "מצבים גנטיים",
+      description: "מחלות אופייניות לגזע ומצבים תורשתיים",
+      gradient: "from-amber-400 to-orange-500",
+      items: ["דיספלזיה", "מחלות עיניים תורשתיות", "בעיות עמוד שדרה", "מחלות לב גנטיות"],
+    },
+  ];
+
+  // Medical Procedures Covered - Chayuta Style
+  const medicalProcedures = [
+    { icon: Activity, title: "בדיקות דם", desc: "פאנל דם מלא, נוגדנים, תפקודי כבד וכליות", gradient: "from-red-400 to-rose-500" },
+    { icon: Stethoscope, title: "בדיקות מעבדה", desc: "תרביות, פתולוגיה, בדיקות גללים", gradient: "from-emerald-400 to-teal-500" },
+    { icon: TrendingUp, title: "בדיקות הדמיה", desc: "MRI, CT, אולטרסאונד, צילומי רנטגן", gradient: "from-blue-400 to-indigo-500" },
+    { icon: Syringe, title: "ניתוחים", desc: "אבנים בכליות, היפוך קיבה, ניתוחי חירום", gradient: "from-violet-400 to-purple-500" },
+    { icon: Building2, title: "אשפוזים", desc: "ימי אשפוז כולל עירויים ותרופות", gradient: "from-pink-400 to-rose-500" },
+    { icon: Users, title: "רפואה מתמחה", desc: "מומחים בקרדיולוגיה, נוירולוגיה, אורתופדיה", gradient: "from-cyan-400 to-sky-500" },
+    { icon: Sparkles, title: "טיפולי סרטן", desc: "כימותרפיה והליכים חדשניים", gradient: "from-fuchsia-400 to-pink-500" },
+    { icon: Pill, title: "תרופות במרשם", desc: "כל התרופות שנרשמו ע״י וטרינר", gradient: "from-orange-400 to-amber-500" },
+  ];
+
+  // Special Add-ons - Chayuta Style
+  const specialAddons = [
+    {
+      icon: Home,
+      title: "קצבה בפנסיון",
+      description: "עד ₪420 כיסוי הוצאות פנסיון כשהבעלים מאושפז או נולד ילד חדש",
+      gradient: "from-emerald-400 to-teal-500",
+      amount: "₪420",
+    },
+    {
+      icon: MapPin,
+      title: "ביקורי בית",
+      description: "ביקור וטרינר בבית לחיות קשישות או עם חרדה מנסיעות",
+      gradient: "from-blue-400 to-indigo-500",
+      amount: "כלול",
+    },
+    {
+      icon: TrendingUp,
+      title: "כיסוי בחו״ל",
+      description: "כיסוי טיפולים וטרינריים בחו״ל עד 4,000 ש״ח בשנה",
+      gradient: "from-violet-400 to-purple-500",
+      amount: "₪4,000",
+    },
+    {
+      icon: Heart,
+      title: "טיפול התנהגותי",
+      description: "מימון טיפולים התנהגותיים לבעיות חרדה ואגרסיביות",
+      gradient: "from-pink-400 to-rose-500",
+      amount: "כלול",
+    },
+    {
+      icon: Pill,
+      title: "מזון רפואי",
+      description: "עד 14 יום מזון רפואי במרשם לאחר טיפול",
+      gradient: "from-amber-400 to-orange-500",
+      amount: "14 יום",
+    },
+    {
+      icon: Activity,
+      title: "טיפולי שיניים",
+      description: "כיסוי טיפולי שיניים כתוצאה מתאונה בלבד",
+      gradient: "from-cyan-400 to-sky-500",
+      amount: "מתאונה",
+    },
+  ];
+
   const additionalCoverages = [
     {
       icon: Home,
@@ -163,7 +253,7 @@ const Insurance = () => {
   const keyBenefits = [
     { icon: ShieldCheck, title: "כיסוי מקיף", desc: "מחלות ותאונות", gradient: "from-amber-400 to-orange-500" },
     { icon: Clock, title: "תקופת אכשרה", desc: "45 יום", gradient: "from-blue-400 to-indigo-500" },
-    { icon: MapPin, title: "כיסוי ארצי", desc: "כל הארץ", gradient: "from-emerald-400 to-teal-500" },
+    { icon: Award, title: "תקרה שנתית", desc: "₪30,000", gradient: "from-emerald-400 to-teal-500" },
     { icon: Calendar, title: "תקופת ביטוח", desc: "עד 5 שנים", gradient: "from-pink-400 to-rose-500" },
   ];
 
@@ -711,37 +801,104 @@ const Insurance = () => {
 
           {/* Coverage Tab */}
           <TabsContent value="coverage" className="space-y-6">
-            {/* What's Covered */}
+            {/* Coverage Categories - Chayuta Bubbles Style */}
             <div>
-              <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
-                <Check className="w-5 h-5 text-emerald-500" />
+              <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-amber-500" />
+                אם אחד מהתרחישים הללו יקרה...
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                כיסוי מלא מזנב ועד ראש 🐾
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {coverageCategories.map((category, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="p-4 border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full group">
+                      <div className={`w-14 h-14 bg-gradient-to-br ${category.gradient} rounded-2xl flex items-center justify-center mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        <category.icon className="w-7 h-7 text-white" />
+                      </div>
+                      <h4 className="font-black text-gray-900 text-sm mb-1">{category.title}</h4>
+                      <p className="text-xs text-gray-500 mb-3 leading-relaxed">{category.description}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {category.items.slice(0, 3).map((item, idx) => (
+                          <span key={idx} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Medical Procedures - Instagram Grid Style */}
+            <div>
+              <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+                <Stethoscope className="w-5 h-5 text-emerald-500" />
                 מה מכוסה?
               </h2>
-              <div className="space-y-3">
-                {[
-                  { icon: Stethoscope, title: "בדיקות ואבחון", desc: "בדיקות פיזיות, דיאגנוסטיות ומעבדה", gradient: "from-blue-400 to-indigo-500" },
-                  { icon: Syringe, title: "הליכים רפואיים", desc: "ניתוחים והליכים כירורגיים", gradient: "from-emerald-400 to-teal-500" },
-                  { icon: Pill, title: "תרופות", desc: "תרופות במרשם רופא וטרינר", gradient: "from-violet-400 to-purple-500" },
-                  { icon: Activity, title: "פיזיותרפיה", desc: "עד 4 טיפולים בשנה", gradient: "from-orange-400 to-rose-500" },
-                  { icon: Building2, title: "אשפוז", desc: "אשפוז בבית חולים וטרינרי", gradient: "from-pink-400 to-rose-500" },
-                ].map((item, index) => (
+              <p className="text-sm text-gray-500 mb-4">
+                הביטוח ישלם את החשבונות הווטרינריים שלכם
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {medicalProcedures.map((proc, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: 0.2 + index * 0.05 }}
                   >
-                    <Card className="p-4 border-0 shadow-md hover:shadow-lg transition-all duration-300">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 bg-gradient-to-br ${item.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
-                          <item.icon className="w-6 h-6 text-white" />
+                    <Card className="p-3 border-0 shadow-md hover:shadow-lg transition-all duration-300 group">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 bg-gradient-to-br ${proc.gradient} rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                          <proc.icon className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-gray-900 text-xs mb-0.5">{proc.title}</h4>
+                          <p className="text-[10px] text-gray-500 leading-tight">{proc.desc}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Special Add-ons - Chayuta Style */}
+            <div>
+              <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-violet-500" />
+                תוספות מיוחדות
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                הטבות נוספות שרק אצלנו
+              </p>
+              <div className="space-y-3">
+                {specialAddons.map((addon, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + index * 0.08 }}
+                  >
+                    <Card className="p-4 border-0 shadow-md hover:shadow-lg transition-all duration-300 group overflow-hidden relative">
+                      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${addon.gradient} opacity-10 rounded-full blur-2xl transform translate-x-8 -translate-y-8`} />
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className={`w-12 h-12 bg-gradient-to-br ${addon.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                          <addon.icon className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-bold text-gray-900">{item.title}</h4>
-                          <p className="text-xs text-gray-500">{item.desc}</p>
+                          <h4 className="font-bold text-gray-900 text-sm mb-0.5">{addon.title}</h4>
+                          <p className="text-xs text-gray-500 leading-relaxed">{addon.description}</p>
                         </div>
-                        <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                          <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} />
+                        <div className={`bg-gradient-to-br ${addon.gradient} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md`}>
+                          {addon.amount}
                         </div>
                       </div>
                     </Card>
@@ -782,6 +939,81 @@ const Insurance = () => {
                   </AccordionItem>
                 ))}
               </Accordion>
+            </div>
+
+            {/* Comparison Table - Chayuta Style */}
+            <div>
+              <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-500" />
+                טבלת השוואת מסלולים
+              </h2>
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <div className="grid grid-cols-3 gap-0">
+                  {/* Header */}
+                  <div className="bg-gray-50 p-3 border-b border-gray-100">
+                    <span className="text-xs font-bold text-gray-500">כיסויים</span>
+                  </div>
+                  <div className="bg-gradient-to-r from-amber-400 to-orange-400 p-3 border-b border-amber-300 text-center">
+                    <span className="text-xs font-black text-white">מסלול 1</span>
+                    <div className="text-[10px] text-white/80">תאונות + מחלות</div>
+                  </div>
+                  <div className="bg-gradient-to-r from-blue-400 to-indigo-400 p-3 border-b border-blue-300 text-center">
+                    <span className="text-xs font-black text-white">מסלול 2</span>
+                    <div className="text-[10px] text-white/80">תאונות בלבד</div>
+                  </div>
+
+                  {/* Rows */}
+                  {[
+                    { feature: "תאונות ופציעות", plan1: true, plan2: true },
+                    { feature: "מחלות", plan1: true, plan2: false },
+                    { feature: "מצבים כרוניים", plan1: true, plan2: false },
+                    { feature: "מצבים גנטיים", plan1: true, plan2: false },
+                    { feature: "ניתוחים", plan1: true, plan2: true },
+                    { feature: "אשפוזים", plan1: true, plan2: true },
+                    { feature: "בדיקות הדמיה", plan1: true, plan2: true },
+                    { feature: "תרופות במרשם", plan1: true, plan2: true },
+                    { feature: "פיזיותרפיה", plan1: true, plan2: true },
+                    { feature: "תקרה שנתית", plan1: "₪30,000", plan2: "₪30,000" },
+                    { feature: "השתתפות עצמית", plan1: "₪250-500", plan2: "₪250-500" },
+                  ].map((row, idx) => (
+                    <React.Fragment key={idx}>
+                      <div className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                        <span className="text-xs font-medium text-gray-700">{row.feature}</span>
+                      </div>
+                      <div className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} flex items-center justify-center`}>
+                        {typeof row.plan1 === 'boolean' ? (
+                          row.plan1 ? (
+                            <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                              <X className="w-4 h-4 text-gray-400" strokeWidth={3} />
+                            </div>
+                          )
+                        ) : (
+                          <span className="text-xs font-bold text-amber-600">{row.plan1}</span>
+                        )}
+                      </div>
+                      <div className={`p-3 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} flex items-center justify-center`}>
+                        {typeof row.plan2 === 'boolean' ? (
+                          row.plan2 ? (
+                            <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                              <X className="w-4 h-4 text-gray-400" strokeWidth={3} />
+                            </div>
+                          )
+                        ) : (
+                          <span className="text-xs font-bold text-blue-600">{row.plan2}</span>
+                        )}
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </Card>
             </div>
 
             {/* Important Notes */}
