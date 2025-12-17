@@ -165,13 +165,18 @@ const BottomNav = () => {
       {/* Bottom Navigation */}
       <nav 
         className={cn(
-          "fixed bottom-0 left-0 right-0 border-t z-50 h-16",
-          isSocialPage ? "bg-secondary border-border" : "bg-surface border-border"
+          "fixed bottom-0 left-0 right-0 z-50",
+          "bg-white/95 backdrop-blur-xl",
+          "border-t border-border/50",
+          "shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
         )}
         role="navigation"
         aria-label={isSocialPage ? "ניווט רשת חברתית" : ARIA_LABELS.navigation}
       >
-        <div className="flex justify-around items-center h-full max-w-md mx-auto px-2">
+        {/* Active indicator bar */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        
+        <div className="flex justify-around items-center h-16 max-w-md mx-auto px-1">
           {navItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = !item.isButton && location.pathname === item.path;
@@ -179,61 +184,69 @@ const BottomNav = () => {
             const itemWidth = "w-[20%]";
             
             const content = (
-              <>
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={buttonTap}
-                  transition={{ duration: ANIMATION_DURATION.fast }}
-                  className="relative"
-                >
-                  <Icon 
-                    className={cn(
-                      "w-[22px] h-[22px] transition-colors",
-                      isSocialPage 
-                        ? isActive ? "text-primary" : "text-secondary-foreground/80"
-                        : isActive ? "text-primary" : "text-foreground"
-                    )} 
-                    strokeWidth={1.5}
+              <motion.div 
+                className="flex flex-col items-center justify-center relative"
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                {/* Active background pill */}
+                {isActive && (
+                  <motion.div
+                    layoutId={isSocialPage ? "activeSocialBg" : "activeNavBg"}
+                    className="absolute inset-0 -top-1 -bottom-1 rounded-2xl bg-primary/10"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
+                )}
+                
+                <div className="relative z-10">
+                  <motion.div
+                    initial={false}
+                    animate={isActive ? { y: -2 } : { y: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <Icon 
+                      className={cn(
+                        "w-6 h-6 transition-all duration-200",
+                        isActive 
+                          ? "text-primary" 
+                          : "text-muted-foreground hover:text-foreground"
+                      )} 
+                      strokeWidth={isActive ? 2 : 1.5}
+                      fill={isActive ? "currentColor" : "none"}
+                      style={{ fillOpacity: isActive ? 0.15 : 0 }}
+                    />
+                  </motion.div>
+                  
                   {/* Badge for unread count */}
                   {item.badge && item.badge > 0 && (
                     <motion.span 
                       className={cn(
-                        "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full flex items-center justify-center",
-                        isPulsing && item.path === '/notifications' && "animate-pulse"
+                        "absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1",
+                        "bg-accent text-white text-[10px] font-bold",
+                        "rounded-full flex items-center justify-center",
+                        "shadow-lg shadow-accent/30",
+                        isPulsing && item.path === '/notifications' && "animate-bounce"
                       )}
-                      initial={false}
-                      animate={isPulsing && item.path === '/notifications' ? {
-                        scale: [1, 1.3, 1],
-                        boxShadow: [
-                          "0 0 0 0 rgba(200, 16, 46, 0)",
-                          "0 0 0 8px rgba(200, 16, 46, 0.3)",
-                          "0 0 0 0 rgba(200, 16, 46, 0)"
-                        ]
-                      } : {}}
-                      transition={{ duration: 0.6, repeat: isPulsing ? 2 : 0 }}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 15 }}
                     >
                       {item.badge > 99 ? '99+' : item.badge}
                     </motion.span>
                   )}
-                  {isActive && (
-                    <motion.div
-                      layoutId={isSocialPage ? "activeSocialNavDot" : "activeNavDot"}
-                      className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                </motion.div>
+                </div>
                 
-                <span className={cn(
-                  "text-[10px] font-medium font-jakarta transition-colors text-center leading-tight mt-1",
-                  isSocialPage
-                    ? isActive ? "text-primary" : "text-secondary-foreground/80"
-                    : isActive ? "text-primary" : "text-foreground"
-                )}>
+                <motion.span 
+                  className={cn(
+                    "text-[10px] font-semibold font-jakarta text-center leading-tight mt-1 relative z-10",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                  initial={false}
+                  animate={isActive ? { fontWeight: 700 } : { fontWeight: 600 }}
+                >
                   {item.label}
-                </span>
-              </>
+                </motion.span>
+              </motion.div>
             );
 
             if (item.isButton) {
@@ -241,7 +254,13 @@ const BottomNav = () => {
                 <button
                   key={key}
                   onClick={item.onClick}
-                  className={cn("flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg py-2", itemWidth)}
+                  className={cn(
+                    "flex flex-col items-center justify-center",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                    "rounded-2xl py-2 px-3",
+                    "active:bg-muted/50 transition-colors",
+                    itemWidth
+                  )}
                   style={{ minHeight: TAP_TARGET.comfortable }}
                   aria-label={item.label}
                 >
@@ -254,7 +273,13 @@ const BottomNav = () => {
               <Link
                 key={key}
                 to={item.path!}
-                className={cn("flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg py-2", itemWidth)}
+                className={cn(
+                  "flex flex-col items-center justify-center",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                  "rounded-2xl py-2 px-3",
+                  "active:bg-muted/50 transition-colors",
+                  itemWidth
+                )}
                 style={{ minHeight: TAP_TARGET.comfortable }}
                 {...getAccessibleLinkProps(item.label)}
               >
@@ -263,34 +288,50 @@ const BottomNav = () => {
             );
           })}
         </div>
+        
+        {/* Safe area for notched devices */}
+        <div className="h-[env(safe-area-inset-bottom)] bg-white/95" />
       </nav>
 
       {/* More Options Sheet */}
       {!isSocialPage && (
         <Sheet open={isMoreSheetOpen} onOpenChange={setIsMoreSheetOpen}>
-          <SheetContent side="bottom" className="h-[60vh] rounded-t-[22px] bg-surface border-border">
-            <SheetHeader className="mb-6">
-              <SheetTitle className="text-center text-lg font-semibold text-foreground">
+          <SheetContent side="bottom" className="h-[65vh] rounded-t-3xl bg-white border-0 shadow-2xl">
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 rounded-full bg-muted" />
+            
+            <SheetHeader className="mb-6 pt-4">
+              <SheetTitle className="text-center text-lg font-bold text-foreground">
                 כל הקטגוריות
               </SheetTitle>
             </SheetHeader>
-            <div className="grid grid-cols-3 gap-6 px-2">
-              {moreCategories.map((category) => {
+            
+            <div className="grid grid-cols-3 gap-4 px-2 pb-8">
+              {moreCategories.map((category, i) => {
                 const CategoryIcon = category.icon;
                 return (
-                  <Link
+                  <motion.div
                     key={category.path}
-                    to={category.path}
-                    onClick={() => setIsMoreSheetOpen(false)}
-                    className="flex flex-col items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors group"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/20 transition-colors">
-                      <CategoryIcon className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-xs font-medium text-center text-foreground leading-tight">
-                      {category.label}
-                    </span>
-                  </Link>
+                    <Link
+                      to={category.path}
+                      onClick={() => setIsMoreSheetOpen(false)}
+                      className="flex flex-col items-center gap-2.5 p-4 rounded-2xl hover:bg-muted/50 active:bg-muted transition-all group"
+                    >
+                      <motion.div 
+                        className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center shadow-sm"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <CategoryIcon className="w-6 h-6 text-primary" strokeWidth={1.5} />
+                      </motion.div>
+                      <span className="text-xs font-semibold text-center text-foreground leading-tight">
+                        {category.label}
+                      </span>
+                    </Link>
+                  </motion.div>
                 );
               })}
             </div>
