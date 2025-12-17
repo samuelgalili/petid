@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import * as React from "react";
 
 export interface CartItem {
   id: string;
@@ -20,19 +20,33 @@ interface CartContextType {
   getSubtotal: () => number;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = React.createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    const savedCart = localStorage.getItem("petid-cart");
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = React.useState<CartItem[]>([]);
+  const [isInitialized, setIsInitialized] = React.useState(false);
 
-  useEffect(() => {
-    localStorage.setItem("petid-cart", JSON.stringify(items));
-  }, [items]);
+  // Load cart from localStorage on mount
+  React.useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem("petid-cart");
+      if (savedCart) {
+        setItems(JSON.parse(savedCart));
+      }
+    } catch (error) {
+      console.error("Failed to load cart from localStorage:", error);
+    }
+    setIsInitialized(true);
+  }, []);
 
-  const addToCart = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+  // Save cart to localStorage when items change
+  React.useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem("petid-cart", JSON.stringify(items));
+    }
+  }, [items, isInitialized]);
+
+  const addToCart = React.useCallback((item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find(
         (i) => i.id === item.id && i.variant === item.variant && i.size === item.size
@@ -48,15 +62,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       return [...prevItems, { ...item, quantity: item.quantity || 1 }];
     });
-  };
+  }, []);
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = React.useCallback((id: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = React.useCallback((id: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(id);
+      setItems((prevItems) => prevItems.filter((item) => item.id !== id));
       return;
     }
 
@@ -65,41 +79,41 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         item.id === id ? { ...item, quantity } : item
       )
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = React.useCallback(() => {
     setItems([]);
-  };
+  }, []);
 
-  const getTotalItems = () => {
+  const getTotalItems = React.useCallback(() => {
     return items.reduce((total, item) => total + item.quantity, 0);
-  };
+  }, [items]);
 
-  const getSubtotal = () => {
+  const getSubtotal = React.useCallback(() => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
+  }, [items]);
+
+  const value = React.useMemo(() => ({
+    items,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    getTotalItems,
+    getSubtotal,
+  }), [items, addToCart, removeFromCart, updateQuantity, clearCart, getTotalItems, getSubtotal]);
 
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        getTotalItems,
-        getSubtotal,
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );
-};
+}
 
-export const useCart = () => {
-  const context = useContext(CartContext);
+export function useCart() {
+  const context = React.useContext(CartContext);
   if (!context) {
     throw new Error("useCart must be used within a CartProvider");
   }
   return context;
-};
+}
