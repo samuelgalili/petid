@@ -21,15 +21,26 @@ export const StoriesBar = () => {
   const [storyUsers, setStoryUsers] = useState<StoryUser[]>([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string; full_name: string } | null>(null);
 
   useEffect(() => {
     fetchStories();
-  }, []);
+    if (user) fetchCurrentUserProfile();
+  }, [user]);
+
+  const fetchCurrentUserProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_url, full_name")
+      .eq("id", user.id)
+      .single();
+    if (data) setCurrentUserProfile(data);
+  };
 
   const fetchStories = async () => {
     setLoading(true);
 
-    // Get all active stories (not expired)
     const { data: storiesData } = await supabase
       .from("stories")
       .select("user_id, id")
@@ -37,23 +48,19 @@ export const StoriesBar = () => {
       .order("created_at", { ascending: false });
 
     if (storiesData && storiesData.length > 0) {
-      // Group stories by user
       const userStoriesMap = new Map<string, number>();
       storiesData.forEach((story) => {
         userStoriesMap.set(story.user_id, (userStoriesMap.get(story.user_id) || 0) + 1);
       });
 
-      // Get unique user IDs
       const userIds = Array.from(userStoriesMap.keys());
 
-      // Fetch user profiles
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url")
         .in("id", userIds);
 
       if (profiles) {
-        // Check which stories current user has viewed
         const { data: viewedData } = user
           ? await supabase
               .from("story_views")
@@ -66,15 +73,14 @@ export const StoriesBar = () => {
 
         const users: StoryUser[] = profiles.map((profile) => ({
           user_id: profile.id,
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
+          full_name: profile.full_name || "משתמש",
+          avatar_url: profile.avatar_url || "",
           story_count: userStoriesMap.get(profile.id) || 0,
           has_viewed: storiesData
             .filter(s => s.user_id === profile.id)
             .every(s => viewedStoryIds.has(s.id)),
         }));
 
-        // Sort: own stories first, then unviewed, then viewed
         users.sort((a, b) => {
           if (a.user_id === user?.id) return -1;
           if (b.user_id === user?.id) return 1;
@@ -92,14 +98,17 @@ export const StoriesBar = () => {
     setLoading(false);
   };
 
+  // Check if current user has active stories
+  const currentUserHasStory = storyUsers.some(u => u.user_id === user?.id);
+
   if (loading) {
     return (
-      <div className="px-4 py-4 bg-white">
+      <div className="px-3 py-2 bg-white">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF] animate-pulse opacity-30" />
-              <div className="w-12 h-3 bg-gray-200 rounded-full animate-pulse" />
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <div className="w-[62px] h-[62px] rounded-full bg-gray-200 animate-pulse" />
+              <div className="w-10 h-2.5 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
         </div>
@@ -109,79 +118,80 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-4 py-4 bg-white">
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1">
-          {/* Add Story Button */}
+      <div className="px-2 py-2 bg-white">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar">
+          {/* Your Story - Always first */}
           {user && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.05 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
-              onClick={() => setCreateDialogOpen(true)}
+              className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer w-[76px]"
+              onClick={() => currentUserHasStory ? navigate(`/story/${user.id}`) : setCreateDialogOpen(true)}
             >
               <div className="relative">
-                <div className="w-[72px] h-[72px] rounded-full bg-gray-100 p-[3px]">
-                  <Avatar className="w-full h-full ring-2 ring-white">
-                    <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold text-lg">
-                      {user.user_metadata?.full_name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
+                  currentUserHasStory 
+                    ? "bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]"
+                    : ""
+                }`}>
+                  <div className="w-full h-full rounded-full bg-white p-[2px]">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={currentUserProfile?.avatar_url} />
+                      <AvatarFallback className="bg-gray-100 text-gray-600 text-lg">
+                        {currentUserProfile?.full_name?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-[#0095F6] rounded-full flex items-center justify-center border-2 border-white">
-                  <Plus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-                </div>
+                {!currentUserHasStory && (
+                  <div className="absolute bottom-0 right-0 w-[22px] h-[22px] bg-[#0095F6] rounded-full flex items-center justify-center border-[2px] border-white">
+                    <Plus className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                  </div>
+                )}
               </div>
-              <span className="text-[11px] font-jakarta font-medium text-[#262626]">הסטורי שלי</span>
+              <span className="text-[11px] text-[#262626] max-w-[64px] truncate text-center">
+                הסטורי שלך
+              </span>
             </motion.div>
           )}
 
-          {/* Stories from other users */}
-          {storyUsers.map((storyUser, index) => (
-            <motion.div
-              key={storyUser.user_id}
-              initial={{ opacity: 0, scale: 0.8, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 20 }}
-              className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
-              onClick={() => navigate(`/story/${storyUser.user_id}`)}
-            >
-              <div className="relative">
-                <div 
-                  className={`w-[72px] h-[72px] rounded-full ${
-                    storyUser.has_viewed 
-                      ? 'story-ring story-ring-viewed' 
-                      : 'story-ring'
-                  }`}
-                >
-                  <Avatar className="w-full h-full ring-[3px] ring-white">
-                    <AvatarImage src={storyUser.avatar_url} />
-                    <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold text-lg">
-                      {storyUser.full_name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+          {/* Other users' stories */}
+          {storyUsers
+            .filter(u => u.user_id !== user?.id)
+            .map((storyUser, index) => (
+              <motion.div
+                key={storyUser.user_id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.03 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer w-[76px]"
+                onClick={() => navigate(`/story/${storyUser.user_id}`)}
+              >
+                <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
+                  storyUser.has_viewed 
+                    ? "bg-gray-300" 
+                    : "bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]"
+                }`}>
+                  <div className="w-full h-full rounded-full bg-white p-[2px]">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={storyUser.avatar_url} />
+                      <AvatarFallback className="bg-gray-100 text-gray-600 text-lg">
+                        {storyUser.full_name?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                 </div>
-                {/* Sparkle effect for unwatched stories */}
-                {!storyUser.has_viewed && (
-                  <>
-                    <div className="story-sparkle" />
-                    <div className="story-sparkle story-sparkle-2" />
-                  </>
-                )}
-              </div>
-              <span className="text-[11px] font-jakarta font-medium text-[#262626] max-w-[72px] truncate text-center">
-                {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}
-              </span>
-            </motion.div>
-          ))}
+                <span className="text-[11px] text-[#262626] max-w-[64px] truncate text-center">
+                  {storyUser.full_name}
+                </span>
+              </motion.div>
+            ))}
 
           {storyUsers.length === 0 && !user && (
             <div className="text-center py-4 w-full">
-              <p className="text-gray-400 font-jakarta text-sm">אין סטוריז פעילים 📸</p>
+              <p className="text-gray-400 text-xs">התחבר כדי לראות סטוריז</p>
             </div>
           )}
         </div>
