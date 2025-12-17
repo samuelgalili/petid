@@ -46,6 +46,63 @@ const getDocumentTypeConfig = (type: string) => {
   }
 };
 
+// Animation variants
+const cardVariants = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { 
+      duration: 0.5, 
+      ease: "easeOut" as const,
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const headerVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.4 } }
+};
+
+const documentVariants = {
+  hidden: { opacity: 0, scale: 0.8, rotate: -10 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    rotate: -3,
+    transition: { 
+      type: "spring" as const, 
+      stiffness: 200, 
+      damping: 20,
+      delay: 0.2
+    }
+  }
+};
+
+const ctaVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, delay: 0.3 } }
+};
+
+const actionsVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1, 
+    transition: { 
+      duration: 0.3,
+      delay: 0.4,
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const actionButtonVariants = {
+  hidden: { opacity: 0, scale: 0 },
+  visible: { opacity: 1, scale: 1 }
+};
+
 export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
   const navigate = useNavigate();
   const docConfig = getDocumentTypeConfig(document.document_type);
@@ -60,33 +117,63 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-card border-b border-border"
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-50px" }}
+      className="bg-card border-b border-border overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <motion.div 
+        variants={headerVariants}
+        className="flex items-center justify-between px-4 py-3"
+      >
         <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-              {user.name?.charAt(0) || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+          >
+            <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                {user.name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </motion.div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-foreground">{user.name}</span>
             <span className="text-xs text-muted-foreground">העלה מסמך חדש</span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Document Visual */}
-      <div className={`relative aspect-square bg-gradient-to-br ${docConfig.gradient}`}>
+      <motion.div 
+        className={`relative aspect-square bg-gradient-to-br ${docConfig.gradient}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         {/* Decorative Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-8 left-8 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-          <div className="absolute bottom-20 right-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-        </div>
+        <motion.div 
+          className="absolute inset-0 overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <motion.div 
+            className="absolute top-8 left-8 w-24 h-24 bg-white/10 rounded-full blur-2xl"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute bottom-20 right-8 w-32 h-32 bg-white/10 rounded-full blur-3xl"
+            animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          />
+        </motion.div>
         
         {/* Document Preview Background - Clickable */}
         <motion.div 
@@ -95,31 +182,55 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
           whileTap={{ scale: 0.98 }}
         >
           <motion.div 
-            className="bg-white rounded-2xl shadow-2xl p-6 w-[75%] max-w-[280px] transform rotate-[-3deg]"
-            whileHover={{ rotate: 0, scale: 1.02 }}
+            variants={documentVariants}
+            initial="hidden"
+            animate="visible"
+            className="bg-white rounded-2xl shadow-2xl p-6 w-[75%] max-w-[280px]"
+            whileHover={{ rotate: 0, scale: 1.02, y: -5 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             {/* Document Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-14 h-14 ${docConfig.bgIcon} rounded-xl flex items-center justify-center text-3xl shadow-sm`}>
+            <motion.div 
+              className="flex items-center gap-3 mb-4"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <motion.div 
+                className={`w-14 h-14 ${docConfig.bgIcon} rounded-xl flex items-center justify-center text-3xl shadow-sm`}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.5 }}
+              >
                 {docConfig.icon}
-              </div>
+              </motion.div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-800 line-clamp-1">{document.title}</p>
                 <p className="text-xs text-gray-500">{docConfig.label}</p>
               </div>
-            </div>
+            </motion.div>
             
-            {/* Document Body Lines */}
+            {/* Document Body Lines - Animated */}
             <div className="space-y-2 mb-4">
-              <div className="h-2.5 bg-gray-100 rounded-full w-full"></div>
-              <div className="h-2.5 bg-gray-100 rounded-full w-5/6"></div>
-              <div className="h-2.5 bg-gray-100 rounded-full w-4/6"></div>
-              <div className="h-2.5 bg-gray-100 rounded-full w-3/4"></div>
+              {[100, 83, 66, 75].map((width, index) => (
+                <motion.div 
+                  key={index}
+                  className="h-2.5 bg-gray-100 rounded-full"
+                  style={{ width: `${width}%` }}
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={{ scaleX: 1, opacity: 1 }}
+                  transition={{ delay: 0.5 + index * 0.1, duration: 0.3 }}
+                />
+              ))}
             </div>
             
             {/* Document Footer */}
-            <div className="pt-3 border-t border-gray-100">
+            <motion.div 
+              className="pt-3 border-t border-gray-100"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {document.pet_avatar && (
@@ -132,23 +243,34 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
                   <span className="text-xs font-medium text-gray-600">{document.pet_name}</span>
                 </div>
                 {document.file_url && (
-                  <div className="flex items-center gap-1 text-xs text-blue-500 font-medium">
+                  <motion.div 
+                    className="flex items-center gap-1 text-xs text-blue-500 font-medium"
+                    whileHover={{ scale: 1.05 }}
+                  >
                     <ExternalLink className="h-3.5 w-3.5" />
                     <span>פתח</span>
-                  </div>
+                  </motion.div>
                 )}
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </motion.div>
 
         {/* CTA Strip - Bottom of image */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-16 pb-4 px-4">
+        <motion.div 
+          variants={ctaVariants}
+          initial="hidden"
+          animate="visible"
+          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-16 pb-4 px-4"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-lg">
+              <motion.div 
+                className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-lg"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
                 {docConfig.icon}
-              </div>
+              </motion.div>
               <div>
                 <p className="text-white text-sm font-semibold line-clamp-1">
                   {document.title}
@@ -161,37 +283,53 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
             <motion.button
               onClick={handleOpenDocument}
               whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
               className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm font-medium hover:bg-white/30 transition-colors"
             >
               <ExternalLink className="h-4 w-4" strokeWidth={2} />
               <span>פתח</span>
             </motion.button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Actions */}
-      <div className="px-4 py-3">
+      <motion.div 
+        variants={actionsVariants}
+        initial="hidden"
+        animate="visible"
+        className="px-4 py-3"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <motion.button whileTap={{ scale: 0.9 }}>
-              <Heart className="h-6 w-6 text-foreground" strokeWidth={1.5} />
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.9 }}>
-              <MessageCircle className="h-6 w-6 text-foreground" strokeWidth={1.5} />
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.9 }}>
-              <Send className="h-6 w-6 text-foreground" strokeWidth={1.5} />
-            </motion.button>
+            {[Heart, MessageCircle, Send].map((Icon, index) => (
+              <motion.button 
+                key={index}
+                variants={actionButtonVariants}
+                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.1 }}
+              >
+                <Icon className="h-6 w-6 text-foreground" strokeWidth={1.5} />
+              </motion.button>
+            ))}
           </div>
-          <motion.button whileTap={{ scale: 0.9 }}>
+          <motion.button 
+            variants={actionButtonVariants}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1 }}
+          >
             <Bookmark className="h-6 w-6 text-foreground" strokeWidth={1.5} />
           </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Caption */}
-      <div className="px-4 pb-4">
+      <motion.div 
+        className="px-4 pb-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
         <p className="text-sm text-foreground">
           <span className="font-semibold">{user.name}</span>{" "}
           <span className="text-muted-foreground">
@@ -201,7 +339,7 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
         <p className="text-xs text-muted-foreground mt-1">
           {new Date(document.uploaded_at).toLocaleDateString("he-IL")}
         </p>
-      </div>
+      </motion.div>
     </motion.article>
   );
 }
