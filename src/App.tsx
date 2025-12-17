@@ -21,7 +21,7 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AddPet from "./pages/AddPet";
-import Home from "./pages/Home";
+
 import Install from "./pages/Install";
 const Feed = lazy(() => import("./pages/Feed"));
 const Explore = lazy(() => import("./pages/Explore"));
