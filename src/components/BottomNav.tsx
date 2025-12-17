@@ -238,29 +238,51 @@ const BottomNav = () => {
           <SheetDescription className="sr-only">בחר קטגוריה לניווט</SheetDescription>
           <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-2 mb-6" />
           
-          <div className="grid grid-cols-4 gap-3 px-4 pb-8">
+          <motion.div 
+            className="grid grid-cols-4 gap-3 px-4 pb-8"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.05
+                }
+              }
+            }}
+          >
             {categories.map((category) => {
               const CategoryIcon = category.icon;
               return (
-                <Link
+                <motion.div
                   key={category.path}
-                  to={category.path}
-                  onClick={() => setCategoriesOpen(false)}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-muted transition-colors"
+                  variants={{
+                    hidden: { opacity: 0, y: 20, scale: 0.8 },
+                    visible: { opacity: 1, y: 0, scale: 1 }
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 24 }}
                 >
-                  <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${category.color}15` }}
+                  <Link
+                    to={category.path}
+                    onClick={() => setCategoriesOpen(false)}
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-muted transition-colors"
                   >
-                    <CategoryIcon className="w-5 h-5" style={{ color: category.color }} strokeWidth={1.5} />
-                  </div>
-                  <span className="text-[11px] font-medium text-center text-foreground leading-tight">
-                    {category.label}
-                  </span>
-                </Link>
+                    <motion.div 
+                      className="w-12 h-12 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${category.color}15` }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <CategoryIcon className="w-5 h-5" style={{ color: category.color }} strokeWidth={1.5} />
+                    </motion.div>
+                    <span className="text-[11px] font-medium text-center text-foreground leading-tight">
+                      {category.label}
+                    </span>
+                  </Link>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </SheetContent>
       </Sheet>
     </>
