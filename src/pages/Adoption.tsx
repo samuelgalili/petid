@@ -347,9 +347,13 @@ const Adoption = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-12"
+            className="text-center py-16 px-6"
           >
-            <p className="text-[#8E8E8E] text-sm font-jakarta">לא נמצאו חיות מחמד התואמות לחיפוש</p>
+            <div className="w-20 h-20 bg-gradient-to-r from-[#F58529]/20 via-[#DD2A7B]/20 to-[#8134AF]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Heart className="w-10 h-10 text-[#DD2A7B]" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-lg font-semibold text-[#262626] mb-2">לא נמצאו חיות מחמד</h3>
+            <p className="text-[#8E8E8E] text-sm font-jakarta">נסה לשנות את הפילטרים או לחפש משהו אחר</p>
           </motion.div>
         )}
         </div>
