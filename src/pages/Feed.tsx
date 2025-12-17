@@ -385,140 +385,211 @@ const Feed = () => {
   }, [posts, feedFilter, followingIds]);
 
   return (
-    <div className="min-h-screen bg-petid-bg pb-24" dir="rtl">
-      {/* Petish Header - Dark themed */}
-      <div className="fixed top-0 left-0 right-0 z-50 petish-header border-b border-petish-dark/50 shadow-petish">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-center">
-          <h1 className="text-2xl font-black font-jakarta tracking-tight text-gradient-petish">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-24" dir="rtl">
+      {/* Petish Header - Premium glass effect */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="w-10" /> {/* Spacer for centering */}
+          <motion.h1 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-2xl font-black font-jakarta tracking-tight bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] bg-clip-text text-transparent"
+          >
             Petish
-          </h1>
+          </motion.h1>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={() => navigate('/messages')}
+            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+          >
+            <MessageCircle className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
+          </motion.button>
         </div>
       </div>
 
       {/* Spacer for fixed header */}
-      <div className="h-14" />
+      <div className="h-[60px]" />
 
-      {/* Create Post FAB - Petish gradient */}
-      <Button
-        onClick={() => setCreatePostOpen(true)}
-        className="fixed bottom-24 left-4 z-50 rounded-full w-14 h-14 btn-petish-primary shadow-petish"
-        size="icon"
+      {/* Create Post FAB - Enhanced */}
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
       >
-        <Plus className="w-6 h-6 text-white" />
-      </Button>
+        <Button
+          onClick={() => setCreatePostOpen(true)}
+          className="fixed bottom-24 left-4 z-50 rounded-full w-14 h-14 bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] hover:opacity-90 shadow-xl shadow-purple-500/30"
+          size="icon"
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </Button>
+      </motion.div>
 
-      {/* New Posts Banner - Petish themed */}
+      {/* New Posts Banner - Enhanced */}
       <AnimatePresence>
         {newPostsAvailable && (
           <motion.div
-            initial={{ y: -50, opacity: 0 }}
+            initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -50, opacity: 0 }}
-            className="fixed top-14 left-0 right-0 z-40 px-4 py-3 bg-gradient-petish text-white text-center cursor-pointer shadow-petish"
+            exit={{ y: -60, opacity: 0 }}
+            className="fixed top-[60px] left-0 right-0 z-40 px-4 py-3 bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] text-white text-center cursor-pointer shadow-lg"
             onClick={handleLoadNewPosts}
           >
             <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
-              <TrendingUp className="w-5 h-5" strokeWidth={1.5} />
-              <span className="font-bold font-jakarta">Petish Posts חדשים זמינים - לחץ לטעינה</span>
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+              >
+                <TrendingUp className="w-5 h-5" strokeWidth={2} />
+              </motion.div>
+              <span className="font-bold font-jakarta">פוסטים חדשים זמינים - לחץ לטעינה</span>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Stories Bar */}
-      <div className="bg-white">
+      <div className="bg-white shadow-sm">
         <StoriesBar />
       </div>
 
-      {/* Filter Tabs - Petish themed */}
-      <div className="bg-surface border-b border-petid-border">
-        <div className="max-w-2xl mx-auto px-4 py-2">
-          <Tabs value={feedFilter} onValueChange={(value) => setFeedFilter(value as "all" | "following")}>
-            <TabsList className="w-full grid grid-cols-2 font-jakarta bg-muted">
-              <TabsTrigger value="all" className="font-black data-[state=active]:bg-white data-[state=active]:text-petish-primary">
-                הכל
-              </TabsTrigger>
-              <TabsTrigger value="following" className="font-black data-[state=active]:bg-white data-[state=active]:text-petish-primary">
-                עוקבים ({followingIds.length})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {/* Filter Tabs - Premium design */}
+      <div className="bg-white border-b border-gray-100 sticky top-[60px] z-30">
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setFeedFilter("all")}
+              className={`flex-1 py-2.5 px-4 rounded-lg font-bold font-jakarta text-sm transition-all ${
+                feedFilter === "all"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              הכל
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setFeedFilter("following")}
+              className={`flex-1 py-2.5 px-4 rounded-lg font-bold font-jakarta text-sm transition-all flex items-center justify-center gap-2 ${
+                feedFilter === "following"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              עוקבים
+              {followingIds.length > 0 && (
+                <span className="bg-gradient-to-r from-[#FF6B9D] to-[#C44FE2] text-white text-xs px-2 py-0.5 rounded-full">
+                  {followingIds.length}
+                </span>
+              )}
+            </motion.button>
+          </div>
         </div>
       </div>
 
       {/* Feed */}
       <div className="max-w-2xl mx-auto">
         {loading ? (
-          // Loading skeleton
-          <div className="space-y-4 px-4 py-4">
+          // Premium Loading skeleton
+          <div className="space-y-5 px-4 py-5">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-white rounded-3xl shadow-md overflow-hidden">
+              <motion.div 
+                key={i} 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+              >
                 <div className="flex items-center gap-3 p-4">
-                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <Skeleton className="w-11 h-11 rounded-full" />
                   <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-4 w-28 rounded-lg" />
+                    <Skeleton className="h-3 w-16 rounded-lg" />
                   </div>
                 </div>
                 <Skeleton className="w-full aspect-square" />
                 <div className="p-4 space-y-3">
-                  <Skeleton className="h-8 w-40" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex gap-4">
+                    <Skeleton className="h-7 w-7 rounded-full" />
+                    <Skeleton className="h-7 w-7 rounded-full" />
+                    <Skeleton className="h-7 w-7 rounded-full" />
+                  </div>
+                  <Skeleton className="h-4 w-20 rounded-lg" />
+                  <Skeleton className="h-4 w-full rounded-lg" />
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         ) : filteredPosts.length === 0 ? (
-          // Empty state
+          // Premium Empty state
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20 px-4"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center py-16 px-6"
           >
-            <div className="w-32 h-32 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Camera className="w-16 h-16 text-gray-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-2xl font-black text-gray-900 font-jakarta mb-3">
-              {feedFilter === "following" ? "אין Petish Posts מעוקבים" : "אין Petish Posts עדיין"}
-            </h3>
-            <p className="text-gray-500 font-jakarta text-base mb-6">
-              {feedFilter === "following" 
-                ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם כאן"
-                : "התחל לשתף תמונות וסיפורים של חיות המחמד שלך ב-Petish 🐕🐈"}
-            </p>
-            <Button
-              onClick={() => setCreatePostOpen(true)}
-              className="bg-accent hover:bg-accent-hover text-text-inverse font-bold shadow-lg"
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="w-28 h-28 bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg"
             >
-              <Plus className="w-5 h-5 ml-2" strokeWidth={1.5} />
-              צור Petish Post ראשון
-            </Button>
+              <Camera className="w-12 h-12 text-purple-400" strokeWidth={1.5} />
+            </motion.div>
+            <h3 className="text-xl font-black text-gray-900 font-jakarta mb-2">
+              {feedFilter === "following" ? "אין פוסטים מעוקבים" : "הפיד ריק"}
+            </h3>
+            <p className="text-gray-500 font-jakarta text-sm mb-6 max-w-[280px] mx-auto">
+              {feedFilter === "following" 
+                ? "התחל לעקוב אחרי משתמשים כדי לראות את הפוסטים שלהם"
+                : "שתף את הרגעים הכי חמודים של חיית המחמד שלך 🐾"}
+            </p>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => setCreatePostOpen(true)}
+                className="bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] hover:opacity-90 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-purple-500/25"
+              >
+                <Plus className="w-5 h-5 ml-2" strokeWidth={2} />
+                צור פוסט ראשון
+              </Button>
+            </motion.div>
           </motion.div>
         ) : (
-          <div className="space-y-4 px-4 py-4">
-            {filteredPosts.map((post) => (
-              <PostCardErrorBoundary key={post.id}>
-                <PostCard
-                  post={post}
-                  currentUserId={user?.id}
-                  onLike={handleLike}
-                  onSave={handleSave}
-                  onDoubleTap={handleDoubleTap}
-                  showDoubleTapAnimation={doubleTapLike === post.id}
-                  getTimeAgo={getTimeAgo}
-                />
-              </PostCardErrorBoundary>
+          <div className="space-y-5 px-4 py-5">
+            {filteredPosts.map((post, index) => (
+              <motion.div
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <PostCardErrorBoundary>
+                  <PostCard
+                    post={post}
+                    currentUserId={user?.id}
+                    onLike={handleLike}
+                    onSave={handleSave}
+                    onDoubleTap={handleDoubleTap}
+                    showDoubleTapAnimation={doubleTapLike === post.id}
+                    getTimeAgo={getTimeAgo}
+                  />
+                </PostCardErrorBoundary>
+              </motion.div>
             ))}
             
             {/* Infinite Scroll Observer Target */}
             {hasMore && (
-              <div ref={observerTarget} className="py-8 text-center">
+              <div ref={observerTarget} className="py-6 text-center">
                 {loadingMore && (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                    <span className="text-gray-500 font-jakarta text-sm">טוען עוד פוסטים...</span>
-                  </div>
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+                    <span className="text-gray-400 font-jakarta text-sm">טוען עוד...</span>
+                  </motion.div>
                 )}
               </div>
             )}

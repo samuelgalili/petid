@@ -210,48 +210,52 @@ export const PostCard = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-surface rounded-3xl shadow-sm border border-petid-border overflow-hidden mb-4"
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
     >
       {/* Post Header */}
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2">
-          <Avatar 
-            className="w-11 h-11 ring-2 ring-petid-border cursor-pointer"
-            onClick={() => navigate(`/user/${post.user.id}`)}
-          >
-            <AvatarImage src={post.user.avatar_url} />
-            <AvatarFallback className="bg-gradient-petish text-white font-black text-sm">
-              {post.user.full_name?.charAt(0) || "U"}
-            </AvatarFallback>
-          </Avatar>
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <motion.div whileTap={{ scale: 0.95 }}>
+            <Avatar 
+              className="w-10 h-10 ring-2 ring-gray-100 cursor-pointer"
+              onClick={() => navigate(`/user/${post.user.id}`)}
+            >
+              <AvatarImage src={post.user.avatar_url} />
+              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-bold text-sm">
+                {post.user.full_name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </motion.div>
           <div 
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <p className="font-black text-petid-text font-jakarta text-[15px]">{post.user.full_name || "משתמש"}</p>
-            <p className="text-xs text-petid-text-muted font-jakarta">{getTimeAgo(post.created_at)}</p>
+            <p className="font-bold text-gray-900 font-jakarta text-sm">{post.user.full_name || "משתמש"}</p>
+            <p className="text-xs text-gray-400 font-jakarta">{getTimeAgo(post.created_at)}</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {currentUserId !== post.user_id && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`text-xs font-black px-3 py-1 rounded-lg ${
-                isFollowing 
-                  ? 'text-muted-foreground hover:text-foreground' 
-                  : 'text-petish-primary hover:text-petish-purple'
-              }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleFollow();
-              }}
-            >
-              {isFollowing ? "עוקב" : "עקוב"}
-            </Button>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                  isFollowing 
+                    ? 'text-gray-500 hover:text-gray-700 bg-gray-100' 
+                    : 'text-white bg-gradient-to-r from-[#FF6B9D] to-[#C44FE2] hover:opacity-90'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFollow();
+                }}
+              >
+                {isFollowing ? "עוקב ✓" : "עקוב"}
+              </Button>
+            </motion.div>
           )}
-          <button className="text-icon-base hover:text-petish-primary p-2 transition-colors">
+          <button className="text-gray-400 hover:text-gray-600 p-2 transition-colors">
             <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
           </button>
         </div>
@@ -270,97 +274,93 @@ export const PostCard = ({
           sizes="(max-width: 768px) 100vw, 672px"
         />
         
-        {/* Double Tap Lick Animation */}
-        {showDoubleTapAnimation && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1.2, opacity: 1 }}
-            exit={{ scale: 1.4, opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          >
-            <DogTongueIcon isLicking={true} isLiked={true} className="w-24 h-24 text-white drop-shadow-2xl" />
-          </motion.div>
-        )}
+        {/* Double Tap Like Animation */}
+        <AnimatePresence>
+          {showDoubleTapAnimation && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.2, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/10"
+            >
+              <DogTongueIcon isLicking={true} isLiked={true} className="w-28 h-28 text-white drop-shadow-2xl" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Post Actions */}
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-5">
+      <div className="px-4 py-3">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-4">
             <motion.button 
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.85 }}
               onClick={handleLike}
-              className={`flex items-center gap-2 transition-all ${
-                post.is_liked ? 'text-petish-primary' : 'text-icon-base hover:text-petish-primary'
+              className={`flex items-center gap-1.5 transition-all ${
+                post.is_liked ? 'text-[#FF6B9D]' : 'text-gray-600 hover:text-[#FF6B9D]'
               }`}
             >
-              <DogTongueIcon isLicking={isLicking} isLiked={post.is_liked} className="w-7 h-7" />
+              <DogTongueIcon isLicking={isLicking} isLiked={post.is_liked} className="w-6 h-6" />
               {post.likes_count > 0 && (
-                <span className="font-black font-jakarta">{post.likes_count}</span>
+                <span className="font-bold font-jakarta text-sm">{post.likes_count}</span>
               )}
             </motion.button>
             
             <motion.button 
-              whileTap={{ scale: 0.9 }}
-              className="flex items-center gap-2 text-icon-base hover:text-petish-purple transition-colors"
+              whileTap={{ scale: 0.85 }}
+              className="flex items-center gap-1.5 text-gray-600 hover:text-[#C44FE2] transition-colors"
               onClick={() => navigate(`/post/${post.id}`)}
             >
-              <MessageCircle className="w-7 h-7" strokeWidth={1.5} />
+              <MessageCircle className="w-6 h-6" strokeWidth={1.5} />
               {post.comments_count > 0 && (
-                <span className="font-black font-jakarta">{post.comments_count}</span>
+                <span className="font-bold font-jakarta text-sm">{post.comments_count}</span>
               )}
             </motion.button>
             
             <motion.button 
-              whileTap={{ scale: 0.9 }}
-              className="text-icon-base hover:text-petish-teal transition-colors"
+              whileTap={{ scale: 0.85 }}
+              className="text-gray-600 hover:text-[#7B68EE] transition-colors"
             >
-              <Share2 className="w-7 h-7" strokeWidth={1.5} />
+              <Share2 className="w-6 h-6" strokeWidth={1.5} />
             </motion.button>
           </div>
           <motion.button 
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.85 }}
             onClick={() => onSave(post.id)}
-            className={`transition-colors ${post.is_saved ? 'text-petish-yellow' : 'text-icon-base hover:text-petish-yellow'}`}
+            className={`transition-colors ${post.is_saved ? 'text-[#FFC107]' : 'text-gray-600 hover:text-[#FFC107]'}`}
           >
-            <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
+            <Bookmark className={`w-6 h-6 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
           </motion.button>
         </div>
 
-        {/* Liked by */}
+        {/* Likes count */}
         {post.likes_count > 0 && (
-          <div className="mb-3">
-            <p className="text-sm text-petid-text font-jakarta">
-              <span className="font-black">
-                {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
-              </span>
-            </p>
-          </div>
+          <p className="text-sm text-gray-900 font-bold font-jakarta mb-2">
+            {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
+          </p>
         )}
 
         {/* Post Caption */}
         {post.caption && (
-          <div className="mb-2">
-            <p className="text-petid-text font-jakarta text-[15px]">
-              <span 
-                className="font-black cursor-pointer hover:text-petish-primary transition-colors"
-                onClick={() => navigate(`/user/${post.user.id}`)}
-              >
-                {post.user.full_name || "משתמש"}
-              </span>{" "}
-              {post.caption}
-            </p>
-          </div>
+          <p className="text-gray-800 font-jakarta text-sm leading-relaxed mb-2">
+            <span 
+              className="font-bold cursor-pointer hover:text-[#C44FE2] transition-colors"
+              onClick={() => navigate(`/user/${post.user.id}`)}
+            >
+              {post.user.full_name || "משתמש"}
+            </span>{" "}
+            {post.caption}
+          </p>
         )}
 
         {/* View Comments */}
         {post.comments_count > 0 && (
           <button 
-            className="text-muted-foreground text-sm font-jakarta hover:text-petish-primary font-semibold transition-colors"
+            className="text-gray-400 text-sm font-jakarta hover:text-[#C44FE2] transition-colors"
             onClick={() => navigate(`/post/${post.id}`)}
           >
-            הצג את כל {post.comments_count} התגובות
+            צפה בכל {post.comments_count} התגובות
           </button>
         )}
       </div>
