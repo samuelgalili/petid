@@ -69,7 +69,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ClubTerms from "./pages/ClubTerms";
 import Favorites from "./pages/Favorites";
-import Splash from "./pages/Splash";
+
 import Welcome from "./pages/Welcome";
 import Support from "./pages/Support";
 import Deals from "./pages/Deals";
@@ -86,7 +86,7 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   useAdminNotifications();
   
-  const authPages = ['/auth', '/signup', '/forgot-password', '/reset-password', '/install', '/splash'];
+  const authPages = ['/auth', '/signup', '/forgot-password', '/reset-password', '/install'];
   const showFooter = !authPages.includes(location.pathname);
   
   return (
@@ -96,7 +96,7 @@ const AnimatedRoutes = () => {
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><PageErrorBoundary pageName="הפיד"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Feed /></Suspense></PageErrorBoundary></PageTransition>} />
-        <Route path="/splash" element={<PageTransition><Splash /></PageTransition>} />
+        <Route path="/splash" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
