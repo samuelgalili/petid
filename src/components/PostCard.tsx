@@ -1,9 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Smile } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Button } from "@/components/ui/button";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
 
@@ -125,9 +124,11 @@ interface PostCardProps {
     is_saved: boolean;
   };
   currentUserId?: string;
+  currentUserAvatar?: string;
   onLike: (postId: string) => void;
   onSave: (postId: string) => void;
   onDoubleTap: (postId: string) => void;
+  onComment?: (postId: string, comment: string) => void;
   showDoubleTapAnimation: boolean;
   getTimeAgo: (dateString: string) => string;
 }
@@ -135,15 +136,25 @@ interface PostCardProps {
 export const PostCard = ({
   post,
   currentUserId,
+  currentUserAvatar,
   onLike,
   onSave,
   onDoubleTap,
+  onComment,
   showDoubleTapAnimation,
   getTimeAgo,
 }: PostCardProps) => {
   const navigate = useNavigate();
   const { isFollowing, toggleFollow } = useFollow(post.user_id);
   const [isLicking, setIsLicking] = useState(false);
+  const [commentText, setCommentText] = useState("");
+
+  const handleComment = () => {
+    if (commentText.trim() && onComment) {
+      onComment(post.id, commentText.trim());
+      setCommentText("");
+    }
+  };
 
   // Play lick sound using Web Audio API
   const playLickSound = () => {
@@ -353,9 +364,38 @@ export const PostCard = ({
         )}
 
         {/* Time ago */}
-        <p className="text-[#8E8E8E] text-[10px] uppercase tracking-wide pb-3">
+        <p className="text-[#8E8E8E] text-[10px] uppercase tracking-wide">
           {getTimeAgo(post.created_at)}
         </p>
+      </div>
+
+      {/* Quick Reply Field */}
+      <div className="flex items-center gap-3 px-3 py-3 border-t border-gray-100">
+        <Avatar className="w-7 h-7 flex-shrink-0">
+          <AvatarImage src={currentUserAvatar} />
+          <AvatarFallback className="bg-gray-100 text-gray-500 text-[10px]">
+            U
+          </AvatarFallback>
+        </Avatar>
+        <input
+          type="text"
+          placeholder="הוסף תגובה..."
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+          className="flex-1 bg-transparent text-[13px] text-[#262626] placeholder-[#8E8E8E] outline-none"
+        />
+        <button className="text-[#8E8E8E] p-1">
+          <Smile className="w-5 h-5" strokeWidth={1.5} />
+        </button>
+        {commentText.trim() && (
+          <button 
+            onClick={handleComment}
+            className="text-[#0095F6] text-[13px] font-semibold"
+          >
+            פרסם
+          </button>
+        )}
       </div>
     </div>
   );

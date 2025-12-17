@@ -45,6 +45,7 @@ const Feed = () => {
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [page, setPage] = useState(0);
+  const [userAvatar, setUserAvatar] = useState<string>("");
   const observerTarget = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   
@@ -177,6 +178,23 @@ const Feed = () => {
       setLoadingMore(false);
     }
   }, [user, POSTS_PER_PAGE]);
+
+  // Fetch user avatar
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .single();
+        if (data?.avatar_url) {
+          setUserAvatar(data.avatar_url);
+        }
+      }
+    };
+    fetchUserAvatar();
+  }, [user]);
 
   useEffect(() => {
     fetchPosts(0, false);
@@ -357,6 +375,30 @@ const Feed = () => {
     });
   }, [handleLike]);
 
+  const handleComment = useCallback(async (postId: string, comment: string) => {
+    if (!user) {
+      toast.error("יש להתחבר כדי להגיב");
+      return;
+    }
+
+    try {
+      await supabase
+        .from("post_comments")
+        .insert({ post_id: postId, user_id: user.id, comment_text: comment });
+      
+      // Update comment count optimistically
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p.id === postId ? { ...p, comments_count: p.comments_count + 1 } : p
+        )
+      );
+      
+      toast.success("התגובה פורסמה");
+    } catch (error: any) {
+      toast.error("שגיאה בפרסום התגובה");
+    }
+  }, [user]);
+
   const handleLoadNewPosts = () => {
     setNewPostsAvailable(false);
     setPage(0);
@@ -512,9 +554,11 @@ const Feed = () => {
                 <PostCard
                   post={post}
                   currentUserId={user?.id}
+                  currentUserAvatar={userAvatar}
                   onLike={handleLike}
                   onSave={handleSave}
                   onDoubleTap={handleDoubleTap}
+                  onComment={handleComment}
                   showDoubleTapAnimation={doubleTapLike === post.id}
                   getTimeAgo={getTimeAgo}
                 />
