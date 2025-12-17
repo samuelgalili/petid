@@ -57,7 +57,7 @@ export function SwipeableDocumentCard({
       setIsDeleting(true);
       setTimeout(() => {
         onDelete(doc.id, doc.file_url);
-      }, 300);
+      }, 200);
     }
   };
 
