@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, ChevronDown, Edit, Camera } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -16,6 +16,7 @@ interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
+  isOnline?: boolean;
 }
 
 export default function Messages() {
@@ -23,11 +24,13 @@ export default function Messages() {
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserName, setCurrentUserName] = useState("");
 
   useEffect(() => {
     if (!user) return;
 
     fetchConversations();
+    fetchCurrentUser();
 
     // Subscribe to new messages
     const channel = supabase
@@ -51,11 +54,20 @@ export default function Messages() {
     };
   }, [user]);
 
+  const fetchCurrentUser = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+    if (data) setCurrentUserName(data.full_name || "");
+  };
+
   const fetchConversations = async () => {
     if (!user) return;
 
     try {
-      // Get all messages where user is sender or receiver
       const { data: messages, error } = await supabase
         .from("messages")
         .select(
@@ -70,7 +82,6 @@ export default function Messages() {
 
       if (error) throw error;
 
-      // Group messages by conversation partner
       const conversationsMap = new Map<string, Conversation>();
 
       messages?.forEach((message: any) => {
@@ -86,10 +97,10 @@ export default function Messages() {
             lastMessage: message.message_text,
             lastMessageTime: message.created_at,
             unreadCount: 0,
+            isOnline: Math.random() > 0.5, // Simulated for demo
           });
         }
 
-        // Count unread messages
         if (isReceiver && !message.is_read) {
           const conv = conversationsMap.get(partnerId)!;
           conv.unreadCount++;
@@ -106,75 +117,103 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="h-8 w-8 animate-spin text-[#262626]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
-      <div className="max-w-2xl mx-auto">
-        {/* Petish Inbox Header */}
-        <div className="bg-surface border-b border-border sticky top-0 z-10">
-          <div className="px-4 py-4">
-            <h1 className="text-2xl font-bold text-foreground font-jakarta">Petish Inbox</h1>
+    <div className="min-h-screen bg-white pb-24" dir="rtl">
+      <div className="max-w-lg mx-auto">
+        {/* Instagram-style Header */}
+        <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <h1 className="text-xl font-bold text-[#262626]">
+                {currentUserName || "הודעות"}
+              </h1>
+              <ChevronDown className="h-5 w-5 text-[#262626]" />
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="p-1">
+                <Edit className="h-6 w-6 text-[#262626]" />
+              </button>
+            </div>
+          </div>
+          
+          {/* Search/Notes Tab */}
+          <div className="px-4 pb-2">
+            <div className="flex gap-2">
+              <button className="flex-1 py-2 text-sm font-semibold text-[#262626] border-b-2 border-[#262626]">
+                הודעות
+              </button>
+              <button className="flex-1 py-2 text-sm font-medium text-gray-400">
+                בקשות
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Conversations List */}
-        <div className="divide-y divide-gray-200">
+        <div>
           {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <MessageCircle className="h-16 w-16 text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                אין הודעות עדיין
+            <div className="flex flex-col items-center justify-center py-20 px-4">
+              <div className="w-24 h-24 rounded-full border-2 border-[#262626] flex items-center justify-center mb-4">
+                <Camera className="h-12 w-12 text-[#262626]" />
+              </div>
+              <h3 className="text-xl font-bold text-[#262626] mb-2">
+                ההודעות שלך
               </h3>
-              <p className="text-sm text-gray-500 text-center">
-                כאשר תתחיל שיחה עם משתמשים אחרים, ההודעות יופיעו כאן
+              <p className="text-sm text-gray-500 text-center max-w-[260px]">
+                שלח תמונות והודעות פרטיות לחבר או לקבוצה
               </p>
+              <button className="mt-4 text-[#0095F6] font-semibold text-sm">
+                שלח הודעה
+              </button>
             </div>
           ) : (
             conversations.map((conversation, index) => (
               <motion.div
                 key={conversation.userId}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.03 }}
                 onClick={() => navigate(`/messages/${conversation.userId}`)}
-                className="bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                className="hover:bg-gray-50 transition-colors cursor-pointer"
               >
-                <div className="px-4 py-4 flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={conversation.userAvatar || undefined} />
-                    <AvatarFallback>
-                      {conversation.userName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="px-4 py-3 flex items-center gap-3">
+                  <div className="relative">
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={conversation.userAvatar || undefined} />
+                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-lg">
+                        {conversation.userName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {conversation.isOnline && (
+                      <div className="absolute bottom-0 left-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                    )}
+                  </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-base font-semibold text-gray-900 truncate">
+                    <div className="flex items-center gap-2">
+                      <h3 className={`text-[15px] ${conversation.unreadCount > 0 ? 'font-bold' : 'font-normal'} text-[#262626] truncate`}>
                         {conversation.userName}
                       </h3>
-                      <span className="text-xs text-gray-500">
-                        {formatDistanceToNow(
-                          new Date(conversation.lastMessageTime),
-                          { addSuffix: true, locale: he }
-                        )}
-                      </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600 truncate">
+                    <div className="flex items-center gap-1">
+                      <p className={`text-sm truncate ${conversation.unreadCount > 0 ? 'text-[#262626] font-medium' : 'text-gray-500'}`}>
                         {conversation.lastMessage}
                       </p>
-                      {conversation.unreadCount > 0 && (
-                        <span className="bg-[#FBD66A] text-gray-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                          {conversation.unreadCount}
-                        </span>
-                      )}
+                      <span className="text-sm text-gray-400 flex-shrink-0">
+                        · {formatDistanceToNow(new Date(conversation.lastMessageTime), { locale: he })}
+                      </span>
                     </div>
                   </div>
+
+                  {conversation.unreadCount > 0 && (
+                    <div className="w-2 h-2 rounded-full bg-[#0095F6]" />
+                  )}
                 </div>
               </motion.div>
             ))
