@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as React from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -8,17 +8,20 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = React.useState<Theme>('system');
+  const [effectiveTheme, setEffectiveTheme] = React.useState<'light' | 'dark'>('light');
+
+  React.useEffect(() => {
     const stored = localStorage.getItem('petid-theme') as Theme;
-    return stored || 'system';
-  });
+    if (stored) {
+      setThemeState(stored);
+    }
+  }, []);
 
-  const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
-
-  useEffect(() => {
+  React.useEffect(() => {
     const root = document.documentElement;
     
     const getEffectiveTheme = (): 'light' | 'dark' => {
@@ -52,22 +55,22 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = React.useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('petid-theme', newTheme);
-  };
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, effectiveTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
-};
+}
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
+export function useTheme() {
+  const context = React.useContext(ThemeContext);
   if (!context) {
     throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
-};
+}

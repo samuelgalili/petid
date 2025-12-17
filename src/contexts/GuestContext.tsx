@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import * as React from "react";
 
 interface GuestContextType {
   isGuest: boolean;
@@ -9,30 +9,32 @@ interface GuestContextType {
   closeLoginPrompt: () => void;
 }
 
-const GuestContext = createContext<GuestContextType | undefined>(undefined);
+const GuestContext = React.createContext<GuestContextType | undefined>(undefined);
 
-export const GuestProvider = ({ children }: { children: ReactNode }) => {
-  const [isGuest, setIsGuest] = useState(() => {
-    return localStorage.getItem("guestMode") === "true";
-  });
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [loginPromptMessage, setLoginPromptMessage] = useState("");
+export function GuestProvider({ children }: { children: React.ReactNode }) {
+  const [isGuest, setIsGuest] = React.useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = React.useState(false);
+  const [loginPromptMessage, setLoginPromptMessage] = React.useState("");
 
-  const setGuestMode = (value: boolean) => {
+  React.useEffect(() => {
+    setIsGuest(localStorage.getItem("guestMode") === "true");
+  }, []);
+
+  const setGuestMode = React.useCallback((value: boolean) => {
     setIsGuest(value);
     if (value) {
       localStorage.setItem("guestMode", "true");
     } else {
       localStorage.removeItem("guestMode");
     }
-  };
+  }, []);
 
-  const promptLogin = useCallback((message?: string) => {
+  const promptLogin = React.useCallback((message?: string) => {
     setLoginPromptMessage(message || "כדי להמשיך, יש להתחבר או להירשם");
     setShowLoginPrompt(true);
   }, []);
 
-  const closeLoginPrompt = useCallback(() => {
+  const closeLoginPrompt = React.useCallback(() => {
     setShowLoginPrompt(false);
     setLoginPromptMessage("");
   }, []);
@@ -49,12 +51,12 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </GuestContext.Provider>
   );
-};
+}
 
-export const useGuest = () => {
-  const context = useContext(GuestContext);
+export function useGuest() {
+  const context = React.useContext(GuestContext);
   if (context === undefined) {
     throw new Error("useGuest must be used within a GuestProvider");
   }
   return context;
-};
+}
