@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock } from "lucide-react";
+import { ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -78,83 +78,128 @@ const Shop = () => {
     {
       id: 1,
       name: "מזון יבש פרימיום",
+      description: "מזון איכותי לכלבים בוגרים, עשיר בחלבון ובויטמינים חיוניים לבריאות מיטבית",
       price: 189,
       originalPrice: 249,
       image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
       popularity: 95,
       likes: 1247,
+      rating: 4.8,
+      reviews: 324,
+      inStock: true,
+      freeShipping: true,
     },
     {
       id: 2,
       name: "חטיפי עוף מיובשים",
+      description: "חטיפים טבעיים 100% מעוף איכותי, ללא תוספים או חומרים משמרים",
       price: 45,
       originalPrice: null,
       image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
       popularity: 78,
       likes: 892,
+      rating: 4.5,
+      reviews: 156,
+      inStock: true,
+      freeShipping: false,
     },
     {
       id: 3,
       name: "מיטה אורתופדית",
+      description: "מיטה נוחה עם קצף זיכרון לתמיכה מושלמת בגוף, מתאימה לכלבים בכל הגילאים",
       price: 299,
       originalPrice: 399,
       image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
       popularity: 88,
       likes: 2103,
+      rating: 4.9,
+      reviews: 487,
+      inStock: true,
+      freeShipping: true,
     },
     {
       id: 4,
       name: "צעצוע אינטראקטיבי",
+      description: "צעצוע חכם שמפעיל את הכלב ומעסיק אותו לשעות, מתאים לכל הגזעים",
       price: 129,
       originalPrice: null,
       image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
       popularity: 65,
       likes: 567,
+      rating: 4.3,
+      reviews: 89,
+      inStock: true,
+      freeShipping: false,
     },
     {
       id: 5,
       name: "שמפו טיפולי",
+      description: "שמפו עדין לעור רגיש, מפנק את הפרווה ומשאיר ניחוח נעים לאורך זמן",
       price: 59,
       originalPrice: 79,
       image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
       popularity: 72,
       likes: 734,
+      rating: 4.6,
+      reviews: 203,
+      inStock: true,
+      freeShipping: false,
     },
     {
       id: 6,
       name: "קערה אוטומטית",
+      description: "קערת מים ואוכל חכמה עם חיישן מילוי אוטומטי, שומרת על מים טריים",
       price: 169,
       originalPrice: null,
       image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
       popularity: 81,
       likes: 1456,
+      rating: 4.7,
+      reviews: 312,
+      inStock: true,
+      freeShipping: true,
     },
     {
       id: 7,
       name: "רצועה מעוצבת",
+      description: "רצועה איכותית ונוחה לאחיזה, עם חומרים עמידים ועיצוב אלגנטי",
       price: 89,
       originalPrice: 119,
       image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
       popularity: 77,
       likes: 623,
+      rating: 4.4,
+      reviews: 178,
+      inStock: false,
+      freeShipping: false,
     },
     {
       id: 8,
       name: "כדור משחק",
+      description: "כדור גומי עמיד במיוחד, קופץ גבוה ומושלם למשחקי אפורט",
       price: 35,
       originalPrice: null,
       image: "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500&h=500&fit=crop",
       popularity: 69,
       likes: 445,
+      rating: 4.2,
+      reviews: 95,
+      inStock: true,
+      freeShipping: false,
     },
     {
       id: 9,
       name: "מברשת פרווה",
+      description: "מברשת מקצועית להסרת פרווה מתה ולמניעת קשרים, עדינה לעור",
       price: 49,
       originalPrice: 65,
       image: "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
       popularity: 74,
       likes: 512,
+      rating: 4.5,
+      reviews: 134,
+      inStock: true,
+      freeShipping: false,
     },
   ];
 
@@ -693,29 +738,63 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Product Details Sheet */}
+      {/* Product Details Sheet - Enhanced */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-auto max-h-[75vh] rounded-t-2xl bg-white p-0">
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-white p-0 overflow-hidden">
           {selectedProduct && (
-            <div className="flex flex-col" dir="rtl">
-              {/* Drag Handle */}
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-10 h-1 bg-[#DBDBDB] rounded-full" />
+            <div className="flex flex-col h-full" dir="rtl">
+              {/* Header with drag handle */}
+              <div className="flex-shrink-0">
+                <div className="flex justify-center pt-3 pb-2">
+                  <div className="w-10 h-1 bg-[#DBDBDB] rounded-full" />
+                </div>
+                
+                {/* Top Actions */}
+                <div className="flex items-center justify-between px-4 pb-2">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSelectedProduct(null)}
+                    className="w-9 h-9 bg-[#FAFAFA] rounded-full flex items-center justify-center"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
+                  </motion.button>
+                  
+                  <div className="flex items-center gap-2">
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => {
+                        navigator.share?.({
+                          title: selectedProduct.name,
+                          text: `בדוק את ${selectedProduct.name} ב-₪${selectedProduct.price}`,
+                        }).catch(() => {});
+                      }}
+                      className="w-9 h-9 bg-[#FAFAFA] rounded-full flex items-center justify-center"
+                    >
+                      <Share2 className="w-4 h-4 text-[#262626]" strokeWidth={1.5} />
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => toggleFavorite(selectedProduct.id)}
+                      className="w-9 h-9 bg-[#FAFAFA] rounded-full flex items-center justify-center"
+                    >
+                      <Bookmark 
+                        className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-[#262626] text-[#262626]" : "text-[#262626]"}`} 
+                        strokeWidth={1.5} 
+                      />
+                    </motion.button>
+                  </div>
+                </div>
               </div>
 
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="absolute top-4 left-4 w-8 h-8 bg-[#FAFAFA] rounded-full flex items-center justify-center"
-              >
-                <X className="w-4 h-4 text-[#262626]" strokeWidth={1.5} />
-              </button>
-
-              {/* Content */}
-              <div className="px-4 pb-4 overflow-y-auto">
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto">
                 {/* Product Image */}
-                <div className="relative mb-4">
-                  <div className="w-full aspect-square bg-[#FAFAFA] rounded-xl overflow-hidden">
+                <div className="relative px-4 mb-4">
+                  <motion.div 
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-full aspect-square bg-gradient-to-br from-[#FAFAFA] to-[#F0F0F0] rounded-2xl overflow-hidden shadow-sm"
+                  >
                     <OptimizedImage
                       src={selectedProduct.image}
                       alt={selectedProduct.name}
@@ -723,107 +802,166 @@ const Shop = () => {
                       objectFit="cover"
                       sizes="(max-width: 768px) 100vw, 400px"
                     />
-                  </div>
+                  </motion.div>
                   
-                  {/* Save Button */}
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => toggleFavorite(selectedProduct.id)}
-                    className="absolute top-3 right-3 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-sm"
-                  >
-                    <Bookmark 
-                      className={`w-5 h-5 ${favorites.includes(selectedProduct.id) ? "fill-[#262626] text-[#262626]" : "text-[#262626]"}`} 
-                      strokeWidth={1.5} 
-                    />
-                  </motion.button>
-
                   {/* Sale Badge */}
                   {selectedProduct.originalPrice && (
-                    <div className="absolute top-3 left-3 bg-[#ED4956] text-white px-2.5 py-1 rounded-lg text-[12px] font-semibold">
+                    <motion.div 
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="absolute top-2 right-6 bg-gradient-to-r from-[#ED4956] to-[#F77062] text-white px-3 py-1.5 rounded-full text-[13px] font-bold shadow-lg"
+                    >
                       {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}% הנחה
-                    </div>
+                    </motion.div>
                   )}
                 </div>
 
-                {/* Product Info */}
-                <div className="mb-4">
-                  <h2 className="text-[18px] font-semibold text-[#262626] mb-2">
-                    {selectedProduct.name}
-                  </h2>
-                  
-                  {/* Price */}
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className={`text-[24px] font-bold ${selectedProduct.originalPrice ? 'text-[#ED4956]' : 'text-[#262626]'}`}>
-                      ₪{selectedProduct.price}
-                    </span>
-                    {selectedProduct.originalPrice && (
-                      <span className="text-[14px] text-[#8E8E8E] line-through">
-                        ₪{selectedProduct.originalPrice}
+                <div className="px-4 space-y-4">
+                  {/* Product Title & Rating */}
+                  <div>
+                    <h2 className="text-[22px] font-bold text-[#262626] mb-2 leading-tight">
+                      {selectedProduct.name}
+                    </h2>
+                    
+                    {/* Rating & Reviews */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-[#FFD700] text-[#FFD700]" />
+                        <span className="text-[14px] font-semibold text-[#262626]">{selectedProduct.rating}</span>
+                      </div>
+                      <span className="text-[13px] text-[#0095F6]">({selectedProduct.reviews} ביקורות)</span>
+                      <div className="flex items-center gap-1 text-[#8E8E8E]">
+                        <Heart className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        <span className="text-[12px]">{selectedProduct.likes}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Price Section */}
+                  <div className="bg-[#FAFAFA] rounded-xl p-4">
+                    <div className="flex items-end gap-3">
+                      <span className={`text-[32px] font-black ${selectedProduct.originalPrice ? 'text-[#ED4956]' : 'text-[#262626]'}`}>
+                        ₪{selectedProduct.price}
                       </span>
+                      {selectedProduct.originalPrice && (
+                        <span className="text-[18px] text-[#8E8E8E] line-through mb-1">
+                          ₪{selectedProduct.originalPrice}
+                        </span>
+                      )}
+                    </div>
+                    {selectedProduct.originalPrice && (
+                      <p className="text-[13px] text-[#4CAF50] font-medium mt-1">
+                        חסכון של ₪{selectedProduct.originalPrice - selectedProduct.price}!
+                      </p>
                     )}
                   </div>
 
-                  {/* Likes */}
-                  <div className="flex items-center gap-1 text-[#8E8E8E] text-[13px]">
-                    <Heart className="w-4 h-4" strokeWidth={1.5} />
-                    {selectedProduct.likes} לייקים
+                  {/* Description */}
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#262626] mb-2">תיאור המוצר</h3>
+                    <p className="text-[14px] text-[#8E8E8E] leading-relaxed">
+                      {selectedProduct.description}
+                    </p>
                   </div>
-                </div>
 
-                {/* Size Selector */}
-                <div className="mb-4">
-                  <label className="text-[13px] font-semibold text-[#262626] mb-2 block">בחר גודל</label>
-                  <div className="flex gap-2">
-                    {sizes.map((size) => (
+                  {/* Features */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className={`flex items-center gap-2 p-3 rounded-xl ${selectedProduct.inStock ? 'bg-[#E8F5E9]' : 'bg-[#FFEBEE]'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.inStock ? 'bg-[#4CAF50]' : 'bg-[#ED4956]'}`}>
+                        <Shield className="w-4 h-4 text-white" strokeWidth={2} />
+                      </div>
+                      <span className={`text-[12px] font-medium ${selectedProduct.inStock ? 'text-[#2E7D32]' : 'text-[#C62828]'}`}>
+                        {selectedProduct.inStock ? 'במלאי' : 'אזל מהמלאי'}
+                      </span>
+                    </div>
+                    
+                    <div className={`flex items-center gap-2 p-3 rounded-xl ${selectedProduct.freeShipping ? 'bg-[#E3F2FD]' : 'bg-[#FAFAFA]'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.freeShipping ? 'bg-[#0095F6]' : 'bg-[#DBDBDB]'}`}>
+                        <Truck className="w-4 h-4 text-white" strokeWidth={2} />
+                      </div>
+                      <span className={`text-[12px] font-medium ${selectedProduct.freeShipping ? 'text-[#1565C0]' : 'text-[#8E8E8E]'}`}>
+                        {selectedProduct.freeShipping ? 'משלוח חינם' : 'משלוח רגיל'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Size Selector */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-[14px] font-semibold text-[#262626]">בחר גודל</h3>
+                      <button className="text-[12px] text-[#0095F6] font-medium">מדריך מידות</button>
+                    </div>
+                    <div className="flex gap-2">
+                      {sizes.map((size) => (
+                        <motion.button
+                          key={size}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setSelectedSize(size)}
+                          className={`flex-1 py-3 rounded-xl text-[14px] font-semibold transition-all ${
+                            selectedSize === size
+                              ? "bg-[#262626] text-white shadow-md"
+                              : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
+                          }`}
+                        >
+                          {size}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quantity Selector */}
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#262626] mb-3">כמות</h3>
+                    <div className="flex items-center justify-between bg-[#FAFAFA] rounded-xl p-2 border border-[#DBDBDB]">
                       <motion.button
-                        key={size}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedSize(size)}
-                        className={`w-12 h-10 rounded-lg text-[13px] font-medium transition-all ${
-                          selectedSize === size
-                            ? "bg-[#262626] text-white"
-                            : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
-                        }`}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={decreaseQuantity}
+                        className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm"
                       >
-                        {size}
+                        <Minus className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
                       </motion.button>
-                    ))}
+                      <span className="text-[20px] font-bold text-[#262626]">{quantity}</span>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={increaseQuantity}
+                        className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm"
+                      >
+                        <Plus className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
+                      </motion.button>
+                    </div>
                   </div>
-                </div>
 
-                {/* Quantity */}
-                <div className="mb-4">
-                  <label className="text-[13px] font-semibold text-[#262626] mb-2 block">כמות</label>
-                  <div className="flex items-center gap-3 w-fit bg-[#FAFAFA] rounded-lg p-1 border border-[#DBDBDB]">
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={decreaseQuantity}
-                      className="w-8 h-8 rounded-md bg-white flex items-center justify-center"
-                    >
-                      <Minus className="w-4 h-4 text-[#262626]" strokeWidth={1.5} />
-                    </motion.button>
-                    <span className="text-[16px] font-semibold text-[#262626] w-8 text-center">{quantity}</span>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={increaseQuantity}
-                      className="w-8 h-8 rounded-md bg-white flex items-center justify-center"
-                    >
-                      <Plus className="w-4 h-4 text-[#262626]" strokeWidth={1.5} />
-                    </motion.button>
-                  </div>
+                  {/* Spacer for bottom button */}
+                  <div className="h-4" />
                 </div>
               </div>
 
-              {/* Add to Cart Button */}
-              <div className="border-t border-[#DBDBDB] px-4 py-3 bg-white">
-                <motion.div whileTap={{ scale: 0.98 }}>
-                  <Button
-                    onClick={handleAddToCart}
-                    className="w-full h-12 bg-[#0095F6] hover:bg-[#0086E0] text-white text-[15px] font-semibold rounded-xl"
-                  >
-                    הוסף לעגלה · ₪{(selectedProduct.price * quantity)}
-                  </Button>
-                </motion.div>
+              {/* Fixed Bottom Bar */}
+              <div className="flex-shrink-0 border-t border-[#DBDBDB] px-4 py-4 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center gap-3">
+                  {/* Total Price */}
+                  <div className="flex-shrink-0">
+                    <p className="text-[11px] text-[#8E8E8E]">סה״כ</p>
+                    <p className="text-[20px] font-black text-[#262626]">₪{selectedProduct.price * quantity}</p>
+                  </div>
+                  
+                  {/* Add to Cart Button */}
+                  <motion.div className="flex-1" whileTap={{ scale: 0.98 }}>
+                    <Button
+                      onClick={handleAddToCart}
+                      disabled={!selectedProduct.inStock}
+                      className={`w-full h-14 text-[16px] font-bold rounded-xl flex items-center justify-center gap-2 ${
+                        selectedProduct.inStock 
+                          ? 'bg-gradient-to-r from-[#0095F6] to-[#00C6FF] hover:opacity-90 text-white shadow-lg' 
+                          : 'bg-[#DBDBDB] text-[#8E8E8E] cursor-not-allowed'
+                      }`}
+                    >
+                      <ShoppingCart className="w-5 h-5" strokeWidth={2} />
+                      {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
+                    </Button>
+                  </motion.div>
+                </div>
               </div>
             </div>
           )}
