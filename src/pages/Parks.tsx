@@ -17,6 +17,14 @@ import { ParkReviewDialog } from "@/components/ParkReviewDialog";
 import { ParkReviewsList } from "@/components/ParkReviewsList";
 import { AppHeader } from "@/components/AppHeader";
 
+// Import park images
+import parkImage1 from "@/assets/parks/dog-park-1.jpg";
+import parkImage2 from "@/assets/parks/dog-park-2.jpg";
+import parkImage3 from "@/assets/parks/dog-park-3.jpg";
+import parkImage4 from "@/assets/parks/dog-park-4.jpg";
+import parkImage5 from "@/assets/parks/dog-park-5.jpg";
+import parkImage6 from "@/assets/parks/dog-park-6.jpg";
+
 interface DogPark {
   id: string;
   name: string;
@@ -57,7 +65,10 @@ interface ParkCheckin {
   };
 }
 
-// Instagram-style gradient backgrounds for park cards
+// Park images array
+const parkImages = [parkImage1, parkImage2, parkImage3, parkImage4, parkImage5, parkImage6];
+
+// Instagram-style gradient backgrounds for park cards (fallback)
 const parkGradients = [
   "from-rose-400 via-fuchsia-500 to-indigo-500",
   "from-amber-400 via-orange-500 to-pink-500",
@@ -65,8 +76,6 @@ const parkGradients = [
   "from-violet-400 via-purple-500 to-pink-500",
   "from-blue-400 via-indigo-500 to-purple-500",
   "from-green-400 via-emerald-500 to-teal-500",
-  "from-yellow-400 via-orange-500 to-red-500",
-  "from-cyan-400 via-blue-500 to-indigo-500",
 ];
 
 const Parks = () => {
@@ -406,6 +415,7 @@ const Parks = () => {
     .slice(0, 6);
 
   const renderInstagramParkCard = (park: DogPark, index: number) => {
+    const parkImage = parkImages[index % parkImages.length];
     const gradient = parkGradients[index % parkGradients.length];
     const isLiked = likedParks.has(park.id);
     const isSaved = savedParks.has(park.id);
@@ -427,9 +437,9 @@ const Parks = () => {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
+              className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-pink-500 ring-offset-2"
             >
-              <span className="text-lg">🐕</span>
+              <img src={parkImage} alt={park.name} className="w-full h-full object-cover" />
             </motion.div>
             <div>
               <div className="flex items-center gap-2">
@@ -473,38 +483,50 @@ const Parks = () => {
             setReviewsListOpen(true);
           }}
         >
-          <div className={`w-full aspect-square bg-gradient-to-br ${gradient} relative overflow-hidden`}>
-            {/* Park Info Overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6">
+          <div className="w-full aspect-square relative overflow-hidden">
+            {/* Actual Park Image */}
+            <img 
+              src={parkImage} 
+              alt={park.name}
+              className="w-full h-full object-cover"
+            />
+            
+            {/* Dark Gradient Overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            
+            {/* Park Info Overlay - Bottom */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
               <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-center"
               >
-                <div className="text-6xl mb-4">🏞️</div>
-                <h3 className="font-black text-2xl drop-shadow-lg mb-2">{park.name}</h3>
-                <p className="text-white/90 text-sm flex items-center justify-center gap-1 mb-4">
-                  <MapPin className="w-4 h-4" />
+                <h3 className="font-black text-xl drop-shadow-lg mb-1">{park.name}</h3>
+                <p className="text-white/90 text-sm flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5" />
                   {park.address}
                 </p>
-                
-                {/* Rating in center */}
-                {park.rating && park.rating > 0 && (
-                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-                    <Star className="w-5 h-5 fill-yellow-300 text-yellow-300" />
-                    <span className="font-bold text-lg">{park.rating.toFixed(1)}</span>
-                    <span className="text-white/70 text-sm">({park.total_reviews} ביקורות)</span>
-                  </div>
-                )}
               </motion.div>
             </div>
 
+            {/* Rating Badge - Top Right */}
+            {park.rating && park.rating > 0 && (
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg"
+              >
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-bold text-gray-900">{park.rating.toFixed(1)}</span>
+                <span className="text-gray-500 text-xs">({park.total_reviews})</span>
+              </motion.div>
+            )}
+
             {/* Who's Here Avatars on Image */}
             {checkins.length > 0 && (
-              <div className="absolute bottom-4 right-4 flex -space-x-2 rtl:space-x-reverse">
+              <div className="absolute bottom-16 right-4 flex -space-x-2 rtl:space-x-reverse">
                 {checkins.slice(0, 4).map((checkin) => (
-                  <Avatar key={checkin.id} className="w-10 h-10 border-2 border-white shadow-lg">
+                  <Avatar key={checkin.id} className="w-9 h-9 border-2 border-white shadow-lg">
                     <AvatarImage src={checkin.pet?.avatar_url || checkin.profile?.avatar_url || ''} />
                     <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white text-xs">
                       {checkin.pet?.name?.[0] || '🐕'}
@@ -512,28 +534,33 @@ const Parks = () => {
                   </Avatar>
                 ))}
                 {checkins.length > 4 && (
-                  <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                  <div className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg">
                     +{checkins.length - 4}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Facilities Icons */}
-            <div className="absolute top-4 left-4 flex flex-col gap-2">
+            {/* Facilities Icons - Top Left */}
+            <div className="absolute top-4 left-4 flex gap-1.5">
+              {park.fencing && (
+                <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                </div>
+              )}
               {park.water && (
-                <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Droplets className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
+                  <Droplets className="w-4 h-4 text-blue-500" />
                 </div>
               )}
               {park.shade && (
-                <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Trees className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
+                  <Trees className="w-4 h-4 text-green-600" />
                 </div>
               )}
               {park.agility && (
-                <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
+                  <Activity className="w-4 h-4 text-purple-600" />
                 </div>
               )}
             </div>
@@ -711,7 +738,7 @@ const Parks = () => {
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {featuredParks.map((park, index) => {
-              const gradient = parkGradients[index % parkGradients.length];
+              const parkImage = parkImages[index % parkImages.length];
               return (
                 <motion.button
                   key={park.id}
@@ -724,9 +751,9 @@ const Parks = () => {
                   }}
                   className="flex-shrink-0 text-center group"
                 >
-                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${gradient} p-0.5 ring-2 ring-offset-2 ring-transparent group-hover:ring-amber-400 transition-all`}>
-                    <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                      <span className="text-2xl">🐕</span>
+                  <div className="w-16 h-16 rounded-full p-0.5 ring-2 ring-offset-2 ring-transparent group-hover:ring-amber-400 transition-all bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500">
+                    <div className="w-full h-full rounded-full overflow-hidden">
+                      <img src={parkImage} alt={park.name} className="w-full h-full object-cover" />
                     </div>
                   </div>
                   <p className="text-xs text-gray-700 mt-1 font-medium truncate w-16">{park.name.split(' ')[0]}</p>
