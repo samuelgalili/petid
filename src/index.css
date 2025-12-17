@@ -6,12 +6,13 @@
 @tailwind utilities;
 
 /* 
- * PETID - YELLOW BRAND COLOR SYSTEM
- * =================================
+ * PETID - INSTAGRAM COLOR SYSTEM
+ * ==============================
  * 
- * Based on Yellow Design System
- * Primary Yellow: #F7BF00
- * Brand Red: #C8102E (for headlines and highlights only)
+ * Based on Instagram Design System
+ * Primary Blue: #0095F6 (actions)
+ * Gradient: Orange → Pink → Purple
+ * Like Red: #ED4956
  * 
  * All colors MUST be HSL format.
  */
@@ -19,131 +20,131 @@
 @layer base {
   :root {
     /* ===========================
-     * YELLOW BRAND COLORS
+     * INSTAGRAM BRAND COLORS
      * =========================== */
 
-    /* Primary Yellow */
-    --yellow-primary: 45 100% 48%;           /* #F7BF00 */
-    --yellow-gradient-top: 46 96% 49%;       /* #F9C600 */
-    --yellow-gradient-bottom: 44 93% 48%;    /* #F4B400 */
-    --yellow-primary-foreground: 0 0% 15%;   /* Dark text on yellow */
-    --yellow-hover: 46 96% 52%;              /* #F9C600 hover */
-    --yellow-pressed: 44 87% 45%;            /* #E3A700 pressed */
+    /* Instagram Gradient Colors */
+    --ig-orange: 28 91% 56%;                 /* #F58529 */
+    --ig-pink: 331 74% 51%;                  /* #DD2A7B */
+    --ig-purple: 276 55% 45%;                /* #8134AF */
+    --ig-blue-purple: 235 54% 57%;           /* #515BD4 */
 
-    /* Brand Red - Headlines & Highlights ONLY */
-    --yellow-red: 350 86% 43%;               /* #C8102E */
-    --yellow-red-foreground: 0 0% 100%;
+    /* Primary Blue (Actions) */
+    --ig-blue: 204 100% 48%;                 /* #0095F6 */
+    --ig-blue-hover: 204 100% 42%;           /* Darker blue on hover */
+    --ig-blue-foreground: 0 0% 100%;
+
+    /* Like/Heart Red */
+    --ig-red: 355 82% 60%;                   /* #ED4956 */
+    --ig-red-foreground: 0 0% 100%;
 
     /* Neutral Palette */
-    --yellow-dark: 0 0% 18%;                 /* #2F2F2F */
-    --yellow-gray-600: 0 0% 33%;             /* #555555 */
-    --yellow-gray-400: 0 0% 46%;             /* #767676 */
-    --yellow-white: 0 0% 100%;               /* #FFFFFF */
-    --yellow-gray-100: 0 0% 96%;             /* #F6F6F6 */
-    --yellow-gray-200: 0 0% 87%;             /* #DDDDDD */
-
-    /* Icon Colors */
-    --yellow-icon-blue: 213 97% 62%;         /* #3E8DFB */
-    --yellow-icon-dark-blue: 211 65% 33%;    /* #1D4E89 */
-    --yellow-icon-orange: 33 100% 50%;       /* #FF8A00 */
+    --ig-black: 0 0% 15%;                    /* #262626 */
+    --ig-gray-dark: 0 0% 38%;                /* #616161 */
+    --ig-gray: 0 0% 56%;                     /* #8E8E8E */
+    --ig-gray-light: 0 0% 74%;               /* #BDBDBD */
+    --ig-border: 0 0% 86%;                   /* #DBDBDB */
+    --ig-bg-light: 0 0% 98%;                 /* #FAFAFA */
+    --ig-white: 0 0% 100%;                   /* #FFFFFF */
 
     /* ===========================
      * SEMANTIC TOKENS
      * =========================== */
 
-    /* Primary - Yellow */
-    --primary: 20 90% 48%;
-    --primary-foreground: 33 100% 96%;
-    --primary-light: var(--yellow-gradient-top);
-    --primary-dark: var(--yellow-gradient-bottom);
-    --primary-hover: var(--yellow-hover);
-    --primary-pressed: var(--yellow-pressed);
+    /* Primary - Instagram Blue */
+    --primary: 204 100% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 204 100% 58%;
+    --primary-dark: 204 100% 42%;
+    --primary-hover: 204 100% 42%;
+    --primary-pressed: 204 100% 38%;
 
-    /* Secondary - Dark Gray */
-    --secondary: 0 0% 32%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: var(--yellow-gray-600);
-    --secondary-dark: 0 0% 12%;
+    /* Secondary - Gray */
+    --secondary: 0 0% 98%;
+    --secondary-foreground: 0 0% 15%;
+    --secondary-light: 0 0% 100%;
+    --secondary-dark: 0 0% 96%;
 
-    /* Accent - Brand Red (use sparingly!) */
-    --accent: 47 100% 96%;
-    --accent-foreground: 37 92% 50%;
-    --accent-hover: 350 86% 38%;
-    --accent-light: 350 86% 53%;
+    /* Accent - Instagram Gradient */
+    --accent: 331 74% 51%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 331 74% 45%;
+    --accent-light: 331 74% 61%;
 
     /* Icon system colors */
-    --icon-base: var(--yellow-dark);
-    --icon-blue: var(--yellow-icon-blue);
-    --icon-dark-blue: var(--yellow-icon-dark-blue);
-    --icon-orange: var(--yellow-icon-orange);
-    --icon-active: var(--yellow-primary);
-    --icon-disabled: var(--yellow-gray-400);
+    --icon-base: var(--ig-black);
+    --icon-blue: var(--ig-blue);
+    --icon-dark-blue: 204 100% 38%;
+    --icon-orange: var(--ig-orange);
+    --icon-active: var(--ig-blue);
+    --icon-disabled: var(--ig-gray);
 
     /* Success - Green */
-    --success: 153 52% 46%;
+    --success: 145 63% 42%;
     --success-foreground: 0 0% 100%;
-    --success-light: 153 52% 56%;
-    --success-dark: 153 52% 36%;
+    --success-light: 145 63% 52%;
+    --success-dark: 145 63% 32%;
 
     /* Warning - Orange */
-    --warning: 33 100% 50%;
+    --warning: var(--ig-orange);
     --warning-foreground: 0 0% 100%;
-    --warning-light: 33 100% 60%;
+    --warning-light: 28 91% 66%;
 
-    /* Error - Red */
-    --error: var(--yellow-red);
+    /* Error - Instagram Red */
+    --error: var(--ig-red);
     --error-foreground: 0 0% 100%;
-    --error-light: 350 86% 53%;
+    --error-light: 355 82% 70%;
 
-    /* Info - Blue */
-    --info: var(--yellow-icon-blue);
+    /* Info - Instagram Blue */
+    --info: var(--ig-blue);
     --info-foreground: 0 0% 100%;
-    --info-light: 213 97% 72%;
+    --info-light: 204 100% 68%;
 
     /* Destructive */
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
+    --destructive: 355 82% 60%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Background & Surface */
-    --background: 0 0% 96%;    /* #F6F6F6 */
-    --foreground: 0 0% 9%;        /* #2F2F2F */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
 
-    --surface: var(--yellow-white);          /* #FFFFFF */
-    --surface-elevated: var(--yellow-white);
+    --surface: var(--ig-white);
+    --surface-elevated: var(--ig-white);
 
-    --muted: 0 0% 63%;
-    --muted-foreground: 0 0% 9%;
+    --muted: 0 0% 56%;
+    --muted-foreground: 0 0% 38%;
 
-    --border: 0 0% 83%;        /* #DDDDDD */
-    --border-light: var(--yellow-gray-100);
+    --border: 0 0% 86%;
+    --border-light: 0 0% 92%;
 
-    --input: 0 0% 83%;
-    --ring: 20 90% 48%;
+    --input: 0 0% 98%;
+    --ring: 204 100% 48%;
 
     /* Card & Popover */
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 9%;
-    --card-border: var(--yellow-gray-200);
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+    --card-border: 0 0% 86%;
 
-    --popover: 0 0% 89%;
-    --popover-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
 
     /* Sidebar & Navigation */
-    --sidebar-background: var(--yellow-white);
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 20 90% 48%;
-    --sidebar-primary-foreground: 33 100% 96%;
-    --sidebar-accent: 0 0% 32%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 83%;
-    --sidebar-ring: 20 90% 48%;
+    --sidebar-background: var(--ig-white);
+    --sidebar-foreground: 0 0% 15%;
+    --sidebar-primary: 204 100% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 98%;
+    --sidebar-accent-foreground: 0 0% 15%;
+    --sidebar-border: 0 0% 86%;
+    --sidebar-ring: 204 100% 48%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--yellow-gradient-top)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
-    --gradient-yellow: linear-gradient(180deg, hsl(var(--yellow-gradient-top)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(var(--yellow-primary)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
+    --gradient-primary: linear-gradient(45deg, hsl(var(--ig-orange)) 0%, hsl(var(--ig-pink)) 50%, hsl(var(--ig-purple)) 100%);
+    --gradient-instagram: linear-gradient(45deg, hsl(28 91% 56%) 0%, hsl(331 74% 51%) 50%, hsl(276 55% 45%) 100%);
+    --gradient-story: linear-gradient(45deg, hsl(45 100% 51%) 0%, hsl(28 91% 56%) 20%, hsl(331 74% 51%) 50%, hsl(276 55% 45%) 80%, hsl(235 54% 57%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(var(--ig-pink)) 0%, hsl(var(--ig-purple)) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(var(--ig-white)) 0%, hsl(var(--ig-bg-light)) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(var(--ig-white)) 0%, hsl(var(--ig-bg-light)) 100%);
 
     /* Shadows */
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -154,133 +155,154 @@
     --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.08);
     --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-button-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
-    --shadow-yellow: 0 4px 12px hsla(45, 100%, 48%, 0.35);
+    --shadow-instagram: 0 4px 12px hsla(331, 74%, 51%, 0.25);
 
     /* Component-specific */
-    --header-bg: var(--yellow-white);
-    --header-text: var(--yellow-dark);
-    --footer-bg: var(--yellow-white);
-    --footer-text: var(--yellow-dark);
+    --header-bg: var(--ig-white);
+    --header-text: var(--ig-black);
+    --footer-bg: var(--ig-white);
+    --footer-text: var(--ig-black);
 
-    --toast-bg: var(--yellow-white);
-    --toast-border: var(--yellow-gray-200);
-    --toast-text: var(--yellow-dark);
+    --toast-bg: var(--ig-white);
+    --toast-border: var(--ig-border);
+    --toast-text: var(--ig-black);
 
-    --tag-bg: var(--yellow-gray-100);
-    --tag-text: var(--yellow-dark);
-    --tag-border: var(--yellow-gray-200);
+    --tag-bg: var(--ig-bg-light);
+    --tag-text: var(--ig-black);
+    --tag-border: var(--ig-border);
 
-    --radius: 0.75rem;                      /* 14px default */
-    --radius-lg: 1.375rem;                   /* 22px for cards */                   --chart-1: 27 95% 60%;                   --chart-2: 43 96% 56%;                   --chart-3: 47 95% 53%;                   --chart-4: 24 94% 53%;                   --chart-5: 0 0% 45%;                   --sidebar: 0 0% 98%;                   --font-sans: 'Roboto', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;                   --font-serif: 'Libre Caslon Text', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;                   --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;                   --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);                   --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);                   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);                   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);                   --tracking-normal: 0em;                   --spacing: 0.25rem;
-  }
-
-  /* DARK MODE */
-  .dark {
-    --yellow-primary: 45 100% 52%;
-    --yellow-gradient-top: 46 96% 55%;
-    --yellow-gradient-bottom: 44 93% 52%;
-    --yellow-primary-foreground: 0 0% 10%;
-
-    --yellow-dark: 0 0% 90%;
-    --yellow-gray-600: 0 0% 75%;
-    --yellow-gray-400: 0 0% 60%;
-    --yellow-white: 0 0% 12%;
-    --yellow-gray-100: 0 0% 8%;
-    --yellow-gray-200: 0 0% 18%;
-
-    --primary: 27 95% 60%;
-    --primary-foreground: 12 81% 14%;
-    --primary-light: var(--yellow-gradient-top);
-    --primary-dark: var(--yellow-gradient-bottom);
-
-    --secondary: 0 0% 45%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: var(--yellow-gray-600);
-
-    --accent: 20 91% 14%;
-    --accent-foreground: 43 96% 56%;
-
-    --success: 153 52% 52%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 33 100% 55%;
-    --warning-foreground: 0 0% 10%;
-
-    --error: 350 86% 55%;
-    --error-foreground: 0 0% 100%;
-
-    --info: 213 97% 68%;
-    --info-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 85% 97%;
-
-    --background: 0 0% 9%;
-    --foreground: 0 0% 98%;
-
-    --surface: var(--yellow-white);
-    --surface-elevated: 0 0% 15%;
-
-    --muted: 0 0% 45%;
-    --muted-foreground: 0 0% 98%;
-
-    --border: 0 0% 32%;
-    --border-light: 0 0% 22%;
-    --input: 0 0% 32%;
-    --ring: 27 95% 60%;
-
-    --card: 0 0% 14%;
-    --card-foreground: 0 0% 98%;
-    --card-border: var(--yellow-gray-200);
-
-    --popover: 0 0% 25%;
-    --popover-foreground: 0 0% 98%;
-
-    --sidebar-background: var(--yellow-gray-100);
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 27 95% 60%;
-    --sidebar-primary-foreground: 12 81% 14%;
-    --sidebar-accent: 43 96% 56%;
-    --sidebar-accent-foreground: 20 91% 14%;
-    --sidebar-border: 0 0% 32%;
-    --sidebar-ring: 27 95% 60%;
-
-    --header-bg: var(--yellow-white);
-    --header-text: var(--yellow-dark);
-    --footer-bg: var(--yellow-gray-100);
-    --footer-text: var(--yellow-dark);
-
-    --toast-bg: var(--yellow-white);
-    --toast-border: var(--yellow-gray-200);
-    --toast-text: var(--yellow-dark);
-
-    --tag-bg: var(--yellow-gray-200);
-    --tag-text: var(--yellow-dark);
-    --tag-border: var(--yellow-gray-200);
-
-    --gradient-primary: linear-gradient(135deg, hsl(var(--yellow-gradient-top)) 0%, hsl(var(--yellow-gradient-bottom)) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(var(--yellow-white)) 0%, hsl(var(--yellow-gray-100)) 100%);
-
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.5);
-    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-button-hover: 0 4px 8px rgba(0, 0, 0, 0.4);
-    --shadow-yellow: 0 4px 12px hsla(45, 100%, 52%, 0.4);
-    --chart-1: 30 97% 72%;
-    --chart-2: 45 96% 64%;
-    --chart-3: 48 96% 76%;
-    --chart-4: 27 95% 60%;
-    --chart-5: 0 0% 45%;
-    --sidebar: 0 0% 14%;
+    --radius: 0.5rem;
+    --radius-lg: 1rem;
+    --chart-1: 204 100% 48%;
+    --chart-2: 331 74% 51%;
+    --chart-3: 276 55% 45%;
+    --chart-4: 28 91% 56%;
+    --chart-5: 0 0% 56%;
+    --sidebar: 0 0% 100%;
+    --font-sans: 'Roboto', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --font-serif: 'Libre Caslon Text', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
+  }
+
+  /* DARK MODE */
+  .dark {
+    --ig-orange: 28 91% 60%;
+    --ig-pink: 331 74% 55%;
+    --ig-purple: 276 55% 50%;
+    --ig-blue-purple: 235 54% 62%;
+    --ig-blue: 204 100% 52%;
+    --ig-blue-foreground: 0 0% 100%;
+    --ig-red: 355 82% 64%;
+
+    --ig-black: 0 0% 92%;
+    --ig-gray-dark: 0 0% 75%;
+    --ig-gray: 0 0% 60%;
+    --ig-gray-light: 0 0% 45%;
+    --ig-border: 0 0% 25%;
+    --ig-bg-light: 0 0% 12%;
+    --ig-white: 0 0% 0%;
+
+    --primary: 204 100% 52%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 204 100% 62%;
+    --primary-dark: 204 100% 45%;
+
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 92%;
+    --secondary-light: 0 0% 22%;
+
+    --accent: 331 74% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 145 63% 48%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 28 91% 60%;
+    --warning-foreground: 0 0% 10%;
+
+    --error: 355 82% 64%;
+    --error-foreground: 0 0% 100%;
+
+    --info: 204 100% 62%;
+    --info-foreground: 0 0% 100%;
+
+    --destructive: 355 82% 64%;
+    --destructive-foreground: 0 0% 100%;
+
+    --background: 0 0% 0%;
+    --foreground: 0 0% 92%;
+
+    --surface: 0 0% 0%;
+    --surface-elevated: 0 0% 8%;
+
+    --muted: 0 0% 45%;
+    --muted-foreground: 0 0% 65%;
+
+    --border: 0 0% 25%;
+    --border-light: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 204 100% 52%;
+
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 92%;
+    --card-border: 0 0% 25%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 92%;
+
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 204 100% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 204 100% 52%;
+
+    --header-bg: 0 0% 0%;
+    --header-text: 0 0% 92%;
+    --footer-bg: 0 0% 0%;
+    --footer-text: 0 0% 92%;
+
+    --toast-bg: 0 0% 8%;
+    --toast-border: 0 0% 25%;
+    --toast-text: 0 0% 92%;
+
+    --tag-bg: 0 0% 18%;
+    --tag-text: 0 0% 92%;
+    --tag-border: 0 0% 25%;
+
+    --gradient-primary: linear-gradient(45deg, hsl(var(--ig-orange)) 0%, hsl(var(--ig-pink)) 50%, hsl(var(--ig-purple)) 100%);
+    --gradient-instagram: linear-gradient(45deg, hsl(28 91% 60%) 0%, hsl(331 74% 55%) 50%, hsl(276 55% 50%) 100%);
+    --gradient-story: linear-gradient(45deg, hsl(45 100% 55%) 0%, hsl(28 91% 60%) 20%, hsl(331 74% 55%) 50%, hsl(276 55% 50%) 80%, hsl(235 54% 62%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(0 0% 12%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 0%) 0%, hsl(0 0% 12%) 100%);
+
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 4px 6px -1px hsl(0 0% 0% / 0.2);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 8px 10px -1px hsl(0 0% 0% / 0.2);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-button-hover: 0 4px 8px rgba(0, 0, 0, 0.5);
+    --shadow-instagram: 0 4px 12px hsla(331, 74%, 55%, 0.3);
+    --chart-1: 204 100% 58%;
+    --chart-2: 331 74% 60%;
+    --chart-3: 276 55% 55%;
+    --chart-4: 28 91% 65%;
+    --chart-5: 0 0% 55%;
+    --sidebar: 0 0% 0%;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.2);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.2);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.5);
   }
 
   /* High Contrast Mode */
@@ -360,30 +382,30 @@
 
 @layer components {
   /* ===========================
-   * YELLOW BUTTON VARIANTS
+   * INSTAGRAM BUTTON VARIANTS
    * =========================== */
 
   .btn-primary {
-    @apply font-semibold rounded-xl px-6 py-3 
+    @apply font-semibold rounded-lg px-6 py-3 
            transition-all duration-200 active:scale-95 
            focus-visible:outline-none focus-visible:ring-2 
            focus-visible:ring-offset-2;
-    background: hsl(var(--yellow-primary));
-    color: hsl(var(--yellow-primary-foreground));
+    background: hsl(var(--ig-blue));
+    color: hsl(var(--ig-blue-foreground));
     box-shadow: var(--shadow-button);
   }
 
   .btn-primary:hover {
-    background: hsl(var(--yellow-hover));
+    background: hsl(var(--ig-blue-hover));
     box-shadow: var(--shadow-button-hover);
   }
 
   .btn-primary:active {
-    background: hsl(var(--yellow-pressed));
+    background: hsl(var(--primary-pressed));
   }
 
   .btn-secondary {
-    @apply font-semibold rounded-xl px-6 py-3 
+    @apply font-semibold rounded-lg px-6 py-3 
            transition-all duration-200 active:scale-95;
     background: hsl(var(--secondary));
     color: hsl(var(--secondary-foreground));
@@ -395,21 +417,33 @@
   }
 
   .btn-outline {
-    @apply bg-transparent font-semibold rounded-xl px-6 py-3 
-           border-2 transition-all duration-200 
-           hover:bg-muted active:scale-95;
+    @apply bg-transparent font-semibold rounded-lg px-6 py-3 
+           border transition-all duration-200 
+           hover:bg-muted/50 active:scale-95;
     border-color: hsl(var(--border));
     color: hsl(var(--foreground));
   }
 
   .btn-ghost {
-    @apply bg-transparent font-medium rounded-xl px-6 py-3 
-           transition-all duration-200 hover:bg-muted active:scale-95;
+    @apply bg-transparent font-medium rounded-lg px-6 py-3 
+           transition-all duration-200 hover:bg-muted/30 active:scale-95;
     color: hsl(var(--foreground));
   }
 
+  .btn-instagram {
+    @apply font-semibold rounded-lg px-6 py-3 
+           transition-all duration-200 active:scale-95;
+    background: var(--gradient-instagram);
+    color: white;
+    background-size: 200% 200%;
+  }
+
+  .btn-instagram:hover {
+    animation: gradient-rotate 3s ease infinite;
+  }
+
   .btn-accent {
-    @apply font-semibold rounded-xl px-6 py-3 
+    @apply font-semibold rounded-lg px-6 py-3 
            transition-all duration-200 active:scale-95;
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
