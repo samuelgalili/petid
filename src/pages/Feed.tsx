@@ -385,211 +385,147 @@ const Feed = () => {
   }, [posts, feedFilter, followingIds]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-24" dir="rtl">
-      {/* Petish Header - Premium glass effect */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="w-10" /> {/* Spacer for centering */}
-          <motion.h1 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-black font-jakarta tracking-tight bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] bg-clip-text text-transparent"
-          >
+    <div className="min-h-screen bg-white pb-20" dir="rtl">
+      {/* Instagram-style Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+        <div className="max-w-lg mx-auto px-4 h-11 flex items-center justify-between">
+          <div className="w-8" />
+          <h1 className="text-[22px] font-semibold text-[#262626]" style={{ fontFamily: 'Instagram Sans, -apple-system, BlinkMacSystemFont, sans-serif' }}>
             Petish
-          </motion.h1>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+          </h1>
+          <button
             onClick={() => navigate('/messages')}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+            className="p-1 active:opacity-50"
           >
-            <MessageCircle className="w-5 h-5 text-gray-600" strokeWidth={1.5} />
-          </motion.button>
+            <MessageCircle className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+          </button>
         </div>
       </div>
 
       {/* Spacer for fixed header */}
-      <div className="h-[60px]" />
+      <div className="h-11" />
 
-      {/* Create Post FAB - Enhanced */}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+      {/* Create Post FAB */}
+      <Button
+        onClick={() => setCreatePostOpen(true)}
+        className="fixed bottom-20 left-4 z-50 rounded-full w-12 h-12 bg-[#0095F6] hover:bg-[#1877F2] shadow-lg"
+        size="icon"
       >
-        <Button
-          onClick={() => setCreatePostOpen(true)}
-          className="fixed bottom-24 left-4 z-50 rounded-full w-14 h-14 bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] hover:opacity-90 shadow-xl shadow-purple-500/30"
-          size="icon"
-        >
-          <Plus className="w-6 h-6 text-white" />
-        </Button>
-      </motion.div>
+        <Plus className="w-5 h-5 text-white" strokeWidth={2} />
+      </Button>
 
-      {/* New Posts Banner - Enhanced */}
+      {/* New Posts Banner */}
       <AnimatePresence>
         {newPostsAvailable && (
           <motion.div
-            initial={{ y: -60, opacity: 0 }}
+            initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -60, opacity: 0 }}
-            className="fixed top-[60px] left-0 right-0 z-40 px-4 py-3 bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] text-white text-center cursor-pointer shadow-lg"
+            exit={{ y: -50, opacity: 0 }}
+            className="fixed top-11 left-0 right-0 z-40 bg-[#0095F6] text-white text-center cursor-pointer py-2"
             onClick={handleLoadNewPosts}
           >
-            <div className="flex items-center justify-center gap-2 max-w-2xl mx-auto">
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-              >
-                <TrendingUp className="w-5 h-5" strokeWidth={2} />
-              </motion.div>
-              <span className="font-bold font-jakarta">פוסטים חדשים זמינים - לחץ לטעינה</span>
-            </div>
+            <span className="text-[13px] font-medium">פוסטים חדשים</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Stories Bar */}
-      <div className="bg-white shadow-sm">
+      <div className="border-b border-gray-200">
         <StoriesBar />
       </div>
 
-      {/* Filter Tabs - Premium design */}
-      <div className="bg-white border-b border-gray-100 sticky top-[60px] z-30">
-        <div className="max-w-2xl mx-auto px-4 py-3">
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setFeedFilter("all")}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-bold font-jakarta text-sm transition-all ${
-                feedFilter === "all"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              הכל
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setFeedFilter("following")}
-              className={`flex-1 py-2.5 px-4 rounded-lg font-bold font-jakarta text-sm transition-all flex items-center justify-center gap-2 ${
-                feedFilter === "following"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              עוקבים
-              {followingIds.length > 0 && (
-                <span className="bg-gradient-to-r from-[#FF6B9D] to-[#C44FE2] text-white text-xs px-2 py-0.5 rounded-full">
-                  {followingIds.length}
-                </span>
-              )}
-            </motion.button>
-          </div>
+      {/* Filter Tabs */}
+      <div className="bg-white border-b border-gray-200 sticky top-11 z-30">
+        <div className="max-w-lg mx-auto flex">
+          <button
+            onClick={() => setFeedFilter("all")}
+            className={`flex-1 py-3 text-[13px] font-semibold border-b-2 transition-colors ${
+              feedFilter === "all"
+                ? "border-[#262626] text-[#262626]"
+                : "border-transparent text-[#8E8E8E]"
+            }`}
+          >
+            הכל
+          </button>
+          <button
+            onClick={() => setFeedFilter("following")}
+            className={`flex-1 py-3 text-[13px] font-semibold border-b-2 transition-colors ${
+              feedFilter === "following"
+                ? "border-[#262626] text-[#262626]"
+                : "border-transparent text-[#8E8E8E]"
+            }`}
+          >
+            עוקבים
+          </button>
         </div>
       </div>
 
       {/* Feed */}
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-lg mx-auto">
         {loading ? (
-          // Premium Loading skeleton
-          <div className="space-y-5 px-4 py-5">
+          // Instagram-style Loading skeleton
+          <div>
             {[...Array(3)].map((_, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-              >
-                <div className="flex items-center gap-3 p-4">
-                  <Skeleton className="w-11 h-11 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-28 rounded-lg" />
-                    <Skeleton className="h-3 w-16 rounded-lg" />
-                  </div>
+              <div key={i} className="bg-white border-b border-gray-200">
+                <div className="flex items-center gap-3 px-3 py-2.5">
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                  <Skeleton className="h-3 w-24" />
                 </div>
                 <Skeleton className="w-full aspect-square" />
-                <div className="p-4 space-y-3">
+                <div className="px-3 py-2 space-y-2">
                   <div className="flex gap-4">
-                    <Skeleton className="h-7 w-7 rounded-full" />
-                    <Skeleton className="h-7 w-7 rounded-full" />
-                    <Skeleton className="h-7 w-7 rounded-full" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded" />
                   </div>
-                  <Skeleton className="h-4 w-20 rounded-lg" />
-                  <Skeleton className="h-4 w-full rounded-lg" />
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-full" />
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         ) : filteredPosts.length === 0 ? (
-          // Premium Empty state
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center py-16 px-6"
-          >
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="w-28 h-28 bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg"
-            >
-              <Camera className="w-12 h-12 text-purple-400" strokeWidth={1.5} />
-            </motion.div>
-            <h3 className="text-xl font-black text-gray-900 font-jakarta mb-2">
-              {feedFilter === "following" ? "אין פוסטים מעוקבים" : "הפיד ריק"}
+          // Empty state
+          <div className="text-center py-16 px-6">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Camera className="w-10 h-10 text-gray-400" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-[22px] font-semibold text-[#262626] mb-1">
+              {feedFilter === "following" ? "אין פוסטים" : "שתף תמונות"}
             </h3>
-            <p className="text-gray-500 font-jakarta text-sm mb-6 max-w-[280px] mx-auto">
+            <p className="text-[#8E8E8E] text-[14px] mb-5">
               {feedFilter === "following" 
-                ? "התחל לעקוב אחרי משתמשים כדי לראות את הפוסטים שלהם"
-                : "שתף את הרגעים הכי חמודים של חיית המחמד שלך 🐾"}
+                ? "עקוב אחרי אנשים כדי לראות תמונות"
+                : "כשתשתף תמונות, הן יופיעו בפרופיל שלך"}
             </p>
-            <motion.div whileTap={{ scale: 0.95 }}>
-              <Button
-                onClick={() => setCreatePostOpen(true)}
-                className="bg-gradient-to-r from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE] hover:opacity-90 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-purple-500/25"
-              >
-                <Plus className="w-5 h-5 ml-2" strokeWidth={2} />
-                צור פוסט ראשון
-              </Button>
-            </motion.div>
-          </motion.div>
+            <button
+              onClick={() => setCreatePostOpen(true)}
+              className="text-[#0095F6] font-semibold text-[14px]"
+            >
+              שתף את התמונה הראשונה שלך
+            </button>
+          </div>
         ) : (
-          <div className="space-y-5 px-4 py-5">
-            {filteredPosts.map((post, index) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <PostCardErrorBoundary>
-                  <PostCard
-                    post={post}
-                    currentUserId={user?.id}
-                    onLike={handleLike}
-                    onSave={handleSave}
-                    onDoubleTap={handleDoubleTap}
-                    showDoubleTapAnimation={doubleTapLike === post.id}
-                    getTimeAgo={getTimeAgo}
-                  />
-                </PostCardErrorBoundary>
-              </motion.div>
+          <div>
+            {filteredPosts.map((post) => (
+              <PostCardErrorBoundary key={post.id}>
+                <PostCard
+                  post={post}
+                  currentUserId={user?.id}
+                  onLike={handleLike}
+                  onSave={handleSave}
+                  onDoubleTap={handleDoubleTap}
+                  showDoubleTapAnimation={doubleTapLike === post.id}
+                  getTimeAgo={getTimeAgo}
+                />
+              </PostCardErrorBoundary>
             ))}
             
             {/* Infinite Scroll Observer Target */}
             {hasMore && (
-              <div ref={observerTarget} className="py-6 text-center">
+              <div ref={observerTarget} className="py-4 text-center">
                 {loadingMore && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center gap-2"
-                  >
-                    <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
-                    <span className="text-gray-400 font-jakarta text-sm">טוען עוד...</span>
-                  </motion.div>
+                  <Loader2 className="w-5 h-5 animate-spin text-[#8E8E8E] mx-auto" />
                 )}
               </div>
             )}
@@ -597,12 +533,10 @@ const Feed = () => {
         )}
       </div>
 
-      {/* Bottom Hint */}
+      {/* End of Feed */}
       {!loading && !hasMore && filteredPosts.length > 0 && (
-        <div className="text-center py-8 px-4">
-          <p className="text-gray-400 font-jakarta text-sm">
-            הגעת לסוף הפיד
-          </p>
+        <div className="text-center py-6 border-t border-gray-200">
+          <p className="text-[#8E8E8E] text-[13px]">סיימת לראות הכל</p>
         </div>
       )}
 
