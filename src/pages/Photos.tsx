@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Grid3X3, Play, Heart, MessageCircle, Plus, Image as ImageIcon } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { motion } from "framer-motion";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
 
 interface Post {
   id: string;
@@ -24,6 +25,7 @@ export default function Photos() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "images" | "videos">("all");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -87,7 +89,11 @@ export default function Photos() {
   };
 
   const handleCreatePost = () => {
-    navigate("/feed");
+    setShowCreateDialog(true);
+  };
+
+  const handlePostCreated = () => {
+    fetchPosts();
   };
 
   return (
@@ -234,6 +240,13 @@ export default function Photos() {
           )}
         </div>
       </div>
+
+      {/* Create Post Dialog */}
+      <CreatePostDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onPostCreated={handlePostCreated}
+      />
     </>
   );
 }
