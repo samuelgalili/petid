@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Send, Bookmark, FileText, ChevronLeft } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, FileText, ChevronLeft, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 
@@ -12,6 +12,7 @@ interface DocumentPostCardProps {
     pet_avatar?: string;
     uploaded_at: string;
     description?: string;
+    file_url?: string;
   };
   user: {
     name: string;
@@ -50,6 +51,14 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
     navigate("/documents");
   };
 
+  const handleOpenDocument = () => {
+    if (document.file_url) {
+      window.open(document.file_url, "_blank", "noopener,noreferrer");
+    } else {
+      navigate("/documents");
+    }
+  };
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
@@ -74,9 +83,13 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
 
       {/* Document Visual */}
       <div className="relative aspect-square bg-gradient-to-br from-blue-50 to-indigo-100">
-        {/* Document Preview Background */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl p-8 w-3/4 max-w-[280px] transform rotate-[-2deg]">
+        {/* Document Preview Background - Clickable */}
+        <motion.div 
+          className="absolute inset-0 flex items-center justify-center cursor-pointer"
+          onClick={handleOpenDocument}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="bg-white rounded-xl shadow-xl p-8 w-3/4 max-w-[280px] transform rotate-[-2deg] hover:shadow-2xl transition-shadow">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">
                 {getDocumentTypeIcon(document.document_type)}
@@ -92,19 +105,24 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
               <div className="h-2 bg-gray-100 rounded w-4/6"></div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-2">
-                {document.pet_avatar && (
-                  <img 
-                    src={document.pet_avatar} 
-                    alt={document.pet_name}
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {document.pet_avatar && (
+                    <img 
+                      src={document.pet_avatar} 
+                      alt={document.pet_name}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  )}
+                  <span className="text-xs text-gray-500">{document.pet_name}</span>
+                </div>
+                {document.file_url && (
+                  <ExternalLink className="h-4 w-4 text-blue-500" />
                 )}
-                <span className="text-xs text-gray-500">{document.pet_name}</span>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* CTA Strip - Bottom of image */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-12 pb-3 px-4">
@@ -121,12 +139,12 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
               </div>
             </div>
             <motion.button
-              onClick={handleDocumentsClick}
+              onClick={handleOpenDocument}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1 text-white text-sm font-medium"
+              className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm font-medium hover:bg-white/30 transition-colors"
             >
-              <span>צפייה</span>
-              <ChevronLeft className="h-4 w-4" strokeWidth={2} />
+              <ExternalLink className="h-4 w-4" strokeWidth={2} />
+              <span>פתח</span>
             </motion.button>
           </div>
         </div>
