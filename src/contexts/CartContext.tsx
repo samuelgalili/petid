@@ -1,4 +1,4 @@
-import * as React from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface CartItem {
   id: string;
@@ -20,33 +20,19 @@ interface CartContextType {
   getSubtotal: () => number;
 }
 
-const CartContext = React.createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = React.useState<CartItem[]>([]);
-  const [isInitialized, setIsInitialized] = React.useState(false);
+export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const [items, setItems] = useState<CartItem[]>(() => {
+    const savedCart = localStorage.getItem("petid-cart");
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
 
-  // Load cart from localStorage on mount
-  React.useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("petid-cart");
-      if (savedCart) {
-        setItems(JSON.parse(savedCart));
-      }
-    } catch (error) {
-      console.error("Failed to load cart from localStorage:", error);
-    }
-    setIsInitialized(true);
-  }, []);
+  useEffect(() => {
+    localStorage.setItem("petid-cart", JSON.stringify(items));
+  }, [items]);
 
-  // Save cart to localStorage when items change
-  React.useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem("petid-cart", JSON.stringify(items));
-    }
-  }, [items, isInitialized]);
-
-  const addToCart = React.useCallback((item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+  const addToCart = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prevItems) => {
       const existingItem = prevItems.find(
         (i) => i.id === item.id && i.variant === item.variant && i.size === item.size
@@ -62,15 +48,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       return [...prevItems, { ...item, quantity: item.quantity || 1 }];
     });
-  }, []);
+  };
 
-  const removeFromCart = React.useCallback((id: string) => {
+  const removeFromCart = (id: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
-  }, []);
+  };
 
-  const updateQuantity = React.useCallback((id: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
-      setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+      removeFromCart(id);
       return;
     }
 
@@ -79,41 +65,41 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         item.id === id ? { ...item, quantity } : item
       )
     );
-  }, []);
+  };
 
-  const clearCart = React.useCallback(() => {
+  const clearCart = () => {
     setItems([]);
-  }, []);
+  };
 
-  const getTotalItems = React.useCallback(() => {
+  const getTotalItems = () => {
     return items.reduce((total, item) => total + item.quantity, 0);
-  }, [items]);
+  };
 
-  const getSubtotal = React.useCallback(() => {
+  const getSubtotal = () => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
-  }, [items]);
-
-  const value = React.useMemo(() => ({
-    items,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getTotalItems,
-    getSubtotal,
-  }), [items, addToCart, removeFromCart, updateQuantity, clearCart, getTotalItems, getSubtotal]);
+  };
 
   return (
-    <CartContext.Provider value={value}>
+    <CartContext.Provider
+      value={{
+        items,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        getTotalItems,
+        getSubtotal,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
-}
+};
 
-export function useCart() {
-  const context = React.useContext(CartContext);
+export const useCart = () => {
+  const context = useContext(CartContext);
   if (!context) {
     throw new Error("useCart must be used within a CartProvider");
   }
   return context;
-}
+};

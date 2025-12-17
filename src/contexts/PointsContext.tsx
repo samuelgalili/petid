@@ -1,4 +1,4 @@
-import * as React from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,14 +9,14 @@ interface PointsContextType {
   loading: boolean;
 }
 
-const PointsContext = React.createContext<PointsContextType | undefined>(undefined);
+const PointsContext = createContext<PointsContextType | undefined>(undefined);
 
-export function PointsProvider({ children }: { children: React.ReactNode }) {
-  const [totalPoints, setTotalPoints] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
+export const PointsProvider = ({ children }: { children: ReactNode }) => {
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchPoints();
   }, []);
 
@@ -112,12 +112,12 @@ export function PointsProvider({ children }: { children: React.ReactNode }) {
       {children}
     </PointsContext.Provider>
   );
-}
+};
 
-export function usePoints() {
-  const context = React.useContext(PointsContext);
+export const usePoints = () => {
+  const context = useContext(PointsContext);
   if (context === undefined) {
     throw new Error("usePoints must be used within a PointsProvider");
   }
   return context;
-}
+};

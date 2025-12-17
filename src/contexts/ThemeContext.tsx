@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -8,20 +8,17 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
-const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>('system');
-  const [effectiveTheme, setEffectiveTheme] = React.useState<'light' | 'dark'>('light');
-
-  React.useEffect(() => {
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem('petid-theme') as Theme;
-    if (stored) {
-      setThemeState(stored);
-    }
-  }, []);
+    return stored || 'system';
+  });
 
-  React.useEffect(() => {
+  const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
     const root = document.documentElement;
     
     const getEffectiveTheme = (): 'light' | 'dark' => {
@@ -55,22 +52,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
-  const setTheme = React.useCallback((newTheme: Theme) => {
+  const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('petid-theme', newTheme);
-  }, []);
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, effectiveTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
-}
+};
 
-export function useTheme() {
-  const context = React.useContext(ThemeContext);
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
   if (!context) {
     throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
-}
+};

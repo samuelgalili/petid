@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 type PetType = "dog" | "cat" | null;
 
@@ -7,38 +7,34 @@ interface PetPreferenceContextType {
   setPetType: (type: PetType) => void;
 }
 
-const PetPreferenceContext = React.createContext<PetPreferenceContextType | undefined>(undefined);
+const PetPreferenceContext = createContext<PetPreferenceContextType | undefined>(undefined);
 
-export function PetPreferenceProvider({ children }: { children: React.ReactNode }) {
-  const [petType, setPetTypeState] = React.useState<PetType>(null);
-
-  React.useEffect(() => {
+export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [petType, setPetTypeState] = useState<PetType>(() => {
     const saved = localStorage.getItem("petPreference");
-    if (saved) {
-      setPetTypeState(saved as PetType);
-    }
-  }, []);
+    return (saved as PetType) || null;
+  });
 
-  const setPetType = React.useCallback((type: PetType) => {
+  const setPetType = (type: PetType) => {
     setPetTypeState(type);
     if (type) {
       localStorage.setItem("petPreference", type);
     } else {
       localStorage.removeItem("petPreference");
     }
-  }, []);
+  };
 
   return (
     <PetPreferenceContext.Provider value={{ petType, setPetType }}>
       {children}
     </PetPreferenceContext.Provider>
   );
-}
+};
 
-export function usePetPreference() {
-  const context = React.useContext(PetPreferenceContext);
+export const usePetPreference = () => {
+  const context = useContext(PetPreferenceContext);
   if (context === undefined) {
     throw new Error("usePetPreference must be used within a PetPreferenceProvider");
   }
   return context;
-}
+};

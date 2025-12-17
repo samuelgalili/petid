@@ -1,4 +1,4 @@
-import * as React from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type Language = "he" | "en" | "ar";
 
@@ -9,39 +9,39 @@ interface LanguageContextType {
   direction: "rtl" | "ltr";
 }
 
-const LanguageContext = React.createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function useLanguage() {
-  const context = React.useContext(LanguageContext);
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
   if (!context) {
     throw new Error("useLanguage must be used within LanguageProvider");
   }
   return context;
+};
+
+interface LanguageProviderProps {
+  children: ReactNode;
 }
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = React.useState<Language>("he");
-
-  React.useEffect(() => {
+export const LanguageProvider = ({ children }: LanguageProviderProps) => {
+  const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem("language");
-    if (saved) {
-      setLanguageState(saved as Language);
-    }
-  }, []);
+    return (saved as Language) || "he";
+  });
 
   const direction = language === "en" ? "ltr" : "rtl";
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem("language", language);
     document.documentElement.lang = language;
     document.documentElement.dir = direction;
   }, [language, direction]);
 
-  const setLanguage = React.useCallback((lang: Language) => {
+  const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-  }, []);
+  };
 
-  const t = React.useCallback((key: string): string => {
+  const t = (key: string): string => {
     const keys = key.split(".");
     let value: any = translations[language];
     
@@ -50,14 +50,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
     
     return value || key;
-  }, [language]);
+  };
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, direction }}>
       {children}
     </LanguageContext.Provider>
   );
-}
+};
 
 const translations = {
   he: {

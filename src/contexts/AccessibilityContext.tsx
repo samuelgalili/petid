@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type FontSize = 'small' | 'medium' | 'large';
 
@@ -14,7 +14,7 @@ interface AccessibilityContextType extends AccessibilitySettings {
   setReduceMotion: (enabled: boolean) => void;
 }
 
-const AccessibilityContext = React.createContext<AccessibilityContextType | undefined>(undefined);
+const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
 
 const defaultSettings: AccessibilitySettings = {
   fontSize: 'medium',
@@ -22,34 +22,29 @@ const defaultSettings: AccessibilitySettings = {
   reduceMotion: false,
 };
 
-export function AccessibilityProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = React.useState<AccessibilitySettings>(defaultSettings);
-
-  React.useEffect(() => {
+export const AccessibilityProvider = ({ children }: { children: React.ReactNode }) => {
+  const [settings, setSettings] = useState<AccessibilitySettings>(() => {
     const stored = localStorage.getItem('petid-accessibility');
-    if (stored) {
-      try {
-        setSettings(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse accessibility settings:', e);
-      }
-    }
-  }, []);
+    return stored ? JSON.parse(stored) : defaultSettings;
+  });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const root = document.documentElement;
     
+    // Apply font size
     root.classList.remove('text-sm', 'text-base', 'text-lg');
     if (settings.fontSize === 'small') root.classList.add('text-sm');
     else if (settings.fontSize === 'large') root.classList.add('text-lg');
     else root.classList.add('text-base');
 
+    // Apply high contrast
     if (settings.highContrast) {
       root.classList.add('high-contrast');
     } else {
       root.classList.remove('high-contrast');
     }
 
+    // Apply reduce motion
     if (settings.reduceMotion) {
       root.classList.add('reduce-motion');
     } else {
@@ -59,17 +54,17 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     localStorage.setItem('petid-accessibility', JSON.stringify(settings));
   }, [settings]);
 
-  const setFontSize = React.useCallback((fontSize: FontSize) => {
+  const setFontSize = (fontSize: FontSize) => {
     setSettings(prev => ({ ...prev, fontSize }));
-  }, []);
+  };
 
-  const setHighContrast = React.useCallback((highContrast: boolean) => {
+  const setHighContrast = (highContrast: boolean) => {
     setSettings(prev => ({ ...prev, highContrast }));
-  }, []);
+  };
 
-  const setReduceMotion = React.useCallback((reduceMotion: boolean) => {
+  const setReduceMotion = (reduceMotion: boolean) => {
     setSettings(prev => ({ ...prev, reduceMotion }));
-  }, []);
+  };
 
   return (
     <AccessibilityContext.Provider
@@ -83,12 +78,12 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       {children}
     </AccessibilityContext.Provider>
   );
-}
+};
 
-export function useAccessibility() {
-  const context = React.useContext(AccessibilityContext);
+export const useAccessibility = () => {
+  const context = useContext(AccessibilityContext);
   if (!context) {
     throw new Error('useAccessibility must be used within AccessibilityProvider');
   }
   return context;
-}
+};

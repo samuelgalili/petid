@@ -1,4 +1,4 @@
-import * as React from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
@@ -44,16 +44,16 @@ interface GameContextType {
   fetchAchievements: () => Promise<void>;
 }
 
-const GameContext = React.createContext<GameContextType | undefined>(undefined);
+const GameContext = createContext<GameContextType | undefined>(undefined);
 
-export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [achievements, setAchievements] = React.useState<Achievement[]>([]);
-  const [streak, setStreak] = React.useState<Streak | null>(null);
-  const [badges, setBadges] = React.useState<Badge[]>([]);
-  const [loading, setLoading] = React.useState(true);
+export const GameProvider = ({ children }: { children: ReactNode }) => {
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [streak, setStreak] = useState<Streak | null>(null);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchGameData();
   }, []);
 
@@ -65,6 +65,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Fetch all badges
       const { data: badgesData } = await supabase
         .from('badges')
         .select('*')
@@ -72,8 +73,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       
       if (badgesData) setBadges(badgesData as Badge[]);
 
+      // Fetch user achievements
       await fetchAchievements();
 
+      // Fetch user streak
       const { data: streakData } = await supabase
         .from('streaks')
         .select('*')
@@ -83,6 +86,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (streakData) {
         setStreak(streakData as Streak);
       } else {
+        // Create initial streak
         const { data: newStreak } = await supabase
           .from('streaks')
           .insert({
@@ -125,12 +129,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Check if already earned
       const alreadyEarned = achievements.some(a => a.badge_id === badgeId);
       if (alreadyEarned) return;
 
       const badge = badges.find(b => b.id === badgeId);
       if (!badge) return;
 
+      // Insert achievement
       const { error } = await supabase
         .from('achievements')
         .insert({
@@ -141,6 +147,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
 
+      // Update points in profiles
       const { data: profile } = await supabase
         .from('profiles')
         .select('points')
@@ -154,17 +161,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           .eq('id', user.id);
       }
 
+      // Trigger confetti
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 }
       });
 
+      // Show toast
       toast({
         title: `🎉 ${badge.name_he}!`,
         description: `קיבלת ${badge.points_reward} נקודות`,
       });
 
+      // Refresh achievements
       await fetchAchievements();
     } catch (error) {
       console.error("Error awarding badge:", error);
@@ -194,6 +204,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       let newStreak = streak.current_streak;
       
       if (lastActivity === today) {
+        // Already logged today
         return;
       } else if (lastActivity) {
         const lastDate = new Date(lastActivity);
@@ -201,8 +212,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
         
         if (diffDays === 1) {
+          // Consecutive day
           newStreak += 1;
         } else {
+          // Streak broken
           newStreak = 1;
         }
       } else {
@@ -230,6 +243,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       if (data) setStreak(data as Streak);
 
+      // Check for streak badges
       await checkAndAwardBadges('streak_days', newStreak);
     } catch (error) {
       console.error("Error updating streak:", error);
@@ -250,12 +264,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       {children}
     </GameContext.Provider>
   );
-}
+};
 
-export function useGame() {
-  const context = React.useContext(GameContext);
+export const useGame = () => {
+  const context = useContext(GameContext);
   if (context === undefined) {
     throw new Error("useGame must be used within a GameProvider");
   }
   return context;
-}
+};
