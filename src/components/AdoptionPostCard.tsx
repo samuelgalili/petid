@@ -160,14 +160,18 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
           </p>
         )}
 
-        {/* CTA Button - Instagram gradient */}
-        <Button
-          onClick={handleAdoptClick}
-          className="w-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white font-semibold rounded-xl h-11 transition-all shadow-lg shadow-[#DD2A7B]/25"
+        {/* CTA Button - Instagram style */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <Heart className="w-4 h-4 ml-2" />
-          אמץ את {pet.name}
-        </Button>
+          <Button
+            onClick={handleAdoptClick}
+            className="w-full bg-[#0095F6] hover:bg-[#1877F2] text-white font-semibold rounded-lg h-10 transition-colors text-sm"
+          >
+            אמץ את {pet.name}
+          </Button>
+        </motion.div>
 
         {/* Hashtags */}
         <p className="text-xs text-[#0095F6]" dir="rtl">
