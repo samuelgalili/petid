@@ -7,6 +7,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { 
   Camera, 
@@ -165,7 +167,9 @@ const BottomNav = () => {
 
       {/* Categories Sheet */}
       <Sheet open={isMoreSheetOpen} onOpenChange={setIsMoreSheetOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl bg-white border-0">
+        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl bg-white border-0" aria-describedby="categories-description">
+          <SheetTitle className="sr-only">קטגוריות</SheetTitle>
+          <SheetDescription id="categories-description" className="sr-only">בחר קטגוריה לניווט</SheetDescription>
           <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-4" />
           
           <div className="grid grid-cols-4 gap-2 px-4 pb-8">
