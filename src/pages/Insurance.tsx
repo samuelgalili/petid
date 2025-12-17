@@ -30,7 +30,8 @@ import {
   Sparkles,
   Shield,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Calculator
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -81,6 +83,11 @@ const Insurance = () => {
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [shakeButton, setShakeButton] = useState(false);
+  const [calculatorData, setCalculatorData] = useState({
+    petType: 'dog' as 'dog' | 'cat',
+    petAge: 1,
+  });
+  const [calculatedPremium, setCalculatedPremium] = useState<number | null>(null);
   const [claimFormData, setClaimFormData] = useState({
     petName: "",
     claimType: "",
@@ -186,6 +193,27 @@ const Insurance = () => {
       items: ["הריון והמלטה", "ניתוח קיסרי", "עיקור וסירוס (למעט בהוראת וטרינר)"],
     },
   ];
+
+  // Premium calculator function
+  const calculatePremium = () => {
+    const basePremium = calculatorData.petType === 'dog' ? 79 : 59;
+    let ageMultiplier = 1;
+    
+    if (calculatorData.petAge <= 2) {
+      ageMultiplier = 0.9;
+    } else if (calculatorData.petAge <= 5) {
+      ageMultiplier = 1;
+    } else if (calculatorData.petAge <= 8) {
+      ageMultiplier = 1.3;
+    } else if (calculatorData.petAge <= 12) {
+      ageMultiplier = 1.6;
+    } else {
+      ageMultiplier = 2;
+    }
+    
+    const premium = Math.round(basePremium * ageMultiplier);
+    setCalculatedPremium(premium);
+  };
 
   const handleClaimSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -566,6 +594,119 @@ const Insurance = () => {
                 ))}
               </div>
             </div>
+
+            {/* Premium Calculator */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Card className="p-6 border-0 shadow-xl bg-gradient-to-br from-amber-50 via-white to-orange-50">
+                <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-amber-500" />
+                  מחשבון פרמיה
+                </h2>
+                <p className="text-sm text-gray-500 mb-6">
+                  חשב את הפרמיה המשוערת לפי סוג וגיל חיית המחמד שלך
+                </p>
+                
+                <div className="space-y-6">
+                  {/* Pet Type Selection */}
+                  <div>
+                    <Label className="text-sm font-bold text-gray-700 mb-3 block">
+                      סוג חיית מחמד
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setCalculatorData(prev => ({ ...prev, petType: 'dog' }))}
+                        className={`p-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-center gap-3 ${
+                          calculatorData.petType === 'dog'
+                            ? 'border-amber-400 bg-amber-50 shadow-lg'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="text-3xl">🐕</span>
+                        <span className="font-bold text-gray-900">כלב</span>
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setCalculatorData(prev => ({ ...prev, petType: 'cat' }))}
+                        className={`p-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-center gap-3 ${
+                          calculatorData.petType === 'cat'
+                            ? 'border-amber-400 bg-amber-50 shadow-lg'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="text-3xl">🐈</span>
+                        <span className="font-bold text-gray-900">חתול</span>
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Age Slider */}
+                  <div>
+                    <Label className="text-sm font-bold text-gray-700 mb-3 block">
+                      גיל: <span className="text-amber-600">{calculatorData.petAge} שנים</span>
+                    </Label>
+                    <Slider
+                      value={[calculatorData.petAge]}
+                      onValueChange={(value) => setCalculatorData(prev => ({ ...prev, petAge: value[0] }))}
+                      max={15}
+                      min={1}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-2">
+                      <span>1 שנה</span>
+                      <span>15 שנים</span>
+                    </div>
+                  </div>
+
+                  {/* Calculate Button */}
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button
+                      onClick={calculatePremium}
+                      className="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <Calculator className="w-5 h-5 ml-2" />
+                      חשב פרמיה
+                    </Button>
+                  </motion.div>
+
+                  {/* Result */}
+                  <AnimatePresence>
+                    {calculatedPremium !== null && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className="p-6 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-xl text-white text-center"
+                      >
+                        <p className="text-sm opacity-90 mb-2">הפרמיה המשוערת שלך</p>
+                        <motion.p
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", delay: 0.2 }}
+                          className="text-4xl font-black mb-2"
+                        >
+                          ₪{calculatedPremium}
+                        </motion.p>
+                        <p className="text-xs opacity-80">לחודש</p>
+                        <div className="mt-4 pt-4 border-t border-white/20">
+                          <p className="text-xs opacity-70">
+                            * המחיר הסופי עשוי להשתנות בהתאם לבדיקות רפואיות ותנאי הפוליסה
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </Card>
+            </motion.div>
           </TabsContent>
 
           {/* Coverage Tab */}
