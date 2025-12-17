@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, FileText, Filter, Search, X, ArrowUpDown } from "lucide-react";
+import { Loader2, Upload, FileText, Search, X, ArrowUpDown } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SwipeableDocumentCard } from "@/components/SwipeableDocumentCard";
 
@@ -375,96 +375,78 @@ export default function Documents() {
         }}
       />
       
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-24">
-        <div className="container mx-auto px-4 py-6 max-w-2xl">
+      <div className="min-h-screen bg-[#F6F6F6] pb-28">
+        <div className="container mx-auto px-4 pt-4 pb-6 max-w-lg">
           {/* Header Section */}
-          <div className="mb-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px]">
-              <div className="w-full h-full rounded-[14px] bg-white flex items-center justify-center">
-                <FileText className="w-7 h-7 text-[#DD2A7B]" />
+          <div className="mb-5 text-center">
+            <div className="w-14 h-14 mx-auto mb-2.5 rounded-2xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px] shadow-lg shadow-[#DD2A7B]/20">
+              <div className="w-full h-full rounded-[12px] bg-white flex items-center justify-center">
+                <FileText className="w-6 h-6 text-[#DD2A7B]" />
               </div>
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-1">המסמכים שלי</h2>
-            <p className="text-gray-500 text-sm">ניהול אישורי חיסון ומסמכים רפואיים</p>
+            <h2 className="text-lg font-bold text-gray-800">המסמכים שלי</h2>
+            <p className="text-gray-500 text-xs mt-0.5">ניהול אישורי חיסון ומסמכים רפואיים</p>
           </div>
 
-          {/* Search & Filters Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 space-y-4">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="חיפוש מסמך לפי שם..."
-                className="h-12 pr-11 pl-10 rounded-xl border-gray-200 text-sm focus:border-[#DD2A7B] focus:ring-[#DD2A7B]/20"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-gray-500" />
-                </button>
-              )}
-            </div>
+          {/* Search Input - Separate */}
+          <div className="relative mb-3">
+            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="חיפוש מסמך..."
+              className="h-11 pr-10 pl-10 rounded-xl bg-white border-0 shadow-sm text-sm placeholder:text-gray-400"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+              >
+                <X className="w-3 h-3 text-gray-600" />
+              </button>
+            )}
+          </div>
 
-            {/* Filters & Sort */}
-            <div className="flex flex-col gap-4">
-              {/* Filters Row */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Filter className="w-4 h-4 text-[#DD2A7B]" />
-                  <span className="text-sm font-medium text-gray-700">סינון</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Select value={selectedPetId} onValueChange={setSelectedPetId}>
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder="חיית מחמד" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">כל חיות המחמד</SelectItem>
-                      {pets.map((pet) => (
-                        <SelectItem key={pet.id} value={pet.id}>
-                          🐾 {pet.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          {/* Filters & Sort - Compact Row */}
+          <div className="flex gap-2 mb-4">
+            <Select value={selectedPetId} onValueChange={setSelectedPetId}>
+              <SelectTrigger className="h-9 rounded-lg bg-white border-0 shadow-sm text-xs flex-1">
+                <SelectValue placeholder="חיה" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל החיות</SelectItem>
+                {pets.map((pet) => (
+                  <SelectItem key={pet.id} value={pet.id}>
+                    🐾 {pet.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-                  <Select value={selectedDocType} onValueChange={setSelectedDocType}>
-                    <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                      <SelectValue placeholder="סוג מסמך" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">כל הסוגים</SelectItem>
-                      <SelectItem value="vaccination">💉 חיסון</SelectItem>
-                      <SelectItem value="medical">🏥 רפואי</SelectItem>
-                      <SelectItem value="other">📄 אחר</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+              <SelectTrigger className="h-9 rounded-lg bg-white border-0 shadow-sm text-xs flex-1">
+                <SelectValue placeholder="סוג" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הסוגים</SelectItem>
+                <SelectItem value="vaccination">💉 חיסון</SelectItem>
+                <SelectItem value="medical">🏥 רפואי</SelectItem>
+                <SelectItem value="other">📄 אחר</SelectItem>
+              </SelectContent>
+            </Select>
 
-              {/* Sort Row */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <ArrowUpDown className="w-4 h-4 text-[#8134AF]" />
-                  <span className="text-sm font-medium text-gray-700">מיון</span>
-                </div>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="h-11 rounded-xl border-gray-200 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="date-desc">📅 תאריך (חדש לישן)</SelectItem>
-                    <SelectItem value="date-asc">📅 תאריך (ישן לחדש)</SelectItem>
-                    <SelectItem value="name-asc">🔤 שם (א-ת)</SelectItem>
-                    <SelectItem value="name-desc">🔤 שם (ת-א)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-9 rounded-lg bg-white border-0 shadow-sm text-xs w-[100px]">
+                <ArrowUpDown className="w-3.5 h-3.5 ml-1 text-gray-500" />
+                <span className="text-gray-600">מיון</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date-desc">חדש → ישן</SelectItem>
+                <SelectItem value="date-asc">ישן → חדש</SelectItem>
+                <SelectItem value="name-asc">א → ת</SelectItem>
+                <SelectItem value="name-desc">ת → א</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Upload Dialog */}
@@ -620,42 +602,42 @@ export default function Documents() {
 
           {/* Documents List */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[3px] animate-spin">
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px] animate-spin">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-[#DD2A7B]" />
+                  <FileText className="w-5 h-5 text-[#DD2A7B]" />
                 </div>
               </div>
-              <p className="mt-4 text-gray-500 text-sm">טוען מסמכים...</p>
+              <p className="mt-3 text-gray-500 text-xs">טוען מסמכים...</p>
             </div>
           ) : filteredDocuments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
-                <FileText className="w-10 h-10 text-gray-400" />
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
+                <FileText className="w-8 h-8 text-gray-300" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">אין מסמכים</h3>
-              <p className="text-gray-500 text-center max-w-xs mb-6">
+              <h3 className="text-base font-bold text-gray-800 mb-1">אין מסמכים</h3>
+              <p className="text-gray-500 text-xs text-center max-w-[200px] mb-4">
                 {documents.length === 0
-                  ? "העלה את המסמכים החשובים של חיית המחמד שלך"
+                  ? "העלה את המסמכים של חיית המחמד שלך"
                   : "לא נמצאו מסמכים התואמים לסינון"}
               </p>
               {documents.length === 0 && (
                 <Button 
                   onClick={() => setIsDialogOpen(true)}
-                  className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white rounded-xl px-6 py-3 font-medium hover:opacity-90"
+                  className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white rounded-lg px-5 h-9 text-sm font-medium hover:opacity-90"
                 >
-                  <Upload className="w-4 h-4 ml-2" />
-                  העלה מסמך ראשון
+                  <Upload className="w-4 h-4 ml-1.5" />
+                  העלה מסמך
                 </Button>
               )}
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-gray-700">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between px-1 mb-2">
+                <span className="text-xs font-medium text-gray-600">
                   {filteredDocuments.length} מסמכים
                 </span>
-                <span className="text-xs text-gray-400">💡 החלק שמאלה למחיקה</span>
+                <span className="text-[10px] text-gray-400">החלק שמאלה למחיקה</span>
               </div>
               {filteredDocuments.map((doc, index) => (
                 <SwipeableDocumentCard
