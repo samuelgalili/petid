@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, TrendingUp, Hash, MapPin, Users, Grid3X3, Play, Heart, MessageCircle } from "lucide-react";
@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 interface Post {
   id: string;
@@ -16,6 +17,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   user_id: string;
+  is_liked?: boolean;
   profiles?: {
     full_name: string;
     avatar_url: string;
@@ -39,12 +41,14 @@ const trendingTags = [
 
 const Explore = () => {
   const navigate = useNavigate();
+  const { checkAuth } = useRequireAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeTab, setActiveTab] = useState("top");
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [doubleTapPostId, setDoubleTapPostId] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([
     "כלבי גולדן",
     "חתולים פרסיים",
@@ -135,6 +139,46 @@ const Explore = () => {
     setUsers([]);
     setIsSearchFocused(false);
   };
+
+  const handleDoubleTap = useCallback(async (postId: string) => {
+    if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
+    
+    // Show animation
+    setDoubleTapPostId(postId);
+    
+    // Like the post
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      // Check if already liked
+      const { data: existingLike } = await supabase
+        .from("post_likes")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (!existingLike) {
+        await supabase.from("post_likes").insert({
+          post_id: postId,
+          user_id: user.id
+        });
+        
+        // Update local state
+        setPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, likes_count: post.likes_count + 1, is_liked: true }
+            : post
+        ));
+      }
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
+    
+    // Hide animation after delay
+    setTimeout(() => setDoubleTapPostId(null), 1000);
+  }, [checkAuth]);
 
   const handleSearchSelect = (query: string) => {
     setSearchQuery(query);
@@ -358,6 +402,10 @@ const Explore = () => {
                   transition={{ delay: index * 0.03 }}
                   className={`relative cursor-pointer group ${span}`}
                   onClick={() => navigate(`/post/${post.id}`)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    handleDoubleTap(post.id);
+                  }}
                 >
                   <img
                     src={post.image_url}
@@ -374,7 +422,7 @@ const Explore = () => {
                   )}
 
                   {/* Hover overlay with stats */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 pointer-events-none">
                     <div className="flex items-center gap-1.5 text-white font-semibold">
                       <Heart className="w-5 h-5" fill="white" />
                       <span>{post.likes_count}</span>
@@ -384,6 +432,58 @@ const Explore = () => {
                       <span>{post.comments_count}</span>
                     </div>
                   </div>
+
+                  {/* Double Tap Heart Animation */}
+                  <AnimatePresence>
+                    {doubleTapPostId === post.id && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                      >
+                        <motion.svg
+                          viewBox="0 0 24 24"
+                          className="w-20 h-20 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+                          initial={{ scale: 0, rotate: -15 }}
+                          animate={{ 
+                            scale: [0, 1.3, 1.1, 1.2, 1],
+                            rotate: [-15, 10, -5, 5, 0]
+                          }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ 
+                            duration: 0.6,
+                            times: [0, 0.3, 0.5, 0.7, 1],
+                            ease: "easeOut"
+                          }}
+                        >
+                          <motion.path
+                            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                            fill="white"
+                            stroke="white"
+                            strokeWidth="0.5"
+                          />
+                        </motion.svg>
+                        
+                        {/* Particle effects */}
+                        {[...Array(6)].map((_, i) => (
+                          <motion.div
+                            key={i}
+                            className="absolute w-2 h-2 rounded-full bg-white"
+                            initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                            animate={{ 
+                              scale: [0, 1, 0],
+                              x: Math.cos((i / 6) * Math.PI * 2) * 50,
+                              y: Math.sin((i / 6) * Math.PI * 2) * 50,
+                              opacity: [1, 1, 0]
+                            }}
+                            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+                          />
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               ))}
             </div>
