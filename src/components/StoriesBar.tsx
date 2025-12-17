@@ -98,8 +98,8 @@ export const StoriesBar = () => {
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 animate-pulse" />
-              <div className="w-12 h-3 bg-gray-100 rounded-full animate-pulse" />
+              <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF] animate-pulse opacity-30" />
+              <div className="w-12 h-3 bg-gray-200 rounded-full animate-pulse" />
             </div>
           ))}
         </div>
@@ -122,22 +122,19 @@ export const StoriesBar = () => {
               onClick={() => setCreateDialogOpen(true)}
             >
               <div className="relative">
-                <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-gray-100 to-gray-50 p-[3px]">
+                <div className="w-[72px] h-[72px] rounded-full bg-gray-100 p-[3px]">
                   <Avatar className="w-full h-full ring-2 ring-white">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black text-lg">
+                    <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold text-lg">
                       {user.user_metadata?.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                <motion.div 
-                  className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-gradient-to-r from-[#FF6B9D] to-[#C44FE2] rounded-full flex items-center justify-center shadow-md border-2 border-white"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                >
+                <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-[#0095F6] rounded-full flex items-center justify-center border-2 border-white">
                   <Plus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-                </motion.div>
+                </div>
               </div>
-              <span className="text-[11px] font-jakarta font-semibold text-gray-600">הסטורי שלי</span>
+              <span className="text-[11px] font-jakarta font-medium text-[#262626]">הסטורי שלי</span>
             </motion.div>
           )}
 
@@ -157,26 +154,19 @@ export const StoriesBar = () => {
                 <div 
                   className={`w-[72px] h-[72px] rounded-full p-[3px] ${
                     storyUser.has_viewed 
-                      ? 'bg-gray-200' 
-                      : 'bg-gradient-to-tr from-[#FF6B9D] via-[#C44FE2] to-[#7B68EE]'
+                      ? 'bg-gray-300' 
+                      : 'bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]'
                   }`}
                 >
                   <Avatar className="w-full h-full ring-[3px] ring-white">
                     <AvatarImage src={storyUser.avatar_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-black text-lg">
+                    <AvatarFallback className="bg-gray-200 text-gray-600 font-semibold text-lg">
                       {storyUser.full_name?.charAt(0) || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                {!storyUser.has_viewed && (
-                  <motion.div
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF6B9D] rounded-full border-2 border-white"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  />
-                )}
               </div>
-              <span className="text-[11px] font-jakarta font-semibold text-gray-600 max-w-[72px] truncate text-center">
+              <span className="text-[11px] font-jakarta font-medium text-[#262626] max-w-[72px] truncate text-center">
                 {storyUser.user_id === user?.id ? "אתה" : storyUser.full_name}
               </span>
             </motion.div>
