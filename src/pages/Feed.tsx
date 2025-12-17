@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AdoptionPostCard } from "@/components/AdoptionPostCard";
 import { ProductPostCard } from "@/components/ProductPostCard";
+import { DocumentPostCard } from "@/components/DocumentPostCard";
 
 // Featured products for feed
 const FEATURED_PRODUCTS = [
@@ -42,6 +43,26 @@ const FEATURED_PRODUCTS = [
     image: "/lovable-uploads/dog-toys.jpg",
     description: "צעצוע עמיד במיוחד לשעות של משחק",
     hasSale: false,
+  },
+];
+
+// Sample documents for feed
+const FEATURED_DOCUMENTS: FeedDocument[] = [
+  {
+    id: "doc-1",
+    title: "אישור חיסון כלבת 2024",
+    document_type: "vaccination",
+    pet_name: "מקס",
+    uploaded_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+    description: "חיסון שנתי הושלם בהצלחה",
+  },
+  {
+    id: "doc-2",
+    title: "בדיקת דם תקופתית",
+    document_type: "medical",
+    pet_name: "לונה",
+    uploaded_at: new Date(Date.now() - 5 * 3600000).toISOString(),
+    description: "תוצאות תקינות",
   },
 ];
 
@@ -90,10 +111,21 @@ interface FeedProduct {
   hasSale?: boolean;
 }
 
+interface FeedDocument {
+  id: string;
+  title: string;
+  document_type: string;
+  pet_name: string;
+  pet_avatar?: string;
+  uploaded_at: string;
+  description?: string;
+}
+
 type FeedItem = 
   | { type: 'post'; data: Post; created_at: string }
   | { type: 'adoption'; data: AdoptionPet; created_at: string }
-  | { type: 'product'; data: FeedProduct; created_at: string };
+  | { type: 'product'; data: FeedProduct; created_at: string }
+  | { type: 'document'; data: FeedDocument; created_at: string };
 const Feed = () => {
   const navigate = useNavigate();
   const {
@@ -583,8 +615,17 @@ const Feed = () => {
         }))
       : [];
 
+    // Convert documents to FeedItems (only show in "all" feed)
+    const documentItems: FeedItem[] = feedFilter === "all"
+      ? FEATURED_DOCUMENTS.map((doc) => ({
+          type: 'document' as const,
+          data: doc,
+          created_at: doc.uploaded_at
+        }))
+      : [];
+
     // Merge and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems].sort((a, b) => 
+    const merged = [...postItems, ...adoptionItems, ...productItems, ...documentItems].sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -771,14 +812,23 @@ const Feed = () => {
                     getTimeAgo={getTimeAgo}
                   />
                 );
-              } else {
+              } else if (item.type === 'product') {
                 return (
                   <ProductPostCard 
                     key={`product-${item.data.id}`}
                     product={item.data}
                   />
                 );
+              } else if (item.type === 'document') {
+                return (
+                  <DocumentPostCard 
+                    key={`document-${item.data.id}`}
+                    document={item.data}
+                    user={{ name: "המשתמש שלי", avatar: userAvatar }}
+                  />
+                );
               }
+              return null;
             })}
             
             {/* Infinite Scroll Observer Target */}
