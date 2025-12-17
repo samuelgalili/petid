@@ -1,16 +1,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -22,7 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, Search, Filter, Check, X } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -210,321 +205,287 @@ const Adoption = () => {
         showMenuButton={false}
       />
       
-      <div className="min-h-screen bg-[#FAFAFA] pb-24 px-4 dir-rtl">
-        <div className="max-w-7xl mx-auto">
-          {/* Hero Section with Instagram gradient */}
+      <div className="min-h-screen bg-[#F6F6F6] pb-28 px-4">
+        <div className="max-w-lg mx-auto pt-3">
+          {/* Hero Section */}
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-6 mt-2 py-4 rounded-2xl bg-gradient-to-r from-[#F58529]/10 via-[#DD2A7B]/10 to-[#8134AF]/10"
+            className="text-center mb-4 py-5 px-4 rounded-2xl bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 shadow-sm"
           >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Heart className="w-5 h-5 text-[#ED4956]" strokeWidth={1.5} fill="#ED4956" />
-              <h2 className="text-lg font-bold bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent">
-                תן בית חם לחבר חדש
-              </h2>
-              <Heart className="w-5 h-5 text-[#ED4956]" strokeWidth={1.5} fill="#ED4956" />
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px] shadow-lg shadow-pink-200/50">
+              <div className="w-full h-full rounded-[12px] bg-white flex items-center justify-center">
+                <Heart className="w-6 h-6 text-[#DD2A7B]" fill="#DD2A7B" />
+              </div>
             </div>
-            <p className="text-[#8E8E8E] text-sm font-jakarta">
+            <h2 className="text-base font-bold text-gray-800 mb-1">
+              תן בית חם לחבר חדש
+            </h2>
+            <p className="text-gray-500 text-xs">
               חיות מחמד מחכות למשפחה אוהבת
             </p>
           </motion.div>
 
-        {/* Search and Filters - Instagram style */}
-        <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#8E8E8E] w-5 h-5" strokeWidth={1.5} />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="חיפוש לפי שם או גזע..."
-                  className="pr-10 border-0 bg-[#EFEFEF] rounded-xl text-[#262626] placeholder:text-[#8E8E8E] focus-visible:ring-2 focus-visible:ring-[#0095F6]"
-                  dir="rtl"
-                />
-              </div>
+          {/* Search & Filters - Compact */}
+          <div className="mb-4 space-y-2">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="חיפוש לפי שם או גזע..."
+                className="h-10 pr-10 border-0 bg-white rounded-xl text-sm shadow-sm placeholder:text-gray-400"
+                dir="rtl"
+              />
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="border-0 rounded-xl bg-[#EFEFEF] text-[#262626]">
-                <SelectValue placeholder="סוג חיה" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הסוגים</SelectItem>
-                <SelectItem value="כלב">🐕 כלבים</SelectItem>
-                <SelectItem value="חתול">🐱 חתולים</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sizeFilter} onValueChange={setSizeFilter}>
-              <SelectTrigger className="border-0 rounded-xl bg-[#EFEFEF] text-[#262626]">
-                <SelectValue placeholder="גודל" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הגדלים</SelectItem>
-                <SelectItem value="קטן">קטן</SelectItem>
-                <SelectItem value="בינוני">בינוני</SelectItem>
-                <SelectItem value="גדול">גדול</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            <div className="flex gap-2">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-9 flex-1 border-0 rounded-lg bg-white text-xs shadow-sm">
+                  <SelectValue placeholder="סוג" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הסוגים</SelectItem>
+                  <SelectItem value="כלב">🐕 כלבים</SelectItem>
+                  <SelectItem value="חתול">🐱 חתולים</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sizeFilter} onValueChange={setSizeFilter}>
+                <SelectTrigger className="h-9 flex-1 border-0 rounded-lg bg-white text-xs shadow-sm">
+                  <SelectValue placeholder="גודל" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הגדלים</SelectItem>
+                  <SelectItem value="קטן">קטן</SelectItem>
+                  <SelectItem value="בינוני">בינוני</SelectItem>
+                  <SelectItem value="גדול">גדול</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
 
-        {/* Pets Grid - Instagram style cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
-          <AnimatePresence>
-            {filteredPets.map((pet) => (
-              <motion.div
-                key={pet.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                  {/* Image with gradient overlay */}
-                  <div className="aspect-square overflow-hidden bg-[#FAFAFA] relative">
-                    <img
-                      src={pet.image_url || "/placeholder.svg"}
-                      alt={pet.name}
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Gradient overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent h-16" />
-                    {/* Heart icon */}
-                    <div className="absolute top-2 right-2">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
-                        <Heart className="w-4 h-4 text-[#ED4956]" strokeWidth={1.5} />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="text-sm font-bold text-[#262626] font-jakarta">{pet.name}</h3>
-                        <p className="text-xs text-[#8E8E8E]">{pet.breed || pet.type}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1 mb-3 text-xs">
-                      <div className="flex items-center gap-1 text-[#8E8E8E]">
-                        <span>{getAgeString(pet.age_years, pet.age_months)}</span>
-                        <span>•</span>
-                        <span>{pet.size}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-1 mb-3 flex-wrap">
-                      {pet.is_vaccinated && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00C853]/10 text-[#00C853] font-medium">
-                          ✓ מחוסן
-                        </span>
-                      )}
-                      {pet.is_neutered && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00C853]/10 text-[#00C853] font-medium">
-                          ✓ מסורס
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Instagram gradient button */}
-                    <Button
-                      onClick={() => handleAdoptClick(pet)}
-                      className="w-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl text-xs py-2 h-9 font-semibold shadow-md"
-                    >
-                      <Heart className="w-3.5 h-3.5 ml-1" strokeWidth={1.5} />
-                      אמץ אותי
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {filteredPets.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16 px-6"
-          >
-            <div className="w-20 h-20 bg-gradient-to-r from-[#F58529]/20 via-[#DD2A7B]/20 to-[#8134AF]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-10 h-10 text-[#DD2A7B]" strokeWidth={1.5} />
+          {/* Results Count */}
+          {filteredPets.length > 0 && (
+            <div className="flex items-center justify-between px-1 mb-3">
+              <span className="text-xs font-medium text-gray-600">{filteredPets.length} חיות מחכות לאימוץ</span>
             </div>
-            <h3 className="text-lg font-semibold text-[#262626] mb-2">לא נמצאו חיות מחמד</h3>
-            <p className="text-[#8E8E8E] text-sm font-jakarta">נסה לשנות את הפילטרים או לחפש משהו אחר</p>
-          </motion.div>
-        )}
+          )}
+
+          {/* Pets Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <AnimatePresence>
+              {filteredPets.map((pet, index) => (
+                <motion.div
+                  key={pet.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                >
+                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                    {/* Image */}
+                    <div className="aspect-square overflow-hidden bg-gray-100 relative">
+                      <img
+                        src={pet.image_url || "/placeholder.svg"}
+                        alt={pet.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                      
+                      {/* Type Badge */}
+                      <div className="absolute top-2 right-2">
+                        <span className="text-lg">{pet.type === 'כלב' ? '🐕' : '🐱'}</span>
+                      </div>
+                      
+                      {/* Name overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                        <h3 className="text-sm font-bold text-white drop-shadow-md">{pet.name}</h3>
+                        <p className="text-[10px] text-white/90 drop-shadow-md">{pet.breed || pet.type}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-2.5">
+                      {/* Info */}
+                      <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-2">
+                        <span>{getAgeString(pet.age_years, pet.age_months)}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                        <span>{pet.size}</span>
+                        {pet.gender && (
+                          <>
+                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                            <span>{pet.gender}</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Status Badges */}
+                      <div className="flex gap-1 mb-2.5 flex-wrap">
+                        {pet.is_vaccinated && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">
+                            מחוסן ✓
+                          </span>
+                        )}
+                        {pet.is_neutered && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                            מסורס ✓
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Adopt Button */}
+                      <Button
+                        onClick={() => handleAdoptClick(pet)}
+                        className="w-full h-8 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-lg text-xs font-semibold shadow-sm"
+                      >
+                        <Heart className="w-3 h-3 ml-1" fill="white" />
+                        אמץ אותי
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Empty State */}
+          {filteredPets.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12 px-4"
+            >
+              <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center mx-auto mb-3">
+                <Heart className="w-7 h-7 text-gray-300" />
+              </div>
+              <h3 className="text-base font-bold text-gray-800 mb-1">לא נמצאו חיות מחמד</h3>
+              <p className="text-gray-500 text-xs">נסה לשנות את הפילטרים</p>
+            </motion.div>
+          )}
         </div>
       </div>
 
       {/* Adoption Form Dialog */}
       <Dialog open={showAdoptionForm} onOpenChange={setShowAdoptionForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dir-rtl bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-[#262626] font-jakarta">
-              בקשת אימוץ - {selectedPet?.name}
-            </DialogTitle>
-            <DialogDescription className="text-[#8E8E8E]">
-              מלא את הפרטים הבאים כדי להגיש בקשה לאימוץ
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmitAdoption} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="fullName" className="text-[#262626] text-sm">
-                  שם מלא *
-                </Label>
-                <Input
-                  id="fullName"
-                  required
-                  value={formData.fullName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
-                  }
-                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
-                  dir="rtl"
-                />
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 border-0 rounded-2xl bg-white">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-4 sticky top-0 z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <Heart className="w-6 h-6 text-white" fill="white" />
               </div>
               <div>
-                <Label htmlFor="email" className="text-[#262626] text-sm">
-                  אימייל *
-                </Label>
+                <h2 className="text-white font-bold text-base">בקשת אימוץ</h2>
+                <p className="text-white/80 text-xs">{selectedPet?.name}</p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmitAdoption} className="p-4 space-y-4" dir="rtl">
+            {/* Personal Info */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase">פרטים אישיים</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">שם מלא *</Label>
+                  <Input
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">טלפון *</Label>
+                  <Input
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600 mb-1.5 block">אימייל *</Label>
                 <Input
-                  id="email"
                   type="email"
                   required
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
-                  dir="rtl"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="phone" className="text-[#262626] text-sm">
-                  טלפון *
-                </Label>
-                <Input
-                  id="phone"
-                  required
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
-                  dir="rtl"
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
                 />
               </div>
               <div>
-                <Label htmlFor="address" className="text-[#262626] text-sm">
-                  כתובת *
-                </Label>
+                <Label className="text-xs text-gray-600 mb-1.5 block">כתובת *</Label>
                 <Input
-                  id="address"
                   required
                   value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
-                  dir="rtl"
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
                 />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
+            {/* Experience */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase">ניסיון</h3>
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                 <Checkbox
                   id="hasExperience"
                   checked={formData.hasExperience}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, hasExperience: checked as boolean })
-                  }
-                  className="border-gray-300 data-[state=checked]:bg-[#0095F6] data-[state=checked]:border-[#0095F6]"
+                  onCheckedChange={(checked) => setFormData({ ...formData, hasExperience: checked as boolean })}
+                  className="border-gray-300 data-[state=checked]:bg-[#DD2A7B] data-[state=checked]:border-[#DD2A7B]"
                 />
-                <Label htmlFor="hasExperience" className="text-[#262626] text-sm cursor-pointer">
-                  יש לי ניסיון קודם בגידול חיות מחמד
+                <Label htmlFor="hasExperience" className="text-sm text-gray-700 cursor-pointer">
+                  יש לי ניסיון בגידול חיות מחמד
                 </Label>
               </div>
-
               {formData.hasExperience && (
-                <div>
-                  <Label htmlFor="experienceDetails" className="text-[#262626] text-sm">
-                    פרט על הניסיון שלך
-                  </Label>
-                  <Textarea
-                    id="experienceDetails"
-                    value={formData.experienceDetails}
-                    onChange={(e) =>
-                      setFormData({ ...formData, experienceDetails: e.target.value })
-                    }
-                    className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
-                    dir="rtl"
-                  />
-                </div>
+                <Textarea
+                  placeholder="פרט על הניסיון שלך..."
+                  value={formData.experienceDetails}
+                  onChange={(e) => setFormData({ ...formData, experienceDetails: e.target.value })}
+                  className="text-sm border-gray-200 rounded-lg bg-gray-50 min-h-[60px] resize-none"
+                />
               )}
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
+              
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                 <Checkbox
                   id="hasOtherPets"
                   checked={formData.hasOtherPets}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, hasOtherPets: checked as boolean })
-                  }
-                  className="border-gray-300 data-[state=checked]:bg-[#0095F6] data-[state=checked]:border-[#0095F6]"
+                  onCheckedChange={(checked) => setFormData({ ...formData, hasOtherPets: checked as boolean })}
+                  className="border-gray-300 data-[state=checked]:bg-[#DD2A7B] data-[state=checked]:border-[#DD2A7B]"
                 />
-                <Label htmlFor="hasOtherPets" className="text-[#262626] text-sm cursor-pointer">
-                  יש לי חיות מחמד נוספות בבית
+                <Label htmlFor="hasOtherPets" className="text-sm text-gray-700 cursor-pointer">
+                  יש לי חיות מחמד נוספות
                 </Label>
               </div>
-
               {formData.hasOtherPets && (
-                <div>
-                  <Label htmlFor="otherPetsDetails" className="text-[#262626] text-sm">
-                    פרט על חיות המחמד הקיימות
-                  </Label>
-                  <Textarea
-                    id="otherPetsDetails"
-                    value={formData.otherPetsDetails}
-                    onChange={(e) =>
-                      setFormData({ ...formData, otherPetsDetails: e.target.value })
-                    }
-                    className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
-                    dir="rtl"
-                  />
-                </div>
+                <Textarea
+                  placeholder="פרט על חיות המחמד שלך..."
+                  value={formData.otherPetsDetails}
+                  onChange={(e) => setFormData({ ...formData, otherPetsDetails: e.target.value })}
+                  className="text-sm border-gray-200 rounded-lg bg-gray-50 min-h-[60px] resize-none"
+                />
               )}
             </div>
 
-            <div>
-              <Label htmlFor="reason" className="text-[#262626] text-sm">
-                למה אתה רוצה לאמץ את {selectedPet?.name}? *
-              </Label>
+            {/* Reason */}
+            <div className="space-y-2 pt-2">
+              <Label className="text-xs text-gray-600">למה אתה רוצה לאמץ את {selectedPet?.name}? *</Label>
               <Textarea
-                id="reason"
                 required
                 value={formData.reason}
-                onChange={(e) =>
-                  setFormData({ ...formData, reason: e.target.value })
-                }
-                className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA] min-h-[100px]"
-                dir="rtl"
+                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                className="text-sm border-gray-200 rounded-lg bg-gray-50 min-h-[80px] resize-none"
+                placeholder="ספר לנו..."
               />
             </div>
 
-            <div className="flex gap-3">
+            {/* Actions */}
+            <div className="flex gap-2 pt-2 sticky bottom-0 bg-white pb-1">
               <Button
                 type="submit"
-                className="flex-1 bg-[#0095F6] hover:bg-[#0095F6]/90 text-white rounded-lg"
+                className="flex-1 h-10 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-lg text-sm font-semibold"
               >
                 שלח בקשה
               </Button>
@@ -532,7 +493,7 @@ const Adoption = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setShowAdoptionForm(false)}
-                className="flex-1 border-gray-200 text-[#262626] hover:bg-gray-50 rounded-lg"
+                className="flex-1 h-10 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm"
               >
                 ביטול
               </Button>
