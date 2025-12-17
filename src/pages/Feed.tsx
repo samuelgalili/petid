@@ -22,6 +22,29 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AdoptionPostCard } from "@/components/AdoptionPostCard";
+import { ProductPostCard } from "@/components/ProductPostCard";
+
+// Featured products for feed
+const FEATURED_PRODUCTS = [
+  {
+    id: "prod-1",
+    title: "אוכל יבש פרימיום לכלבים",
+    price: "₪89",
+    originalPrice: "₪120",
+    image: "/lovable-uploads/dog-food.jpg",
+    description: "אוכל איכותי עשיר בחלבון לכלבים מכל הגילאים",
+    hasSale: true,
+  },
+  {
+    id: "prod-2", 
+    title: "צעצוע משיכה לכלבים",
+    price: "₪35",
+    image: "/lovable-uploads/dog-toys.jpg",
+    description: "צעצוע עמיד במיוחד לשעות של משחק",
+    hasSale: false,
+  },
+];
+
 interface Post {
   id: string;
   user_id: string;
@@ -57,9 +80,20 @@ interface AdoptionPet {
   created_at: string | null;
 }
 
+interface FeedProduct {
+  id: string;
+  title: string;
+  price: string;
+  originalPrice?: string;
+  image: string;
+  description?: string;
+  hasSale?: boolean;
+}
+
 type FeedItem = 
   | { type: 'post'; data: Post; created_at: string }
-  | { type: 'adoption'; data: AdoptionPet; created_at: string };
+  | { type: 'adoption'; data: AdoptionPet; created_at: string }
+  | { type: 'product'; data: FeedProduct; created_at: string };
 const Feed = () => {
   const navigate = useNavigate();
   const {
@@ -521,7 +555,7 @@ const Feed = () => {
     return date.toLocaleDateString("he-IL");
   }, []);
 
-  // Create mixed feed with posts and adoption pets
+  // Create mixed feed with posts, adoption pets, and products
   const mixedFeed = useMemo((): FeedItem[] => {
     // Convert posts to FeedItems
     const postItems: FeedItem[] = posts.map(post => ({
@@ -539,8 +573,18 @@ const Feed = () => {
         }))
       : [];
 
+    // Convert products to FeedItems (only show in "all" feed)
+    const productItems: FeedItem[] = feedFilter === "all"
+      ? FEATURED_PRODUCTS.map((product, index) => ({
+          type: 'product' as const,
+          data: product,
+          // Spread products throughout the feed
+          created_at: new Date(Date.now() - (index + 1) * 3600000).toISOString()
+        }))
+      : [];
+
     // Merge and sort by date
-    const merged = [...postItems, ...adoptionItems].sort((a, b) => 
+    const merged = [...postItems, ...adoptionItems, ...productItems].sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -702,29 +746,40 @@ const Feed = () => {
               שתף את התמונה הראשונה שלך
             </button>
           </div> : <div>
-            {mixedFeed.map((item) => (
-              item.type === 'post' ? (
-                <PostCardErrorBoundary key={`post-${item.data.id}`}>
-                  <PostCard 
-                    post={item.data} 
-                    currentUserId={user?.id} 
-                    currentUserAvatar={userAvatar} 
-                    onLike={handleLike} 
-                    onSave={handleSave} 
-                    onDoubleTap={handleDoubleTap} 
-                    onComment={handleComment} 
-                    showDoubleTapAnimation={doubleTapLike === item.data.id} 
-                    getTimeAgo={getTimeAgo} 
+            {mixedFeed.map((item) => {
+              if (item.type === 'post') {
+                return (
+                  <PostCardErrorBoundary key={`post-${item.data.id}`}>
+                    <PostCard 
+                      post={item.data} 
+                      currentUserId={user?.id} 
+                      currentUserAvatar={userAvatar} 
+                      onLike={handleLike} 
+                      onSave={handleSave} 
+                      onDoubleTap={handleDoubleTap} 
+                      onComment={handleComment} 
+                      showDoubleTapAnimation={doubleTapLike === item.data.id} 
+                      getTimeAgo={getTimeAgo} 
+                    />
+                  </PostCardErrorBoundary>
+                );
+              } else if (item.type === 'adoption') {
+                return (
+                  <AdoptionPostCard 
+                    key={`adoption-${item.data.id}`}
+                    pet={item.data}
+                    getTimeAgo={getTimeAgo}
                   />
-                </PostCardErrorBoundary>
-              ) : (
-                <AdoptionPostCard 
-                  key={`adoption-${item.data.id}`}
-                  pet={item.data}
-                  getTimeAgo={getTimeAgo}
-                />
-              )
-            ))}
+                );
+              } else {
+                return (
+                  <ProductPostCard 
+                    key={`product-${item.data.id}`}
+                    product={item.data}
+                  />
+                );
+              }
+            })}
             
             {/* Infinite Scroll Observer Target */}
             {hasMore && <div ref={observerTarget} className="py-4 text-center">
