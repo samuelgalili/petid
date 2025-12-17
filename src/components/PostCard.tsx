@@ -291,24 +291,66 @@ export const PostCard = ({
           sizes="(max-width: 768px) 100vw, 672px"
         />
         
-        {/* Double Tap Like Animation */}
+        {/* Double Tap Like Animation - Instagram Style Heart */}
         <AnimatePresence>
           {showDoubleTapAnimation && (
             <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1.2, 1] }}
+              <motion.svg
+                viewBox="0 0 24 24"
+                className="w-28 h-28 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+                initial={{ scale: 0, rotate: -15 }}
+                animate={{ 
+                  scale: [0, 1.3, 1.1, 1.2, 1],
+                  rotate: [-15, 10, -5, 5, 0]
+                }}
                 exit={{ scale: 0, opacity: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={{ 
+                  duration: 0.6,
+                  times: [0, 0.3, 0.5, 0.7, 1],
+                  ease: "easeOut"
+                }}
               >
-                <DogTongueIcon isLicking={true} isLiked={true} className="w-24 h-24 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]" />
-              </motion.div>
+                <motion.path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  fill="white"
+                  stroke="white"
+                  strokeWidth="0.5"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </motion.svg>
+              
+              {/* Particle effects */}
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-3 h-3 rounded-full bg-white"
+                  initial={{ 
+                    scale: 0,
+                    x: 0,
+                    y: 0,
+                    opacity: 1
+                  }}
+                  animate={{ 
+                    scale: [0, 1, 0],
+                    x: Math.cos((i / 8) * Math.PI * 2) * 80,
+                    y: Math.sin((i / 8) * Math.PI * 2) * 80,
+                    opacity: [1, 1, 0]
+                  }}
+                  transition={{ 
+                    duration: 0.6,
+                    delay: 0.1,
+                    ease: "easeOut"
+                  }}
+                />
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
