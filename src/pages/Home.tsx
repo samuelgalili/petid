@@ -36,6 +36,8 @@ import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { WalletCard } from "@/components/home/WalletCard";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { PromotionalOffers } from "@/components/home/PromotionalOffers";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/PullToRefresh";
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -92,60 +94,81 @@ const Home = () => {
   ];
 
   // Fetch user data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.full_name) {
-        setUserName(profile.full_name.split(' ')[0]);
-      }
-
-      // Fetch pets
-      const { data: petsData } = await supabase
-        .from('pets')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('archived', false)
-        .order('created_at', { ascending: false });
-
-      if (petsData) setPets(petsData);
-
-      // Fetch nearby parks
-      const { data: parksData } = await supabase
-        .from('dog_parks')
-        .select('*')
-        .eq('status', 'active')
-        .limit(3);
-
-      if (parksData) setNearbyParks(parksData);
-
-      // Fetch promotional offers
-      const { data: offersData } = await supabase
-        .from('promotional_offers')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
-
-      if (offersData) setPromotionalOffers(offersData);
-
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       setLoading(false);
-    };
+      return;
+    }
 
+    // Fetch profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.full_name) {
+      setUserName(profile.full_name.split(' ')[0]);
+    }
+
+    // Fetch pets
+    const { data: petsData } = await supabase
+      .from('pets')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('archived', false)
+      .order('created_at', { ascending: false });
+
+    if (petsData) setPets(petsData);
+
+    // Fetch nearby parks
+    const { data: parksData } = await supabase
+      .from('dog_parks')
+      .select('*')
+      .eq('status', 'active')
+      .limit(3);
+
+    if (parksData) setNearbyParks(parksData);
+
+    // Fetch promotional offers
+    const { data: offersData } = await supabase
+      .from('promotional_offers')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (offersData) setPromotionalOffers(offersData);
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
     fetchData();
     updateStreak();
-  }, [updateStreak]);
+  }, [fetchData, updateStreak]);
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    toast({
+      title: "🔄 מרענן...",
+      description: "טוען נתונים מעודכנים",
+      duration: 1500,
+    });
+    await fetchData();
+    toast({
+      title: "✅ רענון הושלם",
+      description: "הנתונים עודכנו בהצלחה",
+      duration: 2000,
+    });
+  }, [fetchData, toast]);
+
+  const { pullDistance, isRefreshing, progress, shouldTrigger, handlers } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 70,
+    maxPull: 100
+  });
 
   const handleTaskToggle = (taskId: number) => {
     setDailyTasks(tasks =>
@@ -234,7 +257,21 @@ const Home = () => {
   const primaryPet = pets[0];
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div 
+      className="min-h-screen bg-background pb-20 relative" 
+      dir="rtl"
+      {...handlers}
+    >
+      {/* Pull to Refresh Indicator */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        progress={progress}
+        shouldTrigger={shouldTrigger}
+      />
+
+      {/* Content with pull offset */}
+      <div style={{ transform: `translateY(${pullDistance}px)`, transition: isRefreshing ? 'none' : 'transform 0.2s ease' }}>
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Main Content */}
@@ -449,6 +486,7 @@ const Home = () => {
           </Card>
         </motion.div>
       </main>
+      </div>
 
       {/* Bottom Navigation */}
       <BottomNav />
