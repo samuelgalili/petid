@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden",
   {
     variants: {
       variant: {
@@ -34,16 +34,77 @@ const buttonVariants = cva(
   },
 );
 
+interface RippleStyle {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  disableRipple?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+  ({ className, variant, size, asChild = false, disableRipple = false, onClick, ...props }, ref) => {
+    const [ripples, setRipples] = React.useState<RippleStyle[]>([]);
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+    
+    // Merge refs
+    React.useImperativeHandle(ref, () => buttonRef.current!);
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!disableRipple && !asChild && buttonRef.current) {
+        const button = buttonRef.current;
+        const rect = button.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height) * 2;
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        const newRipple = { left: x, top: y, width: size, height: size };
+        setRipples(prev => [...prev, newRipple]);
+        
+        // Remove ripple after animation
+        setTimeout(() => {
+          setRipples(prev => prev.slice(1));
+        }, 600);
+      }
+      
+      onClick?.(e);
+    };
+
+    if (asChild) {
+      return <Slot className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+    }
+
+    return (
+      <button 
+        className={cn(buttonVariants({ variant, size, className }))} 
+        ref={buttonRef} 
+        onClick={handleClick}
+        {...props}
+      >
+        {props.children}
+        {ripples.map((ripple, index) => (
+          <span
+            key={index}
+            className="absolute rounded-full pointer-events-none animate-ripple"
+            style={{
+              left: ripple.left,
+              top: ripple.top,
+              width: ripple.width,
+              height: ripple.height,
+              backgroundColor: variant === 'ghost' || variant === 'outline' 
+                ? 'rgba(0, 0, 0, 0.1)' 
+                : 'rgba(255, 255, 255, 0.3)',
+            }}
+          />
+        ))}
+      </button>
+    );
   },
 );
 Button.displayName = "Button";
