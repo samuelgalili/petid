@@ -86,7 +86,9 @@ const Insurance = () => {
   const [showFloatingCTA, setShowFloatingCTA] = useState(false);
   const [calculatorData, setCalculatorData] = useState({
     petType: 'dog' as 'dog' | 'cat',
-    petAge: 1,
+    petAge: 3,
+    breed: '' as string,
+    isNeutered: false,
   });
   const [calculatedPremium, setCalculatedPremium] = useState<number | null>(null);
   const [claimFormData, setClaimFormData] = useState({
@@ -348,6 +350,41 @@ const Insurance = () => {
     },
   ];
 
+  // Breed data with risk factors
+  const dogBreeds = [
+    { value: 'mixed', label: 'מעורב / לא ידוע', risk: 1.0, emoji: '🐕' },
+    { value: 'labrador', label: 'לברדור רטריבר', risk: 1.1, emoji: '🦮' },
+    { value: 'golden', label: 'גולדן רטריבר', risk: 1.1, emoji: '🐕' },
+    { value: 'german-shepherd', label: 'רועה גרמני', risk: 1.2, emoji: '🐕‍🦺' },
+    { value: 'bulldog', label: 'בולדוג', risk: 1.4, emoji: '🐶' },
+    { value: 'poodle', label: 'פודל', risk: 1.0, emoji: '🐩' },
+    { value: 'husky', label: 'האסקי', risk: 1.15, emoji: '🐺' },
+    { value: 'beagle', label: 'ביגל', risk: 1.0, emoji: '🐕' },
+    { value: 'chihuahua', label: 'צ׳יוואווה', risk: 0.9, emoji: '🐕' },
+    { value: 'shih-tzu', label: 'שיצו', risk: 1.1, emoji: '🐶' },
+    { value: 'yorkshire', label: 'יורקשייר טרייר', risk: 1.0, emoji: '🐕' },
+    { value: 'french-bulldog', label: 'בולדוג צרפתי', risk: 1.5, emoji: '🐶' },
+    { value: 'boxer', label: 'בוקסר', risk: 1.3, emoji: '🐕' },
+    { value: 'rottweiler', label: 'רוטוויילר', risk: 1.25, emoji: '🐕‍🦺' },
+    { value: 'dachshund', label: 'תחש', risk: 1.2, emoji: '🐕' },
+  ];
+
+  const catBreeds = [
+    { value: 'mixed', label: 'מעורב / לא ידוע', risk: 1.0, emoji: '🐈' },
+    { value: 'persian', label: 'פרסי', risk: 1.3, emoji: '🐱' },
+    { value: 'siamese', label: 'סיאמי', risk: 1.1, emoji: '🐈' },
+    { value: 'maine-coon', label: 'מיין קון', risk: 1.15, emoji: '🐈‍⬛' },
+    { value: 'british-shorthair', label: 'בריטי קצר שיער', risk: 1.1, emoji: '🐱' },
+    { value: 'ragdoll', label: 'רגדול', risk: 1.1, emoji: '🐱' },
+    { value: 'bengal', label: 'בנגל', risk: 1.2, emoji: '🐈' },
+    { value: 'sphynx', label: 'ספינקס', risk: 1.25, emoji: '🐱' },
+    { value: 'scottish-fold', label: 'סקוטיש פולד', risk: 1.3, emoji: '🐱' },
+    { value: 'russian-blue', label: 'רוסי כחול', risk: 1.0, emoji: '🐈' },
+    { value: 'abyssinian', label: 'אביסיני', risk: 1.05, emoji: '🐈' },
+  ];
+
+  const currentBreeds = calculatorData.petType === 'dog' ? dogBreeds : catBreeds;
+
   const calculatePremium = () => {
     const basePremium = calculatorData.petType === 'dog' ? 79 : 59;
     let ageMultiplier = 1;
@@ -363,9 +400,24 @@ const Insurance = () => {
     } else {
       ageMultiplier = 2;
     }
+
+    // Get breed risk factor
+    const selectedBreed = currentBreeds.find(b => b.value === calculatorData.breed);
+    const breedRisk = selectedBreed?.risk || 1.0;
+
+    // Neutered discount
+    const neuteredDiscount = calculatorData.isNeutered ? 0.95 : 1;
     
-    const premium = Math.round(basePremium * ageMultiplier);
+    const premium = Math.round(basePremium * ageMultiplier * breedRisk * neuteredDiscount);
     setCalculatedPremium(premium);
+
+    // Confetti on calculation
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ['#F7BF00', '#FF6B35', '#4ECDC4']
+    });
   };
 
   const handleClaimSubmit = (e: React.FormEvent) => {
@@ -748,22 +800,29 @@ const Insurance = () => {
               </div>
             </div>
 
-            {/* Premium Calculator */}
+            {/* Advanced Premium Calculator */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <Card className="p-6 border-0 shadow-xl bg-gradient-to-br from-amber-50 via-white to-orange-50">
-                <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
+              <Card className="p-6 border-0 shadow-xl bg-gradient-to-br from-amber-50 via-white to-orange-50 overflow-hidden relative">
+                {/* Decorative elements */}
+                <motion.div 
+                  className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-200/30 to-orange-200/30 rounded-full blur-3xl"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                />
+                
+                <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2 relative z-10">
                   <Calculator className="w-5 h-5 text-amber-500" />
-                  מחשבון פרמיה
+                  מחשבון פרמיה מתקדם
                 </h2>
-                <p className="text-sm text-gray-500 mb-6">
-                  חשב את הפרמיה המשוערת לפי סוג וגיל חיית המחמד שלך
+                <p className="text-sm text-gray-500 mb-6 relative z-10">
+                  חשב את הפרמיה המדויקת לפי סוג, גיל וגזע חיית המחמד שלך
                 </p>
                 
-                <div className="space-y-6">
+                <div className="space-y-6 relative z-10">
                   {/* Pet Type Selection */}
                   <div>
                     <Label className="text-sm font-bold text-gray-700 mb-3 block">
@@ -773,7 +832,7 @@ const Insurance = () => {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setCalculatorData(prev => ({ ...prev, petType: 'dog' }))}
+                        onClick={() => setCalculatorData(prev => ({ ...prev, petType: 'dog', breed: '' }))}
                         className={`p-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-center gap-3 ${
                           calculatorData.petType === 'dog'
                             ? 'border-amber-400 bg-amber-50 shadow-lg'
@@ -786,7 +845,7 @@ const Insurance = () => {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setCalculatorData(prev => ({ ...prev, petType: 'cat' }))}
+                        onClick={() => setCalculatorData(prev => ({ ...prev, petType: 'cat', breed: '' }))}
                         className={`p-4 rounded-2xl border-2 transition-all duration-300 flex items-center justify-center gap-3 ${
                           calculatorData.petType === 'cat'
                             ? 'border-amber-400 bg-amber-50 shadow-lg'
@@ -799,35 +858,163 @@ const Insurance = () => {
                     </div>
                   </div>
 
+                  {/* Breed Selection */}
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Label className="text-sm font-bold text-gray-700 mb-3 block">
+                      גזע {calculatorData.petType === 'dog' ? 'הכלב' : 'החתול'}
+                    </Label>
+                    <Select
+                      value={calculatorData.breed}
+                      onValueChange={(value) => setCalculatorData(prev => ({ ...prev, breed: value }))}
+                    >
+                      <SelectTrigger className="rounded-xl border-gray-200 h-14 bg-white">
+                        <SelectValue placeholder={`בחר גזע ${calculatorData.petType === 'dog' ? 'כלב' : 'חתול'}`} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {currentBreeds.map((breed) => (
+                          <SelectItem key={breed.value} value={breed.value}>
+                            <div className="flex items-center gap-2">
+                              <span>{breed.emoji}</span>
+                              <span>{breed.label}</span>
+                              {breed.risk > 1.2 && (
+                                <span className="text-[10px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-full">סיכון גבוה</span>
+                              )}
+                              {breed.risk < 1 && (
+                                <span className="text-[10px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full">סיכון נמוך</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {calculatorData.breed && (
+                      <motion.p 
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-xs text-gray-500 mt-2"
+                      >
+                        {(() => {
+                          const breed = currentBreeds.find(b => b.value === calculatorData.breed);
+                          if (!breed) return '';
+                          if (breed.risk > 1.2) return '⚠️ גזע זה נוטה למצבים רפואיים מסוימים - הפרמיה מותאמת בהתאם';
+                          if (breed.risk < 1) return '✨ גזע בריא יחסית - נהנה מהנחה בפרמיה';
+                          return '✓ גזע עם סיכון רפואי סטנדרטי';
+                        })()}
+                      </motion.p>
+                    )}
+                  </motion.div>
+
                   {/* Age Slider */}
                   <div>
-                    <Label className="text-sm font-bold text-gray-700 mb-3 block">
-                      גיל: <span className="text-amber-600">{calculatorData.petAge} שנים</span>
-                    </Label>
-                    <Slider
-                      value={[calculatorData.petAge]}
-                      onValueChange={(value) => setCalculatorData(prev => ({ ...prev, petAge: value[0] }))}
-                      max={15}
-                      min={1}
-                      step={1}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-gray-400 mt-2">
-                      <span>1 שנה</span>
-                      <span>15 שנים</span>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-sm font-bold text-gray-700">
+                        גיל חיית המחמד
+                      </Label>
+                      <motion.span 
+                        key={calculatorData.petAge}
+                        initial={{ scale: 1.3, color: '#F59E0B' }}
+                        animate={{ scale: 1, color: '#D97706' }}
+                        className="text-lg font-black text-amber-600 bg-amber-100 px-3 py-1 rounded-full"
+                      >
+                        {calculatorData.petAge} {calculatorData.petAge === 1 ? 'שנה' : 'שנים'}
+                      </motion.span>
                     </div>
+                    <div className="relative pt-2 pb-6">
+                      <Slider
+                        value={[calculatorData.petAge]}
+                        onValueChange={(value) => setCalculatorData(prev => ({ ...prev, petAge: value[0] }))}
+                        max={15}
+                        min={1}
+                        step={1}
+                        className="w-full"
+                      />
+                      {/* Age labels */}
+                      <div className="absolute -bottom-1 left-0 right-0 flex justify-between px-1">
+                        {[1, 3, 5, 8, 10, 12, 15].map((age) => (
+                          <motion.span 
+                            key={age}
+                            className={`text-[10px] ${calculatorData.petAge === age ? 'text-amber-600 font-bold' : 'text-gray-400'}`}
+                            animate={{ scale: calculatorData.petAge === age ? 1.2 : 1 }}
+                          >
+                            {age}
+                          </motion.span>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Age category indicator */}
+                    <motion.div 
+                      layout
+                      className={`text-xs px-3 py-2 rounded-xl text-center font-medium ${
+                        calculatorData.petAge <= 2 
+                          ? 'bg-emerald-100 text-emerald-700' 
+                          : calculatorData.petAge <= 5 
+                          ? 'bg-blue-100 text-blue-700'
+                          : calculatorData.petAge <= 8
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-rose-100 text-rose-700'
+                      }`}
+                    >
+                      {calculatorData.petAge <= 2 && '🌱 גור/צעיר - פרמיה מופחתת'}
+                      {calculatorData.petAge > 2 && calculatorData.petAge <= 5 && '💪 בוגר - פרמיה סטנדרטית'}
+                      {calculatorData.petAge > 5 && calculatorData.petAge <= 8 && '🏃 מבוגר - פרמיה מוגדלת קלה'}
+                      {calculatorData.petAge > 8 && '👴 קשיש - פרמיה מותאמת לגיל'}
+                    </motion.div>
                   </div>
+
+                  {/* Neutered Checkbox */}
+                  <motion.div 
+                    className="flex items-center gap-3 p-4 bg-white rounded-2xl border-2 border-gray-100 cursor-pointer hover:border-amber-200 transition-all"
+                    onClick={() => setCalculatorData(prev => ({ ...prev, isNeutered: !prev.isNeutered }))}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                      calculatorData.isNeutered 
+                        ? 'bg-amber-400 border-amber-400' 
+                        : 'border-gray-300'
+                    }`}>
+                      {calculatorData.isNeutered && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 500 }}
+                        >
+                          <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                        </motion.div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-bold text-gray-900">מעוקר/מסורס</span>
+                      <p className="text-xs text-gray-500">קבל 5% הנחה על הפרמיה</p>
+                    </div>
+                    {calculatorData.isNeutered && (
+                      <motion.span 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full font-bold"
+                      >
+                        -5%
+                      </motion.span>
+                    )}
+                  </motion.div>
 
                   {/* Calculate Button */}
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button
                       onClick={calculatePremium}
-                      className="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                      disabled={!calculatorData.breed}
+                      className="w-full bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-bold py-6 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Calculator className="w-5 h-5 ml-2" />
-                      חשב פרמיה
+                      חשב פרמיה מדויקת
                     </Button>
                   </motion.div>
+                  {!calculatorData.breed && (
+                    <p className="text-xs text-center text-gray-400">בחר גזע כדי לחשב את הפרמיה</p>
+                  )}
 
                   {/* Result */}
                   <AnimatePresence>
@@ -837,20 +1024,50 @@ const Insurance = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.9 }}
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        className="p-6 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-xl text-white text-center"
+                        className="p-6 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-xl text-white text-center relative overflow-hidden"
                       >
-                        <p className="text-sm opacity-90 mb-2">הפרמיה המשוערת שלך</p>
+                        {/* Shine effect */}
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                          animate={{ x: ['-200%', '200%'] }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                        />
+                        
+                        <p className="text-sm opacity-90 mb-2 relative z-10">הפרמיה המשוערת שלך</p>
                         <motion.p
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ type: "spring", delay: 0.2 }}
-                          className="text-4xl font-black mb-2"
+                          className="text-5xl font-black mb-2 relative z-10"
                         >
                           ₪{calculatedPremium}
                         </motion.p>
-                        <p className="text-xs opacity-80">לחודש</p>
-                        <div className="mt-4 pt-4 border-t border-white/20">
-                          <p className="text-xs opacity-70">
+                        <p className="text-sm opacity-80 relative z-10">לחודש</p>
+                        
+                        {/* Breakdown */}
+                        <div className="mt-4 pt-4 border-t border-white/20 space-y-2 relative z-10">
+                          <div className="flex justify-between text-xs">
+                            <span className="opacity-70">סוג:</span>
+                            <span className="font-medium">{calculatorData.petType === 'dog' ? 'כלב 🐕' : 'חתול 🐈'}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="opacity-70">גזע:</span>
+                            <span className="font-medium">{currentBreeds.find(b => b.value === calculatorData.breed)?.label}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="opacity-70">גיל:</span>
+                            <span className="font-medium">{calculatorData.petAge} שנים</span>
+                          </div>
+                          {calculatorData.isNeutered && (
+                            <div className="flex justify-between text-xs">
+                              <span className="opacity-70">הנחת עיקור:</span>
+                              <span className="font-medium text-emerald-200">-5%</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="mt-4 pt-4 border-t border-white/20 relative z-10">
+                          <p className="text-[10px] opacity-60">
                             * המחיר הסופי עשוי להשתנות בהתאם לבדיקות רפואיות ותנאי הפוליסה
                           </p>
                         </div>
