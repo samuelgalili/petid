@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { LoginForm } from "@/components/LoginForm";
 import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
-import { UserX } from "lucide-react";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
-import { AuthLayout } from "@/components/AuthLayout";
+import petidLogo from "@/assets/petid-logo.png";
 
 const Auth = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -16,23 +14,18 @@ const Auth = () => {
   const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    const checkOnboarding = async () => {
-      if (!authLoading && isAuthenticated) {
-        const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-        if (onboardingCompleted === 'true') {
-          navigate("/home");
-        } else {
-          navigate("/onboarding");
-        }
+    if (!authLoading && isAuthenticated) {
+      const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+      if (onboardingCompleted === 'true') {
+        navigate("/home");
+      } else {
+        navigate("/onboarding");
       }
-    };
-    checkOnboarding();
+    }
   }, [isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPageLoading(false);
-    }, 800);
+    const timer = setTimeout(() => setPageLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -46,48 +39,71 @@ const Auth = () => {
   }
 
   return (
-    <AuthLayout>
-      {/* Login Form */}
-      <div className="mb-5">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8">
+      {/* Main Card */}
+      <div className="w-full max-w-[350px] bg-white border border-gray-300 px-10 py-10 mb-3">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img src={petidLogo} alt="Petid" className="h-14 object-contain" />
+        </div>
+
+        {/* Login Form */}
         <LoginForm />
-      </div>
 
-      {/* Social Auth */}
-      <div className="mb-5">
+        {/* OR Divider */}
+        <div className="flex items-center my-5">
+          <div className="flex-1 h-px bg-gray-300" />
+          <span className="px-4 text-sm font-semibold text-gray-500">OR</span>
+          <div className="flex-1 h-px bg-gray-300" />
+        </div>
+
+        {/* Social Auth */}
         <SocialAuthButtons redirectTo="/add-pet" />
+
+        {/* Guest Mode */}
+        <button
+          onClick={handleGuestMode}
+          className="w-full mt-4 text-sm text-[#00376B] font-semibold hover:text-gray-900"
+        >
+          Continue as Guest
+        </button>
       </div>
 
-      {/* Divider */}
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-400/30" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-transparent px-2 text-gray-700 font-jakarta">Or</span>
-        </div>
-      </div>
-
-      {/* Sign Up Link */}
-      <div className="text-center mb-4">
-        <p className="text-gray-700 text-sm font-jakarta">
+      {/* Sign Up Card */}
+      <div className="w-full max-w-[350px] bg-white border border-gray-300 py-5 text-center">
+        <p className="text-sm text-gray-900">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-gray-900 font-semibold hover:underline transition-colors">
-            Sign Up
+          <Link to="/signup" className="text-[#0095F6] font-semibold hover:text-[#1877F2]">
+            Sign up
           </Link>
         </p>
       </div>
 
-      {/* Guest Mode */}
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={handleGuestMode}
-        className="w-full rounded-full bg-white/95 hover:bg-gray-50 text-gray-900 border-2 border-gray-200 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm font-jakarta font-semibold"
-      >
-        <UserX className="mr-2 h-4 w-4" />
-        Continue as Guest
-      </Button>
-    </AuthLayout>
+      {/* App Download Section */}
+      <div className="mt-5 text-center">
+        <p className="text-sm text-gray-900 mb-4">Get the app.</p>
+        <div className="flex gap-2 justify-center">
+          <img
+            src="https://static.cdninstagram.com/rsrc.php/v3/yz/r/c5Rp7Ym-Klz.png"
+            alt="Get it on Google Play"
+            className="h-10"
+          />
+          <img
+            src="https://static.cdninstagram.com/rsrc.php/v3/yu/r/EHY6QnZYdNX.png"
+            alt="Get it from Microsoft"
+            className="h-10"
+          />
+        </div>
+      </div>
+
+      {/* Footer Links */}
+      <footer className="mt-8 text-xs text-gray-500 text-center space-x-4">
+        <Link to="/terms" className="hover:underline">Terms</Link>
+        <Link to="/privacy" className="hover:underline">Privacy</Link>
+        <Link to="/support" className="hover:underline">Help</Link>
+        <span>© 2024 Petid</span>
+      </footer>
+    </div>
   );
 };
 
