@@ -1,8 +1,12 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
 
 interface GuestContextType {
   isGuest: boolean;
   setGuestMode: (value: boolean) => void;
+  showLoginPrompt: boolean;
+  loginPromptMessage: string;
+  promptLogin: (message?: string) => void;
+  closeLoginPrompt: () => void;
 }
 
 const GuestContext = createContext<GuestContextType | undefined>(undefined);
@@ -11,21 +15,37 @@ export const GuestProvider = ({ children }: { children: ReactNode }) => {
   const [isGuest, setIsGuest] = useState(() => {
     return localStorage.getItem("guestMode") === "true";
   });
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [loginPromptMessage, setLoginPromptMessage] = useState("");
 
   const setGuestMode = (value: boolean) => {
-    console.log("setGuestMode called with:", value);
     setIsGuest(value);
     if (value) {
       localStorage.setItem("guestMode", "true");
-      console.log("Guest mode saved to localStorage");
     } else {
       localStorage.removeItem("guestMode");
-      console.log("Guest mode removed from localStorage");
     }
   };
 
+  const promptLogin = useCallback((message?: string) => {
+    setLoginPromptMessage(message || "כדי להמשיך, יש להתחבר או להירשם");
+    setShowLoginPrompt(true);
+  }, []);
+
+  const closeLoginPrompt = useCallback(() => {
+    setShowLoginPrompt(false);
+    setLoginPromptMessage("");
+  }, []);
+
   return (
-    <GuestContext.Provider value={{ isGuest, setGuestMode }}>
+    <GuestContext.Provider value={{ 
+      isGuest, 
+      setGuestMode, 
+      showLoginPrompt, 
+      loginPromptMessage,
+      promptLogin, 
+      closeLoginPrompt 
+    }}>
       {children}
     </GuestContext.Provider>
   );

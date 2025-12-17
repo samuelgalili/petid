@@ -77,6 +77,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import Footer from "./components/Footer";
+import { LoginPromptDialog } from "./components/LoginPromptDialog";
 
 const queryClient = new QueryClient();
 
@@ -84,11 +85,12 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   useAdminNotifications();
   
-  const authPages = ['/auth', '/signup', '/forgot-password', '/reset-password', '/install'];
+  const authPages = ['/auth', '/signup', '/forgot-password', '/reset-password', '/install', '/splash'];
   const showFooter = !authPages.includes(location.pathname);
   
   return (
     <div className="min-h-screen flex flex-col">
+      <LoginPromptDialog />
       <div className="flex-1">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
@@ -108,20 +110,21 @@ const AnimatedRoutes = () => {
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
         <Route path="/pet/:petId" element={<ProtectedRoute><PageTransition><PetDetails /></PageTransition></ProtectedRoute>} />
         <Route path="/breed-history/:petId" element={<ProtectedRoute><PageTransition><BreedHistory /></PageTransition></ProtectedRoute>} />
-        <Route path="/feed" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="הפיד"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Feed /></Suspense></PageErrorBoundary></PageTransition></ProtectedRoute>} />
-        <Route path="/user/:userId" element={<ProtectedRoute><PageTransition><UserProfile /></PageTransition></ProtectedRoute>} />
-        <Route path="/post/:postId" element={<ProtectedRoute><PageTransition><PostDetail /></PageTransition></ProtectedRoute>} />
-        <Route path="/story/:userId" element={<ProtectedRoute><StoryViewer /></ProtectedRoute>} />
-        <Route path="/highlight/:highlightId" element={<ProtectedRoute><HighlightViewer /></ProtectedRoute>} />
+        <Route path="/feed" element={<PageTransition><PageErrorBoundary pageName="הפיד"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Feed /></Suspense></PageErrorBoundary></PageTransition>} />
+        <Route path="/user/:userId" element={<PageTransition><UserProfile /></PageTransition>} />
+        <Route path="/post/:postId" element={<PageTransition><PostDetail /></PageTransition>} />
+        <Route path="/story/:userId" element={<StoryViewer />} />
+        <Route path="/highlight/:highlightId" element={<HighlightViewer />} />
+        <Route path="/adoption" element={<PageTransition><Adoption /></PageTransition>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
-        <Route path="/shop" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition></ProtectedRoute>} />
-        <Route path="/product/:id" element={<ProtectedRoute><PageTransition><ProductDetail /></PageTransition></ProtectedRoute>} />
+        <Route path="/shop" element={<PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition>} />
+        <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
         <Route path="/cart" element={<ProtectedRoute><PageTransition><Cart /></PageTransition></ProtectedRoute>} />
         <Route path="/favorites" element={<ProtectedRoute><PageTransition><Favorites /></PageTransition></ProtectedRoute>} />
         <Route path="/checkout" element={<ProtectedRoute><PageTransition><Checkout /></PageTransition></ProtectedRoute>} />
         <Route path="/order-confirmation" element={<ProtectedRoute><PageTransition><OrderConfirmation /></PageTransition></ProtectedRoute>} />
         <Route path="/order-history" element={<ProtectedRoute><PageTransition><OrderHistory /></PageTransition></ProtectedRoute>} />
-        <Route path="/insurance" element={<ProtectedRoute><PageTransition><Insurance /></PageTransition></ProtectedRoute>} />
+        <Route path="/insurance" element={<PageTransition><Insurance /></PageTransition>} />
         <Route path="/tasks" element={<ProtectedRoute><PageTransition><Tasks /></PageTransition></ProtectedRoute>} />
         <Route path="/rewards" element={<ProtectedRoute><PageTransition><Rewards /></PageTransition></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
@@ -131,13 +134,12 @@ const AnimatedRoutes = () => {
         <Route path="/admin/customers" element={<ProtectedRoute><AdminRoute><PageTransition><AdminCustomers /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/parks" element={<ProtectedRoute><AdminRoute><PageTransition><AdminParks /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
-        <Route path="/adoption" element={<ProtectedRoute><PageTransition><Adoption /></PageTransition></ProtectedRoute>} />
-            <Route path="/experiences" element={<ProtectedRoute><PageTransition><Experiences /></PageTransition></ProtectedRoute>} />
-            <Route path="/parks" element={<ProtectedRoute><PageTransition><Parks /></PageTransition></ProtectedRoute>} />
-            <Route path="/photos" element={<ProtectedRoute><PageTransition><Photos /></PageTransition></ProtectedRoute>} />
-            <Route path="/documents" element={<ProtectedRoute><PageTransition><Documents /></PageTransition></ProtectedRoute>} />
-            <Route path="/training" element={<ProtectedRoute><PageTransition><PageErrorBoundary pageName="אימונים"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Training /></Suspense></PageErrorBoundary></PageTransition></ProtectedRoute>} />
-            <Route path="/grooming" element={<ProtectedRoute><PageTransition><Grooming /></PageTransition></ProtectedRoute>} />
+        <Route path="/experiences" element={<PageTransition><Experiences /></PageTransition>} />
+        <Route path="/parks" element={<PageTransition><Parks /></PageTransition>} />
+        <Route path="/photos" element={<ProtectedRoute><PageTransition><Photos /></PageTransition></ProtectedRoute>} />
+        <Route path="/documents" element={<ProtectedRoute><PageTransition><Documents /></PageTransition></ProtectedRoute>} />
+        <Route path="/training" element={<PageTransition><PageErrorBoundary pageName="אימונים"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Training /></Suspense></PageErrorBoundary></PageTransition>} />
+        <Route path="/grooming" element={<PageTransition><Grooming /></PageTransition>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><PageTransition><Notifications /></PageTransition></ProtectedRoute>} />
         <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />

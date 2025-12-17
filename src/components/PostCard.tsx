@@ -5,6 +5,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 // Custom Dog Tongue Icon Component
 const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; isLiked: boolean; className?: string }) => (
@@ -146,10 +147,12 @@ export const PostCard = ({
 }: PostCardProps) => {
   const navigate = useNavigate();
   const { isFollowing, toggleFollow } = useFollow(post.user_id);
+  const { checkAuth, isAuthenticated } = useRequireAuth();
   const [isLicking, setIsLicking] = useState(false);
   const [commentText, setCommentText] = useState("");
 
   const handleComment = () => {
+    if (!checkAuth("כדי להגיב על פוסטים, יש להתחבר")) return;
     if (commentText.trim() && onComment) {
       onComment(post.id, commentText.trim());
       setCommentText("");
@@ -204,6 +207,7 @@ export const PostCard = ({
   };
 
   const handleLike = () => {
+    if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
     setIsLicking(true);
     playLickSound();
     onLike(post.id);
@@ -211,10 +215,21 @@ export const PostCard = ({
   };
 
   const handleDoubleTap = () => {
+    if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
     setIsLicking(true);
     playLickSound();
     onDoubleTap(post.id);
     setTimeout(() => setIsLicking(false), 500);
+  };
+
+  const handleSave = () => {
+    if (!checkAuth("כדי לשמור פוסטים, יש להתחבר")) return;
+    onSave(post.id);
+  };
+
+  const handleFollow = () => {
+    if (!checkAuth("כדי לעקוב אחרי משתמשים, יש להתחבר")) return;
+    toggleFollow();
   };
 
   return (
@@ -251,7 +266,7 @@ export const PostCard = ({
               }`}
               onClick={(e) => {
                 e.stopPropagation();
-                toggleFollow();
+                handleFollow();
               }}
             >
               {isFollowing ? "" : "עקוב"}
@@ -326,7 +341,7 @@ export const PostCard = ({
             </button>
           </div>
           <button 
-            onClick={() => onSave(post.id)}
+            onClick={handleSave}
             className="text-[#262626] active:opacity-50 transition-opacity"
           >
             <Bookmark className={`w-6 h-6 ${post.is_saved ? 'fill-[#262626]' : ''}`} strokeWidth={1.5} />
@@ -379,11 +394,13 @@ export const PostCard = ({
         </Avatar>
         <input
           type="text"
-          placeholder="הוסף תגובה..."
+          placeholder={isAuthenticated ? "הוסף תגובה..." : "התחבר כדי להגיב..."}
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+          onFocus={() => !isAuthenticated && checkAuth("כדי להגיב על פוסטים, יש להתחבר")}
           className="flex-1 bg-transparent text-[13px] text-[#262626] placeholder-[#8E8E8E] outline-none"
+          readOnly={!isAuthenticated}
         />
         <button className="text-[#8E8E8E] p-1">
           <Smile className="w-5 h-5" strokeWidth={1.5} />

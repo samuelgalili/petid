@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { CreateStoryDialog } from "./CreateStoryDialog";
 
 interface StoryUser {
@@ -17,6 +18,7 @@ interface StoryUser {
 
 export const StoriesBar = () => {
   const { user } = useAuth();
+  const { checkAuth, isAuthenticated } = useRequireAuth();
   const navigate = useNavigate();
   const [storyUsers, setStoryUsers] = useState<StoryUser[]>([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -116,45 +118,54 @@ export const StoriesBar = () => {
     );
   }
 
+  const handleCreateStory = () => {
+    if (!checkAuth("כדי ליצור סטורי, יש להתחבר")) return;
+    setCreateDialogOpen(true);
+  };
+
   return (
     <>
       <div className="px-2 py-2 bg-white">
         <div className="flex gap-3 overflow-x-auto no-scrollbar">
-          {/* Your Story - Always first */}
-          {user && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer w-[76px]"
-              onClick={() => currentUserHasStory ? navigate(`/story/${user.id}`) : setCreateDialogOpen(true)}
-            >
-              <div className="relative">
-                <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
-                  currentUserHasStory 
-                    ? "bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]"
-                    : ""
-                }`}>
-                  <div className="w-full h-full rounded-full bg-white p-[2px]">
-                    <Avatar className="w-full h-full">
-                      <AvatarImage src={currentUserProfile?.avatar_url} />
-                      <AvatarFallback className="bg-gray-100 text-gray-600 text-lg">
-                        {currentUserProfile?.full_name?.charAt(0) || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
+          {/* Your Story / Add Story - Always first */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer w-[76px]"
+            onClick={() => {
+              if (currentUserHasStory && user) {
+                navigate(`/story/${user.id}`);
+              } else {
+                handleCreateStory();
+              }
+            }}
+          >
+            <div className="relative">
+              <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
+                currentUserHasStory 
+                  ? "bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]"
+                  : ""
+              }`}>
+                <div className="w-full h-full rounded-full bg-white p-[2px]">
+                  <Avatar className="w-full h-full">
+                    <AvatarImage src={currentUserProfile?.avatar_url} />
+                    <AvatarFallback className="bg-gray-100 text-gray-600 text-lg">
+                      {currentUserProfile?.full_name?.charAt(0) || isAuthenticated ? "U" : "+"}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
-                {!currentUserHasStory && (
-                  <div className="absolute bottom-0 right-0 w-[22px] h-[22px] bg-[#0095F6] rounded-full flex items-center justify-center border-[2px] border-white">
-                    <Plus className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
-                  </div>
-                )}
               </div>
-              <span className="text-[11px] text-[#262626] max-w-[64px] truncate text-center">
-                הסטורי שלך
-              </span>
-            </motion.div>
-          )}
+              {!currentUserHasStory && (
+                <div className="absolute bottom-0 right-0 w-[22px] h-[22px] bg-[#0095F6] rounded-full flex items-center justify-center border-[2px] border-white">
+                  <Plus className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                </div>
+              )}
+            </div>
+            <span className="text-[11px] text-[#262626] max-w-[64px] truncate text-center">
+              {isAuthenticated ? "הסטורי שלך" : "הוסף סטורי"}
+            </span>
+          </motion.div>
 
           {/* Other users' stories */}
           {storyUsers
@@ -189,9 +200,9 @@ export const StoriesBar = () => {
               </motion.div>
             ))}
 
-          {storyUsers.length === 0 && !user && (
-            <div className="text-center py-4 w-full">
-              <p className="text-gray-400 text-xs">התחבר כדי לראות סטוריז</p>
+          {storyUsers.length === 0 && (
+            <div className="text-center py-4 px-4">
+              <p className="text-gray-400 text-xs">עדיין אין סטוריז להציג</p>
             </div>
           )}
         </div>
