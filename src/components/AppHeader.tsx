@@ -34,9 +34,9 @@ export const AppHeader = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
               className="rounded-full hover:bg-gray-50 transition-colors h-9 w-9"
-              aria-label="חזור"
+              aria-label="חזור לדף הבית"
             >
               <ArrowRight className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
             </Button>
