@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, ChevronDown } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, ChevronDown, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -18,6 +18,7 @@ import { PetishAnimations } from "@/animations/petish";
 import { MyPetsSection } from "@/components/home/MyPetsSection";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
 import { playPetAddedSound } from "@/lib/sounds";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,7 @@ const Feed = () => {
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({ name: "", breed: "" });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   
@@ -547,18 +549,28 @@ const Feed = () => {
       {/* Instagram-style Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
         <div className="max-w-lg mx-auto px-4 h-[44px] flex items-center justify-between">
-          {/* Logo with Instagram gradient */}
-          <h1 
-            className="text-[24px] font-semibold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent"
-            style={{ fontFamily: "'Billabong', cursive, -apple-system, BlinkMacSystemFont, sans-serif" }}
-            onClick={() => {
-              setPage(0);
-              setHasMore(true);
-              fetchPosts(0, false);
-            }}
-          >
-            Petish
-          </h1>
+          {/* Left side - Hamburger menu */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="active:opacity-50 transition-opacity"
+              aria-label="פתח תפריט"
+            >
+              <Menu className="w-6 h-6 text-[#262626] hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
+            </button>
+            {/* Logo with Instagram gradient */}
+            <h1 
+              className="text-[24px] font-semibold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent"
+              style={{ fontFamily: "'Billabong', cursive, -apple-system, BlinkMacSystemFont, sans-serif" }}
+              onClick={() => {
+                setPage(0);
+                setHasMore(true);
+                fetchPosts(0, false);
+              }}
+            >
+              Petish
+            </h1>
+          </div>
           
           {/* Right icons with Instagram colors */}
           <div className="flex items-center gap-5">
@@ -809,6 +821,9 @@ const Feed = () => {
         showDeleteConfirm={showDeleteConfirm}
         onDeleteConfirmChange={setShowDeleteConfirm}
       />
+
+      {/* Hamburger Menu */}
+      <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <BottomNav />
     </div>
