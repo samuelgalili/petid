@@ -457,6 +457,49 @@ export default {
   					opacity: '0',
   					transform: 'translate(-50%, -50%) scale(0.5)'
   				}
+  			},
+  			'toast-slide-in': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translateX(100%) scale(0.9)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translateX(0) scale(1)'
+  				}
+  			},
+  			'toast-slide-out': {
+  				'0%': {
+  					opacity: '1',
+  					transform: 'translateX(0) scale(1)'
+  				},
+  				'100%': {
+  					opacity: '0',
+  					transform: 'translateX(100%) scale(0.9)'
+  				}
+  			},
+  			'toast-icon-pop': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'scale(0) rotate(-180deg)'
+  				},
+  				'50%': {
+  					transform: 'scale(1.2) rotate(10deg)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'scale(1) rotate(0deg)'
+  				}
+  			},
+  			'toast-content-fade': {
+  				'0%': {
+  					opacity: '0',
+  					transform: 'translateX(-10px)'
+  				},
+  				'100%': {
+  					opacity: '1',
+  					transform: 'translateX(0)'
+  				}
   			}
   		},
 		animation: {
@@ -476,7 +519,11 @@ export default {
 			'dialog-flip-in': 'dialog-flip-in 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
 			'dialog-flip-out': 'dialog-flip-out 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 			'dialog-bounce-in': 'dialog-bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-			'dialog-bounce-out': 'dialog-bounce-out 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+			'dialog-bounce-out': 'dialog-bounce-out 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+			'toast-slide-in': 'toast-slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+			'toast-slide-out': 'toast-slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+			'toast-icon-pop': 'toast-icon-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+			'toast-content-fade': 'toast-content-fade 0.3s ease-out 0.1s both'
 		}
   	}
   },
