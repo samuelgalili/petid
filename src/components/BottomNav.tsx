@@ -230,10 +230,10 @@ const BottomNav = () => {
                       className={cn(
                         "w-[22px] h-[22px] transition-all duration-200",
                         isActive 
-                          ? "text-primary" 
+                          ? "text-primary fill-primary" 
                           : "text-muted-foreground"
                       )} 
-                      strokeWidth={isActive ? 2.5 : 1.8}
+                      strokeWidth={isActive ? 2 : 1.8}
                     />
                   </motion.div>
                 </div>
