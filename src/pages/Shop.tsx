@@ -9,6 +9,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import confetti from "canvas-confetti";
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -74,6 +75,17 @@ const Shop = () => {
     { id: "accessories", label: "אביזרים" },
   ];
 
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    setCurrentImageIndex(carouselApi.selectedScrollSnap());
+    carouselApi.on("select", () => {
+      setCurrentImageIndex(carouselApi.selectedScrollSnap());
+    });
+  }, [carouselApi]);
+
   const products = [
     {
       id: 1,
@@ -81,6 +93,11 @@ const Shop = () => {
       description: "מזון איכותי לכלבים בוגרים, עשיר בחלבון ובויטמינים חיוניים לבריאות מיטבית",
       price: 189,
       originalPrice: 249,
+      images: [
+        "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
       popularity: 95,
       likes: 1247,
@@ -95,6 +112,10 @@ const Shop = () => {
       description: "חטיפים טבעיים 100% מעוף איכותי, ללא תוספים או חומרים משמרים",
       price: 45,
       originalPrice: null,
+      images: [
+        "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
       popularity: 78,
       likes: 892,
@@ -109,6 +130,12 @@ const Shop = () => {
       description: "מיטה נוחה עם קצף זיכרון לתמיכה מושלמת בגוף, מתאימה לכלבים בכל הגילאים",
       price: 299,
       originalPrice: 399,
+      images: [
+        "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
       popularity: 88,
       likes: 2103,
@@ -123,6 +150,10 @@ const Shop = () => {
       description: "צעצוע חכם שמפעיל את הכלב ומעסיק אותו לשעות, מתאים לכל הגזעים",
       price: 129,
       originalPrice: null,
+      images: [
+        "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
       popularity: 65,
       likes: 567,
@@ -137,6 +168,10 @@ const Shop = () => {
       description: "שמפו עדין לעור רגיש, מפנק את הפרווה ומשאיר ניחוח נעים לאורך זמן",
       price: 59,
       originalPrice: 79,
+      images: [
+        "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
       popularity: 72,
       likes: 734,
@@ -151,6 +186,10 @@ const Shop = () => {
       description: "קערת מים ואוכל חכמה עם חיישן מילוי אוטומטי, שומרת על מים טריים",
       price: 169,
       originalPrice: null,
+      images: [
+        "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
       popularity: 81,
       likes: 1456,
@@ -165,6 +204,10 @@ const Shop = () => {
       description: "רצועה איכותית ונוחה לאחיזה, עם חומרים עמידים ועיצוב אלגנטי",
       price: 89,
       originalPrice: 119,
+      images: [
+        "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
       popularity: 77,
       likes: 623,
@@ -179,6 +222,9 @@ const Shop = () => {
       description: "כדור גומי עמיד במיוחד, קופץ גבוה ומושלם למשחקי אפורט",
       price: 35,
       originalPrice: null,
+      images: [
+        "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500&h=500&fit=crop",
       popularity: 69,
       likes: 445,
@@ -193,6 +239,10 @@ const Shop = () => {
       description: "מברשת מקצועית להסרת פרווה מתה ולמניעת קשרים, עדינה לעור",
       price: 49,
       originalPrice: 65,
+      images: [
+        "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
+        "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
+      ],
       image: "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
       popularity: 74,
       likes: 512,
@@ -297,7 +347,9 @@ const Shop = () => {
     setSelectedProduct(product);
     setQuantity(1);
     setSelectedSize(null);
-  }, []);
+    setCurrentImageIndex(0);
+    carouselApi?.scrollTo(0);
+  }, [carouselApi]);
 
   const handleAddToCart = useCallback(() => {
     if (!selectedProduct) return;
@@ -788,21 +840,61 @@ const Shop = () => {
 
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto">
-                {/* Product Image */}
-                <div className="relative px-4 mb-4">
-                  <motion.div 
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="w-full aspect-square bg-gradient-to-br from-[#FAFAFA] to-[#F0F0F0] rounded-2xl overflow-hidden shadow-sm"
+                {/* Product Image Gallery */}
+                <div className="relative mb-4">
+                  <Carousel 
+                    className="w-full" 
+                    dir="ltr"
+                    setApi={setCarouselApi}
+                    opts={{ direction: "ltr" }}
                   >
-                    <OptimizedImage
-                      src={selectedProduct.image}
-                      alt={selectedProduct.name}
-                      className="w-full h-full"
-                      objectFit="cover"
-                      sizes="(max-width: 768px) 100vw, 400px"
-                    />
-                  </motion.div>
+                    <CarouselContent>
+                      {(selectedProduct.images || [selectedProduct.image]).map((img: string, index: number) => (
+                        <CarouselItem key={index}>
+                          <div className="px-4">
+                            <motion.div 
+                              initial={{ scale: 0.95, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              className="w-full aspect-square bg-gradient-to-br from-[#FAFAFA] to-[#F0F0F0] rounded-2xl overflow-hidden shadow-sm"
+                            >
+                              <OptimizedImage
+                                src={img}
+                                alt={`${selectedProduct.name} - תמונה ${index + 1}`}
+                                className="w-full h-full"
+                                objectFit="cover"
+                                sizes="(max-width: 768px) 100vw, 400px"
+                              />
+                            </motion.div>
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                  </Carousel>
+                  
+                  {/* Image Dots Pagination */}
+                  {(selectedProduct.images?.length || 1) > 1 && (
+                    <div className="flex justify-center gap-1.5 mt-3">
+                      {(selectedProduct.images || [selectedProduct.image]).map((_: string, index: number) => (
+                        <motion.div
+                          key={index}
+                          initial={false}
+                          animate={{
+                            width: currentImageIndex === index ? 20 : 6,
+                            backgroundColor: currentImageIndex === index ? "#262626" : "#DBDBDB",
+                          }}
+                          transition={{ duration: 0.2 }}
+                          className="h-1.5 rounded-full"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Image Counter */}
+                  {(selectedProduct.images?.length || 1) > 1 && (
+                    <div className="absolute top-6 left-6 bg-black/60 text-white text-[11px] font-medium px-2 py-1 rounded-full">
+                      {currentImageIndex + 1}/{selectedProduct.images?.length || 1}
+                    </div>
+                  )}
                   
                   {/* Sale Badge */}
                   {selectedProduct.originalPrice && (
@@ -810,7 +902,7 @@ const Shop = () => {
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 0.2 }}
-                      className="absolute top-2 right-6 bg-gradient-to-r from-[#ED4956] to-[#F77062] text-white px-3 py-1.5 rounded-full text-[13px] font-bold shadow-lg"
+                      className="absolute top-6 right-6 bg-gradient-to-r from-[#ED4956] to-[#F77062] text-white px-3 py-1.5 rounded-full text-[13px] font-bold shadow-lg"
                     >
                       {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}% הנחה
                     </motion.div>
