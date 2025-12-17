@@ -94,11 +94,36 @@ export const Header = () => {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all relative focus-visible-ring"
+                      className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all relative focus-visible-ring group"
                       onClick={() => navigate('/cart')}
                       aria-label="Shopping cart"
                     >
-                      <ShoppingCart className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
+                      <motion.div
+                        animate={cartItemCount === 0 ? {
+                          rotate: [0, -8, 8, -6, 6, -3, 3, 0],
+                          x: [0, -2, 2, -1, 1, 0]
+                        } : {}}
+                        transition={{
+                          duration: 0.6,
+                          ease: "easeInOut",
+                          repeat: Infinity,
+                          repeatDelay: 3
+                        }}
+                        whileHover={cartItemCount === 0 ? {
+                          rotate: [0, -12, 12, -8, 8, -4, 4, 0],
+                          scale: [1, 1.1, 1],
+                          transition: { duration: 0.5 }
+                        } : {}}
+                      >
+                        <ShoppingCart 
+                          className={`w-5 h-5 transition-colors ${
+                            cartItemCount === 0 
+                              ? 'text-gray-400 dark:text-gray-500 group-hover:text-[#F7BF00]' 
+                              : 'text-[#262626] dark:text-gray-300 hover:text-[#0095F6]'
+                          }`} 
+                          strokeWidth={1.5} 
+                        />
+                      </motion.div>
                       <AnimatePresence mode="wait">
                         {cartItemCount > 0 && (
                           <motion.span
