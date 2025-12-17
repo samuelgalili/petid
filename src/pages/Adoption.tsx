@@ -205,7 +205,7 @@ const Adoption = () => {
   return (
     <>
       <AppHeader 
-        title="אימוץ חיות מחמד" 
+        title="גלה" 
         showBackButton={true}
         showMenuButton={false}
       />
@@ -215,31 +215,31 @@ const Adoption = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8 mt-4"
+            className="text-center mb-6 mt-2"
           >
-            <p className="text-foreground/70 text-base flex items-center justify-center gap-2 font-jakarta">
-              <Heart className="w-5 h-5 text-primary" strokeWidth={1.5} />
+            <p className="text-[#8E8E8E] text-sm flex items-center justify-center gap-2 font-jakarta">
+              <Heart className="w-4 h-4 text-[#ED4956]" strokeWidth={1.5} fill="#ED4956" />
               תן בית חם לחבר חדש
             </p>
           </motion.div>
 
         {/* Search and Filters */}
-        <Card className="bg-white border border-border p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="md:col-span-2">
               <div className="relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" strokeWidth={1.5} />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#8E8E8E] w-5 h-5" strokeWidth={1.5} />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="חיפוש לפי שם או גזע..."
-                  className="pr-10 border-border focus:border-primary rounded-lg"
+                  className="pr-10 border-gray-200 focus:border-[#0095F6] rounded-lg bg-[#FAFAFA] text-[#262626] placeholder:text-[#8E8E8E]"
                   dir="rtl"
                 />
               </div>
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="border-border rounded-lg">
+              <SelectTrigger className="border-gray-200 rounded-lg bg-[#FAFAFA] text-[#262626]">
                 <SelectValue placeholder="סוג חיה" />
               </SelectTrigger>
               <SelectContent>
@@ -249,7 +249,7 @@ const Adoption = () => {
               </SelectContent>
             </Select>
             <Select value={sizeFilter} onValueChange={setSizeFilter}>
-              <SelectTrigger className="border-border rounded-lg">
+              <SelectTrigger className="border-gray-200 rounded-lg bg-[#FAFAFA] text-[#262626]">
                 <SelectValue placeholder="גודל" />
               </SelectTrigger>
               <SelectContent>
@@ -260,10 +260,10 @@ const Adoption = () => {
               </SelectContent>
             </Select>
           </div>
-        </Card>
+        </div>
 
         {/* Pets Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
           <AnimatePresence>
             {filteredPets.map((pet) => (
               <motion.div
@@ -271,76 +271,55 @@ const Adoption = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                whileHover={{ y: -5 }}
+                whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="bg-white border border-border overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="aspect-square overflow-hidden bg-muted">
+                <div className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm">
+                  <div className="aspect-square overflow-hidden bg-[#FAFAFA]">
                     <img
                       src={pet.image_url || "/placeholder.svg"}
                       alt={pet.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-3">
+                  <div className="p-3">
+                    <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="text-xl font-semibold text-foreground font-jakarta">{pet.name}</h3>
-                        <p className="text-sm text-muted-foreground">{pet.breed || pet.type}</p>
+                        <h3 className="text-sm font-semibold text-[#262626] font-jakarta">{pet.name}</h3>
+                        <p className="text-xs text-[#8E8E8E]">{pet.breed || pet.type}</p>
                       </div>
-                      <Badge className="bg-muted text-foreground border-border">{pet.size}</Badge>
                     </div>
 
-                    <div className="space-y-2 mb-4 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span className="font-medium">גיל:</span>
+                    <div className="space-y-1 mb-3 text-xs">
+                      <div className="flex items-center gap-1 text-[#8E8E8E]">
                         <span>{getAgeString(pet.age_years, pet.age_months)}</span>
+                        <span>•</span>
+                        <span>{pet.size}</span>
                       </div>
-                      {pet.gender && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <span className="font-medium">מין:</span>
-                          <span>{pet.gender}</span>
-                        </div>
-                      )}
                     </div>
 
-                    {pet.description && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                        {pet.description}
-                      </p>
-                    )}
-
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex gap-1 mb-3 flex-wrap">
                       {pet.is_vaccinated && (
-                        <Badge variant="outline" className="border-primary text-primary bg-primary/10">
-                          <Check className="w-3 h-3 mr-1" strokeWidth={1.5} />
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0095F6]/10 text-[#0095F6]">
                           מחוסן
-                        </Badge>
+                        </span>
                       )}
                       {pet.is_neutered && (
-                        <Badge variant="outline" className="border-primary text-primary bg-primary/10">
-                          <Check className="w-3 h-3 mr-1" strokeWidth={1.5} />
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0095F6]/10 text-[#0095F6]">
                           מסורס
-                        </Badge>
+                        </span>
                       )}
                     </div>
-
-                    {pet.special_needs && (
-                      <p className="text-sm text-muted-foreground mb-4 flex items-start gap-2 bg-muted/50 p-3 rounded-lg">
-                        <span className="font-medium">צרכים מיוחדים:</span>
-                        <span>{pet.special_needs}</span>
-                      </p>
-                    )}
 
                     <Button
                       onClick={() => handleAdoptClick(pet)}
-                      className="w-full bg-primary hover:bg-primary/90 text-white rounded-lg"
+                      className="w-full bg-[#0095F6] hover:bg-[#0095F6]/90 text-white rounded-lg text-xs py-2 h-8"
                     >
-                      <Heart className="w-4 h-4 ml-2" strokeWidth={1.5} />
-                      בקשת אימוץ
+                      <Heart className="w-3 h-3 ml-1" strokeWidth={1.5} />
+                      אמץ אותי
                     </Button>
                   </div>
-                </Card>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -352,7 +331,7 @@ const Adoption = () => {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <p className="text-muted-foreground text-base font-jakarta">לא נמצאו חיות מחמד התואמות לחיפוש</p>
+            <p className="text-[#8E8E8E] text-sm font-jakarta">לא נמצאו חיות מחמד התואמות לחיפוש</p>
           </motion.div>
         )}
         </div>
@@ -360,20 +339,20 @@ const Adoption = () => {
 
       {/* Adoption Form Dialog */}
       <Dialog open={showAdoptionForm} onOpenChange={setShowAdoptionForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dir-rtl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dir-rtl bg-white">
           <DialogHeader>
-            <DialogTitle className="text-2xl text-yellow-900">
+            <DialogTitle className="text-xl text-[#262626] font-jakarta">
               בקשת אימוץ - {selectedPet?.name}
             </DialogTitle>
-            <DialogDescription className="text-yellow-700">
+            <DialogDescription className="text-[#8E8E8E]">
               מלא את הפרטים הבאים כדי להגיש בקשה לאימוץ
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmitAdoption} className="space-y-6">
+          <form onSubmit={handleSubmitAdoption} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="fullName" className="text-yellow-900">
+                <Label htmlFor="fullName" className="text-[#262626] text-sm">
                   שם מלא *
                 </Label>
                 <Input
@@ -383,12 +362,12 @@ const Adoption = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
                   }
-                  className="border-yellow-300"
+                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
                   dir="rtl"
                 />
               </div>
               <div>
-                <Label htmlFor="email" className="text-yellow-900">
+                <Label htmlFor="email" className="text-[#262626] text-sm">
                   אימייל *
                 </Label>
                 <Input
@@ -399,7 +378,7 @@ const Adoption = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="border-yellow-300"
+                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
                   dir="rtl"
                 />
               </div>
@@ -407,7 +386,7 @@ const Adoption = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="phone" className="text-yellow-900">
+                <Label htmlFor="phone" className="text-[#262626] text-sm">
                   טלפון *
                 </Label>
                 <Input
@@ -417,12 +396,12 @@ const Adoption = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
-                  className="border-yellow-300"
+                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
                   dir="rtl"
                 />
               </div>
               <div>
-                <Label htmlFor="address" className="text-yellow-900">
+                <Label htmlFor="address" className="text-[#262626] text-sm">
                   כתובת *
                 </Label>
                 <Input
@@ -432,7 +411,7 @@ const Adoption = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
                   }
-                  className="border-yellow-300"
+                  className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
                   dir="rtl"
                 />
               </div>
@@ -446,15 +425,16 @@ const Adoption = () => {
                   onCheckedChange={(checked) =>
                     setFormData({ ...formData, hasExperience: checked as boolean })
                   }
+                  className="border-gray-300 data-[state=checked]:bg-[#0095F6] data-[state=checked]:border-[#0095F6]"
                 />
-                <Label htmlFor="hasExperience" className="text-yellow-900 cursor-pointer">
+                <Label htmlFor="hasExperience" className="text-[#262626] text-sm cursor-pointer">
                   יש לי ניסיון קודם בגידול חיות מחמד
                 </Label>
               </div>
 
               {formData.hasExperience && (
                 <div>
-                  <Label htmlFor="experienceDetails" className="text-yellow-900">
+                  <Label htmlFor="experienceDetails" className="text-[#262626] text-sm">
                     פרט על הניסיון שלך
                   </Label>
                   <Textarea
@@ -463,7 +443,7 @@ const Adoption = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, experienceDetails: e.target.value })
                     }
-                    className="border-yellow-300"
+                    className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
                     dir="rtl"
                   />
                 </div>
@@ -478,15 +458,16 @@ const Adoption = () => {
                   onCheckedChange={(checked) =>
                     setFormData({ ...formData, hasOtherPets: checked as boolean })
                   }
+                  className="border-gray-300 data-[state=checked]:bg-[#0095F6] data-[state=checked]:border-[#0095F6]"
                 />
-                <Label htmlFor="hasOtherPets" className="text-yellow-900 cursor-pointer">
+                <Label htmlFor="hasOtherPets" className="text-[#262626] text-sm cursor-pointer">
                   יש לי חיות מחמד נוספות בבית
                 </Label>
               </div>
 
               {formData.hasOtherPets && (
                 <div>
-                  <Label htmlFor="otherPetsDetails" className="text-yellow-900">
+                  <Label htmlFor="otherPetsDetails" className="text-[#262626] text-sm">
                     פרט על חיות המחמד הקיימות
                   </Label>
                   <Textarea
@@ -495,7 +476,7 @@ const Adoption = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, otherPetsDetails: e.target.value })
                     }
-                    className="border-yellow-300"
+                    className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA]"
                     dir="rtl"
                   />
                 </div>
@@ -503,7 +484,7 @@ const Adoption = () => {
             </div>
 
             <div>
-              <Label htmlFor="reason" className="text-yellow-900">
+              <Label htmlFor="reason" className="text-[#262626] text-sm">
                 למה אתה רוצה לאמץ את {selectedPet?.name}? *
               </Label>
               <Textarea
@@ -513,7 +494,7 @@ const Adoption = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, reason: e.target.value })
                 }
-                className="border-yellow-300 min-h-[100px]"
+                className="border-gray-200 focus:border-[#0095F6] bg-[#FAFAFA] min-h-[100px]"
                 dir="rtl"
               />
             </div>
@@ -521,7 +502,7 @@ const Adoption = () => {
             <div className="flex gap-3">
               <Button
                 type="submit"
-                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
+                className="flex-1 bg-[#0095F6] hover:bg-[#0095F6]/90 text-white rounded-lg"
               >
                 שלח בקשה
               </Button>
@@ -529,7 +510,7 @@ const Adoption = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setShowAdoptionForm(false)}
-                className="flex-1 border-yellow-300 text-yellow-700"
+                className="flex-1 border-gray-200 text-[#262626] hover:bg-gray-50 rounded-lg"
               >
                 ביטול
               </Button>
