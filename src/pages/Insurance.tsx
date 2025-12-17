@@ -296,7 +296,58 @@ const Insurance = () => {
     },
   ];
 
-  // Premium calculator function
+  // FAQ Data
+  const faqItems = [
+    {
+      id: "faq-1",
+      question: "מתי הביטוח נכנס לתוקף?",
+      answer: "כיסוי תאונות נכנס לתוקף 72 שעות מתחילת הביטוח. כיסוי מחלות נכנס לתוקף לאחר תקופת אכשרה של 45 יום.",
+      icon: Clock,
+    },
+    {
+      id: "faq-2",
+      question: "האם יש הגבלת גיל לחיות?",
+      answer: "ניתן לבטח חיות מגיל 8 שבועות ועד גיל 12 שנים. חיות מבוטחות יכולות להמשיך להיות מבוטחות ללא הגבלת גיל.",
+      icon: Calendar,
+    },
+    {
+      id: "faq-3",
+      question: "מה התקרה השנתית?",
+      answer: "התקרה השנתית המקסימלית היא ₪30,000 לשני המסלולים. זה כולל את כל הטיפולים, הניתוחים והאשפוזים.",
+      icon: Award,
+    },
+    {
+      id: "faq-4",
+      question: "מהי השתתפות עצמית?",
+      answer: "ההשתתפות העצמית נעה בין ₪250-500 לכל אירוע, תלוי במסלול הנבחר ובגיל חיית המחמד.",
+      icon: Calculator,
+    },
+    {
+      id: "faq-5",
+      question: "האם מכוסים מצבים כרוניים?",
+      answer: "כן! במסלול 1 (מקיף) מכוסים מצבים כרוניים כגון סוכרת, אלרגיות, כשל כלייתי ומחלות לב, בכפוף לתנאי הפוליסה.",
+      icon: Heart,
+    },
+    {
+      id: "faq-6",
+      question: "איך מגישים תביעה?",
+      answer: "הגשת תביעה פשוטה! העלו את המסמכים הרפואיים דרך האפליקציה או האתר, ונטפל בתביעה תוך 5 ימי עסקים.",
+      icon: FileText,
+    },
+    {
+      id: "faq-7",
+      question: "האם יש כיסוי בחו״ל?",
+      answer: "כן! הביטוח מכסה טיפולים וטרינריים בחו״ל עד ₪4,000 בשנה, כולל ביקורי חירום ואשפוז.",
+      icon: MapPin,
+    },
+    {
+      id: "faq-8",
+      question: "מה לא מכוסה בביטוח?",
+      answer: "הביטוח לא מכסה: חיסונים שגרתיים, טיפולים מונעים, טיפולי שיניים קוסמטיים, מצבים שהיו קיימים לפני הביטוח, והריון והמלטה.",
+      icon: AlertTriangle,
+    },
+  ];
+
   const calculatePremium = () => {
     const basePremium = calculatorData.petType === 'dog' ? 79 : 59;
     let ageMultiplier = 1;
@@ -1301,6 +1352,100 @@ const Insurance = () => {
                   </div>
                 </div>
               </Card>
+            </motion.div>
+
+            {/* Interactive FAQ Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-lg font-black text-gray-900 mb-2 flex items-center gap-2">
+                <Info className="w-5 h-5 text-blue-500" />
+                שאלות נפוצות
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                כל מה שרציתם לדעת על ביטוח חיות מחמד 🐾
+              </p>
+              <Accordion type="single" collapsible className="space-y-3">
+                {faqItems.map((faq, index) => (
+                  <motion.div
+                    key={faq.id}
+                    initial={{ opacity: 0, x: -30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, margin: "-20px" }}
+                    transition={{ delay: index * 0.08, type: "spring", stiffness: 100 }}
+                  >
+                    <AccordionItem value={faq.id} className="border-0">
+                      <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-all duration-300">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline hover:bg-gray-50 transition-colors [&[data-state=open]>div>.faq-icon]:rotate-12 [&[data-state=open]>div>.faq-icon]:scale-110">
+                          <div className="flex items-center gap-3 w-full">
+                            <motion.div 
+                              className="faq-icon w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md transition-all duration-300"
+                            >
+                              <faq.icon className="w-5 h-5 text-white" />
+                            </motion.div>
+                            <span className="font-bold text-gray-900 text-sm text-right flex-1">{faq.question}</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mr-13 pr-2 border-r-2 border-blue-200"
+                          >
+                            <p className="text-sm text-gray-600 leading-relaxed mr-11">
+                              {faq.answer}
+                            </p>
+                          </motion.div>
+                        </AccordionContent>
+                      </Card>
+                    </AccordionItem>
+                  </motion.div>
+                ))}
+              </Accordion>
+              
+              {/* Still have questions CTA */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+                className="mt-6"
+              >
+                <Card className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-0 shadow-md">
+                  <div className="flex items-center gap-4">
+                    <motion.div 
+                      className="w-14 h-14 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Phone className="w-7 h-7 text-white" />
+                    </motion.div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 text-sm">עדיין יש שאלות?</h4>
+                      <p className="text-xs text-gray-500">צוות המומחים שלנו כאן בשבילך</p>
+                    </div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button 
+                        size="sm" 
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold rounded-xl shadow-md"
+                        onClick={() => toast({
+                          title: "תודה על הפנייה! 📞",
+                          description: "נציג יחזור אליך בהקדם",
+                        })}
+                      >
+                        צור קשר
+                      </Button>
+                    </motion.div>
+                  </div>
+                </Card>
+              </motion.div>
             </motion.div>
 
             {/* Important Notes */}
