@@ -17,6 +17,7 @@ import { PostCardErrorBoundary } from "@/components/PostCardErrorBoundary";
 import { PetishAnimations } from "@/animations/petish";
 import { MyPetsSection } from "@/components/home/MyPetsSection";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
+import { playPetAddedSound } from "@/lib/sounds";
 
 interface Post {
   id: string;
@@ -238,6 +239,13 @@ const Feed = () => {
     };
     fetchUserData();
   }, [user]);
+
+  // Play sound when new pet is added
+  useEffect(() => {
+    if (newlyAddedPetIds.size > 0) {
+      playPetAddedSound();
+    }
+  }, [newlyAddedPetIds]);
 
   const handlePetLongPressStart = (pet: any) => {
     setEditingPet(pet);
