@@ -1,5 +1,13 @@
 # E2E Tests - Petid/Petish
 
+![E2E Tests](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/e2e-tests.yml/badge.svg)
+
+## CI/CD
+
+הבדיקות רצות אוטומטית ב-GitHub Actions בכל push ל-main או PR.
+
+לצפייה בתוצאות: **Actions** tab ב-GitHub repository.
+
 ## הרצת הבדיקות
 
 ### דרישות מקדימות
