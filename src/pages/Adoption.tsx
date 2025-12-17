@@ -17,7 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, Search } from "lucide-react";
+import { Heart, Search, Calendar, Ruler, MapPin, Syringe, Scissors, Info, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,6 +44,7 @@ const Adoption = () => {
   const [pets, setPets] = useState<AdoptionPet[]>([]);
   const [filteredPets, setFilteredPets] = useState<AdoptionPet[]>([]);
   const [selectedPet, setSelectedPet] = useState<AdoptionPet | null>(null);
+  const [showPetDetails, setShowPetDetails] = useState(false);
   const [showAdoptionForm, setShowAdoptionForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,7 +117,12 @@ const Adoption = () => {
     setFilteredPets(filtered);
   };
 
-  const handleAdoptClick = (pet: AdoptionPet) => {
+  const handlePetClick = (pet: AdoptionPet) => {
+    setSelectedPet(pet);
+    setShowPetDetails(true);
+  };
+
+  const handleProceedToAdopt = () => {
     if (!user) {
       toast({
         title: "נדרש התחברות",
@@ -125,7 +131,7 @@ const Adoption = () => {
       });
       return;
     }
-    setSelectedPet(pet);
+    setShowPetDetails(false);
     setShowAdoptionForm(true);
   };
 
@@ -332,13 +338,13 @@ const Adoption = () => {
                         )}
                       </div>
 
-                      {/* Adopt Button */}
+                      {/* Details Button */}
                       <Button
-                        onClick={() => handleAdoptClick(pet)}
+                        onClick={() => handlePetClick(pet)}
                         className="w-full h-8 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-lg text-xs font-semibold shadow-sm"
                       >
-                        <Heart className="w-3 h-3 ml-1" fill="white" />
-                        אמץ אותי
+                        <Info className="w-3 h-3 ml-1" />
+                        לפרטים נוספים
                       </Button>
                     </div>
                   </div>
@@ -363,6 +369,114 @@ const Adoption = () => {
           )}
         </div>
       </div>
+
+      {/* Pet Details Dialog */}
+      <Dialog open={showPetDetails} onOpenChange={setShowPetDetails}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 border-0 rounded-2xl bg-white">
+          {selectedPet && (
+            <>
+              {/* Pet Image */}
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <img
+                  src={selectedPet.image_url || "/placeholder.svg"}
+                  alt={selectedPet.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowPetDetails(false)}
+                  className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </button>
+                
+                {/* Pet Name Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-2xl">{selectedPet.type === 'כלב' ? '🐕' : '🐱'}</span>
+                    <h2 className="text-xl font-bold text-white">{selectedPet.name}</h2>
+                  </div>
+                  <p className="text-white/80 text-sm">{selectedPet.breed || selectedPet.type}</p>
+                </div>
+              </div>
+
+              {/* Pet Info */}
+              <div className="p-4 space-y-4" dir="rtl">
+                {/* Quick Info Grid */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <Calendar className="w-4 h-4 mx-auto mb-1 text-[#DD2A7B]" />
+                    <p className="text-[10px] text-gray-500">גיל</p>
+                    <p className="text-xs font-semibold text-gray-800">{getAgeString(selectedPet.age_years, selectedPet.age_months)}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <Ruler className="w-4 h-4 mx-auto mb-1 text-[#8134AF]" />
+                    <p className="text-[10px] text-gray-500">גודל</p>
+                    <p className="text-xs font-semibold text-gray-800">{selectedPet.size}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <Heart className="w-4 h-4 mx-auto mb-1 text-[#F58529]" />
+                    <p className="text-[10px] text-gray-500">מין</p>
+                    <p className="text-xs font-semibold text-gray-800">{selectedPet.gender || 'לא ידוע'}</p>
+                  </div>
+                </div>
+
+                {/* Health Status */}
+                <div className="flex gap-2">
+                  <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl ${selectedPet.is_vaccinated ? 'bg-green-50' : 'bg-gray-50'}`}>
+                    <Syringe className={`w-4 h-4 ${selectedPet.is_vaccinated ? 'text-green-600' : 'text-gray-400'}`} />
+                    <div>
+                      <p className="text-xs font-medium text-gray-800">חיסונים</p>
+                      <p className={`text-[10px] ${selectedPet.is_vaccinated ? 'text-green-600' : 'text-gray-500'}`}>
+                        {selectedPet.is_vaccinated ? 'מחוסן ✓' : 'לא מחוסן'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl ${selectedPet.is_neutered ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                    <Scissors className={`w-4 h-4 ${selectedPet.is_neutered ? 'text-blue-600' : 'text-gray-400'}`} />
+                    <div>
+                      <p className="text-xs font-medium text-gray-800">עיקור/סירוס</p>
+                      <p className={`text-[10px] ${selectedPet.is_neutered ? 'text-blue-600' : 'text-gray-500'}`}>
+                        {selectedPet.is_neutered ? 'מסורס ✓' : 'לא מסורס'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedPet.description && (
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <h3 className="text-xs font-semibold text-gray-700 mb-2">קצת עליי</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{selectedPet.description}</p>
+                  </div>
+                )}
+
+                {/* Special Needs */}
+                {selectedPet.special_needs && (
+                  <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
+                    <h3 className="text-xs font-semibold text-amber-700 mb-2 flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      צרכים מיוחדים
+                    </h3>
+                    <p className="text-sm text-amber-700">{selectedPet.special_needs}</p>
+                  </div>
+                )}
+
+                {/* Adopt Button */}
+                <Button
+                  onClick={handleProceedToAdopt}
+                  className="w-full h-11 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl text-sm font-bold shadow-lg"
+                >
+                  <Heart className="w-4 h-4 ml-2" fill="white" />
+                  אני רוצה לאמץ את {selectedPet.name}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Adoption Form Dialog */}
       <Dialog open={showAdoptionForm} onOpenChange={setShowAdoptionForm}>
