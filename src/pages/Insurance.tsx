@@ -486,6 +486,18 @@ const Insurance = () => {
                             <Button
                               className={`w-full bg-gradient-to-r ${plan.color} text-white rounded-2xl font-bold py-6 shadow-lg hover:shadow-xl transition-all`}
                               onClick={() => {
+                                // Trigger celebration confetti
+                                const colors = ['#F7BF00', '#FF6B35', '#4ECDC4', '#45B7D1', '#96CEB4'];
+                                confetti({
+                                  particleCount: 100,
+                                  spread: 70,
+                                  origin: { y: 0.6 },
+                                  colors: colors
+                                });
+                                // Side confetti
+                                confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0 }, colors });
+                                confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 }, colors });
+                                
                                 toast({
                                   title: "הבקשה נשלחה! 🎉",
                                   description: "נציג יצור איתך קשר בהקדם.",
