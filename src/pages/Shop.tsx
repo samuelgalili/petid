@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
@@ -792,7 +792,9 @@ const Shop = () => {
 
       {/* Product Details Sheet - Enhanced */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-white p-0 overflow-hidden">
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-white p-0 overflow-hidden" aria-describedby="product-details-description">
+          <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
+          <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
             <div className="flex flex-col h-full" dir="rtl">
               {/* Header with drag handle */}
