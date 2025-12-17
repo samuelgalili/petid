@@ -10,6 +10,7 @@ import {
   CheckCircle,
   Truck,
   XCircle,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -315,6 +316,14 @@ const AdminDashboard = () => {
               >
                 <Users className="w-5 h-5 mr-3" />
                 View Customers
+              </Button>
+              <Button
+                size="lg"
+                className="w-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl font-bold font-jakarta justify-start"
+                onClick={() => navigate("/admin/adoption")}
+              >
+                <Heart className="w-5 h-5 mr-3" />
+                ניהול חיות לאימוץ
               </Button>
             </div>
           </motion.div>
