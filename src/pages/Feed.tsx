@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -427,34 +427,43 @@ const Feed = () => {
   }, [posts, feedFilter, followingIds]);
 
   return (
-    <div className="min-h-screen bg-white pb-20" dir="rtl">
+    <div className="min-h-screen bg-white pb-14" dir="rtl">
       {/* Instagram-style Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 h-11 flex items-center justify-between">
-          <div className="w-8" />
-          <h1 className="text-[22px] font-semibold text-[#262626]" style={{ fontFamily: 'Instagram Sans, -apple-system, BlinkMacSystemFont, sans-serif' }}>
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
+        <div className="max-w-lg mx-auto px-4 h-[44px] flex items-center justify-between">
+          {/* Logo */}
+          <h1 
+            className="text-[24px] font-semibold text-[#262626] cursor-pointer"
+            style={{ fontFamily: "'Billabong', cursive, -apple-system, BlinkMacSystemFont, sans-serif" }}
+            onClick={() => {
+              setPage(0);
+              setHasMore(true);
+              fetchPosts(0, false);
+            }}
+          >
             Petish
           </h1>
-          <button
-            onClick={() => navigate('/messages')}
-            className="p-1 active:opacity-50"
-          >
-            <MessageCircle className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
-          </button>
+          
+          {/* Right icons */}
+          <div className="flex items-center gap-5">
+            <button
+              onClick={() => navigate('/notifications')}
+              className="active:opacity-50 transition-opacity relative"
+            >
+              <Heart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={() => navigate('/messages')}
+              className="active:opacity-50 transition-opacity"
+            >
+              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Spacer for fixed header */}
-      <div className="h-11" />
-
-      {/* Create Post FAB */}
-      <Button
-        onClick={() => setCreatePostOpen(true)}
-        className="fixed bottom-20 left-4 z-50 rounded-full w-12 h-12 bg-[#0095F6] hover:bg-[#1877F2] shadow-lg"
-        size="icon"
-      >
-        <Plus className="w-5 h-5 text-white" strokeWidth={2} />
-      </Button>
+      <div className="h-[44px]" />
 
       {/* New Posts Banner */}
       <AnimatePresence>

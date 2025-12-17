@@ -1,5 +1,5 @@
-import { Home, ShoppingBag, Users, Grid3x3, MessageCircle, Mail, User, Newspaper, Bell } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Home, ShoppingBag, Users, Grid3x3, MessageCircle, Mail, User, Newspaper, Bell, Search, PlusSquare, Clapperboard, Compass } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { buttonTap, ANIMATION_DURATION } from "@/lib/animations";
 import { getAccessibleLinkProps, TAP_TARGET } from "@/lib/accessibility";
 import { ARIA_LABELS } from "@/lib/microcopy";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sheet,
   SheetContent,
@@ -24,17 +25,39 @@ import {
   CheckSquare,
   Gift
 } from "lucide-react";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
 
 const BottomNav = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
+  const [createPostOpen, setCreatePostOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPulsing, setIsPulsing] = useState(false);
+  const [userAvatar, setUserAvatar] = useState<string>("");
   const prevCountRef = useRef(0);
 
   // Check if we're on social network pages
   const socialRoutes = ['/feed', '/user/', '/post/', '/story/', '/highlight/', '/messages', '/profile'];
   const isSocialPage = socialRoutes.some(route => location.pathname.startsWith(route));
+
+  // Fetch user avatar
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .single();
+        if (data?.avatar_url) {
+          setUserAvatar(data.avatar_url);
+        }
+      }
+    };
+    fetchUserAvatar();
+  }, []);
 
   // Play notification sound using Web Audio API
   const playNotificationSound = () => {
@@ -137,17 +160,6 @@ const BottomNav = () => {
     { icon: MessageCircle, label: "צ'אט", path: "/chat" },
   ];
 
-  // Social network navigation
-  const socialNavItems = [
-    { icon: Home, label: "חזרה", path: "/home" },
-    { icon: Mail, label: "הודעות", path: "/messages" },
-    { icon: Bell, label: "התראות", path: "/notifications", badge: unreadCount },
-    { icon: User, label: "פרופיל", path: "/profile" },
-    { icon: Newspaper, label: "פיד", path: "/feed" },
-  ];
-
-  const navItems = isSocialPage ? socialNavItems : appNavItems;
-
   const moreCategories = [
     { icon: FileText, label: "מסמכים", path: "/documents" },
     { icon: Camera, label: "אלבום תמונות", path: "/photos" },
@@ -160,16 +172,106 @@ const BottomNav = () => {
     { icon: Gift, label: "פרסים", path: "/rewards" },
   ];
 
+  // Instagram-style social navigation render
+  if (isSocialPage) {
+    return (
+      <>
+        <nav 
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100"
+          role="navigation"
+          aria-label="ניווט רשת חברתית"
+        >
+          <div className="flex justify-around items-center h-[50px] max-w-lg mx-auto px-2">
+            {/* Home */}
+            <Link
+              to="/feed"
+              className="flex items-center justify-center p-2 active:opacity-50"
+            >
+              <Home 
+                className="w-[26px] h-[26px] text-[#262626]" 
+                strokeWidth={location.pathname === '/feed' ? 2.5 : 1.5}
+                fill={location.pathname === '/feed' ? '#262626' : 'none'}
+              />
+            </Link>
+
+            {/* Search/Explore */}
+            <Link
+              to="/adoption"
+              className="flex items-center justify-center p-2 active:opacity-50"
+            >
+              <Compass 
+                className="w-[26px] h-[26px] text-[#262626]" 
+                strokeWidth={location.pathname === '/adoption' ? 2.5 : 1.5}
+              />
+            </Link>
+
+            {/* Create Post */}
+            <button
+              onClick={() => setCreatePostOpen(true)}
+              className="flex items-center justify-center p-2 active:opacity-50"
+            >
+              <PlusSquare 
+                className="w-[26px] h-[26px] text-[#262626]" 
+                strokeWidth={1.5}
+              />
+            </button>
+
+            {/* Reels/Videos */}
+            <Link
+              to="/story/view"
+              className="flex items-center justify-center p-2 active:opacity-50"
+            >
+              <Clapperboard 
+                className="w-[26px] h-[26px] text-[#262626]" 
+                strokeWidth={1.5}
+              />
+            </Link>
+
+            {/* Profile */}
+            <Link
+              to="/profile"
+              className="flex items-center justify-center p-2 active:opacity-50"
+            >
+              <div className={cn(
+                "w-[26px] h-[26px] rounded-full overflow-hidden",
+                location.pathname === '/profile' && "ring-2 ring-[#262626]"
+              )}>
+                <Avatar className="w-full h-full">
+                  <AvatarImage src={userAvatar} />
+                  <AvatarFallback className="bg-gray-200 text-gray-600 text-[10px]">
+                    <User className="w-4 h-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </Link>
+          </div>
+          
+          {/* Safe area for notched devices */}
+          <div className="h-[env(safe-area-inset-bottom)] bg-white" />
+        </nav>
+
+        {/* Create Post Dialog */}
+        <CreatePostDialog
+          open={createPostOpen}
+          onOpenChange={setCreatePostOpen}
+          onPostCreated={() => {
+            // Refresh will be handled by realtime subscription
+          }}
+        />
+      </>
+    );
+  }
+
+  // Regular app navigation
   return (
     <>
-      {/* Instagram-style Bottom Navigation */}
       <nav 
         className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200"
         role="navigation"
-        aria-label={isSocialPage ? "ניווט רשת חברתית" : ARIA_LABELS.navigation}
+        aria-label={ARIA_LABELS.navigation}
       >
         <div className="flex justify-around items-center h-12 max-w-lg mx-auto">
-          {navItems.map((item, index) => {
+          {appNavItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = !item.isButton && location.pathname === item.path;
             const key = item.path || `button-${index}`;
@@ -183,20 +285,6 @@ const BottomNav = () => {
                   )} 
                   strokeWidth={isActive ? 2.5 : 1.5}
                 />
-                
-                {/* Notification badge - Instagram red */}
-                {item.badge && item.badge > 0 && (
-                  <span 
-                    className={cn(
-                      "absolute top-1 right-1 min-w-[18px] h-[18px] px-1",
-                      "bg-[#FF3040] text-white text-[11px] font-semibold",
-                      "rounded-full flex items-center justify-center",
-                      isPulsing && item.path === '/notifications' && "animate-pulse"
-                    )}
-                  >
-                    {item.badge > 99 ? '99+' : item.badge}
-                  </span>
-                )}
               </div>
             );
 
@@ -231,34 +319,32 @@ const BottomNav = () => {
       </nav>
 
       {/* More Options Sheet */}
-      {!isSocialPage && (
-        <Sheet open={isMoreSheetOpen} onOpenChange={setIsMoreSheetOpen}>
-          <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl bg-white border-0">
-            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-4" />
-            
-            <div className="grid grid-cols-4 gap-2 px-4 pb-8">
-              {moreCategories.map((category) => {
-                const CategoryIcon = category.icon;
-                return (
-                  <Link
-                    key={category.path}
-                    to={category.path}
-                    onClick={() => setIsMoreSheetOpen(false)}
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-gray-100 transition-colors"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                      <CategoryIcon className="w-5 h-5 text-black" strokeWidth={1.5} />
-                    </div>
-                    <span className="text-[11px] font-normal text-center text-black leading-tight">
-                      {category.label}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </SheetContent>
-        </Sheet>
-      )}
+      <Sheet open={isMoreSheetOpen} onOpenChange={setIsMoreSheetOpen}>
+        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl bg-white border-0">
+          <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-4" />
+          
+          <div className="grid grid-cols-4 gap-2 px-4 pb-8">
+            {moreCategories.map((category) => {
+              const CategoryIcon = category.icon;
+              return (
+                <Link
+                  key={category.path}
+                  to={category.path}
+                  onClick={() => setIsMoreSheetOpen(false)}
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-gray-100 transition-colors"
+                >
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                    <CategoryIcon className="w-5 h-5 text-black" strokeWidth={1.5} />
+                  </div>
+                  <span className="text-[11px] font-normal text-center text-black leading-tight">
+                    {category.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };
