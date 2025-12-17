@@ -887,3 +887,51 @@
 .skeleton-card {
   @apply rounded-[22px] p-4 skeleton;
 }
+
+/* ===========================
+ * INSTAGRAM STORY GRADIENT ANIMATION
+ * =========================== */
+
+@keyframes instagram-gradient-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.story-ring {
+  position: relative;
+}
+
+.story-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(
+    from 0deg,
+    #FEDA77,
+    #F58529,
+    #DD2A7B,
+    #8134AF,
+    #515BD4,
+    #8134AF,
+    #DD2A7B,
+    #F58529,
+    #FEDA77
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: instagram-gradient-rotate 3s linear infinite;
+}
+
+.story-ring-viewed::before {
+  background: #DBDBDB;
+  animation: none;
+}

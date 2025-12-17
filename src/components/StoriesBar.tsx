@@ -152,10 +152,10 @@ export const StoriesBar = () => {
             >
               <div className="relative">
                 <div 
-                  className={`w-[72px] h-[72px] rounded-full p-[3px] ${
+                  className={`w-[72px] h-[72px] rounded-full ${
                     storyUser.has_viewed 
-                      ? 'bg-gray-300' 
-                      : 'bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]'
+                      ? 'story-ring story-ring-viewed' 
+                      : 'story-ring'
                   }`}
                 >
                   <Avatar className="w-full h-full ring-[3px] ring-white">
