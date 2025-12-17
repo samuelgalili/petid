@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, User, PlusSquare, Compass, MessageCircle } from "lucide-react";
+import { Home, ShoppingBag, User, PlusSquare, Compass, MessageCircle, Clapperboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -99,18 +99,29 @@ const BottomNav = () => {
             />
           </Link>
 
-          {/* Categories - Opens More Sheet */}
-          <button
-            onClick={() => setIsMoreSheetOpen(true)}
+          {/* Reels */}
+          <Link
+            to="/reels"
             className="flex items-center justify-center p-2 active:opacity-50"
           >
-            <div className="relative">
-              <PlusSquare 
-                className="w-[26px] h-[26px] text-[#262626]" 
-                strokeWidth={1.5}
-              />
-            </div>
-          </button>
+            <Clapperboard 
+              className={`w-[26px] h-[26px] ${location.pathname === '/reels' ? 'text-[#262626]' : 'text-[#262626]'}`}
+              strokeWidth={location.pathname === '/reels' ? 2.5 : 1.5}
+              fill={location.pathname === '/reels' ? '#262626' : 'none'}
+            />
+          </Link>
+
+          {/* Shop */}
+          <Link
+            to="/shop"
+            className="flex items-center justify-center p-2 active:opacity-50"
+          >
+            <ShoppingBag 
+              className={`w-[26px] h-[26px] ${location.pathname === '/shop' ? 'text-[#262626]' : 'text-[#262626]'}`}
+              strokeWidth={location.pathname === '/shop' ? 2.5 : 1.5}
+              fill={location.pathname === '/shop' ? '#262626' : 'none'}
+            />
+          </Link>
 
           {/* Shop */}
           <Link
