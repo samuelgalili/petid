@@ -642,46 +642,72 @@ const Feed = () => {
 
     return merged;
   }, [posts, adoptionPets, feedFilter, followingIds]);
-  return <div className="min-h-screen bg-white pb-14" dir="rtl">
-      {/* Instagram-style Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
-        <div className="max-w-lg mx-auto px-4 h-[44px] flex items-center justify-between">
+  return <div className="min-h-screen bg-gradient-to-b from-white via-gray-50/30 to-white pb-14" dir="rtl">
+      {/* Instagram-style Header with blur effect */}
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-100/80 shadow-sm"
+      >
+        <div className="max-w-lg mx-auto px-4 h-[52px] flex items-center justify-between">
           {/* Left side - Hamburger menu */}
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsMenuOpen(true)} className="active:opacity-50 transition-opacity" aria-label="פתח תפריט">
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsMenuOpen(true)} 
+              className="active:opacity-50 transition-opacity p-1" 
+              aria-label="פתח תפריט"
+            >
               <Menu className="w-6 h-6 text-[#262626] hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
-            </button>
-            {/* Logo with Instagram gradient */}
-            <h1 className="text-[24px] font-bold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent font-sans" onClick={() => {
-            setPage(0);
-            setHasMore(true);
-            fetchPosts(0, false);
-          }}>Petid</h1>
+            </motion.button>
+            {/* Logo with Instagram gradient and animation */}
+            <motion.h1 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="text-[26px] font-bold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent font-sans tracking-tight" 
+              onClick={() => {
+                setPage(0);
+                setHasMore(true);
+                fetchPosts(0, false);
+              }}
+            >
+              Petid
+            </motion.h1>
           </div>
           
           {/* Right icons with Instagram colors */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             {isAuthenticated && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className={`active:opacity-50 transition-opacity relative flex items-center gap-0.5 ${newlyAddedPetIds.size > 0 ? 'animate-pulse' : ''}`}>
+                  <motion.button 
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className={`active:opacity-50 transition-opacity relative flex items-center gap-0.5 p-1 ${newlyAddedPetIds.size > 0 ? 'animate-pulse' : ''}`}
+                  >
                     <PawPrint className={`w-6 h-6 transition-colors ${newlyAddedPetIds.size > 0 ? 'text-[#F58529]' : 'text-[#262626] hover:text-[#F58529]'}`} strokeWidth={1.5} />
-                    {pets.length > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 bg-[#F58529] text-white text-[10px] font-bold rounded-full flex items-center justify-center ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}>
+                    {pets.length > 0 && <motion.span 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-[#F58529] to-[#DD2A7B] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}
+                    >
                         {pets.length}
-                      </span>}
+                      </motion.span>}
                     <ChevronDown className="w-3 h-3 text-[#8E8E8E]" />
-                  </button>
+                  </motion.button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white z-50">
+                <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-lg z-50 shadow-xl border-gray-100 rounded-xl">
                   <div className="px-3 py-2 text-[13px] font-semibold text-[#262626]">
                     חיות המחמד שלי
                   </div>
                   <DropdownMenuSeparator />
                   {pets.length === 0 ? <div className="px-3 py-4 text-center text-[13px] text-[#8E8E8E]">
                       אין חיות מחמד עדיין
-                    </div> : pets.map(pet => <DropdownMenuItem key={pet.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer" onClick={() => navigate(`/pet/${pet.id}`)}>
-                        <Avatar className="w-8 h-8">
+                    </div> : pets.map(pet => <DropdownMenuItem key={pet.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded-lg mx-1" onClick={() => navigate(`/pet/${pet.id}`)}>
+                        <Avatar className="w-9 h-9 ring-2 ring-gray-100">
                           <AvatarImage src={pet.avatar_url} alt={pet.name} />
-                          <AvatarFallback className="bg-[#FAFAFA] text-[11px]">
+                          <AvatarFallback className="bg-gradient-to-br from-[#F58529]/20 to-[#DD2A7B]/20 text-[11px]">
                             {pet.name?.charAt(0) || '🐾'}
                           </AvatarFallback>
                         </Avatar>
@@ -692,164 +718,273 @@ const Feed = () => {
                         {newlyAddedPetIds.has(pet.id) && <span className="w-2 h-2 bg-[#F58529] rounded-full animate-pulse" />}
                       </DropdownMenuItem>)}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer text-[#0095F6]" onClick={() => navigate('/add-pet')}>
-                    <div className="w-8 h-8 bg-[#FAFAFA] rounded-full flex items-center justify-center">
+                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer text-[#0095F6] hover:bg-blue-50 rounded-lg mx-1 mb-1" onClick={() => navigate('/add-pet')}>
+                    <div className="w-9 h-9 bg-gradient-to-br from-[#0095F6]/10 to-[#0095F6]/20 rounded-full flex items-center justify-center">
                       <Plus className="w-4 h-4" />
                     </div>
                     <span className="text-[14px] font-medium">הוסף חיית מחמד</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>}
-            <button onClick={handleNavigateToNotifications} className="active:opacity-50 transition-opacity relative">
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleNavigateToNotifications} 
+              className="active:opacity-50 transition-opacity relative p-1"
+            >
               <Heart className="w-6 h-6 text-[#262626] hover:text-[#ED4956] transition-colors" strokeWidth={1.5} />
-            </button>
-            <button onClick={handleNavigateToMessages} className="active:opacity-50 transition-opacity">
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleNavigateToMessages} 
+              className="active:opacity-50 transition-opacity p-1"
+            >
               <Send className="w-6 h-6 text-[#262626] hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
-            </button>
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Spacer for fixed header */}
-      <div className="h-[44px]" />
+      <div className="h-[52px]" />
 
       {/* New Posts Banner */}
       <AnimatePresence>
-        {newPostsAvailable && <motion.div initial={{
-        y: -50,
-        opacity: 0
-      }} animate={{
-        y: 0,
-        opacity: 1
-      }} exit={{
-        y: -50,
-        opacity: 0
-      }} className="fixed top-11 left-0 right-0 z-40 bg-[#0095F6] text-white text-center cursor-pointer py-2" onClick={handleLoadNewPosts}>
-            <span className="text-[13px] font-medium">פוסטים חדשים</span>
+        {newPostsAvailable && <motion.div 
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -50, opacity: 0 }}
+          className="fixed top-[52px] left-0 right-0 z-40 bg-gradient-to-r from-[#0095F6] to-[#00D9FF] text-white text-center cursor-pointer py-2.5 shadow-md" 
+          onClick={handleLoadNewPosts}
+        >
+            <span className="text-[13px] font-medium flex items-center justify-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              פוסטים חדשים
+            </span>
           </motion.div>}
       </AnimatePresence>
 
-      {/* Stories Bar with Parallax */}
-      <ParallaxScroll speed={0.3} opacity>
-        <div className="border-b border-gray-200">
-          <StoriesBar />
-        </div>
-      </ParallaxScroll>
-
-      {/* My Pets Section with Parallax */}
-      {isAuthenticated && <ParallaxScroll speed={0.2} scale>
-        <div data-pets-section className="py-4 border-b border-gray-200">
-          <div className="max-w-lg mx-auto">
-            <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3">חיות המחמד שלי</h2>
-            <MyPetsSection pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
+      {/* Stories Bar with enhanced styling */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+      >
+        <ParallaxScroll speed={0.3} opacity>
+          <div className="border-b border-gray-100 bg-white/80 backdrop-blur-sm">
+            <StoriesBar />
           </div>
-        </div>
-      </ParallaxScroll>}
+        </ParallaxScroll>
+      </motion.div>
 
-      {/* Filter Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-11 z-30">
+      {/* My Pets Section with enhanced Parallax */}
+      {isAuthenticated && <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
+        <ParallaxScroll speed={0.2} scale>
+          <div data-pets-section className="py-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+            <div className="max-w-lg mx-auto">
+              <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3 flex items-center gap-2">
+                <PawPrint className="w-4 h-4 text-[#F58529]" />
+                חיות המחמד שלי
+              </h2>
+              <MyPetsSection pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
+            </div>
+          </div>
+        </ParallaxScroll>
+      </motion.div>}
+
+      {/* Filter Tabs with enhanced styling */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
+        className="bg-white/95 backdrop-blur-lg border-b border-gray-100 sticky top-[52px] z-30 shadow-sm"
+      >
         <div className="max-w-lg mx-auto flex">
-          <button onClick={() => setFeedFilter("all")} className={`flex-1 py-3 text-[13px] font-semibold border-b-2 transition-colors ${feedFilter === "all" ? "border-[#262626] text-[#262626]" : "border-transparent text-[#8E8E8E]"}`}>
+          <motion.button 
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setFeedFilter("all")} 
+            className={`flex-1 py-3.5 text-[13px] font-semibold border-b-2 transition-all duration-200 ${feedFilter === "all" ? "border-[#262626] text-[#262626]" : "border-transparent text-[#8E8E8E] hover:text-[#262626]"}`}
+          >
             הכל
-          </button>
-          <button onClick={handleFollowingFilter} className={`flex-1 py-3 text-[13px] font-semibold border-b-2 transition-colors ${feedFilter === "following" ? "border-[#262626] text-[#262626]" : "border-transparent text-[#8E8E8E]"}`}>
+          </motion.button>
+          <motion.button 
+            whileTap={{ scale: 0.98 }}
+            onClick={handleFollowingFilter} 
+            className={`flex-1 py-3.5 text-[13px] font-semibold border-b-2 transition-all duration-200 ${feedFilter === "following" ? "border-[#262626] text-[#262626]" : "border-transparent text-[#8E8E8E] hover:text-[#262626]"}`}
+          >
             עוקבים
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Feed */}
       <div className="max-w-lg mx-auto">
         {loading ?
-      // Instagram-style Loading skeleton
-      <div>
-            {[...Array(3)].map((_, i) => <div key={i} className="bg-white border-b border-gray-200">
-                <div className="flex items-center gap-3 px-3 py-2.5">
-                  <Skeleton className="w-8 h-8 rounded-full" />
-                  <Skeleton className="h-3 w-24" />
+      // Enhanced Instagram-style Loading skeleton
+      <div className="space-y-0">
+            {[...Array(3)].map((_, i) => (
+              <motion.div 
+                key={i} 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.3 }}
+                className="bg-white border-b border-gray-100"
+              >
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-2 w-16" />
+                  </div>
                 </div>
                 <Skeleton className="w-full aspect-square" />
-                <div className="px-3 py-2 space-y-2">
+                <div className="px-4 py-3 space-y-3">
                   <div className="flex gap-4">
-                    <Skeleton className="h-6 w-6 rounded" />
-                    <Skeleton className="h-6 w-6 rounded" />
-                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-7 w-7 rounded-full" />
+                    <Skeleton className="h-7 w-7 rounded-full" />
+                    <Skeleton className="h-7 w-7 rounded-full" />
                   </div>
-                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-24" />
                   <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
                 </div>
-              </div>)}
+              </motion.div>
+            ))}
           </div> : mixedFeed.length === 0 ?
-      // Empty state
-      <div className="text-center py-16 px-6">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Camera className="w-10 h-10 text-gray-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-[22px] font-semibold text-[#262626] mb-1">
+      // Enhanced Empty state
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className="text-center py-20 px-6"
+      >
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"
+            >
+              <Camera className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
+            </motion.div>
+            <h3 className="text-[24px] font-bold text-[#262626] mb-2">
               {feedFilter === "following" ? "אין פוסטים" : "שתף תמונות"}
             </h3>
-            <p className="text-[#8E8E8E] text-[14px] mb-5">
+            <p className="text-[#8E8E8E] text-[15px] mb-6 max-w-xs mx-auto">
               {feedFilter === "following" ? "עקוב אחרי אנשים כדי לראות תמונות" : "כשתשתף תמונות, הן יופיעו בפרופיל שלך"}
             </p>
-            <button onClick={handleCreatePost} className="text-[#0095F6] font-semibold text-[14px]">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleCreatePost} 
+              className="text-[#0095F6] font-semibold text-[15px] px-6 py-2.5 rounded-full bg-[#0095F6]/10 hover:bg-[#0095F6]/20 transition-colors"
+            >
               שתף את התמונה הראשונה שלך
-            </button>
-          </div> : <div>
-            {mixedFeed.map((item) => {
+            </motion.button>
+          </motion.div> : <div className="space-y-0">
+            {mixedFeed.map((item, index) => {
               if (item.type === 'post') {
                 return (
-                  <PostCardErrorBoundary key={`post-${item.data.id}`}>
-                    <PostCard 
-                      post={item.data} 
-                      currentUserId={user?.id} 
-                      currentUserAvatar={userAvatar} 
-                      onLike={handleLike} 
-                      onSave={handleSave} 
-                      onDoubleTap={handleDoubleTap} 
-                      onComment={handleComment} 
-                      showDoubleTapAnimation={doubleTapLike === item.data.id} 
-                      getTimeAgo={getTimeAgo} 
-                    />
-                  </PostCardErrorBoundary>
+                  <motion.div
+                    key={`post-${item.data.id}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
+                  >
+                    <PostCardErrorBoundary>
+                      <PostCard 
+                        post={item.data} 
+                        currentUserId={user?.id} 
+                        currentUserAvatar={userAvatar} 
+                        onLike={handleLike} 
+                        onSave={handleSave} 
+                        onDoubleTap={handleDoubleTap} 
+                        onComment={handleComment} 
+                        showDoubleTapAnimation={doubleTapLike === item.data.id} 
+                        getTimeAgo={getTimeAgo} 
+                      />
+                    </PostCardErrorBoundary>
+                  </motion.div>
                 );
               } else if (item.type === 'adoption') {
                 return (
-                  <AdoptionPostCard 
+                  <motion.div
                     key={`adoption-${item.data.id}`}
-                    pet={item.data}
-                    getTimeAgo={getTimeAgo}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
+                  >
+                    <AdoptionPostCard 
+                      pet={item.data}
+                      getTimeAgo={getTimeAgo}
+                    />
+                  </motion.div>
                 );
               } else if (item.type === 'product') {
                 return (
-                  <ProductPostCard 
+                  <motion.div
                     key={`product-${item.data.id}`}
-                    product={item.data}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
+                  >
+                    <ProductPostCard 
+                      product={item.data}
+                    />
+                  </motion.div>
                 );
               } else if (item.type === 'document') {
                 return (
-                  <DocumentPostCard 
+                  <motion.div
                     key={`document-${item.data.id}`}
-                    document={item.data}
-                    user={{ name: "המשתמש שלי", avatar: userAvatar }}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
+                  >
+                    <DocumentPostCard 
+                      document={item.data}
+                      user={{ name: "המשתמש שלי", avatar: userAvatar }}
+                    />
+                  </motion.div>
                 );
               }
               return null;
             })}
             
             {/* Infinite Scroll Observer Target */}
-            {hasMore && <div ref={observerTarget} className="py-4 text-center">
-                {loadingMore && <Loader2 className="w-5 h-5 animate-spin text-[#8E8E8E] mx-auto" />}
+            {hasMore && <div ref={observerTarget} className="py-6 text-center">
+                {loadingMore && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Loader2 className="w-5 h-5 animate-spin text-[#8E8E8E]" />
+                    <span className="text-[13px] text-[#8E8E8E]">טוען עוד...</span>
+                  </motion.div>
+                )}
               </div>}
           </div>}
       </div>
 
       {/* End of Feed */}
-      {!loading && !hasMore && mixedFeed.length > 0 && <div className="text-center py-6 border-t border-gray-200">
-          <p className="text-[#8E8E8E] text-[13px]">סיימת לראות הכל</p>
-        </div>}
+      {!loading && !hasMore && mixedFeed.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-8 border-t border-gray-100 bg-gradient-to-b from-transparent to-gray-50/50"
+        >
+          <div className="flex items-center justify-center gap-2 text-[#8E8E8E]">
+            <div className="w-8 h-px bg-gray-200" />
+            <span className="text-[13px]">סיימת לראות הכל</span>
+            <div className="w-8 h-px bg-gray-200" />
+          </div>
+        </motion.div>
+      )}
 
       <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {
       setPage(0);
