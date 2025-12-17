@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -238,13 +239,15 @@ export const LoginForm = () => {
           </div>
 
           {/* Login Button - Instagram blue */}
-          <button
+          <Button
             type="submit"
+            variant="instagram"
+            size="default"
             disabled={loading || !(loginMethod === "email" ? formData.email : formData.phone)}
-            className="w-full h-10 bg-[#0095F6] hover:bg-[#1877F2] text-white font-semibold text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full h-10"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log In"}
-          </button>
+          </Button>
         </>
       ) : (
         /* OTP Input */
@@ -279,14 +282,16 @@ export const LoginForm = () => {
           )}
 
           <div className="space-y-2">
-            <button
+            <Button
               type="button"
+              variant="instagramSecondary"
+              size="sm"
               onClick={() => resendCountdown === 0 && sendOTP()}
               disabled={loading || resendCountdown > 0}
-              className="w-full text-sm text-[#0095F6] font-semibold disabled:text-gray-400"
+              className="w-full"
             >
               {resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : "Resend code"}
-            </button>
+            </Button>
             
             <button
               type="button"
