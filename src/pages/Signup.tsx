@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { SignupForm } from "@/components/SignupForm";
 import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 import petidLogo from "@/assets/petid-logo.png";
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
 const Signup = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -41,11 +47,22 @@ const Signup = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8">
       {/* Main Card */}
-      <div className="w-full max-w-[350px] bg-white border border-gray-300 px-10 py-10 mb-3">
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="w-full max-w-[350px] bg-white border border-gray-300 px-10 py-10 mb-3"
+      >
         {/* Logo */}
-        <div className="flex justify-center mb-4">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+          className="flex justify-center mb-4"
+        >
           <img src={petidLogo} alt="Petid" className="h-14 object-contain" />
-        </div>
+        </motion.div>
 
         {/* Tagline */}
         <p className="text-center text-gray-500 font-semibold mb-6 text-base leading-tight">
@@ -72,20 +89,30 @@ const Signup = () => {
         >
           Continue as Guest
         </button>
-      </div>
+      </motion.div>
 
       {/* Login Card */}
-      <div className="w-full max-w-[350px] bg-white border border-gray-300 py-5 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.3 }}
+        className="w-full max-w-[350px] bg-white border border-gray-300 py-5 text-center"
+      >
         <p className="text-sm text-gray-900">
           Have an account?{" "}
           <Link to="/auth" className="text-[#0095F6] font-semibold hover:text-[#1877F2]">
             Log in
           </Link>
         </p>
-      </div>
+      </motion.div>
 
       {/* App Download Section */}
-      <div className="mt-5 text-center">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
+        className="mt-5 text-center"
+      >
         <p className="text-sm text-gray-900 mb-4">Get the app.</p>
         <div className="flex gap-2 justify-center">
           <img
@@ -99,15 +126,20 @@ const Signup = () => {
             className="h-10"
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Footer Links */}
-      <footer className="mt-8 text-xs text-gray-500 text-center space-x-4">
+      <motion.footer
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.3 }}
+        className="mt-8 text-xs text-gray-500 text-center space-x-4"
+      >
         <Link to="/terms" className="hover:underline">Terms</Link>
         <Link to="/privacy" className="hover:underline">Privacy</Link>
         <Link to="/support" className="hover:underline">Help</Link>
         <span>© 2024 Petid</span>
-      </footer>
+      </motion.footer>
     </div>
   );
 };
