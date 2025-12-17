@@ -1,36 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Phone } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const emailSignupSchema = z.object({
-  fullName: z
-    .string()
-    .min(2, "Full name must be at least 2 characters")
-    .max(100, "Full name must be less than 100 characters")
-    .trim(),
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Invalid email address"),
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100).trim(),
+  email: z.string().min(1, "Email is required").email("Invalid email"),
 });
 
 const phoneSignupSchema = z.object({
-  fullName: z
-    .string()
-    .min(2, "Full name must be at least 2 characters")
-    .max(100, "Full name must be less than 100 characters")
-    .trim(),
-  phone: z
-    .string()
-    .min(1, "Phone number is required")
-    .regex(/^\+?[0-9]{10,15}$/, "Phone must be 10-15 digits with optional + prefix"),
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100).trim(),
+  phone: z.string().min(1, "Phone is required").regex(/^\+?[0-9]{10,15}$/, "Invalid phone number"),
 });
 
 interface FieldError {
@@ -41,11 +25,7 @@ interface FieldError {
 
 export const SignupForm = () => {
   const [signupMethod, setSignupMethod] = useState<"email" | "phone">("phone");
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-  });
+  const [formData, setFormData] = useState({ fullName: "", email: "", phone: "" });
   const [showOTPInput, setShowOTPInput] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
@@ -56,117 +36,65 @@ export const SignupForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Countdown timer effect
   useEffect(() => {
     if (resendCountdown > 0) {
-      const timer = setTimeout(() => {
-        setResendCountdown(resendCountdown - 1);
-      }, 1000);
+      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
       return () => clearTimeout(timer);
     }
   }, [resendCountdown]);
 
-  // Focus first OTP input when OTP screen shows
   useEffect(() => {
     if (showOTPInput && otpInputRefs.current[0]) {
       otpInputRefs.current[0].focus();
     }
   }, [showOTPInput]);
 
-  // Auto-submit when all 6 digits are entered
   useEffect(() => {
     const verifyOtp = async () => {
       if (otp.every(d => d) && showOTPInput && !loading) {
         setLoading(true);
         setGeneralError("");
-
         try {
           const otpCode = otp.join('');
-          
-          if (signupMethod === "email") {
-            const { error } = await supabase.auth.verifyOtp({
-              email: formData.email,
-              token: otpCode,
-              type: 'email'
-            });
+          const { error } = signupMethod === "email"
+            ? await supabase.auth.verifyOtp({ email: formData.email, token: otpCode, type: 'email' })
+            : await supabase.auth.verifyOtp({ phone: formData.phone, token: otpCode, type: 'sms' });
 
-            if (error) {
-              setGeneralError(error.message);
-              toast({
-                title: "Verification failed",
-                description: error.message,
-                variant: "destructive",
-              });
-              setOtp(["", "", "", "", "", ""]);
-              otpInputRefs.current[0]?.focus();
-              setLoading(false);
-              return;
-            }
-          } else {
-            const { error } = await supabase.auth.verifyOtp({
-              phone: formData.phone,
-              token: otpCode,
-              type: 'sms'
-            });
-
-            if (error) {
-              setGeneralError(error.message);
-              toast({
-                title: "Verification failed",
-                description: error.message,
-                variant: "destructive",
-              });
-              setOtp(["", "", "", "", "", ""]);
-              otpInputRefs.current[0]?.focus();
-              setLoading(false);
-              return;
-            }
+          if (error) {
+            setGeneralError(error.message);
+            toast({ title: "Verification failed", description: error.message, variant: "destructive" });
+            setOtp(["", "", "", "", "", ""]);
+            otpInputRefs.current[0]?.focus();
+            setLoading(false);
+            return;
           }
 
-          toast({
-            title: "Account created successfully!",
-            description: "Welcome to Petid!",
-          });
-
+          toast({ title: "Account created!", description: "Welcome to Petid!" });
           navigate("/add-pet");
-        } catch (error: any) {
-          setGeneralError("An unexpected error occurred. Please try again.");
-          toast({
-            title: "Error",
-            description: "An unexpected error occurred",
-            variant: "destructive",
-          });
+        } catch {
+          setGeneralError("An unexpected error occurred.");
           setOtp(["", "", "", "", "", ""]);
           otpInputRefs.current[0]?.focus();
           setLoading(false);
         }
       }
     };
-
     verifyOtp();
   }, [otp, showOTPInput, loading]);
 
   const handleOtpChange = (index: number, value: string) => {
-    // Only allow digits
     const digit = value.replace(/\D/g, '').slice(-1);
-    
     const newOtp = [...otp];
     newOtp[index] = digit;
     setOtp(newOtp);
-
-    // Auto-focus next input
-    if (digit && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
+    if (digit && index < 5) otpInputRefs.current[index + 1]?.focus();
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       if (!otp[index] && index > 0) {
-        // If current input is empty, move to previous input
         otpInputRefs.current[index - 1]?.focus();
       } else {
-        // Clear current input
         const newOtp = [...otp];
         newOtp[index] = "";
         setOtp(newOtp);
@@ -182,33 +110,20 @@ export const SignupForm = () => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
     const newOtp = [...otp];
-    
     pastedData.split('').forEach((digit, index) => {
-      if (index < 6) {
-        newOtp[index] = digit;
-      }
+      if (index < 6) newOtp[index] = digit;
     });
-    
     setOtp(newOtp);
-    
-    // Focus the next empty input or the last one
     const nextEmptyIndex = newOtp.findIndex(d => !d);
-    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
-    otpInputRefs.current[focusIndex]?.focus();
+    otpInputRefs.current[nextEmptyIndex === -1 ? 5 : nextEmptyIndex]?.focus();
   };
 
   const validateForm = (): boolean => {
     try {
       if (signupMethod === "email") {
-        emailSignupSchema.parse({
-          fullName: formData.fullName,
-          email: formData.email,
-        });
+        emailSignupSchema.parse({ fullName: formData.fullName, email: formData.email });
       } else {
-        phoneSignupSchema.parse({
-          fullName: formData.fullName,
-          phone: formData.phone,
-        });
+        phoneSignupSchema.parse({ fullName: formData.fullName, phone: formData.phone });
       }
       setFieldErrors({});
       setGeneralError("");
@@ -227,66 +142,25 @@ export const SignupForm = () => {
   const sendOTP = async () => {
     setLoading(true);
     setGeneralError("");
-
     try {
-      if (signupMethod === "email") {
-        const { error } = await supabase.auth.signInWithOtp({
-          email: formData.email,
-          options: {
-            data: {
-              full_name: formData.fullName,
-            },
-          },
-        });
+      const { error } = signupMethod === "email"
+        ? await supabase.auth.signInWithOtp({ email: formData.email, options: { data: { full_name: formData.fullName } } })
+        : await supabase.auth.signInWithOtp({ phone: formData.phone, options: { data: { full_name: formData.fullName } } });
 
-        if (error) {
-          setGeneralError(error.message);
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return false;
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: formData.phone,
-          options: {
-            data: {
-              full_name: formData.fullName,
-            },
-          },
-        });
-
-        if (error) {
-          setGeneralError(error.message);
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return false;
-        }
+      if (error) {
+        setGeneralError(error.message);
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+        setLoading(false);
+        return false;
       }
 
-      toast({
-        title: "Verification code sent!",
-        description: `Check your ${signupMethod === "email" ? "email" : "phone"} for the code.`,
-      });
-
+      toast({ title: "Code sent!", description: `Check your ${signupMethod === "email" ? "email" : "phone"}.` });
       setShowOTPInput(true);
       setResendCountdown(60);
       setLoading(false);
       return true;
-    } catch (error: any) {
-      setGeneralError("Failed to send verification code. Please try again.");
-      toast({
-        title: "Error",
-        description: "Failed to send verification code",
-        variant: "destructive",
-      });
+    } catch {
+      setGeneralError("Failed to send code.");
       setLoading(false);
       return false;
     }
@@ -295,38 +169,19 @@ export const SignupForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError("");
-
-    if (!showOTPInput && !validateForm()) {
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      if (!showOTPInput) {
-        await sendOTP();
-      }
-      // OTP verification is handled by auto-submit useEffect
-    } catch (error: any) {
-      setGeneralError("An unexpected error occurred. Please try again later.");
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }
+    if (!showOTPInput && !validateForm()) return;
+    if (!showOTPInput) await sendOTP();
   };
 
+  const isFormValid = formData.fullName && (signupMethod === "email" ? formData.email : formData.phone);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-3" noValidate>
       {generalError && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-xl backdrop-blur-sm"
-          role="alert"
-          aria-live="assertive"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg text-center"
         >
           {generalError}
         </motion.div>
@@ -334,152 +189,103 @@ export const SignupForm = () => {
 
       {!showOTPInput ? (
         <>
-          {/* Signup Method Tabs */}
-          <div className="flex p-2 bg-gray-100/80 rounded-2xl backdrop-blur-sm gap-2">
+          {/* Method Toggle */}
+          <div className="flex border border-gray-300 rounded-sm overflow-hidden">
             <button
               type="button"
-              onClick={() => {
-                setSignupMethod("email");
-                setFieldErrors({});
-                setGeneralError("");
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-jakarta font-medium transition-all ${
-                signupMethod === "email"
-                  ? "bg-white text-gray-900 shadow-md"
-                  : "text-gray-600 hover:text-gray-900"
+              onClick={() => { setSignupMethod("phone"); setFieldErrors({}); }}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                signupMethod === "phone" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
               }`}
             >
-              <Mail className="h-4 w-4" />
-              Email
+              Phone
             </button>
             <button
               type="button"
-              onClick={() => {
-                setSignupMethod("phone");
-                setFieldErrors({});
-                setGeneralError("");
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-jakarta font-medium transition-all ${
-                signupMethod === "phone"
-                  ? "bg-white text-gray-900 shadow-md"
-                  : "text-gray-600 hover:text-gray-900"
+              onClick={() => { setSignupMethod("email"); setFieldErrors({}); }}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-l border-gray-300 ${
+                signupMethod === "email" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
               }`}
             >
-              <Phone className="h-4 w-4" />
-              Phone
+              Email
             </button>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="fullName" className="text-sm font-jakarta font-medium text-gray-700">
-              Full Name
-            </Label>
+          {/* Full Name */}
+          <div>
             <Input
-              id="fullName"
-              name="fullName"
               type="text"
-              placeholder="John Doe"
+              placeholder="Full Name"
               value={formData.fullName}
               onChange={(e) => {
                 setFormData({ ...formData, fullName: e.target.value });
                 setFieldErrors({ ...fieldErrors, fullName: undefined });
               }}
               disabled={loading}
-              className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.fullName ? "border-error focus-visible:ring-error" : ""}`}
-              aria-invalid={!!fieldErrors.fullName}
-              aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
+              className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
+                fieldErrors.fullName ? "border-red-400" : ""
+              }`}
               autoComplete="name"
             />
             {fieldErrors.fullName && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                id="fullName-error"
-                className="text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-                role="alert"
-              >
-                {fieldErrors.fullName}
-              </motion.p>
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.fullName}</p>
             )}
           </div>
 
-          {signupMethod === "email" ? (
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-jakarta font-medium text-gray-700">
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={(e) => {
+          {/* Email/Phone Input */}
+          <div>
+            <Input
+              type={signupMethod === "email" ? "email" : "tel"}
+              placeholder={signupMethod === "email" ? "Email" : "Phone number"}
+              value={signupMethod === "email" ? formData.email : formData.phone}
+              onChange={(e) => {
+                if (signupMethod === "email") {
                   setFormData({ ...formData, email: e.target.value });
                   setFieldErrors({ ...fieldErrors, email: undefined });
-                }}
-                disabled={loading}
-                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.email ? "border-error focus-visible:ring-error" : ""}`}
-                aria-invalid={!!fieldErrors.email}
-                aria-describedby={fieldErrors.email ? "email-error" : undefined}
-                autoComplete="email"
-              />
-              {fieldErrors.email && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  id="email-error"
-                  className="text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-                  role="alert"
-                >
-                  {fieldErrors.email}
-                </motion.p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-jakarta font-medium text-gray-700">
-                Phone Number
-              </Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="+1234567890"
-                value={formData.phone}
-                onChange={(e) => {
+                } else {
                   setFormData({ ...formData, phone: e.target.value });
                   setFieldErrors({ ...fieldErrors, phone: undefined });
-                }}
-                disabled={loading}
-                className={`h-12 bg-gray-50/95 border-2 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-primary rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] focus:shadow-[0_8px_30px_rgba(96,165,250,0.3)] backdrop-blur-sm ${fieldErrors.phone ? "border-error focus-visible:ring-error" : ""}`}
-                aria-invalid={!!fieldErrors.phone}
-                aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-                autoComplete="tel"
-              />
-              {fieldErrors.phone && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  id="phone-error"
-                  className="text-xs text-error bg-error/10 px-3 py-1.5 rounded-lg backdrop-blur-sm"
-                  role="alert"
-                >
-                  {fieldErrors.phone}
-                </motion.p>
-              )}
-            </div>
-          )}
+                }
+              }}
+              disabled={loading}
+              className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
+                (signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) ? "border-red-400" : ""
+              }`}
+              autoComplete={signupMethod === "email" ? "email" : "tel"}
+            />
+            {(signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) && (
+              <p className="text-xs text-red-500 mt-1">
+                {signupMethod === "email" ? fieldErrors.email : fieldErrors.phone}
+              </p>
+            )}
+          </div>
+
+          {/* Sign Up Button */}
+          <button
+            type="submit"
+            disabled={loading || !isFormValid}
+            className="w-full h-10 bg-[#0095F6] hover:bg-[#1877F2] text-white font-semibold text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign Up"}
+          </button>
+
+          <p className="text-xs text-gray-500 text-center leading-relaxed">
+            By signing up, you agree to our{" "}
+            <a href="/terms" className="text-[#00376B]">Terms</a>,{" "}
+            <a href="/privacy" className="text-[#00376B]">Privacy Policy</a> and{" "}
+            <a href="/privacy" className="text-[#00376B]">Cookies Policy</a>.
+          </p>
         </>
       ) : (
-        <div className="space-y-3">
-          <Label className="text-sm font-jakarta font-medium text-gray-700 text-center block">
-            Verification Code
-          </Label>
+        /* OTP Input */
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 text-center">
+            Enter the 6-digit code sent to your {signupMethod === "email" ? "email" : "phone"}
+          </p>
           
           <div className="flex justify-center gap-2">
             {otp.map((digit, index) => (
-              <motion.input
+              <input
                 key={index}
                 ref={(el) => (otpInputRefs.current[index] = el)}
                 type="text"
@@ -490,95 +296,42 @@ export const SignupForm = () => {
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 onPaste={index === 0 ? handleOtpPaste : undefined}
                 disabled={loading}
-                animate={otp.every(d => d) ? {
-                  scale: [1, 1.05, 1],
-                  borderColor: ["hsl(var(--border))", "hsl(var(--accent))", "hsl(var(--accent))"],
-                } : {}}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={`w-12 h-14 text-center text-2xl font-bold bg-gray-50/95 border-2 text-gray-900 rounded-xl transition-all shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_25px_rgba(0,0,0,0.2)] backdrop-blur-sm focus:outline-none ${
-                  digit
-                    ? otp.every(d => d)
-                      ? "border-accent bg-accent/10 focus:border-accent-hover focus:shadow-lg"
-                      : "border-gray-300 bg-gray-100 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
-                    : "border-gray-200 focus:border-primary focus:shadow-[0_6px_25px_rgba(96,165,250,0.3)]"
-                }`}
-                autoComplete="one-time-code"
+                className="w-10 h-12 text-center text-xl font-semibold bg-gray-50 border border-gray-300 rounded-sm focus:border-gray-400 focus:outline-none transition-colors"
               />
             ))}
           </div>
 
-          <motion.p
-            initial={{ opacity: 0.7 }}
-            animate={otp.every(d => d) ? {
-              opacity: [0.7, 1, 0.7],
-              color: ["hsl(var(--muted-foreground))", "hsl(var(--accent-hover))", "hsl(var(--muted-foreground))"]
-            } : { opacity: 0.7 }}
-            transition={{ duration: 0.5 }}
-            className="text-xs font-jakarta text-center"
-          >
-            {otp.every(d => d) ? "✓ Code complete! Click verify to continue" : `Enter the 6-digit code sent to your ${signupMethod === "email" ? "email" : "phone"}`}
-          </motion.p>
-        </div>
-      )}
-
-      {!showOTPInput && (
-        <Button
-          type="submit"
-          className="w-full h-12 bg-accent hover:bg-accent-hover text-gray-900 font-jakarta font-semibold transition-all rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
-          disabled={loading}
-          aria-busy={loading}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-              <span>Sending code...</span>
-            </>
-          ) : (
-            "Send Code"
+          {loading && (
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-[#0095F6]" />
+              <span className="ml-2 text-sm text-gray-600">Verifying...</span>
+            </div>
           )}
-        </Button>
-      )}
 
-      {showOTPInput && loading && (
-        <div className="flex items-center justify-center py-3">
-          <Loader2 className="h-6 w-6 animate-spin text-accent" aria-hidden="true" />
-          <span className="ml-2 text-sm font-jakarta text-gray-700">Verifying...</span>
-        </div>
-      )}
-
-      {showOTPInput && (
-        <div className="flex flex-col gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={async () => {
-              if (resendCountdown === 0) {
-                await sendOTP();
-              }
-            }}
-            disabled={loading || resendCountdown > 0}
-            className="w-full h-10 bg-gray-50/95 hover:bg-gray-100 text-gray-700 font-jakarta font-medium border-2 border-gray-200 rounded-xl transition-all disabled:opacity-50"
-          >
-            {resendCountdown > 0 ? (
-              `Resend code in ${resendCountdown}s`
-            ) : (
-              "Resend verification code"
-            )}
-          </Button>
-          
-          <button
-            type="button"
-            onClick={() => {
-              setShowOTPInput(false);
-              setOtp(["", "", "", "", "", ""]);
-              setGeneralError("");
-              setResendCountdown(0);
-            }}
-            className="w-full text-sm text-gray-700 hover:text-gray-900 font-jakarta transition-colors"
-            disabled={loading}
-          >
-            Change {signupMethod === "email" ? "email" : "phone number"}
-          </button>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => resendCountdown === 0 && sendOTP()}
+              disabled={loading || resendCountdown > 0}
+              className="w-full text-sm text-[#0095F6] font-semibold disabled:text-gray-400"
+            >
+              {resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : "Resend code"}
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => {
+                setShowOTPInput(false);
+                setOtp(["", "", "", "", "", ""]);
+                setGeneralError("");
+                setResendCountdown(0);
+              }}
+              className="w-full text-sm text-gray-500 hover:text-gray-700"
+              disabled={loading}
+            >
+              Change {signupMethod === "email" ? "email" : "phone number"}
+            </button>
+          </div>
         </div>
       )}
     </form>
