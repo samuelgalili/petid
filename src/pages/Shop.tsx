@@ -498,7 +498,7 @@ const Shop = () => {
       </div>
 
       {/* Pet Type Selection - Gradient style */}
-      <div className="bg-background/95 backdrop-blur-sm">
+      <div className="bg-white">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex gap-2 justify-center">
             <button
@@ -506,9 +506,9 @@ const Shop = () => {
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "all"
                   ? "bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue-dark text-white shadow-md"
-                  : "bg-white border-2 border-transparent bg-clip-padding relative before:absolute before:inset-0 before:rounded-full before:p-[2px] before:bg-gradient-to-r before:from-petid-blue before:via-petid-gold before:to-petid-blue-dark before:-z-10 before:content-[''] text-foreground"
+                  : "text-gray-700"
               }`}
-              style={selectedPetType !== "all" ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1E90FF, #FFB347, #1565C0) border-box', border: '2px solid transparent' } : {}}
+              style={selectedPetType !== "all" ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1E90FF, #FFB347, #1565C0) border-box', border: '2px solid transparent', borderRadius: '9999px' } : {}}
             >
               הכל
             </button>
@@ -517,7 +517,7 @@ const Shop = () => {
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "dog"
                   ? "bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue-dark text-white shadow-md"
-                  : "text-foreground"
+                  : "text-gray-700"
               }`}
               style={selectedPetType !== "dog" ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1E90FF, #FFB347, #1565C0) border-box', border: '2px solid transparent', borderRadius: '9999px' } : {}}
             >
@@ -529,7 +529,7 @@ const Shop = () => {
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "cat"
                   ? "bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue-dark text-white shadow-md"
-                  : "text-foreground"
+                  : "text-gray-700"
               }`}
               style={selectedPetType !== "cat" ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1E90FF, #FFB347, #1565C0) border-box', border: '2px solid transparent', borderRadius: '9999px' } : {}}
             >
@@ -541,7 +541,7 @@ const Shop = () => {
       </div>
 
       {/* Sub-Categories Scroll */}
-      <div className="border-b border-border/30">
+      <div className="bg-white border-b border-gray-100">
         <div className="max-w-lg mx-auto">
           <div className="flex gap-2 px-4 py-2.5 overflow-x-auto scrollbar-hide">
             {subCategories.map((category) => (
@@ -551,7 +551,7 @@ const Shop = () => {
                 className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category.label
                     ? "bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue-dark text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-gray-600 hover:text-gray-800"
                 }`}
                 style={selectedCategory !== category.label ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1E90FF, #FFB347, #1565C0) border-box', border: '1.5px solid transparent', borderRadius: '9999px' } : {}}
               >
