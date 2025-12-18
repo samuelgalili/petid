@@ -512,19 +512,21 @@ const ProductDetail = () => {
               transition={{ delay: 0.5 + idx * 0.05 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              className="relative p-[1.5px] rounded-2xl cursor-pointer group"
+              style={{
+                background: 'linear-gradient(135deg, #93C5FD, #FBBF24, #60A5FA)'
+              }}
+              onClick={() => navigate('/product/related', { state: { product: { ...item, price: item.price } } })}
             >
-              <Card 
-                className="bg-card border border-border/30 rounded-2xl cursor-pointer hover:shadow-lg transition-all duration-300 overflow-hidden"
-                onClick={() => navigate('/product/related', { state: { product: { ...item, price: item.price } } })}
-              >
-                <div className="aspect-square bg-muted overflow-hidden">
+              <div className="bg-white rounded-2xl overflow-hidden h-full transition-all group-hover:shadow-lg">
+                <div className="aspect-square bg-gradient-to-br from-gray-50 to-white overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                 </div>
-                <div className="p-3">
-                  <h4 className="font-bold text-sm text-foreground font-jakarta mb-1 truncate">{item.name}</h4>
-                  <p className="text-sm font-black text-primary font-jakarta">{item.price}</p>
+                <div className="p-3 bg-white">
+                  <h4 className="font-bold text-sm text-gray-800 font-jakarta mb-1 truncate">{item.name}</h4>
+                  <p className="text-sm font-black bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent font-jakarta">{item.price}</p>
                 </div>
-              </Card>
+              </div>
             </motion.div>
           ))}
         </div>
