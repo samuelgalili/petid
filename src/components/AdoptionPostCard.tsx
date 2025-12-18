@@ -310,30 +310,39 @@ export const AdoptionPostCard = ({
           </motion.div>
         </motion.div>
 
-        {/* CTA Strip at bottom of image */}
-        <motion.button variants={ctaVariants} initial="hidden" animate="visible" onClick={handleAdoptClick} className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors" whileTap={{
-        scale: 0.99
-      }} whileHover={{
-        backgroundColor: "rgba(255,255,255,1)"
-      }}>
-          <div className="flex items-center gap-2">
-            <motion.div className="w-6 h-6 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-blue flex items-center justify-center" animate={{
-            scale: [1, 1.1, 1]
-          }} transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}>
-              <Heart className="w-3.5 h-3.5 text-white" fill="white" />
+        {/* CTA Strip at bottom of image - Always visible, large and prominent */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue p-[2px]">
+          <motion.button 
+            onClick={handleAdoptClick} 
+            className="w-full bg-white py-4 px-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors" 
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-3">
+              <motion.div 
+                className="w-10 h-10 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-blue flex items-center justify-center shadow-lg" 
+                animate={{ scale: [1, 1.1, 1] }} 
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Heart className="w-5 h-5 text-white" fill="white" />
+              </motion.div>
+              <span className="text-base font-bold text-[#262626]">אמץ את {pet.name}</span>
+            </div>
+            <motion.div 
+              className="flex items-center gap-2 bg-gradient-to-r from-petid-blue to-petid-gold px-4 py-2 rounded-full shadow-md"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="text-white text-sm font-bold">לאימוץ</span>
+              <motion.span 
+                className="text-white font-bold"
+                animate={{ x: [0, -3, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                ←
+              </motion.span>
             </motion.div>
-            <span className="text-sm font-semibold text-[#262626]">אמץ את {pet.name}</span>
-          </div>
-          <motion.span className="text-petid-blue text-sm font-semibold" whileHover={{
-          x: -3
-        }}>
-            לאימוץ ←
-          </motion.span>
-        </motion.button>
+          </motion.button>
+        </div>
 
         {/* Heart icon floating */}
         <motion.div className="absolute top-3 right-3" initial={{
