@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, ChevronDown, Menu } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, ChevronDown, Menu, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -25,6 +25,7 @@ import { AdoptionPostCard } from "@/components/AdoptionPostCard";
 import { ProductPostCard } from "@/components/ProductPostCard";
 import { DocumentPostCard } from "@/components/DocumentPostCard";
 import { ParallaxScroll } from "@/components/ParallaxScroll";
+import { useCart } from "@/contexts/CartContext";
 
 // Featured products for feed
 const FEATURED_PRODUCTS = [
@@ -139,6 +140,7 @@ const Feed = () => {
     checkAuth,
     isAuthenticated
   } = useRequireAuth();
+  const { getTotalItems, cartShake } = useCart();
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -757,6 +759,36 @@ const Feed = () => {
             >
               <Send className="w-6 h-6 text-[#262626] hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
             </motion.button>
+            
+            {/* Cart Icon - appears when items added */}
+            <AnimatePresence>
+              {getTotalItems() > 0 && (
+                <motion.button 
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ 
+                    scale: cartShake ? [1, 1.3, 1] : 1, 
+                    opacity: 1,
+                    rotate: cartShake ? [0, -10, 10, -10, 0] : 0
+                  }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => navigate('/cart')} 
+                  className="active:opacity-50 transition-opacity p-1 relative"
+                >
+                  <ShoppingCart className="w-6 h-6 text-petid-gold" strokeWidth={1.5} />
+                  <motion.span 
+                    className="absolute -top-1 -right-1 bg-petid-gold text-petid-blue-dark text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500 }}
+                  >
+                    {getTotalItems()}
+                  </motion.span>
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </motion.div>
