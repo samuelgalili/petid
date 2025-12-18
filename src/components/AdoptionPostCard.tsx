@@ -340,14 +340,25 @@ export const AdoptionPostCard = ({
       {/* Instagram Sponsored-style CTA Bar - Adoption Colors */}
       <motion.button
         onClick={handleAdoptClick}
-        className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3"
+        className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3 group"
         whileTap={{ scale: 0.99 }}
       >
         <div className="flex items-center gap-2">
-          <PawPrint className="w-5 h-5 text-white" />
+          <motion.div
+            className="flex items-center justify-center"
+            whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.2 }}
+            transition={{ duration: 0.5 }}
+          >
+            <PawPrint className="w-5 h-5 text-white group-hover:animate-bounce" />
+          </motion.div>
           <span className="text-white text-[15px] font-medium">אמץ עכשיו</span>
         </div>
-        <ChevronLeft className="w-5 h-5 text-white" />
+        <motion.div
+          animate={{ x: [0, -3, 0] }}
+          transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <ChevronLeft className="w-5 h-5 text-white" />
+        </motion.div>
       </motion.button>
 
       {/* Instagram-style Action Bar - Below CTA */}

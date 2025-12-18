@@ -330,7 +330,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
       <motion.button
         ref={buttonRef}
         onClick={handleAddToCart}
-        className={`w-full transition-all flex items-center justify-between px-4 py-3 relative overflow-hidden ${
+        className={`w-full transition-all flex items-center justify-between px-4 py-3 relative overflow-hidden group ${
           showAddedAnimation 
             ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
             : 'bg-gradient-to-r from-petid-gold to-amber-500 hover:from-amber-500 hover:to-petid-gold'
@@ -338,14 +338,26 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         whileTap={{ scale: 0.99 }}
       >
         <div className="flex items-center gap-2">
-          <ShoppingBag className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
+          <motion.div
+            className="flex items-center justify-center"
+            animate={showAddedAnimation ? { rotate: [0, 360], scale: [1, 1.3, 1] } : {}}
+            whileHover={{ rotate: [0, -15, 15, 0], scale: 1.2 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ShoppingBag className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
+          </motion.div>
           <span className={`text-[15px] font-medium ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>
             {showAddedAnimation ? "נוסף לסל ✓" : "קנה עכשיו"}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className={`font-bold ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>{product.price}</span>
-          <ChevronLeft className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
+          <motion.div
+            animate={{ x: [0, -3, 0] }}
+            transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronLeft className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
+          </motion.div>
         </div>
         
         {/* Success ripple effect */}
