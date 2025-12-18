@@ -265,11 +265,11 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         </motion.div>
 
         {/* Gradient overlay at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent h-32 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent h-40 pointer-events-none" />
         
         {/* Price overlay with enhanced styling */}
         <motion.div 
-          className="absolute bottom-14 left-3 right-3 text-white"
+          className="absolute bottom-4 left-3 right-3 text-white"
           animate={{ y: isHovered ? -5 : 0 }}
           transition={{ duration: 0.2 }}
         >
