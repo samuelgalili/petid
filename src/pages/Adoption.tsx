@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, Search, Calendar, Ruler, Syringe, Scissors, Info, X, Share2, Copy, Check } from "lucide-react";
+import { Heart, Search, Calendar, Ruler, Syringe, Scissors, Info, X, Share2, Copy, Check, MessageCircle, Bookmark, MoreHorizontal, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +51,10 @@ const Adoption = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sizeFilter, setSizeFilter] = useState("all");
   const [copied, setCopied] = useState(false);
+  const [likedPets, setLikedPets] = useState<Set<string>>(new Set());
+  const [savedPets, setSavedPets] = useState<Set<string>>(new Set());
+  const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
+  const lastTapRef = useRef<{ [key: string]: number }>({});
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -118,6 +122,46 @@ const Adoption = () => {
     setFilteredPets(filtered);
   };
 
+  const handleDoubleTap = (petId: string) => {
+    const now = Date.now();
+    const lastTap = lastTapRef.current[petId] || 0;
+    
+    if (now - lastTap < 300) {
+      // Double tap detected
+      handleLike(petId);
+      setShowHeartAnimation(petId);
+      setTimeout(() => setShowHeartAnimation(null), 1000);
+    }
+    
+    lastTapRef.current[petId] = now;
+  };
+
+  const handleLike = (petId: string) => {
+    setLikedPets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(petId)) {
+        newSet.delete(petId);
+      } else {
+        newSet.add(petId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSave = (petId: string) => {
+    setSavedPets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(petId)) {
+        newSet.delete(petId);
+        toast({ title: "הוסר מהשמורים" });
+      } else {
+        newSet.add(petId);
+        toast({ title: "נשמר בהצלחה! 🐾" });
+      }
+      return newSet;
+    });
+  };
+
   const handlePetClick = (pet: AdoptionPet) => {
     setSelectedPet(pet);
     setShowPetDetails(true);
@@ -140,7 +184,6 @@ const Adoption = () => {
     const shareUrl = `${window.location.origin}/adoption?pet=${pet.id}`;
     const shareText = `מכירים מישהו שמחפש חבר חדש? ${pet.name} מחכה לבית חם! 🐾`;
     
-    // Try Web Share API first (mobile)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -154,7 +197,6 @@ const Adoption = () => {
       }
     }
     
-    // Fallback to clipboard
     try {
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
       setCopied(true);
@@ -229,6 +271,15 @@ const Adoption = () => {
     return parts.join(" ו");
   };
 
+  // Instagram-style story categories
+  const storyCategories = [
+    { id: "all", emoji: "✨", label: "הכל" },
+    { id: "כלב", emoji: "🐕", label: "כלבים" },
+    { id: "חתול", emoji: "🐱", label: "חתולים" },
+    { id: "קטן", emoji: "🐾", label: "קטנים" },
+    { id: "גדול", emoji: "🦁", label: "גדולים" },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white pb-24 pt-20 px-4 flex items-center justify-center">
@@ -248,144 +299,208 @@ const Adoption = () => {
         showMenuButton={false}
       />
       
-      <div className="min-h-screen bg-[#F6F6F6] pb-28 px-4">
-        <div className="max-w-lg mx-auto pt-3">
-          {/* Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-4 py-5 px-4 rounded-2xl bg-gradient-to-br from-pink-50 via-purple-50 to-orange-50 shadow-sm"
-          >
-            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px] shadow-lg shadow-pink-200/50">
-              <div className="w-full h-full rounded-[12px] bg-white flex items-center justify-center">
-                <Heart className="w-6 h-6 text-[#DD2A7B]" fill="#DD2A7B" />
-              </div>
+      <div className="min-h-screen bg-white pb-28">
+        <div className="max-w-lg mx-auto">
+          {/* Instagram-style Stories Bar */}
+          <div className="px-4 py-3 border-b border-gray-100">
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+              {storyCategories.map((category, index) => (
+                <motion.button
+                  key={category.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => {
+                    if (category.id === "all") {
+                      setTypeFilter("all");
+                      setSizeFilter("all");
+                    } else if (category.id === "כלב" || category.id === "חתול") {
+                      setTypeFilter(category.id);
+                      setSizeFilter("all");
+                    } else if (category.id === "קטן" || category.id === "גדול") {
+                      setSizeFilter(category.id);
+                      setTypeFilter("all");
+                    }
+                  }}
+                  className="flex flex-col items-center gap-1 flex-shrink-0"
+                >
+                  <div className={`w-16 h-16 rounded-full p-[2px] ${
+                    (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
+                      ? "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]"
+                      : "bg-gray-200"
+                  }`}>
+                    <div className="w-full h-full rounded-full bg-white p-[2px]">
+                      <div className="w-full h-full rounded-full bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+                        <span className="text-2xl">{category.emoji}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-600 font-medium">{category.label}</span>
+                </motion.button>
+              ))}
             </div>
-            <h2 className="text-base font-bold text-gray-800 mb-1">
-              תן בית חם לחבר חדש
-            </h2>
-            <p className="text-gray-500 text-xs">
-              חיות מחמד מחכות למשפחה אוהבת
-            </p>
-          </motion.div>
+          </div>
 
-          {/* Search & Filters - Compact */}
-          <div className="mb-4 space-y-2">
+          {/* Search Bar - Instagram Style */}
+          <div className="px-4 py-3">
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="חיפוש לפי שם או גזע..."
-                className="h-10 pr-10 border-0 bg-white rounded-xl text-sm shadow-sm placeholder:text-gray-400"
+                placeholder="חיפוש..."
+                className="h-9 pr-10 border-0 bg-gray-100 rounded-lg text-sm placeholder:text-gray-400"
                 dir="rtl"
               />
             </div>
-            
-            <div className="flex gap-2">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="h-9 flex-1 border-0 rounded-lg bg-white text-xs shadow-sm">
-                  <SelectValue placeholder="סוג" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">כל הסוגים</SelectItem>
-                  <SelectItem value="כלב">🐕 כלבים</SelectItem>
-                  <SelectItem value="חתול">🐱 חתולים</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={sizeFilter} onValueChange={setSizeFilter}>
-                <SelectTrigger className="h-9 flex-1 border-0 rounded-lg bg-white text-xs shadow-sm">
-                  <SelectValue placeholder="גודל" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">כל הגדלים</SelectItem>
-                  <SelectItem value="קטן">קטן</SelectItem>
-                  <SelectItem value="בינוני">בינוני</SelectItem>
-                  <SelectItem value="גדול">גדול</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
-          {/* Results Count */}
-          {filteredPets.length > 0 && (
-            <div className="flex items-center justify-between px-1 mb-3">
-              <span className="text-xs font-medium text-gray-600">{filteredPets.length} חיות מחכות לאימוץ</span>
-            </div>
-          )}
-
-          {/* Pets Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          {/* Instagram-style Feed */}
+          <div className="divide-y divide-gray-100">
             <AnimatePresence>
               {filteredPets.map((pet, index) => (
-                <motion.div
+                <motion.article
                   key={pet.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  className="bg-white"
                 >
-                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                    {/* Image */}
-                    <div className="aspect-square overflow-hidden bg-gray-100 relative">
-                      <img
-                        src={pet.image_url || "/placeholder.svg"}
-                        alt={pet.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                      
-                      {/* Type Badge */}
-                      <div className="absolute top-2 right-2">
-                        <span className="text-lg">{pet.type === 'כלב' ? '🐕' : '🐱'}</span>
+                  {/* Post Header */}
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px]">
+                        <div className="w-full h-full rounded-full bg-white p-[1px]">
+                          <img
+                            src={pet.image_url || "/placeholder.svg"}
+                            alt={pet.name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        </div>
                       </div>
-                      
-                      {/* Name overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                        <h3 className="text-sm font-bold text-white drop-shadow-md">{pet.name}</h3>
-                        <p className="text-[10px] text-white/90 drop-shadow-md">{pet.breed || pet.type}</p>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{pet.name}</p>
+                        <p className="text-[11px] text-gray-500">{pet.breed || pet.type}</p>
                       </div>
                     </div>
+                    <button 
+                      onClick={() => handlePetClick(pet)}
+                      className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+                    >
+                      <MoreHorizontal className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Post Image with Double Tap */}
+                  <div 
+                    className="relative aspect-square bg-gray-100 cursor-pointer"
+                    onClick={() => handleDoubleTap(pet.id)}
+                  >
+                    <img
+                      src={pet.image_url || "/placeholder.svg"}
+                      alt={pet.name}
+                      className="w-full h-full object-cover"
+                    />
                     
-                    <div className="p-2.5">
-                      {/* Info */}
-                      <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-2">
-                        <span>{getAgeString(pet.age_years, pet.age_months)}</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                        <span>{pet.size}</span>
-                        {pet.gender && (
-                          <>
-                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                            <span>{pet.gender}</span>
-                          </>
-                        )}
-                      </div>
+                    {/* Double Tap Heart Animation */}
+                    <AnimatePresence>
+                      {showHeartAnimation === pet.id && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                        >
+                          <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
-                      {/* Status Badges */}
-                      <div className="flex gap-1 mb-2.5 flex-wrap">
-                        {pet.is_vaccinated && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 font-medium">
-                            מחוסן ✓
-                          </span>
-                        )}
-                        {pet.is_neutered && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
-                            מסורס ✓
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Details Button */}
-                      <Button
-                        onClick={() => handlePetClick(pet)}
-                        className="w-full h-8 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-lg text-xs font-semibold shadow-sm"
-                      >
-                        <Info className="w-3 h-3 ml-1" />
-                        לפרטים נוספים
-                      </Button>
+                    {/* Status Badges */}
+                    <div className="absolute top-3 right-3 flex flex-col gap-1">
+                      {pet.is_vaccinated && (
+                        <span className="text-[10px] px-2 py-1 rounded-full bg-white/90 backdrop-blur-sm text-green-600 font-medium shadow-sm">
+                          מחוסן ✓
+                        </span>
+                      )}
+                      {pet.is_neutered && (
+                        <span className="text-[10px] px-2 py-1 rounded-full bg-white/90 backdrop-blur-sm text-blue-600 font-medium shadow-sm">
+                          מסורס ✓
+                        </span>
+                      )}
                     </div>
                   </div>
-                </motion.div>
+
+                  {/* Instagram Action Bar */}
+                  <div className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-4">
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleLike(pet.id)}
+                          className="p-0"
+                        >
+                          <Heart 
+                            className={`w-6 h-6 transition-colors ${
+                              likedPets.has(pet.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-900"
+                            }`} 
+                          />
+                        </motion.button>
+                        <button onClick={() => handlePetClick(pet)}>
+                          <MessageCircle className="w-6 h-6 text-gray-900" />
+                        </button>
+                        <button onClick={() => handleSharePet(pet)}>
+                          <Send className="w-6 h-6 text-gray-900 -rotate-45" />
+                        </button>
+                      </div>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleSave(pet.id)}
+                      >
+                        <Bookmark 
+                          className={`w-6 h-6 transition-colors ${
+                            savedPets.has(pet.id) 
+                              ? "text-gray-900 fill-gray-900" 
+                              : "text-gray-900"
+                          }`} 
+                        />
+                      </motion.button>
+                    </div>
+
+                    {/* Likes Count */}
+                    {likedPets.has(pet.id) && (
+                      <p className="text-sm font-semibold text-gray-900 mb-1">אהבת את זה</p>
+                    )}
+
+                    {/* Caption */}
+                    <div className="mb-2">
+                      <span className="text-sm font-semibold text-gray-900 ml-2">{pet.name}</span>
+                      <span className="text-sm text-gray-700">
+                        {pet.description || `${pet.type} ${pet.gender || ""} בגיל ${getAgeString(pet.age_years, pet.age_months)}, גודל ${pet.size}. מחפש בית חם ואוהב! 🏠💕`}
+                      </span>
+                    </div>
+
+                    {/* View Details Link */}
+                    <button 
+                      onClick={() => handlePetClick(pet)}
+                      className="text-sm text-gray-500 mb-2"
+                    >
+                      לצפייה בפרטים נוספים...
+                    </button>
+
+                    {/* Adopt Button */}
+                    <Button
+                      onClick={() => handlePetClick(pet)}
+                      className="w-full h-10 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-lg text-sm font-semibold mt-2"
+                    >
+                      <Heart className="w-4 h-4 ml-2" />
+                      רוצה לאמץ את {pet.name}
+                    </Button>
+                  </div>
+                </motion.article>
               ))}
             </AnimatePresence>
           </div>
@@ -395,25 +510,25 @@ const Adoption = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 px-4"
+              className="text-center py-16 px-4"
             >
-              <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center mx-auto mb-3">
-                <Heart className="w-7 h-7 text-gray-300" />
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="w-10 h-10 text-gray-300" />
               </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">לא נמצאו חיות מחמד</h3>
-              <p className="text-gray-500 text-xs">נסה לשנות את הפילטרים</p>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">לא נמצאו חיות מחמד</h3>
+              <p className="text-gray-500 text-sm">נסה לשנות את הפילטרים</p>
             </motion.div>
           )}
         </div>
       </div>
 
-      {/* Pet Details Dialog */}
+      {/* Pet Details Dialog - Instagram Style */}
       <Dialog open={showPetDetails} onOpenChange={setShowPetDetails}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 border-0 rounded-2xl bg-white">
           {selectedPet && (
             <>
               {/* Pet Image */}
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="relative aspect-square overflow-hidden">
                 <img
                   src={selectedPet.image_url || "/placeholder.svg"}
                   alt={selectedPet.name}
@@ -443,20 +558,20 @@ const Adoption = () => {
               <div className="p-4 space-y-4" dir="rtl">
                 {/* Quick Info Grid */}
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl p-3 text-center">
                     <Calendar className="w-4 h-4 mx-auto mb-1 text-[#DD2A7B]" />
                     <p className="text-[10px] text-gray-500">גיל</p>
                     <p className="text-xs font-semibold text-gray-800">{getAgeString(selectedPet.age_years, selectedPet.age_months)}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-3 text-center">
                     <Ruler className="w-4 h-4 mx-auto mb-1 text-[#8134AF]" />
                     <p className="text-[10px] text-gray-500">גודל</p>
                     <p className="text-xs font-semibold text-gray-800">{selectedPet.size}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  <div className="bg-gradient-to-br from-orange-50 to-pink-50 rounded-xl p-3 text-center">
                     <Heart className="w-4 h-4 mx-auto mb-1 text-[#F58529]" />
                     <p className="text-[10px] text-gray-500">מין</p>
-                    <p className="text-xs font-semibold text-gray-800">{selectedPet.gender || 'לא ידוע'}</p>
+                    <p className="text-xs font-semibold text-gray-800">{selectedPet.gender || "לא ידוע"}</p>
                   </div>
                 </div>
 
