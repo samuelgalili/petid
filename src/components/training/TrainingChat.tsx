@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Dog, Star, Trophy, Flame } from "lucide-react";
+import { ArrowRight, Dog, Star, Trophy, Flame, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import {
   UploadPrompt,
   FeedbackCard
 } from "./TrainingChatMessage";
+import { DailyTrainingMode } from "./DailyTrainingMode";
 
 interface Pet {
   id: string;
@@ -54,7 +55,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-type ChatPhase = 'welcome' | 'select-pet' | 'modules' | 'lessons' | 'lesson-active' | 'upload' | 'reviewing' | 'feedback';
+type ChatPhase = 'welcome' | 'select-pet' | 'mode-select' | 'daily' | 'modules' | 'lessons' | 'lesson-active' | 'upload' | 'reviewing' | 'feedback';
 
 export const TrainingChat = () => {
   const { user } = useAuth();
@@ -74,6 +75,7 @@ export const TrainingChat = () => {
   const [totalXP, setTotalXP] = useState(0);
   const [streak, setStreak] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
+  const [showDailyMode, setShowDailyMode] = useState(false);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -173,14 +175,77 @@ export const TrainingChat = () => {
         type: 'bot',
         content: `מעולה! ${pet.name} ${pet.breed ? `(${pet.breed})` : ''} נראה מוכן לאימון! 🎯
 
-בחר מודול אימון להתחלה:`
+איזה סוג אימון מתאים לך היום?`
       });
-      addMessage({
-        type: 'system',
-        component: 'modules'
-      });
-      setPhase('modules');
+      setPhase('mode-select');
     }, 500);
+  };
+
+  const handleSelectDailyMode = () => {
+    setShowDailyMode(true);
+    setPhase('daily');
+  };
+
+  const handleSelectModulesMode = () => {
+    addMessage({
+      type: 'bot',
+      content: 'בחר מודול אימון להתחלה:'
+    });
+    addMessage({
+      type: 'system',
+      component: 'modules'
+    });
+    setPhase('modules');
+  };
+
+  const handleDailyExerciseStart = (exercise: any) => {
+    // Create a synthetic lesson for the daily exercise
+    const syntheticLesson: Lesson = {
+      id: exercise.id,
+      module_id: 'daily',
+      lesson_number: 1,
+      title_he: exercise.title,
+      description_he: exercise.description,
+      instructions_he: exercise.description,
+      demo_video_url: null,
+      demo_image_url: null,
+      duration_minutes: exercise.duration,
+      xp_reward: exercise.xp,
+      recommended_product_name: null,
+      recommended_product_reason: null
+    };
+    
+    setSelectedLesson(syntheticLesson);
+    setShowDailyMode(false);
+    
+    addMessage({
+      type: 'user',
+      content: `בחרתי: ${exercise.title}`
+    });
+    
+    setTimeout(() => {
+      addMessage({
+        type: 'bot',
+        content: `📚 ${exercise.title}
+⏱️ זמן משוער: ${exercise.duration} דקות
+⭐ פרס: +${exercise.xp} XP
+
+${exercise.description}`
+      });
+      
+      setTimeout(() => {
+        addMessage({
+          type: 'system',
+          component: 'upload'
+        });
+        setPhase('upload');
+      }, 500);
+    }, 300);
+  };
+
+  const handleBackFromDaily = () => {
+    setShowDailyMode(false);
+    setPhase('mode-select');
   };
 
   const handleSelectModule = async (module: Module) => {
@@ -511,6 +576,20 @@ ${lesson.instructions_he || 'בצע את התרגיל והעלה הוכחה.'}`
     }
   };
 
+  // Show Daily Training Mode
+  if (showDailyMode && selectedPet) {
+    return (
+      <DailyTrainingMode
+        pet={selectedPet}
+        streak={streak}
+        totalXP={totalXP}
+        completedLessons={completedLessons}
+        onStartExercise={handleDailyExerciseStart}
+        onBack={handleBackFromDaily}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header */}
@@ -536,7 +615,7 @@ ${lesson.instructions_he || 'בצע את התרגיל והעלה הוכחה.'}`
               {selectedPet ? `אימון ${selectedPet.name}` : 'מאלף דיגיטלי'}
             </h3>
             <p className="text-xs text-gray-500">
-              {selectedModule ? selectedModule.title_he : 'מוכן לאימון'}
+              {selectedModule ? selectedModule.title_he : phase === 'daily' ? 'אימון יומי' : 'מוכן לאימון'}
             </p>
           </div>
         </div>
@@ -584,6 +663,50 @@ ${lesson.instructions_he || 'בצע את התרגיל והעלה הוכחה.'}`
                 </button>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {/* Mode Selection */}
+        {phase === 'mode-select' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3"
+          >
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSelectDailyMode}
+              className="w-full bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200 rounded-xl p-4 text-right hover:shadow-md transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
+                  <Calendar className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900">אימון יומי</h4>
+                  <p className="text-xs text-gray-600">תרגילים מותאמים אישית לכלב שלך</p>
+                </div>
+                <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                  מומלץ
+                </div>
+              </div>
+            </motion.button>
+
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSelectModulesMode}
+              className="w-full bg-white border border-gray-200 rounded-xl p-4 text-right hover:border-gray-300 hover:shadow-sm transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-gray-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900">קורס מלא</h4>
+                  <p className="text-xs text-gray-600">מודולים מובנים עם שיעורים והתקדמות</p>
+                </div>
+              </div>
+            </motion.button>
           </motion.div>
         )}
 

@@ -1,4 +1,5 @@
 export { TrainingChat } from './TrainingChat';
+export { DailyTrainingMode } from './DailyTrainingMode';
 export { 
   TrainingChatMessage, 
   LessonCard, 
