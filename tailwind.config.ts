@@ -137,11 +137,14 @@ export default {
 			ring: 'hsl(var(--ring))',
 			background: 'hsl(var(--background))',
 			foreground: 'hsl(var(--foreground))',
+			petid: {
+				blue: 'hsl(var(--petid-blue))',
+				'blue-light': 'hsl(var(--petid-blue-light))',
+				gold: 'hsl(var(--petid-gold))',
+				'gold-light': 'hsl(var(--petid-gold-light))',
+				teal: 'hsl(var(--petid-teal))'
+			},
 			instagram: {
-				orange: 'hsl(var(--ig-orange))',
-				pink: 'hsl(var(--ig-pink))',
-				purple: 'hsl(var(--ig-purple))',
-				'blue-purple': 'hsl(var(--ig-blue-purple))',
 				blue: 'hsl(var(--ig-blue))',
 				red: 'hsl(var(--ig-red))',
 				black: 'hsl(var(--ig-black))',
@@ -277,6 +280,7 @@ export default {
 		backgroundImage: {
 			'gradient-primary': 'var(--gradient-primary)',
 			'gradient-instagram': 'var(--gradient-instagram)',
+			'gradient-petid': 'var(--gradient-instagram)',
 			'gradient-story': 'var(--gradient-story)',
 			'gradient-hero': 'var(--gradient-hero)',
 			'gradient-warm': 'var(--gradient-warm)',
@@ -299,12 +303,12 @@ export default {
 					height: '0'
 				}
 			},
-			'pulse-instagram': {
+			'pulse-petid': {
 				'0%, 100%': {
-					boxShadow: '0 0 0 0 hsla(331, 74%, 51%, 0.4)'
+					boxShadow: '0 0 0 0 hsla(204, 100%, 48%, 0.4)'
 				},
 				'50%': {
-					boxShadow: '0 0 0 12px hsla(331, 74%, 51%, 0)'
+					boxShadow: '0 0 0 12px hsla(204, 100%, 48%, 0)'
 				}
 			},
 			'gradient-rotate': {
