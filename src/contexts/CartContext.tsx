@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { playAddToCartSound } from "@/lib/sounds";
 
 export interface CartItem {
   id: string;
@@ -51,8 +52,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return [...prevItems, { ...item, quantity: item.quantity || 1 }];
     });
     
-    // Trigger shake animation
+    // Trigger shake animation and sound
     setCartShake(true);
+    playAddToCartSound();
     setTimeout(() => setCartShake(false), 500);
   };
 
