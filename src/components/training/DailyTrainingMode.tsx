@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Calendar, Flame, Star, Clock, Sparkles, ChevronLeft, Trophy, Target } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Calendar, Flame, Star, Clock, Sparkles, ChevronLeft, Trophy, Target, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,6 +20,9 @@ interface DailyExercise {
   category: 'obedience' | 'agility' | 'socialization' | 'mental';
   breedSuitable: boolean;
   lessonId?: string;
+  demoVideoUrl?: string;
+  demoThumbnail?: string;
+  steps?: string[];
 }
 
 interface DailyTrainingModeProps {
@@ -59,7 +62,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 5,
     xp: 15,
     category: 'obedience',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/BRIoJXutfLA',
+    steps: ['החזק חטיף מעל ראש הכלב', 'אמור "שב" בקול ברור', 'כשהכלב יושב, תגמל מיד', 'הגדל בהדרגה את זמן ההמתנה']
   },
   {
     id: 'come-recall',
@@ -68,7 +73,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 5,
     xp: 15,
     category: 'obedience',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/rLVfNfOqnQU',
+    steps: ['התחל ממרחק קצר', 'קרא בשם הכלב + "בוא"', 'תגמל מיד כשמגיע', 'הגדל מרחק בהדרגה']
   },
   {
     id: 'down-stay',
@@ -77,7 +84,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 5,
     xp: 20,
     category: 'obedience',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/4dbzPoB7AKk',
+    steps: ['התחל כשהכלב יושב', 'הנמך חטיף לרצפה', 'אמור "שכב"', 'תגמל כשהכלב שוכב']
   },
   {
     id: 'heel-walk',
@@ -86,7 +95,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 10,
     xp: 25,
     category: 'obedience',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/sFgtqgiAKoQ',
+    steps: ['התחל עם רצועה קצרה', 'החזק חטיפים בצד הכלב', 'תגמל על הליכה צמודה', 'עצור כשמושך']
   },
   {
     id: 'jump-hurdle',
@@ -95,7 +106,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 8,
     xp: 30,
     category: 'agility',
-    breedSuitable: false
+    breedSuitable: false,
+    demoVideoUrl: 'https://www.youtube.com/embed/hN-j3hLQMIE',
+    steps: ['התחל עם משוכה נמוכה', 'הובל עם חטיף מעבר למשוכה', 'אמור "קפוץ"', 'תגמל מיד אחרי הקפיצה']
   },
   {
     id: 'weave-poles',
@@ -104,7 +117,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 10,
     xp: 35,
     category: 'agility',
-    breedSuitable: false
+    breedSuitable: false,
+    demoVideoUrl: 'https://www.youtube.com/embed/hDbpPf-f5os',
+    steps: ['סדר עמודים במרחקים גדולים', 'הובל עם חטיף בין העמודים', 'צמצם מרחקים בהדרגה', 'תרגל מהירות']
   },
   {
     id: 'tunnel-run',
@@ -113,7 +128,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 5,
     xp: 25,
     category: 'agility',
-    breedSuitable: false
+    breedSuitable: false,
+    demoVideoUrl: 'https://www.youtube.com/embed/ys0fy_uRfwY',
+    steps: ['התחל עם מנהרה קצרה', 'שלח חטיף לצד השני', 'עודד מהכניסה', 'תגמל ביציאה']
   },
   {
     id: 'nose-work',
@@ -122,7 +139,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 10,
     xp: 30,
     category: 'mental',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/1g_9kqjYqvw',
+    steps: ['הראה לכלב את החטיף', 'החבא במקום קל', 'אמור "חפש"', 'הקשה בהדרגה']
   },
   {
     id: 'puzzle-toy',
@@ -131,7 +150,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 15,
     xp: 35,
     category: 'mental',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/aRW10d_ryf8',
+    steps: ['בחר צעצוע מתאים לרמה', 'הראה איך זה עובד', 'תן לכלב לנסות', 'עזור רק אם נתקע']
   },
   {
     id: 'name-game',
@@ -140,7 +161,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 10,
     xp: 40,
     category: 'mental',
-    breedSuitable: false
+    breedSuitable: false,
+    demoVideoUrl: 'https://www.youtube.com/embed/BRIoJXutfLA',
+    steps: ['בחר צעצוע אחד', 'קרא לו בשם כשמשחקים', 'בקש "תביא [שם]"', 'תגמל על הבאה נכונה']
   },
   {
     id: 'dog-greeting',
@@ -149,7 +172,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 15,
     xp: 30,
     category: 'socialization',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/WL0s6_mTzYI',
+    steps: ['בחר כלב רגוע', 'התקרב בהדרגה', 'תן להריח', 'תגמל על התנהגות רגועה']
   },
   {
     id: 'new-environment',
@@ -158,7 +183,9 @@ const DAILY_EXERCISES: DailyExercise[] = [
     duration: 20,
     xp: 35,
     category: 'socialization',
-    breedSuitable: true
+    breedSuitable: true,
+    demoVideoUrl: 'https://www.youtube.com/embed/LT7fkC5ZsC4',
+    steps: ['בחר מקום לא צפוף', 'תן לכלב להסתגל', 'תגמל על רוגע', 'צא אם מתוח מדי']
   }
 ];
 
@@ -181,6 +208,7 @@ export const DailyTrainingMode = ({
   const [completedToday, setCompletedToday] = useState<Set<string>>(new Set());
   const [dailyGoal] = useState(3);
   const [loading, setLoading] = useState(true);
+  const [selectedExerciseForDemo, setSelectedExerciseForDemo] = useState<DailyExercise | null>(null);
 
   useEffect(() => {
     generateDailyPlan();
@@ -264,6 +292,88 @@ export const DailyTrainingMode = ({
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-amber-50/50 to-white">
+      {/* Video Demo Modal */}
+      <AnimatePresence>
+        {selectedExerciseForDemo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+            onClick={() => setSelectedExerciseForDemo(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl w-full max-w-lg overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <Play className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-sm">{selectedExerciseForDemo.title}</h3>
+                    <p className="text-xs text-gray-500">סרטון הדגמה</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedExerciseForDemo(null)}
+                  className="h-8 w-8 p-0 rounded-full"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Video Player */}
+              <div className="aspect-video bg-black">
+                <iframe
+                  src={`${selectedExerciseForDemo.demoVideoUrl}?autoplay=1`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+
+              {/* Steps */}
+              {selectedExerciseForDemo.steps && selectedExerciseForDemo.steps.length > 0 && (
+                <div className="p-4 bg-gray-50">
+                  <h4 className="font-semibold text-gray-900 text-sm mb-2">שלבי ביצוע:</h4>
+                  <ol className="space-y-2">
+                    {selectedExerciseForDemo.steps.map((step, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                          {index + 1}
+                        </span>
+                        <span className="text-gray-700">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="p-4 border-t border-gray-100">
+                <Button
+                  onClick={() => {
+                    setSelectedExerciseForDemo(null);
+                    handleStartExercise(selectedExerciseForDemo);
+                    markAsCompleted(selectedExerciseForDemo.id);
+                  }}
+                  className="w-full h-10 bg-gray-900 hover:bg-gray-800 text-white rounded-full"
+                >
+                  התחל תרגיל
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100 bg-white">
         <div className="flex items-center justify-between mb-3">
@@ -404,38 +514,50 @@ export const DailyTrainingMode = ({
                       </div>
                       <p className="text-xs text-gray-600 mb-2">{exercise.description}</p>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1 text-xs text-gray-500">
-                            <Clock className="w-3 h-3" />
-                            {exercise.duration} דק׳
-                          </span>
-                          <span className="flex items-center gap-1 text-xs text-amber-600">
-                            <Star className="w-3 h-3" />
-                            +{exercise.xp} XP
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${categoryInfo.color}`}>
-                            {categoryInfo.label}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Clock className="w-3 h-3" />
+                          {exercise.duration} דק׳
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-amber-600">
+                          <Star className="w-3 h-3" />
+                          +{exercise.xp} XP
+                        </span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border ${categoryInfo.color}`}>
+                          {categoryInfo.label}
+                        </span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        {exercise.demoVideoUrl && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedExerciseForDemo(exercise)}
+                            className="h-7 text-xs rounded-full px-3 border-amber-200 text-amber-700 hover:bg-amber-50"
+                          >
+                            <Play className="w-3 h-3 ml-1" />
+                            צפה בהדגמה
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            handleStartExercise(exercise);
+                            markAsCompleted(exercise.id);
+                          }}
+                          disabled={isCompleted}
+                          className={`h-7 text-xs rounded-full px-4 ${
+                            isCompleted
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-900 hover:bg-gray-800 text-white'
+                          }`}
+                        >
+                          {isCompleted ? 'הושלם' : 'התחל תרגיל'}
+                        </Button>
                       </div>
                     </div>
-
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        handleStartExercise(exercise);
-                        markAsCompleted(exercise.id);
-                      }}
-                      disabled={isCompleted}
-                      className={`h-8 text-xs rounded-full px-4 ${
-                        isCompleted
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-900 hover:bg-gray-800 text-white'
-                      }`}
-                    >
-                      {isCompleted ? 'הושלם' : 'התחל'}
-                    </Button>
                   </div>
                 </motion.div>
               );
