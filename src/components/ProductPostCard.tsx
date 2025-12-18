@@ -337,9 +337,12 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         }`}
         whileTap={{ scale: 0.99 }}
       >
-        <span className={`text-[15px] font-medium ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>
-          {showAddedAnimation ? "נוסף לסל ✓" : "קנה עכשיו"}
-        </span>
+        <div className="flex items-center gap-2">
+          <ShoppingBag className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
+          <span className={`text-[15px] font-medium ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>
+            {showAddedAnimation ? "נוסף לסל ✓" : "קנה עכשיו"}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <span className={`font-bold ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>{product.price}</span>
           <ChevronLeft className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
