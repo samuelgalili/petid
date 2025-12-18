@@ -514,7 +514,7 @@ const ProductDetail = () => {
               whileTap={{ scale: 0.98 }}
               className="relative p-[1.5px] rounded-2xl cursor-pointer group"
               style={{
-                background: 'linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45)'
+                background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
               }}
               onClick={() => navigate('/product/related', { state: { product: { ...item, price: item.price } } })}
             >
@@ -527,7 +527,7 @@ const ProductDetail = () => {
                   <p 
                     className="text-sm font-black bg-clip-text text-transparent font-jakarta"
                     style={{
-                      backgroundImage: 'linear-gradient(135deg, #E1306C, #F77737)'
+                      backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
                     }}
                   >
                     {item.price}

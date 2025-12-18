@@ -509,8 +509,8 @@ const Shop = () => {
                   : "text-gray-600 hover:text-gray-800"
               }`}
               style={selectedPetType === "all" 
-                ? { background: 'linear-gradient(135deg, #833AB4, #E1306C, #F77737)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
+                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
               }
             >
               הכל
@@ -523,8 +523,8 @@ const Shop = () => {
                   : "text-gray-600 hover:text-gray-800"
               }`}
               style={selectedPetType === "dog" 
-                ? { background: 'linear-gradient(135deg, #833AB4, #E1306C, #F77737)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
+                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
               }
             >
               <Dog className="w-4 h-4" strokeWidth={1.5} />
@@ -538,8 +538,8 @@ const Shop = () => {
                   : "text-gray-600 hover:text-gray-800"
               }`}
               style={selectedPetType === "cat" 
-                ? { background: 'linear-gradient(135deg, #833AB4, #E1306C, #F77737)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
+                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
               }
             >
               <Cat className="w-4 h-4" strokeWidth={1.5} />
@@ -563,8 +563,8 @@ const Shop = () => {
                     : "text-gray-500 hover:text-gray-700"
                 }`}
                 style={selectedCategory === category.label 
-                  ? { background: 'linear-gradient(135deg, #E1306C, #F77737)' }
-                  : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45) border-box', border: '1px solid transparent', borderRadius: '9999px' }
+                  ? { background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)' }
+                  : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1px solid transparent', borderRadius: '9999px' }
                 }
               >
                 {category.label}
@@ -586,8 +586,8 @@ const Shop = () => {
                   : "text-gray-500"
               }`}
               style={showDealsOnly 
-                ? { background: 'linear-gradient(135deg, #F77737, #FCAF45)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #F77737, #FCAF45) border-box', border: '1px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)' }
+                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box', border: '1px solid transparent', borderRadius: '9999px' }
               }
             >
               <Tag className="w-3.5 h-3.5" strokeWidth={2} />
@@ -602,8 +602,8 @@ const Shop = () => {
                   : "text-gray-500"
               }`}
               style={sortBy === "price-low" 
-                ? { background: 'linear-gradient(135deg, #833AB4, #E1306C)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #833AB4, #E1306C) border-box', border: '1px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(135deg, #1E5799, #7DB9E8)' }
+                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8) border-box', border: '1px solid transparent', borderRadius: '9999px' }
               }
             >
               מחיר ↑
@@ -627,7 +627,7 @@ const Shop = () => {
               whileTap={{ scale: 0.98 }}
               className="relative p-[1.5px] rounded-xl cursor-pointer group"
               style={{
-                background: 'linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45)'
+                background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
               }}
               onClick={() => handleProductClick(product)}
             >
@@ -647,7 +647,7 @@ const Shop = () => {
                     <div 
                       className="absolute top-2 right-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold"
                       style={{
-                        background: 'linear-gradient(135deg, #E1306C, #F77737)'
+                        background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)'
                       }}
                     >
                       -{Math.round((1 - product.price / product.originalPrice) * 100)}%
@@ -660,7 +660,7 @@ const Shop = () => {
                     className="absolute top-2 left-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
                   >
                     <Bookmark 
-                      className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-[#E1306C] text-[#E1306C]" : "text-gray-400"}`} 
+                      className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-[#1E5799] text-[#1E5799]" : "text-gray-400"}`} 
                       strokeWidth={1.5} 
                     />
                   </button>
@@ -673,7 +673,7 @@ const Shop = () => {
                   </h3>
                   
                   <div className="flex items-center gap-1 mb-2">
-                    <Star className="w-3 h-3 fill-[#FCAF45] text-[#FCAF45]" />
+                    <Star className="w-3 h-3 fill-[#4ECDC4] text-[#4ECDC4]" />
                     <span className="text-xs text-gray-500">{product.rating}</span>
                   </div>
                   
@@ -681,7 +681,7 @@ const Shop = () => {
                     <span 
                       className="text-sm font-bold bg-clip-text text-transparent"
                       style={{
-                        backgroundImage: 'linear-gradient(135deg, #E1306C, #F77737)'
+                        backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
                       }}
                     >
                       ₪{product.price}
