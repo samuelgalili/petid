@@ -563,16 +563,17 @@ const Shop = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="border-b border-border/40">
+      <div className="bg-white border-b border-gray-100">
         <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowDealsOnly(!showDealsOnly)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 showDealsOnly
-                  ? "bg-destructive text-white"
-                  : "bg-muted text-foreground hover:bg-muted/80"
+                  ? "bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue-dark text-white shadow-sm"
+                  : "text-gray-600"
               }`}
+              style={!showDealsOnly ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1E90FF, #FFB347, #1565C0) border-box', border: '1.5px solid transparent', borderRadius: '9999px' } : {}}
             >
               <Tag className="w-3.5 h-3.5" strokeWidth={2} />
               מבצעים
@@ -582,15 +583,16 @@ const Shop = () => {
               onClick={() => setSortBy(sortBy === "price-low" ? "none" : "price-low")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 sortBy === "price-low"
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-foreground hover:bg-muted/80"
+                  ? "bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue-dark text-white shadow-sm"
+                  : "text-gray-600"
               }`}
+              style={sortBy !== "price-low" ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(to right, #1E90FF, #FFB347, #1565C0) border-box', border: '1.5px solid transparent', borderRadius: '9999px' } : {}}
             >
               מחיר ↑
             </button>
           </div>
 
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-gray-500">
             {filteredAndSortedProducts.length} מוצרים
           </span>
         </div>
