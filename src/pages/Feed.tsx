@@ -26,6 +26,7 @@ import { ProductPostCard } from "@/components/ProductPostCard";
 import { DocumentPostCard } from "@/components/DocumentPostCard";
 import { ParallaxScroll } from "@/components/ParallaxScroll";
 import { useCart } from "@/contexts/CartContext";
+import { useFlyingCart } from "@/components/FlyingCartAnimation";
 
 // Featured products for feed
 const FEATURED_PRODUCTS = [
@@ -141,6 +142,8 @@ const Feed = () => {
     isAuthenticated
   } = useRequireAuth();
   const { getTotalItems, cartShake } = useCart();
+  const { setCartIconPosition } = useFlyingCart();
+  const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -764,6 +767,7 @@ const Feed = () => {
             <AnimatePresence>
               {getTotalItems() > 0 && (
                 <motion.button 
+                  ref={cartIconRef}
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ 
                     scale: cartShake ? [1, 1.3, 1] : 1, 
@@ -776,6 +780,12 @@ const Feed = () => {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => navigate('/cart')} 
                   className="active:opacity-50 transition-opacity p-1 relative"
+                  onAnimationComplete={() => {
+                    if (cartIconRef.current) {
+                      const rect = cartIconRef.current.getBoundingClientRect();
+                      setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                    }
+                  }}
                 >
                   <ShoppingCart className="w-6 h-6 text-petid-gold" strokeWidth={1.5} />
                   <motion.span 
