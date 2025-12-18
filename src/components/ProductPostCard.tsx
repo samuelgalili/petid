@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Product {
   id: string;
@@ -27,7 +27,16 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [showAddedAnimation, setShowAddedAnimation] = useState(false);
+  const [showCtaHighlight, setShowCtaHighlight] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Highlight CTA button after 1 second
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCtaHighlight(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleShopClick = () => {
     navigate('/shop');
@@ -156,17 +165,26 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         <motion.button
           ref={buttonRef}
           onClick={handleAddToCart}
-          className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm py-2.5 px-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors overflow-hidden"
+          className="absolute bottom-0 left-0 right-0 py-2.5 px-4 flex items-center justify-between cursor-pointer overflow-hidden"
+          initial={{ backgroundColor: "rgba(255, 255, 255, 0)" }}
+          animate={{ 
+            backgroundColor: showAddedAnimation 
+              ? "rgba(247, 191, 0, 0.3)" 
+              : showCtaHighlight 
+                ? "rgba(247, 191, 0, 0.95)" 
+                : "rgba(255, 255, 255, 0)"
+          }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           whileTap={{ scale: 0.98 }}
-          animate={showAddedAnimation ? { backgroundColor: "rgba(247, 191, 0, 0.2)" } : {}}
         >
           <div className="flex items-center gap-2">
             <motion.div 
-              className="w-6 h-6 rounded-full bg-[#F7BF00] flex items-center justify-center"
-              animate={showAddedAnimation ? { 
-                scale: [1, 1.3, 1],
-                rotate: [0, 10, -10, 0]
-              } : {}}
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              animate={{ 
+                backgroundColor: showCtaHighlight ? "#262626" : "#F7BF00",
+                scale: showAddedAnimation ? [1, 1.3, 1] : 1,
+                rotate: showAddedAnimation ? [0, 10, -10, 0] : 0
+              }}
               transition={{ duration: 0.5 }}
             >
               <AnimatePresence mode="wait">
@@ -178,7 +196,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
                     exit={{ scale: 0 }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
-                    <Check className="w-3.5 h-3.5 text-[#262626]" strokeWidth={3} />
+                    <Check className={`w-3.5 h-3.5 ${showCtaHighlight ? 'text-[#F7BF00]' : 'text-[#262626]'}`} strokeWidth={3} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -187,7 +205,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
                   >
-                    <ShoppingBag className="w-3.5 h-3.5 text-[#262626]" />
+                    <ShoppingBag className={`w-3.5 h-3.5 ${showCtaHighlight ? 'text-[#F7BF00]' : 'text-[#262626]'}`} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -206,10 +224,15 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
               ) : (
                 <motion.span 
                   key="add"
-                  className="text-sm font-semibold text-[#262626]"
+                  className="text-sm font-bold"
                   initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    color: showCtaHighlight ? "#262626" : "#FFFFFF"
+                  }}
                   exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
                 >
                   הוסף לסל
                 </motion.span>
@@ -217,8 +240,11 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
             </AnimatePresence>
           </div>
           <motion.span 
-            className="text-[#F7BF00] text-sm font-bold"
-            animate={showAddedAnimation ? { scale: [1, 1.2, 1] } : {}}
+            className="text-sm font-bold"
+            animate={{ 
+              scale: showAddedAnimation ? [1, 1.2, 1] : 1,
+              color: showCtaHighlight ? "#262626" : "#F7BF00"
+            }}
           >
             {product.price} ←
           </motion.span>
