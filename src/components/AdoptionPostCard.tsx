@@ -1,9 +1,11 @@
-import { motion } from "framer-motion";
-import { Heart, Calendar, Ruler } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Heart, Calendar, Ruler, PawPrint, ShoppingBag, BookOpen, Sparkles } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+
 interface AdoptionPet {
   id: string;
   name: string;
@@ -114,6 +116,9 @@ export const AdoptionPostCard = ({
   getTimeAgo
 }: AdoptionPostCardProps) => {
   const navigate = useNavigate();
+  const [showCTA, setShowCTA] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const getAgeString = (years: number | null, months: number | null) => {
     if (!years && !months) return "גיל לא ידוע";
     const parts = [];
@@ -121,9 +126,38 @@ export const AdoptionPostCard = ({
     if (months) parts.push(`${months} חודש${months === 1 ? "" : "ים"}`);
     return parts.join(" ו");
   };
+
   const handleAdoptClick = () => {
     navigate('/adoption');
   };
+
+  const handleMouseEnter = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowCTA(true);
+    }, 1000);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    setShowCTA(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const ctaActions = [
+    { icon: PawPrint, label: "אימוץ", color: "from-petid-blue to-petid-blue-dark", onClick: () => navigate('/adoption') },
+    { icon: ShoppingBag, label: "חנות", color: "from-petid-gold to-amber-500", onClick: () => navigate('/shop') },
+    { icon: BookOpen, label: "מידע", color: "from-emerald-500 to-green-600", onClick: () => navigate('/adoption') },
+  ];
+
   return <motion.article variants={cardVariants} initial="hidden" animate="visible" whileInView="visible" viewport={{
     once: true,
     margin: "-50px"
@@ -165,7 +199,14 @@ export const AdoptionPostCard = ({
       </motion.div>
 
       {/* Image with CTA strip */}
-      <motion.div className="relative aspect-square overflow-hidden" variants={imageVariants}>
+      <motion.div 
+        className="relative aspect-square overflow-hidden cursor-pointer" 
+        variants={imageVariants}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleMouseEnter}
+        onTouchEnd={handleMouseLeave}
+      >
         <motion.div initial={{
         scale: 1.2
       }} animate={{
@@ -176,6 +217,58 @@ export const AdoptionPostCard = ({
       }} className="w-full h-full">
           <OptimizedImage src={pet.image_url || "/placeholder.svg"} alt={pet.name} className="w-full h-full object-cover" />
         </motion.div>
+
+        {/* Delayed CTA Bar - appears after 1 second hover */}
+        <AnimatePresence>
+          {showCTA && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="absolute bottom-12 left-3 right-3 z-20"
+            >
+              <div className="bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue p-[2px] rounded-2xl shadow-lg shadow-petid-blue/30">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3">
+                  <div className="flex items-center justify-center gap-4">
+                    {ctaActions.map((action, index) => (
+                      <motion.button
+                        key={action.label}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.1 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          action.onClick();
+                        }}
+                        className="flex flex-col items-center gap-1 group"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow`}>
+                          <action.icon className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-[11px] font-semibold text-foreground">{action.label}</span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Sparkle indicator */}
+              <motion.div
+                className="absolute -top-2 left-1/2 -translate-x-1/2"
+                animate={{ 
+                  y: [0, -3, 0],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <Sparkles className="w-4 h-4 text-petid-gold" />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {/* Gradient overlay at bottom */}
         <motion.div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent h-36 pointer-events-none" initial={{
