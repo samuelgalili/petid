@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { triggerPetidConfetti } from "@/animations/petid";
 
 interface ParkReviewDialogProps {
   open: boolean;
@@ -110,6 +111,9 @@ export const ParkReviewDialog = ({
         });
 
       if (insertError) throw insertError;
+
+      // Trigger confetti celebration
+      triggerPetidConfetti();
 
       toast({
         title: "🎉 הביקורת נשמרה בהצלחה",
