@@ -607,58 +607,70 @@ const Shop = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               whileTap={{ scale: 0.98 }}
-              className="bg-background rounded-xl overflow-hidden border border-border cursor-pointer"
+              className="relative p-[1.5px] rounded-xl cursor-pointer group"
+              style={{
+                background: 'linear-gradient(135deg, #93C5FD, #FBBF24, #60A5FA)'
+              }}
               onClick={() => handleProductClick(product)}
             >
-              {/* Image */}
-              <div className="relative aspect-square bg-muted">
-                <OptimizedImage
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full"
-                  objectFit="cover"
-                  sizes="(max-width: 768px) 50vw, 200px"
-                />
-                
-                {/* Sale Badge */}
-                {product.originalPrice && (
-                  <div className="absolute top-2 right-2 bg-destructive text-white px-2 py-0.5 rounded text-[10px] font-bold">
-                    -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                  </div>
-                )}
-
-                {/* Save Button */}
-                <button
-                  onClick={(e) => toggleFavorite(product.id, e)}
-                  className="absolute top-2 left-2 w-7 h-7 rounded-full bg-background/90 flex items-center justify-center"
-                >
-                  <Bookmark 
-                    className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-foreground text-foreground" : "text-muted-foreground"}`} 
-                    strokeWidth={1.5} 
+              <div className="bg-white rounded-xl overflow-hidden h-full transition-all group-hover:shadow-lg">
+                {/* Image */}
+                <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-white">
+                  <OptimizedImage
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full"
+                    objectFit="cover"
+                    sizes="(max-width: 768px) 50vw, 200px"
                   />
-                </button>
-              </div>
-
-              {/* Info */}
-              <div className="p-3">
-                <h3 className="text-sm font-semibold text-foreground line-clamp-1 mb-1">
-                  {product.name}
-                </h3>
-                
-                <div className="flex items-center gap-1 mb-2">
-                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                  <span className="text-xs text-muted-foreground">{product.rating}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-bold ${product.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
-                    ₪{product.price}
-                  </span>
+                  
+                  {/* Sale Badge */}
                   {product.originalPrice && (
-                    <span className="text-xs text-muted-foreground line-through">
-                      ₪{product.originalPrice}
-                    </span>
+                    <div 
+                      className="absolute top-2 right-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold"
+                      style={{
+                        background: 'linear-gradient(135deg, #F59E0B, #F97316)'
+                      }}
+                    >
+                      -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                    </div>
                   )}
+
+                  {/* Save Button */}
+                  <button
+                    onClick={(e) => toggleFavorite(product.id, e)}
+                    className="absolute top-2 left-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
+                  >
+                    <Bookmark 
+                      className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-amber-500 text-amber-500" : "text-gray-400"}`} 
+                      strokeWidth={1.5} 
+                    />
+                  </button>
+                </div>
+
+                {/* Info */}
+                <div className="p-3 bg-white">
+                  <h3 className="text-sm font-semibold text-gray-800 line-clamp-1 mb-1">
+                    {product.name}
+                  </h3>
+                  
+                  <div className="flex items-center gap-1 mb-2">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span className="text-xs text-gray-500">{product.rating}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent"
+                    >
+                      ₪{product.price}
+                    </span>
+                    {product.originalPrice && (
+                      <span className="text-xs text-gray-400 line-through">
+                        ₪{product.originalPrice}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
