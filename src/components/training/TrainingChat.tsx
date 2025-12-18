@@ -82,26 +82,32 @@ export const TrainingChat = () => {
 
   // Initialize chat
   useEffect(() => {
-    if (user) {
-      fetchPets();
-      fetchModules();
-      fetchProgress();
-    }
-    
-    // Add welcome message
-    setTimeout(() => {
-      addMessage({
-        type: 'bot',
-        content: `שלום! 🐕 אני המאלף הדיגיטלי שלך.
-        
+    // Add welcome message immediately
+    addMessage({
+      type: 'bot',
+      content: `שלום! 🐕 אני המאלף הדיגיטלי שלך.
+      
 אני כאן כדי לעזור לך לאלף את הכלב שלך בצורה מקצועית ומהנה.
 
 כל שיעור כולל הדגמה, הוראות ברורות, ובסוף - תעלה תמונה או סרטון קצר והבינה המלאכותית שלי תבדוק אם הכלב ביצע נכון.
 
 מוכן להתחיל? 💪`
-      });
+    });
+
+    if (user) {
+      fetchPets();
+      fetchModules();
+      fetchProgress();
       setPhase('select-pet');
-    }, 500);
+    } else {
+      // Show login prompt for non-authenticated users
+      setTimeout(() => {
+        addMessage({
+          type: 'bot',
+          content: '👋 כדי להתחיל באימון, עליך להתחבר לחשבון שלך ולהוסיף כלב לפרופיל.'
+        });
+      }, 1000);
+    }
   }, [user]);
 
   const fetchPets = async () => {
