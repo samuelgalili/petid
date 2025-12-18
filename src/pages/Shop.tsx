@@ -503,40 +503,40 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Pet Type Selection */}
-      <div className="border-b border-border/40">
+      {/* Pet Type Selection - Clean Instagram style */}
+      <div className="bg-background/95 backdrop-blur-sm">
         <div className="max-w-lg mx-auto px-4 py-3">
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-1 justify-center bg-muted/50 rounded-full p-1">
             <button
               onClick={() => setSelectedPetType("all")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "all"
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-foreground hover:bg-muted/80"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               הכל
             </button>
             <button
               onClick={() => setSelectedPetType("dog")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "dog"
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-foreground hover:bg-muted/80"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Dog className="w-4 h-4" strokeWidth={2} />
+              <Dog className="w-4 h-4" strokeWidth={1.5} />
               כלב
             </button>
             <button
               onClick={() => setSelectedPetType("cat")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "cat"
-                  ? "bg-foreground text-background"
-                  : "bg-muted text-foreground hover:bg-muted/80"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Cat className="w-4 h-4" strokeWidth={2} />
+              <Cat className="w-4 h-4" strokeWidth={1.5} />
               חתול
             </button>
           </div>
@@ -544,17 +544,17 @@ const Shop = () => {
       </div>
 
       {/* Sub-Categories Scroll */}
-      <div className="border-b border-border/40">
+      <div className="border-b border-border/30">
         <div className="max-w-lg mx-auto">
           <div className="flex gap-2 px-4 py-2.5 overflow-x-auto scrollbar-hide">
             {subCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.label)}
-                className={`px-3.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category.label
-                    ? "bg-primary/10 text-primary border border-primary/30"
-                    : "bg-transparent text-muted-foreground hover:text-foreground border border-border"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {category.label}
