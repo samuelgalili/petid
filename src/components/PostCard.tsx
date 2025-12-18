@@ -304,7 +304,7 @@ export const PostCard = ({
         <OptimizedImage
           src={post.image_url}
           alt={post.caption || "פוסט"}
-          className="w-full aspect-square"
+          className="w-full aspect-[3/4]"
           objectFit="cover"
           sizes="(max-width: 768px) 100vw, 672px"
         />
