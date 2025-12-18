@@ -242,6 +242,53 @@ export type Database = {
           },
         ]
       }
+      daily_training_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          lessons_completed: number | null
+          pet_id: string | null
+          session_date: string
+          streak_day: number | null
+          total_xp_earned: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          lessons_completed?: number | null
+          pet_id?: string | null
+          session_date?: string
+          streak_day?: number | null
+          total_xp_earned?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          lessons_completed?: number | null
+          pet_id?: string | null
+          session_date?: string
+          streak_day?: number | null
+          total_xp_earned?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_training_sessions_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dog_parks: {
         Row: {
           address: string
@@ -1857,6 +1904,54 @@ export type Database = {
         }
         Relationships: []
       }
+      training_certificates: {
+        Row: {
+          certificate_number: string
+          id: string
+          issued_at: string
+          module_id: string
+          module_title: string | null
+          pet_id: string | null
+          pet_name: string | null
+          user_id: string
+        }
+        Insert: {
+          certificate_number: string
+          id?: string
+          issued_at?: string
+          module_id: string
+          module_title?: string | null
+          pet_id?: string | null
+          pet_name?: string | null
+          user_id: string
+        }
+        Update: {
+          certificate_number?: string
+          id?: string
+          issued_at?: string
+          module_id?: string
+          module_title?: string | null
+          pet_id?: string | null
+          pet_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_certificates_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_certificates_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_courses: {
         Row: {
           created_at: string | null
@@ -1906,6 +2001,180 @@ export type Database = {
             columns: ["trainer_id"]
             isOneToOne: false
             referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_lessons: {
+        Row: {
+          created_at: string
+          demo_image_url: string | null
+          demo_video_url: string | null
+          description: string | null
+          description_he: string | null
+          duration_minutes: number | null
+          id: string
+          instructions: string | null
+          instructions_he: string | null
+          lesson_number: number
+          module_id: string
+          recommended_product_id: string | null
+          recommended_product_name: string | null
+          recommended_product_reason: string | null
+          title: string
+          title_he: string
+          xp_reward: number
+        }
+        Insert: {
+          created_at?: string
+          demo_image_url?: string | null
+          demo_video_url?: string | null
+          description?: string | null
+          description_he?: string | null
+          duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          instructions_he?: string | null
+          lesson_number: number
+          module_id: string
+          recommended_product_id?: string | null
+          recommended_product_name?: string | null
+          recommended_product_reason?: string | null
+          title: string
+          title_he: string
+          xp_reward?: number
+        }
+        Update: {
+          created_at?: string
+          demo_image_url?: string | null
+          demo_video_url?: string | null
+          description?: string | null
+          description_he?: string | null
+          duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          instructions_he?: string | null
+          lesson_number?: number
+          module_id?: string
+          recommended_product_id?: string | null
+          recommended_product_name?: string | null
+          recommended_product_reason?: string | null
+          title?: string
+          title_he?: string
+          xp_reward?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "training_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_modules: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_he: string | null
+          icon: string | null
+          id: string
+          module_number: number
+          title: string
+          title_he: string
+          total_lessons: number
+          xp_reward: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_he?: string | null
+          icon?: string | null
+          id?: string
+          module_number: number
+          title: string
+          title_he: string
+          total_lessons?: number
+          xp_reward?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_he?: string | null
+          icon?: string | null
+          id?: string
+          module_number?: number
+          title?: string
+          title_he?: string
+          total_lessons?: number
+          xp_reward?: number
+        }
+        Relationships: []
+      }
+      training_submissions: {
+        Row: {
+          ai_analysis: string | null
+          ai_approved: boolean | null
+          ai_feedback: string | null
+          created_at: string
+          id: string
+          lesson_id: string
+          media_type: string
+          media_url: string
+          pet_id: string | null
+          progress_id: string
+          reviewed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_analysis?: string | null
+          ai_approved?: boolean | null
+          ai_feedback?: string | null
+          created_at?: string
+          id?: string
+          lesson_id: string
+          media_type: string
+          media_url: string
+          pet_id?: string | null
+          progress_id: string
+          reviewed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_analysis?: string | null
+          ai_approved?: boolean | null
+          ai_feedback?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          media_type?: string
+          media_url?: string
+          pet_id?: string | null
+          progress_id?: string
+          reviewed_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_submissions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "training_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_submissions_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_submissions_progress_id_fkey"
+            columns: ["progress_id"]
+            isOneToOne: false
+            referencedRelation: "user_training_progress"
             referencedColumns: ["id"]
           },
         ]
@@ -2029,6 +2298,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_training_progress: {
+        Row: {
+          attempts: number | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          lesson_id: string
+          pet_id: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          xp_earned: number | null
+        }
+        Insert: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          lesson_id: string
+          pet_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          xp_earned?: number | null
+        }
+        Update: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          pet_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          xp_earned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_training_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "training_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_training_progress_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
