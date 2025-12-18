@@ -80,8 +80,8 @@ const Rewards = () => {
       } catch (error) {
         console.error('Error fetching rewards:', error);
         toast({
-          title: "שגיאה בטעינת הפרסים",
-          description: "נא לנסות שוב מאוחר יותר",
+          title: "שגיאה בטעינה",
+          description: "לא הצלחנו לטעון את הפרסים",
           variant: "destructive",
         });
       } finally {
@@ -145,8 +145,8 @@ const Rewards = () => {
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
     toast({
-      title: "הקוד הועתק! 📋",
-      description: code,
+      title: "הקוד הועתק בהצלחה! 📋",
+      description: `קוד: ${code}`,
     });
   };
 
@@ -155,8 +155,8 @@ const Rewards = () => {
 
     if (totalPoints < selectedReward.points) {
       toast({
-        title: "אין מספיק נקודות",
-        description: `חסרות לך ${selectedReward.points - totalPoints} נקודות`,
+        title: "אין מספיק נקודות 😔",
+        description: `חסרות לך עוד ${selectedReward.points - totalPoints} נקודות למימוש`,
         variant: "destructive",
       });
       setShowRedeemDialog(false);
@@ -167,8 +167,8 @@ const Rewards = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({
-          title: "נדרשת התחברות",
-          description: "יש להתחבר כדי לממש פרסים",
+          title: "יש להתחבר",
+          description: "התחבר לחשבון כדי לממש פרסים",
           variant: "destructive",
         });
         return;
@@ -202,15 +202,15 @@ const Rewards = () => {
       setRedeemedRewards((prev) => [newRedemption, ...prev]);
 
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: 150,
+        spread: 80,
         origin: { y: 0.6 },
-        colors: ["#F58529", "#DD2A7B", "#8134AF", "#FEDA77"],
+        colors: ["#F58529", "#DD2A7B", "#8134AF", "#FEDA77", "#FFD700"],
       });
 
       toast({
-        title: "הפרס מומש בהצלחה! 🎉",
-        description: `הקוד שלך: ${code}`,
+        title: "מזל טוב! הפרס מומש 🎉",
+        description: `קוד המימוש שלך: ${code}`,
       });
 
       setShowRedeemDialog(false);
@@ -219,8 +219,8 @@ const Rewards = () => {
     } catch (error) {
       console.error('Error redeeming reward:', error);
       toast({
-        title: "שגיאה במימוש",
-        description: "נא לנסות שוב",
+        title: "שגיאה במימוש הפרס",
+        description: "משהו השתבש, נסה שוב",
         variant: "destructive",
       });
       setShowRedeemDialog(false);
