@@ -33,7 +33,7 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCB045]"
+            className="absolute inset-0 bg-gradient-to-br from-petid-blue via-petid-gold to-petid-blue-dark"
           >
             {/* Animated background circles */}
             {[...Array(6)].map((_, i) => (

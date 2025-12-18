@@ -237,7 +237,7 @@ const BottomNav = () => {
         onClick={() => setCreatePostOpen(true)}
         whileTap={{ scale: 0.9 }}
         whileHover={{ scale: 1.05 }}
-        className="fixed bottom-24 left-4 z-40 w-14 h-14 bg-gradient-instagram rounded-2xl flex items-center justify-center shadow-xl shadow-instagram/30 hover:shadow-2xl hover:shadow-instagram/40 transition-shadow duration-300"
+        className="fixed bottom-24 left-4 z-40 w-14 h-14 bg-gradient-petid rounded-2xl flex items-center justify-center shadow-xl shadow-petid-blue/30 hover:shadow-2xl hover:shadow-petid-blue/40 transition-shadow duration-300"
         aria-label="יצירת פוסט חדש"
       >
         <Camera className="w-6 h-6 text-white" strokeWidth={2} />

@@ -401,7 +401,7 @@ const AddPet = () => {
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="bg-white rounded-3xl p-8 max-w-sm w-full space-y-6 shadow-2xl"
           >
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#0095F6] to-[#833AB4] rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-petid-blue to-petid-gold rounded-full flex items-center justify-center">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-900 text-center">
@@ -409,16 +409,16 @@ const AddPet = () => {
             </h3>
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#0095F6]/10 flex items-center justify-center">
-                  <ArrowLeft className="w-5 h-5 text-[#0095F6]" />
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-petid-blue/10 flex items-center justify-center">
+                  <ArrowLeft className="w-5 h-5 text-petid-blue" />
                 </div>
                 <p className="text-gray-600 text-sm">
                   Swipe <span className="font-semibold text-gray-900">right</span> to go back
                 </p>
               </div>
               <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#0095F6]/10 flex items-center justify-center">
-                  <ArrowRight className="w-5 h-5 text-[#0095F6]" />
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-petid-blue/10 flex items-center justify-center">
+                  <ArrowRight className="w-5 h-5 text-petid-blue" />
                 </div>
                 <p className="text-gray-600 text-sm">
                   Swipe <span className="font-semibold text-gray-900">left</span> to continue
@@ -502,14 +502,14 @@ const AddPet = () => {
                         width: step < currentStep ? '100%' : step === currentStep ? '50%' : '0%' 
                       }}
                       transition={{ duration: 0.5, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-[#0095F6] to-[#833AB4] rounded-full"
+                      className="h-full bg-gradient-to-r from-petid-blue to-petid-gold rounded-full"
                     />
                   </div>
                   <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                     step < currentStep 
-                      ? 'bg-gradient-to-r from-[#0095F6] to-[#833AB4] text-white scale-90' 
+                      ? 'bg-gradient-to-r from-petid-blue to-petid-gold text-white scale-90' 
                       : step === currentStep 
-                        ? 'bg-white border-2 border-[#0095F6] text-[#0095F6] scale-110 shadow-lg' 
+                        ? 'bg-white border-2 border-petid-blue text-petid-blue scale-110 shadow-lg'
                         : 'bg-gray-100 text-gray-400'
                   }`}>
                     {step < currentStep ? '✓' : step}
@@ -610,7 +610,7 @@ const AddPet = () => {
                       <div className="flex flex-col items-center gap-4">
                         {imagePreview ? (
                           <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-[#0095F6] to-[#833AB4] rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                            <div className="absolute -inset-1 bg-gradient-to-r from-petid-blue to-petid-gold rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
                             <img src={imagePreview} alt="Preview" className="relative w-28 h-28 rounded-full object-cover ring-4 ring-white shadow-xl" />
                             {breedDetecting && (
                               <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">

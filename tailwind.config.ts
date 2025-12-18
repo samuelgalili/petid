@@ -140,8 +140,10 @@ export default {
 			petid: {
 				blue: 'hsl(var(--petid-blue))',
 				'blue-light': 'hsl(var(--petid-blue-light))',
+				'blue-dark': 'hsl(var(--petid-blue-dark))',
 				gold: 'hsl(var(--petid-gold))',
 				'gold-light': 'hsl(var(--petid-gold-light))',
+				'gold-dark': 'hsl(var(--petid-gold-dark))',
 				teal: 'hsl(var(--petid-teal))'
 			},
 			instagram: {

@@ -186,10 +186,10 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               >
                 <Button
                   variant="outline"
-                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-instagram-pink hover:bg-gradient-instagram-soft rounded-2xl transition-all"
+                  className="w-full h-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300 hover:border-petid-blue hover:bg-petid-blue/5 rounded-2xl transition-all"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <div className="w-16 h-16 bg-gradient-instagram rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 bg-gradient-petid rounded-full flex items-center justify-center">
                     <ImageIcon className="w-8 h-8 text-white" strokeWidth={1.5} />
                   </div>
                   <span className="text-sm font-bold text-gray-700">בחר מהגלריה</span>

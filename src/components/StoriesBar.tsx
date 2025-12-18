@@ -144,7 +144,7 @@ export const StoriesBar = () => {
             <div className="relative">
               <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
                 currentUserHasStory 
-                  ? "bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]"
+                  ? "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
                   : ""
               }`}>
                 <div className="w-full h-full rounded-full bg-white p-[2px]">
@@ -157,7 +157,7 @@ export const StoriesBar = () => {
                 </div>
               </div>
               {!currentUserHasStory && (
-                <div className="absolute bottom-0 right-0 w-[22px] h-[22px] bg-[#0095F6] rounded-full flex items-center justify-center border-[2px] border-white">
+                <div className="absolute bottom-0 right-0 w-[22px] h-[22px] bg-petid-blue rounded-full flex items-center justify-center border-[2px] border-white">
                   <Plus className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
                 </div>
               )}
@@ -183,7 +183,7 @@ export const StoriesBar = () => {
                 <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
                   storyUser.has_viewed 
                     ? "bg-gray-300" 
-                    : "bg-gradient-to-tr from-[#FEDA77] via-[#F58529] via-[#DD2A7B] to-[#8134AF]"
+                    : "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
                 }`}>
                   <div className="w-full h-full rounded-full bg-white p-[2px]">
                     <Avatar className="w-full h-full">

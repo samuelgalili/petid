@@ -181,9 +181,9 @@ const Chat = () => {
           </button>
           
           <div className="flex items-center gap-3">
-            {/* AI Avatar with Instagram gradient ring */}
+            {/* AI Avatar with PetID gradient ring */}
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px]">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-blue p-[2px]">
                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
                   <span className="text-lg">🐾</span>
                 </div>
@@ -350,7 +350,7 @@ const Chat = () => {
                 animate={{ scale: 1 }}
                 onClick={handleSend}
                 disabled={isLoading}
-                className="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-[#405DE6] via-[#5851DB] to-[#833AB4] rounded-full text-white disabled:opacity-50"
+                className="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue rounded-full text-white disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
               </motion.button>

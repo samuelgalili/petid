@@ -101,8 +101,8 @@ export function SwipeableDocumentCard({
         style={{ x }}
         className="group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-transparent hover:shadow-xl transition-all duration-300 cursor-grab active:cursor-grabbing"
       >
-        {/* Instagram-style gradient border on hover */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
+        {/* PetID gradient border on hover */}
+        <div className="absolute inset-0 bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
         <div className="absolute inset-[2px] bg-white rounded-[14px] pointer-events-none" />
         
         <div className="relative p-4">
@@ -155,7 +155,7 @@ export function SwipeableDocumentCard({
                         e.stopPropagation();
                         onDownload(doc.file_url, doc.file_name);
                       }}
-                      className="w-9 h-9 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-[#F58529] hover:via-[#DD2A7B] hover:to-[#8134AF] flex items-center justify-center transition-all duration-200 group/btn"
+                      className="w-9 h-9 rounded-full bg-gray-50 hover:bg-gradient-to-r hover:from-petid-blue hover:via-petid-gold hover:to-petid-blue flex items-center justify-center transition-all duration-200 group/btn"
                     >
                       <Download className="w-4 h-4 text-gray-600 group-hover/btn:text-white transition-colors" />
                     </button>

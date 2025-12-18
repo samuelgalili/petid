@@ -355,10 +355,10 @@ const AdminAdoption = () => {
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="pets" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#F58529] data-[state=active]:via-[#DD2A7B] data-[state=active]:to-[#8134AF] data-[state=active]:text-white">
+            <TabsTrigger value="pets" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-petid-blue data-[state=active]:via-petid-gold data-[state=active]:to-petid-blue data-[state=active]:text-white">
               חיות לאימוץ ({pets.length})
             </TabsTrigger>
-            <TabsTrigger value="requests" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#F58529] data-[state=active]:via-[#DD2A7B] data-[state=active]:to-[#8134AF] data-[state=active]:text-white relative">
+            <TabsTrigger value="requests" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-petid-blue data-[state=active]:via-petid-gold data-[state=active]:to-petid-blue data-[state=active]:text-white relative">
               בקשות אימוץ ({requests.length})
               {pendingRequestsCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -373,7 +373,7 @@ const AdminAdoption = () => {
             <div className="flex items-center justify-end mb-4">
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={openNewPetDialog} className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white">
+                  <Button onClick={openNewPetDialog} className="bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue hover:opacity-90 text-white">
                     <Plus className="w-4 h-4 ml-2" />
                     הוסף חיה
                   </Button>
@@ -579,7 +579,7 @@ const AdminAdoption = () => {
                       </div>
 
                       <div className="flex gap-2 pt-4">
-                        <Button type="submit" className="flex-1 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white">
+                        <Button type="submit" className="flex-1 bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue hover:opacity-90 text-white">
                           שמור
                         </Button>
                         <Button

@@ -17,7 +17,7 @@ export const PetidLogo = ({
     }}>
         <div className="relative">
           {/* Gradient glow behind logo */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] opacity-20 blur-xl rounded-full" />
+          <div className="absolute inset-0 bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue opacity-25 blur-xl rounded-full" />
           <img 
             src={petidLogo} 
             alt="Petid Logo" 
