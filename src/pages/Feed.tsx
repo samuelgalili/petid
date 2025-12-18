@@ -663,18 +663,33 @@ const Feed = () => {
               <Menu className="w-6 h-6 text-[#262626] hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
             </motion.button>
             {/* Logo with PetID gradient and animation */}
-            <motion.h1 
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="text-[26px] font-bold cursor-pointer bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue bg-clip-text text-transparent font-sans tracking-tight"
+            <motion.div
+              className="relative cursor-pointer"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => {
                 setPage(0);
                 setHasMore(true);
                 fetchPosts(0, false);
               }}
             >
-              Petid
-            </motion.h1>
+              {/* Glow effect behind logo */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-petid-blue/30 via-petid-gold/40 to-petid-blue/30 blur-lg rounded-full"
+                animate={{ 
+                  opacity: [0.4, 0.7, 0.4],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              <h1 className="relative text-[28px] font-black cursor-pointer bg-gradient-to-r from-petid-blue via-petid-gold via-55% to-petid-blue-dark bg-clip-text text-transparent font-jakarta tracking-tight drop-shadow-sm">
+                Petid
+              </h1>
+            </motion.div>
           </div>
           
           {/* Right icons with Instagram colors */}
