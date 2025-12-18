@@ -176,7 +176,16 @@ const Rewards = () => {
 
       await deductPoints(selectedReward.points);
 
-      const code = `${selectedReward.type.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const typeMap: Record<string, string> = {
+        discount: 'הנחה',
+        voucher: 'שובר',
+        freebie: 'מתנה',
+        premium: 'פרימיום',
+        product: 'מוצר',
+        service: 'שירות',
+      };
+      const hebrewType = typeMap[selectedReward.type] || 'פרס';
+      const code = `${hebrewType}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
       const { error } = await supabase
