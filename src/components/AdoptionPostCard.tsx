@@ -96,46 +96,39 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
       viewport={{ once: true, margin: "-50px" }}
       className="bg-white border-b border-gray-100 overflow-hidden"
     >
-      {/* Header with Instagram gradient accent */}
+      {/* Header - Clean minimal design */}
       <motion.div 
         variants={headerVariants}
-        className="flex items-center justify-between p-3"
+        className="flex items-center justify-between px-4 py-3"
       >
         <div className="flex items-center gap-3">
-          {/* Instagram-style gradient ring */}
+          {/* Avatar with subtle gradient ring */}
           <motion.div 
             className="relative"
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring" as const, stiffness: 200, delay: 0.1 }}
           >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark p-[2px]">
-              <div className="w-full h-full rounded-full bg-white" />
-            </div>
-            <Avatar className="w-10 h-10 relative border-2 border-white">
+            <div className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-petid-blue to-petid-gold opacity-60" />
+            <Avatar className="w-9 h-9 relative ring-2 ring-white">
               <AvatarImage 
                 src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-adoption" 
                 alt="Petid אימוץ" 
               />
-              <AvatarFallback className="bg-gradient-to-tr from-petid-blue to-petid-gold text-white">
+              <AvatarFallback className="bg-gradient-to-tr from-petid-blue to-petid-gold text-white text-sm">
                 🐾
               </AvatarFallback>
             </Avatar>
           </motion.div>
-          <div className="text-right">
+          
+          <div className="text-right space-y-0.5">
             <div className="flex items-center gap-2">
-              <p className="font-semibold text-sm text-[#262626]">Petid אימוץ</p>
-              <motion.div
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Badge className="bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue text-white text-[10px] px-2 py-0 h-5 border-0">
-                  אימוץ
-                </Badge>
-              </motion.div>
+              <p className="font-semibold text-[13px] text-foreground">Petid אימוץ</p>
+              <Badge variant="secondary" className="bg-petid-gold/15 text-petid-blue-dark text-[10px] px-1.5 py-0 h-4 border-0 font-medium">
+                אימוץ
+              </Badge>
             </div>
-            <p className="text-xs text-[#8E8E8E]">
+            <p className="text-[11px] text-muted-foreground">
               {pet.created_at ? getTimeAgo(pet.created_at) : "לאחרונה"}
             </p>
           </div>
