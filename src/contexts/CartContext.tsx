@@ -18,6 +18,7 @@ interface CartContextType {
   clearCart: () => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
+  cartShake: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const savedCart = localStorage.getItem("petid-cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
+  const [cartShake, setCartShake] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("petid-cart", JSON.stringify(items));
@@ -48,6 +50,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       return [...prevItems, { ...item, quantity: item.quantity || 1 }];
     });
+    
+    // Trigger shake animation
+    setCartShake(true);
+    setTimeout(() => setCartShake(false), 500);
   };
 
   const removeFromCart = (id: string) => {
@@ -89,6 +95,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         clearCart,
         getTotalItems,
         getSubtotal,
+        cartShake,
       }}
     >
       {children}

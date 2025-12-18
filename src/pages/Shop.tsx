@@ -13,7 +13,7 @@ import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/com
 
 const Shop = () => {
   const navigate = useNavigate();
-  const { addToCart, getTotalItems } = useCart();
+  const { addToCart, getTotalItems, cartShake } = useCart();
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("הכל");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -396,12 +396,27 @@ const Shop = () => {
               onClick={() => navigate('/cart')}
               className="relative"
             >
-              <ShoppingCart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
-              {getTotalItems() > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-[#ED4956] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {getTotalItems()}
-                </span>
-              )}
+              <motion.div
+                animate={cartShake ? {
+                  rotate: [0, -15, 15, -10, 10, -5, 5, 0],
+                  scale: [1, 1.2, 1.1, 1.15, 1.1, 1.05, 1],
+                } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                <ShoppingCart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              </motion.div>
+              <AnimatePresence>
+                {getTotalItems() > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-1.5 -right-1.5 bg-[#ED4956] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
+                  >
+                    {getTotalItems()}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
           </div>
           
