@@ -169,15 +169,15 @@ const Chat = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-24" dir="rtl">
       {/* Instagram-style Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
+      <div className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <button 
             onClick={() => navigate(-1)}
             className="w-10 h-10 flex items-center justify-center"
           >
-            <ChevronRight className="w-6 h-6 text-gray-900" />
+            <ChevronRight className="w-6 h-6 text-foreground" />
           </button>
           
           <div className="flex items-center gap-3">
@@ -191,8 +191,8 @@ const Chat = () => {
               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
             </div>
             <div className="text-right">
-              <h1 className="text-base font-bold text-gray-900 font-jakarta">Petid AI</h1>
-              <p className="text-xs text-green-500 font-jakarta">פעיל עכשיו</p>
+              <h1 className="text-base font-bold text-foreground font-jakarta">Petid AI</h1>
+              <p className="text-xs text-success font-jakarta">פעיל עכשיו</p>
             </div>
           </div>
           
@@ -214,13 +214,13 @@ const Chat = () => {
                 className="flex flex-col items-center justify-center h-full py-8"
               >
                 {/* AI Profile Card */}
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[3px] mb-4">
-                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-gradient-instagram p-[3px] mb-4">
+                  <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
                     <span className="text-4xl">🐾</span>
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 font-jakarta mb-1">Petid AI</h2>
-                <p className="text-sm text-gray-500 font-jakarta mb-6">העוזר החכם לבעלי חיות מחמד</p>
+                <h2 className="text-xl font-bold text-foreground font-jakarta mb-1">Petid AI</h2>
+                <p className="text-sm text-muted-foreground font-jakarta mb-6">העוזר החכם לבעלי חיות מחמד</p>
                 
                 {/* Example Questions Grid */}
                 <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
@@ -231,10 +231,10 @@ const Chat = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                       onClick={() => setInput(q.text)}
-                      className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-colors text-right"
+                      className="flex items-center gap-2 px-4 py-3 bg-secondary hover:bg-secondary/80 rounded-2xl transition-colors text-right"
                     >
                       <span className="text-xl">{q.icon}</span>
-                      <span className="text-sm text-gray-700 font-jakarta">{q.text}</span>
+                      <span className="text-sm text-foreground font-jakarta">{q.text}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -252,8 +252,8 @@ const Chat = () => {
                 <div className={`flex items-end gap-2 max-w-[80%] ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar */}
                   {message.role === "assistant" && (
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[1.5px]">
-                      <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-instagram p-[1.5px]">
+                      <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
                         <span className="text-xs">🐾</span>
                       </div>
                     </div>
@@ -263,8 +263,8 @@ const Chat = () => {
                   <div
                     className={`px-4 py-2.5 rounded-3xl ${
                       message.role === "user"
-                        ? "bg-gradient-to-r from-[#405DE6] via-[#5851DB] to-[#833AB4] text-white rounded-br-lg"
-                        : "bg-gray-100 text-gray-900 rounded-bl-lg"
+                        ? "bg-gradient-instagram text-white rounded-br-lg"
+                        : "bg-secondary text-foreground rounded-bl-lg"
                     }`}
                   >
                     <p className="text-[15px] leading-relaxed font-jakarta whitespace-pre-wrap">
@@ -283,25 +283,25 @@ const Chat = () => {
                 className="flex justify-end mb-3"
               >
                 <div className="flex items-end gap-2 flex-row-reverse">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[1.5px]">
-                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-instagram p-[1.5px]">
+                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
                       <span className="text-xs">🐾</span>
                     </div>
                   </div>
-                  <div className="px-4 py-3 bg-gray-100 rounded-3xl rounded-bl-lg">
+                  <div className="px-4 py-3 bg-secondary rounded-3xl rounded-bl-lg">
                     <div className="flex gap-1">
                       <motion.div
-                        className="w-2 h-2 bg-gray-400 rounded-full"
+                        className="w-2 h-2 bg-muted rounded-full"
                         animate={{ y: [0, -5, 0] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
                       />
                       <motion.div
-                        className="w-2 h-2 bg-gray-400 rounded-full"
+                        className="w-2 h-2 bg-muted rounded-full"
                         animate={{ y: [0, -5, 0] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
                       />
                       <motion.div
-                        className="w-2 h-2 bg-gray-400 rounded-full"
+                        className="w-2 h-2 bg-muted rounded-full"
                         animate={{ y: [0, -5, 0] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
                       />
@@ -315,26 +315,26 @@ const Chat = () => {
         </div>
 
         {/* Instagram-style Input Area */}
-        <div className="px-4 py-3 bg-white border-t border-gray-100">
+        <div className="px-4 py-3 bg-card border-t border-border">
           <div className="flex items-center gap-2">
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
-              <button className="w-9 h-9 flex items-center justify-center text-[#405DE6] hover:bg-gray-50 rounded-full transition-colors">
+              <button className="w-9 h-9 flex items-center justify-center text-instagram-blue hover:bg-secondary rounded-full transition-colors">
                 <Image className="w-5 h-5" />
               </button>
-              <button className="w-9 h-9 flex items-center justify-center text-[#405DE6] hover:bg-gray-50 rounded-full transition-colors">
+              <button className="w-9 h-9 flex items-center justify-center text-instagram-blue hover:bg-secondary rounded-full transition-colors">
                 <Mic className="w-5 h-5" />
               </button>
             </div>
             
             {/* Input Field */}
-            <div className="flex-1 flex items-center bg-gray-50 rounded-full border border-gray-200 px-4 py-2">
+            <div className="flex-1 flex items-center bg-secondary rounded-full border border-border px-4 py-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="כתוב הודעה..."
-                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-gray-400 p-0 h-auto font-jakarta"
+                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-muted-foreground p-0 h-auto font-jakarta"
                 disabled={isLoading}
                 dir="rtl"
               />
