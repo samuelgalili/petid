@@ -36,17 +36,10 @@ interface NavItemProps {
 const NavItem = ({ to, icon, isActive, label, onClick }: NavItemProps) => {
   const content = (
     <motion.div
-      whileTap={{ scale: 0.9 }}
+      whileTap={{ scale: 0.92 }}
       className="relative"
     >
       {icon}
-      {isActive && (
-        <motion.div
-          layoutId="nav-indicator"
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"
-          initial={false}
-        />
-      )}
     </motion.div>
   );
 
@@ -121,20 +114,28 @@ const BottomNav = () => {
   return (
     <>
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
         role="navigation"
         aria-label="ניווט ראשי"
       >
-        <div className="flex justify-around items-center h-14 max-w-lg mx-auto px-1">
+        <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
           {/* Home */}
           <NavItem
             to="/"
             icon={
-              <Home 
-                className="w-6 h-6 text-foreground"
-                strokeWidth={isActive("/") ? 2.5 : 1.5}
-                fill={isActive("/") ? "currentColor" : "none"}
-              />
+              <div className={cn(
+                "p-2 rounded-xl transition-all duration-200",
+                isActive("/") && "bg-primary/10"
+              )}>
+                <Home 
+                  className={cn(
+                    "w-6 h-6 transition-colors",
+                    isActive("/") ? "text-primary" : "text-muted-foreground"
+                  )}
+                  strokeWidth={isActive("/") ? 2.5 : 1.5}
+                  fill={isActive("/") ? "currentColor" : "none"}
+                />
+              </div>
             }
             isActive={isActive("/")}
             label="בית"
@@ -144,11 +145,19 @@ const BottomNav = () => {
           <NavItem
             to="/explore"
             icon={
-              <Compass 
-                className="w-6 h-6 text-foreground"
-                strokeWidth={isActive("/explore") ? 2.5 : 1.5}
-                fill={isActive("/explore") ? "currentColor" : "none"}
-              />
+              <div className={cn(
+                "p-2 rounded-xl transition-all duration-200",
+                isActive("/explore") && "bg-primary/10"
+              )}>
+                <Compass 
+                  className={cn(
+                    "w-6 h-6 transition-colors",
+                    isActive("/explore") ? "text-primary" : "text-muted-foreground"
+                  )}
+                  strokeWidth={isActive("/explore") ? 2.5 : 1.5}
+                  fill={isActive("/explore") ? "currentColor" : "none"}
+                />
+              </div>
             }
             isActive={isActive("/explore")}
             label="חיפוש"
@@ -158,8 +167,8 @@ const BottomNav = () => {
           <NavItem
             onClick={() => setCategoriesOpen(true)}
             icon={
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-[#E3A700] flex items-center justify-center">
-                <Plus className="w-5 h-5 text-primary-foreground" strokeWidth={2.5} />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary via-[#E3A700] to-primary flex items-center justify-center shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105">
+                <Plus className="w-6 h-6 text-primary-foreground" strokeWidth={2.5} />
               </div>
             }
             isActive={false}
@@ -170,11 +179,19 @@ const BottomNav = () => {
           <NavItem
             to="/shop"
             icon={
-              <ShoppingBag 
-                className="w-6 h-6 text-foreground"
-                strokeWidth={isActive("/shop") ? 2.5 : 1.5}
-                fill={isActive("/shop") ? "currentColor" : "none"}
-              />
+              <div className={cn(
+                "p-2 rounded-xl transition-all duration-200",
+                isActive("/shop") && "bg-primary/10"
+              )}>
+                <ShoppingBag 
+                  className={cn(
+                    "w-6 h-6 transition-colors",
+                    isActive("/shop") ? "text-primary" : "text-muted-foreground"
+                  )}
+                  strokeWidth={isActive("/shop") ? 2.5 : 1.5}
+                  fill={isActive("/shop") ? "currentColor" : "none"}
+                />
+              </div>
             }
             isActive={isActive("/shop")}
             label="חנות"
@@ -188,20 +205,22 @@ const BottomNav = () => {
           >
             <motion.div whileTap={{ scale: 0.9 }} className="relative">
               <div className={cn(
-                "w-6 h-6 rounded-full overflow-hidden transition-all",
-                isActive("/profile") && "ring-2 ring-primary ring-offset-1 ring-offset-background"
+                "w-8 h-8 rounded-xl overflow-hidden transition-all duration-200",
+                isActive("/profile") 
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background" 
+                  : "ring-1 ring-border"
               )}>
                 <Avatar className="w-full h-full">
-                  <AvatarImage src={userAvatar} />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
-                    <User className="w-3.5 h-3.5" />
+                  <AvatarImage src={userAvatar} className="object-cover" />
+                  <AvatarFallback className="bg-secondary text-muted-foreground text-[10px]">
+                    <User className="w-4 h-4" />
                   </AvatarFallback>
                 </Avatar>
               </div>
               {isActive("/profile") && (
                 <motion.div
                   layoutId="nav-indicator"
-                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary"
                   initial={false}
                 />
               )}
@@ -210,7 +229,7 @@ const BottomNav = () => {
         </div>
         
         {/* Safe area for notched devices */}
-        <div className="h-[env(safe-area-inset-bottom)] bg-background" />
+        <div className="h-[env(safe-area-inset-bottom)] bg-background/80" />
       </nav>
 
       {/* Floating Action Button for Create Post */}
@@ -218,10 +237,10 @@ const BottomNav = () => {
         onClick={() => setCreatePostOpen(true)}
         whileTap={{ scale: 0.9 }}
         whileHover={{ scale: 1.05 }}
-        className="fixed bottom-20 left-4 z-40 w-12 h-12 bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] rounded-full flex items-center justify-center shadow-lg"
+        className="fixed bottom-24 left-4 z-40 w-14 h-14 bg-gradient-instagram rounded-2xl flex items-center justify-center shadow-xl shadow-instagram/30 hover:shadow-2xl hover:shadow-instagram/40 transition-shadow duration-300"
         aria-label="יצירת פוסט חדש"
       >
-        <Camera className="w-5 h-5 text-white" strokeWidth={2} />
+        <Camera className="w-6 h-6 text-white" strokeWidth={2} />
       </motion.button>
 
       {/* Create Post Dialog */}
