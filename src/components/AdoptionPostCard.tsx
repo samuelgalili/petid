@@ -340,9 +340,16 @@ export const AdoptionPostCard = ({
       {/* Instagram Sponsored-style CTA Bar - Adoption Colors */}
       <motion.button
         onClick={handleAdoptClick}
-        className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3 group"
+        className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3 group relative overflow-hidden"
         whileTap={{ scale: 0.99 }}
       >
+        {/* Shimmer effect */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
+          initial={{ x: "-100%" }}
+          animate={{ x: "200%" }}
+          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
+        />
         <div className="flex items-center gap-2">
           <motion.div
             className="flex items-center justify-center"

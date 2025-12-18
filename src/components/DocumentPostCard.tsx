@@ -261,9 +261,16 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
       {/* Instagram Sponsored-style CTA Bar - Document Colors */}
       <motion.button
         onClick={handleOpenDocument}
-        className={`w-full bg-gradient-to-r ${docConfig.gradient} hover:opacity-90 transition-all flex items-center justify-between px-4 py-3 group`}
+        className={`w-full bg-gradient-to-r ${docConfig.gradient} hover:opacity-90 transition-all flex items-center justify-between px-4 py-3 group relative overflow-hidden`}
         whileTap={{ scale: 0.99 }}
       >
+        {/* Shimmer effect */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent -skew-x-12"
+          initial={{ x: "-100%" }}
+          animate={{ x: "200%" }}
+          transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
+        />
         <div className="flex items-center gap-2">
           <motion.div
             className="flex items-center justify-center"
