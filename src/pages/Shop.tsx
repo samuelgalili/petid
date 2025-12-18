@@ -404,40 +404,34 @@ const Shop = () => {
           {/* Top Row: Title + Cart */}
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-bold text-foreground">חנות</h1>
-            <button 
+            <motion.button 
               ref={cartIconRef}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/cart')}
-              className="relative"
+              className={`active:opacity-50 transition-opacity p-1 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
+              onAnimationComplete={() => {
+                if (cartIconRef.current) {
+                  const rect = cartIconRef.current.getBoundingClientRect();
+                  setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                }
+              }}
             >
-              <motion.div
-                animate={cartShake ? {
-                  rotate: [0, -15, 15, -10, 10, -5, 5, 0],
-                  scale: [1, 1.2, 1.1, 1.15, 1.1, 1.05, 1],
-                } : {}}
-                transition={{ duration: 0.5 }}
-                onAnimationComplete={() => {
-                  if (cartIconRef.current) {
-                    const rect = cartIconRef.current.getBoundingClientRect();
-                    setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                  }
-                }}
-                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
-              >
-                <ShoppingCart className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-              </motion.div>
+              <ShoppingCart className="w-6 h-6 text-petid-gold" strokeWidth={1.5} />
               <AnimatePresence>
                 {getTotalItems() > 0 && (
-                  <motion.span
+                  <motion.span 
+                    className="absolute -top-1 -right-1 bg-petid-gold text-petid-blue-dark text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    transition={{ type: "spring", stiffness: 500 }}
                   >
                     {getTotalItems()}
                   </motion.span>
                 )}
               </AnimatePresence>
-            </button>
+            </motion.button>
           </div>
           
           {/* Clean Search Bar */}
