@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Calendar, Ruler, PawPrint, ShoppingBag, BookOpen, Sparkles } from "lucide-react";
+import { Heart, Calendar, Ruler, PawPrint, ShoppingBag, BookOpen, Sparkles, ChevronLeft } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -337,7 +337,17 @@ export const AdoptionPostCard = ({
         </motion.div>
       </motion.div>
 
-      {/* Instagram-style Action Bar - Below Image */}
+      {/* Instagram Sponsored-style CTA Bar */}
+      <motion.button
+        onClick={handleAdoptClick}
+        className="w-full bg-[#1A1A1A] hover:bg-[#262626] transition-colors flex items-center justify-between px-4 py-3"
+        whileTap={{ scale: 0.99 }}
+      >
+        <span className="text-white text-[15px] font-medium">אמץ עכשיו</span>
+        <ChevronLeft className="w-5 h-5 text-white" />
+      </motion.button>
+
+      {/* Instagram-style Action Bar - Below CTA */}
       <div className="px-3 pt-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
@@ -373,12 +383,11 @@ export const AdoptionPostCard = ({
           </div>
           
           <motion.button 
-            onClick={handleAdoptClick}
-            className="bg-gradient-to-r from-petid-blue to-petid-gold text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow-md"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 0.8 }}
           >
-            אמץ אותי 🐾
+            <BookOpen className="w-6 h-6" strokeWidth={1.5} />
           </motion.button>
         </div>
       </div>
