@@ -77,7 +77,7 @@ export const ProductCard = memo(({
       transition={{ delay: 0.1 + index * 0.05 }}
       className="relative p-[1.5px] rounded-2xl cursor-pointer group"
       style={{
-        background: 'linear-gradient(135deg, #93C5FD, #FBBF24, #60A5FA)'
+        background: 'linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45)'
       }}
       onClick={onClick}
     >
@@ -88,7 +88,7 @@ export const ProductCard = memo(({
             <div 
               className="absolute top-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10"
               style={{
-                background: 'linear-gradient(135deg, #F59E0B, #F97316)'
+                background: 'linear-gradient(135deg, #E1306C, #F77737)'
               }}
             >
               מבצע
@@ -108,7 +108,14 @@ export const ProductCard = memo(({
           <h3 className="text-xs font-bold text-gray-800 font-jakarta truncate mb-1">{title}</h3>
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-1">
-              <span className="text-base font-black bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent font-jakarta">{price}</span>
+              <span 
+                className="text-base font-black bg-clip-text text-transparent font-jakarta"
+                style={{
+                  backgroundImage: 'linear-gradient(135deg, #E1306C, #F77737)'
+                }}
+              >
+                {price}
+              </span>
               {originalPrice && (
                 <span className="text-[10px] text-gray-400 line-through">{originalPrice}</span>
               )}
@@ -121,7 +128,7 @@ export const ProductCard = memo(({
                 }}
                 className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
                 style={{
-                  background: 'linear-gradient(135deg, #60A5FA, #3B82F6)'
+                  background: 'linear-gradient(135deg, #833AB4, #E1306C)'
                 }}
               >
                 <Plus className="w-4 h-4 text-white" strokeWidth={2.5} />
@@ -161,9 +168,9 @@ export const PromoCard = memo(({
   onClick
 }: PromoCardProps) => {
   const gradients = {
-    yellow: 'linear-gradient(135deg, #FBBF24, #F59E0B)',
-    red: 'linear-gradient(135deg, #F97316, #EA580C)',
-    blue: 'linear-gradient(135deg, #60A5FA, #3B82F6)'
+    yellow: 'linear-gradient(135deg, #F77737, #FCAF45)',
+    red: 'linear-gradient(135deg, #E1306C, #F77737)',
+    blue: 'linear-gradient(135deg, #833AB4, #E1306C)'
   };
 
   return (
@@ -173,7 +180,7 @@ export const PromoCard = memo(({
       transition={{ delay: 0.2 + index * 0.1 }}
       className="relative p-[1.5px] rounded-2xl cursor-pointer group row-span-2"
       style={{
-        background: gradients[bgColor]
+        background: 'linear-gradient(135deg, #833AB4, #E1306C, #F77737, #FCAF45)'
       }}
       onClick={onClick}
     >
