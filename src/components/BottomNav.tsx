@@ -125,12 +125,12 @@ const BottomNav = () => {
             icon={
               <div className={cn(
                 "p-2 rounded-xl transition-all duration-200",
-                isActive("/") && "bg-primary/10"
+                isActive("/") && "bg-primary"
               )}>
                 <Home 
                   className={cn(
                     "w-6 h-6 transition-colors",
-                    isActive("/") ? "text-primary" : "text-muted-foreground"
+                    isActive("/") ? "text-white" : "text-muted-foreground"
                   )}
                   strokeWidth={isActive("/") ? 2.5 : 1.5}
                   fill={isActive("/") ? "currentColor" : "none"}
@@ -147,12 +147,12 @@ const BottomNav = () => {
             icon={
               <div className={cn(
                 "p-2 rounded-xl transition-all duration-200",
-                isActive("/explore") && "bg-primary/10"
+                isActive("/explore") && "bg-primary"
               )}>
                 <Compass 
                   className={cn(
                     "w-6 h-6 transition-colors",
-                    isActive("/explore") ? "text-primary" : "text-muted-foreground"
+                    isActive("/explore") ? "text-white" : "text-muted-foreground"
                   )}
                   strokeWidth={isActive("/explore") ? 2.5 : 1.5}
                   fill={isActive("/explore") ? "currentColor" : "none"}
@@ -181,12 +181,12 @@ const BottomNav = () => {
             icon={
               <div className={cn(
                 "p-2 rounded-xl transition-all duration-200",
-                isActive("/shop") && "bg-primary/10"
+                isActive("/shop") && "bg-primary"
               )}>
                 <ShoppingBag 
                   className={cn(
                     "w-6 h-6 transition-colors",
-                    isActive("/shop") ? "text-primary" : "text-muted-foreground"
+                    isActive("/shop") ? "text-white" : "text-muted-foreground"
                   )}
                   strokeWidth={isActive("/shop") ? 2.5 : 1.5}
                   fill={isActive("/shop") ? "currentColor" : "none"}
