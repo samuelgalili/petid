@@ -709,31 +709,34 @@ const Shop = () => {
 
       {/* Product Details Sheet */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-background p-0 overflow-hidden" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-white p-0 overflow-hidden" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
             <div className="flex flex-col h-full" dir="rtl">
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-2">
-                <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+                <div 
+                  className="w-10 h-1 rounded-full"
+                  style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
+                />
               </div>
               
               {/* Top Actions */}
               <div className="flex items-center justify-between px-4 pb-3">
                 <button
                   onClick={() => setSelectedProduct(null)}
-                  className="w-9 h-9 rounded-full bg-muted flex items-center justify-center"
+                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
                 >
-                  <ChevronLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                  <ChevronLeft className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
                 </button>
                 
                 <button
                   onClick={() => toggleFavorite(selectedProduct.id)}
-                  className="w-9 h-9 rounded-full bg-muted flex items-center justify-center"
+                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
                 >
                   <Bookmark 
-                    className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-foreground" : ""} text-foreground`} 
+                    className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-[#1E5799] text-[#1E5799]" : "text-gray-600"}`} 
                     strokeWidth={1.5} 
                   />
                 </button>
@@ -749,14 +752,17 @@ const Shop = () => {
                         <CarouselItem key={index}>
                           <div 
                             ref={index === 0 ? productImageRef : undefined}
-                            className="w-full aspect-square bg-muted rounded-xl overflow-hidden"
+                            className="relative p-[2px] rounded-xl"
+                            style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
                           >
-                            <OptimizedImage
-                              src={img}
-                              alt={selectedProduct.name}
-                              className="w-full h-full"
-                              objectFit="cover"
-                            />
+                            <div className="w-full aspect-square bg-white rounded-xl overflow-hidden">
+                              <OptimizedImage
+                                src={img}
+                                alt={selectedProduct.name}
+                                className="w-full h-full"
+                                objectFit="cover"
+                              />
+                            </div>
                           </div>
                         </CarouselItem>
                       ))}
@@ -769,7 +775,11 @@ const Shop = () => {
                       {(selectedProduct.images || [selectedProduct.image]).map((_: string, index: number) => (
                         <div
                           key={index}
-                          className={`h-1.5 rounded-full transition-all ${currentImageIndex === index ? 'w-5 bg-foreground' : 'w-1.5 bg-muted-foreground/30'}`}
+                          className="h-1.5 rounded-full transition-all"
+                          style={currentImageIndex === index 
+                            ? { width: '20px', background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
+                            : { width: '6px', background: '#E5E7EB' }
+                          }
                         />
                       ))}
                     </div>
@@ -777,7 +787,10 @@ const Shop = () => {
                   
                   {/* Sale Badge */}
                   {selectedProduct.originalPrice && (
-                    <div className="absolute top-2 right-6 bg-destructive text-white px-2 py-1 rounded text-xs font-bold">
+                    <div 
+                      className="absolute top-4 right-6 text-white px-2.5 py-1 rounded-full text-xs font-bold"
+                      style={{ background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)' }}
+                    >
                       -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
                     </div>
                   )}
@@ -786,40 +799,47 @@ const Shop = () => {
                 <div className="px-4 space-y-4">
                   {/* Title & Rating */}
                   <div>
-                    <h2 className="text-lg font-bold text-foreground mb-1">{selectedProduct.name}</h2>
+                    <h2 className="text-lg font-bold text-gray-800 mb-1">{selectedProduct.name}</h2>
                     <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="text-sm font-medium text-foreground">{selectedProduct.rating}</span>
-                      <span className="text-xs text-muted-foreground">({selectedProduct.reviews} ביקורות)</span>
+                      <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
+                      <span className="text-sm font-medium text-gray-700">{selectedProduct.rating}</span>
+                      <span className="text-xs text-gray-500">({selectedProduct.reviews} ביקורות)</span>
                     </div>
                   </div>
 
                   {/* Price */}
                   <div className="flex items-end gap-2">
-                    <span className={`text-2xl font-bold ${selectedProduct.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
+                    <span 
+                      className="text-2xl font-bold bg-clip-text text-transparent"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
+                    >
                       ₪{selectedProduct.price}
                     </span>
                     {selectedProduct.originalPrice && (
-                      <span className="text-base text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
+                      <span className="text-base text-gray-400 line-through">₪{selectedProduct.originalPrice}</span>
                     )}
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm text-muted-foreground">{selectedProduct.description}</p>
+                  <p className="text-sm text-gray-600">{selectedProduct.description}</p>
 
                   {/* Size Selector */}
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-2">גודל</h3>
+                    <h3 className="text-sm font-semibold text-gray-800 mb-2">גודל</h3>
                     <div className="flex gap-2">
                       {sizes.map((size) => (
                         <button
                           key={size}
                           onClick={() => setSelectedSize(size)}
-                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
                             selectedSize === size
-                              ? "bg-foreground text-background"
-                              : "bg-muted text-foreground"
+                              ? "text-gray-800 bg-white"
+                              : "bg-gray-100 text-gray-600"
                           }`}
+                          style={selectedSize === size 
+                            ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }
+                            : {}
+                          }
                         >
                           {size}
                         </button>
@@ -829,20 +849,23 @@ const Shop = () => {
 
                   {/* Quantity */}
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-2">כמות</h3>
-                    <div className="flex items-center gap-4 bg-muted rounded-lg p-1 w-fit">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-2">כמות</h3>
+                    <div 
+                      className="flex items-center gap-4 p-1 w-fit rounded-lg"
+                      style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
+                    >
                       <button
                         onClick={decreaseQuantity}
-                        className="w-9 h-9 rounded-md bg-background flex items-center justify-center"
+                        className="w-9 h-9 rounded-md bg-gray-100 flex items-center justify-center"
                       >
-                        <Minus className="w-4 h-4 text-foreground" />
+                        <Minus className="w-4 h-4 text-gray-700" />
                       </button>
-                      <span className="text-lg font-bold text-foreground w-8 text-center">{quantity}</span>
+                      <span className="text-lg font-bold text-gray-800 w-8 text-center">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="w-9 h-9 rounded-md bg-background flex items-center justify-center"
+                        className="w-9 h-9 rounded-md bg-gray-100 flex items-center justify-center"
                       >
-                        <Plus className="w-4 h-4 text-foreground" />
+                        <Plus className="w-4 h-4 text-gray-700" />
                       </button>
                     </div>
                   </div>
@@ -852,21 +875,27 @@ const Shop = () => {
               </div>
 
               {/* Bottom Bar */}
-              <div className="flex-shrink-0 border-t border-border px-4 py-4 bg-background">
+              <div className="flex-shrink-0 border-t border-gray-100 px-4 py-4 bg-white">
                 <div className="flex items-center gap-4">
                   <div>
-                    <p className="text-xs text-muted-foreground">סה״כ</p>
-                    <p className="text-xl font-bold text-foreground">₪{selectedProduct.price * quantity}</p>
+                    <p className="text-xs text-gray-500">סה״כ</p>
+                    <p 
+                      className="text-xl font-bold bg-clip-text text-transparent"
+                      style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
+                    >
+                      ₪{selectedProduct.price * quantity}
+                    </p>
                   </div>
                   
-                  <Button
+                  <button
                     onClick={handleAddToCart}
                     disabled={!selectedProduct.inStock}
-                    className="flex-1 h-12 text-sm font-semibold rounded-lg"
+                    className="flex-1 h-12 text-sm font-semibold rounded-lg text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                   >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    <ShoppingCart className="w-4 h-4" />
                     {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>
