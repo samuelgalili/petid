@@ -505,12 +505,12 @@ const Shop = () => {
               onClick={() => setSelectedPetType("all")}
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "all"
-                  ? "text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
+                  ? "text-gray-800"
+                  : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
               }`}
               style={selectedPetType === "all" 
-                ? { background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                : {}
               }
             >
               הכל
@@ -519,12 +519,12 @@ const Shop = () => {
               onClick={() => setSelectedPetType("dog")}
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "dog"
-                  ? "text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
+                  ? "text-gray-800"
+                  : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
               }`}
               style={selectedPetType === "dog" 
-                ? { background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                : {}
               }
             >
               <Dog className="w-4 h-4" strokeWidth={1.5} />
@@ -534,12 +534,12 @@ const Shop = () => {
               onClick={() => setSelectedPetType("cat")}
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "cat"
-                  ? "text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
+                  ? "text-gray-800"
+                  : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
               }`}
               style={selectedPetType === "cat" 
-                ? { background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1.5px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                : {}
               }
             >
               <Cat className="w-4 h-4" strokeWidth={1.5} />
@@ -559,12 +559,12 @@ const Shop = () => {
                 onClick={() => setSelectedCategory(category.label)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category.label
-                    ? "text-white shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "text-gray-800"
+                    : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
                 }`}
                 style={selectedCategory === category.label 
-                  ? { background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)' }
-                  : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1px solid transparent', borderRadius: '9999px' }
+                  ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                  : {}
                 }
               >
                 {category.label}
@@ -582,12 +582,12 @@ const Shop = () => {
               onClick={() => setShowDealsOnly(!showDealsOnly)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 showDealsOnly
-                  ? "text-white shadow-sm"
-                  : "text-gray-500"
+                  ? "text-gray-800"
+                  : "text-gray-500 bg-white border border-gray-200"
               }`}
               style={showDealsOnly 
-                ? { background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box', border: '1px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                : {}
               }
             >
               <Tag className="w-3.5 h-3.5" strokeWidth={2} />
@@ -598,12 +598,12 @@ const Shop = () => {
               onClick={() => setSortBy(sortBy === "price-low" ? "none" : "price-low")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 sortBy === "price-low"
-                  ? "text-white shadow-sm"
-                  : "text-gray-500"
+                  ? "text-gray-800"
+                  : "text-gray-500 bg-white border border-gray-200"
               }`}
               style={sortBy === "price-low" 
-                ? { background: 'linear-gradient(135deg, #1E5799, #7DB9E8)' }
-                : { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8) border-box', border: '1px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                : {}
               }
             >
               מחיר ↑
