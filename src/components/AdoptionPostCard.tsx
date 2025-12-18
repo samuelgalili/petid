@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-
 interface AdoptionPet {
   id: string;
   name: string;
@@ -118,7 +117,6 @@ export const AdoptionPostCard = ({
   const navigate = useNavigate();
   const [showCTA, setShowCTA] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const getAgeString = (years: number | null, months: number | null) => {
     if (!years && !months) return "גיל לא ידוע";
     const parts = [];
@@ -126,24 +124,20 @@ export const AdoptionPostCard = ({
     if (months) parts.push(`${months} חודש${months === 1 ? "" : "ים"}`);
     return parts.join(" ו");
   };
-
   const handleAdoptClick = () => {
     navigate('/adoption');
   };
-
   const handleMouseEnter = () => {
     hoverTimeoutRef.current = setTimeout(() => {
       setShowCTA(true);
     }, 1000);
   };
-
   const handleMouseLeave = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
     setShowCTA(false);
   };
-
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
@@ -151,13 +145,22 @@ export const AdoptionPostCard = ({
       }
     };
   }, []);
-
-  const ctaActions = [
-    { icon: PawPrint, label: "אימוץ", color: "from-petid-blue to-petid-blue-dark", onClick: () => navigate('/adoption') },
-    { icon: ShoppingBag, label: "חנות", color: "from-petid-gold to-amber-500", onClick: () => navigate('/shop') },
-    { icon: BookOpen, label: "מידע", color: "from-emerald-500 to-green-600", onClick: () => navigate('/adoption') },
-  ];
-
+  const ctaActions = [{
+    icon: PawPrint,
+    label: "אימוץ",
+    color: "from-petid-blue to-petid-blue-dark",
+    onClick: () => navigate('/adoption')
+  }, {
+    icon: ShoppingBag,
+    label: "חנות",
+    color: "from-petid-gold to-amber-500",
+    onClick: () => navigate('/shop')
+  }, {
+    icon: BookOpen,
+    label: "מידע",
+    color: "from-emerald-500 to-green-600",
+    onClick: () => navigate('/adoption')
+  }];
   return <motion.article variants={cardVariants} initial="hidden" animate="visible" whileInView="visible" viewport={{
     once: true,
     margin: "-50px"
@@ -199,14 +202,7 @@ export const AdoptionPostCard = ({
       </motion.div>
 
       {/* Image with CTA strip */}
-      <motion.div 
-        className="relative aspect-square overflow-hidden cursor-pointer" 
-        variants={imageVariants}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onTouchStart={handleMouseEnter}
-        onTouchEnd={handleMouseLeave}
-      >
+      <motion.div className="relative aspect-square overflow-hidden cursor-pointer" variants={imageVariants} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onTouchStart={handleMouseEnter} onTouchEnd={handleMouseLeave}>
         <motion.div initial={{
         scale: 1.2
       }} animate={{
@@ -220,54 +216,34 @@ export const AdoptionPostCard = ({
 
         {/* Delayed CTA Bar - appears after 1 second hover */}
         <AnimatePresence>
-          {showCTA && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="absolute bottom-12 left-3 right-3 z-20"
-            >
+          {showCTA && <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} exit={{
+          opacity: 0,
+          y: 10
+        }} transition={{
+          duration: 0.3,
+          ease: "easeOut"
+        }} className="absolute bottom-12 left-3 right-3 z-20">
               <div className="bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue p-[2px] rounded-2xl shadow-lg shadow-petid-blue/30">
-                <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3">
-                  <div className="flex items-center justify-center gap-4">
-                    {ctaActions.map((action, index) => (
-                      <motion.button
-                        key={action.label}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          action.onClick();
-                        }}
-                        className="flex flex-col items-center gap-1 group"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow`}>
-                          <action.icon className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-[11px] font-semibold text-foreground">{action.label}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
+                
               </div>
               
               {/* Sparkle indicator */}
-              <motion.div
-                className="absolute -top-2 left-1/2 -translate-x-1/2"
-                animate={{ 
-                  y: [0, -3, 0],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
+              <motion.div className="absolute -top-2 left-1/2 -translate-x-1/2" animate={{
+            y: [0, -3, 0],
+            rotate: [0, 10, -10, 0]
+          }} transition={{
+            duration: 1.5,
+            repeat: Infinity
+          }}>
                 <Sparkles className="w-4 h-4 text-petid-gold" />
               </motion.div>
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
         
         {/* Gradient overlay at bottom */}
@@ -338,32 +314,38 @@ export const AdoptionPostCard = ({
       </motion.div>
 
       {/* Instagram Sponsored-style CTA Bar - Adoption Colors */}
-      <motion.button
-        onClick={handleAdoptClick}
-        className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3 group relative overflow-hidden"
-        whileTap={{ scale: 0.99 }}
-      >
+      <motion.button onClick={handleAdoptClick} className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3 group relative overflow-hidden" whileTap={{
+      scale: 0.99
+    }}>
         {/* Shimmer effect */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
-          initial={{ x: "-100%" }}
-          animate={{ x: "200%" }}
-          transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
-        />
+        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12" initial={{
+        x: "-100%"
+      }} animate={{
+        x: "200%"
+      }} transition={{
+        duration: 2,
+        repeat: Infinity,
+        repeatDelay: 1,
+        ease: "easeInOut"
+      }} />
         <div className="flex items-center gap-2">
-          <motion.div
-            className="flex items-center justify-center"
-            whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.2 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div className="flex items-center justify-center" whileHover={{
+          rotate: [0, -10, 10, -10, 0],
+          scale: 1.2
+        }} transition={{
+          duration: 0.5
+        }}>
             <PawPrint className="w-5 h-5 text-white group-hover:animate-bounce" />
           </motion.div>
           <span className="text-white text-[15px] font-medium">אמץ עכשיו</span>
         </div>
-        <motion.div
-          animate={{ x: [0, -3, 0] }}
-          transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-        >
+        <motion.div animate={{
+        x: [0, -3, 0]
+      }} transition={{
+        duration: 1,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}>
           <ChevronLeft className="w-5 h-5 text-white" />
         </motion.div>
       </motion.button>
@@ -372,42 +354,48 @@ export const AdoptionPostCard = ({
       <div className="px-3 pt-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
-            <motion.button 
-              onClick={handleAdoptClick}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
-            >
+            <motion.button onClick={handleAdoptClick} whileHover={{
+            scale: 1.2
+          }} whileTap={{
+            scale: 0.8
+          }} transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 17
+          }} className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200">
               <Heart className="w-6 h-6 text-[#ED4956]" fill="#ED4956" />
             </motion.button>
             
-            <motion.button 
-              className="text-[#262626] p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
-              onClick={() => navigate('/adoption')}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
+            <motion.button className="text-[#262626] p-1 rounded-full hover:bg-blue-50 transition-colors duration-200" onClick={() => navigate('/adoption')} whileHover={{
+            scale: 1.2
+          }} whileTap={{
+            scale: 0.8
+          }} transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 17
+          }}>
               <PawPrint className="w-6 h-6" strokeWidth={1.5} />
             </motion.button>
             
-            <motion.button 
-              className="text-[#262626] p-1 rounded-full hover:bg-amber-50 transition-colors duration-200"
-              onClick={() => navigate('/shop')}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
+            <motion.button className="text-[#262626] p-1 rounded-full hover:bg-amber-50 transition-colors duration-200" onClick={() => navigate('/shop')} whileHover={{
+            scale: 1.2
+          }} whileTap={{
+            scale: 0.8
+          }} transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 17
+          }}>
               <ShoppingBag className="w-6 h-6" strokeWidth={1.5} />
             </motion.button>
           </div>
           
-          <motion.button 
-            className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.8 }}
-          >
+          <motion.button className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200" whileHover={{
+          scale: 1.2
+        }} whileTap={{
+          scale: 0.8
+        }}>
             <BookOpen className="w-6 h-6" strokeWidth={1.5} />
           </motion.button>
         </div>
