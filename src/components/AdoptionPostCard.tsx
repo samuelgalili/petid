@@ -337,10 +337,10 @@ export const AdoptionPostCard = ({
         </motion.div>
       </motion.div>
 
-      {/* Instagram Sponsored-style CTA Bar */}
+      {/* Instagram Sponsored-style CTA Bar - Adoption Colors */}
       <motion.button
         onClick={handleAdoptClick}
-        className="w-full bg-[#1A1A1A] hover:bg-[#262626] transition-colors flex items-center justify-between px-4 py-3"
+        className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3"
         whileTap={{ scale: 0.99 }}
       >
         <span className="text-white text-[15px] font-medium">אמץ עכשיו</span>

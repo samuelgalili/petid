@@ -326,26 +326,30 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
 
       </motion.div>
 
-      {/* Instagram Sponsored-style CTA Bar */}
+      {/* Instagram Sponsored-style CTA Bar - Shop Colors */}
       <motion.button
         ref={buttonRef}
         onClick={handleAddToCart}
-        className="w-full bg-[#1A1A1A] hover:bg-[#262626] transition-colors flex items-center justify-between px-4 py-3 relative overflow-hidden"
+        className={`w-full transition-all flex items-center justify-between px-4 py-3 relative overflow-hidden ${
+          showAddedAnimation 
+            ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+            : 'bg-gradient-to-r from-petid-gold to-amber-500 hover:from-amber-500 hover:to-petid-gold'
+        }`}
         whileTap={{ scale: 0.99 }}
       >
-        <span className="text-white text-[15px] font-medium">
+        <span className={`text-[15px] font-medium ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>
           {showAddedAnimation ? "נוסף לסל ✓" : "קנה עכשיו"}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-white font-bold">{product.price}</span>
-          <ChevronLeft className="w-5 h-5 text-white" />
+          <span className={`font-bold ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>{product.price}</span>
+          <ChevronLeft className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
         </div>
         
         {/* Success ripple effect */}
         <AnimatePresence>
           {showAddedAnimation && (
             <motion.div
-              className="absolute inset-0 bg-green-500/30"
+              className="absolute inset-0 bg-white/20"
               initial={{ scale: 0, opacity: 1 }}
               animate={{ scale: 3, opacity: 0 }}
               exit={{ opacity: 0 }}
