@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { PointsProvider } from "@/contexts/PointsContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { FlyingCartProvider } from "@/components/FlyingCartAnimation";
 import { GameProvider } from "@/contexts/GameContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
@@ -177,13 +178,15 @@ const App = () => (
                 <PointsProvider>
                   <GameProvider>
                     <CartProvider>
-                      <TooltipProvider>
-                        <Toaster />
-                        <Sonner />
-                        <BrowserRouter>
-                          <AnimatedRoutes />
-                        </BrowserRouter>
-                      </TooltipProvider>
+                      <FlyingCartProvider>
+                        <TooltipProvider>
+                          <Toaster />
+                          <Sonner />
+                          <BrowserRouter>
+                            <AnimatedRoutes />
+                          </BrowserRouter>
+                        </TooltipProvider>
+                      </FlyingCartProvider>
                     </CartProvider>
                   </GameProvider>
                 </PointsProvider>

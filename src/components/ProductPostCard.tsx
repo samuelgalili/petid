@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
+import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { useState, useRef, useEffect } from "react";
@@ -26,12 +27,14 @@ interface ProductPostCardProps {
 export const ProductPostCard = ({ product }: ProductPostCardProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { triggerFly } = useFlyingCart();
   const [showAddedAnimation, setShowAddedAnimation] = useState(false);
   const [showCtaHighlight, setShowCtaHighlight] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Highlight CTA button after 1 second
@@ -109,6 +112,14 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
     setShowAddedAnimation(true);
     triggerConfetti();
     
+    // Trigger flying animation
+    if (imageRef.current) {
+      const rect = imageRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      triggerFly(product.image, centerX, centerY);
+    }
+    
     addToCart({
       id: product.id,
       name: product.title,
@@ -166,6 +177,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
 
       {/* Image with CTA strip */}
       <motion.div 
+        ref={imageRef}
         className="relative aspect-[3/4] overflow-hidden cursor-pointer"
         animate={{ scale: isHovered ? 1.02 : 1 }}
         transition={{ duration: 0.3 }}
