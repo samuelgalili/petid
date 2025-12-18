@@ -147,7 +147,7 @@ const Feed = () => {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
   const [doubleTapLike, setDoubleTapLike] = useState<string | null>(null);
-  const [feedFilter, setFeedFilter] = useState<"all" | "following">("following");
+  const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [userAvatar, setUserAvatar] = useState<string>("");
@@ -807,22 +807,6 @@ const Feed = () => {
         </div>
       </motion.div>}
 
-      {/* Feed Header - Following only */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.3 }}
-        className="bg-white/95 backdrop-blur-lg border-b border-gray-100 sticky top-[52px] z-30 shadow-sm"
-      >
-        <div className="max-w-lg mx-auto flex">
-          <motion.button 
-            whileTap={{ scale: 0.98 }}
-            className="flex-1 py-3.5 text-[13px] font-semibold border-b-2 border-[#262626] text-[#262626]"
-          >
-            עוקבים
-          </motion.button>
-        </div>
-      </motion.div>
 
       {/* Feed */}
       <div className="max-w-lg mx-auto">
