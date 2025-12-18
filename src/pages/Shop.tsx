@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -397,17 +397,25 @@ const Shop = () => {
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
 
   return (
-    <div className="min-h-screen bg-white pb-20" dir="rtl">
-      {/* Instagram-style Header with Search */}
-      <div className="bg-white border-b border-[#DBDBDB] sticky top-0 z-50">
-        <div className="max-w-lg mx-auto px-4 py-2">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-20" dir="rtl">
+      {/* Enhanced Header with Search */}
+      <div className="bg-gradient-to-b from-background to-background/95 backdrop-blur-xl border-b border-primary/10 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-lg mx-auto px-4 py-3">
           {/* Top Row: Title + Cart */}
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-[20px] font-semibold text-[#262626]">חנות</h1>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
+                <ShoppingBag className="w-5 h-5 text-primary-foreground" strokeWidth={2} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">חנות</h1>
+                <p className="text-[10px] text-muted-foreground">מוצרים איכותיים לחיית המחמד</p>
+              </div>
+            </div>
             <button 
               ref={cartIconRef}
               onClick={() => navigate('/cart')}
-              className="relative"
+              className="relative p-2"
             >
               <motion.div
                 animate={cartShake ? {
@@ -421,8 +429,9 @@ const Shop = () => {
                     setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
                   }
                 }}
+                className="w-11 h-11 rounded-2xl bg-muted/50 flex items-center justify-center border border-border/30"
               >
-                <ShoppingCart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+                <ShoppingCart className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               </motion.div>
               <AnimatePresence>
                 {getTotalItems() > 0 && (
@@ -430,7 +439,7 @@ const Shop = () => {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-1.5 -right-1.5 bg-[#ED4956] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
+                    className="absolute -top-0.5 -right-0.5 bg-gradient-to-br from-destructive to-destructive/80 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-destructive/30"
                   >
                     {getTotalItems()}
                   </motion.span>
@@ -439,12 +448,12 @@ const Shop = () => {
             </button>
           </div>
           
-          {/* Search Bar */}
+          {/* Enhanced Search Bar */}
           <div className="relative">
-            <div className={`flex items-center gap-2 bg-[#FAFAFA] rounded-xl px-3 py-2.5 border transition-all ${
-              isSearchFocused ? 'border-[#262626]' : 'border-transparent'
+            <div className={`flex items-center gap-3 bg-muted/50 rounded-2xl px-4 py-3 border-2 transition-all duration-300 ${
+              isSearchFocused ? 'border-primary/50 bg-background shadow-lg shadow-primary/10' : 'border-transparent'
             }`}>
-              <Search className="w-4 h-4 text-[#8E8E8E]" strokeWidth={1.5} />
+              <Search className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -459,19 +468,18 @@ const Shop = () => {
                 }}
                 onBlur={() => {
                   setIsSearchFocused(false);
-                  // Delay hiding to allow click on suggestions
                   setTimeout(() => setShowSearchResults(false), 200);
                 }}
                 placeholder="חיפוש מוצרים..."
-                className="flex-1 bg-transparent text-[14px] text-[#262626] placeholder:text-[#8E8E8E] outline-none"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none font-medium"
               />
               {searchQuery && (
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={clearSearch}
-                  className="p-1"
+                  className="p-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
                 >
-                  <X className="w-4 h-4 text-[#8E8E8E]" strokeWidth={1.5} />
+                  <X className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
                 </motion.button>
               )}
             </div>
@@ -480,14 +488,14 @@ const Shop = () => {
             <AnimatePresence>
               {isSearchFocused && !searchQuery.trim() && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-[#DBDBDB] shadow-lg overflow-hidden z-50"
+                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden z-50"
                 >
                   {/* Quick Category Tags */}
-                  <div className="px-3 py-3 border-b border-[#EFEFEF]">
-                    <span className="text-[12px] font-semibold text-[#262626] mb-2 block">חיפוש מהיר</span>
+                  <div className="px-4 py-3 border-b border-border/30">
+                    <span className="text-xs font-bold text-foreground mb-3 block">חיפוש מהיר</span>
                     <div className="flex flex-wrap gap-2">
                       {quickTags.map((tag, index) => (
                         <motion.button
@@ -496,11 +504,12 @@ const Shop = () => {
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: index * 0.03 }}
                           whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1.05 }}
                           onClick={() => handleTagClick(tag)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium text-white transition-all hover:opacity-90"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white transition-all shadow-sm hover:shadow-md"
                           style={{ backgroundColor: tag.color }}
                         >
-                          <span>{tag.icon}</span>
+                          <span className="text-sm">{tag.icon}</span>
                           <span>{tag.label}</span>
                         </motion.button>
                       ))}
@@ -510,11 +519,11 @@ const Shop = () => {
                   {/* Recent Searches */}
                   {searchHistory.length > 0 && (
                     <>
-                      <div className="flex items-center justify-between px-3 py-2 border-b border-[#EFEFEF]">
-                        <span className="text-[12px] font-semibold text-[#262626]">חיפושים אחרונים</span>
+                      <div className="flex items-center justify-between px-4 py-2.5 bg-muted/30">
+                        <span className="text-xs font-bold text-foreground">חיפושים אחרונים</span>
                         <button 
                           onClick={clearSearchHistory}
-                          className="text-[11px] text-[#0095F6] font-medium"
+                          className="text-xs text-primary font-semibold hover:underline"
                         >
                           נקה הכל
                         </button>
@@ -526,15 +535,15 @@ const Shop = () => {
                           animate={{ opacity: 1 }}
                           transition={{ delay: index * 0.05 }}
                           onClick={() => handleHistorySelect(query)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#FAFAFA] transition-colors text-right"
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-right"
                         >
-                          <Clock className="w-4 h-4 text-[#8E8E8E]" strokeWidth={1.5} />
-                          <span className="flex-1 text-[13px] text-[#262626]">{query}</span>
+                          <Clock className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                          <span className="flex-1 text-sm text-foreground font-medium">{query}</span>
                           <button
                             onClick={(e) => removeFromHistory(query, e)}
-                            className="p-1 hover:bg-[#EFEFEF] rounded-full"
+                            className="p-1.5 hover:bg-muted rounded-full"
                           >
-                            <X className="w-3.5 h-3.5 text-[#8E8E8E]" strokeWidth={1.5} />
+                            <X className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
                           </button>
                         </motion.button>
                       ))}
@@ -551,7 +560,7 @@ const Shop = () => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-[#DBDBDB] shadow-lg overflow-hidden z-50"
+                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden z-50"
                 >
                   {searchSuggestions.map((product, index) => (
                     <motion.button
@@ -560,9 +569,9 @@ const Shop = () => {
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.05 }}
                       onClick={() => handleSearchSelect(product)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-[#FAFAFA] transition-colors text-right"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-right"
                     >
-                      <div className="w-10 h-10 bg-[#FAFAFA] rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 bg-muted rounded-xl overflow-hidden flex-shrink-0">
                         <OptimizedImage
                           src={product.image}
                           alt={product.name}
@@ -571,11 +580,11 @@ const Shop = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-[#262626] truncate">{product.name}</p>
-                        <p className="text-[12px] text-[#8E8E8E]">₪{product.price}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">₪{product.price}</p>
                       </div>
                       {product.originalPrice && (
-                        <span className="bg-[#ED4956] text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                        <span className="bg-gradient-to-r from-destructive to-destructive/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
                           מבצע
                         </span>
                       )}
@@ -592,10 +601,10 @@ const Shop = () => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-[#DBDBDB] shadow-lg p-4 text-center z-50"
+                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-2xl border border-border/50 shadow-xl p-6 text-center z-50"
                 >
-                  <Search className="w-8 h-8 text-[#DBDBDB] mx-auto mb-2" strokeWidth={1} />
-                  <p className="text-[13px] text-[#8E8E8E]">לא נמצאו מוצרים עבור "{searchQuery}"</p>
+                  <Search className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" strokeWidth={1} />
+                  <p className="text-sm text-muted-foreground">לא נמצאו מוצרים עבור "{searchQuery}"</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -604,7 +613,7 @@ const Shop = () => {
       </div>
 
       {/* Pet Type Filter */}
-      <div className="bg-white border-b border-[#DBDBDB]">
+      <div className="bg-background/80 backdrop-blur-sm border-b border-border/30">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex gap-2">
             {[
@@ -615,33 +624,37 @@ const Shop = () => {
               <motion.button
                 key={type.id}
                 whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
                 onClick={() => setSelectedPetType(type.id as any)}
-                className={`flex-1 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                   selectedPetType === type.id
-                    ? "bg-[#262626] text-white"
-                    : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
+                    ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-muted/50 text-foreground border border-border/30 hover:bg-muted"
                 }`}
               >
-                {type.icon} {type.label}
+                <span className="mr-1">{type.icon}</span> {type.label}
               </motion.button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Categories Scroll */}
-      <div className="bg-white border-b border-[#DBDBDB]">
+      {/* Enhanced Categories Scroll */}
+      <div className="bg-background/60 backdrop-blur-sm">
         <div className="max-w-lg mx-auto">
           <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
-            {categories.map((category) => (
+            {categories.map((category, index) => (
               <motion.button
                 key={category.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedCategory(category.label)}
-                className={`px-4 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-all ${
+                className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
                   selectedCategory === category.label
-                    ? "bg-[#262626] text-white"
-                    : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
+                    ? "bg-foreground text-background shadow-lg"
+                    : "bg-muted/80 text-foreground border border-border/30 hover:bg-muted hover:border-border"
                 }`}
               >
                 {category.label}
@@ -651,54 +664,54 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white border-b border-[#DBDBDB]">
-        <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Enhanced Filter Bar */}
+      <div className="bg-gradient-to-b from-background/80 to-muted/30 border-b border-border/20">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 ${
                 showFilters || sortBy !== "none" || showDealsOnly
-                  ? "bg-[#262626] text-white"
-                  : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
+                  ? "bg-gradient-to-br from-foreground to-foreground/90 text-background shadow-md"
+                  : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
               }`}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" strokeWidth={1.5} />
+              <SlidersHorizontal className="w-4 h-4" strokeWidth={2} />
               סינון
             </motion.button>
             
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowDealsOnly(!showDealsOnly)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 ${
                 showDealsOnly
-                  ? "bg-[#ED4956] text-white"
-                  : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
+                  ? "bg-gradient-to-br from-destructive to-destructive/80 text-white shadow-lg shadow-destructive/30"
+                  : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
               }`}
             >
-              <Tag className="w-3.5 h-3.5" strokeWidth={1.5} />
-              מבצעים
+              <Tag className="w-4 h-4" strokeWidth={2} />
+              מבצעים 🔥
             </motion.button>
           </div>
 
           {/* Grid/Saved Toggle */}
-          <div className="flex bg-[#FAFAFA] rounded-lg p-0.5 border border-[#DBDBDB]">
+          <div className="flex bg-muted/50 rounded-xl p-1 border border-border/30">
             <button
               onClick={() => setActiveTab("grid")}
-              className={`p-1.5 rounded-md transition-all ${
-                activeTab === "grid" ? "bg-white shadow-sm" : ""
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                activeTab === "grid" ? "bg-background shadow-sm" : "hover:bg-muted"
               }`}
             >
-              <Grid3X3 className={`w-4 h-4 ${activeTab === "grid" ? "text-[#262626]" : "text-[#8E8E8E]"}`} strokeWidth={1.5} />
+              <Grid3X3 className={`w-4 h-4 ${activeTab === "grid" ? "text-foreground" : "text-muted-foreground"}`} strokeWidth={1.5} />
             </button>
             <button
               onClick={() => setActiveTab("saved")}
-              className={`p-1.5 rounded-md transition-all ${
-                activeTab === "saved" ? "bg-white shadow-sm" : ""
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                activeTab === "saved" ? "bg-background shadow-sm" : "hover:bg-muted"
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${activeTab === "saved" ? "text-[#262626]" : "text-[#8E8E8E]"}`} strokeWidth={1.5} />
+              <Bookmark className={`w-4 h-4 ${activeTab === "saved" ? "text-foreground" : "text-muted-foreground"}`} strokeWidth={1.5} />
             </button>
           </div>
         </div>
@@ -711,17 +724,17 @@ const Shop = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden bg-white border-b border-[#DBDBDB]"
+            className="overflow-hidden bg-background border-b border-border/30"
           >
-            <div className="max-w-lg mx-auto px-4 py-3">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-[#0095F6]" strokeWidth={1.5} />
-                <span className="text-[12px] font-semibold text-[#262626]">מיון לפי</span>
+            <div className="max-w-lg mx-auto px-4 py-4">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-4 h-4 text-primary" strokeWidth={2} />
+                <span className="text-sm font-bold text-foreground">מיון לפי</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {[
                   { id: "none", label: "ברירת מחדל" },
-                  { id: "popularity", label: "פופולריות" },
+                  { id: "popularity", label: "פופולריות 🔥" },
                   { id: "price-low", label: "מחיר ↑" },
                   { id: "price-high", label: "מחיר ↓" },
                 ].map((option) => (
@@ -729,10 +742,10 @@ const Shop = () => {
                     key={option.id}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSortBy(option.id as any)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-medium ${
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 ${
                       sortBy === option.id
-                        ? "bg-[#262626] text-white"
-                        : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
+                        ? "bg-gradient-to-br from-foreground to-foreground/90 text-background shadow-md"
+                        : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
                     }`}
                   >
                     {option.label}
@@ -745,19 +758,20 @@ const Shop = () => {
       </AnimatePresence>
 
       {/* Products Count */}
-      <div className="bg-[#FAFAFA]">
-        <div className="max-w-lg mx-auto px-4 py-2">
-          <span className="text-[12px] text-[#8E8E8E]">
+      <div className="bg-muted/30">
+        <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
+          <span className="text-xs font-medium text-muted-foreground">
             {filteredAndSortedProducts.length} מוצרים
           </span>
+          <span className="text-xs text-primary font-semibold">משלוח חינם מעל ₪200</span>
         </div>
       </div>
 
-      {/* Instagram-style Products Grid */}
-      <div className="bg-white">
-        <div className="max-w-lg mx-auto">
+      {/* Enhanced Products Grid */}
+      <div className="bg-background">
+        <div className="max-w-lg mx-auto p-3">
           <motion.div 
-            className="grid grid-cols-3 gap-[1px] bg-[#DBDBDB]"
+            className="grid grid-cols-2 gap-3"
             initial="hidden"
             animate="visible"
             variants={{
@@ -777,15 +791,13 @@ const Shop = () => {
                 variants={{
                   hidden: { 
                     opacity: 0, 
-                    scale: 0.8,
-                    y: 30,
-                    rotateX: -15,
+                    scale: 0.9,
+                    y: 20,
                   },
                   visible: { 
                     opacity: 1, 
                     scale: 1,
                     y: 0,
-                    rotateX: 0,
                     transition: {
                       type: "spring",
                       stiffness: 300,
@@ -793,110 +805,119 @@ const Shop = () => {
                     }
                   }
                 }}
-                whileHover={{ 
-                  scale: 1.03, 
-                  zIndex: 10,
-                  transition: { duration: 0.2 }
-                }}
-                whileTap={{ scale: 0.97 }}
-                className="relative aspect-square bg-white cursor-pointer group overflow-hidden"
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative bg-background rounded-2xl overflow-hidden border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
                 onClick={() => handleProductClick(product)}
               >
-                <motion.div
-                  className="w-full h-full"
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <OptimizedImage
-                    src={product.image}
-                    alt={product.name}
+                {/* Image Container */}
+                <div className="relative aspect-square bg-gradient-to-br from-muted/50 to-muted overflow-hidden">
+                  <motion.div
                     className="w-full h-full"
-                    objectFit="cover"
-                    sizes="(max-width: 768px) 33vw, 200px"
-                  />
-                </motion.div>
-                
-                {/* Hover Overlay with animation */}
-                <motion.div 
-                  className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <motion.div 
-                    className="flex items-center gap-1 text-white text-[13px] font-semibold"
-                    initial={{ scale: 0, y: 10 }}
-                    whileHover={{ scale: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
+                    whileHover={{ scale: 1.08 }}
+                    transition={{ duration: 0.4 }}
                   >
-                    <Heart className="w-4 h-4 fill-white" />
-                    {product.likes}
+                    <OptimizedImage
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full"
+                      objectFit="cover"
+                      sizes="(max-width: 768px) 50vw, 200px"
+                    />
                   </motion.div>
-                </motion.div>
+                  
+                  {/* Sale Badge */}
+                  {product.originalPrice && (
+                    <motion.div 
+                      className="absolute top-2 right-2 bg-gradient-to-br from-destructive to-destructive/80 text-white px-2 py-1 rounded-lg text-[10px] font-bold shadow-lg shadow-destructive/30"
+                      initial={{ scale: 0, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 15,
+                        delay: index * 0.03 + 0.2
+                      }}
+                    >
+                      -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                    </motion.div>
+                  )}
 
-                {/* Sale Badge with bounce animation */}
-                {product.originalPrice && (
-                  <motion.div 
-                    className="absolute top-2 right-2 bg-[#ED4956] text-white px-1.5 py-0.5 rounded text-[10px] font-semibold"
-                    initial={{ scale: 0, rotate: -20 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ 
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 15,
-                      delay: index * 0.05 + 0.3
-                    }}
+                  {/* Save Button */}
+                  <motion.button
+                    onClick={(e) => toggleFavorite(product.id, e)}
+                    className="absolute top-2 left-2 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                    whileTap={{ scale: 1.2 }}
                   >
-                    SALE
-                  </motion.div>
-                )}
+                    <Bookmark 
+                      className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-primary text-primary" : "text-foreground"}`} 
+                      strokeWidth={1.5} 
+                    />
+                  </motion.button>
 
-                {/* Price Tag with slide-up animation */}
-                <motion.div 
-                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: index * 0.05 + 0.2 }}
-                >
+                  {/* Free Shipping Badge */}
+                  {product.freeShipping && (
+                    <div className="absolute bottom-2 left-2 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+                      <Truck className="w-3 h-3" />
+                      חינם
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Info */}
+                <div className="p-3 space-y-2">
+                  <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                    {product.name}
+                  </h3>
+                  
+                  {/* Rating */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-white text-[13px] font-bold">₪{product.price}</span>
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span className="text-xs font-semibold text-foreground">{product.rating}</span>
+                    <span className="text-[10px] text-muted-foreground">({product.reviews})</span>
+                  </div>
+                  
+                  {/* Price */}
+                  <div className="flex items-center gap-2">
+                    <span className={`text-base font-black ${product.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
+                      ₪{product.price}
+                    </span>
                     {product.originalPrice && (
-                      <span className="text-white/70 text-[10px] line-through">₪{product.originalPrice}</span>
+                      <span className="text-xs text-muted-foreground line-through">
+                        ₪{product.originalPrice}
+                      </span>
                     )}
                   </div>
-                </motion.div>
 
-                {/* Save Button with pop animation */}
-                <motion.button
-                  onClick={(e) => toggleFavorite(product.id, e)}
-                  className="absolute top-2 left-2"
-                  initial={{ opacity: 0, scale: 0 }}
-                  whileHover={{ opacity: 1, scale: 1 }}
-                  whileTap={{ scale: 1.3 }}
-                >
-                  <Bookmark 
-                    className={`w-5 h-5 ${favorites.includes(product.id) ? "fill-white text-white" : "text-white"}`} 
-                    strokeWidth={1.5} 
-                  />
-                </motion.button>
+                  {/* Stock Status */}
+                  {!product.inStock && (
+                    <div className="text-[10px] font-medium text-destructive">אזל מהמלאי</div>
+                  )}
+                </div>
               </motion.div>
             ))}
           </motion.div>
 
           {/* Empty State for Saved */}
           {activeTab === "saved" && filteredAndSortedProducts.length === 0 && (
-            <div className="py-16 text-center">
-              <Bookmark className="w-16 h-16 text-[#DBDBDB] mx-auto mb-4" strokeWidth={1} />
-              <h3 className="text-[16px] font-semibold text-[#262626] mb-1">עדיין אין מוצרים שמורים</h3>
-              <p className="text-[14px] text-[#8E8E8E]">שמור מוצרים שאהבת לצפייה מאוחרת</p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="py-20 text-center"
+            >
+              <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                <Bookmark className="w-10 h-10 text-muted-foreground" strokeWidth={1} />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">עדיין אין מוצרים שמורים</h3>
+              <p className="text-sm text-muted-foreground">שמור מוצרים שאהבת לצפייה מאוחרת</p>
+            </motion.div>
           )}
         </div>
       </div>
 
       {/* Product Details Sheet - Enhanced */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-white p-0 overflow-hidden" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-background p-0 overflow-hidden shadow-2xl" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
@@ -904,7 +925,7 @@ const Shop = () => {
               {/* Header with drag handle */}
               <div className="flex-shrink-0">
                 <div className="flex justify-center pt-3 pb-2">
-                  <div className="w-10 h-1 bg-[#DBDBDB] rounded-full" />
+                  <div className="w-12 h-1.5 bg-gradient-to-r from-muted via-primary/30 to-muted rounded-full" />
                 </div>
                 
                 {/* Top Actions */}
@@ -912,9 +933,9 @@ const Shop = () => {
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setSelectedProduct(null)}
-                    className="w-9 h-9 bg-[#FAFAFA] rounded-full flex items-center justify-center"
+                    className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center border border-border/30"
                   >
-                    <ChevronLeft className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
+                    <ChevronLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
                   </motion.button>
                   
                   <div className="flex items-center gap-2">
@@ -926,17 +947,17 @@ const Shop = () => {
                           text: `בדוק את ${selectedProduct.name} ב-₪${selectedProduct.price}`,
                         }).catch(() => {});
                       }}
-                      className="w-9 h-9 bg-[#FAFAFA] rounded-full flex items-center justify-center"
+                      className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center border border-border/30"
                     >
-                      <Share2 className="w-4 h-4 text-[#262626]" strokeWidth={1.5} />
+                      <Share2 className="w-4 h-4 text-foreground" strokeWidth={1.5} />
                     </motion.button>
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onClick={() => toggleFavorite(selectedProduct.id)}
-                      className="w-9 h-9 bg-[#FAFAFA] rounded-full flex items-center justify-center"
+                      className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center border border-border/30"
                     >
                       <Bookmark 
-                        className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-[#262626] text-[#262626]" : "text-[#262626]"}`} 
+                        className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-primary text-primary" : "text-foreground"}`} 
                         strokeWidth={1.5} 
                       />
                     </motion.button>
@@ -962,7 +983,7 @@ const Shop = () => {
                               ref={index === 0 ? productImageRef : undefined}
                               initial={{ scale: 0.95, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
-                              className="w-full aspect-square bg-gradient-to-br from-[#FAFAFA] to-[#F0F0F0] rounded-2xl overflow-hidden shadow-sm"
+                              className="w-full aspect-square bg-gradient-to-br from-muted/50 to-muted rounded-2xl overflow-hidden shadow-lg"
                             >
                               <OptimizedImage
                                 src={img}
@@ -987,10 +1008,9 @@ const Shop = () => {
                           initial={false}
                           animate={{
                             width: currentImageIndex === index ? 20 : 6,
-                            backgroundColor: currentImageIndex === index ? "#262626" : "#DBDBDB",
                           }}
                           transition={{ duration: 0.2 }}
-                          className="h-1.5 rounded-full"
+                          className={`h-1.5 rounded-full ${currentImageIndex === index ? 'bg-foreground' : 'bg-muted-foreground/30'}`}
                         />
                       ))}
                     </div>
@@ -998,7 +1018,7 @@ const Shop = () => {
                   
                   {/* Image Counter */}
                   {(selectedProduct.images?.length || 1) > 1 && (
-                    <div className="absolute top-6 left-6 bg-black/60 text-white text-[11px] font-medium px-2 py-1 rounded-full">
+                    <div className="absolute top-6 left-6 bg-foreground/70 backdrop-blur-sm text-background text-[11px] font-semibold px-2.5 py-1 rounded-full">
                       {currentImageIndex + 1}/{selectedProduct.images?.length || 1}
                     </div>
                   )}
@@ -1009,7 +1029,7 @@ const Shop = () => {
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 0.2 }}
-                      className="absolute top-6 right-6 bg-gradient-to-r from-[#ED4956] to-[#F77062] text-white px-3 py-1.5 rounded-full text-[13px] font-bold shadow-lg"
+                      className="absolute top-6 right-6 bg-gradient-to-br from-destructive to-destructive/80 text-white px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg shadow-destructive/30"
                     >
                       {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}% הנחה
                     </motion.div>
@@ -1019,38 +1039,38 @@ const Shop = () => {
                 <div className="px-4 space-y-4">
                   {/* Product Title & Rating */}
                   <div>
-                    <h2 className="text-[22px] font-bold text-[#262626] mb-2 leading-tight">
+                    <h2 className="text-xl font-bold text-foreground mb-2 leading-tight">
                       {selectedProduct.name}
                     </h2>
                     
                     {/* Rating & Reviews */}
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-[#FFD700] text-[#FFD700]" />
-                        <span className="text-[14px] font-semibold text-[#262626]">{selectedProduct.rating}</span>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-lg">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="text-sm font-bold text-foreground">{selectedProduct.rating}</span>
                       </div>
-                      <span className="text-[13px] text-[#0095F6]">({selectedProduct.reviews} ביקורות)</span>
-                      <div className="flex items-center gap-1 text-[#8E8E8E]">
+                      <span className="text-sm text-primary font-medium">({selectedProduct.reviews} ביקורות)</span>
+                      <div className="flex items-center gap-1 text-muted-foreground">
                         <Heart className="w-3.5 h-3.5" strokeWidth={1.5} />
-                        <span className="text-[12px]">{selectedProduct.likes}</span>
+                        <span className="text-xs">{selectedProduct.likes}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Price Section */}
-                  <div className="bg-[#FAFAFA] rounded-xl p-4">
+                  <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-2xl p-4 border border-border/30">
                     <div className="flex items-end gap-3">
-                      <span className={`text-[32px] font-black ${selectedProduct.originalPrice ? 'text-[#ED4956]' : 'text-[#262626]'}`}>
+                      <span className={`text-3xl font-black ${selectedProduct.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
                         ₪{selectedProduct.price}
                       </span>
                       {selectedProduct.originalPrice && (
-                        <span className="text-[18px] text-[#8E8E8E] line-through mb-1">
+                        <span className="text-lg text-muted-foreground line-through mb-0.5">
                           ₪{selectedProduct.originalPrice}
                         </span>
                       )}
                     </div>
                     {selectedProduct.originalPrice && (
-                      <p className="text-[13px] text-[#4CAF50] font-medium mt-1">
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
                         חסכון של ₪{selectedProduct.originalPrice - selectedProduct.price}!
                       </p>
                     )}
@@ -1058,28 +1078,28 @@ const Shop = () => {
 
                   {/* Description */}
                   <div>
-                    <h3 className="text-[14px] font-semibold text-[#262626] mb-2">תיאור המוצר</h3>
-                    <p className="text-[14px] text-[#8E8E8E] leading-relaxed">
+                    <h3 className="text-sm font-bold text-foreground mb-2">תיאור המוצר</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {selectedProduct.description}
                     </p>
                   </div>
 
                   {/* Features */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className={`flex items-center gap-2 p-3 rounded-xl ${selectedProduct.inStock ? 'bg-[#E8F5E9]' : 'bg-[#FFEBEE]'}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.inStock ? 'bg-[#4CAF50]' : 'bg-[#ED4956]'}`}>
+                    <div className={`flex items-center gap-2 p-3 rounded-xl border ${selectedProduct.inStock ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.inStock ? 'bg-emerald-500' : 'bg-destructive'}`}>
                         <Shield className="w-4 h-4 text-white" strokeWidth={2} />
                       </div>
-                      <span className={`text-[12px] font-medium ${selectedProduct.inStock ? 'text-[#2E7D32]' : 'text-[#C62828]'}`}>
+                      <span className={`text-xs font-semibold ${selectedProduct.inStock ? 'text-emerald-700 dark:text-emerald-300' : 'text-destructive'}`}>
                         {selectedProduct.inStock ? 'במלאי' : 'אזל מהמלאי'}
                       </span>
                     </div>
                     
-                    <div className={`flex items-center gap-2 p-3 rounded-xl ${selectedProduct.freeShipping ? 'bg-[#E3F2FD]' : 'bg-[#FAFAFA]'}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.freeShipping ? 'bg-[#0095F6]' : 'bg-[#DBDBDB]'}`}>
+                    <div className={`flex items-center gap-2 p-3 rounded-xl border ${selectedProduct.freeShipping ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800' : 'bg-muted border-border/30'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.freeShipping ? 'bg-blue-500' : 'bg-muted-foreground/30'}`}>
                         <Truck className="w-4 h-4 text-white" strokeWidth={2} />
                       </div>
-                      <span className={`text-[12px] font-medium ${selectedProduct.freeShipping ? 'text-[#1565C0]' : 'text-[#8E8E8E]'}`}>
+                      <span className={`text-xs font-semibold ${selectedProduct.freeShipping ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'}`}>
                         {selectedProduct.freeShipping ? 'משלוח חינם' : 'משלוח רגיל'}
                       </span>
                     </div>
@@ -1088,8 +1108,8 @@ const Shop = () => {
                   {/* Size Selector */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-[14px] font-semibold text-[#262626]">בחר גודל</h3>
-                      <button className="text-[12px] text-[#0095F6] font-medium">מדריך מידות</button>
+                      <h3 className="text-sm font-bold text-foreground">בחר גודל</h3>
+                      <button className="text-xs text-primary font-semibold">מדריך מידות</button>
                     </div>
                     <div className="flex gap-2">
                       {sizes.map((size) => (
@@ -1097,10 +1117,10 @@ const Shop = () => {
                           key={size}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => setSelectedSize(size)}
-                          className={`flex-1 py-3 rounded-xl text-[14px] font-semibold transition-all ${
+                          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${
                             selectedSize === size
-                              ? "bg-[#262626] text-white shadow-md"
-                              : "bg-[#FAFAFA] text-[#262626] border border-[#DBDBDB]"
+                              ? "bg-foreground text-background shadow-lg"
+                              : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
                           }`}
                         >
                           {size}
@@ -1111,22 +1131,22 @@ const Shop = () => {
 
                   {/* Quantity Selector */}
                   <div>
-                    <h3 className="text-[14px] font-semibold text-[#262626] mb-3">כמות</h3>
-                    <div className="flex items-center justify-between bg-[#FAFAFA] rounded-xl p-2 border border-[#DBDBDB]">
+                    <h3 className="text-sm font-bold text-foreground mb-3">כמות</h3>
+                    <div className="flex items-center justify-between bg-muted/50 rounded-xl p-2 border border-border/30">
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={decreaseQuantity}
-                        className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm"
+                        className="w-10 h-10 rounded-lg bg-background flex items-center justify-center shadow-sm border border-border/30"
                       >
-                        <Minus className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
+                        <Minus className="w-5 h-5 text-foreground" strokeWidth={1.5} />
                       </motion.button>
-                      <span className="text-[20px] font-bold text-[#262626]">{quantity}</span>
+                      <span className="text-xl font-black text-foreground">{quantity}</span>
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={increaseQuantity}
-                        className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm"
+                        className="w-10 h-10 rounded-lg bg-background flex items-center justify-center shadow-sm border border-border/30"
                       >
-                        <Plus className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
+                        <Plus className="w-5 h-5 text-foreground" strokeWidth={1.5} />
                       </motion.button>
                     </div>
                   </div>
@@ -1137,12 +1157,12 @@ const Shop = () => {
               </div>
 
               {/* Fixed Bottom Bar */}
-              <div className="flex-shrink-0 border-t border-[#DBDBDB] px-4 py-4 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+              <div className="flex-shrink-0 border-t border-border/30 px-4 py-4 bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
                 <div className="flex items-center gap-3">
                   {/* Total Price */}
                   <div className="flex-shrink-0">
-                    <p className="text-[11px] text-[#8E8E8E]">סה״כ</p>
-                    <p className="text-[20px] font-black text-[#262626]">₪{selectedProduct.price * quantity}</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">סה״כ</p>
+                    <p className="text-xl font-black text-foreground">₪{selectedProduct.price * quantity}</p>
                   </div>
                   
                   {/* Add to Cart Button */}
@@ -1150,10 +1170,10 @@ const Shop = () => {
                     <Button
                       onClick={handleAddToCart}
                       disabled={!selectedProduct.inStock}
-                      className={`w-full h-14 text-[16px] font-bold rounded-xl flex items-center justify-center gap-2 ${
+                      className={`w-full h-14 text-base font-bold rounded-xl flex items-center justify-center gap-2 ${
                         selectedProduct.inStock 
-                          ? 'bg-gradient-to-r from-[#0095F6] to-[#00C6FF] hover:opacity-90 text-white shadow-lg' 
-                          : 'bg-[#DBDBDB] text-[#8E8E8E] cursor-not-allowed'
+                          ? 'bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 text-primary-foreground shadow-lg shadow-primary/30' 
+                          : 'bg-muted text-muted-foreground cursor-not-allowed'
                       }`}
                     >
                       <ShoppingCart className="w-5 h-5" strokeWidth={2} />
