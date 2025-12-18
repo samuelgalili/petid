@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Tag, Check, Heart, Eye, Sparkles, Star } from "lucide-react";
+import { ShoppingBag, Tag, Check, Heart, Eye, Sparkles, Star, ChevronLeft } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -324,153 +324,90 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
           )}
         </AnimatePresence>
 
-        {/* CTA Strip at bottom of image */}
-        <motion.button
-          ref={buttonRef}
-          onClick={handleAddToCart}
-          className="absolute bottom-3 left-3 right-3 py-3 px-4 flex items-center justify-between cursor-pointer overflow-hidden rounded-2xl backdrop-blur-md"
-          initial={{ backgroundColor: "rgba(0, 0, 0, 0.4)", scale: 0.95, opacity: 0 }}
-          animate={{ 
-            backgroundColor: showAddedAnimation 
-              ? "rgba(0, 200, 83, 0.95)" 
-              : showCtaHighlight 
-                ? "rgba(247, 191, 0, 1)" 
-                : "rgba(0, 0, 0, 0.5)",
-            scale: 1,
-            opacity: 1,
-            boxShadow: showCtaHighlight 
-              ? "0 8px 32px rgba(247, 191, 0, 0.4)" 
-              : "0 4px 16px rgba(0, 0, 0, 0.2)"
-          }}
-          transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-3">
-            <motion.div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              animate={{ 
-                backgroundColor: showCtaHighlight ? "#262626" : "rgba(255, 255, 255, 0.2)",
-                scale: showAddedAnimation ? [1, 1.2, 1] : showCtaHighlight ? [1, 1.05, 1] : 1,
-                rotate: showAddedAnimation ? [0, 10, -10, 0] : 0
-              }}
-              transition={{ 
-                duration: showCtaHighlight ? 2 : 0.5,
-                repeat: showCtaHighlight && !showAddedAnimation ? Infinity : 0,
-                repeatType: "reverse"
-              }}
-            >
-              <AnimatePresence mode="wait">
-                {showAddedAnimation ? (
-                  <motion.div
-                    key="check"
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    exit={{ scale: 0 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <Check className="w-5 h-5 text-white" strokeWidth={3} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="bag"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                  >
-                    <ShoppingBag className={`w-5 h-5 ${showCtaHighlight ? 'text-[#F7BF00]' : 'text-white'}`} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-            <div className="flex flex-col items-start">
-              <AnimatePresence mode="wait">
-                {showAddedAnimation ? (
-                  <motion.span 
-                    key="added"
-                    className="text-base font-bold text-white"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    נוסף לסל! ✓
-                  </motion.span>
-                ) : (
-                  <motion.span 
-                    key="add"
-                    className="text-base font-bold"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ 
-                      opacity: 1, 
-                      y: 0,
-                      color: showCtaHighlight ? "#262626" : "#FFFFFF"
-                    }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    הוסף לסל
-                  </motion.span>
-                )}
-              </AnimatePresence>
-              <motion.span 
-                className="text-xs"
-                animate={{ 
-                  color: showCtaHighlight ? "rgba(38, 38, 38, 0.7)" : "rgba(255, 255, 255, 0.7)"
-                }}
-              >
-                משלוח מהיר
-              </motion.span>
-            </div>
-          </div>
-          <motion.div 
-            className="flex items-center gap-1"
-            animate={{ 
-              scale: showAddedAnimation ? [1, 1.2, 1] : 1,
-            }}
-          >
-            <motion.span 
-              className="text-xl font-black"
-              animate={{ 
-                color: showCtaHighlight ? "#262626" : "#FFFFFF"
-              }}
-            >
-              {product.price}
-            </motion.span>
-            <motion.span
-              className="text-lg"
-              animate={{
-                x: showCtaHighlight ? [0, -4, 0] : 0,
-                color: showCtaHighlight ? "#262626" : "#FFFFFF"
-              }}
-              transition={{
-                duration: 1,
-                repeat: showCtaHighlight ? Infinity : 0,
-                repeatType: "reverse"
-              }}
-            >
-              ←
-            </motion.span>
-          </motion.div>
-          
-          {/* Success ripple effect */}
-          <AnimatePresence>
-            {showAddedAnimation && (
-              <motion.div
-                className="absolute inset-0 bg-[#F7BF00]/20"
-                initial={{ scale: 0, opacity: 1 }}
-                animate={{ scale: 3, opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6 }}
-                style={{ borderRadius: "50%", transformOrigin: "center" }}
-              />
-            )}
-          </AnimatePresence>
-        </motion.button>
       </motion.div>
+
+      {/* Instagram Sponsored-style CTA Bar */}
+      <motion.button
+        ref={buttonRef}
+        onClick={handleAddToCart}
+        className="w-full bg-[#1A1A1A] hover:bg-[#262626] transition-colors flex items-center justify-between px-4 py-3 relative overflow-hidden"
+        whileTap={{ scale: 0.99 }}
+      >
+        <span className="text-white text-[15px] font-medium">
+          {showAddedAnimation ? "נוסף לסל ✓" : "קנה עכשיו"}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-white font-bold">{product.price}</span>
+          <ChevronLeft className="w-5 h-5 text-white" />
+        </div>
+        
+        {/* Success ripple effect */}
+        <AnimatePresence>
+          {showAddedAnimation && (
+            <motion.div
+              className="absolute inset-0 bg-green-500/30"
+              initial={{ scale: 0, opacity: 1 }}
+              animate={{ scale: 3, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              style={{ borderRadius: "50%", transformOrigin: "center" }}
+            />
+          )}
+        </AnimatePresence>
+      </motion.button>
+
+      {/* Instagram-style Action Bar */}
+      <div className="px-3 pt-2">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-4">
+            <motion.button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsLiked(!isLiked);
+                if (!isLiked) toast.success("נוסף למועדפים ❤️");
+              }}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
+            >
+              <Heart className={`w-6 h-6 ${isLiked ? 'text-[#ED4956] fill-[#ED4956]' : 'text-[#262626]'}`} />
+            </motion.button>
+            
+            <motion.button 
+              className="text-[#262626] p-1 rounded-full hover:bg-amber-50 transition-colors duration-200"
+              onClick={handleShopClick}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <ShoppingBag className="w-6 h-6" strokeWidth={1.5} />
+            </motion.button>
+            
+            <motion.button 
+              className="text-[#262626] p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
+              onClick={() => navigate(`/product/${product.id}`)}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <Eye className="w-6 h-6" strokeWidth={1.5} />
+            </motion.button>
+          </div>
+          
+          <motion.button 
+            className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 0.8 }}
+          >
+            <Star className="w-6 h-6" strokeWidth={1.5} />
+          </motion.button>
+        </div>
+      </div>
 
       {/* Caption area */}
       <motion.div 
-        className="p-3 space-y-2"
+        className="px-3 pb-3 space-y-2"
         animate={{ backgroundColor: isHovered ? "rgba(247, 191, 0, 0.05)" : "transparent" }}
         transition={{ duration: 0.2 }}
       >
