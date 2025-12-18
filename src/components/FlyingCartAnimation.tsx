@@ -27,10 +27,13 @@ export const useFlyingCart = () => {
 
 export const FlyingCartProvider = ({ children }: { children: ReactNode }) => {
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
-  const [cartPosition, setCartPosition] = useState({ x: window.innerWidth - 60, y: 26 });
+  // Default position - top right where cart icon typically appears
+  const [cartPosition, setCartPosition] = useState({ x: window.innerWidth - 40, y: 38 });
 
   const setCartIconPosition = useCallback((x: number, y: number) => {
-    setCartPosition({ x, y });
+    if (x > 0 && y > 0) {
+      setCartPosition({ x, y });
+    }
   }, []);
 
   const triggerFly = useCallback((image: string, startX: number, startY: number) => {
