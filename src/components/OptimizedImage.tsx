@@ -112,15 +112,21 @@ export const OptimizedImage = ({
       className={cn("relative overflow-hidden", className)}
       onClick={onClick}
     >
-      {/* Blur placeholder */}
+      {/* Shimmer placeholder */}
       {!isLoaded && (
         <div
-          className="absolute inset-0 bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100 animate-pulse"
+          className="absolute inset-0 bg-gradient-to-br from-amber-50 via-gray-100 to-amber-50/50"
           style={{
             backgroundSize: "200% 200%",
-            animation: "shimmer 2s infinite",
+            animation: "shimmer 1.5s ease-in-out infinite",
           }}
-        />
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-petid-gold/20 to-amber-200/30 flex items-center justify-center">
+              <span className="text-2xl opacity-50">🐾</span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Main image */}

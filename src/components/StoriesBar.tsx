@@ -105,12 +105,12 @@ export const StoriesBar = () => {
 
   if (loading) {
     return (
-      <div className="px-3 py-2 bg-white">
+      <div className="px-3 py-3 bg-gradient-to-r from-white via-amber-50/30 to-white">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-              <div className="w-[62px] h-[62px] rounded-full bg-gray-200 animate-pulse" />
-              <div className="w-10 h-2.5 bg-gray-200 rounded animate-pulse" />
+              <div className="w-[66px] h-[66px] rounded-full bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+              <div className="w-12 h-2.5 bg-gray-200 rounded-full animate-pulse" />
             </div>
           ))}
         </div>
@@ -125,14 +125,15 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-2 py-2 bg-white">
+      <div className="px-2 py-3 bg-gradient-to-r from-white via-amber-50/20 to-white">
         <div className="flex gap-3 overflow-x-auto no-scrollbar">
           {/* Your Story / Add Story - Always first */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer w-[76px]"
+            className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer w-[80px]"
             onClick={() => {
               if (currentUserHasStory && user) {
                 navigate(`/story/${user.id}`);
@@ -142,27 +143,37 @@ export const StoriesBar = () => {
             }}
           >
             <div className="relative">
-              <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
-                currentUserHasStory 
-                  ? "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
-                  : ""
-              }`}>
+              <motion.div 
+                className={`w-[68px] h-[68px] rounded-full p-[2.5px] ${
+                  currentUserHasStory 
+                    ? "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
+                    : "bg-gradient-to-br from-gray-200 to-gray-300"
+                }`}
+                animate={currentUserHasStory ? {
+                  boxShadow: ['0 0 0 0 rgba(247, 191, 0, 0)', '0 0 12px 2px rgba(247, 191, 0, 0.4)', '0 0 0 0 rgba(247, 191, 0, 0)']
+                } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
                 <div className="w-full h-full rounded-full bg-white p-[2px]">
-                  <Avatar className="w-full h-full">
-                    <AvatarImage src={currentUserProfile?.avatar_url} />
-                    <AvatarFallback className="bg-gray-100 text-gray-600 text-lg">
+                  <Avatar className="w-full h-full ring-2 ring-white">
+                    <AvatarImage src={currentUserProfile?.avatar_url} className="object-cover" />
+                    <AvatarFallback className="bg-gradient-to-br from-petid-gold/20 to-petid-blue/20 text-petid-blue-dark text-lg font-semibold">
                       {currentUserProfile?.full_name?.charAt(0) || isAuthenticated ? "U" : "+"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
-              </div>
+              </motion.div>
               {!currentUserHasStory && (
-                <div className="absolute bottom-0 right-0 w-[22px] h-[22px] bg-petid-blue rounded-full flex items-center justify-center border-[2px] border-white">
+                <motion.div 
+                  className="absolute bottom-0 right-0 w-[24px] h-[24px] bg-gradient-to-br from-petid-blue to-petid-blue-dark rounded-full flex items-center justify-center border-[2.5px] border-white shadow-md"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
                   <Plus className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
-                </div>
+                </motion.div>
               )}
             </div>
-            <span className="text-[11px] text-[#262626] max-w-[64px] truncate text-center">
+            <span className="text-[11px] font-medium text-foreground max-w-[70px] truncate text-center">
               {isAuthenticated ? "הסטורי שלך" : "הוסף סטורי"}
             </span>
           </motion.div>
@@ -173,37 +184,55 @@ export const StoriesBar = () => {
             .map((storyUser, index) => (
               <motion.div
                 key={storyUser.user_id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.03 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer w-[76px]"
+                className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer w-[80px]"
                 onClick={() => navigate(`/story/${storyUser.user_id}`)}
               >
-                <div className={`w-[62px] h-[62px] rounded-full p-[2px] ${
-                  storyUser.has_viewed 
-                    ? "bg-gray-300" 
-                    : "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
-                }`}>
+                <motion.div 
+                  className={`w-[68px] h-[68px] rounded-full p-[2.5px] ${
+                    storyUser.has_viewed 
+                      ? "bg-gradient-to-br from-gray-300 to-gray-400" 
+                      : "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
+                  }`}
+                  animate={!storyUser.has_viewed ? {
+                    boxShadow: ['0 0 0 0 rgba(247, 191, 0, 0)', '0 0 10px 2px rgba(247, 191, 0, 0.3)', '0 0 0 0 rgba(247, 191, 0, 0)']
+                  } : {}}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: index * 0.2 }}
+                >
                   <div className="w-full h-full rounded-full bg-white p-[2px]">
-                    <Avatar className="w-full h-full">
-                      <AvatarImage src={storyUser.avatar_url} />
-                      <AvatarFallback className="bg-gray-100 text-gray-600 text-lg">
+                    <Avatar className="w-full h-full ring-2 ring-white">
+                      <AvatarImage src={storyUser.avatar_url} className="object-cover" />
+                      <AvatarFallback className="bg-gradient-to-br from-petid-gold/20 to-petid-blue/20 text-petid-blue-dark text-lg font-semibold">
                         {storyUser.full_name?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                </div>
-                <span className="text-[11px] text-[#262626] max-w-[64px] truncate text-center">
+                </motion.div>
+                <span className={`text-[11px] max-w-[70px] truncate text-center ${
+                  storyUser.has_viewed ? 'text-muted-foreground' : 'text-foreground font-medium'
+                }`}>
                   {storyUser.full_name}
                 </span>
               </motion.div>
             ))}
 
           {storyUsers.length === 0 && (
-            <div className="text-center py-4 px-4">
-              <p className="text-gray-400 text-xs">עדיין אין סטוריז להציג</p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-3 py-2 px-4"
+            >
+              <div className="flex -space-x-2 rtl:space-x-reverse">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-white" />
+                ))}
+              </div>
+              <p className="text-muted-foreground text-xs">עקוב אחרי חברים לצפות בסטוריז שלהם</p>
+            </motion.div>
           )}
         </div>
       </div>
