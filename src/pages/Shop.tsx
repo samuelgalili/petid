@@ -397,25 +397,17 @@ const Shop = () => {
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-20" dir="rtl">
-      {/* Enhanced Header with Search */}
-      <div className="bg-gradient-to-b from-background to-background/95 backdrop-blur-xl border-b border-primary/10 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
+      {/* Clean Header */}
+      <div className="bg-background/95 backdrop-blur-xl border-b border-border/40 sticky top-0 z-50">
         <div className="max-w-lg mx-auto px-4 py-3">
           {/* Top Row: Title + Cart */}
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-                <ShoppingBag className="w-5 h-5 text-primary-foreground" strokeWidth={2} />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">חנות</h1>
-                <p className="text-[10px] text-muted-foreground">מוצרים איכותיים לחיית המחמד</p>
-              </div>
-            </div>
+            <h1 className="text-xl font-bold text-foreground">חנות</h1>
             <button 
               ref={cartIconRef}
               onClick={() => navigate('/cart')}
-              className="relative p-2"
+              className="relative"
             >
               <motion.div
                 animate={cartShake ? {
@@ -429,7 +421,7 @@ const Shop = () => {
                     setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
                   }
                 }}
-                className="w-11 h-11 rounded-2xl bg-muted/50 flex items-center justify-center border border-border/30"
+                className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
               >
                 <ShoppingCart className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               </motion.div>
@@ -439,7 +431,7 @@ const Shop = () => {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-0.5 -right-0.5 bg-gradient-to-br from-destructive to-destructive/80 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg shadow-destructive/30"
+                    className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                   >
                     {getTotalItems()}
                   </motion.span>
@@ -448,12 +440,12 @@ const Shop = () => {
             </button>
           </div>
           
-          {/* Enhanced Search Bar */}
+          {/* Clean Search Bar */}
           <div className="relative">
-            <div className={`flex items-center gap-3 bg-muted/50 rounded-2xl px-4 py-3 border-2 transition-all duration-300 ${
-              isSearchFocused ? 'border-primary/50 bg-background shadow-lg shadow-primary/10' : 'border-transparent'
+            <div className={`flex items-center gap-3 bg-muted rounded-xl px-4 py-2.5 transition-all ${
+              isSearchFocused ? 'ring-2 ring-primary/30' : ''
             }`}>
-              <Search className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+              <Search className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -471,715 +463,337 @@ const Shop = () => {
                   setTimeout(() => setShowSearchResults(false), 200);
                 }}
                 placeholder="חיפוש מוצרים..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none font-medium"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
               {searchQuery && (
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={clearSearch}
-                  className="p-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
-                >
+                <button onClick={clearSearch} className="p-1">
                   <X className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
-                </motion.button>
+                </button>
               )}
             </div>
             
-            {/* Search Dropdown - Show when focused and no query */}
-            <AnimatePresence>
-              {isSearchFocused && !searchQuery.trim() && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden z-50"
-                >
-                  {/* Quick Category Tags */}
-                  <div className="px-4 py-3 border-b border-border/30">
-                    <span className="text-xs font-bold text-foreground mb-3 block">חיפוש מהיר</span>
-                    <div className="flex flex-wrap gap-2">
-                      {quickTags.map((tag, index) => (
-                        <motion.button
-                          key={tag.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.03 }}
-                          whileTap={{ scale: 0.95 }}
-                          whileHover={{ scale: 1.05 }}
-                          onClick={() => handleTagClick(tag)}
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white transition-all shadow-sm hover:shadow-md"
-                          style={{ backgroundColor: tag.color }}
-                        >
-                          <span className="text-sm">{tag.icon}</span>
-                          <span>{tag.label}</span>
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Recent Searches */}
-                  {searchHistory.length > 0 && (
-                    <>
-                      <div className="flex items-center justify-between px-4 py-2.5 bg-muted/30">
-                        <span className="text-xs font-bold text-foreground">חיפושים אחרונים</span>
-                        <button 
-                          onClick={clearSearchHistory}
-                          className="text-xs text-primary font-semibold hover:underline"
-                        >
-                          נקה הכל
-                        </button>
-                      </div>
-                      {searchHistory.map((query, index) => (
-                        <motion.button
-                          key={query}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.05 }}
-                          onClick={() => handleHistorySelect(query)}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-right"
-                        >
-                          <Clock className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-                          <span className="flex-1 text-sm text-foreground font-medium">{query}</span>
-                          <button
-                            onClick={(e) => removeFromHistory(query, e)}
-                            className="p-1.5 hover:bg-muted rounded-full"
-                          >
-                            <X className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
-                          </button>
-                        </motion.button>
-                      ))}
-                    </>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-            
-            {/* Autocomplete Suggestions */}
+            {/* Search Suggestions */}
             <AnimatePresence>
               {showSearchResults && searchQuery.trim() && searchSuggestions.length > 0 && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-2xl border border-border/50 shadow-xl overflow-hidden z-50"
+                  exit={{ opacity: 0, y: -8 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-xl border border-border shadow-lg overflow-hidden z-50"
                 >
-                  {searchSuggestions.map((product, index) => (
-                    <motion.button
+                  {searchSuggestions.map((product) => (
+                    <button
                       key={product.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 }}
                       onClick={() => handleSearchSelect(product)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-right"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-right"
                     >
-                      <div className="w-12 h-12 bg-muted rounded-xl overflow-hidden flex-shrink-0">
-                        <OptimizedImage
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-full"
-                          objectFit="cover"
-                        />
+                      <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden">
+                        <OptimizedImage src={product.image} alt={product.name} className="w-full h-full" objectFit="cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
                         <p className="text-xs text-muted-foreground">₪{product.price}</p>
                       </div>
-                      {product.originalPrice && (
-                        <span className="bg-gradient-to-r from-destructive to-destructive/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
-                          מבצע
-                        </span>
-                      )}
-                    </motion.button>
+                    </button>
                   ))}
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* No Results */}
-            <AnimatePresence>
-              {showSearchResults && searchQuery.trim() && searchSuggestions.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-2xl border border-border/50 shadow-xl p-6 text-center z-50"
-                >
-                  <Search className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" strokeWidth={1} />
-                  <p className="text-sm text-muted-foreground">לא נמצאו מוצרים עבור "{searchQuery}"</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </div>
 
-      {/* Pet Type Filter */}
-      <div className="bg-background/80 backdrop-blur-sm border-b border-border/30">
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <div className="flex gap-2">
-            {[
-              { id: "all", label: "הכל", icon: "🐾" },
-              { id: "dog", label: "כלבים", icon: "🐕" },
-              { id: "cat", label: "חתולים", icon: "🐱" },
-            ].map((type) => (
-              <motion.button
-                key={type.id}
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => setSelectedPetType(type.id as any)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                  selectedPetType === type.id
-                    ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20"
-                    : "bg-muted/50 text-foreground border border-border/30 hover:bg-muted"
-                }`}
-              >
-                <span className="mr-1">{type.icon}</span> {type.label}
-              </motion.button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Categories Scroll */}
-      <div className="bg-background/60 backdrop-blur-sm">
+      {/* Categories Scroll */}
+      <div className="border-b border-border/40">
         <div className="max-w-lg mx-auto">
           <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
-            {categories.map((category, index) => (
-              <motion.button
+            {categories.map((category) => (
+              <button
                 key={category.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedCategory(category.label)}
-                className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category.label
-                    ? "bg-foreground text-background shadow-lg"
-                    : "bg-muted/80 text-foreground border border-border/30 hover:bg-muted hover:border-border"
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {category.label}
-              </motion.button>
+              </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Enhanced Filter Bar */}
-      <div className="bg-gradient-to-b from-background/80 to-muted/30 border-b border-border/20">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 ${
-                showFilters || sortBy !== "none" || showDealsOnly
-                  ? "bg-gradient-to-br from-foreground to-foreground/90 text-background shadow-md"
-                  : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
-              }`}
-            >
-              <SlidersHorizontal className="w-4 h-4" strokeWidth={2} />
-              סינון
-            </motion.button>
-            
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowDealsOnly(!showDealsOnly)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 ${
-                showDealsOnly
-                  ? "bg-gradient-to-br from-destructive to-destructive/80 text-white shadow-lg shadow-destructive/30"
-                  : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
-              }`}
-            >
-              <Tag className="w-4 h-4" strokeWidth={2} />
-              מבצעים 🔥
-            </motion.button>
-          </div>
-
-          {/* Grid/Saved Toggle */}
-          <div className="flex bg-muted/50 rounded-xl p-1 border border-border/30">
-            <button
-              onClick={() => setActiveTab("grid")}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                activeTab === "grid" ? "bg-background shadow-sm" : "hover:bg-muted"
-              }`}
-            >
-              <Grid3X3 className={`w-4 h-4 ${activeTab === "grid" ? "text-foreground" : "text-muted-foreground"}`} strokeWidth={1.5} />
-            </button>
-            <button
-              onClick={() => setActiveTab("saved")}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                activeTab === "saved" ? "bg-background shadow-sm" : "hover:bg-muted"
-              }`}
-            >
-              <Bookmark className={`w-4 h-4 ${activeTab === "saved" ? "text-foreground" : "text-muted-foreground"}`} strokeWidth={1.5} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Options Panel */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden bg-background border-b border-border/30"
-          >
-            <div className="max-w-lg mx-auto px-4 py-4">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-primary" strokeWidth={2} />
-                <span className="text-sm font-bold text-foreground">מיון לפי</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: "none", label: "ברירת מחדל" },
-                  { id: "popularity", label: "פופולריות 🔥" },
-                  { id: "price-low", label: "מחיר ↑" },
-                  { id: "price-high", label: "מחיר ↓" },
-                ].map((option) => (
-                  <motion.button
-                    key={option.id}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSortBy(option.id as any)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 ${
-                      sortBy === option.id
-                        ? "bg-gradient-to-br from-foreground to-foreground/90 text-background shadow-md"
-                        : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
-                    }`}
-                  >
-                    {option.label}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Products Count */}
-      <div className="bg-muted/30">
+      {/* Filter Bar */}
+      <div className="border-b border-border/40">
         <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowDealsOnly(!showDealsOnly)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                showDealsOnly
+                  ? "bg-destructive text-white"
+                  : "bg-muted text-foreground hover:bg-muted/80"
+              }`}
+            >
+              <Tag className="w-3.5 h-3.5" strokeWidth={2} />
+              מבצעים
+            </button>
+            
+            <button
+              onClick={() => setSortBy(sortBy === "price-low" ? "none" : "price-low")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                sortBy === "price-low"
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-foreground hover:bg-muted/80"
+              }`}
+            >
+              מחיר ↑
+            </button>
+          </div>
+
+          <span className="text-xs text-muted-foreground">
             {filteredAndSortedProducts.length} מוצרים
           </span>
-          <span className="text-xs text-primary font-semibold">משלוח חינם מעל ₪200</span>
         </div>
       </div>
 
-      {/* Enhanced Products Grid */}
-      <div className="bg-background">
-        <div className="max-w-lg mx-auto p-3">
-          <motion.div 
-            className="grid grid-cols-2 gap-3"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.06,
-                  delayChildren: 0.1,
-                }
-              }
-            }}
-          >
-            {filteredAndSortedProducts.map((product, index) => (
-              <motion.div
-                key={product.id}
-                variants={{
-                  hidden: { 
-                    opacity: 0, 
-                    scale: 0.9,
-                    y: 20,
-                  },
-                  visible: { 
-                    opacity: 1, 
-                    scale: 1,
-                    y: 0,
-                    transition: {
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 24,
-                    }
-                  }
-                }}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.98 }}
-                className="relative bg-background rounded-2xl overflow-hidden border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
-                onClick={() => handleProductClick(product)}
-              >
-                {/* Image Container */}
-                <div className="relative aspect-square bg-gradient-to-br from-muted/50 to-muted overflow-hidden">
-                  <motion.div
-                    className="w-full h-full"
-                    whileHover={{ scale: 1.08 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <OptimizedImage
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full"
-                      objectFit="cover"
-                      sizes="(max-width: 768px) 50vw, 200px"
-                    />
-                  </motion.div>
-                  
-                  {/* Sale Badge */}
-                  {product.originalPrice && (
-                    <motion.div 
-                      className="absolute top-2 right-2 bg-gradient-to-br from-destructive to-destructive/80 text-white px-2 py-1 rounded-lg text-[10px] font-bold shadow-lg shadow-destructive/30"
-                      initial={{ scale: 0, rotate: -20 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ 
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 15,
-                        delay: index * 0.03 + 0.2
-                      }}
-                    >
-                      -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                    </motion.div>
-                  )}
-
-                  {/* Save Button */}
-                  <motion.button
-                    onClick={(e) => toggleFavorite(product.id, e)}
-                    className="absolute top-2 left-2 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                    whileTap={{ scale: 1.2 }}
-                  >
-                    <Bookmark 
-                      className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-primary text-primary" : "text-foreground"}`} 
-                      strokeWidth={1.5} 
-                    />
-                  </motion.button>
-
-                  {/* Free Shipping Badge */}
-                  {product.freeShipping && (
-                    <div className="absolute bottom-2 left-2 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-                      <Truck className="w-3 h-3" />
-                      חינם
-                    </div>
-                  )}
-                </div>
-
-                {/* Product Info */}
-                <div className="p-3 space-y-2">
-                  <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                    {product.name}
-                  </h3>
-                  
-                  {/* Rating */}
-                  <div className="flex items-center gap-1.5">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-semibold text-foreground">{product.rating}</span>
-                    <span className="text-[10px] text-muted-foreground">({product.reviews})</span>
-                  </div>
-                  
-                  {/* Price */}
-                  <div className="flex items-center gap-2">
-                    <span className={`text-base font-black ${product.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
-                      ₪{product.price}
-                    </span>
-                    {product.originalPrice && (
-                      <span className="text-xs text-muted-foreground line-through">
-                        ₪{product.originalPrice}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Stock Status */}
-                  {!product.inStock && (
-                    <div className="text-[10px] font-medium text-destructive">אזל מהמלאי</div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Empty State for Saved */}
-          {activeTab === "saved" && filteredAndSortedProducts.length === 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+      {/* Clean Products Grid */}
+      <div className="max-w-lg mx-auto p-4">
+        <div className="grid grid-cols-2 gap-3">
+          {filteredAndSortedProducts.map((product) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="py-20 text-center"
+              whileTap={{ scale: 0.98 }}
+              className="bg-background rounded-xl overflow-hidden border border-border cursor-pointer"
+              onClick={() => handleProductClick(product)}
             >
-              <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                <Bookmark className="w-10 h-10 text-muted-foreground" strokeWidth={1} />
+              {/* Image */}
+              <div className="relative aspect-square bg-muted">
+                <OptimizedImage
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full"
+                  objectFit="cover"
+                  sizes="(max-width: 768px) 50vw, 200px"
+                />
+                
+                {/* Sale Badge */}
+                {product.originalPrice && (
+                  <div className="absolute top-2 right-2 bg-destructive text-white px-2 py-0.5 rounded text-[10px] font-bold">
+                    -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                  </div>
+                )}
+
+                {/* Save Button */}
+                <button
+                  onClick={(e) => toggleFavorite(product.id, e)}
+                  className="absolute top-2 left-2 w-7 h-7 rounded-full bg-background/90 flex items-center justify-center"
+                >
+                  <Bookmark 
+                    className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-foreground text-foreground" : "text-muted-foreground"}`} 
+                    strokeWidth={1.5} 
+                  />
+                </button>
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">עדיין אין מוצרים שמורים</h3>
-              <p className="text-sm text-muted-foreground">שמור מוצרים שאהבת לצפייה מאוחרת</p>
+
+              {/* Info */}
+              <div className="p-3">
+                <h3 className="text-sm font-semibold text-foreground line-clamp-1 mb-1">
+                  {product.name}
+                </h3>
+                
+                <div className="flex items-center gap-1 mb-2">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span className="text-xs text-muted-foreground">{product.rating}</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-bold ${product.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
+                    ₪{product.price}
+                  </span>
+                  {product.originalPrice && (
+                    <span className="text-xs text-muted-foreground line-through">
+                      ₪{product.originalPrice}
+                    </span>
+                  )}
+                </div>
+              </div>
             </motion.div>
-          )}
+          ))}
         </div>
+
+        {/* Empty State */}
+        {filteredAndSortedProducts.length === 0 && (
+          <div className="py-16 text-center">
+            <Bookmark className="w-12 h-12 text-muted-foreground mx-auto mb-3" strokeWidth={1} />
+            <p className="text-sm text-muted-foreground">לא נמצאו מוצרים</p>
+          </div>
+        )}
       </div>
 
-      {/* Product Details Sheet - Enhanced */}
+      {/* Product Details Sheet */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-background p-0 overflow-hidden shadow-2xl" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-background p-0 overflow-hidden" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
             <div className="flex flex-col h-full" dir="rtl">
-              {/* Header with drag handle */}
-              <div className="flex-shrink-0">
-                <div className="flex justify-center pt-3 pb-2">
-                  <div className="w-12 h-1.5 bg-gradient-to-r from-muted via-primary/30 to-muted rounded-full" />
-                </div>
+              {/* Handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
+              </div>
+              
+              {/* Top Actions */}
+              <div className="flex items-center justify-between px-4 pb-3">
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="w-9 h-9 rounded-full bg-muted flex items-center justify-center"
+                >
+                  <ChevronLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                </button>
                 
-                {/* Top Actions */}
-                <div className="flex items-center justify-between px-4 pb-2">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setSelectedProduct(null)}
-                    className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center border border-border/30"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                  </motion.button>
-                  
-                  <div className="flex items-center gap-2">
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => {
-                        navigator.share?.({
-                          title: selectedProduct.name,
-                          text: `בדוק את ${selectedProduct.name} ב-₪${selectedProduct.price}`,
-                        }).catch(() => {});
-                      }}
-                      className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center border border-border/30"
-                    >
-                      <Share2 className="w-4 h-4 text-foreground" strokeWidth={1.5} />
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => toggleFavorite(selectedProduct.id)}
-                      className="w-10 h-10 bg-muted/50 rounded-full flex items-center justify-center border border-border/30"
-                    >
-                      <Bookmark 
-                        className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-primary text-primary" : "text-foreground"}`} 
-                        strokeWidth={1.5} 
-                      />
-                    </motion.button>
-                  </div>
-                </div>
+                <button
+                  onClick={() => toggleFavorite(selectedProduct.id)}
+                  className="w-9 h-9 rounded-full bg-muted flex items-center justify-center"
+                >
+                  <Bookmark 
+                    className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-foreground" : ""} text-foreground`} 
+                    strokeWidth={1.5} 
+                  />
+                </button>
               </div>
 
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto">
-                {/* Product Image Gallery */}
-                <div className="relative mb-4">
-                  <Carousel 
-                    className="w-full" 
-                    dir="ltr"
-                    setApi={setCarouselApi}
-                    opts={{ direction: "ltr" }}
-                  >
+                {/* Product Image */}
+                <div className="relative px-4 mb-4">
+                  <Carousel className="w-full" dir="ltr" setApi={setCarouselApi} opts={{ direction: "ltr" }}>
                     <CarouselContent>
                       {(selectedProduct.images || [selectedProduct.image]).map((img: string, index: number) => (
                         <CarouselItem key={index}>
-                          <div className="px-4">
-                            <motion.div 
-                              ref={index === 0 ? productImageRef : undefined}
-                              initial={{ scale: 0.95, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              className="w-full aspect-square bg-gradient-to-br from-muted/50 to-muted rounded-2xl overflow-hidden shadow-lg"
-                            >
-                              <OptimizedImage
-                                src={img}
-                                alt={`${selectedProduct.name} - תמונה ${index + 1}`}
-                                className="w-full h-full"
-                                objectFit="cover"
-                                sizes="(max-width: 768px) 100vw, 400px"
-                              />
-                            </motion.div>
+                          <div 
+                            ref={index === 0 ? productImageRef : undefined}
+                            className="w-full aspect-square bg-muted rounded-xl overflow-hidden"
+                          >
+                            <OptimizedImage
+                              src={img}
+                              alt={selectedProduct.name}
+                              className="w-full h-full"
+                              objectFit="cover"
+                            />
                           </div>
                         </CarouselItem>
                       ))}
                     </CarouselContent>
                   </Carousel>
                   
-                  {/* Image Dots Pagination */}
+                  {/* Dots */}
                   {(selectedProduct.images?.length || 1) > 1 && (
                     <div className="flex justify-center gap-1.5 mt-3">
                       {(selectedProduct.images || [selectedProduct.image]).map((_: string, index: number) => (
-                        <motion.div
+                        <div
                           key={index}
-                          initial={false}
-                          animate={{
-                            width: currentImageIndex === index ? 20 : 6,
-                          }}
-                          transition={{ duration: 0.2 }}
-                          className={`h-1.5 rounded-full ${currentImageIndex === index ? 'bg-foreground' : 'bg-muted-foreground/30'}`}
+                          className={`h-1.5 rounded-full transition-all ${currentImageIndex === index ? 'w-5 bg-foreground' : 'w-1.5 bg-muted-foreground/30'}`}
                         />
                       ))}
                     </div>
                   )}
                   
-                  {/* Image Counter */}
-                  {(selectedProduct.images?.length || 1) > 1 && (
-                    <div className="absolute top-6 left-6 bg-foreground/70 backdrop-blur-sm text-background text-[11px] font-semibold px-2.5 py-1 rounded-full">
-                      {currentImageIndex + 1}/{selectedProduct.images?.length || 1}
-                    </div>
-                  )}
-                  
                   {/* Sale Badge */}
                   {selectedProduct.originalPrice && (
-                    <motion.div 
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      className="absolute top-6 right-6 bg-gradient-to-br from-destructive to-destructive/80 text-white px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg shadow-destructive/30"
-                    >
-                      {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}% הנחה
-                    </motion.div>
+                    <div className="absolute top-2 right-6 bg-destructive text-white px-2 py-1 rounded text-xs font-bold">
+                      -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
+                    </div>
                   )}
                 </div>
 
                 <div className="px-4 space-y-4">
-                  {/* Product Title & Rating */}
+                  {/* Title & Rating */}
                   <div>
-                    <h2 className="text-xl font-bold text-foreground mb-2 leading-tight">
-                      {selectedProduct.name}
-                    </h2>
-                    
-                    {/* Rating & Reviews */}
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-1 rounded-lg">
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                        <span className="text-sm font-bold text-foreground">{selectedProduct.rating}</span>
-                      </div>
-                      <span className="text-sm text-primary font-medium">({selectedProduct.reviews} ביקורות)</span>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Heart className="w-3.5 h-3.5" strokeWidth={1.5} />
-                        <span className="text-xs">{selectedProduct.likes}</span>
-                      </div>
+                    <h2 className="text-lg font-bold text-foreground mb-1">{selectedProduct.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span className="text-sm font-medium text-foreground">{selectedProduct.rating}</span>
+                      <span className="text-xs text-muted-foreground">({selectedProduct.reviews} ביקורות)</span>
                     </div>
                   </div>
 
-                  {/* Price Section */}
-                  <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-2xl p-4 border border-border/30">
-                    <div className="flex items-end gap-3">
-                      <span className={`text-3xl font-black ${selectedProduct.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
-                        ₪{selectedProduct.price}
-                      </span>
-                      {selectedProduct.originalPrice && (
-                        <span className="text-lg text-muted-foreground line-through mb-0.5">
-                          ₪{selectedProduct.originalPrice}
-                        </span>
-                      )}
-                    </div>
+                  {/* Price */}
+                  <div className="flex items-end gap-2">
+                    <span className={`text-2xl font-bold ${selectedProduct.originalPrice ? 'text-destructive' : 'text-foreground'}`}>
+                      ₪{selectedProduct.price}
+                    </span>
                     {selectedProduct.originalPrice && (
-                      <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                        חסכון של ₪{selectedProduct.originalPrice - selectedProduct.price}!
-                      </p>
+                      <span className="text-base text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
                     )}
                   </div>
 
                   {/* Description */}
-                  <div>
-                    <h3 className="text-sm font-bold text-foreground mb-2">תיאור המוצר</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {selectedProduct.description}
-                    </p>
-                  </div>
-
-                  {/* Features */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={`flex items-center gap-2 p-3 rounded-xl border ${selectedProduct.inStock ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.inStock ? 'bg-emerald-500' : 'bg-destructive'}`}>
-                        <Shield className="w-4 h-4 text-white" strokeWidth={2} />
-                      </div>
-                      <span className={`text-xs font-semibold ${selectedProduct.inStock ? 'text-emerald-700 dark:text-emerald-300' : 'text-destructive'}`}>
-                        {selectedProduct.inStock ? 'במלאי' : 'אזל מהמלאי'}
-                      </span>
-                    </div>
-                    
-                    <div className={`flex items-center gap-2 p-3 rounded-xl border ${selectedProduct.freeShipping ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800' : 'bg-muted border-border/30'}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedProduct.freeShipping ? 'bg-blue-500' : 'bg-muted-foreground/30'}`}>
-                        <Truck className="w-4 h-4 text-white" strokeWidth={2} />
-                      </div>
-                      <span className={`text-xs font-semibold ${selectedProduct.freeShipping ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'}`}>
-                        {selectedProduct.freeShipping ? 'משלוח חינם' : 'משלוח רגיל'}
-                      </span>
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground">{selectedProduct.description}</p>
 
                   {/* Size Selector */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-bold text-foreground">בחר גודל</h3>
-                      <button className="text-xs text-primary font-semibold">מדריך מידות</button>
-                    </div>
+                    <h3 className="text-sm font-semibold text-foreground mb-2">גודל</h3>
                     <div className="flex gap-2">
                       {sizes.map((size) => (
-                        <motion.button
+                        <button
                           key={size}
-                          whileTap={{ scale: 0.95 }}
                           onClick={() => setSelectedSize(size)}
-                          className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${
+                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                             selectedSize === size
-                              ? "bg-foreground text-background shadow-lg"
-                              : "bg-muted text-foreground border border-border/30 hover:bg-muted/80"
+                              ? "bg-foreground text-background"
+                              : "bg-muted text-foreground"
                           }`}
                         >
                           {size}
-                        </motion.button>
+                        </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Quantity Selector */}
+                  {/* Quantity */}
                   <div>
-                    <h3 className="text-sm font-bold text-foreground mb-3">כמות</h3>
-                    <div className="flex items-center justify-between bg-muted/50 rounded-xl p-2 border border-border/30">
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
+                    <h3 className="text-sm font-semibold text-foreground mb-2">כמות</h3>
+                    <div className="flex items-center gap-4 bg-muted rounded-lg p-1 w-fit">
+                      <button
                         onClick={decreaseQuantity}
-                        className="w-10 h-10 rounded-lg bg-background flex items-center justify-center shadow-sm border border-border/30"
+                        className="w-9 h-9 rounded-md bg-background flex items-center justify-center"
                       >
-                        <Minus className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                      </motion.button>
-                      <span className="text-xl font-black text-foreground">{quantity}</span>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
+                        <Minus className="w-4 h-4 text-foreground" />
+                      </button>
+                      <span className="text-lg font-bold text-foreground w-8 text-center">{quantity}</span>
+                      <button
                         onClick={increaseQuantity}
-                        className="w-10 h-10 rounded-lg bg-background flex items-center justify-center shadow-sm border border-border/30"
+                        className="w-9 h-9 rounded-md bg-background flex items-center justify-center"
                       >
-                        <Plus className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                      </motion.button>
+                        <Plus className="w-4 h-4 text-foreground" />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Spacer for bottom button */}
                   <div className="h-4" />
                 </div>
               </div>
 
-              {/* Fixed Bottom Bar */}
-              <div className="flex-shrink-0 border-t border-border/30 px-4 py-4 bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-                <div className="flex items-center gap-3">
-                  {/* Total Price */}
-                  <div className="flex-shrink-0">
-                    <p className="text-[10px] text-muted-foreground font-medium">סה״כ</p>
-                    <p className="text-xl font-black text-foreground">₪{selectedProduct.price * quantity}</p>
+              {/* Bottom Bar */}
+              <div className="flex-shrink-0 border-t border-border px-4 py-4 bg-background">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">סה״כ</p>
+                    <p className="text-xl font-bold text-foreground">₪{selectedProduct.price * quantity}</p>
                   </div>
                   
-                  {/* Add to Cart Button */}
-                  <motion.div className="flex-1" whileTap={{ scale: 0.98 }}>
-                    <Button
-                      onClick={handleAddToCart}
-                      disabled={!selectedProduct.inStock}
-                      className={`w-full h-14 text-base font-bold rounded-xl flex items-center justify-center gap-2 ${
-                        selectedProduct.inStock 
-                          ? 'bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 text-primary-foreground shadow-lg shadow-primary/30' 
-                          : 'bg-muted text-muted-foreground cursor-not-allowed'
-                      }`}
-                    >
-                      <ShoppingCart className="w-5 h-5" strokeWidth={2} />
-                      {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
-                    </Button>
-                  </motion.div>
+                  <Button
+                    onClick={handleAddToCart}
+                    disabled={!selectedProduct.inStock}
+                    className="flex-1 h-12 text-sm font-semibold rounded-lg"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
+                  </Button>
                 </div>
               </div>
             </div>
