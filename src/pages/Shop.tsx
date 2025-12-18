@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { ShoppingCart, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
+import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import confetti from "canvas-confetti";
@@ -14,7 +15,10 @@ import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/com
 const Shop = () => {
   const navigate = useNavigate();
   const { addToCart, getTotalItems, cartShake } = useCart();
+  const { triggerFly, setCartIconPosition } = useFlyingCart();
   const { toast } = useToast();
+  const cartIconRef = useRef<HTMLButtonElement>(null);
+  const productImageRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState("הכל");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedPetType, setSelectedPetType] = useState<"all" | "dog" | "cat">("all");
@@ -354,6 +358,14 @@ const Shop = () => {
   const handleAddToCart = useCallback(() => {
     if (!selectedProduct) return;
 
+    // Trigger flying animation
+    if (productImageRef.current) {
+      const rect = productImageRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      triggerFly(selectedProduct.image, centerX, centerY);
+    }
+
     addToCart({
       id: `${selectedProduct.id}-${selectedSize || 'default'}`,
       name: selectedProduct.name,
@@ -379,7 +391,7 @@ const Shop = () => {
     setSelectedProduct(null);
     setQuantity(1);
     setSelectedSize(null);
-  }, [selectedProduct, quantity, addToCart, toast, selectedSize]);
+  }, [selectedProduct, quantity, addToCart, toast, selectedSize, triggerFly]);
 
   const increaseQuantity = useCallback(() => setQuantity(prev => prev + 1), []);
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
@@ -393,6 +405,7 @@ const Shop = () => {
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-[20px] font-semibold text-[#262626]">חנות</h1>
             <button 
+              ref={cartIconRef}
               onClick={() => navigate('/cart')}
               className="relative"
             >
@@ -402,6 +415,12 @@ const Shop = () => {
                   scale: [1, 1.2, 1.1, 1.15, 1.1, 1.05, 1],
                 } : {}}
                 transition={{ duration: 0.5 }}
+                onAnimationComplete={() => {
+                  if (cartIconRef.current) {
+                    const rect = cartIconRef.current.getBoundingClientRect();
+                    setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                  }
+                }}
               >
                 <ShoppingCart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
               </motion.div>
@@ -940,6 +959,7 @@ const Shop = () => {
                         <CarouselItem key={index}>
                           <div className="px-4">
                             <motion.div 
+                              ref={index === 0 ? productImageRef : undefined}
                               initial={{ scale: 0.95, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               className="w-full aspect-square bg-gradient-to-br from-[#FAFAFA] to-[#F0F0F0] rounded-2xl overflow-hidden shadow-sm"
