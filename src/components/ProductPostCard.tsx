@@ -337,6 +337,15 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         }`}
         whileTap={{ scale: 0.99 }}
       >
+        {/* Shimmer effect */}
+        {!showAddedAnimation && (
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
+            initial={{ x: "-100%" }}
+            animate={{ x: "200%" }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.5, ease: "easeInOut" }}
+          />
+        )}
         <div className="flex items-center gap-2">
           <motion.div
             className="flex items-center justify-center"
