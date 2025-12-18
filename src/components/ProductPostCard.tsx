@@ -132,7 +132,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
       </div>
 
       {/* Image with CTA strip */}
-      <div className="relative aspect-square overflow-hidden">
+      <div className="relative aspect-[3/4] overflow-hidden">
         <OptimizedImage
           src={product.image}
           alt={product.title}
