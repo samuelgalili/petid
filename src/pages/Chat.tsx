@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send, ChevronRight, Sparkles, Heart, Image, Mic, Smile } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   role: "user" | "assistant";
@@ -15,8 +16,10 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -28,6 +31,7 @@ const Chat = () => {
 
   const streamChat = async (messages: Message[]) => {
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+    setIsTyping(true);
     
     const resp = await fetch(CHAT_URL, {
       method: "POST",
@@ -39,6 +43,7 @@ const Chat = () => {
     });
 
     if (!resp.ok || !resp.body) {
+      setIsTyping(false);
       if (resp.status === 429) {
         throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
       }
@@ -78,6 +83,7 @@ const Chat = () => {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) {
+            setIsTyping(false);
             assistantContent += content;
             setMessages((prev) => {
               const last = prev[prev.length - 1];
@@ -122,6 +128,7 @@ const Chat = () => {
         } catch {}
       }
     }
+    setIsTyping(false);
   };
 
   const handleSend = async () => {
@@ -154,124 +161,204 @@ const Chat = () => {
     }
   };
 
+  const exampleQuestions = [
+    { icon: "🐕", text: "איך לטפל בכלב?" },
+    { icon: "🐈", text: "מה לתת לחתול?" },
+    { icon: "🎓", text: "איך לאלף גור?" },
+    { icon: "🏥", text: "מתי לפנות לווטרינר?" },
+  ];
+
   return (
-    <div className="min-h-screen bg-background pb-24 pt-4 px-4 dir-rtl">
-      <div className="max-w-3xl mx-auto h-[calc(100vh-7rem)]">
-        {/* Messages Container - ChatGPT style */}
-        <div className="h-full flex flex-col">
-          <div className="flex-1 overflow-y-auto space-y-3 py-4">
-            <AnimatePresence>
-              {messages.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-20"
-                >
-                  <Bot className="w-12 h-12 mx-auto mb-4 text-muted-foreground" strokeWidth={1.5} />
-                  <h2 className="text-2xl font-semibold text-foreground mb-2">איך אוכל לעזור לך?</h2>
-                  <p className="text-muted-foreground text-sm mb-8">שאל שאלות על חיות המחמד שלך</p>
-                  <div className="flex flex-wrap gap-2 justify-center max-w-md mx-auto">
-                    <button
-                      onClick={() => setInput("איך לטפל בכלב שלי?")}
-                      className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors text-foreground"
-                    >
-                      איך לטפל בכלב?
-                    </button>
-                    <button
-                      onClick={() => setInput("מה לתת לחתול לאכול?")}
-                      className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors text-foreground"
-                    >
-                      מה לתת לחתול?
-                    </button>
-                    <button
-                      onClick={() => setInput("כיצד לאלף כלב צעיר?")}
-                      className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors text-foreground"
-                    >
-                      איך לאלף כלב?
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {messages.map((message, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`flex gap-4 ${
-                    message.role === "user" ? "flex-row-reverse" : "flex-row"
-                  } max-w-full`}
-                >
-                  <div
-                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      message.role === "user"
-                        ? "bg-foreground text-background"
-                        : "bg-primary text-primary-foreground"
-                    }`}
-                  >
-                    {message.role === "user" ? (
-                      <User className="w-4 h-4" strokeWidth={2} />
-                    ) : (
-                      <Bot className="w-4 h-4" strokeWidth={2} />
-                    )}
-                  </div>
-                  <div
-                    className={`flex-1 px-4 py-3 rounded-xl ${
-                      message.role === "user"
-                        ? "bg-muted text-foreground"
-                        : "bg-transparent text-foreground"
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap text-[15px] leading-[1.6]">{message.content}</p>
-                  </div>
-                </motion.div>
-              ))}
-
-              {isLoading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex gap-4"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                    <Bot className="w-4 h-4" strokeWidth={2} />
-                  </div>
-                  <div className="flex-1 px-4 py-3">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <div ref={messagesEndRef} />
+    <div className="min-h-screen bg-white pb-24" dir="rtl">
+      {/* Instagram-style Header */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button 
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 flex items-center justify-center"
+          >
+            <ChevronRight className="w-6 h-6 text-gray-900" />
+          </button>
+          
+          <div className="flex items-center gap-3">
+            {/* AI Avatar with Instagram gradient ring */}
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px]">
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                  <span className="text-lg">🐾</span>
+                </div>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+            </div>
+            <div className="text-right">
+              <h1 className="text-base font-bold text-gray-900 font-jakarta">Petid AI</h1>
+              <p className="text-xs text-green-500 font-jakarta">פעיל עכשיו</p>
+            </div>
           </div>
+          
+          <div className="w-10 h-10 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-[#DD2A7B]" />
+          </div>
+        </div>
+      </div>
 
-          {/* Input Area - ChatGPT style */}
-          <div className="pt-4 pb-2">
-            <div className="flex gap-2 bg-surface border border-border rounded-xl p-2 shadow-sm">
+      <div className="flex flex-col h-[calc(100vh-140px)]">
+        {/* Messages Container */}
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <AnimatePresence>
+            {messages.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center h-full py-8"
+              >
+                {/* AI Profile Card */}
+                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[3px] mb-4">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <span className="text-4xl">🐾</span>
+                  </div>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 font-jakarta mb-1">Petid AI</h2>
+                <p className="text-sm text-gray-500 font-jakarta mb-6">העוזר החכם לבעלי חיות מחמד</p>
+                
+                {/* Example Questions Grid */}
+                <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+                  {exampleQuestions.map((q, index) => (
+                    <motion.button
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => setInput(q.text)}
+                      className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-colors text-right"
+                    >
+                      <span className="text-xl">{q.icon}</span>
+                      <span className="text-sm text-gray-700 font-jakarta">{q.text}</span>
+                    </motion.button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {messages.map((message, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                className={`flex mb-3 ${message.role === "user" ? "justify-start" : "justify-end"}`}
+              >
+                <div className={`flex items-end gap-2 max-w-[80%] ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
+                  {/* Avatar */}
+                  {message.role === "assistant" && (
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[1.5px]">
+                      <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                        <span className="text-xs">🐾</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Message Bubble */}
+                  <div
+                    className={`px-4 py-2.5 rounded-3xl ${
+                      message.role === "user"
+                        ? "bg-gradient-to-r from-[#405DE6] via-[#5851DB] to-[#833AB4] text-white rounded-br-lg"
+                        : "bg-gray-100 text-gray-900 rounded-bl-lg"
+                    }`}
+                  >
+                    <p className="text-[15px] leading-relaxed font-jakarta whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-end mb-3"
+              >
+                <div className="flex items-end gap-2 flex-row-reverse">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[1.5px]">
+                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                      <span className="text-xs">🐾</span>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 bg-gray-100 rounded-3xl rounded-bl-lg">
+                    <div className="flex gap-1">
+                      <motion.div
+                        className="w-2 h-2 bg-gray-400 rounded-full"
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-gray-400 rounded-full"
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-gray-400 rounded-full"
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Instagram-style Input Area */}
+        <div className="px-4 py-3 bg-white border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-1">
+              <button className="w-9 h-9 flex items-center justify-center text-[#405DE6] hover:bg-gray-50 rounded-full transition-colors">
+                <Image className="w-5 h-5" />
+              </button>
+              <button className="w-9 h-9 flex items-center justify-center text-[#405DE6] hover:bg-gray-50 rounded-full transition-colors">
+                <Mic className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Input Field */}
+            <div className="flex-1 flex items-center bg-gray-50 rounded-full border border-gray-200 px-4 py-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="כתוב הודעה..."
-                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-muted-foreground"
+                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-gray-400 p-0 h-auto font-jakarta"
                 disabled={isLoading}
                 dir="rtl"
               />
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="bg-foreground hover:bg-foreground/90 text-background rounded-lg h-10 w-10"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </Button>
+              <button className="mr-2 text-gray-400 hover:text-gray-600 transition-colors">
+                <Smile className="w-5 h-5" />
+              </button>
             </div>
+            
+            {/* Send Button */}
+            {input.trim() ? (
+              <motion.button
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                onClick={handleSend}
+                disabled={isLoading}
+                className="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-[#405DE6] via-[#5851DB] to-[#833AB4] rounded-full text-white disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+              </motion.button>
+            ) : (
+              <button className="w-9 h-9 flex items-center justify-center text-[#ED4956] hover:bg-gray-50 rounded-full transition-colors">
+                <Heart className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
