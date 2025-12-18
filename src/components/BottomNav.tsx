@@ -114,23 +114,29 @@ const BottomNav = () => {
   return (
     <>
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-background via-background/98 to-background/90 backdrop-blur-2xl border-t border-primary/10 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
         role="navigation"
         aria-label="ניווט ראשי"
       >
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
+        {/* Decorative glow line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+        
+        <div className="flex justify-around items-center h-18 max-w-lg mx-auto px-3 py-1">
           {/* Home */}
           <NavItem
             to="/"
             icon={
               <div className={cn(
-                "p-2 rounded-xl transition-all duration-200",
-                isActive("/") && "bg-primary"
+                "p-2.5 rounded-2xl transition-all duration-300 relative",
+                isActive("/") && "bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25"
               )}>
+                {isActive("/") && (
+                  <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-pulse" />
+                )}
                 <Home 
                   className={cn(
-                    "w-6 h-6 transition-colors",
-                    isActive("/") ? "text-white" : "text-muted-foreground"
+                    "w-6 h-6 transition-all duration-300 relative z-10",
+                    isActive("/") ? "text-primary-foreground drop-shadow-sm" : "text-muted-foreground"
                   )}
                   strokeWidth={isActive("/") ? 2.5 : 1.5}
                   fill={isActive("/") ? "currentColor" : "none"}
@@ -146,13 +152,16 @@ const BottomNav = () => {
             to="/explore"
             icon={
               <div className={cn(
-                "p-2 rounded-xl transition-all duration-200",
-                isActive("/explore") && "bg-primary"
+                "p-2.5 rounded-2xl transition-all duration-300 relative",
+                isActive("/explore") && "bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25"
               )}>
+                {isActive("/explore") && (
+                  <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-pulse" />
+                )}
                 <Compass 
                   className={cn(
-                    "w-6 h-6 transition-colors",
-                    isActive("/explore") ? "text-white" : "text-muted-foreground"
+                    "w-6 h-6 transition-all duration-300 relative z-10",
+                    isActive("/explore") ? "text-primary-foreground drop-shadow-sm" : "text-muted-foreground"
                   )}
                   strokeWidth={isActive("/explore") ? 2.5 : 1.5}
                   fill={isActive("/explore") ? "currentColor" : "none"}
@@ -163,12 +172,19 @@ const BottomNav = () => {
             label="חיפוש"
           />
 
-          {/* Categories (+) */}
+          {/* Categories (+) - Center Button */}
           <NavItem
             onClick={() => setCategoriesOpen(true)}
             icon={
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary via-[#E3A700] to-primary flex items-center justify-center shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105">
-                <Plus className="w-6 h-6 text-primary-foreground" strokeWidth={2.5} />
+              <div className="relative group">
+                {/* Outer glow ring */}
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-primary via-[#E3A700] to-primary opacity-60 blur-md group-hover:opacity-80 transition-opacity" />
+                {/* Main button */}
+                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-[#D4A000] to-primary flex items-center justify-center shadow-xl shadow-primary/40 group-hover:shadow-2xl group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
+                  {/* Inner shine */}
+                  <div className="absolute inset-[2px] rounded-[14px] bg-gradient-to-br from-white/20 to-transparent" />
+                  <Plus className="w-7 h-7 text-primary-foreground drop-shadow-sm relative z-10" strokeWidth={2.5} />
+                </div>
               </div>
             }
             isActive={false}
@@ -180,13 +196,16 @@ const BottomNav = () => {
             to="/shop"
             icon={
               <div className={cn(
-                "p-2 rounded-xl transition-all duration-200",
-                isActive("/shop") && "bg-primary"
+                "p-2.5 rounded-2xl transition-all duration-300 relative",
+                isActive("/shop") && "bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25"
               )}>
+                {isActive("/shop") && (
+                  <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-pulse" />
+                )}
                 <ShoppingBag 
                   className={cn(
-                    "w-6 h-6 transition-colors",
-                    isActive("/shop") ? "text-white" : "text-muted-foreground"
+                    "w-6 h-6 transition-all duration-300 relative z-10",
+                    isActive("/shop") ? "text-primary-foreground drop-shadow-sm" : "text-muted-foreground"
                   )}
                   strokeWidth={isActive("/shop") ? 2.5 : 1.5}
                   fill={isActive("/shop") ? "currentColor" : "none"}
@@ -205,31 +224,27 @@ const BottomNav = () => {
           >
             <motion.div whileTap={{ scale: 0.9 }} className="relative">
               <div className={cn(
-                "w-8 h-8 rounded-xl overflow-hidden transition-all duration-200",
+                "w-9 h-9 rounded-2xl overflow-hidden transition-all duration-300 relative",
                 isActive("/profile") 
-                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background" 
-                  : "ring-1 ring-border"
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/20" 
+                  : "ring-1 ring-border/50"
               )}>
+                {isActive("/profile") && (
+                  <div className="absolute inset-0 bg-primary/10 z-10" />
+                )}
                 <Avatar className="w-full h-full">
                   <AvatarImage src={userAvatar} className="object-cover" />
-                  <AvatarFallback className="bg-secondary text-muted-foreground text-[10px]">
+                  <AvatarFallback className="bg-gradient-to-br from-secondary to-muted text-muted-foreground text-[10px]">
                     <User className="w-4 h-4" />
                   </AvatarFallback>
                 </Avatar>
               </div>
-              {isActive("/profile") && (
-                <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary"
-                  initial={false}
-                />
-              )}
             </motion.div>
           </Link>
         </div>
         
         {/* Safe area for notched devices */}
-        <div className="h-[env(safe-area-inset-bottom)] bg-background/80" />
+        <div className="h-[env(safe-area-inset-bottom)] bg-background" />
       </nav>
 
       {/* Floating Action Button for Create Post */}
@@ -237,14 +252,15 @@ const BottomNav = () => {
         onClick={() => setCreatePostOpen(true)}
         whileTap={{ scale: 0.9 }}
         whileHover={{ scale: 1.05 }}
-        className="fixed bottom-24 left-4 z-40 w-14 h-14 rounded-2xl flex items-center justify-center bg-white/80 backdrop-blur-md p-[2px] transition-all duration-300"
+        className="fixed bottom-24 left-4 z-40 w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden group"
         aria-label="יצירת פוסט חדש"
       >
-        {/* Gradient border */}
-        <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue p-[2px]">
-          <span className="block w-full h-full rounded-[14px] bg-white/90 backdrop-blur-md" />
-        </span>
-        <Camera className="w-6 h-6 text-petid-blue relative z-10" strokeWidth={2} />
+        {/* Animated gradient border */}
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite] p-[2px]">
+          <div className="w-full h-full rounded-[14px] bg-background/95 backdrop-blur-md flex items-center justify-center">
+            <Camera className="w-6 h-6 text-primary" strokeWidth={2} />
+          </div>
+        </div>
       </motion.button>
 
       {/* Create Post Dialog */}
@@ -256,49 +272,72 @@ const BottomNav = () => {
 
       {/* Categories Sheet */}
       <Sheet open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-2xl bg-background border-0">
+        <SheetContent side="bottom" className="h-auto max-h-[75vh] rounded-t-3xl bg-gradient-to-b from-background to-background/98 border-0 shadow-[0_-16px_48px_rgba(0,0,0,0.15)]">
           <SheetTitle className="sr-only">קטגוריות</SheetTitle>
           <SheetDescription className="sr-only">בחר קטגוריה לניווט</SheetDescription>
-          <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-2 mb-6" />
+          
+          {/* Handle bar */}
+          <div className="w-12 h-1.5 bg-gradient-to-r from-muted via-primary/30 to-muted rounded-full mx-auto mt-3 mb-4" />
+          
+          {/* Header */}
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-bold text-foreground">קטגוריות</h3>
+            <p className="text-sm text-muted-foreground">בחר קטגוריה לניווט</p>
+          </div>
           
           <motion.div 
-            className="grid grid-cols-4 gap-3 px-4 pb-8"
+            className="grid grid-cols-4 gap-4 px-4 pb-10"
             initial="hidden"
             animate="visible"
             variants={{
               hidden: {},
               visible: {
                 transition: {
-                  staggerChildren: 0.05
+                  staggerChildren: 0.04,
+                  delayChildren: 0.1
                 }
               }
             }}
           >
-            {categories.map((category) => {
+            {categories.map((category, index) => {
               const CategoryIcon = category.icon;
               return (
                 <motion.div
                   key={category.path}
                   variants={{
-                    hidden: { opacity: 0, y: 20, scale: 0.8 },
+                    hidden: { opacity: 0, y: 30, scale: 0.7 },
                     visible: { opacity: 1, y: 0, scale: 1 }
                   }}
-                  transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 >
                   <Link
                     to={category.path}
                     onClick={() => setCategoriesOpen(false)}
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-muted transition-colors"
+                    className="flex flex-col items-center gap-2.5 p-3 rounded-2xl active:bg-muted/50 hover:bg-muted/30 transition-all duration-200 group"
                   >
                     <motion.div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center"
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center relative overflow-hidden shadow-sm"
                       style={{ backgroundColor: `${category.color}15` }}
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={{ scale: 1.08, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <CategoryIcon className="w-5 h-5" style={{ color: category.color }} strokeWidth={1.5} />
+                      {/* Glow effect on hover */}
+                      <div 
+                        className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-300 blur-sm"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      {/* Icon border ring */}
+                      <div 
+                        className="absolute inset-0 rounded-2xl border-2 opacity-20"
+                        style={{ borderColor: category.color }}
+                      />
+                      <CategoryIcon 
+                        className="w-6 h-6 relative z-10 transition-transform group-hover:scale-110" 
+                        style={{ color: category.color }} 
+                        strokeWidth={1.5} 
+                      />
                     </motion.div>
-                    <span className="text-[11px] font-medium text-center text-foreground leading-tight">
+                    <span className="text-xs font-semibold text-center text-foreground leading-tight group-hover:text-primary transition-colors">
                       {category.label}
                     </span>
                   </Link>
