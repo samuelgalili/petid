@@ -109,7 +109,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring" as const, stiffness: 200, delay: 0.1 }}
           >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px]">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark p-[2px]">
               <div className="w-full h-full rounded-full bg-white" />
             </div>
             <Avatar className="w-10 h-10 relative border-2 border-white">
@@ -117,7 +117,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
                 src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-adoption" 
                 alt="Petid אימוץ" 
               />
-              <AvatarFallback className="bg-gradient-to-tr from-[#F58529] to-[#DD2A7B] text-white">
+              <AvatarFallback className="bg-gradient-to-tr from-petid-blue to-petid-gold text-white">
                 🐾
               </AvatarFallback>
             </Avatar>
@@ -130,7 +130,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <Badge className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white text-[10px] px-2 py-0 h-5 border-0">
+                <Badge className="bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue text-white text-[10px] px-2 py-0 h-5 border-0">
                   אימוץ
                 </Badge>
               </motion.div>
@@ -212,7 +212,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         >
           <div className="flex items-center gap-2">
             <motion.div 
-              className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center"
+              className="w-6 h-6 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-blue flex items-center justify-center"
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
@@ -221,7 +221,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
             <span className="text-sm font-semibold text-[#262626]">אמץ את {pet.name}</span>
           </div>
           <motion.span 
-            className="text-[#0095F6] text-sm font-semibold"
+            className="text-petid-blue text-sm font-semibold"
             whileHover={{ x: -3 }}
           >
             לאימוץ ←

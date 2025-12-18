@@ -662,11 +662,11 @@ const Feed = () => {
             >
               <Menu className="w-6 h-6 text-[#262626] hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
             </motion.button>
-            {/* Logo with Instagram gradient and animation */}
+            {/* Logo with PetID gradient and animation */}
             <motion.h1 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="text-[26px] font-bold cursor-pointer bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] bg-clip-text text-transparent font-sans tracking-tight" 
+              className="text-[26px] font-bold cursor-pointer bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue bg-clip-text text-transparent font-sans tracking-tight"
               onClick={() => {
                 setPage(0);
                 setHasMore(true);

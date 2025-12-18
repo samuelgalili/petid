@@ -141,11 +141,11 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
             onTouchEnd={handleLongPressEnd}
             onTouchCancel={handleLongPressEnd}
           >
-            {/* Instagram-style gradient ring */}
+            {/* PetID gradient ring */}
             <div 
               className={`relative p-[3px] rounded-full ${
                 highlight.story_count > 0 
-                  ? "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]" 
+                  ? "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark" 
                   : "bg-gray-200"
               }`}
             >
