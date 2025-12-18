@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -69,7 +69,7 @@ const Shop = () => {
     { id: "accessories", label: "אביזרים", icon: "🎀", color: "#3498DB" },
   ];
 
-  const categories = [
+  const subCategories = [
     { id: "all", label: "הכל" },
     { id: "food", label: "מזון" },
     { id: "treats", label: "חטיפים" },
@@ -503,18 +503,58 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Categories Scroll */}
+      {/* Pet Type Selection */}
+      <div className="border-b border-border/40">
+        <div className="max-w-lg mx-auto px-4 py-3">
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => setSelectedPetType("all")}
+              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                selectedPetType === "all"
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-foreground hover:bg-muted/80"
+              }`}
+            >
+              הכל
+            </button>
+            <button
+              onClick={() => setSelectedPetType("dog")}
+              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                selectedPetType === "dog"
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-foreground hover:bg-muted/80"
+              }`}
+            >
+              <Dog className="w-4 h-4" strokeWidth={2} />
+              כלב
+            </button>
+            <button
+              onClick={() => setSelectedPetType("cat")}
+              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                selectedPetType === "cat"
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-foreground hover:bg-muted/80"
+              }`}
+            >
+              <Cat className="w-4 h-4" strokeWidth={2} />
+              חתול
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sub-Categories Scroll */}
       <div className="border-b border-border/40">
         <div className="max-w-lg mx-auto">
-          <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
-            {categories.map((category) => (
+          <div className="flex gap-2 px-4 py-2.5 overflow-x-auto scrollbar-hide">
+            {subCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.label)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`px-3.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category.label
-                    ? "bg-foreground text-background"
-                    : "bg-muted text-foreground hover:bg-muted/80"
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-transparent text-muted-foreground hover:text-foreground border border-border"
                 }`}
               >
                 {category.label}
