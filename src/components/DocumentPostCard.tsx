@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Send, Bookmark, ExternalLink } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, ExternalLink, FileText, ChevronLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 
@@ -256,42 +256,20 @@ export function DocumentPostCard({ document, user }: DocumentPostCardProps) {
           </motion.div>
         </motion.div>
 
-        {/* CTA Strip - Bottom of image */}
-        <motion.div 
-          variants={ctaVariants}
-          initial="hidden"
-          animate="visible"
-          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-16 pb-4 px-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <motion.div 
-                className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-lg"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-              >
-                {docConfig.icon}
-              </motion.div>
-              <div>
-                <p className="text-white text-sm font-semibold line-clamp-1">
-                  {document.title}
-                </p>
-                <p className="text-white/70 text-xs">
-                  {docConfig.label} • {document.pet_name}
-                </p>
-              </div>
-            </div>
-            <motion.button
-              onClick={handleOpenDocument}
-              whileTap={{ scale: 0.95 }}
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-white text-sm font-medium hover:bg-white/30 transition-colors"
-            >
-              <ExternalLink className="h-4 w-4" strokeWidth={2} />
-              <span>פתח</span>
-            </motion.button>
-          </div>
-        </motion.div>
       </motion.div>
+
+      {/* Instagram Sponsored-style CTA Bar - Document Colors */}
+      <motion.button
+        onClick={handleOpenDocument}
+        className={`w-full bg-gradient-to-r ${docConfig.gradient} hover:opacity-90 transition-all flex items-center justify-between px-4 py-3`}
+        whileTap={{ scale: 0.99 }}
+      >
+        <div className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-white" />
+          <span className="text-white text-[15px] font-medium">צפה במסמך</span>
+        </div>
+        <ChevronLeft className="w-5 h-5 text-white" />
+      </motion.button>
 
       {/* Actions */}
       <motion.div 
