@@ -165,27 +165,37 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         <motion.button
           ref={buttonRef}
           onClick={handleAddToCart}
-          className="absolute bottom-0 left-0 right-0 py-2.5 px-4 flex items-center justify-between cursor-pointer overflow-hidden"
-          initial={{ backgroundColor: "rgba(255, 255, 255, 0)" }}
+          className="absolute bottom-3 left-3 right-3 py-3 px-4 flex items-center justify-between cursor-pointer overflow-hidden rounded-2xl backdrop-blur-md"
+          initial={{ backgroundColor: "rgba(0, 0, 0, 0.4)", scale: 0.95, opacity: 0 }}
           animate={{ 
             backgroundColor: showAddedAnimation 
-              ? "rgba(247, 191, 0, 0.3)" 
+              ? "rgba(0, 200, 83, 0.95)" 
               : showCtaHighlight 
-                ? "rgba(247, 191, 0, 0.95)" 
-                : "rgba(255, 255, 255, 0)"
+                ? "rgba(247, 191, 0, 1)" 
+                : "rgba(0, 0, 0, 0.5)",
+            scale: 1,
+            opacity: 1,
+            boxShadow: showCtaHighlight 
+              ? "0 8px 32px rgba(247, 191, 0, 0.4)" 
+              : "0 4px 16px rgba(0, 0, 0, 0.2)"
           }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <motion.div 
-              className="w-6 h-6 rounded-full flex items-center justify-center"
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
               animate={{ 
-                backgroundColor: showCtaHighlight ? "#262626" : "#F7BF00",
-                scale: showAddedAnimation ? [1, 1.3, 1] : 1,
+                backgroundColor: showCtaHighlight ? "#262626" : "rgba(255, 255, 255, 0.2)",
+                scale: showAddedAnimation ? [1, 1.2, 1] : showCtaHighlight ? [1, 1.05, 1] : 1,
                 rotate: showAddedAnimation ? [0, 10, -10, 0] : 0
               }}
-              transition={{ duration: 0.5 }}
+              transition={{ 
+                duration: showCtaHighlight ? 2 : 0.5,
+                repeat: showCtaHighlight && !showAddedAnimation ? Infinity : 0,
+                repeatType: "reverse"
+              }}
             >
               <AnimatePresence mode="wait">
                 {showAddedAnimation ? (
@@ -196,7 +206,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
                     exit={{ scale: 0 }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
-                    <Check className={`w-3.5 h-3.5 ${showCtaHighlight ? 'text-[#F7BF00]' : 'text-[#262626]'}`} strokeWidth={3} />
+                    <Check className="w-5 h-5 text-white" strokeWidth={3} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -205,49 +215,79 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
                   >
-                    <ShoppingBag className={`w-3.5 h-3.5 ${showCtaHighlight ? 'text-[#F7BF00]' : 'text-[#262626]'}`} />
+                    <ShoppingBag className={`w-5 h-5 ${showCtaHighlight ? 'text-[#F7BF00]' : 'text-white'}`} />
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
-            <AnimatePresence mode="wait">
-              {showAddedAnimation ? (
-                <motion.span 
-                  key="added"
-                  className="text-sm font-semibold text-[#00C853]"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  נוסף לסל! ✓
-                </motion.span>
-              ) : (
-                <motion.span 
-                  key="add"
-                  className="text-sm font-bold"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ 
-                    opacity: 1, 
-                    y: 0,
-                    color: showCtaHighlight ? "#262626" : "#FFFFFF"
-                  }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  הוסף לסל
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <div className="flex flex-col items-start">
+              <AnimatePresence mode="wait">
+                {showAddedAnimation ? (
+                  <motion.span 
+                    key="added"
+                    className="text-base font-bold text-white"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    נוסף לסל! ✓
+                  </motion.span>
+                ) : (
+                  <motion.span 
+                    key="add"
+                    className="text-base font-bold"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: 0,
+                      color: showCtaHighlight ? "#262626" : "#FFFFFF"
+                    }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    הוסף לסל
+                  </motion.span>
+                )}
+              </AnimatePresence>
+              <motion.span 
+                className="text-xs"
+                animate={{ 
+                  color: showCtaHighlight ? "rgba(38, 38, 38, 0.7)" : "rgba(255, 255, 255, 0.7)"
+                }}
+              >
+                משלוח מהיר
+              </motion.span>
+            </div>
           </div>
-          <motion.span 
-            className="text-sm font-bold"
+          <motion.div 
+            className="flex items-center gap-1"
             animate={{ 
               scale: showAddedAnimation ? [1, 1.2, 1] : 1,
-              color: showCtaHighlight ? "#262626" : "#F7BF00"
             }}
           >
-            {product.price} ←
-          </motion.span>
+            <motion.span 
+              className="text-xl font-black"
+              animate={{ 
+                color: showCtaHighlight ? "#262626" : "#FFFFFF"
+              }}
+            >
+              {product.price}
+            </motion.span>
+            <motion.span
+              className="text-lg"
+              animate={{
+                x: showCtaHighlight ? [0, -4, 0] : 0,
+                color: showCtaHighlight ? "#262626" : "#FFFFFF"
+              }}
+              transition={{
+                duration: 1,
+                repeat: showCtaHighlight ? Infinity : 0,
+                repeatType: "reverse"
+              }}
+            >
+              ←
+            </motion.span>
+          </motion.div>
           
           {/* Success ripple effect */}
           <AnimatePresence>
