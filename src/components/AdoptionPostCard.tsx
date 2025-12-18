@@ -343,7 +343,10 @@ export const AdoptionPostCard = ({
         className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3"
         whileTap={{ scale: 0.99 }}
       >
-        <span className="text-white text-[15px] font-medium">אמץ עכשיו</span>
+        <div className="flex items-center gap-2">
+          <PawPrint className="w-5 h-5 text-white" />
+          <span className="text-white text-[15px] font-medium">אמץ עכשיו</span>
+        </div>
         <ChevronLeft className="w-5 h-5 text-white" />
       </motion.button>
 
