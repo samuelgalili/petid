@@ -770,16 +770,15 @@ const Feed = () => {
                   ref={cartIconRef}
                   initial={{ scale: 0, opacity: 0 }}
                   animate={{ 
-                    scale: cartShake ? [1, 1.3, 1] : 1, 
+                    scale: 1, 
                     opacity: 1,
-                    rotate: cartShake ? [0, -10, 10, -10, 0] : 0
                   }}
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => navigate('/cart')} 
-                  className="active:opacity-50 transition-opacity p-1 relative"
+                  className={`active:opacity-50 transition-opacity p-1 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
                   onAnimationComplete={() => {
                     if (cartIconRef.current) {
                       const rect = cartIconRef.current.getBoundingClientRect();

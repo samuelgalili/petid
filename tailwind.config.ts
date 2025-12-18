@@ -506,6 +506,20 @@ export default {
   					opacity: '1',
   					transform: 'translateX(0)'
   				}
+  			},
+  			'wiggle': {
+  				'0%, 100%': {
+  					transform: 'rotate(0deg) scale(1)'
+  				},
+  				'25%': {
+  					transform: 'rotate(-10deg) scale(1.15)'
+  				},
+  				'50%': {
+  					transform: 'rotate(10deg) scale(1.2)'
+  				},
+  				'75%': {
+  					transform: 'rotate(-5deg) scale(1.1)'
+  				}
   			}
   		},
 		animation: {
@@ -529,7 +543,8 @@ export default {
 			'toast-slide-in': 'toast-slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
 			'toast-slide-out': 'toast-slide-out 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 			'toast-icon-pop': 'toast-icon-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-			'toast-content-fade': 'toast-content-fade 0.3s ease-out 0.1s both'
+			'toast-content-fade': 'toast-content-fade 0.3s ease-out 0.1s both',
+			'wiggle': 'wiggle 0.3s ease-in-out'
 		}
   	}
   },
