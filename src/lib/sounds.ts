@@ -90,3 +90,47 @@ export const playPetAddedSound = () => {
     console.log('Audio not supported or blocked');
   }
 };
+
+// Add to cart sound (cash register / coin drop)
+export const playAddToCartSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Create a "ka-ching" cash register sound
+    const notes = [1318.51, 1567.98]; // E6, G6 - high pitched coins
+    
+    notes.forEach((freq, index) => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      const startTime = audioContext.currentTime + (index * 0.06);
+      osc.frequency.setValueAtTime(freq, startTime);
+      osc.type = 'triangle';
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+      
+      osc.start(startTime);
+      osc.stop(startTime + 0.15);
+    });
+    
+    // Add a subtle low "thunk" for weight
+    const bassOsc = audioContext.createOscillator();
+    const bassGain = audioContext.createGain();
+    bassOsc.connect(bassGain);
+    bassGain.connect(audioContext.destination);
+    bassOsc.frequency.setValueAtTime(200, audioContext.currentTime);
+    bassOsc.type = 'sine';
+    bassGain.gain.setValueAtTime(0, audioContext.currentTime);
+    bassGain.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.01);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    bassOsc.start(audioContext.currentTime);
+    bassOsc.stop(audioContext.currentTime + 0.1);
+  } catch (error) {
+    console.log('Audio not supported or blocked');
+  }
+};
