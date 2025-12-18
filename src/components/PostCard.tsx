@@ -234,7 +234,7 @@ export const PostCard = ({
 
   return (
     <motion.div 
-      className="bg-white border-b border-gray-200"
+      className="bg-card border-b border-border"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ backgroundColor: "rgba(0,0,0,0.01)" }}
@@ -250,9 +250,9 @@ export const PostCard = ({
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <Avatar className="w-8 h-8 ring-2 ring-transparent hover:ring-gray-200 transition-all duration-200">
+            <Avatar className="w-8 h-8 ring-2 ring-transparent hover:ring-border transition-all duration-200">
               <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-gray-100 text-gray-600 text-xs font-medium">
+              <AvatarFallback className="bg-secondary text-muted-foreground text-xs font-medium">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>

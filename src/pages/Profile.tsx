@@ -197,7 +197,7 @@ const Profile = () => {
           {/* Edit Profile Button */}
           <button 
             onClick={() => navigate('/settings')}
-            className="w-full bg-[#FAFAFA] border border-gray-200 text-[#262626] rounded-lg py-2 font-semibold text-sm font-jakarta hover:bg-gray-100 transition-colors"
+            className="w-full bg-secondary border border-border text-foreground rounded-lg py-2 font-semibold text-sm font-jakarta hover:bg-secondary/80 transition-colors"
           >
             עריכת פרופיל
           </button>

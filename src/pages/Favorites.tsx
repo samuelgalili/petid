@@ -117,9 +117,9 @@ const Favorites = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-24" dir="rtl">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+      <header className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
           <Button
             variant="ghost"
@@ -129,7 +129,7 @@ const Favorites = () => {
           >
             <ArrowRight className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-bold font-jakarta">המועדפים שלי</h1>
+          <h1 className="text-lg font-bold font-jakarta text-foreground">המועדפים שלי</h1>
           <div className="w-10" />
         </div>
       </header>
@@ -142,18 +142,18 @@ const Favorites = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-16 text-center"
           >
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-              <Heart className="w-12 h-12 text-gray-300" />
+            <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mb-6">
+              <Heart className="w-12 h-12 text-muted" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2 font-jakarta">
+            <h2 className="text-xl font-bold text-foreground mb-2 font-jakarta">
               אין מוצרים במועדפים
             </h2>
-            <p className="text-gray-500 mb-6 font-jakarta">
+            <p className="text-muted-foreground mb-6 font-jakarta">
               לחץ על הלב במוצרים כדי לשמור אותם כאן
             </p>
             <Button
               onClick={() => navigate("/shop")}
-              className="bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 font-bold rounded-xl px-6"
+              className="bg-instagram-blue hover:bg-instagram-blue/90 text-white font-bold rounded-xl px-6"
             >
               <ShoppingCart className="w-5 h-5 ml-2" />
               לחנות

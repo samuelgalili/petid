@@ -252,7 +252,7 @@ const Rewards = () => {
         );
       case "expired":
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600">
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-error/10 text-error">
             פג תוקף
           </span>
         );
@@ -261,22 +261,22 @@ const Rewards = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <motion.div 
           className="text-center"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
           <motion.div 
-            className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-orange-400 p-[3px]"
+            className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-instagram p-[3px]"
             animate={{ rotate: 360 }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
           >
-            <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-              <Gift className="w-8 h-8 text-purple-500" />
+            <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+              <Gift className="w-8 h-8 text-instagram-pink" />
             </div>
           </motion.div>
-          <p className="text-gray-600 font-jakarta font-medium">טוען פרסים...</p>
+          <p className="text-muted-foreground font-jakarta font-medium">טוען פרסים...</p>
         </motion.div>
       </div>
     );
@@ -284,27 +284,27 @@ const Rewards = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-gradient-to-b from-purple-50/50 via-pink-50/30 to-orange-50/50 pb-24" dir="rtl">
+      <div className="min-h-screen bg-background pb-24" dir="rtl">
         {/* Instagram-style Header */}
-        <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+        <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
           <div className="flex items-center justify-between px-4 py-3">
             <button 
               onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors"
+              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
+              <ChevronLeft className="w-5 h-5 text-foreground" />
             </button>
             
             <div className="flex items-center gap-2">
-              <span className="text-xl font-black bg-gradient-to-r from-pink-500 via-purple-500 to-orange-400 bg-clip-text text-transparent font-jakarta">
+              <span className="text-xl font-black bg-gradient-instagram bg-clip-text text-transparent font-jakarta">
                 פרסים והטבות
               </span>
-              <Sparkles className="w-5 h-5 text-purple-500" />
+              <Sparkles className="w-5 h-5 text-instagram-purple" />
             </div>
             
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 via-purple-500 to-orange-400 p-[2px]">
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                <Gift className="w-4 h-4 text-purple-500" />
+            <div className="w-10 h-10 rounded-full bg-gradient-instagram p-[2px]">
+              <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                <Gift className="w-4 h-4 text-instagram-purple" />
               </div>
             </div>
           </div>
@@ -315,7 +315,7 @@ const Rewards = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-500 via-purple-500 to-orange-400 p-6 mb-6 shadow-xl shadow-purple-200/50"
+            className="relative overflow-hidden rounded-3xl bg-gradient-instagram p-6 mb-6 shadow-xl shadow-instagram"
           >
             {/* Decorative circles */}
             <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
@@ -371,8 +371,8 @@ const Rewards = () => {
               onClick={() => setActiveTab("available")}
               className={`flex-1 py-3 rounded-2xl text-sm font-bold font-jakarta transition-all ${
                 activeTab === "available"
-                  ? "bg-gradient-to-r from-pink-500 via-purple-500 to-orange-400 text-white shadow-lg shadow-purple-200"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-gradient-instagram text-white shadow-lg shadow-instagram"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
               }`}
             >
               <span className="flex items-center justify-center gap-2">
@@ -385,8 +385,8 @@ const Rewards = () => {
               onClick={() => setActiveTab("redeemed")}
               className={`flex-1 py-3 rounded-2xl text-sm font-bold font-jakarta transition-all ${
                 activeTab === "redeemed"
-                  ? "bg-gradient-to-r from-pink-500 via-purple-500 to-orange-400 text-white shadow-lg shadow-purple-200"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-gradient-instagram text-white shadow-lg shadow-instagram"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
               }`}
             >
               <span className="flex items-center justify-center gap-2">

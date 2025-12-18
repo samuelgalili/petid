@@ -176,8 +176,8 @@ export const FollowersDialog = ({ open, onOpenChange, userId, defaultTab = "foll
             onClick={() => handleFollowToggle(followUser.id, followUser.is_following)}
             className={`font-jakarta ${
               followUser.is_following
-                ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                : "bg-blue-500 text-white hover:bg-blue-600"
+                ? "bg-secondary text-foreground hover:bg-secondary/80"
+                : "bg-instagram-blue text-white hover:bg-instagram-blue/90"
             }`}
           >
             {followUser.is_following ? (
