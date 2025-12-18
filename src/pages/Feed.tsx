@@ -147,7 +147,7 @@ const Feed = () => {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
   const [doubleTapLike, setDoubleTapLike] = useState<string | null>(null);
-  const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
+  const [feedFilter, setFeedFilter] = useState<"all" | "following">("following");
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [userAvatar, setUserAvatar] = useState<string>("");
@@ -807,7 +807,7 @@ const Feed = () => {
         </div>
       </motion.div>}
 
-      {/* Filter Tabs with enhanced styling */}
+      {/* Feed Header - Following only */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -817,15 +817,7 @@ const Feed = () => {
         <div className="max-w-lg mx-auto flex">
           <motion.button 
             whileTap={{ scale: 0.98 }}
-            onClick={() => setFeedFilter("all")} 
-            className={`flex-1 py-3.5 text-[13px] font-semibold border-b-2 transition-all duration-200 ${feedFilter === "all" ? "border-[#262626] text-[#262626]" : "border-transparent text-[#8E8E8E] hover:text-[#262626]"}`}
-          >
-            הכל
-          </motion.button>
-          <motion.button 
-            whileTap={{ scale: 0.98 }}
-            onClick={handleFollowingFilter} 
-            className={`flex-1 py-3.5 text-[13px] font-semibold border-b-2 transition-all duration-200 ${feedFilter === "following" ? "border-[#262626] text-[#262626]" : "border-transparent text-[#8E8E8E] hover:text-[#262626]"}`}
+            className="flex-1 py-3.5 text-[13px] font-semibold border-b-2 border-[#262626] text-[#262626]"
           >
             עוקבים
           </motion.button>
