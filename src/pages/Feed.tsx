@@ -35,7 +35,7 @@ const FEATURED_PRODUCTS = [
     title: "אוכל יבש פרימיום לכלבים",
     price: "₪89",
     originalPrice: "₪120",
-    image: "/lovable-uploads/dog-food.jpg",
+    image: "https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=600&h=800&fit=crop&q=80",
     description: "אוכל איכותי עשיר בחלבון לכלבים מכל הגילאים",
     hasSale: true,
   },
@@ -43,7 +43,7 @@ const FEATURED_PRODUCTS = [
     id: "prod-2", 
     title: "צעצוע משיכה לכלבים",
     price: "₪35",
-    image: "/lovable-uploads/dog-toys.jpg",
+    image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=600&h=800&fit=crop&q=80",
     description: "צעצוע עמיד במיוחד לשעות של משחק",
     hasSale: false,
   },
@@ -647,15 +647,15 @@ const Feed = () => {
 
     return merged;
   }, [posts, adoptionPets, feedFilter, followingIds]);
-  return <div className="min-h-screen bg-gradient-to-b from-white via-gray-50/30 to-white pb-14" dir="rtl">
+  return <div className="min-h-screen bg-gradient-to-b from-white via-amber-50/10 to-white pb-14" dir="rtl">
       {/* Instagram-style Header with blur effect */}
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-100/80 shadow-sm"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50 shadow-sm"
       >
-        <div className="max-w-lg mx-auto px-4 h-[52px] flex items-center justify-between">
+        <div className="max-w-lg mx-auto px-4 h-[56px] flex items-center justify-between">
           {/* Left side - Hamburger menu */}
           <div className="flex items-center gap-3">
             <motion.button 
@@ -670,7 +670,7 @@ const Feed = () => {
             {/* Logo with PetID gradient and animation */}
             <motion.div
               className="relative cursor-pointer"
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
                 setPage(0);
@@ -678,12 +678,12 @@ const Feed = () => {
                 fetchPosts(0, false);
               }}
             >
-              {/* Glow effect behind logo */}
+              {/* Animated glow effect behind logo */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-petid-blue/30 via-petid-gold/40 to-petid-blue/30 blur-lg rounded-full"
+                className="absolute -inset-2 bg-gradient-to-r from-petid-blue/20 via-petid-gold/30 to-petid-blue/20 blur-xl rounded-full"
                 animate={{ 
-                  opacity: [0.4, 0.7, 0.4],
-                  scale: [1, 1.1, 1]
+                  opacity: [0.3, 0.6, 0.3],
+                  scale: [0.95, 1.1, 0.95]
                 }}
                 transition={{ 
                   duration: 3, 
@@ -691,7 +691,7 @@ const Feed = () => {
                   ease: "easeInOut"
                 }}
               />
-              <h1 className="relative text-[28px] font-black cursor-pointer bg-gradient-to-r from-petid-blue via-petid-gold via-55% to-petid-blue-dark bg-clip-text text-transparent font-jakarta tracking-tight drop-shadow-sm">
+              <h1 className="relative text-[30px] font-black cursor-pointer bg-gradient-to-r from-petid-blue via-petid-gold via-55% to-petid-blue-dark bg-clip-text text-transparent font-jakarta tracking-tight">
                 Petid
               </h1>
             </motion.div>
@@ -803,7 +803,7 @@ const Feed = () => {
       </motion.div>
 
       {/* Spacer for fixed header */}
-      <div className="h-[52px]" />
+      <div className="h-[56px]" />
 
       {/* New Posts Banner */}
       <AnimatePresence>

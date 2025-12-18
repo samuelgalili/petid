@@ -137,40 +137,46 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
     <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-white border-b border-gray-100"
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="bg-gradient-to-b from-white to-gray-50/50 border-b border-gray-100 overflow-hidden"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-3">
+      <div className="flex items-center justify-between p-3 bg-white">
         <div className="flex items-center gap-3">
           <motion.div 
             className="relative"
             animate={{ scale: isHovered ? 1.05 : 1 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-petid-gold to-amber-500 p-[2px]">
-              <div className="w-full h-full rounded-full bg-white" />
+            {/* Animated ring */}
+            <motion.div 
+              className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-petid-gold via-amber-400 to-petid-gold-dark"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="relative w-11 h-11 rounded-full bg-white p-[2px]">
+              <Avatar className="w-full h-full">
+                <AvatarImage 
+                  src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-shop" 
+                  alt="Petid חנות" 
+                />
+                <AvatarFallback className="bg-gradient-to-tr from-petid-gold to-amber-500 text-white">
+                  🛒
+                </AvatarFallback>
+              </Avatar>
             </div>
-            <Avatar className="w-10 h-10 relative border-2 border-white">
-              <AvatarImage 
-                src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-shop" 
-                alt="Petid חנות" 
-              />
-              <AvatarFallback className="bg-gradient-to-tr from-petid-gold to-amber-500 text-white">
-                🛒
-              </AvatarFallback>
-            </Avatar>
           </motion.div>
           <div className="text-right">
             <div className="flex items-center gap-2">
-              <p className="font-semibold text-sm text-foreground">Petid חנות</p>
-              <Badge className="bg-petid-gold/20 text-petid-blue-dark text-[10px] px-2 py-0 h-5 border-0 font-semibold">
+              <p className="font-bold text-sm text-foreground">Petid חנות</p>
+              <Badge className="bg-gradient-to-r from-petid-gold/30 to-amber-400/30 text-petid-blue-dark text-[10px] px-2.5 py-0.5 h-5 border-0 font-bold shadow-sm">
+                <Sparkles className="w-2.5 h-2.5 mr-1" />
                 חנות
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">ממולץ עבורך</p>
+            <p className="text-xs text-muted-foreground">ממולץ עבורך ✨</p>
           </div>
         </div>
       </div>
@@ -191,6 +197,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
             src={product.image}
             alt={product.title}
             className="w-full h-full object-cover"
+            priority={true}
           />
         </motion.div>
         
