@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AdoptionPostCard } from "@/components/AdoptionPostCard";
 import { ProductPostCard } from "@/components/ProductPostCard";
 import { AdPostCard } from "@/components/AdPostCard";
+import { SuggestedPostCard } from "@/components/SuggestedPostCard";
 import { ParallaxScroll } from "@/components/ParallaxScroll";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -187,11 +188,27 @@ interface FeedProduct {
   reviews?: number;
 }
 
+interface SuggestedPost {
+  id: string;
+  user_id: string;
+  image_url: string;
+  caption: string;
+  created_at: string;
+  user: {
+    id: string;
+    full_name: string;
+    avatar_url: string;
+  };
+  likes_count: number;
+  comments_count: number;
+}
+
 type FeedItem = 
   | { type: 'post'; data: Post; created_at: string }
   | { type: 'adoption'; data: AdoptionPet; created_at: string }
   | { type: 'product'; data: FeedProduct; created_at: string }
-  | { type: 'ad'; data: FeedAd; created_at: string };
+  | { type: 'ad'; data: FeedAd; created_at: string }
+  | { type: 'suggested'; data: SuggestedPost; created_at: string };
 const Feed = () => {
   const navigate = useNavigate();
   const {
@@ -206,6 +223,7 @@ const Feed = () => {
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
+  const [suggestedPosts, setSuggestedPosts] = useState<SuggestedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -246,6 +264,94 @@ const Feed = () => {
       console.error("Error fetching adoption pets:", error);
     }
   }, []);
+
+  // Fetch suggested posts from users you don't follow
+  const fetchSuggestedPosts = useCallback(async () => {
+    try {
+      // Get users that the current user follows
+      let followedUserIds: string[] = [];
+      if (user) {
+        const { data: followingData } = await supabase
+          .from("user_follows")
+          .select("following_id")
+          .eq("follower_id", user.id);
+        followedUserIds = followingData?.map(f => f.following_id) || [];
+        followedUserIds.push(user.id); // Exclude own posts
+      }
+
+      // Fetch posts from users not in the following list, ordered by engagement
+      let query = supabase
+        .from("posts")
+        .select(`
+          *,
+          profiles!posts_user_id_fkey_profiles (
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      // If user is logged in, exclude posts from followed users
+      if (followedUserIds.length > 0) {
+        query = query.not("user_id", "in", `(${followedUserIds.join(",")})`);
+      }
+
+      const { data: postsData, error } = await query;
+
+      if (error) throw error;
+
+      if (postsData && postsData.length > 0) {
+        const postIds = postsData.map(p => p.id);
+
+        // Get likes count for these posts
+        const { data: likesData } = await supabase
+          .from("post_likes")
+          .select("post_id")
+          .in("post_id", postIds);
+
+        // Get comments count
+        const { data: commentsData } = await supabase
+          .from("post_comments")
+          .select("post_id")
+          .in("post_id", postIds);
+
+        const likesCount = likesData?.reduce((acc: Record<string, number>, like: any) => {
+          acc[like.post_id] = (acc[like.post_id] || 0) + 1;
+          return acc;
+        }, {}) || {};
+
+        const commentsCount = commentsData?.reduce((acc: Record<string, number>, comment: any) => {
+          acc[comment.post_id] = (acc[comment.post_id] || 0) + 1;
+          return acc;
+        }, {}) || {};
+
+        // Format and sort by engagement (likes + comments)
+        const formattedPosts: SuggestedPost[] = postsData.map((post: any) => {
+          const profile = post.profiles;
+          return {
+            id: post.id,
+            user_id: post.user_id,
+            image_url: post.image_url,
+            caption: post.caption,
+            created_at: post.created_at,
+            user: {
+              id: profile?.id || post.user_id,
+              full_name: profile?.full_name || "משתמש",
+              avatar_url: profile?.avatar_url || ""
+            },
+            likes_count: likesCount[post.id] || 0,
+            comments_count: commentsCount[post.id] || 0,
+          };
+        }).sort((a, b) => (b.likes_count + b.comments_count) - (a.likes_count + a.comments_count));
+
+        setSuggestedPosts(formattedPosts);
+      }
+    } catch (error) {
+      console.error("Error fetching suggested posts:", error);
+    }
+  }, [user]);
   const handleCreatePost = () => {
     if (!checkAuth("כדי לפרסם פוסט, יש להתחבר")) return;
     setCreatePostOpen(true);
@@ -474,6 +580,7 @@ const Feed = () => {
   useEffect(() => {
     fetchPosts(0, false);
     fetchAdoptionPets();
+    fetchSuggestedPosts();
 
     // Setup realtime subscription for new posts
     if (channelRef.current) {
@@ -485,6 +592,7 @@ const Feed = () => {
       table: 'posts'
     }, () => {
       setNewPostsAvailable(true);
+      fetchSuggestedPosts();
     }).on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -500,7 +608,7 @@ const Feed = () => {
         channelRef.current = null;
       }
     };
-  }, [fetchPosts, fetchAdoptionPets]);
+  }, [fetchPosts, fetchAdoptionPets, fetchSuggestedPosts]);
 
   // Listen for refresh-feed event from bottom nav
   useEffect(() => {
@@ -509,6 +617,7 @@ const Feed = () => {
       setHasMore(true);
       fetchPosts(0, false);
       fetchAdoptionPets();
+      fetchSuggestedPosts();
     };
     
     window.addEventListener('refresh-feed', handleRefreshFeed);
@@ -677,7 +786,7 @@ const Feed = () => {
     return date.toLocaleDateString("he-IL");
   }, []);
 
-  // Create mixed feed with posts, adoption pets, and products
+  // Create mixed feed with posts, adoption pets, products, ads, and suggested posts
   const mixedFeed = useMemo((): FeedItem[] => {
     // Convert posts to FeedItems
     const postItems: FeedItem[] = posts.map(post => ({
@@ -714,8 +823,18 @@ const Feed = () => {
         }))
       : [];
 
+    // Convert suggested posts to FeedItems (only show in "all" feed)
+    const suggestedItems: FeedItem[] = feedFilter === "all"
+      ? suggestedPosts.map((post, index) => ({
+          type: 'suggested' as const,
+          data: post,
+          // Spread suggested posts throughout the feed
+          created_at: new Date(Date.now() - (index + 3) * 5400000).toISOString()
+        }))
+      : [];
+
     // Merge and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems].sort((a, b) =>
+    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -727,7 +846,12 @@ const Feed = () => {
     }
 
     return merged;
-  }, [posts, adoptionPets, feedFilter, followingIds]);
+  }, [posts, adoptionPets, suggestedPosts, feedFilter, followingIds]);
+
+  // Handle following a suggested user - remove from suggested posts
+  const handleSuggestedFollow = useCallback((userId: string) => {
+    setSuggestedPosts(prev => prev.filter(post => post.user_id !== userId));
+  }, []);
   return <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 pb-14" dir="rtl">
       {/* Instagram-style Header with blur effect */}
       <motion.div 
@@ -1056,6 +1180,20 @@ const Feed = () => {
                     transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
                   >
                     <AdPostCard ad={item.data} />
+                  </motion.div>
+                );
+              } else if (item.type === 'suggested') {
+                return (
+                  <motion.div
+                    key={`suggested-${item.data.id}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
+                  >
+                    <SuggestedPostCard 
+                      post={item.data}
+                      onFollow={handleSuggestedFollow}
+                    />
                   </motion.div>
                 );
               }
