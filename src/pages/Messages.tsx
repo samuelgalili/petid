@@ -117,8 +117,8 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-[#262626]" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -133,11 +133,11 @@ export default function Messages() {
               <h1 className="text-xl font-bold text-foreground">
                 {currentUserName || "הודעות"}
               </h1>
-              <ChevronDown className="h-5 w-5 text-[#262626]" />
+              <ChevronDown className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex items-center gap-4">
               <button className="p-1">
-                <Edit className="h-6 w-6 text-[#262626]" />
+                <Edit className="h-6 w-6 text-foreground" />
               </button>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function Messages() {
               <p className="text-sm text-gray-500 text-center max-w-[260px]">
                 שלח תמונות והודעות פרטיות לחבר או לקבוצה
               </p>
-              <button className="mt-4 text-[#0095F6] font-semibold text-sm">
+              <button className="mt-4 text-primary font-semibold text-sm">
                 שלח הודעה
               </button>
             </div>
@@ -180,39 +180,39 @@ export default function Messages() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.03 }}
                 onClick={() => navigate(`/messages/${conversation.userId}`)}
-                className="hover:bg-gray-50 transition-colors cursor-pointer"
+                className="hover:bg-muted/50 transition-colors cursor-pointer"
               >
                 <div className="px-4 py-3 flex items-center gap-3">
                   <div className="relative">
                     <Avatar className="h-14 w-14">
                       <AvatarImage src={conversation.userAvatar || undefined} />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-lg">
+                      <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg">
                         {conversation.userName.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     {conversation.isOnline && (
-                      <div className="absolute bottom-0 left-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                      <div className="absolute bottom-0 left-0 w-4 h-4 bg-success rounded-full border-2 border-card" />
                     )}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className={`text-[15px] ${conversation.unreadCount > 0 ? 'font-bold' : 'font-normal'} text-[#262626] truncate`}>
+                      <h3 className={`text-[15px] ${conversation.unreadCount > 0 ? 'font-bold' : 'font-normal'} text-foreground truncate`}>
                         {conversation.userName}
                       </h3>
                     </div>
                     <div className="flex items-center gap-1">
-                      <p className={`text-sm truncate ${conversation.unreadCount > 0 ? 'text-[#262626] font-medium' : 'text-gray-500'}`}>
+                      <p className={`text-sm truncate ${conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
                         {conversation.lastMessage}
                       </p>
-                      <span className="text-sm text-gray-400 flex-shrink-0">
+                      <span className="text-sm text-muted-foreground flex-shrink-0">
                         · {formatDistanceToNow(new Date(conversation.lastMessageTime), { locale: he })}
                       </span>
                     </div>
                   </div>
 
                   {conversation.unreadCount > 0 && (
-                    <div className="w-2 h-2 rounded-full bg-[#0095F6]" />
+                    <div className="w-2 h-2 rounded-full bg-primary" />
                   )}
                 </div>
               </motion.div>

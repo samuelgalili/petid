@@ -375,12 +375,12 @@ export default function Documents() {
         }}
       />
       
-      <div className="min-h-screen bg-[#F6F6F6] pb-28">
+      <div className="min-h-screen bg-background pb-28">
         <div className="container mx-auto px-4 pt-4 pb-6 max-w-lg">
           {/* Header Section */}
           <div className="mb-5 text-center">
-            <div className="w-14 h-14 mx-auto mb-2.5 rounded-2xl bg-primary p-[2px] shadow-lg shadow-primary/20">
-              <div className="w-full h-full rounded-[12px] bg-background flex items-center justify-center">
+            <div className="w-14 h-14 mx-auto mb-2.5 rounded-2xl bg-gradient-primary p-[2px] shadow-lg shadow-primary/20">
+              <div className="w-full h-full rounded-[12px] bg-card flex items-center justify-center">
                 <FileText className="w-6 h-6 text-primary" />
               </div>
             </div>
@@ -390,19 +390,19 @@ export default function Documents() {
 
           {/* Search Input - Separate */}
           <div className="relative mb-3">
-            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400" />
+            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="חיפוש מסמך..."
-              className="h-11 pr-10 pl-10 rounded-xl bg-white border-0 shadow-sm text-sm placeholder:text-gray-400"
+              className="h-11 pr-10 pl-10 rounded-xl bg-card border-0 shadow-sm text-sm placeholder:text-muted-foreground"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
               >
-                <X className="w-3 h-3 text-gray-600" />
+                <X className="w-3 h-3 text-muted-foreground" />
               </button>
             )}
           </div>
@@ -410,7 +410,7 @@ export default function Documents() {
           {/* Filters & Sort - Compact Row */}
           <div className="flex gap-2 mb-4">
             <Select value={selectedPetId} onValueChange={setSelectedPetId}>
-              <SelectTrigger className="h-9 rounded-lg bg-white border-0 shadow-sm text-xs flex-1">
+              <SelectTrigger className="h-9 rounded-lg bg-card border-0 shadow-sm text-xs flex-1">
                 <SelectValue placeholder="חיה" />
               </SelectTrigger>
               <SelectContent>
@@ -424,7 +424,7 @@ export default function Documents() {
             </Select>
 
             <Select value={selectedDocType} onValueChange={setSelectedDocType}>
-              <SelectTrigger className="h-9 rounded-lg bg-white border-0 shadow-sm text-xs flex-1">
+              <SelectTrigger className="h-9 rounded-lg bg-card border-0 shadow-sm text-xs flex-1">
                 <SelectValue placeholder="סוג" />
               </SelectTrigger>
               <SelectContent>
@@ -436,9 +436,9 @@ export default function Documents() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-9 rounded-lg bg-white border-0 shadow-sm text-xs w-[100px]">
-                <ArrowUpDown className="w-3.5 h-3.5 ml-1 text-gray-500" />
-                <span className="text-gray-600">מיון</span>
+              <SelectTrigger className="h-9 rounded-lg bg-card border-0 shadow-sm text-xs w-[100px]">
+                <ArrowUpDown className="w-3.5 h-3.5 ml-1 text-muted-foreground" />
+                <span className="text-muted-foreground">מיון</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="date-desc">חדש → ישן</SelectItem>
@@ -451,7 +451,7 @@ export default function Documents() {
 
           {/* Upload Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-white rounded-3xl">
+            <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-card rounded-3xl">
               {/* Header */}
               <div className="bg-primary p-5">
                 <div className="flex items-center justify-between">

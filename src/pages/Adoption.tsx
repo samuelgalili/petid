@@ -299,10 +299,10 @@ const Adoption = () => {
         showMenuButton={false}
       />
       
-      <div className="min-h-screen bg-white pb-28">
+      <div className="min-h-screen bg-background pb-28">
         <div className="max-w-lg mx-auto">
           {/* Instagram-style Stories Bar */}
-          <div className="px-4 py-3 border-b border-gray-100">
+          <div className="px-4 py-3 border-b border-border/50">
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {storyCategories.map((category, index) => (
                 <motion.button
@@ -326,16 +326,16 @@ const Adoption = () => {
                 >
                   <div className={`w-16 h-16 rounded-full p-[2px] ${
                     (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
-                      ? "bg-gradient-to-tr from-primary via-accent to-primary-light"
-                      : "bg-gray-200"
+                      ? "bg-gradient-primary"
+                      : "bg-muted"
                   }`}>
-                    <div className="w-full h-full rounded-full bg-white p-[2px]">
+                    <div className="w-full h-full rounded-full bg-card p-[2px]">
                       <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center">
                         <span className="text-2xl">{category.emoji}</span>
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] text-gray-600 font-medium">{category.label}</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">{category.label}</span>
                 </motion.button>
               ))}
             </div>
@@ -344,19 +344,19 @@ const Adoption = () => {
           {/* Search Bar - Instagram Style */}
           <div className="px-4 py-3">
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="חיפוש..."
-                className="h-9 pr-10 border-0 bg-gray-100 rounded-lg text-sm placeholder:text-gray-400"
+                className="h-9 pr-10 border-0 bg-muted rounded-lg text-sm placeholder:text-muted-foreground"
                 dir="rtl"
               />
             </div>
           </div>
 
           {/* Instagram-style Feed */}
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border/50">
             <AnimatePresence>
               {filteredPets.map((pet, index) => (
                 <motion.article
@@ -370,7 +370,7 @@ const Adoption = () => {
                   {/* Post Header */}
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary via-accent to-primary-light p-[2px]">
+                      <div className="w-9 h-9 rounded-full bg-gradient-primary p-[2px]">
                         <div className="w-full h-full rounded-full bg-card p-[1px]">
                           <img
                             src={pet.image_url || "/placeholder.svg"}
@@ -380,21 +380,21 @@ const Adoption = () => {
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{pet.name}</p>
-                        <p className="text-[11px] text-gray-500">{pet.breed || pet.type}</p>
+                        <p className="text-sm font-semibold text-foreground">{pet.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{pet.breed || pet.type}</p>
                       </div>
                     </div>
                     <button 
                       onClick={() => handlePetClick(pet)}
-                      className="p-2 hover:bg-gray-50 rounded-full transition-colors"
+                      className="p-2 hover:bg-muted/50 rounded-full transition-colors"
                     >
-                      <MoreHorizontal className="w-5 h-5 text-gray-600" />
+                      <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
                     </button>
                   </div>
 
                   {/* Post Image with Double Tap */}
                   <div 
-                    className="relative aspect-square bg-gray-100 cursor-pointer"
+                    className="relative aspect-square bg-muted cursor-pointer"
                     onClick={() => handleDoubleTap(pet.id)}
                   >
                     <img
@@ -442,18 +442,18 @@ const Adoption = () => {
                           className="p-0"
                         >
                           <Heart 
-                            className={`w-6 h-6 transition-colors ${
-                              likedPets.has(pet.id) 
-                                ? "text-red-500 fill-red-500" 
-                                : "text-gray-900"
-                            }`} 
+                          className={`w-6 h-6 transition-colors ${
+                            likedPets.has(pet.id) 
+                              ? "text-error fill-error" 
+                              : "text-foreground"
+                          }`}
                           />
                         </motion.button>
                         <button onClick={() => handlePetClick(pet)}>
-                          <MessageCircle className="w-6 h-6 text-gray-900" />
+                          <MessageCircle className="w-6 h-6 text-foreground" />
                         </button>
                         <button onClick={() => handleSharePet(pet)}>
-                          <Send className="w-6 h-6 text-gray-900 -rotate-45" />
+                          <Send className="w-6 h-6 text-foreground -rotate-45" />
                         </button>
                       </div>
                       <motion.button
@@ -463,8 +463,8 @@ const Adoption = () => {
                         <Bookmark 
                           className={`w-6 h-6 transition-colors ${
                             savedPets.has(pet.id) 
-                              ? "text-gray-900 fill-gray-900" 
-                              : "text-gray-900"
+                              ? "text-foreground fill-foreground" 
+                              : "text-foreground"
                           }`} 
                         />
                       </motion.button>
@@ -472,13 +472,13 @@ const Adoption = () => {
 
                     {/* Likes Count */}
                     {likedPets.has(pet.id) && (
-                      <p className="text-sm font-semibold text-gray-900 mb-1">אהבת את זה</p>
+                      <p className="text-sm font-semibold text-foreground mb-1">אהבת את זה</p>
                     )}
 
                     {/* Caption */}
                     <div className="mb-2">
-                      <span className="text-sm font-semibold text-gray-900 ml-2">{pet.name}</span>
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm font-semibold text-foreground ml-2">{pet.name}</span>
+                      <span className="text-sm text-muted-foreground">
                         {pet.description || `${pet.type} ${pet.gender || ""} בגיל ${getAgeString(pet.age_years, pet.age_months)}, גודל ${pet.size}. מחפש בית חם ואוהב! 🏠💕`}
                       </span>
                     </div>

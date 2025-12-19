@@ -417,11 +417,11 @@ const Shop = () => {
                 }
               }}
             >
-              <ShoppingCart className="w-6 h-6 text-petid-gold" strokeWidth={1.5} />
+              <ShoppingCart className="w-6 h-6 text-primary" strokeWidth={1.5} />
               <AnimatePresence>
                 {getTotalItems() > 0 && (
                   <motion.span 
-                    className="absolute -top-1 -right-1 bg-petid-gold text-petid-blue-dark text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
@@ -436,8 +436,8 @@ const Shop = () => {
           
           {/* Clean Search Bar */}
           <div className="relative">
-            <div className={`flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 transition-all ${
-              isSearchFocused ? 'ring-2 ring-petid-gold/30 border-petid-gold/50' : ''
+            <div className={`flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2.5 transition-all ${
+              isSearchFocused ? 'ring-2 ring-primary/30 border-primary/50' : ''
             }`}>
               <Search className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
               <input
