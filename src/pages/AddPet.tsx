@@ -387,7 +387,59 @@ const AddPet = () => {
   const progressSteps = isOnboarding ? actualSteps : TOTAL_STEPS;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-24" dir="rtl">
+      {/* Gradient Header */}
+      <div 
+        className="sticky top-0 z-40 backdrop-blur-xl border-b border-border/40"
+        style={{ background: 'linear-gradient(135deg, hsl(214 66% 36% / 0.95) 0%, hsl(174 59% 55% / 0.95) 50%, hsl(210 70% 70% / 0.95) 100%)' }}
+      >
+        <div className="max-w-lg mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            {currentStep > (isOnboarding ? 0 : 1) ? (
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                type="button"
+                onClick={prevStep}
+                className="p-2 bg-white/20 rounded-full backdrop-blur-sm"
+              >
+                <ArrowRight className="w-5 h-5 text-white" />
+              </motion.button>
+            ) : (
+              <div className="w-9" />
+            )}
+            <h1 className="text-xl font-bold text-white">
+              {isOnboarding ? "ברוכים הבאים" : "הוספת חיית מחמד"}
+            </h1>
+            <div className="w-9" />
+          </div>
+          
+          {/* Progress Bar in Header */}
+          {currentStep > 0 && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-white/80">
+                  שלב {displayStep} מתוך {progressSteps}
+                </span>
+                {autoSaveStatus === 'saved' && (
+                  <span className="text-xs text-white/80 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> נשמר
+                  </span>
+                )}
+              </div>
+              <div className="h-1.5 bg-white/30 rounded-full overflow-hidden">
+                <motion.div 
+                  className="h-full bg-white rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(displayStep / progressSteps) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Tutorial Overlay */}
       {showTutorial && (
         <motion.div 
@@ -400,80 +452,60 @@ const AddPet = () => {
             animate={{ scale: 1, opacity: 1 }}
             className="bg-card rounded-3xl p-8 max-w-sm w-full space-y-6 shadow-2xl"
           >
-            <div className="w-16 h-16 mx-auto bg-primary rounded-full flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary-foreground" />
+            <div 
+              className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
+              style={{ background: 'var(--gradient-primary)' }}
+            >
+              <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-foreground text-center">החלקה לניווט</h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-3 bg-background rounded-xl border border-border">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <ArrowRight className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
+                  <ArrowRight className="w-5 h-5 text-white" />
                 </div>
                 <p className="text-muted-foreground text-sm">
                   החלק <span className="font-semibold text-foreground">ימינה</span> לחזור
                 </p>
               </div>
-              <div className="flex items-center gap-4 p-3 bg-background rounded-xl border border-border">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <ArrowLeft className="w-5 h-5 text-primary" />
+              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
+                  <ArrowLeft className="w-5 h-5 text-white" />
                 </div>
                 <p className="text-muted-foreground text-sm">
                   החלק <span className="font-semibold text-foreground">שמאלה</span> להמשיך
                 </p>
               </div>
             </div>
-            <Button onClick={dismissTutorial} className="w-full">הבנתי!</Button>
+            <Button 
+              onClick={dismissTutorial} 
+              className="w-full text-white border-0"
+              style={{ background: 'var(--gradient-primary)' }}
+            >
+              הבנתי!
+            </Button>
           </motion.div>
         </motion.div>
       )}
 
-      {/* Back Button */}
-      {currentStep > (isOnboarding ? 0 : 1) && (
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          type="button"
-          onClick={prevStep}
-          className="fixed top-6 right-4 z-50 p-2.5 bg-card rounded-full shadow-lg border border-border"
-        >
-          <ArrowRight className="w-5 h-5 text-foreground" />
-        </motion.button>
-      )}
-
-      <div className="max-w-md mx-auto pt-12">
-        {/* Header */}
+      <div className="max-w-md mx-auto p-4 pt-6">
+        {/* Step Title */}
         {currentStep > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-6"
           >
-            <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 bg-primary/10 rounded-full">
-              <span className="text-xs font-semibold text-primary">
-                שלב {displayStep} מתוך {progressSteps}
-              </span>
-              {autoSaveStatus === 'saved' && (
-                <span className="text-xs text-green-600">• נשמר</span>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
+            <h2 className="text-2xl font-bold text-foreground">
               {stepTitles[currentStep]}
-            </h1>
+            </h2>
           </motion.div>
-        )}
-
-        {/* Progress Bar */}
-        {currentStep > 0 && (
-          <div className="mb-8 px-2">
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full bg-primary rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${(displayStep / progressSteps) * 100}%` }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-          </div>
         )}
 
         {/* Content */}
@@ -491,14 +523,24 @@ const AddPet = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="bg-card rounded-3xl p-8 shadow-lg text-center space-y-6"
+                className="bg-card rounded-3xl p-8 shadow-[var(--shadow-elevated)] text-center space-y-6 border border-border/50"
               >
-                <div className="text-6xl mb-4">🐾</div>
-                <h1 className="text-3xl font-bold">ברוכים הבאים!</h1>
+                <div 
+                  className="w-24 h-24 mx-auto rounded-full flex items-center justify-center shadow-[var(--shadow-shop)]"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
+                  <span className="text-5xl">🐾</span>
+                </div>
+                <h1 className="text-3xl font-bold text-foreground">ברוכים הבאים!</h1>
                 <p className="text-muted-foreground text-lg">
                   הבית הדיגיטלי של החבר על ארבע שלכם
                 </p>
-                <Button onClick={nextStep} size="lg" className="w-full">
+                <Button 
+                  onClick={nextStep} 
+                  size="lg" 
+                  className="w-full text-white border-0 shadow-[var(--shadow-shop)]"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
                   בואו נתחיל
                 </Button>
               </motion.div>
@@ -514,39 +556,44 @@ const AddPet = () => {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className="space-y-6"
               >
+                <p className="text-center text-muted-foreground">בחר את סוג חיית המחמד</p>
                 <div className="grid grid-cols-2 gap-6 py-4">
                   <motion.button 
                     type="button" 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       setPetType("dog");
                       nextStep();
                     }} 
                     className={cn(
-                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all",
-                      petType === "dog" ? "border-primary shadow-lg" : "border-border hover:border-primary/50"
+                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
+                      petType === "dog" 
+                        ? "border-primary shadow-[var(--shadow-shop)]" 
+                        : "border-border hover:border-primary/50 hover:shadow-[var(--shadow-elevated)]"
                     )}
                   >
                     <img src={dogIcon} alt="כלב" className="w-28 h-28 object-contain mb-3" />
-                    <span className="font-semibold text-foreground">כלב</span>
+                    <span className="font-semibold text-foreground text-lg">כלב</span>
                   </motion.button>
                   
                   <motion.button 
                     type="button" 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       setPetType("cat");
                       nextStep();
                     }} 
                     className={cn(
-                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all",
-                      petType === "cat" ? "border-primary shadow-lg" : "border-border hover:border-primary/50"
+                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
+                      petType === "cat" 
+                        ? "border-primary shadow-[var(--shadow-shop)]" 
+                        : "border-border hover:border-primary/50 hover:shadow-[var(--shadow-elevated)]"
                     )}
                   >
                     <img src={catIcon} alt="חתול" className="w-24 h-24 object-contain mb-3" />
-                    <span className="font-semibold text-foreground">חתול</span>
+                    <span className="font-semibold text-foreground text-lg">חתול</span>
                   </motion.button>
                 </div>
               </motion.div>
@@ -560,23 +607,35 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-lg space-y-6"
+                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
               >
                 {/* Image Upload */}
                 <div className="text-center">
                   <Label className="block mb-3 font-semibold">תמונת פרופיל</Label>
                   <label className="cursor-pointer inline-block">
                     <div className="relative">
-                      <div className="w-32 h-32 mx-auto rounded-full border-2 border-dashed border-border hover:border-primary transition-colors flex items-center justify-center overflow-hidden bg-muted">
+                      <div 
+                        className="w-32 h-32 mx-auto rounded-full border-3 border-dashed hover:border-solid transition-all flex items-center justify-center overflow-hidden"
+                        style={{ 
+                          borderColor: imagePreview ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                          background: imagePreview ? 'transparent' : 'hsl(var(--muted))'
+                        }}
+                      >
                         {imagePreview ? (
                           <img src={imagePreview} alt="תצוגה מקדימה" className="w-full h-full object-cover" />
                         ) : (
-                          <Camera className="w-12 h-12 text-muted-foreground" />
+                          <div className="flex flex-col items-center gap-1">
+                            <Camera className="w-10 h-10 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">העלה תמונה</span>
+                          </div>
                         )}
                       </div>
                       {breedDetecting && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                          <Loader2 className="w-8 h-8 text-white animate-spin" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full mx-auto w-32 h-32">
+                          <div className="text-center">
+                            <Loader2 className="w-8 h-8 text-white animate-spin mx-auto" />
+                            <span className="text-xs text-white mt-1 block">מזהה גזע...</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -588,9 +647,17 @@ const AddPet = () => {
                     />
                   </label>
                   {breedConfidence !== null && formData.breed && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
-                    </p>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm"
+                      style={{ background: 'var(--gradient-primary)' }}
+                    >
+                      <Sparkles className="w-4 h-4 text-white" />
+                      <span className="text-white font-medium">
+                        {formData.breed} ({Math.round(breedConfidence * 100)}%)
+                      </span>
+                    </motion.div>
                   )}
                 </div>
 
@@ -602,7 +669,7 @@ const AddPet = () => {
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="מה השם?"
-                    className="text-lg"
+                    className="text-lg h-12 rounded-xl"
                   />
                 </div>
 
@@ -615,12 +682,20 @@ const AddPet = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, breed: e.target.value }))}
                     placeholder={breedDetecting ? "מזהה גזע..." : "מה הגזע?"}
                     disabled={breedDetecting}
+                    className="h-12 rounded-xl"
                   />
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1">חזור</Button>
-                  <Button onClick={nextStep} disabled={!formData.name.trim()} className="flex-1">המשך</Button>
+                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button 
+                    onClick={nextStep} 
+                    disabled={!formData.name.trim()} 
+                    className="flex-1 h-12 rounded-xl text-white border-0"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
+                    המשך
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -633,14 +708,14 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-lg space-y-6"
+                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
               >
                 {/* Birth Date */}
                 <div className="space-y-2">
                   <Label>תאריך לידה</Label>
                   <Popover open={showCalendar} onOpenChange={setShowCalendar}>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-right">
+                      <Button variant="outline" className="w-full justify-start text-right h-12 rounded-xl">
                         <CalendarIcon className="ml-2 h-4 w-4" />
                         {formData.birthDate ? format(formData.birthDate, "PPP", { locale: he }) : "בחר תאריך"}
                       </Button>
@@ -663,7 +738,7 @@ const AddPet = () => {
                 <div className="space-y-2">
                   <Label>מין</Label>
                   <Select value={formData.gender} onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-xl">
                       <SelectValue placeholder="בחר מין" />
                     </SelectTrigger>
                     <SelectContent>
@@ -677,7 +752,7 @@ const AddPet = () => {
                 <div className="space-y-2">
                   <Label>מעוקר/מסורס?</Label>
                   <Select value={formData.is_neutered} onValueChange={(val) => setFormData(prev => ({ ...prev, is_neutered: val }))}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12 rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -688,8 +763,14 @@ const AddPet = () => {
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1">חזור</Button>
-                  <Button onClick={nextStep} className="flex-1">המשך</Button>
+                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button 
+                    onClick={nextStep} 
+                    className="flex-1 h-12 rounded-xl text-white border-0"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
+                    המשך
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -702,33 +783,45 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-lg space-y-6"
+                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
               >
                 <p className="text-muted-foreground text-center text-sm">
                   בחר תגיות שמתארות את {formData.name || "חיית המחמד"}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {PERSONALITY_TAGS.map(tag => (
-                    <button
+                    <motion.button
                       key={tag.value}
                       type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => toggleTag(tag.value, setPersonalityTags)}
                       className={cn(
                         "p-4 rounded-xl border-2 transition-all text-center",
                         personalityTags.includes(tag.value)
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
+                          ? "border-transparent shadow-[var(--shadow-shop)]"
+                          : "border-border hover:border-primary/50 bg-card"
                       )}
+                      style={personalityTags.includes(tag.value) ? { background: 'var(--gradient-primary)' } : {}}
                     >
                       <div className="text-2xl mb-1">{tag.emoji}</div>
-                      <div className="text-sm font-medium">{tag.label}</div>
-                    </button>
+                      <div className={cn(
+                        "text-sm font-medium",
+                        personalityTags.includes(tag.value) ? "text-white" : "text-foreground"
+                      )}>{tag.label}</div>
+                    </motion.button>
                   ))}
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1">חזור</Button>
-                  <Button onClick={nextStep} className="flex-1">המשך</Button>
+                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button 
+                    onClick={nextStep} 
+                    className="flex-1 h-12 rounded-xl text-white border-0"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
+                    המשך
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -741,36 +834,48 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-lg space-y-6"
+                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
               >
                 <p className="text-muted-foreground text-center text-sm">
                   מה {formData.name || "חיית המחמד"} אוהב/ת לעשות?
                 </p>
                 <div className="space-y-3">
                   {ACTIVITIES.map(activity => (
-                    <button
+                    <motion.button
                       key={activity.value}
                       type="button"
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
                       onClick={() => toggleTag(activity.value, setActivities)}
                       className={cn(
                         "w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3",
                         activities.includes(activity.value)
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
+                          ? "border-transparent shadow-[var(--shadow-shop)]"
+                          : "border-border hover:border-primary/50 bg-card"
                       )}
+                      style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
                     >
                       <div className="text-2xl">{activity.emoji}</div>
-                      <div className="text-lg font-medium">{activity.label}</div>
+                      <div className={cn(
+                        "text-lg font-medium",
+                        activities.includes(activity.value) ? "text-white" : "text-foreground"
+                      )}>{activity.label}</div>
                       {activities.includes(activity.value) && (
-                        <Check className="w-5 h-5 text-primary mr-auto" />
+                        <Check className="w-5 h-5 text-white mr-auto" />
                       )}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1">חזור</Button>
-                  <Button onClick={nextStep} className="flex-1">המשך</Button>
+                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button 
+                    onClick={nextStep} 
+                    className="flex-1 h-12 rounded-xl text-white border-0"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
+                    המשך
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -783,9 +888,14 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-lg space-y-6"
+                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
               >
-                <p className="text-muted-foreground text-center text-sm">(אופציונלי - אפשר לדלג)</p>
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm mb-2">
+                    <Heart className="w-4 h-4" />
+                    אופציונלי
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label>רגישויות או בעיות רפואיות</Label>
                   <Textarea
@@ -793,12 +903,19 @@ const AddPet = () => {
                     onChange={(e) => setHealthNotes(e.target.value)}
                     placeholder="למשל: רגיש למזון מסוים, בעיות עור..."
                     rows={4}
+                    className="rounded-xl resize-none"
                   />
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1">חזור</Button>
-                  <Button onClick={nextStep} className="flex-1">המשך</Button>
+                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button 
+                    onClick={nextStep} 
+                    className="flex-1 h-12 rounded-xl text-white border-0"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
+                    המשך
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -811,43 +928,95 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-lg space-y-6 text-center"
+                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 text-center border border-border/50"
               >
-                <div className="text-5xl">🎉</div>
+                <div 
+                  className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--gradient-primary)' }}
+                >
+                  <span className="text-3xl">🎉</span>
+                </div>
                 
-                {imagePreview && (
-                  <img 
-                    src={imagePreview} 
-                    alt={formData.name}
-                    className="w-28 h-28 rounded-full mx-auto object-cover border-4 border-primary shadow-lg"
-                  />
+                {imagePreview ? (
+                  <div className="relative w-28 h-28 mx-auto">
+                    <img 
+                      src={imagePreview} 
+                      alt={formData.name}
+                      className="w-28 h-28 rounded-full object-cover shadow-[var(--shadow-shop)]"
+                      style={{ border: '4px solid hsl(var(--primary))' }}
+                    />
+                  </div>
+                ) : (
+                  <div 
+                    className="w-28 h-28 mx-auto rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
+                    <span className="text-5xl">{petType === "dog" ? "🐕" : "🐈"}</span>
+                  </div>
                 )}
                 
-                <h2 className="text-2xl font-bold">{formData.name}</h2>
+                <h2 className="text-2xl font-bold text-foreground">{formData.name}</h2>
                 
-                <div className="text-right space-y-2 bg-muted/50 rounded-xl p-4">
-                  <p><span className="text-muted-foreground">סוג:</span> {petType === "dog" ? "כלב" : "חתול"}</p>
-                  {formData.breed && <p><span className="text-muted-foreground">גזע:</span> {formData.breed}</p>}
-                  {formData.gender && <p><span className="text-muted-foreground">מין:</span> {formData.gender === "male" ? "זכר" : "נקבה"}</p>}
+                <div className="text-right space-y-3 bg-muted/50 rounded-xl p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-foreground font-medium">{petType === "dog" ? "כלב" : "חתול"}</span>
+                    <span className="text-muted-foreground text-sm">סוג</span>
+                  </div>
+                  {formData.breed && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-foreground font-medium">{formData.breed}</span>
+                      <span className="text-muted-foreground text-sm">גזע</span>
+                    </div>
+                  )}
+                  {formData.gender && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-foreground font-medium">{formData.gender === "male" ? "זכר" : "נקבה"}</span>
+                      <span className="text-muted-foreground text-sm">מין</span>
+                    </div>
+                  )}
                   {personalityTags.length > 0 && (
-                    <p>
-                      <span className="text-muted-foreground">אישיות:</span>{" "}
-                      {personalityTags.map(t => PERSONALITY_TAGS.find(pt => pt.value === t)?.label).join(", ")}
-                    </p>
+                    <div className="pt-2 border-t border-border">
+                      <span className="text-muted-foreground text-sm block mb-2">אישיות</span>
+                      <div className="flex flex-wrap gap-2">
+                        {personalityTags.map(t => {
+                          const tag = PERSONALITY_TAGS.find(pt => pt.value === t);
+                          return (
+                            <span 
+                              key={t}
+                              className="px-3 py-1 rounded-full text-sm text-white"
+                              style={{ background: 'var(--gradient-primary)' }}
+                            >
+                              {tag?.emoji} {tag?.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
 
                 {isOnboarding && (
-                  <div className="bg-primary/10 rounded-2xl p-4 space-y-2">
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="rounded-2xl p-4 space-y-2 shadow-[var(--shadow-shop)]"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
                     <div className="text-3xl">🎁</div>
-                    <p className="font-semibold">קיבלת 50 נקודות התחלתיות</p>
-                    <p className="text-sm text-muted-foreground">ובאדג׳ "ברוך הבא" 🏆</p>
-                  </div>
+                    <p className="font-semibold text-white">קיבלת 50 נקודות התחלתיות</p>
+                    <p className="text-sm text-white/80">ובאדג׳ "ברוך הבא" 🏆</p>
+                  </motion.div>
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1">חזור</Button>
-                  <Button onClick={handleSubmit} disabled={loading} className="flex-1">
+                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={loading} 
+                    className="flex-1 h-12 rounded-xl text-white border-0 shadow-[var(--shadow-shop)]"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
                     {loading ? "שומר..." : "סיום 🐾"}
                   </Button>
