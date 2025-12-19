@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { ReportDialog } from "@/components/ReportDialog";
+import { ProductTagOverlay } from "@/components/post/ProductTagOverlay";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,6 +115,20 @@ const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; 
   </svg>
 );
 
+interface ProductTag {
+  id: string;
+  product_id: string;
+  position_x: number;
+  position_y: number;
+  product?: {
+    id: string;
+    name: string;
+    price: number;
+    image_url: string;
+    business_id: string;
+  };
+}
+
 interface PostCardProps {
   post: {
     id: string;
@@ -130,6 +145,7 @@ interface PostCardProps {
     comments_count: number;
     is_liked: boolean;
     is_saved: boolean;
+    product_tags?: ProductTag[];
   };
   currentUserId?: string;
   currentUserAvatar?: string;
@@ -157,6 +173,7 @@ export const PostCard = ({
   const { checkAuth, isAuthenticated } = useRequireAuth();
   const [isLicking, setIsLicking] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [showProductTags, setShowProductTags] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
 
   const handleComment = () => {
@@ -464,6 +481,15 @@ export const PostCard = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Product Tags Overlay */}
+        {post.product_tags && post.product_tags.length > 0 && (
+          <ProductTagOverlay 
+            tags={post.product_tags}
+            showTags={showProductTags}
+            onToggleTags={() => setShowProductTags(!showProductTags)}
+          />
+        )}
       </div>
 
       {/* Post Actions */}
