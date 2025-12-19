@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, ChevronDown, Menu, ShoppingCart } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, Menu, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -30,71 +30,64 @@ import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 
 // Shop products for feed
-const SHOP_PRODUCTS: FeedProduct[] = [
-  {
-    id: "prod-1",
-    title: "מזון יבש פרימיום",
-    price: "₪189",
-    originalPrice: "₪249",
-    image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
-    description: "מזון איכותי לכלבים בוגרים, עשיר בחלבון ובויטמינים חיוניים",
-    hasSale: true,
-    rating: 4.8,
-    reviews: 324,
-  },
-  {
-    id: "prod-2",
-    title: "חטיפי עוף מיובשים",
-    price: "₪45",
-    image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
-    description: "חטיפים טבעיים 100% מעוף איכותי, ללא תוספים",
-    hasSale: false,
-    rating: 4.5,
-    reviews: 156,
-  },
-  {
-    id: "prod-3",
-    title: "מיטה אורתופדית",
-    price: "₪299",
-    originalPrice: "₪399",
-    image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
-    description: "מיטה נוחה עם קצף זיכרון לתמיכה מושלמת בגוף",
-    hasSale: true,
-    rating: 4.9,
-    reviews: 487,
-  },
-  {
-    id: "prod-4",
-    title: "צעצוע אינטראקטיבי",
-    price: "₪129",
-    image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
-    description: "צעצוע חכם שמפעיל את הכלב ומעסיק אותו לשעות",
-    hasSale: false,
-    rating: 4.3,
-    reviews: 89,
-  },
-  {
-    id: "prod-5",
-    title: "שמפו טיפולי",
-    price: "₪59",
-    originalPrice: "₪79",
-    image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
-    description: "שמפו עדין לעור רגיש, מפנק את הפרווה",
-    hasSale: true,
-    rating: 4.6,
-    reviews: 203,
-  },
-  {
-    id: "prod-6",
-    title: "קערה אוטומטית",
-    price: "₪169",
-    image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
-    description: "קערת מים ואוכל חכמה עם חיישן מילוי אוטומטי",
-    hasSale: false,
-    rating: 4.7,
-    reviews: 312,
-  },
-];
+const SHOP_PRODUCTS: FeedProduct[] = [{
+  id: "prod-1",
+  title: "מזון יבש פרימיום",
+  price: "₪189",
+  originalPrice: "₪249",
+  image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
+  description: "מזון איכותי לכלבים בוגרים, עשיר בחלבון ובויטמינים חיוניים",
+  hasSale: true,
+  rating: 4.8,
+  reviews: 324
+}, {
+  id: "prod-2",
+  title: "חטיפי עוף מיובשים",
+  price: "₪45",
+  image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
+  description: "חטיפים טבעיים 100% מעוף איכותי, ללא תוספים",
+  hasSale: false,
+  rating: 4.5,
+  reviews: 156
+}, {
+  id: "prod-3",
+  title: "מיטה אורתופדית",
+  price: "₪299",
+  originalPrice: "₪399",
+  image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
+  description: "מיטה נוחה עם קצף זיכרון לתמיכה מושלמת בגוף",
+  hasSale: true,
+  rating: 4.9,
+  reviews: 487
+}, {
+  id: "prod-4",
+  title: "צעצוע אינטראקטיבי",
+  price: "₪129",
+  image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
+  description: "צעצוע חכם שמפעיל את הכלב ומעסיק אותו לשעות",
+  hasSale: false,
+  rating: 4.3,
+  reviews: 89
+}, {
+  id: "prod-5",
+  title: "שמפו טיפולי",
+  price: "₪59",
+  originalPrice: "₪79",
+  image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
+  description: "שמפו עדין לעור רגיש, מפנק את הפרווה",
+  hasSale: true,
+  rating: 4.6,
+  reviews: 203
+}, {
+  id: "prod-6",
+  title: "קערה אוטומטית",
+  price: "₪169",
+  image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
+  description: "קערת מים ואוכל חכמה עם חיישן מילוי אוטומטי",
+  hasSale: false,
+  rating: 4.7,
+  reviews: 312
+}];
 
 // Promotional ads for feed
 interface FeedAd {
@@ -107,40 +100,34 @@ interface FeedAd {
   gradient: string;
   badge?: string;
 }
-
-const FEED_ADS: FeedAd[] = [
-  {
-    id: "ad-1",
-    title: "ביטוח חיות מחמד",
-    subtitle: "הגן על חבר הפרווה שלך עם כיסוי מלא",
-    image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop",
-    cta: "קבל הצעה",
-    link: "/insurance",
-    gradient: "from-blue-500 to-cyan-400",
-    badge: "פופולרי",
-  },
-  {
-    id: "ad-2",
-    title: "אילוף מקצועי",
-    subtitle: "הפוך את הכלב שלך לחבר מושלם",
-    image: "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=600&h=400&fit=crop",
-    cta: "התחל עכשיו",
-    link: "/training",
-    gradient: "from-purple-500 to-pink-400",
-    badge: "חדש",
-  },
-  {
-    id: "ad-3",
-    title: "מועדון הטבות Petid",
-    subtitle: "הנחות בלעדיות לחברי המועדון",
-    image: "https://images.unsplash.com/photo-1544568100-847a948585b9?w=600&h=400&fit=crop",
-    cta: "הצטרף חינם",
-    link: "/rewards",
-    gradient: "from-amber-500 to-orange-400",
-    badge: "20% הנחה",
-  },
-];
-
+const FEED_ADS: FeedAd[] = [{
+  id: "ad-1",
+  title: "ביטוח חיות מחמד",
+  subtitle: "הגן על חבר הפרווה שלך עם כיסוי מלא",
+  image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop",
+  cta: "קבל הצעה",
+  link: "/insurance",
+  gradient: "from-blue-500 to-cyan-400",
+  badge: "פופולרי"
+}, {
+  id: "ad-2",
+  title: "אילוף מקצועי",
+  subtitle: "הפוך את הכלב שלך לחבר מושלם",
+  image: "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=600&h=400&fit=crop",
+  cta: "התחל עכשיו",
+  link: "/training",
+  gradient: "from-purple-500 to-pink-400",
+  badge: "חדש"
+}, {
+  id: "ad-3",
+  title: "מועדון הטבות Petid",
+  subtitle: "הנחות בלעדיות לחברי המועדון",
+  image: "https://images.unsplash.com/photo-1544568100-847a948585b9?w=600&h=400&fit=crop",
+  cta: "הצטרף חינם",
+  link: "/rewards",
+  gradient: "from-amber-500 to-orange-400",
+  badge: "20% הנחה"
+}];
 interface Post {
   id: string;
   user_id: string;
@@ -157,7 +144,6 @@ interface Post {
   is_liked: boolean;
   is_saved: boolean;
 }
-
 interface AdoptionPet {
   id: string;
   name: string;
@@ -175,7 +161,6 @@ interface AdoptionPet {
   status: string;
   created_at: string | null;
 }
-
 interface FeedProduct {
   id: string;
   title: string;
@@ -187,7 +172,6 @@ interface FeedProduct {
   rating?: number;
   reviews?: number;
 }
-
 interface SuggestedPost {
   id: string;
   user_id: string;
@@ -202,13 +186,27 @@ interface SuggestedPost {
   likes_count: number;
   comments_count: number;
 }
-
-type FeedItem = 
-  | { type: 'post'; data: Post; created_at: string }
-  | { type: 'adoption'; data: AdoptionPet; created_at: string }
-  | { type: 'product'; data: FeedProduct; created_at: string }
-  | { type: 'ad'; data: FeedAd; created_at: string }
-  | { type: 'suggested'; data: SuggestedPost; created_at: string };
+type FeedItem = {
+  type: 'post';
+  data: Post;
+  created_at: string;
+} | {
+  type: 'adoption';
+  data: AdoptionPet;
+  created_at: string;
+} | {
+  type: 'product';
+  data: FeedProduct;
+  created_at: string;
+} | {
+  type: 'ad';
+  data: FeedAd;
+  created_at: string;
+} | {
+  type: 'suggested';
+  data: SuggestedPost;
+  created_at: string;
+};
 const Feed = () => {
   const navigate = useNavigate();
   const {
@@ -218,8 +216,13 @@ const Feed = () => {
     checkAuth,
     isAuthenticated
   } = useRequireAuth();
-  const { getTotalItems, cartShake } = useCart();
-  const { setCartIconPosition } = useFlyingCart();
+  const {
+    getTotalItems,
+    cartShake
+  } = useCart();
+  const {
+    setCartIconPosition
+  } = useFlyingCart();
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
@@ -251,13 +254,12 @@ const Feed = () => {
   // Fetch adoption pets
   const fetchAdoptionPets = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("adoption_pets")
-        .select("*")
-        .eq("status", "available")
-        .order("created_at", { ascending: false })
-        .limit(5);
-      
+      const {
+        data,
+        error
+      } = await supabase.from("adoption_pets").select("*").eq("status", "available").order("created_at", {
+        ascending: false
+      }).limit(5);
       if (error) throw error;
       setAdoptionPets(data || []);
     } catch (error) {
@@ -271,57 +273,50 @@ const Feed = () => {
       // Get users that the current user follows
       let followedUserIds: string[] = [];
       if (user) {
-        const { data: followingData } = await supabase
-          .from("user_follows")
-          .select("following_id")
-          .eq("follower_id", user.id);
+        const {
+          data: followingData
+        } = await supabase.from("user_follows").select("following_id").eq("follower_id", user.id);
         followedUserIds = followingData?.map(f => f.following_id) || [];
         followedUserIds.push(user.id); // Exclude own posts
       }
 
       // Fetch posts from users not in the following list, ordered by engagement
-      let query = supabase
-        .from("posts")
-        .select(`
+      let query = supabase.from("posts").select(`
           *,
           profiles!posts_user_id_fkey_profiles (
             id,
             full_name,
             avatar_url
           )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(5);
+        `).order("created_at", {
+        ascending: false
+      }).limit(5);
 
       // If user is logged in, exclude posts from followed users
       if (followedUserIds.length > 0) {
         query = query.not("user_id", "in", `(${followedUserIds.join(",")})`);
       }
-
-      const { data: postsData, error } = await query;
-
+      const {
+        data: postsData,
+        error
+      } = await query;
       if (error) throw error;
-
       if (postsData && postsData.length > 0) {
         const postIds = postsData.map(p => p.id);
 
         // Get likes count for these posts
-        const { data: likesData } = await supabase
-          .from("post_likes")
-          .select("post_id")
-          .in("post_id", postIds);
+        const {
+          data: likesData
+        } = await supabase.from("post_likes").select("post_id").in("post_id", postIds);
 
         // Get comments count
-        const { data: commentsData } = await supabase
-          .from("post_comments")
-          .select("post_id")
-          .in("post_id", postIds);
-
+        const {
+          data: commentsData
+        } = await supabase.from("post_comments").select("post_id").in("post_id", postIds);
         const likesCount = likesData?.reduce((acc: Record<string, number>, like: any) => {
           acc[like.post_id] = (acc[like.post_id] || 0) + 1;
           return acc;
         }, {}) || {};
-
         const commentsCount = commentsData?.reduce((acc: Record<string, number>, comment: any) => {
           acc[comment.post_id] = (acc[comment.post_id] || 0) + 1;
           return acc;
@@ -342,10 +337,9 @@ const Feed = () => {
               avatar_url: profile?.avatar_url || ""
             },
             likes_count: likesCount[post.id] || 0,
-            comments_count: commentsCount[post.id] || 0,
+            comments_count: commentsCount[post.id] || 0
           };
-        }).sort((a, b) => (b.likes_count + b.comments_count) - (a.likes_count + a.comments_count));
-
+        }).sort((a, b) => b.likes_count + b.comments_count - (a.likes_count + a.comments_count));
         setSuggestedPosts(formattedPosts);
       }
     } catch (error) {
@@ -551,14 +545,12 @@ const Feed = () => {
       toast.error("שגיאה בעדכון פרטי חיית המחמד");
     }
   };
-  
   const handlePetAvatarUpdate = (petId: string, newAvatarUrl: string) => {
     setPets(prev => prev.map(p => p.id === petId ? {
       ...p,
       avatar_url: newAvatarUrl
     } : p));
   };
-  
   const handleArchivePet = async () => {
     if (!editingPet) return;
     try {
@@ -619,7 +611,6 @@ const Feed = () => {
       fetchAdoptionPets();
       fetchSuggestedPosts();
     };
-    
     window.addEventListener('refresh-feed', handleRefreshFeed);
     return () => window.removeEventListener('refresh-feed', handleRefreshFeed);
   }, [fetchPosts, fetchAdoptionPets]);
@@ -796,55 +787,42 @@ const Feed = () => {
     }));
 
     // Convert adoption pets to FeedItems (only show in "all" feed)
-    const adoptionItems: FeedItem[] = feedFilter === "all" 
-      ? adoptionPets.map(pet => ({
-          type: 'adoption' as const,
-          data: pet,
-          created_at: pet.created_at || new Date().toISOString()
-        }))
-      : [];
+    const adoptionItems: FeedItem[] = feedFilter === "all" ? adoptionPets.map(pet => ({
+      type: 'adoption' as const,
+      data: pet,
+      created_at: pet.created_at || new Date().toISOString()
+    })) : [];
 
     // Convert products to FeedItems (only show in "all" feed)
-    const productItems: FeedItem[] = feedFilter === "all"
-      ? SHOP_PRODUCTS.map((product, index) => ({
-          type: 'product' as const,
-          data: product,
-          // Spread products throughout the feed
-          created_at: new Date(Date.now() - (index + 2) * 3600000).toISOString()
-        }))
-      : [];
+    const productItems: FeedItem[] = feedFilter === "all" ? SHOP_PRODUCTS.map((product, index) => ({
+      type: 'product' as const,
+      data: product,
+      // Spread products throughout the feed
+      created_at: new Date(Date.now() - (index + 2) * 3600000).toISOString()
+    })) : [];
 
     // Convert ads to FeedItems (only show in "all" feed)
-    const adItems: FeedItem[] = feedFilter === "all"
-      ? FEED_ADS.map((ad, index) => ({
-          type: 'ad' as const,
-          data: ad,
-          created_at: new Date(Date.now() - (index + 4) * 7200000).toISOString()
-        }))
-      : [];
+    const adItems: FeedItem[] = feedFilter === "all" ? FEED_ADS.map((ad, index) => ({
+      type: 'ad' as const,
+      data: ad,
+      created_at: new Date(Date.now() - (index + 4) * 7200000).toISOString()
+    })) : [];
 
     // Convert suggested posts to FeedItems (only show in "all" feed)
-    const suggestedItems: FeedItem[] = feedFilter === "all"
-      ? suggestedPosts.map((post, index) => ({
-          type: 'suggested' as const,
-          data: post,
-          // Spread suggested posts throughout the feed
-          created_at: new Date(Date.now() - (index + 3) * 5400000).toISOString()
-        }))
-      : [];
+    const suggestedItems: FeedItem[] = feedFilter === "all" ? suggestedPosts.map((post, index) => ({
+      type: 'suggested' as const,
+      data: post,
+      // Spread suggested posts throughout the feed
+      created_at: new Date(Date.now() - (index + 3) * 5400000).toISOString()
+    })) : [];
 
     // Merge and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems].sort((a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // If following filter, only show posts from followed users
     if (feedFilter === "following") {
-      return merged.filter(item => 
-        item.type === 'post' && followingIds.includes(item.data.user_id)
-      );
+      return merged.filter(item => item.type === 'post' && followingIds.includes(item.data.user_id));
     }
-
     return merged;
   }, [posts, adoptionPets, suggestedPosts, feedFilter, followingIds]);
 
@@ -854,48 +832,45 @@ const Feed = () => {
   }, []);
   return <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 pb-14" dir="rtl">
       {/* Instagram-style Header with blur effect */}
-      <motion.div 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50 shadow-sm"
-      >
+      <motion.div initial={{
+      y: -20,
+      opacity: 0
+    }} animate={{
+      y: 0,
+      opacity: 1
+    }} transition={{
+      duration: 0.4,
+      ease: "easeOut"
+    }} className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50 shadow-sm">
         <div className="max-w-lg mx-auto px-4 h-[56px] flex items-center justify-between">
           {/* Left side - Hamburger menu */}
           <div className="flex items-center gap-3">
-            <motion.button 
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsMenuOpen(true)} 
-              className="active:opacity-50 transition-opacity p-1" 
-              aria-label="פתח תפריט"
-            >
+            <motion.button whileHover={{
+            scale: 1.1
+          }} whileTap={{
+            scale: 0.9
+          }} onClick={() => setIsMenuOpen(true)} className="active:opacity-50 transition-opacity p-1" aria-label="פתח תפריט">
               <Menu className="w-6 h-6 text-[#262626] hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
             </motion.button>
             {/* Logo with PetID gradient and animation */}
-            <motion.div
-              className="relative cursor-pointer"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => {
-                setPage(0);
-                setHasMore(true);
-                fetchPosts(0, false);
-              }}
-            >
+            <motion.div className="relative cursor-pointer" whileHover={{
+            scale: 1.05
+          }} whileTap={{
+            scale: 0.97
+          }} onClick={() => {
+            setPage(0);
+            setHasMore(true);
+            fetchPosts(0, false);
+          }}>
               {/* Animated glow effect behind logo */}
-              <motion.div 
-                className="absolute -inset-2 bg-gradient-to-r from-[#1E5799]/20 via-[#4ECDC4]/30 to-[#7DB9E8]/20 blur-xl rounded-full"
-                animate={{ 
-                  opacity: [0.3, 0.6, 0.3],
-                  scale: [0.95, 1.1, 0.95]
-                }}
-                transition={{ 
-                  duration: 3, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
+              <motion.div className="absolute -inset-2 bg-gradient-to-r from-[#1E5799]/20 via-[#4ECDC4]/30 to-[#7DB9E8]/20 blur-xl rounded-full" animate={{
+              opacity: [0.3, 0.6, 0.3],
+              scale: [0.95, 1.1, 0.95]
+            }} transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }} />
               <h1 className="relative text-[30px] font-black cursor-pointer bg-gradient-to-r from-[#1E5799] via-[#4ECDC4] via-55% to-[#7DB9E8] bg-clip-text text-transparent font-jakarta tracking-tight">
                 Petid
               </h1>
@@ -906,20 +881,20 @@ const Feed = () => {
           <div className="flex items-center gap-4">
             {isAuthenticated && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <motion.button 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className={`active:opacity-50 transition-opacity relative flex items-center gap-0.5 p-1 ${newlyAddedPetIds.size > 0 ? 'animate-pulse' : ''}`}
-                  >
+                  <motion.button whileHover={{
+                scale: 1.1
+              }} whileTap={{
+                scale: 0.9
+              }} className={`active:opacity-50 transition-opacity relative flex items-center gap-0.5 p-1 ${newlyAddedPetIds.size > 0 ? 'animate-pulse' : ''}`}>
                     <PawPrint className={`w-6 h-6 transition-colors ${newlyAddedPetIds.size > 0 ? 'text-[#4ECDC4]' : 'text-[#262626] hover:text-[#4ECDC4]'}`} strokeWidth={1.5} />
-                    {pets.length > 0 && <motion.span 
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}
-                    >
+                    {pets.length > 0 && <motion.span initial={{
+                  scale: 0
+                }} animate={{
+                  scale: 1
+                }} className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}>
                         {pets.length}
                       </motion.span>}
-                    <ChevronDown className="w-3 h-3 text-[#8E8E8E]" />
+                    
                   </motion.button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-lg z-50 shadow-xl border-gray-100 rounded-xl">
@@ -951,57 +926,58 @@ const Feed = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>}
-            <motion.button 
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleNavigateToNotifications} 
-              className="active:opacity-50 transition-opacity relative p-1"
-            >
+            <motion.button whileHover={{
+            scale: 1.1
+          }} whileTap={{
+            scale: 0.9
+          }} onClick={handleNavigateToNotifications} className="active:opacity-50 transition-opacity relative p-1">
               <Heart className="w-6 h-6 text-[#262626] hover:text-[#4ECDC4] transition-colors" strokeWidth={1.5} />
             </motion.button>
-            <motion.button 
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleNavigateToMessages} 
-              className="active:opacity-50 transition-opacity p-1"
-            >
+            <motion.button whileHover={{
+            scale: 1.1
+          }} whileTap={{
+            scale: 0.9
+          }} onClick={handleNavigateToMessages} className="active:opacity-50 transition-opacity p-1">
               <Send className="w-6 h-6 text-[#262626] hover:text-[#1E5799] transition-colors" strokeWidth={1.5} />
             </motion.button>
             
             {/* Cart Icon - appears when items added */}
             <AnimatePresence>
-              {getTotalItems() > 0 && (
-                <motion.button 
-                  ref={cartIconRef}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ 
-                    scale: 1, 
-                    opacity: 1,
-                  }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => navigate('/cart')} 
-                  className={`active:opacity-50 transition-opacity p-1 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
-                  onAnimationComplete={() => {
-                    if (cartIconRef.current) {
-                      const rect = cartIconRef.current.getBoundingClientRect();
-                      setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                    }
-                  }}
-                >
+              {getTotalItems() > 0 && <motion.button ref={cartIconRef} initial={{
+              scale: 0,
+              opacity: 0
+            }} animate={{
+              scale: 1,
+              opacity: 1
+            }} exit={{
+              scale: 0,
+              opacity: 0
+            }} transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 15
+            }} whileHover={{
+              scale: 1.1
+            }} whileTap={{
+              scale: 0.9
+            }} onClick={() => navigate('/cart')} className={`active:opacity-50 transition-opacity p-1 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`} onAnimationComplete={() => {
+              if (cartIconRef.current) {
+                const rect = cartIconRef.current.getBoundingClientRect();
+                setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+              }
+            }}>
                   <ShoppingCart className="w-6 h-6 text-[#1E5799]" strokeWidth={1.5} />
-                  <motion.span 
-                    className="absolute -top-1 -right-1 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 500 }}
-                  >
+                  <motion.span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center" initial={{
+                scale: 0
+              }} animate={{
+                scale: 1
+              }} transition={{
+                type: "spring",
+                stiffness: 500
+              }}>
                     {getTotalItems()}
                   </motion.span>
-                </motion.button>
-              )}
+                </motion.button>}
             </AnimatePresence>
           </div>
         </div>
@@ -1012,13 +988,16 @@ const Feed = () => {
 
       {/* New Posts Banner */}
       <AnimatePresence>
-        {newPostsAvailable && <motion.div 
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -50, opacity: 0 }}
-          className="fixed top-[52px] left-0 right-0 z-40 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-center cursor-pointer py-2.5 shadow-md" 
-          onClick={handleLoadNewPosts}
-        >
+        {newPostsAvailable && <motion.div initial={{
+        y: -50,
+        opacity: 0
+      }} animate={{
+        y: 0,
+        opacity: 1
+      }} exit={{
+        y: -50,
+        opacity: 0
+      }} className="fixed top-[52px] left-0 right-0 z-40 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-center cursor-pointer py-2.5 shadow-md" onClick={handleLoadNewPosts}>
             <span className="text-[13px] font-medium flex items-center justify-center gap-2">
               <TrendingUp className="w-4 h-4" />
               פוסטים חדשים
@@ -1027,11 +1006,16 @@ const Feed = () => {
       </AnimatePresence>
 
       {/* My Pets Section - Above Stories */}
-      {isAuthenticated && <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-      >
+      {isAuthenticated && <motion.div initial={{
+      opacity: 0,
+      y: 10
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.1,
+      duration: 0.4
+    }}>
         <div data-pets-section className="py-5 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
           <div className="max-w-lg mx-auto">
             <h2 className="text-[15px] font-bold text-slate-800 px-4 mb-4 flex items-center gap-2.5">
@@ -1046,12 +1030,16 @@ const Feed = () => {
       </motion.div>}
 
       {/* Stories Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-        className="bg-white"
-      >
+      <motion.div initial={{
+      opacity: 0,
+      y: 10
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.2,
+      duration: 0.4
+    }} className="bg-white">
         <StoriesBar />
       </motion.div>
 
@@ -1061,14 +1049,16 @@ const Feed = () => {
         {loading ?
       // Enhanced Instagram-style Loading skeleton
       <div className="space-y-0">
-            {[...Array(3)].map((_, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1, duration: 0.3 }}
-                className="bg-white border-b border-gray-100"
-              >
+            {[...Array(3)].map((_, i) => <motion.div key={i} initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: i * 0.1,
+          duration: 0.3
+        }} className="bg-white border-b border-gray-100">
                 <div className="flex items-center gap-3 px-4 py-3">
                   <Skeleton className="w-10 h-10 rounded-full" />
                   <div className="space-y-1.5">
@@ -1087,22 +1077,27 @@ const Feed = () => {
                   <Skeleton className="h-3 w-full" />
                   <Skeleton className="h-3 w-3/4" />
                 </div>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div> : mixedFeed.length === 0 ?
       // Enhanced Empty state
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        className="text-center py-20 px-6"
-      >
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"
-            >
+      <motion.div initial={{
+        opacity: 0,
+        scale: 0.95
+      }} animate={{
+        opacity: 1,
+        scale: 1
+      }} transition={{
+        duration: 0.4
+      }} className="text-center py-20 px-6">
+            <motion.div initial={{
+          scale: 0
+        }} animate={{
+          scale: 1
+        }} transition={{
+          delay: 0.2,
+          type: "spring",
+          stiffness: 200
+        }} className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
               <Camera className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
             </motion.div>
             <h3 className="text-[24px] font-bold text-[#262626] mb-2">
@@ -1111,125 +1106,112 @@ const Feed = () => {
             <p className="text-[#8E8E8E] text-[15px] mb-6 max-w-xs mx-auto">
               {feedFilter === "following" ? "עקוב אחרי אנשים כדי לראות תמונות" : "כשתשתף תמונות, הן יופיעו בפרופיל שלך"}
             </p>
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleCreatePost} 
-              className="text-[#0095F6] font-semibold text-[15px] px-6 py-2.5 rounded-full bg-[#0095F6]/10 hover:bg-[#0095F6]/20 transition-colors"
-            >
+            <motion.button whileHover={{
+          scale: 1.05
+        }} whileTap={{
+          scale: 0.95
+        }} onClick={handleCreatePost} className="text-[#0095F6] font-semibold text-[15px] px-6 py-2.5 rounded-full bg-[#0095F6]/10 hover:bg-[#0095F6]/20 transition-colors">
               שתף את התמונה הראשונה שלך
             </motion.button>
           </motion.div> : <div className="space-y-0">
             {mixedFeed.map((item, index) => {
-              if (item.type === 'post') {
-                return (
-                  <motion.div
-                    key={`post-${item.data.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
-                  >
+          if (item.type === 'post') {
+            return <motion.div key={`post-${item.data.id}`} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: Math.min(index * 0.05, 0.3),
+              duration: 0.3
+            }}>
                     <PostCardErrorBoundary>
-                      <PostCard 
-                        post={item.data} 
-                        currentUserId={user?.id} 
-                        currentUserAvatar={userAvatar} 
-                        onLike={handleLike} 
-                        onSave={handleSave} 
-                        onDoubleTap={handleDoubleTap} 
-                        onComment={handleComment} 
-                        showDoubleTapAnimation={doubleTapLike === item.data.id} 
-                        getTimeAgo={getTimeAgo} 
-                      />
+                      <PostCard post={item.data} currentUserId={user?.id} currentUserAvatar={userAvatar} onLike={handleLike} onSave={handleSave} onDoubleTap={handleDoubleTap} onComment={handleComment} showDoubleTapAnimation={doubleTapLike === item.data.id} getTimeAgo={getTimeAgo} />
                     </PostCardErrorBoundary>
-                  </motion.div>
-                );
-              } else if (item.type === 'adoption') {
-                return (
-                  <motion.div
-                    key={`adoption-${item.data.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
-                  >
-                    <AdoptionPostCard 
-                      pet={item.data}
-                      getTimeAgo={getTimeAgo}
-                    />
-                  </motion.div>
-                );
-              } else if (item.type === 'product') {
-                return (
-                  <motion.div
-                    key={`product-${item.data.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
-                  >
-                    <ProductPostCard 
-                      product={item.data}
-                    />
-                  </motion.div>
-                );
-              } else if (item.type === 'ad') {
-                return (
-                  <motion.div
-                    key={`ad-${item.data.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
-                  >
+                  </motion.div>;
+          } else if (item.type === 'adoption') {
+            return <motion.div key={`adoption-${item.data.id}`} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: Math.min(index * 0.05, 0.3),
+              duration: 0.3
+            }}>
+                    <AdoptionPostCard pet={item.data} getTimeAgo={getTimeAgo} />
+                  </motion.div>;
+          } else if (item.type === 'product') {
+            return <motion.div key={`product-${item.data.id}`} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: Math.min(index * 0.05, 0.3),
+              duration: 0.3
+            }}>
+                    <ProductPostCard product={item.data} />
+                  </motion.div>;
+          } else if (item.type === 'ad') {
+            return <motion.div key={`ad-${item.data.id}`} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: Math.min(index * 0.05, 0.3),
+              duration: 0.3
+            }}>
                     <AdPostCard ad={item.data} />
-                  </motion.div>
-                );
-              } else if (item.type === 'suggested') {
-                return (
-                  <motion.div
-                    key={`suggested-${item.data.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
-                  >
-                    <SuggestedPostCard 
-                      post={item.data}
-                      onFollow={handleSuggestedFollow}
-                    />
-                  </motion.div>
-                );
-              }
-              return null;
-            })}
+                  </motion.div>;
+          } else if (item.type === 'suggested') {
+            return <motion.div key={`suggested-${item.data.id}`} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: Math.min(index * 0.05, 0.3),
+              duration: 0.3
+            }}>
+                    <SuggestedPostCard post={item.data} onFollow={handleSuggestedFollow} />
+                  </motion.div>;
+          }
+          return null;
+        })}
             
             {/* Infinite Scroll Observer Target */}
             {hasMore && <div ref={observerTarget} className="py-6 text-center">
-                {loadingMore && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-center gap-2"
-                  >
+                {loadingMore && <motion.div initial={{
+            opacity: 0
+          }} animate={{
+            opacity: 1
+          }} className="flex items-center justify-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin text-[#8E8E8E]" />
                     <span className="text-[13px] text-[#8E8E8E]">טוען עוד...</span>
-                  </motion.div>
-                )}
+                  </motion.div>}
               </div>}
           </div>}
       </div>
 
       {/* End of Feed */}
-      {!loading && !hasMore && mixedFeed.length > 0 && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-8 border-t border-gray-100 bg-gradient-to-b from-transparent to-gray-50/50"
-        >
+      {!loading && !hasMore && mixedFeed.length > 0 && <motion.div initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} className="text-center py-8 border-t border-gray-100 bg-gradient-to-b from-transparent to-gray-50/50">
           <div className="flex items-center justify-center gap-2 text-[#8E8E8E]">
             <div className="w-8 h-px bg-gray-200" />
             <span className="text-[13px]">סיימת לראות הכל</span>
             <div className="w-8 h-px bg-gray-200" />
           </div>
-        </motion.div>
-      )}
+        </motion.div>}
 
       <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {
       setPage(0);
