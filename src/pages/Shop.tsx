@@ -498,18 +498,18 @@ const Shop = () => {
       </div>
 
       {/* Pet Type Selection - Clean minimal style */}
-      <div className="bg-white">
+      <div className="bg-background">
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex gap-2 justify-center">
             <button
               onClick={() => setSelectedPetType("all")}
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "all"
-                  ? "text-gray-800"
-                  : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground bg-background border border-border"
               }`}
               style={selectedPetType === "all" 
-                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
                 : {}
               }
             >
@@ -519,11 +519,11 @@ const Shop = () => {
               onClick={() => setSelectedPetType("dog")}
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "dog"
-                  ? "text-gray-800"
-                  : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground bg-background border border-border"
               }`}
               style={selectedPetType === "dog" 
-                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
                 : {}
               }
             >
@@ -534,11 +534,11 @@ const Shop = () => {
               onClick={() => setSelectedPetType("cat")}
               className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedPetType === "cat"
-                  ? "text-gray-800"
-                  : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground bg-background border border-border"
               }`}
               style={selectedPetType === "cat" 
-                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
                 : {}
               }
             >
@@ -550,7 +550,7 @@ const Shop = () => {
       </div>
 
       {/* Sub-Categories Scroll */}
-      <div className="bg-white border-b border-gray-50">
+      <div className="bg-background">
         <div className="max-w-lg mx-auto">
           <div className="flex gap-2 px-4 py-2.5 overflow-x-auto scrollbar-hide">
             {subCategories.map((category) => (
@@ -559,11 +559,11 @@ const Shop = () => {
                 onClick={() => setSelectedCategory(category.label)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category.label
-                    ? "text-gray-800"
-                    : "text-gray-500 hover:text-gray-700 bg-white border border-gray-200"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground bg-background border border-border"
                 }`}
                 style={selectedCategory === category.label 
-                  ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                  ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
                   : {}
                 }
               >
@@ -575,18 +575,18 @@ const Shop = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white border-b border-gray-50">
+      <div className="bg-background">
         <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowDealsOnly(!showDealsOnly)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 showDealsOnly
-                  ? "text-gray-800"
-                  : "text-gray-500 bg-white border border-gray-200"
+                  ? "text-foreground"
+                  : "text-muted-foreground bg-background border border-border"
               }`}
               style={showDealsOnly 
-                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
                 : {}
               }
             >
@@ -598,11 +598,11 @@ const Shop = () => {
               onClick={() => setSortBy(sortBy === "price-low" ? "none" : "price-low")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 sortBy === "price-low"
-                  ? "text-gray-800"
-                  : "text-gray-500 bg-white border border-gray-200"
+                  ? "text-foreground"
+                  : "text-muted-foreground bg-background border border-border"
               }`}
               style={sortBy === "price-low" 
-                ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
+                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
                 : {}
               }
             >
@@ -610,7 +610,7 @@ const Shop = () => {
             </button>
           </div>
 
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-muted-foreground">
             {filteredAndSortedProducts.length} מוצרים
           </span>
         </div>
