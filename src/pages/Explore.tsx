@@ -11,6 +11,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Badge } from "@/components/ui/badge";
 
+// Park images
+import parkImage1 from "@/assets/parks/dog-park-1.jpg";
+import parkImage2 from "@/assets/parks/dog-park-2.jpg";
+import parkImage3 from "@/assets/parks/dog-park-3.jpg";
+import parkImage4 from "@/assets/parks/dog-park-4.jpg";
+import parkImage5 from "@/assets/parks/dog-park-5.jpg";
+import parkImage6 from "@/assets/parks/dog-park-6.jpg";
+
+// Product images for deals
+import dogFood from "@/assets/products/dog-food.jpg";
+import catFood from "@/assets/products/cat-food.jpg";
+import dogTreats from "@/assets/products/dog-treats.jpg";
+import dogToys from "@/assets/products/dog-toys.jpg";
+import petBed from "@/assets/products/pet-bed.jpg";
+import petCollar from "@/assets/products/pet-collar.jpg";
+
+const parkImages = [parkImage1, parkImage2, parkImage3, parkImage4, parkImage5, parkImage6];
+const productImages = [dogFood, catFood, dogTreats, dogToys, petBed, petCollar];
+
 interface Post {
   id: string;
   image_url: string;
@@ -461,77 +480,77 @@ const Explore = () => {
               ))}
             </div>
           ) : activeTab === "parks" ? (
-            /* Parks List */
-            <div className="space-y-3">
+            /* Parks Grid with Images */
+            <div className="grid grid-cols-2 gap-3">
               {parks.length > 0 ? (
                 parks.map((park, index) => (
                   <motion.div
                     key={park.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => navigate("/parks")}
-                    className="bg-card rounded-xl p-4 border border-border/50 cursor-pointer hover:bg-muted/50 transition-colors"
+                    className="relative rounded-xl overflow-hidden cursor-pointer group aspect-[4/3]"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Trees className="w-5 h-5 text-green-500" />
-                          <h3 className="font-semibold">{park.name}</h3>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{park.address}, {park.city}</p>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {park.rating && (
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                              <span className="text-sm font-medium">{park.rating.toFixed(1)}</span>
-                              {park.total_reviews && (
-                                <span className="text-xs text-muted-foreground">({park.total_reviews})</span>
-                              )}
-                            </div>
-                          )}
-                          {park.water && <Badge variant="secondary" className="text-xs">מים</Badge>}
-                          {park.shade && <Badge variant="secondary" className="text-xs">צל</Badge>}
-                          {park.fencing && <Badge variant="secondary" className="text-xs">גידור</Badge>}
-                        </div>
+                    <img
+                      src={parkImages[index % parkImages.length]}
+                      alt={park.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="font-semibold text-white text-sm mb-1 line-clamp-1">{park.name}</h3>
+                      <div className="flex items-center gap-1 text-white/80 text-xs">
+                        <MapPin className="w-3 h-3" />
+                        <span className="line-clamp-1">{park.city}</span>
                       </div>
-                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      {park.rating && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                          <span className="text-white text-xs font-medium">{park.rating.toFixed(1)}</span>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))
               ) : (
-                <div className="text-center py-20">
+                <div className="col-span-2 text-center py-20">
                   <Trees className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
                   <p className="text-muted-foreground">אין גינות כלבים להצגה</p>
                 </div>
               )}
             </div>
           ) : activeTab === "deals" ? (
-            /* Deals List */
-            <div className="space-y-3">
+            /* Deals Grid with Product Images */
+            <div className="grid grid-cols-2 gap-3">
               {deals.length > 0 ? (
                 deals.map((deal, index) => (
                   <motion.div
                     key={deal.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => navigate(deal.button_link || "/shop")}
-                    className="rounded-xl p-4 cursor-pointer overflow-hidden relative"
-                    style={{
-                      background: `linear-gradient(135deg, ${deal.gradient_from}, ${deal.gradient_to})`
-                    }}
+                    className="relative rounded-xl overflow-hidden cursor-pointer group aspect-[4/3]"
                   >
-                    <Badge className="bg-white/20 text-white border-0 mb-2">
+                    <img
+                      src={productImages[index % productImages.length]}
+                      alt={deal.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                    <Badge className="absolute top-2 right-2 bg-red-500 text-white border-0 text-xs">
                       <Percent className="w-3 h-3 mr-1" />
                       {deal.badge_text}
                     </Badge>
-                    <h3 className="font-bold text-white text-lg mb-1">{deal.title}</h3>
-                    <p className="text-white/80 text-sm">{deal.subtitle}</p>
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="font-semibold text-white text-sm mb-0.5 line-clamp-1">{deal.title}</h3>
+                      <p className="text-white/70 text-xs line-clamp-1">{deal.subtitle}</p>
+                    </div>
                   </motion.div>
                 ))
               ) : (
-                <div className="text-center py-20">
+                <div className="col-span-2 text-center py-20">
                   <Tag className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
                   <p className="text-muted-foreground">אין מבצעים כרגע</p>
                 </div>
