@@ -46,6 +46,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminParks from "./pages/admin/AdminParks";
 import AdminAdoption from "./pages/admin/AdminAdoption";
 import AdminReports from "./pages/admin/AdminReports";
+const AdminRoles = lazy(() => import("./pages/admin/AdminRoles"));
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
 import Tasks from "./pages/Tasks";
@@ -146,6 +147,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin/parks" element={<ProtectedRoute><AdminRoute><PageTransition><AdminParks /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/adoption" element={<ProtectedRoute><AdminRoute><PageTransition><AdminAdoption /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/reports" element={<ProtectedRoute><AdminRoute><PageTransition><AdminReports /></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/roles" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminRoles /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
         <Route path="/experiences" element={<PageTransition><Experiences /></PageTransition>} />
         <Route path="/parks" element={<PageTransition><Parks /></PageTransition>} />
