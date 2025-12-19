@@ -1,4 +1,4 @@
-import { User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff, Palette, ChevronLeft } from "lucide-react";
+import { User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff, Palette, ChevronLeft, Store } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -65,6 +65,13 @@ const Settings = () => {
           label: t("settings.profile"),
           description: t("settings.profileDesc"),
           action: () => navigate("/profile"),
+          type: "link",
+        },
+        {
+          icon: Store,
+          label: "עבור לחשבון עסקי",
+          description: "הפוך את הפרופיל שלך לפרופיל עסקי",
+          action: () => navigate("/convert-to-business"),
           type: "link",
         },
       ],
