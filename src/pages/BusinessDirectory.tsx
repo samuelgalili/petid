@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowRight, Star, MapPin, Phone, Clock, BadgeCheck, Search, Stethoscope, Scissors, Store, GraduationCap, Dog } from 'lucide-react';
+import { ArrowRight, Star, MapPin, Phone, Clock, BadgeCheck, Search, Stethoscope, Scissors, Store, GraduationCap, Dog, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '@/components/BottomNav';
 
-type BusinessType = 'all' | 'vet' | 'trainer' | 'groomer' | 'shop' | 'pet_sitter';
+type BusinessType = 'all' | 'vet' | 'trainer' | 'groomer' | 'shop' | 'pet_sitter' | 'shelter';
 
 const businessTypeLabels: Record<string, { label: string; icon: React.ReactNode }> = {
   vet: { label: 'וטרינר', icon: <Stethoscope className="w-4 h-4" /> },
@@ -18,6 +18,7 @@ const businessTypeLabels: Record<string, { label: string; icon: React.ReactNode 
   groomer: { label: 'מספרה', icon: <Scissors className="w-4 h-4" /> },
   shop: { label: 'חנות', icon: <Store className="w-4 h-4" /> },
   pet_sitter: { label: 'פט סיטר', icon: <Dog className="w-4 h-4" /> },
+  shelter: { label: 'עמותה', icon: <Heart className="w-4 h-4" /> },
 };
 
 const BusinessDirectory = () => {
