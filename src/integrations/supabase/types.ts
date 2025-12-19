@@ -255,6 +255,7 @@ export type Database = {
           is_featured: boolean | null
           name: string
           original_price: number | null
+          pet_type: Database["public"]["Enums"]["pet_type"] | null
           price: number
           updated_at: string
         }
@@ -270,6 +271,7 @@ export type Database = {
           is_featured?: boolean | null
           name: string
           original_price?: number | null
+          pet_type?: Database["public"]["Enums"]["pet_type"] | null
           price: number
           updated_at?: string
         }
@@ -285,6 +287,7 @@ export type Database = {
           is_featured?: boolean | null
           name?: string
           original_price?: number | null
+          pet_type?: Database["public"]["Enums"]["pet_type"] | null
           price?: number
           updated_at?: string
         }
@@ -460,6 +463,90 @@ export type Database = {
           title?: string
           title_he?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      coupon_uses: {
+        Row: {
+          coupon_id: string
+          id: string
+          order_id: string | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          id?: string
+          order_id?: string | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_uses_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_uses_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_order_amount: number | null
+          updated_at: string
+          used_count: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+          used_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+          used_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Relationships: []
       }
@@ -966,10 +1053,13 @@ export type Database = {
       }
       orders: {
         Row: {
+          coupon_id: string | null
           created_at: string
+          discount_amount: number | null
           id: string
           order_date: string
           order_number: string
+          payment_installments: number | null
           payment_method: string
           shipping: number
           shipping_address: Json
@@ -981,10 +1071,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          coupon_id?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           order_date?: string
           order_number: string
+          payment_installments?: number | null
           payment_method: string
           shipping: number
           shipping_address: Json
@@ -996,10 +1089,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          coupon_id?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           order_date?: string
           order_number?: string
+          payment_installments?: number | null
           payment_method?: string
           shipping?: number
           shipping_address?: Json
@@ -1010,7 +1106,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       park_checkins: {
         Row: {
@@ -2733,6 +2837,7 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+      pet_type: "dog" | "cat" | "other" | "all"
       report_status: "pending" | "reviewed" | "resolved" | "dismissed"
       report_type: "spam" | "inappropriate" | "harassment" | "fake" | "other"
     }
@@ -2879,6 +2984,7 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
+      pet_type: ["dog", "cat", "other", "all"],
       report_status: ["pending", "reviewed", "resolved", "dismissed"],
       report_type: ["spam", "inappropriate", "harassment", "fake", "other"],
     },

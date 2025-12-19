@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.smart-discovery]
 verify_jwt = false
+
+[functions.order-status-notification]
+verify_jwt = false
+
+[functions.upload-avatar]
+verify_jwt = false
