@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, TrendingUp, Hash, MapPin, Users, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Rss, Star, Percent, Sparkles, Lightbulb, Flame } from "lucide-react";
+import { Search, X, TrendingUp, Hash, MapPin, Users, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Rss, Star, Percent, Sparkles, Lightbulb, Flame, Dog, Cat, PawPrint, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Park images
 import parkImage1 from "@/assets/parks/dog-park-1.jpg";
@@ -27,8 +28,55 @@ import dogToys from "@/assets/products/dog-toys.jpg";
 import petBed from "@/assets/products/pet-bed.jpg";
 import petCollar from "@/assets/products/pet-collar.jpg";
 
+// Pet default avatar
+import defaultPetAvatar from "@/assets/default-pet-avatar.png";
+
 const parkImages = [parkImage1, parkImage2, parkImage3, parkImage4, parkImage5, parkImage6];
 const productImages = [dogFood, catFood, dogTreats, dogToys, petBed, petCollar];
+
+// Common dog breeds in Hebrew
+const dogBreeds = [
+  "כל הגזעים",
+  "מעורב",
+  "לברדור רטריבר",
+  "גולדן רטריבר",
+  "בולדוג צרפתי",
+  "פודל",
+  "ביגל",
+  "רוטווילר",
+  "יורקשייר טרייר",
+  "בוקסר",
+  "שיצו",
+  "האסקי סיבירי",
+  "גרמן שפרד",
+  "מלינואה",
+  "פיטבול",
+  "צ'יוואווה",
+  "שיבה אינו",
+  "קוקר ספניאל",
+  "בורדר קולי",
+  "ג'ק ראסל",
+  "פומרניאן",
+];
+
+// Common cat breeds in Hebrew
+const catBreeds = [
+  "כל הגזעים",
+  "מעורב",
+  "חתול בית",
+  "פרסי",
+  "סיאמי",
+  "מיין קון",
+  "בריטי קצר שיער",
+  "רגדול",
+  "בנגלי",
+  "אביסיני",
+  "סקוטי מקופל",
+  "בירמן",
+  "ספינקס",
+  "רוסי כחול",
+  "נורווגי יער",
+];
 
 interface Post {
   id: string;
@@ -80,6 +128,21 @@ interface Deal {
   button_link: string;
 }
 
+interface Pet {
+  id: string;
+  name: string;
+  type: string;
+  breed: string | null;
+  avatar_url: string | null;
+  user_id: string;
+  gender: string | null;
+  age: number | null;
+  profiles?: {
+    full_name: string;
+    avatar_url: string;
+  };
+}
+
 const trendingTags = [
   { tag: "כלבים_שמחים", posts: 12400 },
   { tag: "חתולים_חמודים", posts: 8900 },
@@ -107,17 +170,22 @@ const Explore = () => {
   const { checkAuth } = useRequireAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [activeTab, setActiveTab] = useState("parks");
+  const [activeTab, setActiveTab] = useState("pets");
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [parks, setParks] = useState<DogPark[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [aiInsights, setAiInsights] = useState<SmartDiscoveryResult | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [doubleTapPostId, setDoubleTapPostId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  
+  // Pet filters
+  const [petTypeFilter, setPetTypeFilter] = useState<"all" | "dog" | "cat">("all");
+  const [breedFilter, setBreedFilter] = useState("כל הגזעים");
   const [recentSearches, setRecentSearches] = useState<string[]>([
     "כלבי גולדן",
     "חתולים פרסיים",
@@ -176,8 +244,50 @@ const Explore = () => {
     }
   };
 
+  // Fetch pets based on filters
+  const fetchPets = useCallback(async () => {
+    try {
+      setLoading(true);
+      let query = supabase
+        .from("pets")
+        .select(`
+          id,
+          name,
+          type,
+          breed,
+          avatar_url,
+          user_id,
+          gender,
+          age
+        `)
+        .eq("archived", false);
+
+      // Apply type filter
+      if (petTypeFilter !== "all") {
+        query = query.eq("type", petTypeFilter);
+      }
+
+      // Apply breed filter
+      if (breedFilter !== "כל הגזעים") {
+        query = query.ilike("breed", `%${breedFilter}%`);
+      }
+
+      const { data, error } = await query.limit(50);
+
+      if (error) throw error;
+      setPets(data || []);
+    } catch (error) {
+      console.error("Error fetching pets:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [petTypeFilter, breedFilter]);
+
   useEffect(() => {
-    if (activeTab === "parks") {
+    if (activeTab === "pets") {
+      fetchPets();
+      fetchSmartDiscovery("pets");
+    } else if (activeTab === "parks") {
       fetchParks();
       fetchSmartDiscovery("parks");
     } else if (activeTab === "deals") {
@@ -187,7 +297,7 @@ const Explore = () => {
       fetchExplorePosts();
       fetchSmartDiscovery("posts");
     }
-  }, [activeTab, userLocation]);
+  }, [activeTab, userLocation, fetchPets]);
 
   const fetchParks = async () => {
     try {
@@ -416,33 +526,98 @@ const Explore = () => {
         {/* Tabs */}
         {!isSearchFocused && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 pb-2">
-            <TabsList className="w-full bg-transparent h-auto p-0 gap-2">
+            <TabsList className="w-full bg-transparent h-auto p-0 gap-1.5 flex-wrap">
+              <TabsTrigger 
+                value="pets" 
+                className="flex-1 min-w-[60px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full py-2 text-sm"
+              >
+                <PawPrint className="w-4 h-4 ml-1" />
+                חיות
+              </TabsTrigger>
               <TabsTrigger 
                 value="parks" 
-                className="flex-1 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
+                className="flex-1 min-w-[60px] data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
               >
                 גינות
               </TabsTrigger>
               <TabsTrigger 
                 value="deals" 
-                className="flex-1 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
+                className="flex-1 min-w-[60px] data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
               >
                 מבצעים
               </TabsTrigger>
               <TabsTrigger 
                 value="top" 
-                className="flex-1 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
+                className="flex-1 min-w-[60px] data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
               >
                 מובילים
               </TabsTrigger>
-              <TabsTrigger 
-                value="feeds" 
-                className="flex-1 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
-              >
-                פידים
-              </TabsTrigger>
             </TabsList>
           </Tabs>
+        )}
+
+        {/* Pet Filters - Only show when pets tab is active */}
+        {!isSearchFocused && activeTab === "pets" && (
+          <div className="px-4 py-2 space-y-3 border-t border-border/30">
+            {/* Pet Type Filter */}
+            <div className="flex gap-2">
+              <Button
+                variant={petTypeFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setPetTypeFilter("all");
+                  setBreedFilter("כל הגזעים");
+                }}
+                className="rounded-full gap-1.5"
+              >
+                <PawPrint className="w-4 h-4" />
+                הכל
+              </Button>
+              <Button
+                variant={petTypeFilter === "dog" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setPetTypeFilter("dog");
+                  setBreedFilter("כל הגזעים");
+                }}
+                className="rounded-full gap-1.5"
+              >
+                <Dog className="w-4 h-4" />
+                כלבים
+              </Button>
+              <Button
+                variant={petTypeFilter === "cat" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setPetTypeFilter("cat");
+                  setBreedFilter("כל הגזעים");
+                }}
+                className="rounded-full gap-1.5"
+              >
+                <Cat className="w-4 h-4" />
+                חתולים
+              </Button>
+            </div>
+
+            {/* Breed Filter */}
+            {petTypeFilter !== "all" && (
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <Select value={breedFilter} onValueChange={setBreedFilter}>
+                  <SelectTrigger className="w-[180px] h-9 rounded-full text-sm">
+                    <SelectValue placeholder="בחר גזע" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(petTypeFilter === "dog" ? dogBreeds : catBreeds).map((breed) => (
+                      <SelectItem key={breed} value={breed}>
+                        {breed}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -633,6 +808,77 @@ const Explore = () => {
                 />
               ))}
             </div>
+          ) : activeTab === "pets" ? (
+            /* Pets Grid */
+            <>
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="text-xs text-muted-foreground">
+                  {pets.length} חיות נמצאו
+                  {petTypeFilter !== "all" && ` • ${petTypeFilter === "dog" ? "כלבים" : "חתולים"}`}
+                  {breedFilter !== "כל הגזעים" && ` • ${breedFilter}`}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
+                {pets.length > 0 ? (
+                  pets.map((pet, index) => {
+                    const isLarge = index % 7 === 0;
+                    return (
+                      <motion.div
+                        key={pet.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.03 }}
+                        onClick={() => navigate(`/pet/${pet.id}`)}
+                        className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
+                      >
+                        <img
+                          src={pet.avatar_url || defaultPetAvatar}
+                          alt={pet.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
+                          <span className="text-white font-bold text-sm text-center px-2">{pet.name}</span>
+                          {pet.breed && (
+                            <span className="text-white/80 text-xs">{pet.breed}</span>
+                          )}
+                          <div className="flex items-center gap-1 text-white/70 text-xs">
+                            {pet.type === "dog" ? (
+                              <Dog className="w-3 h-3" />
+                            ) : (
+                              <Cat className="w-3 h-3" />
+                            )}
+                            <span>{pet.type === "dog" ? "כלב" : "חתול"}</span>
+                            {pet.gender && (
+                              <span>• {pet.gender === "male" ? "זכר" : "נקבה"}</span>
+                            )}
+                          </div>
+                        </div>
+                        {/* Pet type indicator */}
+                        <div className="absolute top-1 right-1 bg-black/60 rounded-full p-1">
+                          {pet.type === "dog" ? (
+                            <Dog className="w-3 h-3 text-white" />
+                          ) : (
+                            <Cat className="w-3 h-3 text-white" />
+                          )}
+                        </div>
+                        {/* Name badge */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                          <span className="text-white text-xs font-medium">{pet.name}</span>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-3 text-center py-20">
+                    <PawPrint className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground">לא נמצאו חיות</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">נסה לשנות את הפילטרים</p>
+                  </div>
+                )}
+              </div>
+            </>
           ) : activeTab === "parks" ? (
             /* Parks Grid - Instagram style */
             <>
