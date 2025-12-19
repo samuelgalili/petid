@@ -124,13 +124,13 @@ export default function Messages() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-24" dir="rtl">
       <div className="max-w-lg mx-auto">
         {/* Instagram-style Header */}
-        <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="bg-background border-b border-border sticky top-0 z-10">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-1">
-              <h1 className="text-xl font-bold text-[#262626]">
+              <h1 className="text-xl font-bold text-foreground">
                 {currentUserName || "הודעות"}
               </h1>
               <ChevronDown className="h-5 w-5 text-[#262626]" />

@@ -455,7 +455,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
       {/* Caption area */}
       <motion.div 
         className="px-3 pb-3 space-y-2"
-        animate={{ backgroundColor: isHovered ? "rgba(247, 191, 0, 0.05)" : "transparent" }}
+        animate={{ backgroundColor: isHovered ? "rgba(30, 87, 153, 0.05)" : "rgba(255, 255, 255, 0)" }}
         transition={{ duration: 0.2 }}
       >
         {/* Description */}

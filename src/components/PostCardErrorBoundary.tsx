@@ -32,12 +32,12 @@ export class PostCardErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-4 text-center" dir="rtl">
+        <div className="bg-card rounded-3xl shadow-sm border border-border p-8 mb-4 text-center" dir="rtl">
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
           
-          <h3 className="text-lg font-black text-gray-900 font-jakarta mb-2">
+          <h3 className="text-lg font-black text-foreground font-jakarta mb-2">
             שגיאה בטעינת הפוסט
           </h3>
           

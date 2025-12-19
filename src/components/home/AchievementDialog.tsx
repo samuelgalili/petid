@@ -96,7 +96,7 @@ export const AchievementDialog = ({ achievement, isOpen, onClose }: AchievementD
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClose}
-                className="bg-white text-gray-900 px-8 py-3 rounded-full font-bold text-sm shadow-xl hover:shadow-2xl transition-all font-jakarta"
+                className="bg-card text-foreground px-8 py-3 rounded-full font-bold text-sm shadow-xl hover:shadow-2xl transition-all font-jakarta"
               >
                 מעולה! 🚀
               </motion.button>

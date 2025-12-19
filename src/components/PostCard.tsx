@@ -237,7 +237,7 @@ export const PostCard = ({
       className="bg-card border-b border-border"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ backgroundColor: "rgba(0,0,0,0.01)" }}
+      whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
       transition={{ duration: 0.3 }}
     >
       {/* Post Header */}
@@ -520,16 +520,16 @@ export const PostCard = ({
         )}
 
         {/* Time ago */}
-        <p className="text-[#8E8E8E] text-[10px] uppercase tracking-wide">
+        <p className="text-muted-foreground text-[10px] uppercase tracking-wide">
           {getTimeAgo(post.created_at)}
         </p>
       </div>
 
       {/* Quick Reply Field */}
-      <div className="flex items-center gap-3 px-3 py-3 border-t border-gray-100">
+      <div className="flex items-center gap-3 px-3 py-3 border-t border-border">
         <Avatar className="w-7 h-7 flex-shrink-0">
           <AvatarImage src={currentUserAvatar} />
-          <AvatarFallback className="bg-gray-100 text-gray-500 text-[10px]">
+          <AvatarFallback className="bg-secondary text-muted-foreground text-[10px]">
             U
           </AvatarFallback>
         </Avatar>
@@ -540,10 +540,10 @@ export const PostCard = ({
           onChange={(e) => setCommentText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleComment()}
           onFocus={() => !isAuthenticated && checkAuth("כדי להגיב על פוסטים, יש להתחבר")}
-          className="flex-1 bg-transparent text-[13px] text-[#262626] placeholder-[#8E8E8E] outline-none"
+          className="flex-1 bg-transparent text-[13px] text-foreground placeholder-muted-foreground outline-none"
           readOnly={!isAuthenticated}
         />
-        <button className="text-[#8E8E8E] p-1">
+        <button className="text-muted-foreground p-1">
           <Smile className="w-5 h-5" strokeWidth={1.5} />
         </button>
         {commentText.trim() && (

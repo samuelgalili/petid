@@ -156,7 +156,7 @@ export const followButtonAnimation: Variants = {
     scale: 0.95,
   },
   following: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 255, 255, 0)',
     borderColor: 'hsl(var(--petish-primary))',
     color: 'hsl(var(--petish-primary))',
   },
