@@ -1038,7 +1038,7 @@ const Feed = () => {
           
           {/* Progress Bar */}
           <div className="flex items-center gap-3 mb-2" dir="rtl">
-            <span className="text-gray-400 text-sm">קאשבק</span>
+            <span className="text-gray-400 text-sm">קאשבק 5%</span>
             <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <motion.div className="h-full rounded-full" style={{
               backgroundColor: '#FBBF24'
