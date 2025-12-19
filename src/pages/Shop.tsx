@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -709,7 +709,7 @@ const Shop = () => {
 
       {/* Product Details Sheet */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-white p-0 overflow-hidden" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t-0" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
@@ -717,7 +717,7 @@ const Shop = () => {
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-2">
                 <div 
-                  className="w-10 h-1 rounded-full"
+                  className="w-12 h-1.5 rounded-full"
                   style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
                 />
               </div>
@@ -726,36 +726,59 @@ const Shop = () => {
               <div className="flex items-center justify-between px-4 pb-3">
                 <button
                   onClick={() => setSelectedProduct(null)}
-                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
+                  className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
                 >
-                  <ChevronLeft className="w-5 h-5 text-gray-700" strokeWidth={1.5} />
+                  <X className="w-5 h-5 text-foreground" strokeWidth={1.5} />
                 </button>
                 
-                <button
-                  onClick={() => toggleFavorite(selectedProduct.id)}
-                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
-                >
-                  <Bookmark 
-                    className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-[#1E5799] text-[#1E5799]" : "text-gray-600"}`} 
-                    strokeWidth={1.5} 
-                  />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      navigate('/product', { state: { product: selectedProduct } });
+                      setSelectedProduct(null);
+                    }}
+                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                  >
+                    <Info className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      toast({ title: "הקישור הועתק", duration: 1500 });
+                    }}
+                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                  >
+                    <Share2 className="w-4 h-4 text-foreground" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => toggleFavorite(selectedProduct.id)}
+                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                  >
+                    <Bookmark 
+                      className={`w-5 h-5 transition-colors ${favorites.includes(selectedProduct.id) ? "fill-primary text-primary" : "text-foreground"}`} 
+                      strokeWidth={1.5} 
+                    />
+                  </button>
+                </div>
               </div>
 
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto">
-                {/* Product Image */}
+                {/* Product Image Carousel */}
                 <div className="relative px-4 mb-4">
                   <Carousel className="w-full" dir="ltr" setApi={setCarouselApi} opts={{ direction: "ltr" }}>
                     <CarouselContent>
                       {(selectedProduct.images || [selectedProduct.image]).map((img: string, index: number) => (
                         <CarouselItem key={index}>
-                          <div 
+                          <motion.div 
                             ref={index === 0 ? productImageRef : undefined}
-                            className="relative p-[2px] rounded-xl"
+                            className="relative p-[2px] rounded-2xl overflow-hidden"
                             style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3 }}
                           >
-                            <div className="w-full aspect-square bg-white rounded-xl overflow-hidden">
+                            <div className="w-full aspect-square bg-card rounded-2xl overflow-hidden">
                               <OptimizedImage
                                 src={img}
                                 alt={selectedProduct.name}
@@ -763,23 +786,25 @@ const Shop = () => {
                                 objectFit="cover"
                               />
                             </div>
-                          </div>
+                          </motion.div>
                         </CarouselItem>
                       ))}
                     </CarouselContent>
                   </Carousel>
                   
-                  {/* Dots */}
+                  {/* Dots Indicator */}
                   {(selectedProduct.images?.length || 1) > 1 && (
                     <div className="flex justify-center gap-1.5 mt-3">
                       {(selectedProduct.images || [selectedProduct.image]).map((_: string, index: number) => (
-                        <div
+                        <motion.div
                           key={index}
                           className="h-1.5 rounded-full transition-all"
-                          style={currentImageIndex === index 
-                            ? { width: '20px', background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }
-                            : { width: '6px', background: '#E5E7EB' }
-                          }
+                          animate={{ 
+                            width: currentImageIndex === index ? 20 : 6,
+                            background: currentImageIndex === index 
+                              ? 'linear-gradient(135deg, #1E5799, #4ECDC4)' 
+                              : 'hsl(var(--muted))'
+                          }}
                         />
                       ))}
                     </div>
@@ -787,115 +812,148 @@ const Shop = () => {
                   
                   {/* Sale Badge */}
                   {selectedProduct.originalPrice && (
-                    <div 
-                      className="absolute top-4 right-6 text-white px-2.5 py-1 rounded-full text-xs font-bold"
+                    <motion.div 
+                      className="absolute top-4 right-6 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg"
                       style={{ background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)' }}
+                      initial={{ scale: 0, rotate: -10 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 15 }}
                     >
                       -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
-                    </div>
+                    </motion.div>
                   )}
                 </div>
 
-                <div className="px-4 space-y-4">
+                <div className="px-4 space-y-5">
                   {/* Title & Rating */}
                   <div>
-                    <h2 className="text-lg font-bold text-gray-800 mb-1">{selectedProduct.name}</h2>
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
-                      <span className="text-sm font-medium text-gray-700">{selectedProduct.rating}</span>
-                      <span className="text-xs text-gray-500">({selectedProduct.reviews} ביקורות)</span>
+                    <h2 className="text-xl font-bold text-foreground mb-2">{selectedProduct.name}</h2>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted">
+                        <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
+                        <span className="text-sm font-semibold text-foreground">{selectedProduct.rating}</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">({selectedProduct.reviews} ביקורות)</span>
                     </div>
                   </div>
 
                   {/* Price */}
-                  <div className="flex items-end gap-2">
+                  <div className="flex items-baseline gap-3">
                     <span 
-                      className="text-2xl font-bold bg-clip-text text-transparent"
+                      className="text-3xl font-bold bg-clip-text text-transparent"
                       style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                     >
                       ₪{selectedProduct.price}
                     </span>
                     {selectedProduct.originalPrice && (
-                      <span className="text-base text-gray-400 line-through">₪{selectedProduct.originalPrice}</span>
+                      <span className="text-lg text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
                     )}
                   </div>
 
+                  {/* Shipping Info Pills */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {selectedProduct.freeShipping && (
+                      <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-muted text-foreground">
+                        <Truck className="w-3.5 h-3.5 text-[#4ECDC4]" />
+                        <span>משלוח חינם</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-muted text-foreground">
+                      <Shield className="w-3.5 h-3.5 text-[#1E5799]" />
+                      <span>אחריות מלאה</span>
+                    </div>
+                  </div>
+
                   {/* Description */}
-                  <p className="text-sm text-gray-600">{selectedProduct.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>
 
                   {/* Size Selector */}
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">גודל</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">בחר גודל</h3>
                     <div className="flex gap-2">
                       {sizes.map((size) => (
-                        <button
+                        <motion.button
                           key={size}
                           onClick={() => setSelectedSize(size)}
-                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                          whileTap={{ scale: 0.95 }}
+                          className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
                             selectedSize === size
-                              ? "text-gray-800 bg-white"
-                              : "bg-gray-100 text-gray-600"
+                              ? "text-foreground bg-card"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
                           }`}
                           style={selectedSize === size 
-                            ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }
+                            ? { background: 'linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }
                             : {}
                           }
                         >
                           {size}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
 
                   {/* Quantity */}
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">כמות</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">כמות</h3>
                     <div 
-                      className="flex items-center gap-4 p-1 w-fit rounded-lg"
-                      style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
+                      className="flex items-center gap-4 p-1 w-fit rounded-xl bg-card"
+                      style={{ background: 'linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
                     >
                       <button
                         onClick={decreaseQuantity}
-                        className="w-9 h-9 rounded-md bg-gray-100 flex items-center justify-center"
+                        className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
                       >
-                        <Minus className="w-4 h-4 text-gray-700" />
+                        <Minus className="w-4 h-4 text-foreground" />
                       </button>
-                      <span className="text-lg font-bold text-gray-800 w-8 text-center">{quantity}</span>
+                      <span className="text-lg font-bold text-foreground w-8 text-center">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="w-9 h-9 rounded-md bg-gray-100 flex items-center justify-center"
+                        className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
                       >
-                        <Plus className="w-4 h-4 text-gray-700" />
+                        <Plus className="w-4 h-4 text-foreground" />
                       </button>
                     </div>
                   </div>
+
+                  {/* More Details Link */}
+                  <button
+                    onClick={() => {
+                      navigate('/product', { state: { product: selectedProduct } });
+                      setSelectedProduct(null);
+                    }}
+                    className="w-full py-3 text-sm font-medium text-primary flex items-center justify-center gap-2 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
+                  >
+                    <Info className="w-4 h-4" />
+                    לפרטים נוספים ולביקורות
+                  </button>
 
                   <div className="h-4" />
                 </div>
               </div>
 
               {/* Bottom Bar */}
-              <div className="flex-shrink-0 border-t border-gray-100 px-4 py-4 bg-white">
+              <div className="flex-shrink-0 border-t border-border px-4 py-4 bg-background">
                 <div className="flex items-center gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500">סה״כ</p>
+                  <div className="flex-shrink-0">
+                    <p className="text-xs text-muted-foreground">סה״כ</p>
                     <p 
-                      className="text-xl font-bold bg-clip-text text-transparent"
+                      className="text-2xl font-bold bg-clip-text text-transparent"
                       style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                     >
                       ₪{selectedProduct.price * quantity}
                     </p>
                   </div>
                   
-                  <button
+                  <motion.button
                     onClick={handleAddToCart}
                     disabled={!selectedProduct.inStock}
-                    className="flex-1 h-12 text-sm font-semibold rounded-lg text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-50"
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-1 h-14 text-base font-semibold rounded-xl text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 disabled:opacity-50 shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                   >
-                    <ShoppingCart className="w-4 h-4" />
+                    <ShoppingCart className="w-5 h-5" />
                     {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>
