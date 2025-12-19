@@ -506,50 +506,59 @@ const Explore = () => {
       {/* AI Insights Section */}
       {!isSearchFocused && aiInsights && (
         <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="px-3 py-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="px-4 py-3"
         >
-          <div className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 rounded-xl p-3 border border-primary/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold">תובנות חכמות</span>
-              {loadingInsights && (
-                <div className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-              )}
-            </div>
-            {aiInsights.summary && (
-              <p className="text-xs text-muted-foreground mb-2">{aiInsights.summary}</p>
-            )}
-            {aiInsights.insights && aiInsights.insights.length > 0 && (
-              <div className="space-y-1.5">
-                {aiInsights.insights.slice(0, 3).map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-2 bg-background/50 rounded-lg p-2">
-                    {insight.type === "trend" ? (
-                      <Flame className="w-3.5 h-3.5 text-orange-500 mt-0.5 shrink-0" />
-                    ) : insight.type === "recommendation" ? (
-                      <Lightbulb className="w-3.5 h-3.5 text-yellow-500 mt-0.5 shrink-0" />
-                    ) : (
-                      <Star className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium line-clamp-1">{insight.title}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{insight.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {aiInsights.trending_topics && aiInsights.trending_topics.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {aiInsights.trending_topics.slice(0, 5).map((topic, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-xs py-0.5">
-                    #{topic}
-                  </Badge>
-                ))}
-              </div>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">מומלץ עבורך</span>
+            {loadingInsights && (
+              <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />
             )}
           </div>
+          
+          {aiInsights.summary && (
+            <p className="text-sm text-foreground mb-3">{aiInsights.summary}</p>
+          )}
+          
+          {aiInsights.insights && aiInsights.insights.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+              {aiInsights.insights.slice(0, 4).map((insight, idx) => (
+                <div 
+                  key={idx} 
+                  className="flex-shrink-0 w-36 bg-muted/50 rounded-lg p-3"
+                >
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    {insight.type === "trend" ? (
+                      <Flame className="w-3 h-3 text-orange-500" />
+                    ) : insight.type === "recommendation" ? (
+                      <Lightbulb className="w-3 h-3 text-yellow-500" />
+                    ) : (
+                      <Star className="w-3 h-3 text-primary" />
+                    )}
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                      {insight.type === "trend" ? "טרנד" : insight.type === "recommendation" ? "המלצה" : "מומלץ"}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium line-clamp-2">{insight.title}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {aiInsights.trending_topics && aiInsights.trending_topics.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {aiInsights.trending_topics.slice(0, 4).map((topic, idx) => (
+                <span 
+                  key={idx} 
+                  className="text-xs text-primary font-medium"
+                >
+                  #{topic}
+                </span>
+              ))}
+            </div>
+          )}
         </motion.div>
       )}
 
