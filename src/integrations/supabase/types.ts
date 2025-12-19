@@ -46,6 +46,48 @@ export type Database = {
           },
         ]
       }
+      admin_audit_log: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       adoption_pets: {
         Row: {
           age_months: number | null
@@ -322,6 +364,9 @@ export type Database = {
           total_reviews: number | null
           updated_at: string
           user_id: string | null
+          verification_notes: string | null
+          verification_requested_at: string | null
+          verified_by: string | null
           view_count: number | null
           website: string | null
           working_hours: Json | null
@@ -346,6 +391,9 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id?: string | null
+          verification_notes?: string | null
+          verification_requested_at?: string | null
+          verified_by?: string | null
           view_count?: number | null
           website?: string | null
           working_hours?: Json | null
@@ -370,6 +418,9 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id?: string | null
+          verification_notes?: string | null
+          verification_requested_at?: string | null
+          verified_by?: string | null
           view_count?: number | null
           website?: string | null
           working_hours?: Json | null
@@ -974,6 +1025,36 @@ export type Database = {
           },
         ]
       }
+      notification_templates: {
+        Row: {
+          created_at: string
+          id: string
+          message_template: string
+          name: string
+          title_template: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_template: string
+          name: string
+          title_template: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_template?: string
+          name?: string
+          title_template?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1523,10 +1604,15 @@ export type Database = {
           created_at: string
           id: string
           image_url: string
+          is_featured: boolean | null
+          is_pinned: boolean | null
           location_id: string | null
           media_type: string | null
           media_urls: string[] | null
           pet_id: string | null
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
           updated_at: string
           user_id: string
           video_url: string | null
@@ -1536,10 +1622,15 @@ export type Database = {
           created_at?: string
           id?: string
           image_url: string
+          is_featured?: boolean | null
+          is_pinned?: boolean | null
           location_id?: string | null
           media_type?: string | null
           media_urls?: string[] | null
           pet_id?: string | null
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           updated_at?: string
           user_id: string
           video_url?: string | null
@@ -1549,10 +1640,15 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string
+          is_featured?: boolean | null
+          is_pinned?: boolean | null
           location_id?: string | null
           media_type?: string | null
           media_urls?: string[] | null
           pet_id?: string | null
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           updated_at?: string
           user_id?: string
           video_url?: string | null
@@ -1586,6 +1682,9 @@ export type Database = {
           allow_messages_from: string | null
           avatar_url: string | null
           bio: string | null
+          blocked_at: string | null
+          blocked_by: string | null
+          blocked_reason: string | null
           created_at: string | null
           email: string | null
           favorite_breeds: string[] | null
@@ -1603,6 +1702,9 @@ export type Database = {
           allow_messages_from?: string | null
           avatar_url?: string | null
           bio?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           email?: string | null
           favorite_breeds?: string[] | null
@@ -1620,6 +1722,9 @@ export type Database = {
           allow_messages_from?: string | null
           avatar_url?: string | null
           bio?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           email?: string | null
           favorite_breeds?: string[] | null
@@ -1864,6 +1969,7 @@ export type Database = {
           reported_post_id: string | null
           reported_user_id: string | null
           reporter_id: string
+          resolved_at: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["report_status"]
@@ -1878,6 +1984,7 @@ export type Database = {
           reported_post_id?: string | null
           reported_user_id?: string | null
           reporter_id: string
+          resolved_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["report_status"]
@@ -1892,6 +1999,7 @@ export type Database = {
           reported_post_id?: string | null
           reported_user_id?: string | null
           reporter_id?: string
+          resolved_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["report_status"]
