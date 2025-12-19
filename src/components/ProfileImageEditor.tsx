@@ -257,9 +257,9 @@ export const ProfileImageEditor = ({
               <div className="p-6">
                 {!imageSrc ? (
                   <div className="space-y-4">
-                    <div className="bg-gray-50 rounded-3xl p-12 text-center border-2 border-dashed border-gray-300">
-                      <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 font-jakarta mb-6">
+                    <div className="bg-secondary rounded-3xl p-12 text-center border-2 border-dashed border-border">
+                      <ImageIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground font-jakarta mb-6">
                         בחר תמונה להעלאה
                       </p>
                       <div className="flex flex-col gap-3">

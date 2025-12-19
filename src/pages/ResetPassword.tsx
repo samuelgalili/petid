@@ -153,13 +153,13 @@ const ResetPassword = () => {
                             setErrors({ ...errors, password: undefined });
                           }}
                           disabled={loading}
-                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.password ? "border-error" : ""}`}
+                          className={`h-12 pr-10 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary font-jakarta ${errors.password ? "border-error" : ""}`}
                           autoComplete="new-password"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           aria-label={showPassword ? "Hide password" : "Show password"}
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -174,28 +174,28 @@ const ResetPassword = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-sm font-medium font-jakarta text-gray-700">
-                        Confirm New Password
+                      <Label htmlFor="confirmPassword" className="text-sm font-medium font-jakarta text-foreground">
+                        אישור סיסמה חדשה
                       </Label>
                       <div className="relative">
                         <Input
                           id="confirmPassword"
                           name="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Re-enter your password"
+                          placeholder="הזן שוב את הסיסמה"
                           value={confirmPassword}
                           onChange={(e) => {
                             setConfirmPassword(e.target.value);
                             setErrors({ ...errors, confirmPassword: undefined });
                           }}
                           disabled={loading}
-                          className={`h-12 pr-10 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta ${errors.confirmPassword ? "border-error" : ""}`}
+                          className={`h-12 pr-10 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary font-jakarta ${errors.confirmPassword ? "border-error" : ""}`}
                           autoComplete="new-password"
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                         >
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

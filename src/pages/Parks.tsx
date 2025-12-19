@@ -543,10 +543,10 @@ const Parks = () => {
     return (
       <motion.div
         key={park.id}
-        className="bg-white border-b border-gray-200"
+        className="bg-card border-b border-border"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        whileHover={{ backgroundColor: "rgba(0,0,0,0.01)" }}
+        whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
         transition={{ duration: 0.3, delay: index * 0.03 }}
       >
         {/* Post Header */}
