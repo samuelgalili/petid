@@ -1059,15 +1059,15 @@ const Feed = () => {
             <span className="text-gray-400 text-sm">נקודות פעילות</span>
             <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <motion.div className="h-full rounded-full" style={{
-                backgroundColor: '#4ECDC4'
-              }} initial={{
-                width: 0
-              }} animate={{
-                width: `${Math.min(totalPoints / 1000 * 100, 100)}%`
-              }} transition={{
-                duration: 0.8,
-                ease: "easeOut"
-              }} />
+              backgroundColor: '#4ECDC4'
+            }} initial={{
+              width: 0
+            }} animate={{
+              width: `${Math.min(totalPoints / 1000 * 100, 100)}%`
+            }} transition={{
+              duration: 0.8,
+              ease: "easeOut"
+            }} />
             </div>
             <span className="text-foreground text-sm font-semibold">1000</span>
           </div>
@@ -1089,43 +1089,7 @@ const Feed = () => {
         </div>
 
         {/* Business Directory Quick Access */}
-        <div className="py-4 px-4 bg-gradient-to-br from-white via-primary/5 to-accent/5 border-b">
-          <div className="max-w-lg mx-auto">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[15px] font-bold text-slate-800 flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-                  <Store className="w-4 h-4 text-white" />
-                </div>
-                עסקים באזור
-              </h2>
-              <Button variant="ghost" size="sm" className="text-primary text-xs gap-1" onClick={() => navigate('/businesses')}>
-                הכל
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              {[
-                { type: 'vet', label: 'וטרינרים', icon: <Stethoscope className="w-5 h-5" />, color: 'from-red-500 to-orange-400' },
-                { type: 'groomer', label: 'מספרות', icon: <Scissors className="w-5 h-5" />, color: 'from-pink-500 to-purple-400' },
-                { type: 'trainer', label: 'מאלפים', icon: <GraduationCap className="w-5 h-5" />, color: 'from-blue-500 to-cyan-400' },
-                { type: 'shop', label: 'חנויות', icon: <Store className="w-5 h-5" />, color: 'from-green-500 to-teal-400' },
-              ].map((category) => (
-                <motion.button
-                  key={category.type}
-                  className="flex flex-col items-center gap-2 min-w-[70px]"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate(`/businesses?type=${category.type}`)}
-                >
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center shadow-md text-white`}>
-                    {category.icon}
-                  </div>
-                  <span className="text-xs text-muted-foreground font-medium">{category.label}</span>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </div>
+        
       </motion.div>}
 
       {/* Stories Bar */}
