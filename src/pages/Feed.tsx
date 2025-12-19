@@ -655,7 +655,7 @@ const Feed = () => {
 
     return merged;
   }, [posts, adoptionPets, feedFilter, followingIds]);
-  return <div className="min-h-screen bg-gradient-to-b from-white via-[#7DB9E8]/5 to-white pb-14" dir="rtl">
+  return <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 pb-14" dir="rtl">
       {/* Instagram-style Header with blur effect */}
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
@@ -835,10 +835,12 @@ const Feed = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
       >
-        <div data-pets-section className="py-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+        <div data-pets-section className="py-5 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
           <div className="max-w-lg mx-auto">
-            <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3 flex items-center gap-2">
-              <PawPrint className="w-4 h-4 text-[#4ECDC4]" />
+            <h2 className="text-[15px] font-bold text-slate-800 px-4 mb-4 flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4ECDC4] to-[#1E5799] flex items-center justify-center shadow-md">
+                <PawPrint className="w-4 h-4 text-white" />
+              </div>
               חיות המחמד שלי
             </h2>
             <MyPetsSection pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
@@ -851,7 +853,7 @@ const Feed = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className="border-b border-gray-100 bg-white sticky top-[56px] z-40"
+        className="border-b border-[#DD2A7B]/10 bg-white/95 backdrop-blur-sm sticky top-[56px] z-40 shadow-sm"
       >
         <StoriesBar />
       </motion.div>
