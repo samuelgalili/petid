@@ -41,7 +41,7 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-white pb-20" dir="rtl">
+      <div className="min-h-screen bg-background pb-20" dir="rtl">
         <AppHeader title="עגלת הקניות" showBackButton={true} />
 
         {/* Empty Cart State */}
@@ -52,18 +52,18 @@ const Cart = () => {
             transition={{ duration: 0.3 }}
             className="text-center"
           >
-            <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShoppingBag className="w-16 h-16 text-gray-400" strokeWidth={1.5} />
+            <div className="w-32 h-32 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+              <ShoppingBag className="w-16 h-16 text-muted-foreground" strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3 font-jakarta">
+            <h2 className="text-2xl font-bold text-foreground mb-3 font-jakarta">
               העגלה שלך ריקה
             </h2>
-            <p className="text-gray-600 mb-8 font-jakarta">
+            <p className="text-muted-foreground mb-8 font-jakarta">
               הוסף מוצרים מהחנות כדי להתחיל
             </p>
             <Button
               onClick={() => navigate("/shop")}
-              className="bg-accent hover:bg-accent-hover text-gray-900 font-bold px-8 py-6 rounded-2xl shadow-lg font-jakarta"
+              className="bg-accent hover:bg-accent-hover text-foreground font-bold px-8 py-6 rounded-2xl shadow-lg font-jakarta"
             >
               המשך לקניות
             </Button>
@@ -76,7 +76,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-32" dir="rtl">
+    <div className="min-h-screen bg-background pb-32" dir="rtl">
       <AppHeader title="עגלת הקניות" showBackButton={true} />
       
       {/* Cart Items */}
@@ -121,23 +121,23 @@ const Cart = () => {
 
                     {/* Quantity Controls */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 bg-gray-100 rounded-full px-2 py-1">
+                      <div className="flex items-center gap-2 bg-muted rounded-full px-2 py-1">
                         <motion.button
                           whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          className="w-7 h-7 rounded-full bg-card shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
                         >
-                          <Minus className="w-4 h-4 text-gray-700" strokeWidth={1.5} />
+                          <Minus className="w-4 h-4 text-foreground" strokeWidth={1.5} />
                         </motion.button>
-                        <span className="text-base font-bold text-gray-900 w-8 text-center font-jakarta">
+                        <span className="text-base font-bold text-foreground w-8 text-center font-jakarta">
                           {item.quantity}
                         </span>
                         <motion.button
                           whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                          className="w-7 h-7 rounded-full bg-card shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
                         >
-                          <Plus className="w-4 h-4 text-gray-700" strokeWidth={1.5} />
+                          <Plus className="w-4 h-4 text-foreground" strokeWidth={1.5} />
                         </motion.button>
                       </div>
 
@@ -164,24 +164,24 @@ const Cart = () => {
           transition={{ delay: 0.2 }}
           className="mt-8"
         >
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-muted/30">
             <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6 font-jakarta">
+              <h2 className="text-xl font-bold text-foreground mb-6 font-jakarta">
                 סיכום הזמנה
               </h2>
 
               {/* Price Breakdown */}
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 font-jakarta">סכום ביניים</span>
-                  <span className="font-bold text-gray-900 font-jakarta">
+                  <span className="text-muted-foreground font-jakarta">סכום ביניים</span>
+                  <span className="font-bold text-foreground font-jakarta">
                     ₪{getSubtotal().toFixed(2)}
                   </span>
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 font-jakarta">משלוח</span>
-                  <span className="font-bold text-gray-900 font-jakarta">
+                  <span className="text-muted-foreground font-jakarta">משלוח</span>
+                  <span className="font-bold text-foreground font-jakarta">
                     {shippingCost === 0 ? (
                       <span className="text-success">חינם</span>
                     ) : (
@@ -191,21 +191,21 @@ const Cart = () => {
                 </div>
 
                 {getSubtotal() < 200 && (
-                  <div className="text-xs text-gray-500 bg-accent/10 p-2 rounded-lg font-jakarta">
+                  <div className="text-xs text-muted-foreground bg-accent/10 p-2 rounded-lg font-jakarta">
                     הוסף עוד ₪{(200 - getSubtotal()).toFixed(2)} למשלוח חינם!
                   </div>
                 )}
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 font-jakarta">מע״מ (17%)</span>
-                  <span className="font-bold text-gray-900 font-jakarta">
+                  <span className="text-muted-foreground font-jakarta">מע״מ (17%)</span>
+                  <span className="font-bold text-foreground font-jakarta">
                     ₪{tax.toFixed(2)}
                   </span>
                 </div>
 
-                <div className="border-t-2 border-dashed border-gray-300 pt-4">
+                <div className="border-t-2 border-dashed border-border pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-xl font-bold text-gray-900 font-jakarta">
+                    <span className="text-xl font-bold text-foreground font-jakarta">
                       סה״כ לתשלום
                     </span>
                     <span className="text-2xl font-bold text-error font-jakarta">
@@ -235,7 +235,7 @@ const Cart = () => {
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => navigate("/shop")}
-          className="w-full mt-4 py-4 text-gray-600 hover:text-gray-900 font-medium transition-colors font-jakarta"
+          className="w-full mt-4 py-4 text-muted-foreground hover:text-foreground font-medium transition-colors font-jakarta"
         >
           ← המשך לקניות
         </motion.button>

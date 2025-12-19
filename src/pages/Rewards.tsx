@@ -417,11 +417,11 @@ const Rewards = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center py-16"
                   >
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-tr from-pink-100 to-purple-100 flex items-center justify-center">
-                      <Gift className="w-10 h-10 text-purple-300" />
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-tr from-primary/10 to-accent/10 flex items-center justify-center">
+                      <Gift className="w-10 h-10 text-primary/50" />
                     </div>
-                    <p className="text-gray-500 font-jakarta font-medium">אין פרסים זמינים כרגע</p>
-                    <p className="text-gray-400 font-jakarta text-sm mt-1">בדוק שוב מאוחר יותר</p>
+                    <p className="text-muted-foreground font-jakarta font-medium">אין פרסים זמינים כרגע</p>
+                    <p className="text-muted-foreground/70 font-jakarta text-sm mt-1">בדוק שוב מאוחר יותר</p>
                   </motion.div>
                 ) : (
                   availableRewards.map((reward, index) => (
@@ -430,13 +430,13 @@ const Rewards = () => {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="bg-white rounded-3xl overflow-hidden shadow-lg shadow-gray-100/80 border border-gray-100"
+                      className="bg-card rounded-3xl overflow-hidden shadow-lg shadow-primary/5 border border-border"
                     >
                       <div className="p-5">
                         <div className="flex items-start gap-4">
                           {/* Icon with gradient ring */}
                           <div className="relative">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-100 via-purple-100 to-orange-100 flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center">
                               <span className="text-4xl">{reward.icon}</span>
                             </div>
                             {totalPoints >= reward.points && (
@@ -452,23 +452,23 @@ const Rewards = () => {
 
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-1">
-                              <h3 className="text-lg font-black text-gray-900 font-jakarta">
+                              <h3 className="text-lg font-black text-foreground font-jakarta">
                                 {reward.title}
                               </h3>
-                              <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-pink-50 to-purple-50 text-purple-700 border border-purple-100">
+                              <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-primary/10 to-accent/10 text-primary border border-primary/20">
                                 {reward.value}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-500 font-jakarta mb-3 line-clamp-2">
+                            <p className="text-sm text-muted-foreground font-jakarta mb-3 line-clamp-2">
                               {reward.description}
                             </p>
 
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1.5">
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 flex items-center justify-center">
-                                  <Star className="w-3.5 h-3.5 text-white" fill="white" />
+                                <div className="w-6 h-6 rounded-full bg-gradient-primary flex items-center justify-center">
+                                  <Star className="w-3.5 h-3.5 text-primary-foreground" fill="currentColor" />
                                 </div>
-                                <span className="text-sm font-bold text-gray-900 font-jakarta">
+                                <span className="text-sm font-bold text-foreground font-jakarta">
                                   {reward.points} נקודות
                                 </span>
                               </div>
@@ -479,8 +479,8 @@ const Rewards = () => {
                                 disabled={totalPoints < reward.points}
                                 className={`px-5 py-2.5 rounded-xl text-sm font-bold font-jakarta transition-all ${
                                   totalPoints >= reward.points
-                                    ? "bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue text-white shadow-lg shadow-petid-blue/20 hover:shadow-xl"
-                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    ? "bg-gradient-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl"
+                                    : "bg-muted text-muted-foreground cursor-not-allowed"
                                 }`}
                               >
                                 {totalPoints >= reward.points ? "מימוש ✨" : `חסרות ${reward.points - totalPoints}`}
@@ -513,8 +513,8 @@ const Rewards = () => {
                     <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-tr from-petid-blue/20 to-petid-gold/20 flex items-center justify-center">
                       <Star className="w-10 h-10 text-petid-gold" />
                     </div>
-                    <p className="text-gray-500 font-jakarta font-medium">אין פרסים עדיין</p>
-                    <p className="text-gray-400 font-jakarta text-sm mt-1">מימשת פרס? הוא יופיע כאן</p>
+                    <p className="text-muted-foreground font-jakarta font-medium">אין פרסים עדיין</p>
+                    <p className="text-muted-foreground/70 font-jakarta text-sm mt-1">מימשת פרס? הוא יופיע כאן</p>
                   </motion.div>
                 ) : (
                   redeemedRewards.map((reward, index) => (
@@ -523,18 +523,18 @@ const Rewards = () => {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="bg-white rounded-3xl overflow-hidden shadow-lg shadow-gray-100/80 border border-gray-100"
+                      className="bg-card rounded-3xl overflow-hidden shadow-lg shadow-primary/5 border border-border"
                     >
                       {/* Gradient header */}
-                      <div className="bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue p-4">
+                      <div className="bg-gradient-primary p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <span className="text-3xl">{reward.icon}</span>
                             <div>
-                              <h3 className="text-white font-black font-jakarta">
+                              <h3 className="text-primary-foreground font-black font-jakarta">
                                 {reward.title}
                               </h3>
-                              <p className="text-white/80 text-xs font-jakarta">
+                              <p className="text-primary-foreground/80 text-xs font-jakarta">
                                 {reward.value}
                               </p>
                             </div>
@@ -545,16 +545,16 @@ const Rewards = () => {
 
                       {/* Code section */}
                       <div className="p-4">
-                        <div className="bg-gray-50 rounded-2xl p-4">
+                        <div className="bg-muted rounded-2xl p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-gray-500 font-jakarta flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground font-jakarta flex items-center gap-1">
                               <Tag className="w-3.5 h-3.5" />
                               קוד מימוש
                             </span>
                             <motion.button
                               whileTap={{ scale: 0.9 }}
                               onClick={() => copyCode(reward.code)}
-                              className="text-purple-600 text-xs font-bold font-jakarta flex items-center gap-1"
+                              className="text-primary text-xs font-bold font-jakarta flex items-center gap-1"
                             >
                               {copiedCode === reward.code ? (
                                 <>
@@ -569,12 +569,12 @@ const Rewards = () => {
                               )}
                             </motion.button>
                           </div>
-                          <code className="text-lg font-black text-gray-900 font-mono tracking-wider">
+                          <code className="text-lg font-black text-foreground font-mono tracking-wider">
                             {reward.code}
                           </code>
                         </div>
 
-                        <div className="flex items-center justify-between mt-3 text-xs text-gray-400">
+                        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1 font-jakarta">
                             <Clock className="w-3.5 h-3.5" />
                             <span>מומש: {reward.redeemedAt}</span>
@@ -598,15 +598,15 @@ const Rewards = () => {
         <AlertDialog open={showRedeemDialog} onOpenChange={setShowRedeemDialog}>
           <AlertDialogContent className="rounded-3xl p-0 overflow-hidden max-w-sm" dir="rtl">
             {/* Gradient Header */}
-            <div className="bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue p-6 text-center">
+            <div className="bg-gradient-primary p-6 text-center">
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                className="w-20 h-20 mx-auto mb-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"
+                className="w-20 h-20 mx-auto mb-3 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center"
               >
                 <span className="text-5xl">{selectedReward?.icon}</span>
               </motion.div>
-              <AlertDialogTitle className="text-2xl font-black text-white font-jakarta">
+              <AlertDialogTitle className="text-2xl font-black text-primary-foreground font-jakarta">
                 לממש פרס? ✨
               </AlertDialogTitle>
             </div>
@@ -616,27 +616,27 @@ const Rewards = () => {
                 {selectedReward && (
                   <div className="space-y-4">
                     <div className="text-center">
-                      <h4 className="text-xl font-black text-gray-900 font-jakarta mb-1">
+                      <h4 className="text-xl font-black text-foreground font-jakarta mb-1">
                         {selectedReward.title}
                       </h4>
-                      <p className="text-gray-500 text-sm font-jakarta">
+                      <p className="text-muted-foreground text-sm font-jakarta">
                         {selectedReward.description}
                       </p>
                     </div>
 
-                    <div className="bg-gradient-to-r from-petid-blue/10 via-petid-gold/10 to-petid-blue/10 rounded-2xl p-4">
+                    <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 rounded-2xl p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600 font-jakarta text-sm">עלות:</span>
+                        <span className="text-muted-foreground font-jakarta text-sm">עלות:</span>
                         <div className="flex items-center gap-1.5">
-                          <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />
-                          <span className="font-black text-gray-900 font-jakarta">
+                          <Star className="w-4 h-4 text-warning" fill="currentColor" />
+                          <span className="font-black text-foreground font-jakarta">
                             {selectedReward.points} נקודות
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-gray-600 font-jakarta text-sm">יתרה לאחר מימוש:</span>
-                        <span className="font-black text-petid-blue font-jakarta">
+                        <span className="text-muted-foreground font-jakarta text-sm">יתרה לאחר מימוש:</span>
+                        <span className="font-black text-primary font-jakarta">
                           {totalPoints - selectedReward.points} נקודות
                         </span>
                       </div>
@@ -647,13 +647,13 @@ const Rewards = () => {
             </AlertDialogDescription>
 
             <AlertDialogFooter className="p-4 pt-0 flex gap-3">
-              <AlertDialogCancel className="flex-1 rounded-xl font-jakarta h-12 border-gray-200">
+              <AlertDialogCancel className="flex-1 rounded-xl font-jakarta h-12 border-border">
                 ביטול
               </AlertDialogCancel>
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={confirmRedemption}
-                className="flex-[2] h-12 bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue text-white rounded-xl font-black font-jakarta shadow-lg shadow-petid-blue/20"
+                className="flex-[2] h-12 bg-gradient-primary text-primary-foreground rounded-xl font-black font-jakarta shadow-lg shadow-primary/20"
               >
                 אישור מימוש 🎉
               </motion.button>

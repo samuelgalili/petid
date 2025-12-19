@@ -160,7 +160,7 @@ const Tasks = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-white pb-20" dir="rtl">
+      <div className="min-h-screen bg-background pb-20" dir="rtl">
         <AppHeader 
           title="משימות טיפול" 
           showBackButton={false}
@@ -173,10 +173,10 @@ const Tasks = () => {
         
         <div className="px-4 pt-4">
           {/* Points & Streak Card */}
-          <div className="bg-white border border-border rounded-2xl p-5 mb-6">
+          <div className="bg-card border border-border rounded-2xl p-5 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-md">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center shadow-md">
                   <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
                     <path d="M14 5C9.5 5 7 8 7 11.5C7 14 8.5 16.5 11 17.5L12 21L16 21L17 17.5C19.5 16.5 21 14 21 11.5C21 8 18.5 5 14 5Z" fill="hsl(var(--error))"/>
                     <circle cx="11.5" cy="11" r="1.5" fill="white"/>
@@ -239,7 +239,7 @@ const Tasks = () => {
                       className={`p-5 transition-all border ${
                         task.completed
                           ? "bg-primary/5 border-primary/30"
-                          : "bg-white border-border hover:shadow-sm"
+                          : "bg-card border-border hover:shadow-sm"
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -263,15 +263,15 @@ const Tasks = () => {
                             <h3
                               className={`font-semibold font-jakarta ${
                                 task.completed
-                                  ? "text-gray-500 line-through"
-                                  : "text-gray-900"
+                                  ? "text-muted-foreground line-through"
+                                  : "text-foreground"
                               }`}
                             >
                               {task.title}
                             </h3>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                          <Badge variant="secondary" className="bg-accent/20 text-gray-900">
+                          <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
+                          <Badge variant="secondary" className="bg-accent/20 text-foreground">
                             +{task.points} נקודות
                           </Badge>
                         </div>
@@ -288,9 +288,9 @@ const Tasks = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-accent" strokeWidth={1.5} />
-                    <span className="font-semibold text-gray-900 font-jakarta">התקדמות שבועית</span>
+                    <span className="font-semibold text-foreground font-jakarta">התקדמות שבועית</span>
                   </div>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     {weeklyCompleted}/{weeklyTasks.length}
                   </span>
                 </div>
@@ -310,7 +310,7 @@ const Tasks = () => {
                       className={`p-4 transition-all ${
                         task.completed
                           ? "bg-success/10 border-success/20"
-                          : "bg-white hover:shadow-md"
+                          : "bg-card hover:shadow-md"
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -334,15 +334,15 @@ const Tasks = () => {
                             <h3
                               className={`font-semibold font-jakarta ${
                                 task.completed
-                                  ? "text-gray-500 line-through"
-                                  : "text-gray-900"
+                                  ? "text-muted-foreground line-through"
+                                  : "text-foreground"
                               }`}
                             >
                               {task.title}
                             </h3>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                          <Badge variant="secondary" className="bg-accent/20 text-gray-900">
+                          <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
+                          <Badge variant="secondary" className="bg-accent/20 text-foreground">
                             +{task.points} נקודות
                           </Badge>
                         </div>
