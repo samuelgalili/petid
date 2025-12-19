@@ -27,13 +27,17 @@ export const OptimizedImage = ({
   onClick,
 }: OptimizedImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [imageSrc, setImageSrc] = useState<string>("");
+  const [hasError, setHasError] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string>(priority ? src : "");
   const [isInView, setIsInView] = useState(priority);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const imgRef = useRef<HTMLDivElement>(null);
 
   // Intersection Observer for lazy loading
   useEffect(() => {
-    if (priority || !imgRef.current) return;
+    if (priority || !imgRef.current) {
+      setIsInView(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -45,7 +49,8 @@ export const OptimizedImage = ({
         });
       },
       {
-        rootMargin: "50px",
+        rootMargin: "100px",
+        threshold: 0.01,
       }
     );
 
@@ -95,7 +100,16 @@ export const OptimizedImage = ({
 
   const handleLoad = () => {
     setIsLoaded(true);
+    setHasError(false);
     onLoad?.();
+  };
+
+  const handleError = () => {
+    setHasError(true);
+    // Try to load original image without modifications
+    if (imageSrc !== src) {
+      setImageSrc(src);
+    }
   };
 
   const objectFitClass = {
@@ -148,6 +162,7 @@ export const OptimizedImage = ({
             loading={priority ? "eager" : "lazy"}
             decoding="async"
             onLoad={handleLoad}
+            onError={handleError}
             className={cn(
               "w-full h-full transition-opacity duration-300",
               objectFitClass,
