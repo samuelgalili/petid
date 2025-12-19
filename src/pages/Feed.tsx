@@ -1021,30 +1021,34 @@ const Feed = () => {
       duration: 0.4
     }}>
         {/* Rewards Bar */}
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-4 py-4 mb-2 cursor-pointer"
-          onClick={() => navigate('/rewards')}
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: -10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} className="mx-4 py-4 mb-2 cursor-pointer" onClick={() => navigate('/rewards')}>
           {/* Amount */}
           <div className="flex justify-end mb-3">
             <div className="text-right">
-              <span className="text-gray-400 text-sm ml-1">צברת</span>
-              <span className="text-2xl font-bold text-gray-700">₪{(totalPoints * 0.01).toFixed(2)}</span>
+              
+              
             </div>
           </div>
           
           {/* Progress Bar */}
           <div className="flex items-center gap-3 mb-2" dir="rtl">
             <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full rounded-full"
-                style={{ backgroundColor: '#FBBF24' }}
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min((totalPoints * 0.01 / 50) * 100, 100)}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
+              <motion.div className="h-full rounded-full" style={{
+              backgroundColor: '#FBBF24'
+            }} initial={{
+              width: 0
+            }} animate={{
+              width: `${Math.min(totalPoints * 0.01 / 50 * 100, 100)}%`
+            }} transition={{
+              duration: 0.8,
+              ease: "easeOut"
+            }} />
             </div>
             <span className="text-gray-300 text-sm">₪50</span>
           </div>
