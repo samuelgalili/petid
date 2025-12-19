@@ -258,11 +258,11 @@ const Checkout = () => {
                     id="fullName"
                     value={shippingData.fullName}
                     onChange={(e) => handleInputChange("fullName", e.target.value)}
-                    className={`mt-1.5 font-jakarta rounded-xl ${errors.fullName ? "border-red-500" : ""}`}
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.fullName ? "border-destructive" : ""}`}
                     placeholder="ישראל ישראלי"
                   />
                   {errors.fullName && (
-                    <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.fullName}</p>
+                    <p className="text-xs text-destructive mt-1 font-jakarta">{errors.fullName}</p>
                   )}
                 </div>
 
@@ -275,11 +275,11 @@ const Checkout = () => {
                     type="email"
                     value={shippingData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className={`mt-1.5 font-jakarta rounded-xl ${errors.email ? "border-red-500" : ""}`}
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.email ? "border-destructive" : ""}`}
                     placeholder="email@example.com"
                   />
                   {errors.email && (
-                    <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.email}</p>
+                    <p className="text-xs text-destructive mt-1 font-jakarta">{errors.email}</p>
                   )}
                 </div>
 
@@ -292,11 +292,11 @@ const Checkout = () => {
                     type="tel"
                     value={shippingData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
-                    className={`mt-1.5 font-jakarta rounded-xl ${errors.phone ? "border-red-500" : ""}`}
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.phone ? "border-destructive" : ""}`}
                     placeholder="0501234567"
                   />
                   {errors.phone && (
-                    <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.phone}</p>
+                    <p className="text-xs text-destructive mt-1 font-jakarta">{errors.phone}</p>
                   )}
                 </div>
 
@@ -308,11 +308,11 @@ const Checkout = () => {
                     id="address"
                     value={shippingData.address}
                     onChange={(e) => handleInputChange("address", e.target.value)}
-                    className={`mt-1.5 font-jakarta rounded-xl ${errors.address ? "border-red-500" : ""}`}
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.address ? "border-destructive" : ""}`}
                     placeholder="רחוב הרצל 123, דירה 4"
                   />
                   {errors.address && (
-                    <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.address}</p>
+                    <p className="text-xs text-destructive mt-1 font-jakarta">{errors.address}</p>
                   )}
                 </div>
 
@@ -325,11 +325,11 @@ const Checkout = () => {
                       id="city"
                       value={shippingData.city}
                       onChange={(e) => handleInputChange("city", e.target.value)}
-                      className={`mt-1.5 font-jakarta rounded-xl ${errors.city ? "border-red-500" : ""}`}
+                      className={`mt-1.5 font-jakarta rounded-xl ${errors.city ? "border-destructive" : ""}`}
                       placeholder="תל אביב"
                     />
                     {errors.city && (
-                      <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.city}</p>
+                      <p className="text-xs text-destructive mt-1 font-jakarta">{errors.city}</p>
                     )}
                   </div>
 
@@ -341,11 +341,11 @@ const Checkout = () => {
                       id="zipCode"
                       value={shippingData.zipCode}
                       onChange={(e) => handleInputChange("zipCode", e.target.value)}
-                      className={`mt-1.5 font-jakarta rounded-xl ${errors.zipCode ? "border-red-500" : ""}`}
+                      className={`mt-1.5 font-jakarta rounded-xl ${errors.zipCode ? "border-destructive" : ""}`}
                       placeholder="12345"
                     />
                     {errors.zipCode && (
-                      <p className="text-xs text-red-500 mt-1 font-jakarta">{errors.zipCode}</p>
+                      <p className="text-xs text-destructive mt-1 font-jakarta">{errors.zipCode}</p>
                     )}
                   </div>
                 </div>
