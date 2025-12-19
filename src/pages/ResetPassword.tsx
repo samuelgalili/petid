@@ -160,7 +160,7 @@ const ResetPassword = () => {
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -196,7 +196,7 @@ const ResetPassword = () => {
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                          aria-label={showConfirmPassword ? "הסתר סיסמה" : "הצג סיסמה"}
                         >
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -210,31 +210,31 @@ const ResetPassword = () => {
 
                     <Button
                       type="submit"
-                      className="w-full h-12 font-medium font-jakarta transition-all bg-accent hover:bg-accent-hover text-gray-900"
+                      className="w-full h-12 font-medium font-jakarta transition-all bg-accent hover:bg-accent-hover text-foreground"
                       disabled={loading}
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span className="text-gray-900">Updating Password...</span>
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                          <span className="text-foreground">מעדכן סיסמה...</span>
                         </>
                       ) : (
-                        <span className="text-gray-900">Update Password</span>
+                        <span className="text-foreground">עדכן סיסמה</span>
                       )}
                     </Button>
                   </form>
                 </>
               ) : (
                 <div className="text-center space-y-6">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                  <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle className="h-10 w-10 text-success" />
                   </div>
                   
                   <div>
-                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Password Updated!</h2>
-                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
-                      Your password has been successfully updated.<br />
-                      Redirecting to login...
+                    <h2 className="text-3xl font-bold font-jakarta text-foreground mb-3">הסיסמה עודכנה!</h2>
+                    <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
+                      הסיסמה שלך עודכנה בהצלחה.<br />
+                      מעביר להתחברות...
                     </p>
                   </div>
                 </div>

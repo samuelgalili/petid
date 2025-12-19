@@ -83,8 +83,8 @@ const Checkout = () => {
         setCurrentStep(2);
       } else {
         toast({
-          title: "Validation Error",
-          description: "Please check all fields and try again",
+          title: "שגיאת אימות",
+          description: "אנא בדוק את כל השדות ונסה שוב",
           variant: "destructive",
         });
       }
@@ -169,8 +169,8 @@ const Checkout = () => {
       console.error("Error placing order:", error);
       setIsProcessing(false);
       toast({
-        title: "Order Failed",
-        description: error.message || "Failed to place order. Please try again.",
+        title: "ההזמנה נכשלה",
+        description: error.message || "נכשל בביצוע ההזמנה. אנא נסה שוב.",
         variant: "destructive",
       });
     }

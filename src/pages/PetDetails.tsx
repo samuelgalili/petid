@@ -56,8 +56,8 @@ const PetDetails = () => {
         if (petError) throw petError;
         if (!petData) {
           toast({
-            title: "Pet not found",
-            description: "The pet you're looking for doesn't exist.",
+            title: "חיה לא נמצאה",
+            description: "החיה שחיפשת לא קיימת.",
             variant: "destructive",
           });
           navigate('/home');

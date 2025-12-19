@@ -11,7 +11,7 @@ import { PetidLogo } from "@/components/PetidLogo";
 import { z } from "zod";
 
 const emailSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("אנא הזן כתובת אימייל תקינה"),
 });
 
 const ForgotPassword = () => {
@@ -45,13 +45,13 @@ const ForgotPassword = () => {
 
       setEmailSent(true);
       toast({
-        title: "Email Sent",
-        description: "Check your email for the password reset link",
+        title: "אימייל נשלח",
+        description: "בדוק את האימייל שלך לקישור איפוס הסיסמה",
       });
     } catch (error: any) {
       setError(error.message);
       toast({
-        title: "Error",
+        title: "שגיאה",
         description: error.message,
         variant: "destructive",
       });
@@ -63,7 +63,7 @@ const ForgotPassword = () => {
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" 
-      dir="ltr"
+      dir="rtl"
     >
       {/* Background Video */}
       <video
@@ -77,14 +77,14 @@ const ForgotPassword = () => {
       </video>
 
       {/* Fixed Header with Back Button and Logo */}
-      <div className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm">
+      <div className="fixed top-0 left-0 right-0 z-10 bg-background/5 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link
             to="/auth"
-            className="inline-flex items-center text-gray-900 hover:text-gray-700 transition-colors font-medium"
+            className="inline-flex items-center text-foreground hover:text-foreground/70 transition-colors font-medium"
           >
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            <span className="font-jakarta">Back</span>
+            <ArrowLeft className="ml-2 h-5 w-5" />
+            <span className="font-jakarta">חזרה</span>
           </Link>
           
           <PetidLogo showAnimals={false} />
@@ -106,9 +106,9 @@ const ForgotPassword = () => {
               {!emailSent ? (
                 <>
                   <div className="mb-8 text-center">
-                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Reset Password</h2>
-                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
-                      Enter your email address and we'll send you a link to reset your password
+                    <h2 className="text-3xl font-bold font-jakarta text-foreground mb-3">איפוס סיסמה</h2>
+                    <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
+                      הזן את כתובת האימייל שלך ונשלח לך קישור לאיפוס הסיסמה
                     </p>
                   </div>
 
@@ -123,8 +123,8 @@ const ForgotPassword = () => {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium font-jakarta text-gray-700">
-                        Email Address
+                      <Label htmlFor="email" className="text-sm font-medium font-jakarta text-foreground/80">
+                        כתובת אימייל
                       </Label>
                       <Input
                         id="email"
@@ -137,7 +137,7 @@ const ForgotPassword = () => {
                           setError("");
                         }}
                         disabled={loading}
-                        className="h-12 bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-gray-300 font-jakarta"
+                        className="h-12 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-border font-jakarta"
                         autoComplete="email"
                         required
                       />
@@ -145,18 +145,18 @@ const ForgotPassword = () => {
 
                     <Button
                       type="submit"
-                      className="w-full h-12 font-medium transition-all bg-accent hover:bg-accent-hover text-gray-900"
+                      className="w-full h-12 font-medium transition-all bg-accent hover:bg-accent-hover text-foreground"
                       disabled={loading}
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          <span className="text-gray-900 font-jakarta">Sending...</span>
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                          <span className="text-foreground font-jakarta">שולח...</span>
                         </>
                       ) : (
                         <>
-                          <Mail className="mr-2 h-4 w-4 text-gray-900" />
-                          <span className="text-gray-900 font-jakarta">Send Reset Link</span>
+                          <Mail className="ml-2 h-4 w-4 text-foreground" />
+                          <span className="text-foreground font-jakarta">שלח קישור איפוס</span>
                         </>
                       )}
                     </Button>
@@ -164,27 +164,27 @@ const ForgotPassword = () => {
                 </>
               ) : (
                 <div className="text-center space-y-6">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                    <Mail className="h-10 w-10 text-gray-700" />
+                  <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto">
+                    <Mail className="h-10 w-10 text-foreground/70" />
                   </div>
                   
                   <div>
-                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Check Your Email</h2>
-                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
-                      We've sent a password reset link to<br />
-                      <strong className="text-gray-900">{email}</strong>
+                    <h2 className="text-3xl font-bold font-jakarta text-foreground mb-3">בדוק את האימייל</h2>
+                    <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
+                      שלחנו קישור לאיפוס סיסמה אל<br />
+                      <strong className="text-foreground">{email}</strong>
                     </p>
                   </div>
 
-                  <p className="text-xs font-jakarta text-gray-500">
-                    Didn't receive the email? Check your spam folder or try again with a different email address.
+                  <p className="text-xs font-jakarta text-muted-foreground">
+                    לא קיבלת את האימייל? בדוק בתיקיית הספאם או נסה שוב עם כתובת אימייל אחרת.
                   </p>
 
                   <Button
                     onClick={() => setEmailSent(false)}
-                    className="w-full h-12 font-medium transition-all bg-accent hover:bg-accent-hover text-gray-900"
+                    className="w-full h-12 font-medium transition-all bg-accent hover:bg-accent-hover text-foreground"
                   >
-                    <span className="text-gray-900 font-jakarta">Try Another Email</span>
+                    <span className="text-foreground font-jakarta">נסה אימייל אחר</span>
                   </Button>
                 </div>
               )}

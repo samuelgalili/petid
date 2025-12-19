@@ -63,7 +63,7 @@ const BreedHistory = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-gray-600 font-jakarta">Loading...</p>
+        <p className="text-muted-foreground font-jakarta">טוען...</p>
       </div>
     );
   }
@@ -71,13 +71,13 @@ const BreedHistory = () => {
   if (!pet) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-gray-600 font-jakarta">Pet not found</p>
+        <p className="text-muted-foreground font-jakarta">חיה לא נמצאה</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 animate-fade-in" dir="ltr">
+    <div className="min-h-screen bg-background pb-24 animate-fade-in" dir="rtl">
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
