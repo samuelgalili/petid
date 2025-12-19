@@ -30,6 +30,8 @@ import { ParallaxScroll } from "@/components/ParallaxScroll";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { ChallengesSection } from "@/components/ChallengesSection";
+import { ChallengeLeaderboard } from "@/components/ChallengeLeaderboard";
+import { ChallengeBadges } from "@/components/ChallengeBadges";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -1119,6 +1121,28 @@ const Feed = () => {
       duration: 0.4
     }} className="bg-white px-4 py-3 border-b border-gray-100">
         <ChallengesSection />
+        
+        {/* Challenge Badges for current user */}
+        {user && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mt-3 pt-3 border-t border-gray-100"
+          >
+            <ChallengeBadges />
+          </motion.div>
+        )}
+      </motion.div>
+      
+      {/* Challenge Leaderboard - show periodically */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+        className="bg-white px-4 py-3 border-b border-gray-100"
+      >
+        <ChallengeLeaderboard limit={3} />
       </motion.div>
 
 

@@ -173,6 +173,7 @@ export const PostCard = ({
   const { isFollowing, toggleFollow } = useFollow(post.user_id);
   const { checkAuth, isAuthenticated } = useRequireAuth();
   const [isLicking, setIsLicking] = useState(false);
+  const [isSaveAnimating, setIsSaveAnimating] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [showProductTags, setShowProductTags] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
@@ -285,7 +286,9 @@ export const PostCard = ({
 
   const handleSave = () => {
     if (!checkAuth("כדי לשמור פוסטים, יש להתחבר")) return;
+    setIsSaveAnimating(true);
     onSave(post.id);
+    setTimeout(() => setIsSaveAnimating(false), 600);
   };
 
   const handleFollow = () => {
@@ -567,12 +570,67 @@ export const PostCard = ({
           </div>
           <motion.button 
             onClick={handleSave}
-            className="text-[#262626] p-1 rounded-full hover:bg-yellow-50 transition-colors duration-200"
+            className="text-[#262626] p-1 rounded-full hover:bg-yellow-50 transition-colors duration-200 relative"
             whileHover={{ scale: 1.2, y: -2 }}
             whileTap={{ scale: 0.8 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <Bookmark className={`w-6 h-6 ${post.is_saved ? 'fill-[#262626]' : ''}`} strokeWidth={1.5} />
+            <motion.div
+              animate={isSaveAnimating ? {
+                scale: [1, 0.8, 1.3, 1],
+                rotate: [0, -10, 10, 0]
+              } : {}}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <Bookmark 
+                className={`w-6 h-6 transition-colors duration-200 ${post.is_saved ? 'fill-[#262626]' : ''}`} 
+                strokeWidth={1.5} 
+              />
+            </motion.div>
+            <AnimatePresence>
+              {isSaveAnimating && post.is_saved && (
+                <>
+                  {/* Sparkle effects */}
+                  {[...Array(6)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute text-yellow-500"
+                      style={{ fontSize: '8px' }}
+                      initial={{ 
+                        opacity: 1, 
+                        scale: 0,
+                        x: 0,
+                        y: 0 
+                      }}
+                      animate={{ 
+                        opacity: [1, 1, 0],
+                        scale: [0, 1.2, 0.8],
+                        x: Math.cos((i / 6) * Math.PI * 2) * 20,
+                        y: Math.sin((i / 6) * Math.PI * 2) * 20,
+                      }}
+                      exit={{ opacity: 0 }}
+                      transition={{ 
+                        duration: 0.5,
+                        delay: i * 0.03,
+                        ease: "easeOut"
+                      }}
+                    >
+                      ✨
+                    </motion.div>
+                  ))}
+                  {/* Check mark animation */}
+                  <motion.div
+                    className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: [0, 1.2, 1], opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  >
+                    <span className="text-white text-[8px]">✓</span>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </motion.button>
         </div>
 
