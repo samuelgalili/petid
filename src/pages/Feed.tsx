@@ -878,7 +878,7 @@ const Feed = () => {
           </div>
           
           {/* Right icons with Instagram colors */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
             {isAuthenticated && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <motion.button whileHover={{
