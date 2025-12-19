@@ -6,6 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function to convert ArrayBuffer to base64
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -32,64 +42,54 @@ serve(async (req) => {
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const type = formData.get("type") as string || "profile"; // profile or pet
+    const type = formData.get("type") as string || "profile";
     const petId = formData.get("petId") as string | null;
 
     if (!file) {
       throw new Error("No file provided");
     }
 
-    // Generate file path
-    const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const fileName = type === "pet" && petId 
-      ? `pet-${petId}-${Date.now()}.${fileExt}`
-      : `avatar-${Date.now()}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
-
-    // Convert file to array buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-
-    // Upload using service role (bypasses RLS)
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("pet-avatars")
-      .upload(filePath, uint8Array, {
-        contentType: file.type,
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      throw uploadError;
+    // Check file size (max 500KB for base64 storage)
+    if (file.size > 500 * 1024) {
+      throw new Error("File too large. Maximum 500KB allowed.");
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from("pet-avatars")
-      .getPublicUrl(filePath);
+    // Convert file to base64 data URL
+    const arrayBuffer = await file.arrayBuffer();
+    const base64String = arrayBufferToBase64(arrayBuffer);
+    const mimeType = file.type || "image/jpeg";
+    const dataUrl = `data:${mimeType};base64,${base64String}`;
 
-    const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
+    console.log(`Uploading ${type} image for user ${user.id}, size: ${file.size} bytes`);
 
-    // Update the appropriate table
+    // Update the appropriate table with the data URL
     if (type === "pet" && petId) {
       const { error: updateError } = await supabase
         .from("pets")
-        .update({ avatar_url: cacheBustedUrl })
+        .update({ avatar_url: dataUrl })
         .eq("id", petId)
         .eq("user_id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Update error:", updateError);
+        throw updateError;
+      }
     } else {
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: cacheBustedUrl })
+        .update({ avatar_url: dataUrl })
         .eq("id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Update error:", updateError);
+        throw updateError;
+      }
     }
 
+    console.log("Successfully saved image as data URL");
+
     return new Response(
-      JSON.stringify({ success: true, url: cacheBustedUrl }),
+      JSON.stringify({ success: true, url: dataUrl }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
