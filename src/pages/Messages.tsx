@@ -145,10 +145,10 @@ export default function Messages() {
           {/* Search/Notes Tab */}
           <div className="px-4 pb-2">
             <div className="flex gap-2">
-              <button className="flex-1 py-2 text-sm font-semibold text-[#262626] border-b-2 border-[#262626]">
+              <button className="flex-1 py-2 text-sm font-semibold text-foreground border-b-2 border-primary">
                 הודעות
               </button>
-              <button className="flex-1 py-2 text-sm font-medium text-gray-400">
+              <button className="flex-1 py-2 text-sm font-medium text-muted-foreground">
                 בקשות
               </button>
             </div>
@@ -159,10 +159,10 @@ export default function Messages() {
         <div>
           {conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-4">
-              <div className="w-24 h-24 rounded-full border-2 border-[#262626] flex items-center justify-center mb-4">
-                <Camera className="h-12 w-12 text-[#262626]" />
+              <div className="w-24 h-24 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
+                <Camera className="h-12 w-12 text-foreground" />
               </div>
-              <h3 className="text-xl font-bold text-[#262626] mb-2">
+              <h3 className="text-xl font-bold text-foreground mb-2">
                 ההודעות שלך
               </h3>
               <p className="text-sm text-gray-500 text-center max-w-[260px]">

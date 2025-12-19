@@ -139,7 +139,7 @@ const ArchivedPets = () => {
       <div className="px-4 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7DD3C0]"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : archivedPets.length === 0 ? (
           <motion.div

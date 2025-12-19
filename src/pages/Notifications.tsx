@@ -155,11 +155,11 @@ const Notifications = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl p-8 text-center"
+            className="bg-card rounded-2xl p-8 text-center"
           >
-            <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">אין התראות</h2>
-            <p className="text-gray-600">כל ההתראות שלך יופיעו כאן</p>
+            <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-foreground mb-2">אין התראות</h2>
+            <p className="text-muted-foreground">כל ההתראות שלך יופיעו כאן</p>
           </motion.div>
         ) : (
           notifications.map((notification, index) => (

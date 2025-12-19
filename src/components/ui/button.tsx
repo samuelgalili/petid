@@ -17,8 +17,8 @@ const buttonVariants = cva(
         ghost: "bg-transparent hover:bg-muted/50 active:bg-muted active:scale-[0.98] transform",
         link: "text-primary underline-offset-4 hover:underline hover:opacity-80 active:opacity-60",
         success: "bg-success text-success-foreground hover:bg-success-dark hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
-        instagram: "bg-[#0095F6] text-white font-semibold hover:bg-[#1877F2] hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
-        instagramSecondary: "bg-transparent text-[#0095F6] font-semibold hover:text-[#1877F2] hover:opacity-80 active:opacity-60",
+        instagram: "bg-primary text-primary-foreground font-semibold hover:bg-primary/90 hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
+        instagramSecondary: "bg-transparent text-primary font-semibold hover:text-primary/80 hover:opacity-80 active:opacity-60",
       },
       size: {
         default: "h-11 px-6 py-3",
