@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { 
-  Store, Stethoscope, Scissors, GraduationCap, Dog, 
+  Store, Stethoscope, Scissors, GraduationCap, Dog, Heart,
   ArrowRight, CheckCircle, Loader2, Building2, Phone, Mail, Globe, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ const businessTypes = [
   { value: 'groomer', label: 'מספרה', icon: Scissors, description: 'טיפוח וגזירה' },
   { value: 'shop', label: 'חנות', icon: Store, description: 'מכירת מוצרים' },
   { value: 'pet_sitter', label: 'פט סיטר', icon: Dog, description: 'שמירה ופנסיון' },
+  { value: 'shelter', label: 'עמותה', icon: Heart, description: 'עמותה לאימוץ וחילוץ' },
 ];
 
 const ConvertToBusiness = () => {

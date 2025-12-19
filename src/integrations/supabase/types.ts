@@ -2615,6 +2615,7 @@ export type Database = {
         | "shop"
         | "pet_sitter"
         | "other"
+        | "shelter"
       order_status:
         | "pending"
         | "processing"
@@ -2758,6 +2759,7 @@ export const Constants = {
         "shop",
         "pet_sitter",
         "other",
+        "shelter",
       ],
       order_status: [
         "pending",
