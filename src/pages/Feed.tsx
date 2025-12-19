@@ -1051,7 +1051,7 @@ const Feed = () => {
               ease: "easeOut"
             }} />
             </div>
-            <span className="text-gray-300 text-sm">₪50</span>
+            <span className="text-foreground text-sm font-semibold">₪50</span>
           </div>
           
           {/* Bottom Text */}
