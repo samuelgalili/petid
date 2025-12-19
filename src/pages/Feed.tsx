@@ -1027,7 +1027,7 @@ const Feed = () => {
       }} animate={{
         opacity: 1,
         y: 0
-      }} className="mx-4 py-4 mb-2 cursor-pointer" onClick={() => navigate('/rewards')}>
+      }} className="mx-4 py-1 mb-1 cursor-pointer" onClick={() => navigate('/rewards')}>
           {/* Amount */}
           <div className="flex justify-end mb-3">
             <div className="text-right">
