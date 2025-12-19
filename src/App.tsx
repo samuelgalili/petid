@@ -77,6 +77,7 @@ import AdCampaigns from "./pages/AdCampaigns";
 import BusinessDirectory from "./pages/BusinessDirectory";
 import BusinessProfile from "./pages/BusinessProfile";
 import ConvertToBusiness from "./pages/ConvertToBusiness";
+import PrivacySettings from "./pages/PrivacySettings";
 
 import Support from "./pages/Support";
 import Deals from "./pages/Deals";
@@ -166,6 +167,7 @@ const AnimatedRoutes = () => {
         <Route path="/businesses" element={<PageTransition><BusinessDirectory /></PageTransition>} />
         <Route path="/business/:id" element={<PageTransition><BusinessProfile /></PageTransition>} />
         <Route path="/convert-to-business" element={<ProtectedRoute><PageTransition><ConvertToBusiness /></PageTransition></ProtectedRoute>} />
+        <Route path="/privacy-settings" element={<ProtectedRoute><PageTransition><PrivacySettings /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
         </AnimatePresence>
