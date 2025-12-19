@@ -829,21 +829,11 @@ const Feed = () => {
           </motion.div>}
       </AnimatePresence>
 
-      {/* Stories Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="border-b border-gray-100 bg-white"
-      >
-        <StoriesBar />
-      </motion.div>
-
-      {/* My Pets Section */}
+      {/* My Pets Section - Above Stories */}
       {isAuthenticated && <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
       >
         <div data-pets-section className="py-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
           <div className="max-w-lg mx-auto">
@@ -855,6 +845,16 @@ const Feed = () => {
           </div>
         </div>
       </motion.div>}
+
+      {/* Stories Bar - Sticky below header */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="border-b border-gray-100 bg-white sticky top-[56px] z-40"
+      >
+        <StoriesBar />
+      </motion.div>
 
 
       {/* Feed */}
