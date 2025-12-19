@@ -152,11 +152,11 @@ export const StoriesBar = () => {
 
   if (loading) {
     return (
-      <div className="px-3 py-4 bg-gradient-to-r from-background via-primary/5 to-background">
-        <div className="flex gap-4 overflow-x-auto no-scrollbar">
+      <div className="px-4 py-4 bg-gradient-to-r from-[#DD2A7B]/5 via-[#F58529]/5 to-[#8134AF]/5">
+        <div className="flex gap-5 overflow-x-auto no-scrollbar">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-              <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-muted to-muted/50 animate-pulse" />
+              <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-[#DD2A7B]/20 to-[#F58529]/20 animate-pulse" />
               <div className="w-14 h-3 bg-muted rounded-full animate-pulse" />
             </div>
           ))}
@@ -177,8 +177,8 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-3 py-4 bg-gradient-to-r from-background via-primary/5 to-background">
-        <div className="flex gap-4 overflow-x-auto no-scrollbar">
+      <div className="px-4 py-4 bg-gradient-to-r from-[#DD2A7B]/5 via-[#F58529]/5 to-[#8134AF]/5">
+        <div className="flex gap-5 overflow-x-auto no-scrollbar">
           {/* Your Story / Add Story - Always first */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}

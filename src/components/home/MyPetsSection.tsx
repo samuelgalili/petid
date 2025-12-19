@@ -30,7 +30,7 @@ export const MyPetsSection = ({
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="mb-6 px-4"
+        className="px-4"
       >
       {/* Empty State - Beautiful & Inviting */}
       {pets.length === 0 ? (
@@ -40,7 +40,7 @@ export const MyPetsSection = ({
           transition={{ delay: 0.2 }}
           className="relative overflow-hidden"
         >
-          <div className="flex flex-col items-center justify-center py-10 text-center bg-gradient-to-br from-warning/30 via-white to-success/30 rounded-3xl border-2 border-dashed border-border backdrop-blur-sm">
+          <div className="flex flex-col items-center justify-center py-10 text-center bg-gradient-to-br from-[#4ECDC4]/10 via-white to-[#1E5799]/10 rounded-3xl border-2 border-dashed border-[#4ECDC4]/30 backdrop-blur-sm shadow-inner">
             {/* Decorative Elements */}
             <div className="absolute top-4 left-4 w-8 h-8 bg-primary/10 rounded-full blur-xl" />
             <div className="absolute bottom-6 right-6 w-12 h-12 bg-accent/10 rounded-full blur-xl" />
