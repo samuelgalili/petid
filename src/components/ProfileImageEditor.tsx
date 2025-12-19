@@ -143,9 +143,9 @@ export const ProfileImageEditor = ({
 
     try {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("User not authenticated");
 
       const croppedImage = await getCroppedImg(
         imageSrc,
@@ -153,46 +153,30 @@ export const ProfileImageEditor = ({
         rotation
       );
 
-      // Delete old avatar if exists
-      if (currentImageUrl) {
-        const oldPath = currentImageUrl.split("/").pop()?.split("?")[0];
-        if (oldPath) {
-          await supabase.storage
-            .from("pet-avatars")
-            .remove([`${user.id}/${oldPath}`]);
+      // Create form data for edge function
+      const formData = new FormData();
+      formData.append("file", croppedImage, "avatar.jpg");
+      formData.append("type", "profile");
+
+      // Upload via edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: formData,
         }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Upload failed");
       }
 
-      // Upload new avatar
-      const fileName = `avatar-${Date.now()}.jpg`;
-      const filePath = `${user.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("pet-avatars")
-        .upload(filePath, croppedImage, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL with cache-busting timestamp
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("pet-avatars").getPublicUrl(filePath);
-      
-      // Add timestamp to bust browser cache
-      const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
-
-      // Update profile
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: cacheBustedUrl })
-        .eq("id", user.id);
-
-      if (updateError) throw updateError;
-
-      onImageUpdated(cacheBustedUrl);
+      onImageUpdated(result.url);
       toast({
         title: "הצלחה!",
         description: "תמונת הפרופיל עודכנה בהצלחה",

@@ -115,33 +115,34 @@ const PetDetails = () => {
 
     setIsUploadingImage(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("User not authenticated");
 
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const fileName = `pet-${pet.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      // Create form data for edge function
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "pet");
+      formData.append("petId", pet.id);
 
-      const { error: uploadError } = await supabase.storage
-        .from("pet-avatars")
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: true,
-        });
+      // Upload via edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
 
-      if (uploadError) throw uploadError;
+      const result = await response.json();
 
-      const { data: { publicUrl } } = supabase.storage.from("pet-avatars").getPublicUrl(filePath);
-      const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
+      if (!result.success) {
+        throw new Error(result.error || "Upload failed");
+      }
 
-      const { error: updateError } = await supabase
-        .from("pets")
-        .update({ avatar_url: cacheBustedUrl })
-        .eq("id", pet.id);
-
-      if (updateError) throw updateError;
-
-      setPet(prev => prev ? { ...prev, avatar_url: cacheBustedUrl } : null);
+      setPet(prev => prev ? { ...prev, avatar_url: result.url } : null);
       sonnerToast.success("תמונת חיית המחמד עודכנה בהצלחה!");
       navigate(-1);
     } catch (error: any) {
@@ -150,7 +151,7 @@ const PetDetails = () => {
     } finally {
       setIsUploadingImage(false);
     }
-  }, [pet]);
+  }, [pet, navigate]);
 
   const handleSaveEdit = async () => {
     if (!pet) return;

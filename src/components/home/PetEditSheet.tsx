@@ -52,41 +52,39 @@ export const PetEditSheet = ({
 
     setIsUploadingImage(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("User not authenticated");
 
-      // Upload to storage
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const fileName = `pet-${pet.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      // Create form data for edge function
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "pet");
+      formData.append("petId", pet.id);
 
-      const { error: uploadError } = await supabase.storage
-        .from("pet-avatars")
-        .upload(filePath, file, {
-          contentType: file.type,
-          upsert: true,
-        });
+      // Upload via edge function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
 
-      if (uploadError) throw uploadError;
+      const result = await response.json();
 
-      // Get public URL with cache busting
-      const { data: { publicUrl } } = supabase.storage.from("pet-avatars").getPublicUrl(filePath);
-      const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
-
-      // Update pet in database
-      const { error: updateError } = await supabase
-        .from("pets")
-        .update({ avatar_url: cacheBustedUrl })
-        .eq("id", pet.id);
-
-      if (updateError) throw updateError;
+      if (!result.success) {
+        throw new Error(result.error || "Upload failed");
+      }
 
       // Update local state immediately
-      setLocalAvatarUrl(cacheBustedUrl);
+      setLocalAvatarUrl(result.url);
       
       // Notify parent component
       if (onAvatarUpdate) {
-        onAvatarUpdate(pet.id, cacheBustedUrl);
+        onAvatarUpdate(pet.id, result.url);
       }
 
       toast.success("תמונת חיית המחמד עודכנה בהצלחה!");
