@@ -143,6 +143,7 @@ const PetDetails = () => {
 
       setPet(prev => prev ? { ...prev, avatar_url: cacheBustedUrl } : null);
       sonnerToast.success("תמונת חיית המחמד עודכנה בהצלחה!");
+      navigate(-1);
     } catch (error: any) {
       console.error("Error uploading pet image:", error);
       sonnerToast.error(error.message || "שגיאה בהעלאת התמונה");
