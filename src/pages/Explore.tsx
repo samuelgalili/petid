@@ -60,6 +60,14 @@ interface DogPark {
   water: boolean | null;
   shade: boolean | null;
   fencing: boolean | null;
+  latitude: number | null;
+  longitude: number | null;
+  distance?: number;
+}
+
+interface UserLocation {
+  latitude: number;
+  longitude: number;
 }
 
 interface Deal {
@@ -108,11 +116,46 @@ const Explore = () => {
   const [aiInsights, setAiInsights] = useState<SmartDiscoveryResult | null>(null);
   const [loadingInsights, setLoadingInsights] = useState(false);
   const [doubleTapPostId, setDoubleTapPostId] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([
     "כלבי גולדן",
     "חתולים פרסיים",
     "אימוץ בתל אביב"
   ]);
+
+  // Calculate distance between two coordinates in km
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Get user location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+          setLocationError(null);
+        },
+        (error) => {
+          console.log("Geolocation error:", error.message);
+          setLocationError("לא ניתן לקבל מיקום");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+    }
+  }, []);
 
   const fetchSmartDiscovery = async (type: string) => {
     try {
@@ -144,20 +187,35 @@ const Explore = () => {
       fetchExplorePosts();
       fetchSmartDiscovery("posts");
     }
-  }, [activeTab]);
+  }, [activeTab, userLocation]);
 
   const fetchParks = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from("dog_parks")
-        .select("id, name, address, city, rating, total_reviews, water, shade, fencing")
+        .select("id, name, address, city, rating, total_reviews, water, shade, fencing, latitude, longitude")
         .eq("status", "approved")
-        .order("rating", { ascending: false, nullsFirst: false })
-        .limit(20);
+        .limit(50);
 
       if (error) throw error;
-      setParks(data || []);
+      
+      let parksData = data || [];
+      
+      // Calculate distance and sort by proximity if user location is available
+      if (userLocation && parksData.length > 0) {
+        parksData = parksData.map(park => ({
+          ...park,
+          distance: park.latitude && park.longitude 
+            ? calculateDistance(userLocation.latitude, userLocation.longitude, park.latitude, park.longitude)
+            : 999999
+        })).sort((a, b) => (a.distance || 999999) - (b.distance || 999999));
+      } else {
+        // Sort by rating if no location
+        parksData = parksData.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      }
+      
+      setParks(parksData.slice(0, 20));
     } catch (error) {
       console.error("Error fetching parks:", error);
     } finally {
@@ -577,53 +635,76 @@ const Explore = () => {
             </div>
           ) : activeTab === "parks" ? (
             /* Parks Grid - Instagram style */
-            <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
-              {parks.length > 0 ? (
-                parks.map((park, index) => {
-                  const isLarge = index % 5 === 0;
-                  return (
-                    <motion.div
-                      key={park.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.03 }}
-                      onClick={() => navigate("/parks")}
-                      className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
-                    >
-                      <img
-                        src={parkImages[index % parkImages.length]}
-                        alt={park.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
-                        <span className="text-white font-semibold text-sm text-center px-2 line-clamp-2">{park.name}</span>
-                        <div className="flex items-center gap-1 text-white/90">
-                          <MapPin className="w-3 h-3" />
-                          <span className="text-xs">{park.city}</span>
-                        </div>
-                        {park.rating && (
-                          <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                            <span className="text-white text-xs">{park.rating.toFixed(1)}</span>
-                          </div>
-                        )}
-                      </div>
-                      {/* Park icon indicator */}
-                      <div className="absolute top-1 right-1">
-                        <Trees className="w-4 h-4 text-white drop-shadow-lg" />
-                      </div>
-                    </motion.div>
-                  );
-                })
-              ) : (
-                <div className="col-span-3 text-center py-20">
-                  <Trees className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">אין גינות כלבים להצגה</p>
+            <>
+              {userLocation && (
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <MapPin className="w-3 h-3 text-primary" />
+                  <span className="text-xs text-muted-foreground">ממויין לפי קרבה אליך</span>
                 </div>
               )}
-            </div>
+              {!userLocation && locationError && (
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <MapPin className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">ממויין לפי דירוג</span>
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
+                {parks.length > 0 ? (
+                  parks.map((park, index) => {
+                    const isLarge = index % 5 === 0;
+                    return (
+                      <motion.div
+                        key={park.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.03 }}
+                        onClick={() => navigate("/parks")}
+                        className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
+                      >
+                        <img
+                          src={parkImages[index % parkImages.length]}
+                          alt={park.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
+                          <span className="text-white font-semibold text-sm text-center px-2 line-clamp-2">{park.name}</span>
+                          <div className="flex items-center gap-1 text-white/90">
+                            <MapPin className="w-3 h-3" />
+                            <span className="text-xs">{park.city}</span>
+                          </div>
+                          {park.distance !== undefined && park.distance < 999999 && (
+                            <span className="text-white/90 text-xs">{park.distance.toFixed(1)} ק״מ</span>
+                          )}
+                          {park.rating && (
+                            <div className="flex items-center gap-1">
+                              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                              <span className="text-white text-xs">{park.rating.toFixed(1)}</span>
+                            </div>
+                          )}
+                        </div>
+                        {/* Distance badge */}
+                        {park.distance !== undefined && park.distance < 999999 && (
+                          <div className="absolute top-1 left-1 bg-black/60 rounded px-1.5 py-0.5">
+                            <span className="text-white text-[10px] font-medium">{park.distance.toFixed(1)} ק״מ</span>
+                          </div>
+                        )}
+                        {/* Park icon indicator */}
+                        <div className="absolute top-1 right-1">
+                          <Trees className="w-4 h-4 text-white drop-shadow-lg" />
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-3 text-center py-20">
+                    <Trees className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground">אין גינות כלבים להצגה</p>
+                  </div>
+                )}
+              </div>
+            </>
           ) : activeTab === "deals" ? (
             /* Deals Grid - Instagram style */
             <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
