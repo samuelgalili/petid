@@ -1,11 +1,18 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Smile } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { ReportDialog } from "@/components/ReportDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Custom Dog Tongue Icon Component
 const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; isLiked: boolean; className?: string }) => (
@@ -150,6 +157,7 @@ export const PostCard = ({
   const { checkAuth, isAuthenticated } = useRequireAuth();
   const [isLicking, setIsLicking] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   const handleComment = () => {
     if (!checkAuth("כדי להגיב על פוסטים, יש להתחבר")) return;
@@ -285,14 +293,31 @@ export const PostCard = ({
               {isFollowing ? "" : "עקוב"}
             </motion.button>
           )}
-          <motion.button 
-            className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          >
-            <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
-          </motion.button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <motion.button 
+                className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+              </motion.button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  if (checkAuth("כדי לדווח, יש להתחבר")) {
+                    setShowReportDialog(true);
+                  }
+                }}
+                className="text-destructive focus:text-destructive"
+              >
+                <Flag className="w-4 h-4 ml-2" />
+                דווח על פוסט
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -555,6 +580,14 @@ export const PostCard = ({
           </button>
         )}
       </div>
+
+      {/* Report Dialog */}
+      <ReportDialog
+        open={showReportDialog}
+        onOpenChange={setShowReportDialog}
+        reportedUserId={post.user_id}
+        reportedPostId={post.id}
+      />
     </motion.div>
   );
 };
