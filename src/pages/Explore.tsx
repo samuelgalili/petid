@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, TrendingUp, Hash, MapPin, Users, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Rss, Star, Percent } from "lucide-react";
+import { Search, X, TrendingUp, Hash, MapPin, Users, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Rss, Star, Percent, Sparkles, Lightbulb, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,6 +81,19 @@ const trendingTags = [
   { tag: "גורים", posts: 9300 },
 ];
 
+interface AIInsight {
+  type: "trend" | "recommendation" | "highlight";
+  title: string;
+  description: string;
+  relevance_score: number;
+}
+
+interface SmartDiscoveryResult {
+  insights: AIInsight[];
+  trending_topics: string[];
+  summary: string;
+}
+
 const Explore = () => {
   const navigate = useNavigate();
   const { checkAuth } = useRequireAuth();
@@ -92,6 +105,8 @@ const Explore = () => {
   const [parks, setParks] = useState<DogPark[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState<SmartDiscoveryResult | null>(null);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const [doubleTapPostId, setDoubleTapPostId] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([
     "כלבי גולדן",
@@ -99,13 +114,35 @@ const Explore = () => {
     "אימוץ בתל אביב"
   ]);
 
+  const fetchSmartDiscovery = async (type: string) => {
+    try {
+      setLoadingInsights(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const response = await supabase.functions.invoke("smart-discovery", {
+        body: { type, userId: user?.id },
+      });
+
+      if (response.data?.ai_insights) {
+        setAiInsights(response.data.ai_insights);
+      }
+    } catch (error) {
+      console.error("Error fetching smart discovery:", error);
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "parks") {
       fetchParks();
+      fetchSmartDiscovery("parks");
     } else if (activeTab === "deals") {
       fetchDeals();
+      fetchSmartDiscovery("deals");
     } else if (activeTab === "top" || activeTab === "feeds") {
       fetchExplorePosts();
+      fetchSmartDiscovery("posts");
     }
   }, [activeTab]);
 
@@ -465,6 +502,56 @@ const Explore = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI Insights Section */}
+      {!isSearchFocused && aiInsights && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-3 py-2"
+        >
+          <div className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 rounded-xl p-3 border border-primary/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold">תובנות חכמות</span>
+              {loadingInsights && (
+                <div className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              )}
+            </div>
+            {aiInsights.summary && (
+              <p className="text-xs text-muted-foreground mb-2">{aiInsights.summary}</p>
+            )}
+            {aiInsights.insights && aiInsights.insights.length > 0 && (
+              <div className="space-y-1.5">
+                {aiInsights.insights.slice(0, 3).map((insight, idx) => (
+                  <div key={idx} className="flex items-start gap-2 bg-background/50 rounded-lg p-2">
+                    {insight.type === "trend" ? (
+                      <Flame className="w-3.5 h-3.5 text-orange-500 mt-0.5 shrink-0" />
+                    ) : insight.type === "recommendation" ? (
+                      <Lightbulb className="w-3.5 h-3.5 text-yellow-500 mt-0.5 shrink-0" />
+                    ) : (
+                      <Star className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium line-clamp-1">{insight.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1">{insight.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {aiInsights.trending_topics && aiInsights.trending_topics.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {aiInsights.trending_topics.slice(0, 5).map((topic, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-xs py-0.5">
+                    #{topic}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Content based on active tab */}
       {!isSearchFocused && (
