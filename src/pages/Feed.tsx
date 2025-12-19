@@ -1022,29 +1022,39 @@ const Feed = () => {
     }}>
         {/* Rewards Bar */}
         <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 mx-4 rounded-2xl p-3 shadow-lg mb-4 cursor-pointer hover:shadow-xl transition-shadow"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-100 mx-4 rounded-2xl p-4 mb-4 cursor-pointer hover:bg-gray-50 transition-colors"
           onClick={() => navigate('/rewards')}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/30 backdrop-blur rounded-full flex items-center justify-center">
-                <Coins className="w-5 h-5 text-amber-800" />
-              </div>
-              <div>
-                <p className="text-amber-900 font-bold text-sm">{totalPoints.toLocaleString()} נקודות</p>
-                <p className="text-amber-800/80 text-xs">5% קאשבק בכל קנייה</p>
-              </div>
+          {/* Top Row - Icon and Amount */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200">
+              <Gift className="w-6 h-6 text-amber-500" />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="bg-white/30 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-amber-800" />
-                <span className="text-amber-900 font-semibold text-xs">פדה עכשיו</span>
-              </div>
-              <ChevronLeft className="w-5 h-5 text-amber-800" />
+            <div className="text-right">
+              <span className="text-2xl font-bold text-gray-800">₪{(totalPoints * 0.01).toFixed(2)}</span>
+              <span className="text-gray-600 text-sm mr-1">צברת</span>
             </div>
           </div>
+          
+          {/* Progress Bar */}
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-gray-500 text-sm font-medium">₪50</span>
+            <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full bg-amber-400 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min((totalPoints * 0.01 / 50) * 100, 100)}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+          
+          {/* Bottom Text */}
+          <p className="text-gray-500 text-xs text-center">
+            צוברים עוד ₪{(50 - totalPoints * 0.01).toFixed(2)} עד ה-31.12.25 והכסף עובר לארנק
+          </p>
         </motion.div>
 
         <div data-pets-section className="py-5 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
