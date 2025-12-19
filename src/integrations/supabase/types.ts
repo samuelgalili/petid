@@ -242,6 +242,81 @@ export type Database = {
           },
         ]
       }
+      business_profiles: {
+        Row: {
+          address: string | null
+          business_name: string
+          business_type: Database["public"]["Enums"]["business_type"]
+          city: string | null
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          is_featured: boolean | null
+          is_verified: boolean | null
+          logo_url: string | null
+          phone: string | null
+          price_range: string | null
+          rating: number | null
+          services: string[] | null
+          total_reviews: number | null
+          updated_at: string
+          user_id: string | null
+          view_count: number | null
+          website: string | null
+          working_hours: Json | null
+        }
+        Insert: {
+          address?: string | null
+          business_name: string
+          business_type: Database["public"]["Enums"]["business_type"]
+          city?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          services?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id?: string | null
+          view_count?: number | null
+          website?: string | null
+          working_hours?: Json | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          business_type?: Database["public"]["Enums"]["business_type"]
+          city?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          services?: string[] | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id?: string | null
+          view_count?: number | null
+          website?: string | null
+          working_hours?: Json | null
+        }
+        Relationships: []
+      }
       daily_training_sessions: {
         Row: {
           created_at: string
@@ -2435,6 +2510,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      business_type:
+        | "vet"
+        | "trainer"
+        | "groomer"
+        | "shop"
+        | "pet_sitter"
+        | "other"
       order_status:
         | "pending"
         | "processing"
@@ -2571,6 +2653,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      business_type: [
+        "vet",
+        "trainer",
+        "groomer",
+        "shop",
+        "pet_sitter",
+        "other",
+      ],
       order_status: [
         "pending",
         "processing",
