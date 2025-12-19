@@ -93,8 +93,8 @@ const AddPet = () => {
         if (draft.breedConfident !== undefined) setBreedConfident(draft.breedConfident);
         
         toast({
-          title: "Draft restored",
-          description: "Your previous progress has been restored"
+          title: "טיוטה שוחזרה",
+          description: "ההתקדמות הקודמת שלך שוחזרה"
         });
       } catch (e) {
         console.error('Error loading draft:', e);
@@ -138,8 +138,8 @@ const AddPet = () => {
   const clearDraft = () => {
     localStorage.removeItem('addPetDraft');
     toast({
-      title: "Draft cleared",
-      description: "Your saved progress has been removed"
+      title: "הטיוטה נוקתה",
+      description: "ההתקדמות השמורה שלך הוסרה"
     });
   };
   const detectBreed = async (base64Image: string) => {
@@ -200,8 +200,8 @@ const AddPet = () => {
     e.preventDefault();
     if (!petType) {
       toast({
-        title: "Error",
-        description: "Please choose a pet type",
+        title: "שגיאה",
+        description: "אנא בחר סוג חיית מחמד",
         variant: "destructive"
       });
       return;
@@ -211,8 +211,8 @@ const AddPet = () => {
       // For guest users, just show success and navigate
       if (isGuest) {
         toast({
-          title: "Guest Mode",
-          description: "Please log in to save your pet permanently. Your pet data won't be saved in guest mode.",
+          title: "מצב אורח",
+          description: "אנא התחבר כדי לשמור את חיית המחמד שלך לצמיתות. הנתונים לא יישמרו במצב אורח.",
           variant: "destructive"
         });
         navigate("/home");
@@ -230,8 +230,8 @@ const AddPet = () => {
       if (!user) {
         console.error("No user authenticated");
         toast({
-          title: "Authentication Required",
-          description: "Please log in to add a pet",
+          title: "נדרשת הזדהות",
+          description: "אנא התחבר כדי להוסיף חיית מחמד",
           variant: "destructive"
         });
         navigate("/auth");
@@ -310,8 +310,8 @@ const AddPet = () => {
       }
       
       toast({
-        title: "Success!",
-        description: `${formData.name} has been added successfully!`
+        title: "הצלחה!",
+        description: `${formData.name} נוסף בהצלחה!`
       });
       
       // Clear saved draft after successful submission
@@ -320,7 +320,7 @@ const AddPet = () => {
       navigate("/home");
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "שגיאה",
         description: error.message,
         variant: "destructive"
       });
@@ -387,7 +387,7 @@ const AddPet = () => {
     setSwipeDirection(null);
   };
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 pb-24 relative" dir="ltr">
+    <div className="min-h-screen bg-background p-4 pb-24 relative" dir="rtl">
       {/* Tutorial Overlay */}
       {showTutorial && (
         <motion.div 
@@ -399,38 +399,37 @@ const AddPet = () => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="bg-white rounded-3xl p-8 max-w-sm w-full space-y-6 shadow-2xl"
+            className="bg-card rounded-3xl p-8 max-w-sm w-full space-y-6 shadow-2xl"
           >
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-petid-blue to-petid-gold rounded-full flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 mx-auto bg-primary rounded-full flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 text-center">
-              Swipe to Navigate
+            <h3 className="text-2xl font-bold text-foreground text-center">
+              החלקה לניווט
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-petid-blue/10 flex items-center justify-center">
-                  <ArrowLeft className="w-5 h-5 text-petid-blue" />
+              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ArrowRight className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-gray-600 text-sm">
-                  Swipe <span className="font-semibold text-gray-900">right</span> to go back
+                <p className="text-muted-foreground text-sm">
+                  החלק <span className="font-semibold text-foreground">ימינה</span> לחזור
                 </p>
               </div>
-              <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-petid-blue/10 flex items-center justify-center">
-                  <ArrowRight className="w-5 h-5 text-petid-blue" />
+              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ArrowLeft className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-gray-600 text-sm">
-                  Swipe <span className="font-semibold text-gray-900">left</span> to continue
+                <p className="text-muted-foreground text-sm">
+                  החלק <span className="font-semibold text-foreground">שמאלה</span> להמשיך
                 </p>
               </div>
             </div>
             <Button
               onClick={dismissTutorial}
-              variant="instagram"
-              className="w-full h-11 rounded-xl"
+              className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Got it!
+              הבנתי!
             </Button>
           </motion.div>
         </motion.div>
@@ -447,9 +446,9 @@ const AddPet = () => {
             setCurrentStep(prev => prev - 1);
             setShowValidationError(false);
           }}
-          className="fixed top-6 left-4 z-[100] p-2.5 bg-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 border border-gray-100"
+          className="fixed top-6 right-4 z-[100] p-2.5 bg-card rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 border border-border"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
+          <ArrowRight className="w-5 h-5 text-foreground" />
         </motion.button>
       )}
 
@@ -460,31 +459,31 @@ const AddPet = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 bg-[#0095F6]/10 rounded-full">
-            <span className="text-xs font-semibold text-[#0095F6]">Step {currentStep} of 4</span>
+          <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 bg-primary/10 rounded-full">
+            <span className="text-xs font-semibold text-primary">שלב {currentStep} מתוך 4</span>
             {autoSaveStatus === 'saved' && (
-              <span className="text-xs text-green-600">• Saved</span>
+              <span className="text-xs text-green-600">• נשמר</span>
             )}
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            {currentStep === 1 && "Choose Your Pet"}
-            {currentStep === 2 && "Pet Details"}
-            {currentStep === 3 && "Additional Info"}
-            {currentStep === 4 && "Review & Confirm"}
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            {currentStep === 1 && "בחר את חיית המחמד שלך"}
+            {currentStep === 2 && "פרטי חיית המחמד"}
+            {currentStep === 3 && "מידע נוסף"}
+            {currentStep === 4 && "סקירה ואישור"}
           </h1>
-          <p className="text-gray-500 text-sm max-w-xs mx-auto">
-            {currentStep === 1 && "Select your pet type to get started"}
-            {currentStep === 2 && "Tell us about your furry friend"}
-            {currentStep === 3 && "Just a few more details"}
-            {currentStep === 4 && "Make sure everything looks right"}
+          <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+            {currentStep === 1 && "בחר את סוג חיית המחמד שלך כדי להתחיל"}
+            {currentStep === 2 && "ספר לנו על החבר הפרוותי שלך"}
+            {currentStep === 3 && "עוד כמה פרטים קטנים"}
+            {currentStep === 4 && "וודא שהכל נראה נכון"}
           </p>
           {currentStep > 1 && (
             <button
               type="button"
               onClick={clearDraft}
-              className="mt-2 text-xs text-gray-400 hover:text-gray-600 underline transition-colors"
+              className="mt-2 text-xs text-muted-foreground hover:text-foreground underline transition-colors"
             >
-              Clear saved draft
+              נקה טיוטה שמורה
             </button>
           )}
         </motion.div>
@@ -495,22 +494,22 @@ const AddPet = () => {
             {[1, 2, 3, 4].map((step) => (
               <div key={step} className="flex-1 flex items-center">
                 <div className="flex-1 relative">
-                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ 
                         width: step < currentStep ? '100%' : step === currentStep ? '50%' : '0%' 
                       }}
                       transition={{ duration: 0.5, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-petid-blue to-petid-gold rounded-full"
+                      className="h-full bg-primary rounded-full"
                     />
                   </div>
                   <div className={`absolute -top-2.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                     step < currentStep 
-                      ? 'bg-gradient-to-r from-petid-blue to-petid-gold text-white scale-90' 
+                      ? 'bg-primary text-primary-foreground scale-90' 
                       : step === currentStep 
-                        ? 'bg-white border-2 border-petid-blue text-petid-blue scale-110 shadow-lg'
-                        : 'bg-gray-100 text-gray-400'
+                        ? 'bg-card border-2 border-primary text-primary scale-110 shadow-lg'
+                        : 'bg-muted text-muted-foreground'
                   }`}>
                     {step < currentStep ? '✓' : step}
                   </div>
@@ -526,10 +525,10 @@ const AddPet = () => {
               <motion.div 
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
               >
-                <div className="flex items-center gap-1 text-[#0095F6]">
-                  <ArrowLeft className="w-8 h-8 animate-pulse" strokeWidth={2.5} />
+                <div className="flex items-center gap-1 text-primary">
+                  <ArrowRight className="w-8 h-8 animate-pulse" strokeWidth={2.5} />
                 </div>
               </motion.div>
             )}
@@ -538,10 +537,10 @@ const AddPet = () => {
               <motion.div 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
               >
-                <div className="flex items-center gap-1 text-[#0095F6]">
-                  <ArrowRight className="w-8 h-8 animate-pulse" strokeWidth={2.5} />
+                <div className="flex items-center gap-1 text-primary">
+                  <ArrowLeft className="w-8 h-8 animate-pulse" strokeWidth={2.5} />
                 </div>
               </motion.div>
             )}
@@ -567,12 +566,12 @@ const AddPet = () => {
                           setPetType("dog");
                           setCurrentStep(2);
                         }} 
-                        className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-3xl border-2 border-gray-100 hover:border-[#0095F6] hover:shadow-xl transition-all duration-300"
+                        className="group relative flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-border hover:border-primary hover:shadow-xl transition-all duration-300"
                       >
                         <div className="w-28 h-28 md:w-36 md:h-36 flex items-center justify-center mb-3">
-                          <img src={dogIcon} alt="Dog" className="w-full h-full object-contain drop-shadow-lg" />
+                          <img src={dogIcon} alt="כלב" className="w-full h-full object-contain drop-shadow-lg" />
                         </div>
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-[#0095F6] transition-colors">Dog</span>
+                        <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">כלב</span>
                       </motion.button>
                       
                       <motion.button 
@@ -583,12 +582,12 @@ const AddPet = () => {
                           setPetType("cat");
                           setCurrentStep(2);
                         }} 
-                        className="group relative flex flex-col items-center justify-center p-6 bg-white rounded-3xl border-2 border-gray-100 hover:border-[#0095F6] hover:shadow-xl transition-all duration-300"
+                        className="group relative flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 border-border hover:border-primary hover:shadow-xl transition-all duration-300"
                       >
                         <div className="w-24 h-24 md:w-32 md:h-32 flex items-center justify-center mb-3">
-                          <img src={catIcon} alt="Cat" className="w-full h-full object-contain drop-shadow-lg" />
+                          <img src={catIcon} alt="חתול" className="w-full h-full object-contain drop-shadow-lg" />
                         </div>
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-[#0095F6] transition-colors">Cat</span>
+                        <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">חתול</span>
                       </motion.button>
                     </div>
                   </motion.div>
@@ -602,36 +601,36 @@ const AddPet = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="space-y-5 bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
+                    className="space-y-5 bg-card rounded-3xl p-6 shadow-sm border border-border"
                   >
                     {/* Image Upload */}
                     <div className="space-y-4">
-                      <Label className="text-sm font-semibold text-gray-900">Pet Photo</Label>
+                      <Label className="text-sm font-semibold text-foreground">תמונת חיית המחמד</Label>
                       <div className="flex flex-col items-center gap-4">
                         {imagePreview ? (
                           <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-petid-blue to-petid-gold rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                            <img src={imagePreview} alt="Preview" className="relative w-28 h-28 rounded-full object-cover ring-4 ring-white shadow-xl" />
+                            <div className="absolute -inset-1 bg-primary rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                            <img src={imagePreview} alt="תצוגה מקדימה" className="relative w-28 h-28 rounded-full object-cover ring-4 ring-card shadow-xl" />
                             {breedDetecting && (
                               <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                <Loader2 className="w-6 h-6 text-primary-foreground animate-spin" />
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
-                            <Camera className="w-8 h-8 text-gray-400" />
+                          <div className="w-28 h-28 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-border">
+                            <Camera className="w-8 h-8 text-muted-foreground" />
                           </div>
                         )}
                         <div className="flex gap-3 w-full">
-                          <Label htmlFor="image-upload" className="flex-1 flex items-center gap-2 cursor-pointer bg-gray-50 border border-gray-200 rounded-xl p-3 hover:bg-gray-100 hover:border-[#0095F6] transition-all duration-200 justify-center">
-                            <Upload className="w-4 h-4 text-gray-600" />
-                            <span className="font-medium text-sm text-gray-700">Upload</span>
+                          <Label htmlFor="image-upload" className="flex-1 flex items-center gap-2 cursor-pointer bg-muted border border-border rounded-xl p-3 hover:bg-muted/80 hover:border-primary transition-all duration-200 justify-center">
+                            <Upload className="w-4 h-4 text-foreground" />
+                            <span className="font-medium text-sm text-foreground">העלאה</span>
                             <Input id="image-upload" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                           </Label>
-                          <Label htmlFor="image-camera" className="flex-1 flex items-center gap-2 cursor-pointer bg-gray-50 border border-gray-200 rounded-xl p-3 hover:bg-gray-100 hover:border-[#0095F6] transition-all duration-200 justify-center">
-                            <Camera className="w-4 h-4 text-gray-600" />
-                            <span className="font-medium text-sm text-gray-700">Camera</span>
+                          <Label htmlFor="image-camera" className="flex-1 flex items-center gap-2 cursor-pointer bg-muted border border-border rounded-xl p-3 hover:bg-muted/80 hover:border-primary transition-all duration-200 justify-center">
+                            <Camera className="w-4 h-4 text-foreground" />
+                            <span className="font-medium text-sm text-foreground">מצלמה</span>
                             <Input id="image-camera" type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden" />
                           </Label>
                         </div>
@@ -640,40 +639,40 @@ const AddPet = () => {
 
                     {/* Name */}
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-sm font-semibold text-gray-900">
-                        Pet Name <span className="text-red-500">*</span>
+                      <Label htmlFor="name" className="text-sm font-semibold text-foreground">
+                        שם <span className="text-destructive">*</span>
                       </Label>
                       <Input 
                         id="name" 
                         value={formData.name} 
                         onChange={e => setFormData({ ...formData, name: e.target.value })} 
-                        placeholder="What's your pet's name?" 
+                        placeholder="איך קוראים לחיית המחמד שלך?" 
                         required 
                         disabled={loading} 
                         className={cn(
-                          "h-11 text-sm bg-gray-50 border border-gray-200 rounded-xl placeholder:text-gray-400 focus:border-[#0095F6] focus:ring-1 focus:ring-[#0095F6]/20 transition-all",
-                          showValidationError && formData.name.trim() === "" && "border-red-400 bg-red-50"
+                          "h-11 text-sm bg-muted border border-border rounded-xl placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all",
+                          showValidationError && formData.name.trim() === "" && "border-destructive bg-destructive/10"
                         )}
                       />
                       {showValidationError && formData.name.trim() === "" && (
-                        <p className="text-xs text-red-500 animate-fade-in">Pet name is required</p>
+                        <p className="text-xs text-destructive animate-fade-in">שם חיית המחמד הוא שדה חובה</p>
                       )}
                     </div>
 
                     {/* Birth Date */}
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-900">Birth Date</Label>
+                      <Label className="text-sm font-semibold text-foreground">תאריך לידה</Label>
                       <Popover open={showCalendar} onOpenChange={setShowCalendar}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full h-11 text-sm bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-[#0095F6] justify-start text-left font-normal",
-                              !formData.birthDate && "text-gray-400"
+                              "w-full h-11 text-sm bg-muted border border-border rounded-xl hover:bg-muted/80 hover:border-primary justify-start text-right font-normal",
+                              !formData.birthDate && "text-muted-foreground"
                             )}
                           >
-                            <CalendarIcon className="mr-2 h-4 w-4 text-gray-500" />
-                            {formData.birthDate ? format(formData.birthDate, "PPP") : "Select birth date"}
+                            <CalendarIcon className="ml-2 h-4 w-4 text-muted-foreground" />
+                            {formData.birthDate ? format(formData.birthDate, "PPP") : "בחר תאריך לידה"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -694,48 +693,48 @@ const AddPet = () => {
 
                     {/* Breed */}
                     <div className="space-y-2">
-                      <Label htmlFor="breed" className="text-sm font-semibold text-gray-900">
-                        Breed <span className="text-red-500">*</span>
+                      <Label htmlFor="breed" className="text-sm font-semibold text-foreground">
+                        גזע <span className="text-destructive">*</span>
                       </Label>
                       {breedDetecting && (
-                        <div className="flex items-center gap-2 text-xs text-[#0095F6] font-medium">
+                        <div className="flex items-center gap-2 text-xs text-primary font-medium">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          AI is analyzing your photo...
+                          AI מנתח את התמונה שלך...
                         </div>
                       )}
                       {formData.breed && !breedDetecting && breedConfidence !== null && (
-                        <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                          <Sparkles className="w-4 h-4 text-[#0095F6]" />
-                          <span className="text-xs text-gray-600">AI detected: <strong>{formData.breed}</strong></span>
+                        <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          <span className="text-xs text-muted-foreground">AI זיהה: <strong>{formData.breed}</strong></span>
                           <span className={`text-sm font-semibold ${breedConfident ? 'text-green-600' : 'text-orange-500'}`}>
                             {breedConfident ? '✓' : '?'}
                           </span>
                         </div>
                       )}
                       {!breedConfident && formData.breed && (
-                        <p className="text-xs text-orange-600">Please confirm or correct the detected breed</p>
+                        <p className="text-xs text-orange-600">אנא אשר או תקן את הגזע שזוהה</p>
                       )}
                       <div className="relative">
                         <Input 
                           id="breed" 
                           value={formData.breed} 
                           onChange={e => setFormData({ ...formData, breed: e.target.value })} 
-                          placeholder={breedDetecting ? "Detecting breed..." : "What breed?"} 
+                          placeholder={breedDetecting ? "מזהה גזע..." : "מה הגזע?"} 
                           disabled={loading || breedDetecting} 
                           className={cn(
-                            "h-11 text-sm bg-gray-50 border border-gray-200 rounded-xl placeholder:text-gray-400 focus:border-[#0095F6] focus:ring-1 focus:ring-[#0095F6]/20 transition-all",
-                            breedDetecting && "pr-10",
-                            showValidationError && formData.breed.trim() === "" && "border-red-400 bg-red-50"
+                            "h-11 text-sm bg-muted border border-border rounded-xl placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all",
+                            breedDetecting && "pl-10",
+                            showValidationError && formData.breed.trim() === "" && "border-destructive bg-destructive/10"
                           )}
                         />
                         {breedDetecting && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                            <Loader2 className="w-4 h-4 text-[#0095F6] animate-spin" />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="w-4 h-4 text-primary animate-spin" />
                           </div>
                         )}
                       </div>
                       {showValidationError && formData.breed.trim() === "" && (
-                        <p className="text-xs text-red-500 animate-fade-in">Breed is required - upload a photo or enter manually</p>
+                        <p className="text-xs text-destructive animate-fade-in">גזע הוא שדה חובה - העלה תמונה או הזן ידנית</p>
                       )}
                     </div>
 
@@ -743,7 +742,6 @@ const AddPet = () => {
                     <div className="pt-2">
                       <Button
                         type="button"
-                        variant="instagram"
                         onClick={() => {
                           if (canProceed()) {
                             setSlideDirection('left');
@@ -755,17 +753,17 @@ const AddPet = () => {
                           }
                         }}
                         disabled={!canProceed() || breedDetecting}
-                        className="w-full h-11 rounded-xl"
+                        className="w-full h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         {breedDetecting ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Detecting...
+                            <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                            מזהה...
                           </>
                         ) : (
                           <>
-                            Continue
-                            <ArrowRight className="ml-2 h-4 w-4" />
+                            המשך
+                            <ArrowLeft className="mr-2 h-4 w-4" />
                           </>
                         )}
                       </Button>
@@ -781,32 +779,32 @@ const AddPet = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="space-y-5 bg-white rounded-3xl p-6 shadow-sm border border-gray-100"
+                    className="space-y-5 bg-card rounded-3xl p-6 shadow-sm border border-border"
                   >
                     {/* Gender */}
                     <div className="space-y-2">
-                      <Label htmlFor="gender" className="text-sm font-semibold text-gray-900">Gender</Label>
+                      <Label htmlFor="gender" className="text-sm font-semibold text-foreground">מין</Label>
                       <Select value={formData.gender} onValueChange={value => setFormData({ ...formData, gender: value })} disabled={loading}>
-                        <SelectTrigger className="h-11 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0095F6] focus:ring-1 focus:ring-[#0095F6]/20 transition-all">
-                          <SelectValue placeholder="Select gender" />
+                        <SelectTrigger className="h-11 text-sm bg-muted border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
+                          <SelectValue placeholder="בחר מין" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="male">זכר</SelectItem>
+                          <SelectItem value="female">נקבה</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {/* Neutered */}
                     <div className="space-y-2">
-                      <Label htmlFor="neutered" className="text-sm font-semibold text-gray-900">Neutered/Spayed</Label>
+                      <Label htmlFor="neutered" className="text-sm font-semibold text-foreground">מסורס/מעוקר</Label>
                       <Select value={formData.is_neutered} onValueChange={value => setFormData({ ...formData, is_neutered: value })} disabled={loading}>
-                        <SelectTrigger className="h-11 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0095F6] focus:ring-1 focus:ring-[#0095F6]/20 transition-all">
-                          <SelectValue placeholder="Select status" />
+                        <SelectTrigger className="h-11 text-sm bg-muted border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
+                          <SelectValue placeholder="בחר סטטוס" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="true">Yes</SelectItem>
-                          <SelectItem value="false">No</SelectItem>
+                          <SelectItem value="true">כן</SelectItem>
+                          <SelectItem value="false">לא</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -823,18 +821,18 @@ const AddPet = () => {
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     className="space-y-6"
                   >
-                    <h3 className="text-xl font-jakarta font-bold text-gray-900 text-center mb-6">
-                      Review Pet Details
+                    <h3 className="text-xl font-jakarta font-bold text-foreground text-center mb-6">
+                      סקירת פרטי חיית המחמד
                     </h3>
 
                     {/* Pet Photo */}
                       {imagePreview && (
                       <div className="flex justify-center relative">
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-gradient-primary rounded-full blur-lg opacity-30"></div>
+                          <div className="absolute inset-0 bg-primary rounded-full blur-lg opacity-30"></div>
                           <img 
                             src={imagePreview} 
-                            alt="Pet preview" 
+                            alt="תצוגה מקדימה" 
                             className="relative w-32 h-32 rounded-full object-cover ring-4 ring-accent/30 shadow-[0_8px_30px_rgba(0,0,0,0.2)]" 
                           />
                           <button
@@ -843,9 +841,9 @@ const AddPet = () => {
                               setSlideDirection('right');
                               setCurrentStep(2);
                             }}
-                            className="absolute bottom-0 right-0 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-all hover:scale-110 border-2 border-accent"
+                            className="absolute bottom-0 left-0 p-2 bg-card rounded-full shadow-lg hover:bg-muted transition-all hover:scale-110 border-2 border-accent"
                           >
-                            <Edit2 className="w-4 h-4 text-gray-900" />
+                            <Edit2 className="w-4 h-4 text-foreground" />
                           </button>
                         </div>
                       </div>
@@ -853,10 +851,10 @@ const AddPet = () => {
 
                     {/* Summary Cards */}
                     <div className="space-y-3">
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                      <div className="bg-card rounded-xl p-4 border-2 border-border shadow-sm flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-gray-500 font-jakarta mb-1">Pet Type</p>
-                          <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{petType}</p>
+                          <p className="text-xs text-muted-foreground font-jakarta mb-1">סוג חיית מחמד</p>
+                          <p className="text-base font-jakarta font-semibold text-foreground">{petType === 'dog' ? 'כלב' : 'חתול'}</p>
                         </div>
                         <button
                           type="button"
@@ -864,16 +862,16 @@ const AddPet = () => {
                             setSlideDirection('right');
                             setCurrentStep(1);
                           }}
-                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                          className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
                         >
-                          <Edit2 className="w-4 h-4 text-gray-600" />
+                          <Edit2 className="w-4 h-4 text-muted-foreground" />
                         </button>
                       </div>
 
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                      <div className="bg-card rounded-xl p-4 border-2 border-border shadow-sm flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-gray-500 font-jakarta mb-1">Name</p>
-                          <p className="text-base font-jakarta font-semibold text-gray-900">{formData.name}</p>
+                          <p className="text-xs text-muted-foreground font-jakarta mb-1">שם</p>
+                          <p className="text-base font-jakarta font-semibold text-foreground">{formData.name}</p>
                         </div>
                         <button
                           type="button"
@@ -881,17 +879,17 @@ const AddPet = () => {
                             setSlideDirection('right');
                             setCurrentStep(2);
                           }}
-                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                          className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
                         >
-                          <Edit2 className="w-4 h-4 text-gray-600" />
+                          <Edit2 className="w-4 h-4 text-muted-foreground" />
                         </button>
                       </div>
 
                       {formData.birthDate && (
-                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                        <div className="bg-card rounded-xl p-4 border-2 border-border shadow-sm flex items-center justify-between">
                           <div>
-                            <p className="text-xs text-gray-500 font-jakarta mb-1">Birth Date</p>
-                            <p className="text-base font-jakarta font-semibold text-gray-900">{format(formData.birthDate, "PPP")}</p>
+                            <p className="text-xs text-muted-foreground font-jakarta mb-1">תאריך לידה</p>
+                            <p className="text-base font-jakarta font-semibold text-foreground">{format(formData.birthDate, "PPP")}</p>
                           </div>
                           <button
                             type="button"
@@ -899,15 +897,15 @@ const AddPet = () => {
                               setSlideDirection('right');
                               setCurrentStep(2);
                             }}
-                            className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                            className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
                           >
-                            <Edit2 className="w-4 h-4 text-gray-600" />
+                            <Edit2 className="w-4 h-4 text-muted-foreground" />
                           </button>
                         </div>
                       )}
 
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm">
-                        <p className="text-xs text-gray-500 font-jakarta mb-1">Breed</p>
+                      <div className="bg-card rounded-xl p-4 border-2 border-border shadow-sm">
+                        <p className="text-xs text-muted-foreground font-jakarta mb-1">גזע</p>
                         {isEditingBreed ? (
                           <div className="flex items-center gap-2">
                             <Input 
@@ -923,12 +921,12 @@ const AddPet = () => {
                                 if (tempBreed.trim()) {
                                   setFormData({ ...formData, breed: tempBreed });
                                   setIsEditingBreed(false);
-                                  toast({ title: "Breed updated", description: "Changes saved successfully" });
+                                  toast({ title: "גזע עודכן", description: "השינויים נשמרו בהצלחה" });
                                 }
                               }}
-                              className="h-9 bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 font-jakarta"
+                              className="h-9 bg-accent hover:bg-accent/90 text-accent-foreground font-jakarta"
                             >
-                              Save
+                              שמור
                             </Button>
                             <Button
                               type="button"
@@ -940,13 +938,13 @@ const AddPet = () => {
                               }}
                               className="h-9 font-jakarta"
                             >
-                              Cancel
+                              ביטול
                             </Button>
                           </div>
                         ) : (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <p className="text-base font-jakarta font-semibold text-gray-900">{formData.breed}</p>
+                              <p className="text-base font-jakarta font-semibold text-foreground">{formData.breed}</p>
                               {breedConfidence !== null && (
                                 <span className={`text-xl font-semibold ${
                                   breedConfident ? 'text-green-600' : 'text-red-600'
@@ -961,19 +959,19 @@ const AddPet = () => {
                                 setTempBreed(formData.breed);
                                 setIsEditingBreed(true);
                               }}
-                              className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                              className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
                             >
-                              <Edit2 className="w-4 h-4 text-gray-600" />
+                              <Edit2 className="w-4 h-4 text-muted-foreground" />
                             </button>
                           </div>
                         )}
                       </div>
 
                       {formData.gender && (
-                        <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                        <div className="bg-card rounded-xl p-4 border-2 border-border shadow-sm flex items-center justify-between">
                           <div>
-                            <p className="text-xs text-gray-500 font-jakarta mb-1">Gender</p>
-                            <p className="text-base font-jakarta font-semibold text-gray-900 capitalize">{formData.gender}</p>
+                            <p className="text-xs text-muted-foreground font-jakarta mb-1">מין</p>
+                            <p className="text-base font-jakarta font-semibold text-foreground">{formData.gender === 'male' ? 'זכר' : 'נקבה'}</p>
                           </div>
                           <button
                             type="button"
@@ -981,17 +979,17 @@ const AddPet = () => {
                               setSlideDirection('right');
                               setCurrentStep(3);
                             }}
-                            className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                            className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
                           >
-                            <Edit2 className="w-4 h-4 text-gray-600" />
+                            <Edit2 className="w-4 h-4 text-muted-foreground" />
                           </button>
                         </div>
                       )}
 
-                      <div className="bg-white rounded-xl p-4 border-2 border-gray-100 shadow-sm flex items-center justify-between">
+                      <div className="bg-card rounded-xl p-4 border-2 border-border shadow-sm flex items-center justify-between">
                         <div>
-                          <p className="text-xs text-gray-500 font-jakarta mb-1">Neutered/Spayed</p>
-                          <p className="text-base font-jakarta font-semibold text-gray-900">{formData.is_neutered === "true" ? "Yes" : "No"}</p>
+                          <p className="text-xs text-muted-foreground font-jakarta mb-1">מסורס/מעוקר</p>
+                          <p className="text-base font-jakarta font-semibold text-foreground">{formData.is_neutered === "true" ? "כן" : "לא"}</p>
                         </div>
                         <button
                           type="button"
@@ -999,15 +997,15 @@ const AddPet = () => {
                             setSlideDirection('right');
                             setCurrentStep(3);
                           }}
-                          className="p-2 hover:bg-gray-50 rounded-lg transition-all hover:scale-110"
+                          className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
                         >
-                          <Edit2 className="w-4 h-4 text-gray-600" />
+                          <Edit2 className="w-4 h-4 text-muted-foreground" />
                         </button>
                       </div>
                     </div>
 
-                    <p className="text-xs text-gray-500 font-jakarta text-center pt-4">
-                      Please review all details before submitting
+                    <p className="text-xs text-muted-foreground font-jakarta text-center pt-4">
+                      אנא בדוק את כל הפרטים לפני השליחה
                     </p>
                   </motion.div>
                 )}
@@ -1022,10 +1020,10 @@ const AddPet = () => {
                       setSlideDirection('left');
                       setCurrentStep(4);
                     }}
-                    className="w-full h-12 text-sm bg-gradient-primary hover:opacity-90 text-gray-900 rounded-full font-jakarta font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                    className="w-full h-12 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-jakarta font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                   >
-                    <ArrowRight className="mr-2 h-4 w-4" />
-                    Continue to Review
+                    <ArrowLeft className="ml-2 h-4 w-4" />
+                    המשך לסקירה
                   </Button>
                 )}
                 {currentStep === 4 && (
@@ -1036,25 +1034,25 @@ const AddPet = () => {
                         setSlideDirection('right');
                         setCurrentStep(3);
                       }}
-                      className="h-12 text-sm border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-900 rounded-full font-jakarta font-bold transition-all duration-300 hover:scale-[1.02] px-6"
+                      className="h-12 text-sm border-2 border-border bg-card hover:bg-muted text-foreground rounded-full font-jakarta font-bold transition-all duration-300 hover:scale-[1.02] px-6"
                     >
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                      חזרה
                     </Button>
                     <Button 
                       type="submit" 
                       disabled={loading} 
-                      className="flex-1 h-12 text-sm bg-gradient-primary hover:opacity-90 text-gray-900 rounded-full font-jakarta font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="flex-1 h-12 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-jakarta font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Saving...
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                          שומר...
                         </>
                       ) : (
                         <>
-                          <Sparkles className="mr-2 h-4 w-4" />
-                          Add Pet
+                          <Sparkles className="ml-2 h-4 w-4" />
+                          הוסף חיית מחמד
                         </>
                       )}
                     </Button>
