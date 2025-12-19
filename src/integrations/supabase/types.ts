@@ -373,6 +373,96 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          id: string
+          joined_at: string
+          post_id: string | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          id?: string
+          joined_at?: string
+          post_id?: string | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          id?: string
+          joined_at?: string
+          post_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participants_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          description_he: string | null
+          ends_at: string | null
+          hashtag: string
+          id: string
+          is_active: boolean
+          participant_count: number
+          starts_at: string
+          title: string
+          title_he: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          description_he?: string | null
+          ends_at?: string | null
+          hashtag: string
+          id?: string
+          is_active?: boolean
+          participant_count?: number
+          starts_at?: string
+          title: string
+          title_he: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          description_he?: string | null
+          ends_at?: string | null
+          hashtag?: string
+          id?: string
+          is_active?: boolean
+          participant_count?: number
+          starts_at?: string
+          title?: string
+          title_he?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_training_sessions: {
         Row: {
           created_at: string
