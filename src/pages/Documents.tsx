@@ -379,13 +379,13 @@ export default function Documents() {
         <div className="container mx-auto px-4 pt-4 pb-6 max-w-lg">
           {/* Header Section */}
           <div className="mb-5 text-center">
-            <div className="w-14 h-14 mx-auto mb-2.5 rounded-2xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px] shadow-lg shadow-[#DD2A7B]/20">
-              <div className="w-full h-full rounded-[12px] bg-white flex items-center justify-center">
-                <FileText className="w-6 h-6 text-[#DD2A7B]" />
+            <div className="w-14 h-14 mx-auto mb-2.5 rounded-2xl bg-primary p-[2px] shadow-lg shadow-primary/20">
+              <div className="w-full h-full rounded-[12px] bg-background flex items-center justify-center">
+                <FileText className="w-6 h-6 text-primary" />
               </div>
             </div>
-            <h2 className="text-lg font-bold text-gray-800">המסמכים שלי</h2>
-            <p className="text-gray-500 text-xs mt-0.5">ניהול אישורי חיסון ומסמכים רפואיים</p>
+            <h2 className="text-lg font-bold text-foreground">המסמכים שלי</h2>
+            <p className="text-muted-foreground text-xs mt-0.5">ניהול אישורי חיסון ומסמכים רפואיים</p>
           </div>
 
           {/* Search Input - Separate */}
@@ -452,15 +452,15 @@ export default function Documents() {
           {/* Upload Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-white rounded-3xl">
-              {/* Instagram-style gradient header */}
-              <div className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-5">
+              {/* Header */}
+              <div className="bg-primary p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-white font-bold text-lg">העלאת מסמך חדש</h2>
-                    <p className="text-white/80 text-sm mt-1">שמור את המסמכים החשובים</p>
+                    <h2 className="text-primary-foreground font-bold text-lg">העלאת מסמך חדש</h2>
+                    <p className="text-primary-foreground/80 text-sm mt-1">שמור את המסמכים החשובים</p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                    <Upload className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-primary-foreground" />
                   </div>
                 </div>
               </div>
@@ -538,8 +538,8 @@ export default function Documents() {
                       relative flex flex-col items-center justify-center w-full h-28 
                       border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 group
                       ${selectedFile 
-                        ? 'border-[#DD2A7B] bg-gradient-to-br from-[#DD2A7B]/5 to-[#8134AF]/5' 
-                        : 'border-gray-300 hover:border-[#DD2A7B] hover:bg-gray-50'
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-muted-foreground/30 hover:border-primary hover:bg-muted'
                       }
                     `}
                   >
@@ -552,21 +552,21 @@ export default function Documents() {
                     />
                     {selectedFile ? (
                       <div className="flex flex-col items-center text-center px-4">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center mb-2 animate-scale-in">
-                          <FileText className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center mb-2 animate-scale-in">
+                          <FileText className="w-6 h-6 text-primary-foreground" />
                         </div>
-                        <p className="text-sm font-medium text-gray-800 truncate max-w-full">{selectedFile.name}</p>
-                        <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(0)} KB</p>
+                        <p className="text-sm font-medium text-foreground truncate max-w-full">{selectedFile.name}</p>
+                        <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(0)} KB</p>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center text-center">
-                        <div className="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-[#DD2A7B]/10 flex items-center justify-center mb-2 transition-all duration-300">
-                          <Upload className="w-5 h-5 text-gray-400 group-hover:text-[#DD2A7B] transition-colors" />
+                        <div className="w-12 h-12 rounded-full bg-muted group-hover:bg-primary/10 flex items-center justify-center mb-2 transition-all duration-300">
+                          <Upload className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
-                        <p className="text-sm text-gray-600">
-                          <span className="text-[#DD2A7B] font-medium">לחץ לבחירה</span> או גרור קובץ
+                        <p className="text-sm text-muted-foreground">
+                          <span className="text-primary font-medium">לחץ לבחירה</span> או גרור קובץ
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG, DOC (עד 10MB)</p>
+                        <p className="text-xs text-muted-foreground/60 mt-1">PDF, JPG, PNG, DOC (עד 10MB)</p>
                       </div>
                     )}
                   </label>

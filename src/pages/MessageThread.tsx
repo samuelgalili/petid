@@ -324,8 +324,8 @@ export default function MessageThread() {
                     <div
                       className={`max-w-[70%] px-4 py-2 ${
                         isSender
-                          ? "bg-[#3797F0] text-white rounded-[22px] rounded-br-md"
-                          : "bg-gray-100 text-[#262626] rounded-[22px] rounded-bl-md"
+                          ? "bg-primary text-primary-foreground rounded-[22px] rounded-br-md"
+                          : "bg-muted text-foreground rounded-[22px] rounded-bl-md"
                       }`}
                     >
                       <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">
