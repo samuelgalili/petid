@@ -577,10 +577,10 @@ export default function Documents() {
                   onClick={handleUpload}
                   disabled={uploading || !selectedFile || !uploadPetId || !uploadTitle}
                   className={`
-                    w-full h-12 rounded-xl font-bold text-white text-base transition-all duration-300
+                    w-full h-12 rounded-xl font-bold text-primary-foreground text-base transition-all duration-300
                     ${uploading || !selectedFile || !uploadPetId || !uploadTitle
-                      ? 'bg-gray-300 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#DD2A7B]/25'
+                      ? 'bg-muted-foreground/30 cursor-not-allowed'
+                      : 'bg-primary hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/25'
                     }
                   `}
                 >

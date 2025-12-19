@@ -149,8 +149,8 @@ const OrderHistory = () => {
       {/* Loading State */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7DD3C0]"></div>
-          <p className="text-sm text-gray-600 font-jakarta mt-4">Loading your orders...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground font-jakarta mt-4">טוען את ההזמנות שלך...</p>
         </div>
       )}
 

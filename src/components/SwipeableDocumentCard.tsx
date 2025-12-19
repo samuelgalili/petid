@@ -138,9 +138,9 @@ export function SwipeableDocumentCard({
                 <p className="text-sm text-gray-600 mb-2 line-clamp-2">{doc.description}</p>
               )}
               
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#F58529] to-[#DD2A7B]" />
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                   הועלה ב-{new Date(doc.uploaded_at).toLocaleDateString("he-IL")}
                 </div>
                 

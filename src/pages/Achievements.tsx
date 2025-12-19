@@ -11,9 +11,9 @@ import { fadeIn, staggerContainer, staggerItem } from "@/lib/animations";
 import BottomNav from "@/components/BottomNav";
 
 const rarityColors = {
-  common: "bg-gray-100 text-gray-900 border-gray-300",
-  rare: "bg-blue-100 text-blue-900 border-blue-300",
-  epic: "bg-purple-100 text-purple-900 border-purple-300",
+  common: "bg-secondary text-foreground border-border",
+  rare: "bg-primary/10 text-primary border-primary/30",
+  epic: "bg-accent/10 text-accent border-accent/30",
   legendary: "bg-yellow-100 text-yellow-900 border-yellow-300"
 };
 

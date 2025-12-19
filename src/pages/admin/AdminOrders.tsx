@@ -247,7 +247,7 @@ const AdminOrders = () => {
       {/* Orders List */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7DD3C0]"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-4">

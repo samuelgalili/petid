@@ -411,22 +411,22 @@ const ProductDetail = () => {
                 </AccordionContent>
               </AccordionItem>
               
-              <AccordionItem value="ingredients" className="border-0 bg-gray-50 rounded-xl px-4">
-                <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-800 hover:no-underline py-4">
+              <AccordionItem value="ingredients" className="border-0 bg-secondary rounded-xl px-4">
+                <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
                   רכיבים וערכים תזונתיים
                 </AccordionTrigger>
-                <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2 pb-4">
-                  <p><strong className="text-gray-800">רכיבים עיקריים:</strong> עוף (30%), אורז (25%), ירקות (15%), ויטמינים ומינרלים חיוניים</p>
-                  <p><strong className="text-gray-800">ערך תזונתי:</strong> חלבון 28%, שומן 15%, סיבים 3%, לחות 10%</p>
-                  <p><strong className="text-gray-800">ללא:</strong> חומרים משמרים, צבעים או טעמים מלאכותיים</p>
+                <AccordionContent className="text-sm text-muted-foreground font-jakarta space-y-2 pb-4">
+                  <p><strong className="text-foreground">רכיבים עיקריים:</strong> עוף (30%), אורז (25%), ירקות (15%), ויטמינים ומינרלים חיוניים</p>
+                  <p><strong className="text-foreground">ערך תזונתי:</strong> חלבון 28%, שומן 15%, סיבים 3%, לחות 10%</p>
+                  <p><strong className="text-foreground">ללא:</strong> חומרים משמרים, צבעים או טעמים מלאכותיים</p>
                 </AccordionContent>
               </AccordionItem>
               
-              <AccordionItem value="usage" className="border-0 bg-gray-50 rounded-xl px-4">
-                <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-800 hover:no-underline py-4">
+              <AccordionItem value="usage" className="border-0 bg-secondary rounded-xl px-4">
+                <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
                   הוראות שימוש
                 </AccordionTrigger>
-                <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2 pb-4">
+                <AccordionContent className="text-sm text-muted-foreground font-jakarta space-y-2 pb-4">
                   <p>האכילו בהתאם למשקל חיית המחמד:</p>
                   <ul className="list-disc list-inside space-y-1 mr-2">
                     <li>כלבים קטנים (עד 10 ק״ג): 100-150 גרם ליום</li>
@@ -436,13 +436,13 @@ const ProductDetail = () => {
                 </AccordionContent>
               </AccordionItem>
               
-              <AccordionItem value="shipping" className="border-0 bg-gray-50 rounded-xl px-4">
-                <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-800 hover:no-underline py-4">
+              <AccordionItem value="shipping" className="border-0 bg-secondary rounded-xl px-4">
+                <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
                   משלוח והחזרות
                 </AccordionTrigger>
-                <AccordionContent className="text-sm text-gray-600 font-jakarta space-y-2 pb-4">
-                  <p><strong className="text-gray-800">משלוח:</strong> משלוח חינם בהזמנות מעל ₪199. משלוח רגיל 2-4 ימי עסקים.</p>
-                  <p><strong className="text-gray-800">החזרות:</strong> אחריות החזר כספי של 30 יום.</p>
+                <AccordionContent className="text-sm text-muted-foreground font-jakarta space-y-2 pb-4">
+                  <p><strong className="text-foreground">משלוח:</strong> משלוח חינם בהזמנות מעל ₪199. משלוח רגיל 2-4 ימי עסקים.</p>
+                  <p><strong className="text-foreground">החזרות:</strong> אחריות החזר כספי של 30 יום.</p>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

@@ -365,13 +365,13 @@ const Adoption = () => {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="bg-white"
+                  className="bg-card"
                 >
                   {/* Post Header */}
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary via-accent to-primary-light p-[2px]">
-                        <div className="w-full h-full rounded-full bg-white p-[1px]">
+                        <div className="w-full h-full rounded-full bg-card p-[1px]">
                           <img
                             src={pet.image_url || "/placeholder.svg"}
                             alt={pet.name}
@@ -761,10 +761,10 @@ const Adoption = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2 pt-2 sticky bottom-0 bg-white pb-1">
+            <div className="flex gap-2 pt-2 sticky bottom-0 bg-card pb-1">
               <Button
                 type="submit"
-                className="flex-1 h-10 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-lg text-sm font-semibold"
+                className="flex-1 h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold"
               >
                 שלח בקשה
               </Button>
@@ -772,7 +772,7 @@ const Adoption = () => {
                 type="button"
                 variant="outline"
                 onClick={() => setShowAdoptionForm(false)}
-                className="flex-1 h-10 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg text-sm"
+                className="flex-1 h-10 border-border text-muted-foreground hover:bg-secondary rounded-lg text-sm"
               >
                 ביטול
               </Button>

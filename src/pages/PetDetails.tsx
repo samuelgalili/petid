@@ -148,21 +148,21 @@ const PetDetails = () => {
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
-            <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-secondary" />
-              Profile Information
+            <h3 className="text-lg font-bold text-foreground font-jakarta mb-4 flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" />
+              מידע על הפרופיל
             </h3>
-          <Card className="p-5 bg-gradient-to-br from-[#F5F5F5] to-[#FAFAFA] border-2 border-gray-100 rounded-3xl shadow-sm">
+          <Card className="p-5 bg-card border-2 border-border rounded-3xl shadow-sm">
             <div className="space-y-4">
               {/* Breed */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-[#FFE8D6] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
                     <span className="text-lg">🐾</span>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 font-jakarta">Breed</p>
-                    <p className="text-sm font-bold text-gray-900 font-jakarta">
+                    <p className="text-xs text-muted-foreground font-jakarta">גזע</p>
+                    <p className="text-sm font-bold text-foreground font-jakarta">
                       {pet.breed || "Unknown"}
                     </p>
                   </div>
@@ -176,12 +176,12 @@ const PetDetails = () => {
 
               {/* Age */}
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-secondary" />
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-jakarta">Age</p>
-                  <p className="text-sm font-bold text-gray-900 font-jakarta">
+                  <p className="text-xs text-muted-foreground font-jakarta">גיל</p>
+                  <p className="text-sm font-bold text-foreground font-jakarta">
                     {calculateAge(pet.birth_date)}
                   </p>
                 </div>
@@ -190,12 +190,12 @@ const PetDetails = () => {
               {/* Birth Date */}
               {pet.birth_date && (
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-[#FFE5F0] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
                     <span className="text-lg">🎂</span>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 font-jakarta">Birth Date</p>
-                    <p className="text-sm font-bold text-gray-900 font-jakarta">
+                    <p className="text-xs text-muted-foreground font-jakarta">תאריך לידה</p>
+                    <p className="text-sm font-bold text-foreground font-jakarta">
                       {format(new Date(pet.birth_date), 'MMMM d, yyyy')}
                     </p>
                   </div>
@@ -205,13 +205,13 @@ const PetDetails = () => {
               {/* Gender */}
               {pet.gender && (
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-[#E8E5FF] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="text-lg">{pet.gender === 'male' ? '♂️' : '♀️'}</span>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 font-jakarta">Gender</p>
-                    <p className="text-sm font-bold text-gray-900 font-jakarta capitalize">
-                      {pet.gender}
+                    <p className="text-xs text-muted-foreground font-jakarta">מין</p>
+                    <p className="text-sm font-bold text-foreground font-jakarta capitalize">
+                      {pet.gender === 'male' ? 'זכר' : 'נקבה'}
                     </p>
                   </div>
                 </div>
@@ -220,13 +220,13 @@ const PetDetails = () => {
               {/* Neutered Status */}
               {pet.is_neutered !== null && (
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-[#E5F5FF] flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-blue-500" />
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Heart className="w-5 h-5 text-accent" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 font-jakarta">Status</p>
-                    <p className="text-sm font-bold text-gray-900 font-jakarta">
-                      {pet.is_neutered ? 'Neutered/Spayed' : 'Not Neutered/Spayed'}
+                    <p className="text-xs text-muted-foreground font-jakarta">סטטוס</p>
+                    <p className="text-sm font-bold text-foreground font-jakarta">
+                      {pet.is_neutered ? 'מסורס/מעוקר' : 'לא מסורס/מעוקר'}
                     </p>
                   </div>
                 </div>
