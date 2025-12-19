@@ -408,7 +408,7 @@ const AddPet = () => {
               החלקה לניווט
             </h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+              <div className="flex items-center gap-4 p-3 bg-background rounded-xl border border-border">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <ArrowRight className="w-5 h-5 text-primary" />
                 </div>
@@ -416,7 +416,7 @@ const AddPet = () => {
                   החלק <span className="font-semibold text-foreground">ימינה</span> לחזור
                 </p>
               </div>
-              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+              <div className="flex items-center gap-4 p-3 bg-background rounded-xl border border-border">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <ArrowLeft className="w-5 h-5 text-primary" />
                 </div>
@@ -494,7 +494,7 @@ const AddPet = () => {
             {[1, 2, 3, 4].map((step) => (
               <div key={step} className="flex-1 flex items-center">
                 <div className="flex-1 relative">
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-border rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ 
@@ -509,7 +509,7 @@ const AddPet = () => {
                       ? 'bg-primary text-primary-foreground scale-90' 
                       : step === currentStep 
                         ? 'bg-card border-2 border-primary text-primary scale-110 shadow-lg'
-                        : 'bg-muted text-muted-foreground'
+                        : 'bg-background border border-border text-muted-foreground'
                   }`}>
                     {step < currentStep ? '✓' : step}
                   </div>
@@ -618,17 +618,17 @@ const AddPet = () => {
                             )}
                           </div>
                         ) : (
-                          <div className="w-28 h-28 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-border">
+                          <div className="w-28 h-28 rounded-full bg-background flex items-center justify-center border-2 border-dashed border-border">
                             <Camera className="w-8 h-8 text-muted-foreground" />
                           </div>
                         )}
                         <div className="flex gap-3 w-full">
-                          <Label htmlFor="image-upload" className="flex-1 flex items-center gap-2 cursor-pointer bg-muted border border-border rounded-xl p-3 hover:bg-muted/80 hover:border-primary transition-all duration-200 justify-center">
+                          <Label htmlFor="image-upload" className="flex-1 flex items-center gap-2 cursor-pointer bg-background border border-border rounded-xl p-3 hover:bg-secondary hover:border-primary transition-all duration-200 justify-center">
                             <Upload className="w-4 h-4 text-foreground" />
                             <span className="font-medium text-sm text-foreground">העלאה</span>
                             <Input id="image-upload" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                           </Label>
-                          <Label htmlFor="image-camera" className="flex-1 flex items-center gap-2 cursor-pointer bg-muted border border-border rounded-xl p-3 hover:bg-muted/80 hover:border-primary transition-all duration-200 justify-center">
+                          <Label htmlFor="image-camera" className="flex-1 flex items-center gap-2 cursor-pointer bg-background border border-border rounded-xl p-3 hover:bg-secondary hover:border-primary transition-all duration-200 justify-center">
                             <Camera className="w-4 h-4 text-foreground" />
                             <span className="font-medium text-sm text-foreground">מצלמה</span>
                             <Input id="image-camera" type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden" />
@@ -650,7 +650,7 @@ const AddPet = () => {
                         required 
                         disabled={loading} 
                         className={cn(
-                          "h-11 text-sm bg-muted border border-border rounded-xl placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all",
+                          "h-11 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all",
                           showValidationError && formData.name.trim() === "" && "border-destructive bg-destructive/10"
                         )}
                       />
@@ -667,7 +667,7 @@ const AddPet = () => {
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full h-11 text-sm bg-muted border border-border rounded-xl hover:bg-muted/80 hover:border-primary justify-start text-right font-normal",
+                              "w-full h-11 text-sm bg-background border border-border rounded-xl hover:bg-secondary hover:border-primary justify-start text-right font-normal",
                               !formData.birthDate && "text-muted-foreground"
                             )}
                           >
@@ -703,7 +703,7 @@ const AddPet = () => {
                         </div>
                       )}
                       {formData.breed && !breedDetecting && breedConfidence !== null && (
-                        <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+                        <div className="flex items-center gap-2 p-2 bg-background border border-border rounded-lg">
                           <Sparkles className="w-4 h-4 text-primary" />
                           <span className="text-xs text-muted-foreground">AI זיהה: <strong>{formData.breed}</strong></span>
                           <span className={`text-sm font-semibold ${breedConfident ? 'text-green-600' : 'text-orange-500'}`}>
@@ -722,7 +722,7 @@ const AddPet = () => {
                           placeholder={breedDetecting ? "מזהה גזע..." : "מה הגזע?"} 
                           disabled={loading || breedDetecting} 
                           className={cn(
-                            "h-11 text-sm bg-muted border border-border rounded-xl placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all",
+                            "h-11 text-sm bg-background border border-border rounded-xl placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all",
                             breedDetecting && "pl-10",
                             showValidationError && formData.breed.trim() === "" && "border-destructive bg-destructive/10"
                           )}
@@ -785,7 +785,7 @@ const AddPet = () => {
                     <div className="space-y-2">
                       <Label htmlFor="gender" className="text-sm font-semibold text-foreground">מין</Label>
                       <Select value={formData.gender} onValueChange={value => setFormData({ ...formData, gender: value })} disabled={loading}>
-                        <SelectTrigger className="h-11 text-sm bg-muted border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
+                        <SelectTrigger className="h-11 text-sm bg-background border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
                           <SelectValue placeholder="בחר מין" />
                         </SelectTrigger>
                         <SelectContent>
@@ -799,7 +799,7 @@ const AddPet = () => {
                     <div className="space-y-2">
                       <Label htmlFor="neutered" className="text-sm font-semibold text-foreground">מסורס/מעוקר</Label>
                       <Select value={formData.is_neutered} onValueChange={value => setFormData({ ...formData, is_neutered: value })} disabled={loading}>
-                        <SelectTrigger className="h-11 text-sm bg-muted border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
+                        <SelectTrigger className="h-11 text-sm bg-background border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all">
                           <SelectValue placeholder="בחר סטטוס" />
                         </SelectTrigger>
                         <SelectContent>
@@ -841,7 +841,7 @@ const AddPet = () => {
                               setSlideDirection('right');
                               setCurrentStep(2);
                             }}
-                            className="absolute bottom-0 left-0 p-2 bg-card rounded-full shadow-lg hover:bg-muted transition-all hover:scale-110 border-2 border-accent"
+                            className="absolute bottom-0 left-0 p-2 bg-card rounded-full shadow-lg hover:bg-secondary transition-all hover:scale-110 border-2 border-accent"
                           >
                             <Edit2 className="w-4 h-4 text-foreground" />
                           </button>
@@ -862,7 +862,7 @@ const AddPet = () => {
                             setSlideDirection('right');
                             setCurrentStep(1);
                           }}
-                          className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
+                          className="p-2 hover:bg-secondary rounded-lg transition-all hover:scale-110"
                         >
                           <Edit2 className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -879,7 +879,7 @@ const AddPet = () => {
                             setSlideDirection('right');
                             setCurrentStep(2);
                           }}
-                          className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
+                          className="p-2 hover:bg-secondary rounded-lg transition-all hover:scale-110"
                         >
                           <Edit2 className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -897,7 +897,7 @@ const AddPet = () => {
                               setSlideDirection('right');
                               setCurrentStep(2);
                             }}
-                            className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
+                            className="p-2 hover:bg-secondary rounded-lg transition-all hover:scale-110"
                           >
                             <Edit2 className="w-4 h-4 text-muted-foreground" />
                           </button>
@@ -959,7 +959,7 @@ const AddPet = () => {
                                 setTempBreed(formData.breed);
                                 setIsEditingBreed(true);
                               }}
-                              className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
+                              className="p-2 hover:bg-secondary rounded-lg transition-all hover:scale-110"
                             >
                               <Edit2 className="w-4 h-4 text-muted-foreground" />
                             </button>
@@ -979,7 +979,7 @@ const AddPet = () => {
                               setSlideDirection('right');
                               setCurrentStep(3);
                             }}
-                            className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
+                          className="p-2 hover:bg-secondary rounded-lg transition-all hover:scale-110"
                           >
                             <Edit2 className="w-4 h-4 text-muted-foreground" />
                           </button>
@@ -997,7 +997,7 @@ const AddPet = () => {
                             setSlideDirection('right');
                             setCurrentStep(3);
                           }}
-                          className="p-2 hover:bg-muted rounded-lg transition-all hover:scale-110"
+                          className="p-2 hover:bg-secondary rounded-lg transition-all hover:scale-110"
                         >
                           <Edit2 className="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -1034,7 +1034,7 @@ const AddPet = () => {
                         setSlideDirection('right');
                         setCurrentStep(3);
                       }}
-                      className="h-12 text-sm border-2 border-border bg-card hover:bg-muted text-foreground rounded-full font-jakarta font-bold transition-all duration-300 hover:scale-[1.02] px-6"
+                      className="h-12 text-sm border-2 border-border bg-card hover:bg-secondary text-foreground rounded-full font-jakarta font-bold transition-all duration-300 hover:scale-[1.02] px-6"
                     >
                       <ArrowRight className="ml-2 h-4 w-4" />
                       חזרה
