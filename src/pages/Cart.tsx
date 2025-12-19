@@ -92,10 +92,10 @@ const Cart = () => {
               transition={{ duration: 0.2 }}
               className="mb-4"
             >
-              <Card className="overflow-hidden border-0 shadow-md">
+              <Card className="overflow-hidden border-0 shadow-md bg-card">
                 <div className="flex gap-4 p-4">
                   {/* Product Image */}
-                  <div className="w-24 h-24 bg-gray-50 rounded-xl flex-shrink-0 overflow-hidden">
+                  <div className="w-24 h-24 bg-muted rounded-xl flex-shrink-0 overflow-hidden">
                     <img
                       src={item.image}
                       alt={item.name}
@@ -105,18 +105,18 @@ const Cart = () => {
 
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-sm mb-1 font-jakarta line-clamp-2">
+                    <h3 className="font-bold text-foreground text-sm mb-1 font-jakarta line-clamp-2">
                       {item.name}
                     </h3>
                     {item.variant && (
-                      <p className="text-xs text-gray-600 mb-2 font-jakarta">
+                      <p className="text-xs text-muted-foreground mb-2 font-jakarta">
                         {item.variant}
                       </p>
                     )}
                     
                     {/* Price */}
-                    <div className="text-lg font-bold text-error mb-3 font-jakarta">
-                      {item.price}₪
+                    <div className="text-lg font-bold text-primary mb-3 font-jakarta">
+                      ₪{item.price}
                     </div>
 
                     {/* Quantity Controls */}
@@ -145,7 +145,7 @@ const Cart = () => {
                       <motion.button
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleRemoveItem(item.id, item.name)}
-                        className="p-2 text-error hover:bg-error/10 rounded-full transition-colors"
+                        className="p-2 text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                       >
                         <Trash2 className="w-5 h-5" strokeWidth={1.5} />
                       </motion.button>
@@ -208,7 +208,7 @@ const Cart = () => {
                     <span className="text-xl font-bold text-foreground font-jakarta">
                       סה״כ לתשלום
                     </span>
-                    <span className="text-2xl font-bold text-error font-jakarta">
+                    <span className="text-2xl font-bold text-primary font-jakarta">
                       ₪{total.toFixed(2)}
                     </span>
                   </div>
