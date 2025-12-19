@@ -99,16 +99,16 @@ const BottomNav = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const categories = [
-    { icon: FileText, label: "מסמכים", path: "/documents", color: "#0095F6" },
-    { icon: Camera, label: "אלבום תמונות", path: "/photos", color: "#8134AF" },
-    { icon: Heart, label: "אימוץ", path: "/adoption", color: "#ED4956" },
-    { icon: Shield, label: "ביטוח", path: "/insurance", color: "#0095F6" },
-    { icon: Trees, label: "גינות כלבים", path: "/parks", color: "#00A676" },
-    { icon: GraduationCap, label: "אילוף", path: "/training", color: "#F58529" },
-    { icon: Scissors, label: "מספרה", path: "/grooming", color: "#DD2A7B" },
-    { icon: CheckSquare, label: "משימות", path: "/tasks", color: "#515BD4" },
-    { icon: Gift, label: "פרסים", path: "/rewards", color: "#F58529" },
-    { icon: MessageCircle, label: "צ'אט AI", path: "/chat", color: "#0095F6" },
+    { icon: FileText, label: "מסמכים", path: "/documents", color: "#1E5799" },
+    { icon: Camera, label: "אלבום תמונות", path: "/photos", color: "#7DB9E8" },
+    { icon: Heart, label: "אימוץ", path: "/adoption", color: "#4ECDC4" },
+    { icon: Shield, label: "ביטוח", path: "/insurance", color: "#1E5799" },
+    { icon: Trees, label: "גינות כלבים", path: "/parks", color: "#4ECDC4" },
+    { icon: GraduationCap, label: "אילוף", path: "/training", color: "#7DB9E8" },
+    { icon: Scissors, label: "מספרה", path: "/grooming", color: "#4ECDC4" },
+    { icon: CheckSquare, label: "משימות", path: "/tasks", color: "#1E5799" },
+    { icon: Gift, label: "פרסים", path: "/rewards", color: "#4ECDC4" },
+    { icon: MessageCircle, label: "צ'אט AI", path: "/chat", color: "#1E5799" },
   ];
 
   return (
@@ -178,12 +178,12 @@ const BottomNav = () => {
             icon={
               <div className="relative group">
                 {/* Outer glow ring */}
-                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-primary via-[#E3A700] to-primary opacity-60 blur-md group-hover:opacity-80 transition-opacity" />
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] opacity-60 blur-md group-hover:opacity-80 transition-opacity" />
                 {/* Main button */}
-                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-[#D4A000] to-primary flex items-center justify-center shadow-xl shadow-primary/40 group-hover:shadow-2xl group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
+                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] flex items-center justify-center shadow-xl shadow-[#4ECDC4]/40 group-hover:shadow-2xl group-hover:shadow-[#4ECDC4]/50 transition-all duration-300 group-hover:scale-105">
                   {/* Inner shine */}
                   <div className="absolute inset-[2px] rounded-[14px] bg-gradient-to-br from-white/20 to-transparent" />
-                  <Plus className="w-7 h-7 text-primary-foreground drop-shadow-sm relative z-10" strokeWidth={2.5} />
+                  <Plus className="w-7 h-7 text-white drop-shadow-sm relative z-10" strokeWidth={2.5} />
                 </div>
               </div>
             }
@@ -256,9 +256,9 @@ const BottomNav = () => {
         aria-label="יצירת פוסט חדש"
       >
         {/* Animated gradient border */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite] p-[2px]">
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite] p-[2px]">
           <div className="w-full h-full rounded-[14px] bg-background/95 backdrop-blur-md flex items-center justify-center">
-            <Camera className="w-6 h-6 text-primary" strokeWidth={2} />
+            <Camera className="w-6 h-6 text-[#1E5799]" strokeWidth={2} />
           </div>
         </div>
       </motion.button>
@@ -277,7 +277,7 @@ const BottomNav = () => {
           <SheetDescription className="sr-only">בחר קטגוריה לניווט</SheetDescription>
           
           {/* Handle bar */}
-          <div className="w-12 h-1.5 bg-gradient-to-r from-muted via-primary/30 to-muted rounded-full mx-auto mt-3 mb-4" />
+          <div className="w-12 h-1.5 bg-gradient-to-r from-muted via-[#4ECDC4]/50 to-muted rounded-full mx-auto mt-3 mb-4" />
           
           {/* Header */}
           <div className="text-center mb-6">
