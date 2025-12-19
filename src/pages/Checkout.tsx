@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, CreditCard, MapPin, Package, Truck } from "lucide-react";
+import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,24 @@ const shippingSchema = z.object({
   zipCode: z.string().trim().regex(/^[0-9]{5,7}$/, "Zip code must be 5-7 digits"),
 });
 
+interface Coupon {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_order_amount: number;
+}
+
 const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { items, getSubtotal, clearCart } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
+  const [installments, setInstallments] = useState(1);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [shippingData, setShippingData] = useState({
     fullName: "",
     email: "",
@@ -42,8 +54,86 @@ const Checkout = () => {
 
   const subtotal = getSubtotal();
   const shipping = subtotal >= 199 ? 0 : 25;
-  const tax = subtotal * 0.17;
-  const total = subtotal + shipping + tax;
+  
+  // Calculate discount
+  const discount = appliedCoupon 
+    ? appliedCoupon.discount_type === 'percentage'
+      ? (subtotal * appliedCoupon.discount_value) / 100
+      : appliedCoupon.discount_value
+    : 0;
+  
+  const discountedSubtotal = Math.max(0, subtotal - discount);
+  const tax = discountedSubtotal * 0.17;
+  const total = discountedSubtotal + shipping + tax;
+
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) return;
+    
+    setIsValidatingCoupon(true);
+    try {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        toast({
+          title: "קופון לא תקין",
+          description: "הקופון שהזנת לא קיים או לא פעיל",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.min_order_amount && subtotal < data.min_order_amount) {
+        toast({
+          title: "מינימום הזמנה",
+          description: `הזמנה מינימלית לקופון זה: ₪${data.min_order_amount}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.max_uses && data.used_count >= data.max_uses) {
+        toast({
+          title: "קופון מנוצל",
+          description: "הקופון הזה כבר נוצל עד תום",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAppliedCoupon(data);
+      toast({
+        title: "קופון הופעל!",
+        description: data.discount_type === 'percentage' 
+          ? `הנחה של ${data.discount_value}%`
+          : `הנחה של ₪${data.discount_value}`,
+      });
+    } catch (error) {
+      console.error("Error validating coupon:", error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לבדוק את הקופון",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    toast({
+      title: "קופון הוסר",
+      duration: 1500,
+    });
+  };
 
   if (items.length === 0) {
     navigate("/cart");
@@ -107,7 +197,7 @@ const Checkout = () => {
       const orderNumber = `PID-${Date.now()}`;
       const orderTotal = total + (paymentMethod === "cash-on-delivery" ? 5 : 0);
 
-      // Insert order
+      // Insert order with coupon info
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -120,6 +210,9 @@ const Checkout = () => {
           total: orderTotal,
           payment_method: paymentMethod,
           shipping_address: shippingData,
+          coupon_id: appliedCoupon?.id || null,
+          discount_amount: discount,
+          payment_installments: installments,
         })
         .select()
         .single();
@@ -371,6 +464,7 @@ const Checkout = () => {
               <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="space-y-3">
+                    {/* Credit Card */}
                     <div
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "credit-card"
@@ -392,6 +486,96 @@ const Checkout = () => {
                       </div>
                     </div>
 
+                    {/* Apple Pay */}
+                    <div
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        paymentMethod === "apple-pay"
+                          ? "border-accent bg-accent/10"
+                          : "border-border hover:border-border-light"
+                      }`}
+                      onClick={() => setPaymentMethod("apple-pay")}
+                    >
+                      <RadioGroupItem value="apple-pay" id="apple-pay" />
+                      <Label
+                        htmlFor="apple-pay"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-foreground"
+                      >
+                        Apple Pay
+                      </Label>
+                      <div className="w-12 h-5 bg-black rounded flex items-center justify-center text-white text-[10px] font-bold">
+                         Pay
+                      </div>
+                    </div>
+
+                    {/* Google Pay */}
+                    <div
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        paymentMethod === "google-pay"
+                          ? "border-accent bg-accent/10"
+                          : "border-border hover:border-border-light"
+                      }`}
+                      onClick={() => setPaymentMethod("google-pay")}
+                    >
+                      <RadioGroupItem value="google-pay" id="google-pay" />
+                      <Label
+                        htmlFor="google-pay"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-foreground"
+                      >
+                        Google Pay
+                      </Label>
+                      <div className="flex gap-0.5">
+                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      </div>
+                    </div>
+
+                    {/* Bit */}
+                    <div
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        paymentMethod === "bit"
+                          ? "border-accent bg-accent/10"
+                          : "border-border hover:border-border-light"
+                      }`}
+                      onClick={() => setPaymentMethod("bit")}
+                    >
+                      <RadioGroupItem value="bit" id="bit" />
+                      <Label
+                        htmlFor="bit"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-foreground flex items-center gap-2"
+                      >
+                        <Smartphone className="w-4 h-4" />
+                        Bit
+                      </Label>
+                      <div className="w-10 h-5 bg-gradient-to-r from-blue-600 to-cyan-500 rounded flex items-center justify-center text-white text-[10px] font-bold">
+                        BIT
+                      </div>
+                    </div>
+
+                    {/* PayBox */}
+                    <div
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        paymentMethod === "paybox"
+                          ? "border-accent bg-accent/10"
+                          : "border-border hover:border-border-light"
+                      }`}
+                      onClick={() => setPaymentMethod("paybox")}
+                    >
+                      <RadioGroupItem value="paybox" id="paybox" />
+                      <Label
+                        htmlFor="paybox"
+                        className="flex-1 cursor-pointer font-jakarta font-semibold text-foreground flex items-center gap-2"
+                      >
+                        <Wallet className="w-4 h-4" />
+                        PayBox
+                      </Label>
+                      <div className="w-14 h-5 bg-gradient-to-r from-green-500 to-green-600 rounded flex items-center justify-center text-white text-[10px] font-bold">
+                        PayBox
+                      </div>
+                    </div>
+
+                    {/* PayPal */}
                     <div
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "paypal"
@@ -412,6 +596,7 @@ const Checkout = () => {
                       </div>
                     </div>
 
+                    {/* Cash on Delivery */}
                     <div
                       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         paymentMethod === "cash-on-delivery"
@@ -431,6 +616,74 @@ const Checkout = () => {
                     </div>
                   </div>
                 </RadioGroup>
+              </Card>
+
+              {/* Installments - only for credit card */}
+              {paymentMethod === "credit-card" && (
+                <Card className="p-4 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+                  <Label className="font-jakarta text-sm font-semibold text-foreground mb-3 block">
+                    תשלומים
+                  </Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {[1, 3, 6, 12].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => setInstallments(num)}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          installments === num
+                            ? "bg-accent text-accent-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {num === 1 ? "תשלום אחד" : `${num} תשלומים`}
+                      </button>
+                    ))}
+                  </div>
+                  {installments > 1 && (
+                    <p className="text-xs text-muted-foreground mt-2 font-jakarta">
+                      ₪{(total / installments).toFixed(2)} × {installments} תשלומים
+                    </p>
+                  )}
+                </Card>
+              )}
+
+              {/* Coupon Code */}
+              <Card className="p-4 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+                <Label className="font-jakarta text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  קוד קופון
+                </Label>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between p-3 bg-success/10 rounded-xl border border-success/30">
+                    <div>
+                      <p className="font-semibold text-success font-jakarta text-sm">{appliedCoupon.code}</p>
+                      <p className="text-xs text-muted-foreground font-jakarta">
+                        {appliedCoupon.discount_type === 'percentage' 
+                          ? `${appliedCoupon.discount_value}% הנחה`
+                          : `₪${appliedCoupon.discount_value} הנחה`}
+                      </p>
+                    </div>
+                    <button onClick={removeCoupon} className="p-1 hover:bg-destructive/10 rounded-full transition-colors">
+                      <X className="w-4 h-4 text-destructive" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="הזן קוד קופון"
+                      className="flex-1 font-jakarta rounded-xl"
+                    />
+                    <Button
+                      onClick={validateCoupon}
+                      disabled={!couponCode.trim() || isValidatingCoupon}
+                      className="bg-accent hover:bg-accent-hover text-accent-foreground rounded-xl font-jakarta"
+                    >
+                      {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "הפעל"}
+                    </Button>
+                  </div>
+                )}
               </Card>
 
               <Card className="p-3 bg-accent/10 border-0 rounded-xl max-w-md mx-auto">
@@ -496,7 +749,11 @@ const Checkout = () => {
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground font-jakarta">
-                  {paymentMethod === "credit-card" ? "כרטיס אשראי" : 
+                  {paymentMethod === "credit-card" ? `כרטיס אשראי${installments > 1 ? ` (${installments} תשלומים)` : ''}` : 
+                   paymentMethod === "apple-pay" ? "Apple Pay" :
+                   paymentMethod === "google-pay" ? "Google Pay" :
+                   paymentMethod === "bit" ? "Bit" :
+                   paymentMethod === "paybox" ? "PayBox" :
                    paymentMethod === "paypal" ? "PayPal" : "מזומן במשלוח"}
                 </p>
               </Card>
@@ -556,6 +813,12 @@ const Checkout = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground font-jakarta">עמלת מזומן</span>
                     <span className="font-semibold text-foreground font-jakarta">₪5.00</span>
+                  </div>
+                )}
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-success font-jakarta">הנחה ({appliedCoupon.code})</span>
+                    <span className="font-semibold text-success font-jakarta">-₪{discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
