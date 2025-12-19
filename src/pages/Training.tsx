@@ -4,7 +4,7 @@ import BottomNav from "@/components/BottomNav";
 
 const Training = () => {
   return (
-    <div className="min-h-screen bg-white flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col" dir="rtl">
       <AppHeader 
         title="אילוף כלבים" 
         showBackButton={true}
