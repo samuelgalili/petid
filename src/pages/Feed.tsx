@@ -29,6 +29,7 @@ import { SuggestedPostCard } from "@/components/SuggestedPostCard";
 import { ParallaxScroll } from "@/components/ParallaxScroll";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
+import { ChallengesSection } from "@/components/ChallengesSection";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -1104,6 +1105,20 @@ const Feed = () => {
       duration: 0.4
     }} className="bg-white">
         <StoriesBar />
+      </motion.div>
+
+      {/* Challenges Section */}
+      <motion.div initial={{
+      opacity: 0,
+      y: 10
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.25,
+      duration: 0.4
+    }} className="bg-white px-4 py-3 border-b border-gray-100">
+        <ChallengesSection />
       </motion.div>
 
 
