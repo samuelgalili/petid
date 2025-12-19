@@ -1076,7 +1076,7 @@ const Feed = () => {
           
         </motion.div>
 
-        <div data-pets-section className="py-2 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
+        <div data-pets-section className="py-1 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
           <div className="max-w-lg mx-auto">
             <h2 className="text-[15px] font-bold text-slate-800 px-4 mb-4 flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4ECDC4] to-[#1E5799] flex items-center justify-center shadow-md">
