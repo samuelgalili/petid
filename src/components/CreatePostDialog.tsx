@@ -87,23 +87,31 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     setUploading(true);
 
     try {
-      // Upload image to avatars bucket
-      const fileExt = selectedImage.name.split(".").pop();
+      // Upload image to avatars bucket - ensure lowercase extension for storage policy
+      const fileExt = selectedImage.name.split(".").pop()?.toLowerCase() || 'jpg';
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      console.log("Uploading file:", fileName, "Type:", selectedImage.type, "Size:", selectedImage.size);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(fileName, selectedImage, {
           cacheControl: "3600",
           upsert: false,
+          contentType: selectedImage.type,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw uploadError;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from("avatars")
         .getPublicUrl(uploadData.path);
+
+      console.log("Upload successful, public URL:", publicUrl);
 
       // Create post in database
       const { error: insertError } = await supabase
@@ -114,7 +122,10 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
           caption: caption.trim() || null,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Database insert error:", insertError);
+        throw insertError;
+      }
 
       toast.success("🎉 Petish Post פורסם בהצלחה!");
       
@@ -124,7 +135,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
       onPostCreated();
     } catch (error: any) {
       console.error("Error creating post:", error);
-      toast.error("שגיאה בפרסום ה-Petish Post");
+      toast.error(error.message || "שגיאה בפרסום ה-Petish Post");
     } finally {
       setUploading(false);
     }
