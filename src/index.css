@@ -136,8 +136,8 @@
     --surface: var(--ig-white);
     --surface-elevated: var(--ig-white);
 
-    --muted: 0 0% 56%;
-    --muted-foreground: 0 0% 38%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
     --border: 0 0% 86%;
     --border-light: 0 0% 92%;
