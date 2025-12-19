@@ -105,7 +105,7 @@ export const StoriesBar = () => {
 
   if (loading) {
     return (
-      <div className="px-3 py-3 bg-gradient-to-r from-white via-amber-50/30 to-white">
+      <div className="px-3 py-3 bg-gradient-to-r from-white via-[#7DB9E8]/10 to-white">
         <div className="flex gap-4 overflow-x-auto no-scrollbar">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0">
@@ -125,7 +125,7 @@ export const StoriesBar = () => {
 
   return (
     <>
-      <div className="px-2 py-3 bg-gradient-to-r from-white via-amber-50/20 to-white">
+      <div className="px-2 py-3 bg-gradient-to-r from-white via-[#7DB9E8]/10 to-white">
         <div className="flex gap-3 overflow-x-auto no-scrollbar">
           {/* Your Story / Add Story - Always first */}
           <motion.div
@@ -146,18 +146,18 @@ export const StoriesBar = () => {
               <motion.div 
                 className={`w-[68px] h-[68px] rounded-full p-[2.5px] ${
                   currentUserHasStory 
-                    ? "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
+                    ? "bg-gradient-to-tr from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8]"
                     : "bg-gradient-to-br from-gray-200 to-gray-300"
                 }`}
                 animate={currentUserHasStory ? {
-                  boxShadow: ['0 0 0 0 rgba(247, 191, 0, 0)', '0 0 12px 2px rgba(247, 191, 0, 0.4)', '0 0 0 0 rgba(247, 191, 0, 0)']
+                  boxShadow: ['0 0 0 0 rgba(78, 205, 196, 0)', '0 0 12px 2px rgba(78, 205, 196, 0.4)', '0 0 0 0 rgba(78, 205, 196, 0)']
                 } : {}}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <div className="w-full h-full rounded-full bg-white p-[2px]">
                   <Avatar className="w-full h-full ring-2 ring-white">
                     <AvatarImage src={currentUserProfile?.avatar_url} className="object-cover" />
-                    <AvatarFallback className="bg-gradient-to-br from-petid-gold/20 to-petid-blue/20 text-petid-blue-dark text-lg font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-[#1E5799]/20 to-[#4ECDC4]/20 text-[#1E5799] text-lg font-semibold">
                       {currentUserProfile?.full_name?.charAt(0) || isAuthenticated ? "U" : "+"}
                     </AvatarFallback>
                   </Avatar>
@@ -165,7 +165,7 @@ export const StoriesBar = () => {
               </motion.div>
               {!currentUserHasStory && (
                 <motion.div 
-                  className="absolute bottom-0 right-0 w-[24px] h-[24px] bg-gradient-to-br from-petid-blue to-petid-blue-dark rounded-full flex items-center justify-center border-[2.5px] border-white shadow-md"
+                  className="absolute bottom-0 right-0 w-[24px] h-[24px] bg-gradient-to-br from-[#1E5799] to-[#4ECDC4] rounded-full flex items-center justify-center border-[2.5px] border-white shadow-md"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   transition={{ type: "spring", stiffness: 400 }}
                 >
@@ -196,17 +196,17 @@ export const StoriesBar = () => {
                   className={`w-[68px] h-[68px] rounded-full p-[2.5px] ${
                     storyUser.has_viewed 
                       ? "bg-gradient-to-br from-gray-300 to-gray-400" 
-                      : "bg-gradient-to-tr from-petid-gold via-petid-blue to-petid-gold-dark"
+                      : "bg-gradient-to-tr from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8]"
                   }`}
                   animate={!storyUser.has_viewed ? {
-                    boxShadow: ['0 0 0 0 rgba(247, 191, 0, 0)', '0 0 10px 2px rgba(247, 191, 0, 0.3)', '0 0 0 0 rgba(247, 191, 0, 0)']
+                    boxShadow: ['0 0 0 0 rgba(78, 205, 196, 0)', '0 0 10px 2px rgba(78, 205, 196, 0.3)', '0 0 0 0 rgba(78, 205, 196, 0)']
                   } : {}}
                   transition={{ duration: 2.5, repeat: Infinity, delay: index * 0.2 }}
                 >
                   <div className="w-full h-full rounded-full bg-white p-[2px]">
                     <Avatar className="w-full h-full ring-2 ring-white">
                       <AvatarImage src={storyUser.avatar_url} className="object-cover" />
-                      <AvatarFallback className="bg-gradient-to-br from-petid-gold/20 to-petid-blue/20 text-petid-blue-dark text-lg font-semibold">
+                      <AvatarFallback className="bg-gradient-to-br from-[#1E5799]/20 to-[#4ECDC4]/20 text-[#1E5799] text-lg font-semibold">
                         {storyUser.full_name?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
