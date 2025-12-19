@@ -242,25 +242,11 @@ const AddPet = () => {
       
       let avatarUrl = "";
 
-      // Upload image if exists
-      if (imageFile) {
-        console.log("Uploading image...");
-        const fileExt = imageFile.name.split(".").pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const {
-          error: uploadError
-        } = await supabase.storage.from("pet-avatars").upload(fileName, imageFile);
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
-          throw uploadError;
-        }
-        const {
-          data: {
-            publicUrl
-          }
-        } = supabase.storage.from("pet-avatars").getPublicUrl(fileName);
-        avatarUrl = publicUrl;
-        console.log("Image uploaded:", avatarUrl);
+      // Use the imagePreview (data URL) directly instead of uploading to storage
+      // This bypasses the storage tenant configuration issue
+      if (imagePreview) {
+        console.log("Using image preview as avatar URL");
+        avatarUrl = imagePreview;
       }
 
       // Insert pet data
