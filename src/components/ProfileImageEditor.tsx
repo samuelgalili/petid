@@ -125,7 +125,7 @@ export const ProfileImageEditor = ({
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         resolve(blob!);
-      }, "image/jpeg");
+      }, "image/jpeg", 0.7); // 70% quality for compression
     });
   };
 

@@ -49,9 +49,9 @@ serve(async (req) => {
       throw new Error("No file provided");
     }
 
-    // Check file size (max 500KB for base64 storage)
-    if (file.size > 500 * 1024) {
-      throw new Error("File too large. Maximum 500KB allowed.");
+    // Check file size (max 2MB for base64 storage)
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error("File too large. Maximum 2MB allowed.");
     }
 
     // Convert file to base64 data URL
