@@ -77,10 +77,6 @@ export const PetCard = memo(({
           </div>
         </div>
         
-        {/* Type Badge */}
-        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-card rounded-full shadow-md flex items-center justify-center border-2 border-background">
-          <span className="text-xs">{pet.type === 'dog' ? '🐕' : '🐈'}</span>
-        </div>
         
         {/* New Badge */}
         {isNewPet && (
