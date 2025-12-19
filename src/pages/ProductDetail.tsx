@@ -24,11 +24,11 @@ const ProductDetail = () => {
   const touchStartX = useRef(0);
 
   // Get product from location state or use default
-  const product = location.state?.product || {
+  const rawProduct = location.state?.product || {
     name: "מזון פרימיום לכלבים",
     subtitle: "בריאות טובה יותר. טעם מעולה. חיות מחמד מאושרות.",
-    price: "₪207.84",
-    originalPrice: "₪259.80",
+    price: 207.84,
+    originalPrice: 259.80,
     discount: "20% הנחה",
     image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=600&h=600&fit=crop",
     color: "bg-[#B8E3D5]",
@@ -36,6 +36,22 @@ const ProductDetail = () => {
     description: "מזון פרימיום איכותי לכלבים עשוי ממרכיבים טבעיים. מתאים לכל הגזעים ושלבי החיים. מכיל ויטמינים, מינרלים וחלבונים חיוניים לבריאות מיטבית.",
     rating: 4.8,
     reviewCount: 234,
+  };
+
+  // Normalize price to number
+  const getNumericPrice = (price: string | number): number => {
+    if (typeof price === 'number') return price;
+    return parseFloat(price.replace(/[₪,]/g, '')) || 0;
+  };
+
+  // Normalize product data
+  const product = {
+    ...rawProduct,
+    price: getNumericPrice(rawProduct.price),
+    originalPrice: rawProduct.originalPrice ? getNumericPrice(rawProduct.originalPrice) : null,
+    discount: rawProduct.originalPrice 
+      ? `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.originalPrice)) * 100)}% הנחה`
+      : null,
   };
 
   const benefits = [
@@ -46,13 +62,13 @@ const ProductDetail = () => {
   ];
 
   const relatedProducts = [
-    { id: 1, name: "חטיפים לכלבים", price: "₪45.00", image: "https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=300&h=300&fit=crop" },
-    { id: 2, name: "ויטמינים לחיות", price: "₪89.00", image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop" },
-    { id: 3, name: "צעצועים לכלבים", price: "₪65.00", image: "https://images.unsplash.com/photo-1591769225440-811ad7d6eab3?w=300&h=300&fit=crop" },
-    { id: 4, name: "קערת אוכל", price: "₪55.00", image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop" },
+    { id: 1, name: "חטיפים לכלבים", price: 45, image: "https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=300&h=300&fit=crop" },
+    { id: 2, name: "ויטמינים לחיות", price: 89, image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop" },
+    { id: 3, name: "צעצועים לכלבים", price: 65, image: "https://images.unsplash.com/photo-1591769225440-811ad7d6eab3?w=300&h=300&fit=crop" },
+    { id: 4, name: "קערת אוכל", price: 55, image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop" },
   ];
 
-  const images = [
+  const images = rawProduct.images || [
     product.image,
     "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&h=600&fit=crop",
     "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&h=600&fit=crop",
@@ -82,11 +98,10 @@ const ProductDetail = () => {
   ];
 
   const handleAddToCart = () => {
-    const priceNumeric = parseFloat(product.price.replace('₪', ''));
     addToCart({
       id: `${product.name}-${selectedVariant}-${selectedSize}`,
       name: product.name,
-      price: priceNumeric,
+      price: product.price,
       image: product.image,
       quantity: quantity,
       variant: selectedVariant,
@@ -288,10 +303,10 @@ const ProductDetail = () => {
                 className="text-3xl font-black bg-clip-text text-transparent font-jakarta"
                 style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
               >
-                {product.price}
+                ₪{product.price}
               </span>
               {product.originalPrice && (
-                <span className="text-base text-gray-400 line-through font-jakarta">{product.originalPrice}</span>
+                <span className="text-base text-gray-400 line-through font-jakarta">₪{product.originalPrice}</span>
               )}
             </div>
             
@@ -577,7 +592,7 @@ const ProductDetail = () => {
                       backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
                     }}
                   >
-                    {item.price}
+                    ₪{item.price}
                   </p>
                 </div>
               </div>
@@ -678,7 +693,7 @@ const ProductDetail = () => {
                 className="text-xl font-black bg-clip-text text-transparent font-jakarta"
                 style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
               >
-                ₪{(parseFloat(product.price.replace('₪', '')) * quantity).toFixed(2)}
+                ₪{(product.price * quantity).toFixed(2)}
               </motion.p>
             </div>
           </div>
