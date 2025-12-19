@@ -734,7 +734,7 @@ const Shop = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
-                      navigate('/product', { state: { product: selectedProduct } });
+                      navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
                       setSelectedProduct(null);
                     }}
                     className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
@@ -918,7 +918,7 @@ const Shop = () => {
                   {/* More Details Link */}
                   <button
                     onClick={() => {
-                      navigate('/product', { state: { product: selectedProduct } });
+                      navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
                       setSelectedProduct(null);
                     }}
                     className="w-full py-3 text-sm font-medium text-primary flex items-center justify-center gap-2 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
