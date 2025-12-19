@@ -1,14 +1,18 @@
-import { Camera, Calendar, Info, History, Heart, Stethoscope, Pill } from "lucide-react";
+import { Camera, Calendar, Info, History, Heart, Stethoscope, Pill, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
 import { AppHeader } from "@/components/AppHeader";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 interface Pet {
   id: string;
@@ -38,6 +42,10 @@ const PetDetails = () => {
   const [pet, setPet] = useState<Pet | null>(null);
   const [breedHistory, setBreedHistory] = useState<BreedHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({ name: '', breed: '' });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const fetchPetDetails = async () => {
@@ -65,6 +73,7 @@ const PetDetails = () => {
         }
 
         setPet(petData);
+        setEditFormData({ name: petData.name, breed: petData.breed || '' });
 
         // Fetch breed detection history
         const { data: historyData, error: historyError } = await supabase
@@ -89,6 +98,84 @@ const PetDetails = () => {
 
     fetchPetDetails();
   }, [petId, navigate, toast]);
+
+  const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pet) return;
+
+    if (!file.type.startsWith("image/")) {
+      sonnerToast.error("נא להעלות קובץ תמונה בלבד");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      sonnerToast.error("גודל הקובץ חייב להיות קטן מ-5MB");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = `pet-${pet.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("pets")
+        .update({ avatar_url: cacheBustedUrl })
+        .eq("id", pet.id);
+
+      if (updateError) throw updateError;
+
+      setPet(prev => prev ? { ...prev, avatar_url: cacheBustedUrl } : null);
+      sonnerToast.success("תמונת חיית המחמד עודכנה בהצלחה!");
+    } catch (error: any) {
+      console.error("Error uploading pet image:", error);
+      sonnerToast.error(error.message || "שגיאה בהעלאת התמונה");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  }, [pet]);
+
+  const handleSaveEdit = async () => {
+    if (!pet) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("pets")
+        .update({
+          name: editFormData.name,
+          breed: editFormData.breed || null,
+        })
+        .eq("id", pet.id);
+
+      if (error) throw error;
+
+      setPet(prev => prev ? { ...prev, name: editFormData.name, breed: editFormData.breed || null } : null);
+      setIsEditSheetOpen(false);
+      sonnerToast.success("פרטי חיית המחמד עודכנו בהצלחה!");
+    } catch (error: any) {
+      console.error("Error saving pet:", error);
+      sonnerToast.error(error.message || "שגיאה בשמירת הנתונים");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const calculateAge = (birthDate: string | null) => {
     if (!birthDate) return "Unknown";
@@ -131,13 +218,30 @@ const PetDetails = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center mb-8"
         >
-          <Avatar className="w-32 h-32 border-[4px] border-white ring-4 ring-gray-100 shadow-xl mb-4">
-            <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
-            <AvatarFallback className="bg-gradient-secondary text-white text-4xl font-bold">
-              {pet.type === 'dog' ? '🐕' : '🐈'}
-            </AvatarFallback>
-          </Avatar>
-          <h2 className="text-3xl font-bold text-gray-900 font-jakarta mb-1">{pet.name}</h2>
+          <div className="relative">
+            <Avatar className="w-32 h-32 border-[4px] border-white ring-4 ring-gray-100 shadow-xl">
+              <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-gradient-secondary text-white text-4xl font-bold">
+                {pet.type === 'dog' ? '🐕' : '🐈'}
+              </AvatarFallback>
+            </Avatar>
+            <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center ring-2 ring-background cursor-pointer hover:bg-primary/90 transition-colors">
+              <Camera className="w-5 h-5 text-primary-foreground" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+                disabled={isUploadingImage}
+              />
+              {isUploadingImage && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </label>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 font-jakarta mb-1 mt-4">{pet.name}</h2>
           <p className="text-base text-gray-500 font-jakarta capitalize">{pet.type}</p>
         </motion.div>
 
@@ -335,13 +439,111 @@ const PetDetails = () => {
             View Full Breed History
           </Button>
           <Button
-            onClick={() => toast({ title: "Coming Soon", description: "Edit profile feature is under development" })}
+            onClick={() => {
+              setEditFormData({ name: pet.name, breed: pet.breed || '' });
+              setIsEditSheetOpen(true);
+            }}
             className="w-full h-14 bg-gradient-primary hover:opacity-90 text-gray-900 rounded-2xl font-jakarta font-bold shadow-md"
           >
             Edit Profile
           </Button>
         </motion.div>
       </div>
+
+      {/* Edit Pet Sheet */}
+      <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
+        <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle className="font-jakarta text-xl font-bold text-foreground">
+              עריכת פרטי חיית מחמד
+            </SheetTitle>
+            <SheetDescription className="font-jakarta text-sm text-muted-foreground">
+              עדכנו את פרטי חיית המחמד שלכם
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-6">
+            {/* Pet Avatar */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-accent/10 shadow-lg overflow-hidden border-4 border-background">
+                  {pet.avatar_url ? (
+                    <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl">
+                      {pet.type === 'dog' ? '🐕' : '🐈'}
+                    </div>
+                  )}
+                  {isUploadingImage && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-md border-2 border-background cursor-pointer hover:bg-accent-hover transition-colors">
+                  <Camera className="w-4 h-4 text-accent-foreground" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    disabled={isUploadingImage}
+                  />
+                </label>
+              </div>
+              <span className="text-sm text-accent font-semibold font-jakarta">
+                {isUploadingImage ? "מעלה..." : "שנה תמונה"}
+              </span>
+            </div>
+
+            {/* Name Field */}
+            <div className="space-y-2">
+              <Label htmlFor="pet-name" className="font-jakarta font-semibold text-foreground">
+                שם חיית המחמד
+              </Label>
+              <Input
+                id="pet-name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="הכנס שם"
+                className="font-jakarta h-12 rounded-xl border-2 focus:border-accent focus:ring-accent"
+              />
+            </div>
+
+            {/* Breed Field */}
+            <div className="space-y-2">
+              <Label htmlFor="pet-breed" className="font-jakarta font-semibold text-foreground">
+                גזע
+              </Label>
+              <Input
+                id="pet-breed"
+                value={editFormData.breed}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, breed: e.target.value }))}
+                placeholder="הכנס גזע"
+                className="font-jakarta h-12 rounded-xl border-2 focus:border-accent focus:ring-accent"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditSheetOpen(false)}
+                className="flex-1 h-12 rounded-xl font-jakarta font-bold border-2"
+              >
+                ביטול
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                className="flex-1 h-12 rounded-xl font-jakarta font-bold bg-accent hover:bg-accent-hover text-accent-foreground shadow-md"
+              >
+                {isSaving ? "שומר..." : "שמור שינויים"}
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
