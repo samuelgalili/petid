@@ -1024,26 +1024,27 @@ const Feed = () => {
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-100 mx-4 rounded-2xl p-4 mb-4 cursor-pointer hover:bg-gray-50 transition-colors"
+          className="bg-white mx-4 rounded-2xl p-4 mb-4 cursor-pointer shadow-sm border border-gray-100"
           onClick={() => navigate('/rewards')}
         >
           {/* Top Row - Icon and Amount */}
           <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-200">
-              <Gift className="w-6 h-6 text-amber-500" />
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
+              <Gift className="w-6 h-6 text-[#F59E0B]" />
             </div>
             <div className="text-right">
               <span className="text-2xl font-bold text-gray-800">₪{(totalPoints * 0.01).toFixed(2)}</span>
-              <span className="text-gray-600 text-sm mr-1">צברת</span>
+              <span className="text-gray-500 text-sm mr-1">צברת</span>
             </div>
           </div>
           
           {/* Progress Bar */}
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-gray-500 text-sm font-medium">₪50</span>
-            <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
+            <span className="text-gray-400 text-sm font-medium">₪50</span>
+            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
               <motion.div 
-                className="h-full bg-amber-400 rounded-full"
+                className="h-full rounded-full"
+                style={{ backgroundColor: '#FBBF24' }}
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min((totalPoints * 0.01 / 50) * 100, 100)}%` }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
@@ -1052,7 +1053,7 @@ const Feed = () => {
           </div>
           
           {/* Bottom Text */}
-          <p className="text-gray-500 text-xs text-center">
+          <p className="text-gray-400 text-xs text-center">
             צוברים עוד ₪{(50 - totalPoints * 0.01).toFixed(2)} עד ה-31.12.25 והכסף עובר לארנק
           </p>
         </motion.div>
