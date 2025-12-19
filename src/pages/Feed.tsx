@@ -23,51 +23,120 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AdoptionPostCard } from "@/components/AdoptionPostCard";
 import { ProductPostCard } from "@/components/ProductPostCard";
-import { DocumentPostCard } from "@/components/DocumentPostCard";
+import { AdPostCard } from "@/components/AdPostCard";
 import { ParallaxScroll } from "@/components/ParallaxScroll";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 
-// Featured products for feed
-const FEATURED_PRODUCTS = [
+// Shop products for feed
+const SHOP_PRODUCTS: FeedProduct[] = [
   {
     id: "prod-1",
-    title: "אוכל יבש פרימיום לכלבים",
-    price: "₪89",
-    originalPrice: "₪120",
-    image: "https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=600&h=800&fit=crop&q=80",
-    description: "אוכל איכותי עשיר בחלבון לכלבים מכל הגילאים",
+    title: "מזון יבש פרימיום",
+    price: "₪189",
+    originalPrice: "₪249",
+    image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
+    description: "מזון איכותי לכלבים בוגרים, עשיר בחלבון ובויטמינים חיוניים",
     hasSale: true,
+    rating: 4.8,
+    reviews: 324,
   },
   {
-    id: "prod-2", 
-    title: "צעצוע משיכה לכלבים",
-    price: "₪35",
-    image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=600&h=800&fit=crop&q=80",
-    description: "צעצוע עמיד במיוחד לשעות של משחק",
+    id: "prod-2",
+    title: "חטיפי עוף מיובשים",
+    price: "₪45",
+    image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
+    description: "חטיפים טבעיים 100% מעוף איכותי, ללא תוספים",
     hasSale: false,
+    rating: 4.5,
+    reviews: 156,
+  },
+  {
+    id: "prod-3",
+    title: "מיטה אורתופדית",
+    price: "₪299",
+    originalPrice: "₪399",
+    image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
+    description: "מיטה נוחה עם קצף זיכרון לתמיכה מושלמת בגוף",
+    hasSale: true,
+    rating: 4.9,
+    reviews: 487,
+  },
+  {
+    id: "prod-4",
+    title: "צעצוע אינטראקטיבי",
+    price: "₪129",
+    image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
+    description: "צעצוע חכם שמפעיל את הכלב ומעסיק אותו לשעות",
+    hasSale: false,
+    rating: 4.3,
+    reviews: 89,
+  },
+  {
+    id: "prod-5",
+    title: "שמפו טיפולי",
+    price: "₪59",
+    originalPrice: "₪79",
+    image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
+    description: "שמפו עדין לעור רגיש, מפנק את הפרווה",
+    hasSale: true,
+    rating: 4.6,
+    reviews: 203,
+  },
+  {
+    id: "prod-6",
+    title: "קערה אוטומטית",
+    price: "₪169",
+    image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
+    description: "קערת מים ואוכל חכמה עם חיישן מילוי אוטומטי",
+    hasSale: false,
+    rating: 4.7,
+    reviews: 312,
   },
 ];
 
-// Sample documents for feed
-const FEATURED_DOCUMENTS: FeedDocument[] = [
+// Promotional ads for feed
+interface FeedAd {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  cta: string;
+  link: string;
+  gradient: string;
+  badge?: string;
+}
+
+const FEED_ADS: FeedAd[] = [
   {
-    id: "doc-1",
-    title: "אישור חיסון כלבת 2024",
-    document_type: "vaccination",
-    pet_name: "מקס",
-    uploaded_at: new Date(Date.now() - 2 * 3600000).toISOString(),
-    description: "חיסון שנתי הושלם בהצלחה",
-    file_url: "https://xcauajpfrmalzhhiodcb.supabase.co/storage/v1/object/public/documents/sample-vaccination.pdf",
+    id: "ad-1",
+    title: "ביטוח חיות מחמד",
+    subtitle: "הגן על חבר הפרווה שלך עם כיסוי מלא",
+    image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop",
+    cta: "קבל הצעה",
+    link: "/insurance",
+    gradient: "from-blue-500 to-cyan-400",
+    badge: "פופולרי",
   },
   {
-    id: "doc-2",
-    title: "בדיקת דם תקופתית",
-    document_type: "medical",
-    pet_name: "לונה",
-    uploaded_at: new Date(Date.now() - 5 * 3600000).toISOString(),
-    description: "תוצאות תקינות",
-    file_url: "https://xcauajpfrmalzhhiodcb.supabase.co/storage/v1/object/public/documents/sample-medical.pdf",
+    id: "ad-2",
+    title: "אילוף מקצועי",
+    subtitle: "הפוך את הכלב שלך לחבר מושלם",
+    image: "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=600&h=400&fit=crop",
+    cta: "התחל עכשיו",
+    link: "/training",
+    gradient: "from-purple-500 to-pink-400",
+    badge: "חדש",
+  },
+  {
+    id: "ad-3",
+    title: "מועדון הטבות Petid",
+    subtitle: "הנחות בלעדיות לחברי המועדון",
+    image: "https://images.unsplash.com/photo-1544568100-847a948585b9?w=600&h=400&fit=crop",
+    cta: "הצטרף חינם",
+    link: "/rewards",
+    gradient: "from-amber-500 to-orange-400",
+    badge: "20% הנחה",
   },
 ];
 
@@ -114,24 +183,15 @@ interface FeedProduct {
   image: string;
   description?: string;
   hasSale?: boolean;
-}
-
-interface FeedDocument {
-  id: string;
-  title: string;
-  document_type: string;
-  pet_name: string;
-  pet_avatar?: string;
-  uploaded_at: string;
-  description?: string;
-  file_url?: string;
+  rating?: number;
+  reviews?: number;
 }
 
 type FeedItem = 
   | { type: 'post'; data: Post; created_at: string }
   | { type: 'adoption'; data: AdoptionPet; created_at: string }
   | { type: 'product'; data: FeedProduct; created_at: string }
-  | { type: 'document'; data: FeedDocument; created_at: string };
+  | { type: 'ad'; data: FeedAd; created_at: string };
 const Feed = () => {
   const navigate = useNavigate();
   const {
@@ -637,25 +697,25 @@ const Feed = () => {
 
     // Convert products to FeedItems (only show in "all" feed)
     const productItems: FeedItem[] = feedFilter === "all"
-      ? FEATURED_PRODUCTS.map((product, index) => ({
+      ? SHOP_PRODUCTS.map((product, index) => ({
           type: 'product' as const,
           data: product,
           // Spread products throughout the feed
-          created_at: new Date(Date.now() - (index + 1) * 3600000).toISOString()
+          created_at: new Date(Date.now() - (index + 2) * 3600000).toISOString()
         }))
       : [];
 
-    // Convert documents to FeedItems (only show in "all" feed)
-    const documentItems: FeedItem[] = feedFilter === "all"
-      ? FEATURED_DOCUMENTS.map((doc) => ({
-          type: 'document' as const,
-          data: doc,
-          created_at: doc.uploaded_at
+    // Convert ads to FeedItems (only show in "all" feed)
+    const adItems: FeedItem[] = feedFilter === "all"
+      ? FEED_ADS.map((ad, index) => ({
+          type: 'ad' as const,
+          data: ad,
+          created_at: new Date(Date.now() - (index + 4) * 7200000).toISOString()
         }))
       : [];
 
     // Merge and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems, ...documentItems].sort((a, b) => 
+    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -987,18 +1047,15 @@ const Feed = () => {
                     />
                   </motion.div>
                 );
-              } else if (item.type === 'document') {
+              } else if (item.type === 'ad') {
                 return (
                   <motion.div
-                    key={`document-${item.data.id}`}
+                    key={`ad-${item.data.id}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index * 0.05, 0.3), duration: 0.3 }}
                   >
-                    <DocumentPostCard 
-                      document={item.data}
-                      user={{ name: "המשתמש שלי", avatar: userAvatar }}
-                    />
+                    <AdPostCard ad={item.data} />
                   </motion.div>
                 );
               }
