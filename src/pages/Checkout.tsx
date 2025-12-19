@@ -183,11 +183,11 @@ const Checkout = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-20 bg-white" dir="rtl">
+    <div className="min-h-screen pb-20 bg-background" dir="rtl">
       <AppHeader title="תשלום" showBackButton={true} />
 
       {/* Progress Steps */}
-      <div className="px-4 py-6 bg-gray-50">
+      <div className="px-4 py-6 bg-muted/50">
         <div className="flex items-center justify-between mb-8 max-w-md mx-auto">
           {steps.map((step, index) => {
             const StepIcon = step.icon;
@@ -200,10 +200,10 @@ const Checkout = () => {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md ${
                       isCompleted
-                        ? "bg-success text-white"
+                        ? "bg-success text-success-foreground"
                         : isActive
-                        ? "bg-accent text-gray-900"
-                        : "bg-white border-2 border-gray-300 text-gray-400"
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-background border-2 border-border text-muted-foreground"
                     }`}
                   >
                     {isCompleted ? (
@@ -214,7 +214,7 @@ const Checkout = () => {
                   </div>
                   <span
                     className={`text-xs font-jakarta mt-2 ${
-                      isActive ? "font-bold text-gray-900" : "text-gray-600"
+                      isActive ? "font-bold text-foreground" : "text-muted-foreground"
                     }`}
                   >
                     {step.title}
@@ -223,7 +223,7 @@ const Checkout = () => {
                 {index < steps.length - 1 && (
                   <div
                     className={`h-1 flex-1 transition-all mx-2 rounded-full ${
-                      isCompleted ? "bg-success" : "bg-gray-300"
+                      isCompleted ? "bg-accent" : "bg-border"
                     }`}
                   />
                 )}
@@ -246,10 +246,10 @@ const Checkout = () => {
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
                 <MapPin className="w-5 h-5 text-accent" strokeWidth={1.5} />
-                <h2 className="text-lg font-bold text-gray-900 font-jakarta">כתובת למשלוח</h2>
+                <h2 className="text-lg font-bold text-foreground font-jakarta">כתובת למשלוח</h2>
               </div>
 
-              <Card className="p-5 bg-background border-0 rounded-2xl shadow-lg space-y-4 max-w-md mx-auto">
+              <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg space-y-4 max-w-md mx-auto">
                 <div>
                   <Label htmlFor="fullName" className="font-jakarta text-sm font-semibold text-foreground">
                     שם מלא *
@@ -365,10 +365,10 @@ const Checkout = () => {
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
                 <CreditCard className="w-5 h-5 text-accent" strokeWidth={1.5} />
-                <h2 className="text-lg font-bold text-gray-900 font-jakarta">אמצעי תשלום</h2>
+                <h2 className="text-lg font-bold text-foreground font-jakarta">אמצעי תשלום</h2>
               </div>
 
-              <Card className="p-5 bg-background border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+              <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="space-y-3">
                     <div
@@ -433,8 +433,8 @@ const Checkout = () => {
                 </RadioGroup>
               </Card>
 
-              <Card className="p-3 bg-blue-50 border-0 rounded-xl max-w-md mx-auto">
-                <p className="text-xs text-blue-800 font-jakarta">
+              <Card className="p-3 bg-accent/10 border-0 rounded-xl max-w-md mx-auto">
+                <p className="text-xs text-accent font-jakarta font-medium text-center">
                   🔒 פרטי התשלום שלך מאובטחים ומוצפנים
                 </p>
               </Card>
@@ -452,27 +452,27 @@ const Checkout = () => {
               className="space-y-4"
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
-                <Package className="w-5 h-5 text-[#FFC107]" strokeWidth={1.5} />
-                <h2 className="text-lg font-bold text-gray-900 font-jakarta">סיכום הזמנה</h2>
+                <Package className="w-5 h-5 text-accent" strokeWidth={1.5} />
+                <h2 className="text-lg font-bold text-foreground font-jakarta">סיכום הזמנה</h2>
               </div>
 
               {/* Shipping Info */}
-              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+              <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-gray-900 font-jakarta text-base">
+                  <h3 className="font-bold text-foreground font-jakarta text-base">
                     כתובת למשלוח
                   </h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setCurrentStep(1)}
-                    className="text-[#FFC107] hover:bg-[#FFC107]/10 font-jakarta text-xs"
+                    className="text-accent hover:bg-accent/10 font-jakarta text-xs"
                   >
                     ערוך
                   </Button>
                 </div>
-                <div className="text-sm text-gray-600 font-jakarta space-y-1">
-                  <p className="font-semibold text-gray-900">{shippingData.fullName}</p>
+                <div className="text-sm text-muted-foreground font-jakarta space-y-1">
+                  <p className="font-semibold text-foreground">{shippingData.fullName}</p>
                   <p>{shippingData.address}</p>
                   <p>
                     {shippingData.city}, {shippingData.zipCode}
@@ -483,33 +483,33 @@ const Checkout = () => {
               </Card>
 
               {/* Payment Method */}
-              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+              <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-gray-900 font-jakarta text-base">אמצעי תשלום</h3>
+                  <h3 className="font-bold text-foreground font-jakarta text-base">אמצעי תשלום</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setCurrentStep(2)}
-                    className="text-[#FFC107] hover:bg-[#FFC107]/10 font-jakarta text-xs"
+                    className="text-accent hover:bg-accent/10 font-jakarta text-xs"
                   >
                     ערוך
                   </Button>
                 </div>
-                <p className="text-sm text-gray-600 font-jakarta">
+                <p className="text-sm text-muted-foreground font-jakarta">
                   {paymentMethod === "credit-card" ? "כרטיס אשראי" : 
                    paymentMethod === "paypal" ? "PayPal" : "מזומן במשלוח"}
                 </p>
               </Card>
 
               {/* Order Items */}
-              <Card className="p-5 bg-white border-0 rounded-2xl shadow-lg max-w-md mx-auto">
-                <h3 className="font-bold text-gray-900 font-jakarta text-base mb-4">
+              <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
+                <h3 className="font-bold text-foreground font-jakarta text-base mb-4">
                   פריטים בהזמנה ({items.length})
                 </h3>
                 <div className="space-y-3">
                   {items.map((item) => (
                     <div key={item.id} className="flex gap-3">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                         <img
                           src={item.image}
                           alt={item.name}
@@ -517,16 +517,16 @@ const Checkout = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 font-jakarta text-sm line-clamp-2">
+                        <h4 className="font-semibold text-foreground font-jakarta text-sm line-clamp-2">
                           {item.name}
                         </h4>
-                        <p className="text-xs text-gray-600 font-jakarta">
+                        <p className="text-xs text-muted-foreground font-jakarta">
                           כמות: {item.quantity}
                           {item.variant && ` • ${item.variant}`}
                           {item.size && ` • ${item.size}`}
                         </p>
                       </div>
-                      <div className="text-sm font-bold text-gray-900 font-jakarta">
+                      <div className="text-sm font-bold text-foreground font-jakarta">
                         ₪{(item.price * item.quantity).toFixed(2)}
                       </div>
                     </div>
@@ -535,18 +535,18 @@ const Checkout = () => {
               </Card>
 
               {/* Order Summary */}
-              <Card className="p-5 bg-gradient-to-br from-white to-gray-50 border-0 rounded-2xl shadow-xl max-w-md mx-auto space-y-3">
+              <Card className="p-5 bg-card border-0 rounded-2xl shadow-xl max-w-md mx-auto space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-jakarta">סכום ביניים</span>
-                  <span className="font-semibold text-gray-900 font-jakarta">
+                  <span className="text-muted-foreground font-jakarta">סכום ביניים</span>
+                  <span className="font-semibold text-foreground font-jakarta">
                     ₪{subtotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-jakarta">משלוח</span>
-                  <span className="font-semibold text-gray-900 font-jakarta">
+                  <span className="text-muted-foreground font-jakarta">משלוח</span>
+                  <span className="font-semibold text-foreground font-jakarta">
                     {shipping === 0 ? (
-                      <span className="text-green-600 font-bold">חינם</span>
+                      <span className="text-success font-bold">חינם</span>
                     ) : (
                       `₪${shipping.toFixed(2)}`
                     )}
@@ -554,22 +554,22 @@ const Checkout = () => {
                 </div>
                 {paymentMethod === "cash-on-delivery" && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 font-jakarta">עמלת מזומן</span>
-                    <span className="font-semibold text-gray-900 font-jakarta">₪5.00</span>
+                    <span className="text-muted-foreground font-jakarta">עמלת מזומן</span>
+                    <span className="font-semibold text-foreground font-jakarta">₪5.00</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 font-jakarta">מע״מ (17%)</span>
-                  <span className="font-semibold text-gray-900 font-jakarta">
+                  <span className="text-muted-foreground font-jakarta">מע״מ (17%)</span>
+                  <span className="font-semibold text-foreground font-jakarta">
                     ₪{tax.toFixed(2)}
                   </span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-lg font-bold text-gray-900 font-jakarta">
+                  <span className="text-lg font-bold text-foreground font-jakarta">
                     סה״כ לתשלום
                   </span>
-                  <span className="text-2xl font-bold text-[#E91E63] font-jakarta">
+                  <span className="text-2xl font-bold text-primary font-jakarta">
                     ₪
                     {(
                       total + (paymentMethod === "cash-on-delivery" ? 5 : 0)
@@ -587,7 +587,7 @@ const Checkout = () => {
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-2 border-gray-300 text-gray-900 hover:bg-gray-100 rounded-xl font-bold font-jakarta h-14"
+              className="flex-1 border-2 border-border text-foreground hover:bg-muted rounded-xl font-bold font-jakarta h-14"
               onClick={() => setCurrentStep(currentStep - 1)}
               disabled={isProcessing}
             >
@@ -596,7 +596,7 @@ const Checkout = () => {
           )}
           <Button
             size="lg"
-            className={`flex-1 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
+            className={`flex-1 bg-accent hover:bg-accent-hover text-accent-foreground rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
             onClick={currentStep === 3 ? handlePlaceOrder : handleNextStep}
             disabled={isProcessing}
           >
