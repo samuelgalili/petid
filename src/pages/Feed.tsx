@@ -1,4 +1,5 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, Menu, ShoppingCart } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, Menu, ShoppingCart, Coins, Gift, ChevronLeft } from "lucide-react";
+import { usePoints } from "@/contexts/PointsContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -223,6 +224,9 @@ const Feed = () => {
   const {
     setCartIconPosition
   } = useFlyingCart();
+  const {
+    totalPoints
+  } = usePoints();
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
@@ -1016,6 +1020,33 @@ const Feed = () => {
       delay: 0.1,
       duration: 0.4
     }}>
+        {/* Rewards Bar */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 mx-4 rounded-2xl p-3 shadow-lg mb-4 cursor-pointer hover:shadow-xl transition-shadow"
+          onClick={() => navigate('/rewards')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/30 backdrop-blur rounded-full flex items-center justify-center">
+                <Coins className="w-5 h-5 text-amber-800" />
+              </div>
+              <div>
+                <p className="text-amber-900 font-bold text-sm">{totalPoints.toLocaleString()} נקודות</p>
+                <p className="text-amber-800/80 text-xs">5% קאשבק בכל קנייה</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-white/30 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                <Gift className="w-4 h-4 text-amber-800" />
+                <span className="text-amber-900 font-semibold text-xs">פדה עכשיו</span>
+              </div>
+              <ChevronLeft className="w-5 h-5 text-amber-800" />
+            </div>
+          </div>
+        </motion.div>
+
         <div data-pets-section className="py-5 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
           <div className="max-w-lg mx-auto">
             <h2 className="text-[15px] font-bold text-slate-800 px-4 mb-4 flex items-center gap-2.5">
