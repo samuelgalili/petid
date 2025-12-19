@@ -174,20 +174,23 @@ export const ProfileImageEditor = ({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache-busting timestamp
       const {
         data: { publicUrl },
       } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      
+      // Add timestamp to bust browser cache
+      const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
 
       // Update profile
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: cacheBustedUrl })
         .eq("id", user.id);
 
       if (updateError) throw updateError;
 
-      onImageUpdated(publicUrl);
+      onImageUpdated(cacheBustedUrl);
       toast({
         title: "הצלחה!",
         description: "תמונת הפרופיל עודכנה בהצלחה",

@@ -385,6 +385,14 @@ const Feed = () => {
       toast.error("שגיאה בעדכון פרטי חיית המחמד");
     }
   };
+  
+  const handlePetAvatarUpdate = (petId: string, newAvatarUrl: string) => {
+    setPets(prev => prev.map(p => p.id === petId ? {
+      ...p,
+      avatar_url: newAvatarUrl
+    } : p));
+  };
+  
   const handleArchivePet = async () => {
     if (!editingPet) return;
     try {
@@ -1020,7 +1028,7 @@ const Feed = () => {
     }} />
 
       {/* Pet Edit Sheet */}
-      <PetEditSheet pet={editingPet} isOpen={isEditSheetOpen} onClose={handleCloseEditSheet} editFormData={editFormData} onFormDataChange={setEditFormData} onSave={handleSavePetEdit} onDelete={handleArchivePet} showDeleteConfirm={showDeleteConfirm} onDeleteConfirmChange={setShowDeleteConfirm} />
+      <PetEditSheet pet={editingPet} isOpen={isEditSheetOpen} onClose={handleCloseEditSheet} editFormData={editFormData} onFormDataChange={setEditFormData} onSave={handleSavePetEdit} onDelete={handleArchivePet} showDeleteConfirm={showDeleteConfirm} onDeleteConfirmChange={setShowDeleteConfirm} onAvatarUpdate={handlePetAvatarUpdate} />
 
       {/* Hamburger Menu */}
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
