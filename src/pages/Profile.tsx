@@ -134,8 +134,8 @@ const Profile = () => {
   if (loading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center pb-20">
-          <div className="w-12 h-12 border-3 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
+        <div className="min-h-screen bg-background flex items-center justify-center pb-20">
+          <div className="w-12 h-12 border-3 border-border border-t-foreground rounded-full animate-spin"></div>
         </div>
       </PageTransition>
     );
@@ -143,54 +143,54 @@ const Profile = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-white pb-20" dir="rtl">
+      <div className="min-h-screen bg-background pb-20" dir="rtl">
         <AppHeader title="פרופיל" showBackButton={true} />
 
         {/* Content Container */}
         <div className="px-4 py-4 space-y-4">
           
-          {/* User Header Section - Instagram Style */}
+          {/* User Header Section */}
           <div className="flex items-center gap-5 mb-6">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-gray-100">
+              <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-border">
                 <Avatar className="w-full h-full">
                   <AvatarImage src={profile?.avatar_url} />
-                  <AvatarFallback className="bg-[#FAFAFA] text-[#262626] font-semibold text-xl">
+                  <AvatarFallback className="bg-muted text-foreground font-semibold text-xl">
                     {profile?.full_name?.[0]?.toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
               </div>
               <button
                 onClick={() => setIsImageEditorOpen(true)}
-                className="absolute bottom-0 right-0 w-7 h-7 bg-[#0095F6] rounded-full flex items-center justify-center ring-2 ring-white"
+                className="absolute bottom-0 right-0 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background"
               >
-                <Camera className="w-3.5 h-3.5 text-white" strokeWidth={2} />
+                <Camera className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2} />
               </button>
             </div>
             
             <div className="flex-1">
-              <h2 className="text-xl font-semibold text-[#262626] font-jakarta">
+              <h2 className="text-xl font-semibold text-foreground font-jakarta">
                 {profile?.full_name || "משתמש"}
               </h2>
-              <p className="text-sm text-[#8E8E8E] font-jakarta">
+              <p className="text-sm text-muted-foreground font-jakarta">
                 {profile?.email || "user@example.com"}
               </p>
             </div>
           </div>
 
           {/* Statistics Row */}
-          <div className="flex justify-around py-3 border-t border-b border-gray-100">
+          <div className="flex justify-around py-3 border-t border-b border-border">
             <div className="text-center">
-              <p className="text-lg font-semibold text-[#262626]">{pets.length}</p>
-              <p className="text-xs text-[#8E8E8E]">חיות מחמד</p>
+              <p className="text-lg font-semibold text-foreground">{pets.length}</p>
+              <p className="text-xs text-muted-foreground">חיות מחמד</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-[#262626]">{totalOrders}</p>
-              <p className="text-xs text-[#8E8E8E]">הזמנות</p>
+              <p className="text-lg font-semibold text-foreground">{totalOrders}</p>
+              <p className="text-xs text-muted-foreground">הזמנות</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-[#262626]">{profile?.points || 0}</p>
-              <p className="text-xs text-[#8E8E8E]">נקודות</p>
+              <p className="text-lg font-semibold text-foreground">{profile?.points || 0}</p>
+              <p className="text-xs text-muted-foreground">נקודות</p>
             </div>
           </div>
 
@@ -205,10 +205,10 @@ const Profile = () => {
           {/* Pets Section */}
           <div className="mt-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[#262626] font-semibold font-jakarta text-base">חיות המחמד שלי</h3>
+              <h3 className="text-foreground font-semibold font-jakarta text-base">חיות המחמד שלי</h3>
               <button 
                 onClick={() => navigate('/add-pet')}
-                className="text-[#0095F6] font-semibold text-sm font-jakarta"
+                className="text-primary font-semibold text-sm font-jakarta"
               >
                 + הוסף
               </button>
@@ -221,11 +221,11 @@ const Profile = () => {
                     onClick={() => navigate(`/pet/${pet.id}`)}
                     className="flex-shrink-0 w-20 text-center cursor-pointer"
                   >
-                    <div className="w-16 h-16 mx-auto rounded-full overflow-hidden ring-2 ring-gray-100 mb-1">
+                    <div className="w-16 h-16 mx-auto rounded-full overflow-hidden ring-2 ring-border mb-1">
                       {pet.avatar_url ? (
                         <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-[#FAFAFA] flex items-center justify-center">
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
                           {pet.type === 'dog' ? (
                             <img src={dogIcon} alt="dog" className="w-8 h-8" />
                           ) : (
@@ -234,17 +234,17 @@ const Profile = () => {
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-[#262626] font-jakarta truncate">{pet.name}</p>
+                    <p className="text-xs text-foreground font-jakarta truncate">{pet.name}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 bg-[#FAFAFA] rounded-lg">
-                <PawPrint className="w-10 h-10 text-[#8E8E8E] mx-auto mb-2" strokeWidth={1.5} />
-                <p className="text-[#8E8E8E] text-sm font-jakarta mb-3">אין חיות מחמד</p>
+              <div className="text-center py-8 bg-muted rounded-lg">
+                <PawPrint className="w-10 h-10 text-muted-foreground mx-auto mb-2" strokeWidth={1.5} />
+                <p className="text-muted-foreground text-sm font-jakarta mb-3">אין חיות מחמד</p>
                 <button
                   onClick={() => navigate('/add-pet')}
-                  className="text-[#0095F6] font-semibold text-sm font-jakarta"
+                  className="text-primary font-semibold text-sm font-jakarta"
                 >
                   הוסף חיית מחמד ראשונה
                 </button>
@@ -256,87 +256,87 @@ const Profile = () => {
           <div className="mt-6 space-y-1">
             <button 
               onClick={() => navigate('/cart')}
-              className="w-full flex items-center justify-between p-4 bg-white border-b border-gray-100 active:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 bg-card border-b border-border active:bg-muted"
             >
               <div className="flex items-center gap-3">
-                <ShoppingCart className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
-                <span className="text-[#262626] font-jakarta text-sm">עגלת קניות</span>
+                <ShoppingCart className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-foreground font-jakarta text-sm">עגלת קניות</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#8E8E8E]" strokeWidth={1.5} />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </button>
 
             <button 
               onClick={() => navigate('/order-history')}
-              className="w-full flex items-center justify-between p-4 bg-white border-b border-gray-100 active:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 bg-card border-b border-border active:bg-muted"
             >
               <div className="flex items-center gap-3">
-                <Package className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
-                <span className="text-[#262626] font-jakarta text-sm">ההזמנות שלי</span>
+                <Package className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-foreground font-jakarta text-sm">ההזמנות שלי</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#8E8E8E]" strokeWidth={1.5} />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </button>
 
             <button 
               onClick={() => navigate('/rewards')}
-              className="w-full flex items-center justify-between p-4 bg-white border-b border-gray-100 active:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 bg-card border-b border-border active:bg-muted"
             >
               <div className="flex items-center gap-3">
-                <Award className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
-                <span className="text-[#262626] font-jakarta text-sm">תגמולים ונקודות</span>
+                <Award className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-foreground font-jakarta text-sm">תגמולים ונקודות</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#8E8E8E]" strokeWidth={1.5} />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </button>
 
             <button 
               onClick={() => navigate('/tasks')}
-              className="w-full flex items-center justify-between p-4 bg-white border-b border-gray-100 active:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 bg-card border-b border-border active:bg-muted"
             >
               <div className="flex items-center gap-3">
-                <Target className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
-                <span className="text-[#262626] font-jakarta text-sm">משימות יומיות</span>
+                <Target className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-foreground font-jakarta text-sm">משימות יומיות</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#8E8E8E]" strokeWidth={1.5} />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </button>
 
             <button 
               onClick={() => navigate('/favorites')}
-              className="w-full flex items-center justify-between p-4 bg-white border-b border-gray-100 active:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 bg-card border-b border-border active:bg-muted"
             >
               <div className="flex items-center gap-3">
-                <Heart className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
-                <span className="text-[#262626] font-jakarta text-sm">מועדפים</span>
+                <Heart className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-foreground font-jakarta text-sm">מועדפים</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#8E8E8E]" strokeWidth={1.5} />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </button>
 
             <button 
               onClick={() => navigate('/notifications')}
-              className="w-full flex items-center justify-between p-4 bg-white border-b border-gray-100 active:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 bg-card border-b border-border active:bg-muted"
             >
               <div className="flex items-center gap-3">
-                <Bell className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
-                <span className="text-[#262626] font-jakarta text-sm">התראות</span>
+                <Bell className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-foreground font-jakarta text-sm">התראות</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#8E8E8E]" strokeWidth={1.5} />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </button>
 
             <button 
               onClick={() => navigate('/settings')}
-              className="w-full flex items-center justify-between p-4 bg-white border-b border-gray-100 active:bg-gray-50"
+              className="w-full flex items-center justify-between p-4 bg-card border-b border-border active:bg-muted"
             >
               <div className="flex items-center gap-3">
-                <Settings className="w-5 h-5 text-[#262626]" strokeWidth={1.5} />
-                <span className="text-[#262626] font-jakarta text-sm">הגדרות</span>
+                <Settings className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-foreground font-jakarta text-sm">הגדרות</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-[#8E8E8E]" strokeWidth={1.5} />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </button>
           </div>
 
           {/* Logout Button */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
+          <div className="mt-6 pt-4 border-t border-border">
             <button
               onClick={handleLogout}
-              className="w-full text-[#ED4956] font-semibold text-sm font-jakarta py-3"
+              className="w-full text-destructive font-semibold text-sm font-jakarta py-3"
             >
               התנתק
             </button>
@@ -344,7 +344,7 @@ const Profile = () => {
 
           {/* Version */}
           <div className="text-center pb-6">
-            <p className="text-xs text-[#8E8E8E] font-jakarta">Petid v1.0.0</p>
+            <p className="text-xs text-muted-foreground font-jakarta">Petid v1.0.0</p>
           </div>
         </div>
 

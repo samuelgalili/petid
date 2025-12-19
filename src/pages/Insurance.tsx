@@ -492,25 +492,25 @@ const Insurance = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-gray-50 to-white" dir="rtl">
+    <div className="min-h-screen pb-24 bg-background" dir="rtl">
       <AppHeader 
         title="ביטוח חיות מחמד" 
         showBackButton={true}
         showMenuButton={false}
       />
 
-      {/* Hero Section - Instagram Stories Style */}
+      {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="px-4 -mt-2 mb-6"
       >
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-400 to-rose-400 p-[2px]">
-          <div className="relative bg-gradient-to-br from-amber-50 to-orange-50 rounded-[22px] p-6 overflow-hidden">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-primary p-[2px]">
+          <div className="relative bg-gradient-to-br from-primary/5 to-accent/5 rounded-[22px] p-6 overflow-hidden">
             {/* Decorative Elements */}
-            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-amber-300/40 to-transparent rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-orange-300/40 to-transparent rounded-full blur-2xl translate-x-1/2 translate-y-1/2" />
+            <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-primary/40 to-transparent rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-tl from-accent/40 to-transparent rounded-full blur-2xl translate-x-1/2 translate-y-1/2" />
             
             <div className="relative z-10">
               <motion.div 
@@ -519,10 +519,10 @@ const Insurance = () => {
                 transition={{ delay: 0.2 }}
                 className="flex items-center gap-2 mb-4"
               >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-200">
+                <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-sm font-bold text-amber-800 bg-amber-100/80 px-3 py-1.5 rounded-full">
+                <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
                   שומרה ביטוח
                 </span>
               </motion.div>
@@ -531,7 +531,7 @@ const Insurance = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-2xl font-black text-gray-900 mb-2"
+                className="text-2xl font-black text-foreground mb-2"
               >
                 הגנה מקיפה לחיית המחמד שלך 🐾
               </motion.h1>
@@ -540,7 +540,7 @@ const Insurance = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="text-gray-600 text-sm mb-5 leading-relaxed"
+                className="text-muted-foreground text-sm mb-5 leading-relaxed"
               >
                 החזר הוצאות רפואיות במקרה של מחלה או תאונה
               </motion.p>
@@ -551,15 +551,15 @@ const Insurance = () => {
                 transition={{ delay: 0.5 }}
                 className="flex items-center gap-3"
               >
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-sm">
-                  <div className="text-xs text-gray-500 mb-0.5">החל מ-</div>
-                  <div className="text-2xl font-black bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+                <div className="bg-background/80 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="text-xs text-muted-foreground mb-0.5">החל מ-</div>
+                  <div className="text-2xl font-black bg-gradient-primary bg-clip-text text-transparent">
                     ₪79
-                    <span className="text-sm font-medium text-gray-400">/חודש</span>
+                    <span className="text-sm font-medium text-muted-foreground">/חודש</span>
                   </div>
                 </div>
                 <Button 
-                  className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-2xl font-bold py-6 shadow-lg shadow-orange-200/50 transition-all duration-300 hover:shadow-xl hover:shadow-orange-300/50 hover:-translate-y-0.5"
+                  className="flex-1 bg-gradient-primary hover:opacity-90 text-white rounded-2xl font-bold py-6 shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
                   onClick={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   צפה במסלולים
