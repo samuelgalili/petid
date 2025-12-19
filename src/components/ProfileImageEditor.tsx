@@ -155,10 +155,10 @@ export const ProfileImageEditor = ({
 
       // Delete old avatar if exists
       if (currentImageUrl) {
-        const oldPath = currentImageUrl.split("/").pop();
+        const oldPath = currentImageUrl.split("/").pop()?.split("?")[0];
         if (oldPath) {
           await supabase.storage
-            .from("avatars")
+            .from("pet-avatars")
             .remove([`${user.id}/${oldPath}`]);
         }
       }
@@ -168,7 +168,7 @@ export const ProfileImageEditor = ({
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("pet-avatars")
         .upload(filePath, croppedImage, {
           contentType: "image/jpeg",
           upsert: true,
@@ -179,7 +179,7 @@ export const ProfileImageEditor = ({
       // Get public URL with cache-busting timestamp
       const {
         data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      } = supabase.storage.from("pet-avatars").getPublicUrl(filePath);
       
       // Add timestamp to bust browser cache
       const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;

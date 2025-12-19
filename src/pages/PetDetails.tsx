@@ -123,7 +123,7 @@ const PetDetails = () => {
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("pet-avatars")
         .upload(filePath, file, {
           contentType: file.type,
           upsert: true,
@@ -131,7 +131,7 @@ const PetDetails = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage.from("pet-avatars").getPublicUrl(filePath);
       const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
 
       const { error: updateError } = await supabase
