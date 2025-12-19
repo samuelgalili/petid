@@ -552,7 +552,7 @@ const Shop = () => {
       {/* Sub-Categories Scroll */}
       <div className="bg-background">
         <div className="max-w-lg mx-auto">
-          <div className="flex gap-2 px-4 py-2.5 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 px-4 py-2.5 overflow-x-auto hide-scrollbar">
             {subCategories.map((category) => (
               <button
                 key={category.id}
