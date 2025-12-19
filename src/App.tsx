@@ -74,6 +74,8 @@ import Terms from "./pages/Terms";
 import ClubTerms from "./pages/ClubTerms";
 import Favorites from "./pages/Favorites";
 import AdCampaigns from "./pages/AdCampaigns";
+import BusinessDirectory from "./pages/BusinessDirectory";
+import BusinessProfile from "./pages/BusinessProfile";
 
 import Support from "./pages/Support";
 import Deals from "./pages/Deals";
@@ -160,6 +162,8 @@ const AnimatedRoutes = () => {
         <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
         <Route path="/club-terms" element={<PageTransition><ClubTerms /></PageTransition>} />
         <Route path="/ad-campaigns" element={<PageTransition><AdCampaigns /></PageTransition>} />
+        <Route path="/businesses" element={<PageTransition><BusinessDirectory /></PageTransition>} />
+        <Route path="/business/:id" element={<PageTransition><BusinessProfile /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
         </AnimatePresence>
