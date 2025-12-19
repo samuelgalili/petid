@@ -558,86 +558,100 @@ const Explore = () => {
         <div className="p-2">
           {loading ? (
             /* Skeleton Grid */
-            <div className="grid grid-cols-2 gap-3">
-              {[...Array(6)].map((_, i) => (
+            <div className="grid grid-cols-3 gap-0.5">
+              {[...Array(12)].map((_, i) => (
                 <div 
                   key={i} 
-                  className="aspect-[4/3] bg-muted animate-pulse rounded-xl"
+                  className={`aspect-square bg-muted animate-pulse ${i % 5 === 0 ? 'row-span-2' : ''}`}
                 />
               ))}
             </div>
           ) : activeTab === "parks" ? (
-            /* Parks Grid with Images */
-            <div className="grid grid-cols-2 gap-3">
+            /* Parks Grid - Instagram style */
+            <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
               {parks.length > 0 ? (
-                parks.map((park, index) => (
-                  <motion.div
-                    key={park.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => navigate("/parks")}
-                    className="relative rounded-xl overflow-hidden cursor-pointer group aspect-[4/3]"
-                  >
-                    <img
-                      src={parkImages[index % parkImages.length]}
-                      alt={park.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <h3 className="font-semibold text-white text-sm mb-1 line-clamp-1">{park.name}</h3>
-                      <div className="flex items-center gap-1 text-white/80 text-xs">
-                        <MapPin className="w-3 h-3" />
-                        <span className="line-clamp-1">{park.city}</span>
-                      </div>
-                      {park.rating && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          <span className="text-white text-xs font-medium">{park.rating.toFixed(1)}</span>
+                parks.map((park, index) => {
+                  const isLarge = index % 5 === 0;
+                  return (
+                    <motion.div
+                      key={park.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.03 }}
+                      onClick={() => navigate("/parks")}
+                      className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
+                    >
+                      <img
+                        src={parkImages[index % parkImages.length]}
+                        alt={park.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
+                        <span className="text-white font-semibold text-sm text-center px-2 line-clamp-2">{park.name}</span>
+                        <div className="flex items-center gap-1 text-white/90">
+                          <MapPin className="w-3 h-3" />
+                          <span className="text-xs">{park.city}</span>
                         </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))
+                        {park.rating && (
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-white text-xs">{park.rating.toFixed(1)}</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Park icon indicator */}
+                      <div className="absolute top-1 right-1">
+                        <Trees className="w-4 h-4 text-white drop-shadow-lg" />
+                      </div>
+                    </motion.div>
+                  );
+                })
               ) : (
-                <div className="col-span-2 text-center py-20">
+                <div className="col-span-3 text-center py-20">
                   <Trees className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
                   <p className="text-muted-foreground">אין גינות כלבים להצגה</p>
                 </div>
               )}
             </div>
           ) : activeTab === "deals" ? (
-            /* Deals Grid with Product Images */
-            <div className="grid grid-cols-2 gap-3">
+            /* Deals Grid - Instagram style */
+            <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
               {deals.length > 0 ? (
-                deals.map((deal, index) => (
-                  <motion.div
-                    key={deal.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => navigate(deal.button_link || "/shop")}
-                    className="relative rounded-xl overflow-hidden cursor-pointer group aspect-[4/3]"
-                  >
-                    <img
-                      src={productImages[index % productImages.length]}
-                      alt={deal.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                    <Badge className="absolute top-2 right-2 bg-red-500 text-white border-0 text-xs">
-                      <Percent className="w-3 h-3 mr-1" />
-                      {deal.badge_text}
-                    </Badge>
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <h3 className="font-semibold text-white text-sm mb-0.5 line-clamp-1">{deal.title}</h3>
-                      <p className="text-white/70 text-xs line-clamp-1">{deal.subtitle}</p>
-                    </div>
-                  </motion.div>
-                ))
+                deals.map((deal, index) => {
+                  const isLarge = index % 5 === 0;
+                  return (
+                    <motion.div
+                      key={deal.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.03 }}
+                      onClick={() => navigate(deal.button_link || "/shop")}
+                      className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
+                    >
+                      <img
+                        src={productImages[index % productImages.length]}
+                        alt={deal.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
+                        <span className="text-white font-semibold text-sm text-center px-2 line-clamp-2">{deal.title}</span>
+                        <span className="text-white/80 text-xs">{deal.subtitle}</span>
+                      </div>
+                      {/* Deal badge */}
+                      <div className="absolute top-1 right-1">
+                        <Badge className="bg-red-500 text-white border-0 text-[10px] px-1.5 py-0.5">
+                          {deal.badge_text}
+                        </Badge>
+                      </div>
+                    </motion.div>
+                  );
+                })
               ) : (
-                <div className="col-span-2 text-center py-20">
+                <div className="col-span-3 text-center py-20">
                   <Tag className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
                   <p className="text-muted-foreground">אין מבצעים כרגע</p>
                 </div>
