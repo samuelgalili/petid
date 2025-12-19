@@ -61,7 +61,7 @@ export const PetEditSheet = ({
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from("pet-avatars")
         .upload(filePath, file, {
           contentType: file.type,
           upsert: true,
@@ -70,7 +70,7 @@ export const PetEditSheet = ({
       if (uploadError) throw uploadError;
 
       // Get public URL with cache busting
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage.from("pet-avatars").getPublicUrl(filePath);
       const cacheBustedUrl = `${publicUrl}?t=${Date.now()}`;
 
       // Update pet in database
