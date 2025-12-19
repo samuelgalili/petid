@@ -6,8 +6,7 @@ export const FeedCardSkeleton = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="rounded-[28px] p-5 flex gap-4 overflow-hidden"
-      style={{ backgroundColor: '#F5F5F5' }}
+      className="rounded-[28px] p-5 flex gap-4 overflow-hidden bg-muted"
     >
       <Skeleton variant="shimmer" className="w-28 h-28 rounded-2xl flex-shrink-0" />
       

@@ -302,7 +302,7 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 gap-3">
               <Button
                 size="lg"
-                className="w-full bg-[#7DD3C0] hover:bg-[#6BC4AD] text-gray-900 rounded-xl font-bold font-jakarta justify-start"
+                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl font-bold font-jakarta justify-start"
                 onClick={() => navigate("/admin/orders")}
               >
                 <Package className="w-5 h-5 mr-3" />
@@ -311,7 +311,7 @@ const AdminDashboard = () => {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full border-2 border-gray-300 text-gray-900 hover:bg-gray-100 rounded-xl font-bold font-jakarta justify-start"
+                className="w-full border-2 border-border text-foreground hover:bg-muted rounded-xl font-bold font-jakarta justify-start"
                 onClick={() => navigate("/admin/customers")}
               >
                 <Users className="w-5 h-5 mr-3" />
@@ -319,7 +319,7 @@ const AdminDashboard = () => {
               </Button>
               <Button
                 size="lg"
-                className="w-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl font-bold font-jakarta justify-start"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold font-jakarta justify-start"
                 onClick={() => navigate("/admin/adoption")}
               >
                 <Heart className="w-5 h-5 mr-3" />

@@ -161,17 +161,17 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   onClick={() => handleNavigation("/profile")}
                   className="flex items-center gap-4 w-full"
                 >
-                  <Avatar className="w-16 h-16 ring-2 ring-gray-100">
+                  <Avatar className="w-16 h-16 ring-2 ring-border">
                     <AvatarImage src={profile?.avatar_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-[#F58529] to-[#DD2A7B] text-white text-xl font-semibold">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xl font-semibold">
                       {profile?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-right">
-                    <p className="text-[18px] font-semibold text-[#262626]">
+                    <p className="text-[18px] font-semibold text-foreground">
                       {profile?.full_name || "משתמש"}
                     </p>
-                    <p className="text-[14px] text-[#8E8E8E]">הצג פרופיל</p>
+                    <p className="text-[14px] text-muted-foreground">הצג פרופיל</p>
                   </div>
                 </button>
               ) : (

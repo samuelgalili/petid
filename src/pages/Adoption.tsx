@@ -494,7 +494,7 @@ const Adoption = () => {
                     {/* Adopt Button */}
                     <Button
                       onClick={() => handlePetClick(pet)}
-                      className="w-full h-10 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-lg text-sm font-semibold mt-2"
+                      className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold mt-2"
                     >
                       <Heart className="w-4 h-4 ml-2" />
                       רוצה לאמץ את {pet.name}
@@ -558,20 +558,20 @@ const Adoption = () => {
               <div className="p-4 space-y-4" dir="rtl">
                 {/* Quick Info Grid */}
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-xl p-3 text-center">
-                    <Calendar className="w-4 h-4 mx-auto mb-1 text-[#DD2A7B]" />
-                    <p className="text-[10px] text-gray-500">גיל</p>
-                    <p className="text-xs font-semibold text-gray-800">{getAgeString(selectedPet.age_years, selectedPet.age_months)}</p>
+                  <div className="bg-secondary rounded-xl p-3 text-center">
+                    <Calendar className="w-4 h-4 mx-auto mb-1 text-primary" />
+                    <p className="text-[10px] text-muted-foreground">גיל</p>
+                    <p className="text-xs font-semibold text-foreground">{getAgeString(selectedPet.age_years, selectedPet.age_months)}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-3 text-center">
-                    <Ruler className="w-4 h-4 mx-auto mb-1 text-[#8134AF]" />
-                    <p className="text-[10px] text-gray-500">גודל</p>
-                    <p className="text-xs font-semibold text-gray-800">{selectedPet.size}</p>
+                  <div className="bg-secondary rounded-xl p-3 text-center">
+                    <Ruler className="w-4 h-4 mx-auto mb-1 text-primary" />
+                    <p className="text-[10px] text-muted-foreground">גודל</p>
+                    <p className="text-xs font-semibold text-foreground">{selectedPet.size}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-orange-50 to-pink-50 rounded-xl p-3 text-center">
-                    <Heart className="w-4 h-4 mx-auto mb-1 text-[#F58529]" />
-                    <p className="text-[10px] text-gray-500">מין</p>
-                    <p className="text-xs font-semibold text-gray-800">{selectedPet.gender || "לא ידוע"}</p>
+                  <div className="bg-secondary rounded-xl p-3 text-center">
+                    <Heart className="w-4 h-4 mx-auto mb-1 text-primary" />
+                    <p className="text-[10px] text-muted-foreground">מין</p>
+                    <p className="text-xs font-semibold text-foreground">{selectedPet.gender || "לא ידוע"}</p>
                   </div>
                 </div>
 
@@ -620,7 +620,7 @@ const Adoption = () => {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleProceedToAdopt}
-                    className="flex-1 h-11 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90 text-white rounded-xl text-sm font-bold shadow-lg"
+                    className="flex-1 h-11 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold shadow-lg"
                   >
                     <Heart className="w-4 h-4 ml-2" fill="white" />
                     אמץ את {selectedPet.name}
@@ -647,14 +647,14 @@ const Adoption = () => {
       <Dialog open={showAdoptionForm} onOpenChange={setShowAdoptionForm}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 border-0 rounded-2xl bg-white">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-4 sticky top-0 z-10">
+          <div className="bg-primary p-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white" fill="white" />
+              <div className="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                <Heart className="w-6 h-6 text-primary-foreground" fill="currentColor" />
               </div>
               <div>
-                <h2 className="text-white font-bold text-base">בקשת אימוץ</h2>
-                <p className="text-white/80 text-xs">{selectedPet?.name}</p>
+                <h2 className="text-primary-foreground font-bold text-base">בקשת אימוץ</h2>
+                <p className="text-primary-foreground/80 text-xs">{selectedPet?.name}</p>
               </div>
             </div>
           </div>
