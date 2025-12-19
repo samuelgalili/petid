@@ -123,7 +123,7 @@ const BottomNav = () => {
         {/* Decorative glow line */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         
-        <div className="flex justify-around items-center h-18 max-w-lg mx-auto px-3 py-1">
+        <div className="flex justify-around items-center h-18 w-full max-w-2xl mx-auto px-3 py-1">
           {/* Home */}
           <NavItem
             onClick={() => {
