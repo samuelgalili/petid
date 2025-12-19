@@ -68,8 +68,8 @@ const AdminCustomers = () => {
     } catch (error: any) {
       console.error("Error fetching customers:", error);
       toast({
-        title: "Error",
-        description: "Failed to load customers",
+        title: "שגיאה",
+        description: "נכשל בטעינת לקוחות",
         variant: "destructive",
       });
     } finally {

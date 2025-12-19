@@ -83,15 +83,15 @@ const EditProfile = () => {
           >
             <ArrowRight className="w-6 h-6" />
           </Button>
-          <h1 className="text-xl font-bold text-gray-900 font-jakarta">
-            Edit profile
+          <h1 className="text-xl font-bold text-foreground font-jakarta">
+            עריכת פרופיל
           </h1>
           <Button
             onClick={handleSave}
             disabled={loading}
-            className="bg-[#0095F6] hover:bg-[#0082d9] text-white font-bold rounded-lg px-4"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-lg px-4"
           >
-            {loading ? "Saving..." : "Done"}
+            {loading ? "שומר..." : "סיום"}
           </Button>
         </div>
       </div>
@@ -158,27 +158,27 @@ const EditProfile = () => {
                 className="pr-10 font-jakarta bg-gray-50 text-gray-500"
               />
             </div>
-            <p className="text-xs text-gray-500 font-jakarta">Email cannot be changed</p>
+            <p className="text-xs text-muted-foreground font-jakarta">לא ניתן לשנות את האימייל</p>
           </div>
 
           {/* Bio Field */}
           <div className="space-y-2">
-            <Label htmlFor="bio" className="text-sm font-medium text-gray-900 font-jakarta">
-              Bio
+            <Label htmlFor="bio" className="text-sm font-medium text-foreground font-jakarta">
+              ביו
             </Label>
             <Textarea
               id="bio"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               className="min-h-[120px] font-jakarta resize-none"
-              placeholder="Write something about yourself... You can use emojis! 🐕🐈"
+              placeholder="כתבו משהו על עצמכם... אפשר להשתמש באימוג'ים! 🐕🐈"
               maxLength={150}
             />
             <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-500 font-jakarta">
-                Make your profile stand out with emojis and a brief bio
+              <p className="text-xs text-muted-foreground font-jakarta">
+                הפכו את הפרופיל שלכם לבולט עם אימוג'ים וביו קצר
               </p>
-              <p className="text-xs text-gray-400 font-jakarta">
+              <p className="text-xs text-muted-foreground/60 font-jakarta">
                 {bio.length}/150
               </p>
             </div>
@@ -190,16 +190,16 @@ const EditProfile = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mt-8 bg-gray-50 rounded-xl p-4 border border-gray-200"
+          className="mt-8 bg-secondary rounded-xl p-4 border border-border"
         >
-          <h3 className="text-sm font-bold text-gray-900 font-jakarta mb-2">
-            Profile Tips
+          <h3 className="text-sm font-bold text-foreground font-jakarta mb-2">
+            טיפים לפרופיל
           </h3>
-          <ul className="space-y-1 text-xs text-gray-600 font-jakarta">
-            <li>• Use emojis to add personality to your bio 🐾</li>
-            <li>• Keep your name clear and recognizable</li>
-            <li>• Add a profile photo to help others find you</li>
-            <li>• Share your interests and what you love about pets</li>
+          <ul className="space-y-1 text-xs text-muted-foreground font-jakarta">
+            <li>• השתמשו באימוג'ים כדי להוסיף אישיות לביו 🐾</li>
+            <li>• שמרו על שם ברור ומזהה</li>
+            <li>• הוסיפו תמונת פרופיל כדי שאחרים ימצאו אתכם</li>
+            <li>• שתפו את התחביבים שלכם ומה אתם אוהבים בחיות מחמד</li>
           </ul>
         </motion.div>
       </div>

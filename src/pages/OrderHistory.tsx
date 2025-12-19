@@ -79,8 +79,8 @@ const OrderHistory = () => {
     } catch (error: any) {
       console.error("Error fetching orders:", error);
       toast({
-        title: "Error",
-        description: "Failed to load order history",
+        title: "שגיאה",
+        description: "נכשל בטעינת היסטוריית הזמנות",
         variant: "destructive",
       });
     } finally {
@@ -135,8 +135,8 @@ const OrderHistory = () => {
     });
 
     toast({
-      title: "Items added to cart",
-      description: `${itemsAdded} items from order ${order.order_number} added to your cart`,
+      title: "פריטים נוספו לעגלה",
+      description: `${itemsAdded} פריטים מהזמנה ${order.order_number} נוספו לעגלה שלך`,
     });
 
     navigate("/cart");
@@ -161,19 +161,19 @@ const OrderHistory = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center px-4 py-20"
         >
-          <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <Package className="w-12 h-12 text-gray-400" />
+          <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center mb-4">
+            <Package className="w-12 h-12 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 font-jakarta mb-2">No orders yet</h2>
-          <p className="text-sm text-gray-600 font-jakarta mb-6 text-center">
-            Start shopping to see your order history
+          <h2 className="text-xl font-bold text-foreground font-jakarta mb-2">אין הזמנות עדיין</h2>
+          <p className="text-sm text-muted-foreground font-jakarta mb-6 text-center">
+            התחל לקנות כדי לראות את היסטוריית ההזמנות שלך
           </p>
           <Button
             size="lg"
-            className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-bold font-jakarta"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold font-jakarta"
             onClick={() => navigate("/home")}
           >
-            Start Shopping
+            התחל לקנות
           </Button>
         </motion.div>
       )}
@@ -189,7 +189,7 @@ const OrderHistory = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                <Card className="p-4 bg-card border border-border rounded-xl shadow-sm">
                   {/* Order Header */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -344,8 +344,8 @@ const OrderHistory = () => {
                       </Badge>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">Payment Method</span>
-                      <span className="font-semibold text-gray-900 font-jakarta capitalize">
+                      <span className="text-muted-foreground font-jakarta">אמצעי תשלום</span>
+                      <span className="font-semibold text-foreground font-jakarta capitalize">
                         {selectedOrder.payment_method.replace("-", " ")}
                       </span>
                     </div>
@@ -354,12 +354,12 @@ const OrderHistory = () => {
 
                 {/* Shipping Address */}
                 <div>
-                  <h3 className="font-bold text-gray-900 font-jakarta text-sm mb-2">
-                    Shipping Address
+                  <h3 className="font-bold text-foreground font-jakarta text-sm mb-2">
+                    כתובת למשלוח
                   </h3>
-                  <Card className="p-3 bg-white border border-gray-200">
-                    <div className="text-sm text-gray-600 font-jakarta space-y-1">
-                      <p className="font-semibold text-gray-900">
+                  <Card className="p-3 bg-card border border-border">
+                    <div className="text-sm text-muted-foreground font-jakarta space-y-1">
+                      <p className="font-semibold text-foreground">
                         {selectedOrder.shipping_address.fullName}
                       </p>
                       <p>{selectedOrder.shipping_address.address}</p>
@@ -374,14 +374,14 @@ const OrderHistory = () => {
 
                 {/* Order Items */}
                 <div>
-                  <h3 className="font-bold text-gray-900 font-jakarta text-sm mb-2">
-                    Items ({selectedOrder.items.length})
+                  <h3 className="font-bold text-foreground font-jakarta text-sm mb-2">
+                    פריטים ({selectedOrder.items.length})
                   </h3>
                   <div className="space-y-2">
                     {selectedOrder.items.map((item) => (
-                      <Card key={item.id} className="p-3 bg-white border border-gray-200">
+                      <Card key={item.id} className="p-3 bg-card border border-border">
                         <div className="flex gap-3">
-                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
                             <img
                               src={item.product_image}
                               alt={item.product_name}
@@ -389,15 +389,15 @@ const OrderHistory = () => {
                             />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900 font-jakarta text-sm">
+                            <h4 className="font-semibold text-foreground font-jakarta text-sm">
                               {item.product_name}
                             </h4>
-                            <p className="text-xs text-gray-600 font-jakarta">
-                              Qty: {item.quantity}
+                            <p className="text-xs text-muted-foreground font-jakarta">
+                              כמות: {item.quantity}
                               {item.variant && ` • ${item.variant}`}
                               {item.size && ` • ${item.size}`}
                             </p>
-                            <p className="text-sm font-bold text-gray-900 font-jakarta mt-1">
+                            <p className="text-sm font-bold text-foreground font-jakarta mt-1">
                               ₪{(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>

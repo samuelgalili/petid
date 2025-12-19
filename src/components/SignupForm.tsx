@@ -63,17 +63,17 @@ export const SignupForm = () => {
 
           if (error) {
             setGeneralError(error.message);
-            toast({ title: "Verification failed", description: error.message, variant: "destructive" });
+            toast({ title: "האימות נכשל", description: error.message, variant: "destructive" });
             setOtp(["", "", "", "", "", ""]);
             otpInputRefs.current[0]?.focus();
             setLoading(false);
             return;
           }
 
-          toast({ title: "Account created!", description: "Welcome to Petid!" });
+          toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
           navigate("/add-pet");
         } catch {
-          setGeneralError("An unexpected error occurred.");
+          setGeneralError("אירעה שגיאה לא צפויה.");
           setOtp(["", "", "", "", "", ""]);
           otpInputRefs.current[0]?.focus();
           setLoading(false);
@@ -269,21 +269,21 @@ export const SignupForm = () => {
             disabled={loading || !isFormValid}
             className="w-full h-10"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign Up"}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "הרשמה"}
           </Button>
 
-          <p className="text-xs text-gray-500 text-center leading-relaxed">
-            By signing up, you agree to our{" "}
-            <a href="/terms" className="text-[#00376B]">Terms</a>,{" "}
-            <a href="/privacy" className="text-[#00376B]">Privacy Policy</a> and{" "}
-            <a href="/privacy" className="text-[#00376B]">Cookies Policy</a>.
+          <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            בהרשמה, אתה מסכים ל{" "}
+            <a href="/terms" className="text-primary">תנאי שימוש</a>,{" "}
+            <a href="/privacy" className="text-primary">מדיניות פרטיות</a> ו{" "}
+            <a href="/privacy" className="text-primary">מדיניות עוגיות</a>.
           </p>
         </>
       ) : (
         /* OTP Input */
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 text-center">
-            Enter the 6-digit code sent to your {signupMethod === "email" ? "email" : "phone"}
+          <p className="text-sm text-muted-foreground text-center">
+            הזן את הקוד בן 6 הספרות שנשלח ל{signupMethod === "email" ? "אימייל" : "טלפון"} שלך
           </p>
           
           <div className="flex justify-center gap-2">

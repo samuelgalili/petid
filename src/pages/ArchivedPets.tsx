@@ -56,8 +56,8 @@ const ArchivedPets = () => {
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to load archived pets",
+        title: "שגיאה",
+        description: "נכשל בטעינת חיות מחמד מאורכבות",
         variant: "destructive",
       });
     } finally {
@@ -78,14 +78,14 @@ const ArchivedPets = () => {
       if (error) throw error;
 
       toast({
-        title: "Pet Restored!",
-        description: `${petName} has been restored to your active pets`,
+        title: "החיה שוחזרה!",
+        description: `${petName} הוחזר לחיות המחמד הפעילות שלך`,
       });
 
       fetchArchivedPets();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "שגיאה",
         description: error.message,
         variant: "destructive",
       });

@@ -63,17 +63,17 @@ export const LoginForm = () => {
 
           if (error) {
             setGeneralError(error.message);
-            toast({ title: "Verification failed", description: error.message, variant: "destructive" });
+            toast({ title: "האימות נכשל", description: error.message, variant: "destructive" });
             setOtp(["", "", "", "", "", ""]);
             otpInputRefs.current[0]?.focus();
             setLoading(false);
             return;
           }
 
-          toast({ title: "Login successful!", description: "Welcome back!" });
+          toast({ title: "התחברת בהצלחה!", description: "ברוכים השבים!" });
           navigate("/add-pet");
         } catch {
-          setGeneralError("An unexpected error occurred.");
+          setGeneralError("אירעה שגיאה לא צפויה.");
           setOtp(["", "", "", "", "", ""]);
           otpInputRefs.current[0]?.focus();
           setLoading(false);
@@ -246,14 +246,14 @@ export const LoginForm = () => {
             disabled={loading || !(loginMethod === "email" ? formData.email : formData.phone)}
             className="w-full h-10"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Log In"}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "התחברות"}
           </Button>
         </>
       ) : (
         /* OTP Input */
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 text-center">
-            Enter the 6-digit code sent to your {loginMethod === "email" ? "email" : "phone"}
+          <p className="text-sm text-muted-foreground text-center">
+            הזן את הקוד בן 6 הספרות שנשלח ל{loginMethod === "email" ? "אימייל" : "טלפון"} שלך
           </p>
           
           <div className="flex justify-center gap-2">

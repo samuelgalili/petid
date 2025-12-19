@@ -201,8 +201,8 @@ const AdminDashboard = () => {
     } catch (error: any) {
       console.error("Error fetching analytics:", error);
       toast({
-        title: "Error",
-        description: "Failed to load dashboard analytics",
+        title: "שגיאה",
+        description: "נכשל בטעינת נתוני הדשבורד",
         variant: "destructive",
       });
     } finally {
@@ -212,28 +212,28 @@ const AdminDashboard = () => {
 
   const statCards = [
     {
-      title: "Total Orders",
+      title: "סה״כ הזמנות",
       value: stats.totalOrders,
       icon: Package,
       color: "bg-blue-500",
       bgLight: "bg-blue-50",
     },
     {
-      title: "Total Revenue",
+      title: "סה״כ הכנסות",
       value: `₪${stats.totalRevenue.toFixed(2)}`,
       icon: DollarSign,
       color: "bg-green-500",
       bgLight: "bg-green-50",
     },
     {
-      title: "Pending Orders",
+      title: "הזמנות ממתינות",
       value: stats.pendingOrders,
       icon: Clock,
       color: "bg-yellow-500",
       bgLight: "bg-yellow-50",
     },
     {
-      title: "Delivered",
+      title: "נמסרו",
       value: stats.deliveredOrders,
       icon: CheckCircle,
       color: "bg-purple-500",
@@ -254,7 +254,7 @@ const AdminDashboard = () => {
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </Button>
-          <h1 className="text-base font-bold font-jakarta text-gray-900">Admin Dashboard</h1>
+          <h1 className="text-base font-bold font-jakarta text-foreground">דשבורד ניהול</h1>
           <div className="w-10" />
         </div>
       </header>
