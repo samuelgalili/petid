@@ -242,6 +242,62 @@ export type Database = {
           },
         ]
       }
+      business_products: {
+        Row: {
+          business_id: string
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string
+          images: string[] | null
+          in_stock: boolean | null
+          is_featured: boolean | null
+          name: string
+          original_price: number | null
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          images?: string[] | null
+          in_stock?: boolean | null
+          is_featured?: boolean | null
+          name: string
+          original_price?: number | null
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          images?: string[] | null
+          in_stock?: boolean | null
+          is_featured?: boolean | null
+          name?: string
+          original_price?: number | null
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_products_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_profiles: {
         Row: {
           address: string | null
@@ -1224,6 +1280,48 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      post_product_tags: {
+        Row: {
+          created_at: string
+          id: string
+          position_x: number | null
+          position_y: number | null
+          post_id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          post_id: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          post_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_product_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       posts: {
         Row: {
