@@ -64,7 +64,7 @@ import Notifications from "./pages/Notifications";
 const Training = lazy(() => import("./pages/Training"));
 import Grooming from "./pages/Grooming";
 import ColorSystemShowcase from "./pages/ColorSystemShowcase";
-import Onboarding from "./pages/Onboarding";
+// Onboarding merged into AddPet
 import Achievements from "./pages/Achievements";
 import Messages from "./pages/Messages";
 import MessageThread from "./pages/MessageThread";
@@ -109,7 +109,7 @@ const AnimatedRoutes = () => {
         
         <Route path="/support" element={<ProtectedRoute><PageTransition><Support /></PageTransition></ProtectedRoute>} />
         <Route path="/deals" element={<ProtectedRoute><PageTransition><Deals /></PageTransition></ProtectedRoute>} />
-        <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+        <Route path="/onboarding" element={<ProtectedRoute><Navigate to="/add-pet?onboarding=true" replace /></ProtectedRoute>} />
         <Route path="/add-pet" element={<ProtectedRoute><PageTransition><AddPet /></PageTransition></ProtectedRoute>} />
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
