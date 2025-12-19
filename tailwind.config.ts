@@ -141,10 +141,18 @@ export default {
 				blue: 'hsl(var(--petid-blue))',
 				'blue-light': 'hsl(var(--petid-blue-light))',
 				'blue-dark': 'hsl(var(--petid-blue-dark))',
+				turquoise: 'hsl(var(--petid-turquoise))',
+				'turquoise-light': 'hsl(var(--petid-turquoise-light))',
+				'turquoise-dark': 'hsl(var(--petid-turquoise-dark))',
 				gold: 'hsl(var(--petid-gold))',
 				'gold-light': 'hsl(var(--petid-gold-light))',
 				'gold-dark': 'hsl(var(--petid-gold-dark))',
 				teal: 'hsl(var(--petid-teal))'
+			},
+			shop: {
+				blue: 'hsl(var(--shop-blue))',
+				turquoise: 'hsl(var(--shop-turquoise))',
+				'light-blue': 'hsl(var(--shop-light-blue))'
 			},
 			instagram: {
 				blue: 'hsl(var(--ig-blue))',
@@ -274,7 +282,7 @@ export default {
 			elevated: 'var(--shadow-elevated)',
 			button: 'var(--shadow-button)',
 			'button-hover': 'var(--shadow-button-hover)',
-			instagram: 'var(--shadow-instagram)',
+			shop: 'var(--shadow-shop)',
 			'2xs': 'var(--shadow-2xs)',
 			xs: 'var(--shadow-xs)',
 			'2xl': 'var(--shadow-2xl)'
@@ -283,6 +291,7 @@ export default {
 			'gradient-primary': 'var(--gradient-primary)',
 			'gradient-instagram': 'var(--gradient-instagram)',
 			'gradient-petid': 'var(--gradient-instagram)',
+			'gradient-shop': 'var(--gradient-shop)',
 			'gradient-story': 'var(--gradient-story)',
 			'gradient-hero': 'var(--gradient-hero)',
 			'gradient-warm': 'var(--gradient-warm)',

@@ -326,11 +326,11 @@ const Adoption = () => {
                 >
                   <div className={`w-16 h-16 rounded-full p-[2px] ${
                     (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
-                      ? "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]"
+                      ? "bg-gradient-to-tr from-primary via-accent to-primary-light"
                       : "bg-gray-200"
                   }`}>
                     <div className="w-full h-full rounded-full bg-white p-[2px]">
-                      <div className="w-full h-full rounded-full bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+                      <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center">
                         <span className="text-2xl">{category.emoji}</span>
                       </div>
                     </div>
@@ -370,7 +370,7 @@ const Adoption = () => {
                   {/* Post Header */}
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px]">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary via-accent to-primary-light p-[2px]">
                         <div className="w-full h-full rounded-full bg-white p-[1px]">
                           <img
                             src={pet.image_url || "/placeholder.svg"}
