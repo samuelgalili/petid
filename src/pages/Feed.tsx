@@ -1055,9 +1055,7 @@ const Feed = () => {
           </div>
           
           {/* Bottom Text */}
-          <p className="text-gray-400 text-[11px] text-center">
-            צוברים עוד ₪{Math.max(50 - totalPoints * 0.01, 0).toFixed(2)} עד ה-31.12.25 והכסף עובר לארנק
-          </p>
+          
         </motion.div>
 
         <div data-pets-section className="py-5 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
