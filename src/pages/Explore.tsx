@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PetSearch } from "@/components/PetSearch";
 
 // Park images
 import parkImage1 from "@/assets/parks/dog-park-1.jpg";
@@ -809,8 +810,11 @@ const Explore = () => {
               ))}
             </div>
           ) : activeTab === "pets" ? (
-            /* Pets Grid */
-            <>
+            /* Pets Tab with Search */
+            <div className="space-y-4">
+              {/* Pet Search Component */}
+              <PetSearch className="px-2" />
+              
               <div className="flex items-center justify-between mb-2 px-1">
                 <span className="text-xs text-muted-foreground">
                   {pets.length} חיות נמצאו
@@ -878,7 +882,7 @@ const Explore = () => {
                   </div>
                 )}
               </div>
-            </>
+            </div>
           ) : activeTab === "parks" ? (
             /* Parks Grid - Instagram style */
             <>
