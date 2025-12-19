@@ -442,6 +442,19 @@ const Feed = () => {
     };
   }, [fetchPosts, fetchAdoptionPets]);
 
+  // Listen for refresh-feed event from bottom nav
+  useEffect(() => {
+    const handleRefreshFeed = () => {
+      setPage(0);
+      setHasMore(true);
+      fetchPosts(0, false);
+      fetchAdoptionPets();
+    };
+    
+    window.addEventListener('refresh-feed', handleRefreshFeed);
+    return () => window.removeEventListener('refresh-feed', handleRefreshFeed);
+  }, [fetchPosts, fetchAdoptionPets]);
+
   // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
@@ -848,12 +861,12 @@ const Feed = () => {
         </div>
       </motion.div>}
 
-      {/* Stories Bar - Sticky below header */}
+      {/* Stories Bar */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className="border-b border-[#DD2A7B]/10 bg-white/95 backdrop-blur-sm sticky top-[56px] z-40 shadow-sm"
+        className="bg-white"
       >
         <StoriesBar />
       </motion.div>
