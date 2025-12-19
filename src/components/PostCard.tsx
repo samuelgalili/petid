@@ -1,13 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag, Trophy, Sparkles } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { ReportDialog } from "@/components/ReportDialog";
 import { ProductTagOverlay } from "@/components/post/ProductTagOverlay";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -175,6 +176,41 @@ export const PostCard = ({
   const [commentText, setCommentText] = useState("");
   const [showProductTags, setShowProductTags] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [activeChallenge, setActiveChallenge] = useState<{
+    id: string;
+    title_he: string;
+    hashtag: string;
+    participant_count: number;
+  } | null>(null);
+  const [showChallengeCTA, setShowChallengeCTA] = useState(false);
+
+  // Check if post caption contains a challenge hashtag
+  useEffect(() => {
+    const checkForChallenge = async () => {
+      if (!post.caption) return;
+      
+      // Extract hashtags from caption
+      const hashtagMatches = post.caption.match(/#[\u0590-\u05FFa-zA-Z0-9_]+/g);
+      if (!hashtagMatches || hashtagMatches.length === 0) return;
+      
+      const hashtags = hashtagMatches.map(h => h.replace('#', ''));
+      
+      // Check if any hashtag matches an active challenge
+      const { data: challenges } = await supabase
+        .from("challenges")
+        .select("id, title_he, hashtag, participant_count")
+        .eq("is_active", true)
+        .in("hashtag", hashtags)
+        .limit(1);
+      
+      if (challenges && challenges.length > 0) {
+        setActiveChallenge(challenges[0]);
+        setShowChallengeCTA(true);
+      }
+    };
+    
+    checkForChallenge();
+  }, [post.caption]);
 
   const handleComment = () => {
     if (!checkAuth("כדי להגיב על פוסטים, יש להתחבר")) return;
@@ -559,6 +595,59 @@ export const PostCard = ({
             {post.caption}
           </p>
         )}
+
+        {/* Challenge CTA Banner */}
+        <AnimatePresence>
+          {showChallengeCTA && activeChallenge && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 8 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              className="relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 p-[1px]"
+            >
+              <div className="relative bg-gradient-to-r from-orange-50 via-pink-50 to-purple-50 dark:from-orange-950/80 dark:via-pink-950/80 dark:to-purple-950/80 rounded-[11px] p-3">
+                <button
+                  onClick={() => setShowChallengeCTA(false)}
+                  className="absolute top-1 left-1 text-muted-foreground hover:text-foreground text-xs p-1"
+                >
+                  ✕
+                </button>
+                
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <Trophy className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-orange-600 dark:text-orange-400">#{activeChallenge.hashtag}</span>
+                        <Sparkles className="w-3 h-3 text-yellow-500" />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        הצטרפו לאתגר וזכו ב-<span className="font-bold text-primary">50 נקודות</span>!
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <motion.button
+                    onClick={() => navigate('/feed')}
+                    className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs font-bold rounded-full shadow-md flex-shrink-0"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    הצטרף עכשיו
+                  </motion.button>
+                </div>
+                
+                <div className="flex items-center gap-1 mt-2 text-[10px] text-muted-foreground">
+                  <span>👥 {activeChallenge.participant_count} משתתפים</span>
+                  <span className="mx-1">•</span>
+                  <span className="text-green-600 dark:text-green-400 font-medium">🎁 +50 נק׳</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* View Comments */}
         {post.comments_count > 0 && (
