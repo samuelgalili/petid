@@ -170,9 +170,9 @@ const Settings = () => {
       items: [
         {
           icon: Lock,
-          label: t("settings.privacy"),
-          description: t("settings.privacyDesc"),
-          action: () => {},
+          label: "הגדרות פרטיות",
+          description: "מיקום, נראות פרופיל, הודעות",
+          action: () => navigate("/privacy-settings"),
           type: "link",
         },
       ],

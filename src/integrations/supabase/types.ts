@@ -1389,33 +1389,54 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allow_messages_from: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
           email: string | null
+          favorite_breeds: string[] | null
           full_name: string | null
           id: string
+          interests: string[] | null
+          location_blur_enabled: boolean | null
           points: number
+          profile_visibility: string | null
+          show_email: boolean | null
+          show_location: boolean | null
           updated_at: string | null
         }
         Insert: {
+          allow_messages_from?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           email?: string | null
+          favorite_breeds?: string[] | null
           full_name?: string | null
           id: string
+          interests?: string[] | null
+          location_blur_enabled?: boolean | null
           points?: number
+          profile_visibility?: string | null
+          show_email?: boolean | null
+          show_location?: boolean | null
           updated_at?: string | null
         }
         Update: {
+          allow_messages_from?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           email?: string | null
+          favorite_breeds?: string[] | null
           full_name?: string | null
           id?: string
+          interests?: string[] | null
+          location_blur_enabled?: boolean | null
           points?: number
+          profile_visibility?: string | null
+          show_email?: boolean | null
+          show_location?: boolean | null
           updated_at?: string | null
         }
         Relationships: []
