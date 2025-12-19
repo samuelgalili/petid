@@ -81,9 +81,9 @@ export const MyPetsSection = ({
           </div>
         </motion.div>
       ) : (
-        /* Pet Cards Grid - Modern & Feature-Rich */
+        /* Pet Circles - Story Style */
         <div
-          className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide"
+          className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {pets.map((pet, index) => {
@@ -100,7 +100,7 @@ export const MyPetsSection = ({
             );
           })}
           
-          {/* Add Pet Button - Enhanced */}
+          {/* Add Pet Button */}
           <AddPetCard 
             index={pets.length} 
             onAddPet={() => navigate('/add-pet')} 
