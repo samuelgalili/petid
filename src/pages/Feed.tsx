@@ -647,7 +647,7 @@ const Feed = () => {
 
     return merged;
   }, [posts, adoptionPets, feedFilter, followingIds]);
-  return <div className="min-h-screen bg-gradient-to-b from-white via-amber-50/10 to-white pb-14" dir="rtl">
+  return <div className="min-h-screen bg-gradient-to-b from-white via-[#7DB9E8]/5 to-white pb-14" dir="rtl">
       {/* Instagram-style Header with blur effect */}
       <motion.div 
         initial={{ y: -20, opacity: 0 }}
@@ -680,7 +680,7 @@ const Feed = () => {
             >
               {/* Animated glow effect behind logo */}
               <motion.div 
-                className="absolute -inset-2 bg-gradient-to-r from-petid-blue/20 via-petid-gold/30 to-petid-blue/20 blur-xl rounded-full"
+                className="absolute -inset-2 bg-gradient-to-r from-[#1E5799]/20 via-[#4ECDC4]/30 to-[#7DB9E8]/20 blur-xl rounded-full"
                 animate={{ 
                   opacity: [0.3, 0.6, 0.3],
                   scale: [0.95, 1.1, 0.95]
@@ -691,7 +691,7 @@ const Feed = () => {
                   ease: "easeInOut"
                 }}
               />
-              <h1 className="relative text-[30px] font-black cursor-pointer bg-gradient-to-r from-petid-blue via-petid-gold via-55% to-petid-blue-dark bg-clip-text text-transparent font-jakarta tracking-tight">
+              <h1 className="relative text-[30px] font-black cursor-pointer bg-gradient-to-r from-[#1E5799] via-[#4ECDC4] via-55% to-[#7DB9E8] bg-clip-text text-transparent font-jakarta tracking-tight">
                 Petid
               </h1>
             </motion.div>
@@ -706,11 +706,11 @@ const Feed = () => {
                     whileTap={{ scale: 0.9 }}
                     className={`active:opacity-50 transition-opacity relative flex items-center gap-0.5 p-1 ${newlyAddedPetIds.size > 0 ? 'animate-pulse' : ''}`}
                   >
-                    <PawPrint className={`w-6 h-6 transition-colors ${newlyAddedPetIds.size > 0 ? 'text-[#F58529]' : 'text-[#262626] hover:text-[#F58529]'}`} strokeWidth={1.5} />
+                    <PawPrint className={`w-6 h-6 transition-colors ${newlyAddedPetIds.size > 0 ? 'text-[#4ECDC4]' : 'text-[#262626] hover:text-[#4ECDC4]'}`} strokeWidth={1.5} />
                     {pets.length > 0 && <motion.span 
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-[#F58529] to-[#DD2A7B] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}
+                      className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}
                     >
                         {pets.length}
                       </motion.span>}
@@ -727,7 +727,7 @@ const Feed = () => {
                     </div> : pets.map(pet => <DropdownMenuItem key={pet.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 rounded-lg mx-1" onClick={() => navigate(`/pet/${pet.id}`)}>
                         <Avatar className="w-9 h-9 ring-2 ring-gray-100">
                           <AvatarImage src={pet.avatar_url} alt={pet.name} />
-                          <AvatarFallback className="bg-gradient-to-br from-[#F58529]/20 to-[#DD2A7B]/20 text-[11px]">
+                          <AvatarFallback className="bg-gradient-to-br from-[#1E5799]/20 to-[#4ECDC4]/20 text-[11px]">
                             {pet.name?.charAt(0) || '🐾'}
                           </AvatarFallback>
                         </Avatar>
@@ -735,11 +735,11 @@ const Feed = () => {
                           <p className="text-[14px] font-medium text-[#262626]">{pet.name}</p>
                           <p className="text-[11px] text-[#8E8E8E]">{pet.breed || pet.type}</p>
                         </div>
-                        {newlyAddedPetIds.has(pet.id) && <span className="w-2 h-2 bg-[#F58529] rounded-full animate-pulse" />}
+                        {newlyAddedPetIds.has(pet.id) && <span className="w-2 h-2 bg-[#4ECDC4] rounded-full animate-pulse" />}
                       </DropdownMenuItem>)}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer text-[#0095F6] hover:bg-blue-50 rounded-lg mx-1 mb-1" onClick={() => navigate('/add-pet')}>
-                    <div className="w-9 h-9 bg-gradient-to-br from-[#0095F6]/10 to-[#0095F6]/20 rounded-full flex items-center justify-center">
+                  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 cursor-pointer text-[#1E5799] hover:bg-[#7DB9E8]/10 rounded-lg mx-1 mb-1" onClick={() => navigate('/add-pet')}>
+                    <div className="w-9 h-9 bg-gradient-to-br from-[#1E5799]/10 to-[#4ECDC4]/20 rounded-full flex items-center justify-center">
                       <Plus className="w-4 h-4" />
                     </div>
                     <span className="text-[14px] font-medium">הוסף חיית מחמד</span>
@@ -752,7 +752,7 @@ const Feed = () => {
               onClick={handleNavigateToNotifications} 
               className="active:opacity-50 transition-opacity relative p-1"
             >
-              <Heart className="w-6 h-6 text-[#262626] hover:text-[#ED4956] transition-colors" strokeWidth={1.5} />
+              <Heart className="w-6 h-6 text-[#262626] hover:text-[#4ECDC4] transition-colors" strokeWidth={1.5} />
             </motion.button>
             <motion.button 
               whileHover={{ scale: 1.1 }}
@@ -760,7 +760,7 @@ const Feed = () => {
               onClick={handleNavigateToMessages} 
               className="active:opacity-50 transition-opacity p-1"
             >
-              <Send className="w-6 h-6 text-[#262626] hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
+              <Send className="w-6 h-6 text-[#262626] hover:text-[#1E5799] transition-colors" strokeWidth={1.5} />
             </motion.button>
             
             {/* Cart Icon - appears when items added */}
@@ -786,9 +786,9 @@ const Feed = () => {
                     }
                   }}
                 >
-                  <ShoppingCart className="w-6 h-6 text-petid-gold" strokeWidth={1.5} />
+                  <ShoppingCart className="w-6 h-6 text-[#1E5799]" strokeWidth={1.5} />
                   <motion.span 
-                    className="absolute -top-1 -right-1 bg-petid-gold text-petid-blue-dark text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    className="absolute -top-1 -right-1 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500 }}
@@ -811,7 +811,7 @@ const Feed = () => {
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -50, opacity: 0 }}
-          className="fixed top-[52px] left-0 right-0 z-40 bg-gradient-to-r from-[#0095F6] to-[#00D9FF] text-white text-center cursor-pointer py-2.5 shadow-md" 
+          className="fixed top-[52px] left-0 right-0 z-40 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-center cursor-pointer py-2.5 shadow-md" 
           onClick={handleLoadNewPosts}
         >
             <span className="text-[13px] font-medium flex items-center justify-center gap-2">
@@ -840,7 +840,7 @@ const Feed = () => {
         <div data-pets-section className="py-4 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
           <div className="max-w-lg mx-auto">
             <h2 className="text-[14px] font-semibold text-[#262626] px-4 mb-3 flex items-center gap-2">
-              <PawPrint className="w-4 h-4 text-[#F58529]" />
+              <PawPrint className="w-4 h-4 text-[#4ECDC4]" />
               חיות המחמד שלי
             </h2>
             <MyPetsSection pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />

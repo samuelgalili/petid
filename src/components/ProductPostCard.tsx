@@ -84,7 +84,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         particleCount: 50,
         spread: 60,
         origin: { x, y },
-        colors: ['#F7BF00', '#F4B400', '#FFD700', '#FFA500', '#FF8C00'],
+        colors: ['#1E5799', '#7DB9E8', '#4ECDC4', '#5BCFCF', '#3AA3A3'],
         shapes: ['circle', 'square'],
         gravity: 0.8,
         scalar: 0.9,
@@ -98,7 +98,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
           particleCount: 30,
           spread: 80,
           origin: { x, y: y - 0.05 },
-          colors: ['#F7BF00', '#FFD700', '#FFED4A', '#FFF3B0'],
+          colors: ['#4ECDC4', '#7DB9E8', '#9FDEF8', '#1E5799'],
           shapes: ['circle'],
           gravity: 1,
           scalar: 0.7,
@@ -152,7 +152,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
           >
             {/* Animated ring */}
             <motion.div 
-              className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-petid-gold via-amber-400 to-petid-gold-dark"
+              className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8]"
               animate={{ rotate: 360 }}
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
             />
@@ -162,7 +162,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
                   src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-shop" 
                   alt="Petid חנות" 
                 />
-                <AvatarFallback className="bg-gradient-to-tr from-petid-gold to-amber-500 text-white">
+                <AvatarFallback className="bg-gradient-to-tr from-[#1E5799] to-[#4ECDC4] text-white">
                   🛒
                 </AvatarFallback>
               </Avatar>
@@ -171,7 +171,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
           <div className="text-right">
             <div className="flex items-center gap-2">
               <p className="font-bold text-sm text-foreground">Petid חנות</p>
-              <Badge className="bg-gradient-to-r from-petid-gold/30 to-amber-400/30 text-petid-blue-dark text-[10px] px-2.5 py-0.5 h-5 border-0 font-bold shadow-sm">
+              <Badge className="bg-gradient-to-r from-[#1E5799]/30 to-[#4ECDC4]/30 text-[#1E5799] text-[10px] px-2.5 py-0.5 h-5 border-0 font-bold shadow-sm">
                 <Sparkles className="w-2.5 h-2.5 mr-1" />
                 חנות
               </Badge>
@@ -278,7 +278,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
           animate={{ opacity: showQuickActions ? 0 : 1 }}
         >
           <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
-            <Star className="w-3.5 h-3.5 text-petid-gold fill-petid-gold" />
+            <Star className="w-3.5 h-3.5 text-[#4ECDC4] fill-[#4ECDC4]" />
             <span className="text-xs font-semibold text-foreground">4.8</span>
           </div>
         </motion.div>
@@ -303,7 +303,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
               className="text-xl font-black"
               animate={{ 
                 scale: isHovered ? 1.1 : 1,
-                textShadow: isHovered ? "0 2px 10px rgba(247, 191, 0, 0.5)" : "none"
+                textShadow: isHovered ? "0 2px 10px rgba(78, 205, 196, 0.5)" : "none"
               }}
             >
               {product.price}
@@ -318,7 +318,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
             )}
             {product.hasSale && (
               <motion.span
-                className="text-xs bg-petid-gold text-petid-blue-dark px-2 py-0.5 rounded-full font-bold"
+                className="text-xs bg-[#4ECDC4] text-white px-2 py-0.5 rounded-full font-bold"
                 initial={{ scale: 0 }}
                 animate={{ scale: isHovered ? 1.1 : 1 }}
                 transition={{ type: "spring", stiffness: 300 }}
@@ -352,7 +352,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         className={`w-full transition-all flex items-center justify-between px-4 py-3 relative overflow-hidden group ${
           showAddedAnimation 
             ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-            : 'bg-gradient-to-r from-petid-gold to-amber-500 hover:from-amber-500 hover:to-petid-gold'
+            : 'bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] hover:from-[#4ECDC4] hover:to-[#1E5799]'
         }`}
         whileTap={{ scale: 0.99 }}
       >
@@ -372,19 +372,19 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
             whileHover={{ rotate: [0, -15, 15, 0], scale: 1.2 }}
             transition={{ duration: 0.5 }}
           >
-            <ShoppingBag className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
+            <ShoppingBag className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-white'}`} />
           </motion.div>
-          <span className={`text-[15px] font-medium ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>
+          <span className={`text-[15px] font-medium ${showAddedAnimation ? 'text-white' : 'text-white'}`}>
             {showAddedAnimation ? "נוסף לסל ✓" : "קנה עכשיו"}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`font-bold ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`}>{product.price}</span>
+          <span className={`font-bold ${showAddedAnimation ? 'text-white' : 'text-white'}`}>{product.price}</span>
           <motion.div
             animate={{ x: [0, -3, 0] }}
             transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
           >
-            <ChevronLeft className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-petid-blue-dark'}`} />
+            <ChevronLeft className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-white'}`} />
           </motion.div>
         </div>
         
