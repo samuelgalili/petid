@@ -1,5 +1,5 @@
 import { Home, ShoppingBag, User, Compass, Clapperboard, Plus, Grid3X3 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +68,7 @@ const NavItem = ({ to, icon, isActive, label, onClick }: NavItemProps) => {
 
 const BottomNav = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string>("");
@@ -124,7 +125,15 @@ const BottomNav = () => {
         <div className="flex justify-around items-center h-18 max-w-lg mx-auto px-3 py-1">
           {/* Home */}
           <NavItem
-            to="/"
+            onClick={() => {
+              if (location.pathname === "/") {
+                // Already on home - scroll to top and trigger refresh
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.dispatchEvent(new CustomEvent('refresh-feed'));
+              } else {
+                navigate("/");
+              }
+            }}
             icon={
               <div className={cn(
                 "p-2.5 rounded-2xl transition-all duration-300 relative",
