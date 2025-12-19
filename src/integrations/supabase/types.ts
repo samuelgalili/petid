@@ -1466,6 +1466,59 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string | null
+          id: string
+          report_type: Database["public"]["Enums"]["report_type"]
+          reported_post_id: string | null
+          reported_user_id: string | null
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          report_type: Database["public"]["Enums"]["report_type"]
+          reported_post_id?: string | null
+          reported_user_id?: string | null
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          report_type?: Database["public"]["Enums"]["report_type"]
+          reported_post_id?: string | null
+          reported_user_id?: string | null
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_post_id_fkey"
+            columns: ["reported_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rewards: {
         Row: {
           created_at: string
@@ -2388,6 +2441,8 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+      report_status: "pending" | "reviewed" | "resolved" | "dismissed"
+      report_type: "spam" | "inappropriate" | "harassment" | "fake" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2523,6 +2578,8 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
+      report_status: ["pending", "reviewed", "resolved", "dismissed"],
+      report_type: ["spam", "inappropriate", "harassment", "fake", "other"],
     },
   },
 } as const

@@ -11,6 +11,7 @@ import {
   Truck,
   XCircle,
   Heart,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -324,6 +325,15 @@ const AdminDashboard = () => {
               >
                 <Heart className="w-5 h-5 mr-3" />
                 ניהול חיות לאימוץ
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full border-2 border-destructive text-destructive hover:bg-destructive/10 rounded-xl font-bold font-jakarta justify-start"
+                onClick={() => navigate("/admin/reports")}
+              >
+                <Flag className="w-5 h-5 mr-3" />
+                דיווחים ומודרציה
               </Button>
             </div>
           </motion.div>
