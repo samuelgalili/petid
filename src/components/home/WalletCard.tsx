@@ -50,17 +50,17 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
               }
             }}
           >
-            {/* Yellow Loyalty Card - Yellow Brand themed */}
+            {/* Shop Theme Loyalty Card */}
             <motion.div
-              className="relative rounded-[22px] shadow-yellow p-6 pt-10 overflow-hidden"
+              className="relative rounded-[22px] shadow-shop p-6 pt-10 overflow-hidden"
               style={{
-                background: 'linear-gradient(180deg, hsl(46, 96%, 49%) 0%, hsl(44, 93%, 48%) 100%)'
+                background: 'linear-gradient(135deg, hsl(214, 66%, 36%) 0%, hsl(174, 59%, 55%) 50%, hsl(210, 70%, 70%) 100%)'
               }}
               animate={{
                 boxShadow: [
-                  '0 4px 12px hsla(45, 100%, 48%, 0.2)',
-                  '0 4px 24px hsla(45, 100%, 48%, 0.35)',
-                  '0 4px 12px hsla(45, 100%, 48%, 0.2)',
+                  '0 4px 12px hsla(174, 59%, 55%, 0.2)',
+                  '0 4px 24px hsla(174, 59%, 55%, 0.35)',
+                  '0 4px 12px hsla(174, 59%, 55%, 0.2)',
                 ],
               }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -81,10 +81,10 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                   animate={{ scale: 1, opacity: 1, x: 0 }}
                   transition={{ type: "spring", stiffness: 200 }}
                 >
-                  <div className="text-4xl font-black text-foreground leading-none mb-2 drop-shadow-sm">
+                  <div className="text-4xl font-black text-white leading-none mb-2 drop-shadow-sm">
                     ₪{walletBalance.toFixed(2)}
                   </div>
-                  <div className="text-sm font-bold text-foreground/90 font-jakarta drop-shadow-sm">
+                  <div className="text-sm font-bold text-white/90 font-jakarta drop-shadow-sm">
                     יתרת חיסכון
                   </div>
                 </motion.div>
@@ -148,7 +148,7 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
                         <motion.div
                           className="h-full rounded-full shadow-lg relative overflow-hidden"
                           style={{
-                            background: 'linear-gradient(135deg, hsl(46, 96%, 49%) 0%, hsl(44, 93%, 48%) 100%)'
+                            background: 'linear-gradient(135deg, hsl(214, 66%, 36%) 0%, hsl(174, 59%, 55%) 100%)'
                           }}
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}

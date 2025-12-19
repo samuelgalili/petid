@@ -69,7 +69,7 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
           whileHover={{ x: -2 }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.15 }}
-          className="text-[13px] leading-none font-medium text-[#2271CF] hover:opacity-80 transition-opacity inline-flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2"
+          className="text-[13px] leading-none font-medium text-primary hover:opacity-80 transition-opacity inline-flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2"
           style={{ minHeight: TAP_TARGET.minimum }}
           {...getAccessibleButtonProps("צפה בתגמולים והטבות")}
         >

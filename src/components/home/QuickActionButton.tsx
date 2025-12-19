@@ -35,7 +35,7 @@ export const QuickActionButton = memo(({
           transition={{ duration: ANIMATION_DURATION.fast }}
         >
           <Icon 
-            className="w-7 h-7 text-[#2D2D2D] group-hover:text-[#00A870] transition-colors duration-200" 
+            className="w-7 h-7 text-foreground group-hover:text-accent transition-colors duration-200" 
             strokeWidth={1.5} 
           />
         </motion.div>

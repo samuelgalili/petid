@@ -118,8 +118,8 @@ export const Header = () => {
                         <ShoppingCart 
                           className={`w-5 h-5 transition-colors ${
                             cartItemCount === 0 
-                              ? 'text-gray-400 dark:text-gray-500 group-hover:text-[#F7BF00]' 
-                              : 'text-[#262626] dark:text-gray-300 hover:text-[#0095F6]'
+                              ? 'text-gray-400 dark:text-gray-500 group-hover:text-accent' 
+                              : 'text-foreground dark:text-gray-300 hover:text-primary'
                           }`} 
                           strokeWidth={1.5} 
                         />
@@ -242,7 +242,7 @@ export const Header = () => {
                     onClick={() => navigate('/settings')}
                     aria-label="User profile"
                   >
-                    <User className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
+                    <User className="w-5 h-5 text-foreground dark:text-gray-300 hover:text-primary transition-colors" strokeWidth={1.5} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -259,7 +259,7 @@ export const Header = () => {
                     onClick={() => navigate('/notifications')}
                     aria-label="View notifications"
                   >
-                    <Bell className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#ED4956] transition-colors" strokeWidth={1.5} />
+                    <Bell className="w-5 h-5 text-foreground dark:text-gray-300 hover:text-accent transition-colors" strokeWidth={1.5} />
                     <AnimatePresence mode="wait">
                       {unreadCount > 0 && (
                         <motion.span
@@ -297,7 +297,7 @@ export const Header = () => {
                       onClick={() => setIsSearchOpen(true)}
                       aria-label="Open search"
                     >
-                      <Search className="w-5 h-5 text-[#262626] dark:text-gray-300 hover:text-[#0095F6] transition-colors" strokeWidth={1.5} />
+                      <Search className="w-5 h-5 text-foreground dark:text-gray-300 hover:text-primary transition-colors" strokeWidth={1.5} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
