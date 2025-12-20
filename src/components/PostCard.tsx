@@ -25,74 +25,78 @@ const DogTailIcon = ({ isWagging, isLiked, className }: { isWagging: boolean; is
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    {/* Dog body silhouette */}
+    {/* Dog tail - simple wagging tail */}
     <motion.path
-      d="M3 14C3 11 5 9 8 9C9 9 10 9.5 11 10L14 10C16 10 18 11 19 13C20 15 20 17 19 18C18 19 16 19 14 19L8 19C5 19 3 17 3 14Z"
+      d="M4 20C6 18 8 14 10 10C11 8 12 6 14 5C16 4 18 4 20 5"
       stroke="currentColor"
-      strokeWidth="1.5"
-      fill={isLiked ? "currentColor" : "none"}
-      strokeLinecap="round"
-    />
-    {/* Dog head */}
-    <motion.circle
-      cx="6"
-      cy="11"
-      r="3"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      fill={isLiked ? "currentColor" : "none"}
-    />
-    {/* Ear */}
-    <path
-      d="M4 9C3.5 7.5 4 6 5 6C6 6 6.5 7 6 8.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      fill={isLiked ? "currentColor" : "none"}
-    />
-    {/* Eye */}
-    <circle cx="5.5" cy="10.5" r="0.7" fill={isLiked ? "white" : "currentColor"} />
-    {/* Nose */}
-    <circle cx="4" cy="12" r="0.5" fill={isLiked ? "#333" : "currentColor"} />
-    {/* Front leg */}
-    <path
-      d="M9 19L9 22"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    {/* Back leg */}
-    <path
-      d="M15 19L15 22"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    {/* Wagging tail */}
-    <motion.path
-      d="M19 14C20 12 21.5 11 22.5 11.5C23 12 22.5 13 21.5 14C20.5 15 20 15.5 20 16"
-      stroke={isLiked ? "currentColor" : "currentColor"}
-      strokeWidth="2"
+      strokeWidth="2.5"
       strokeLinecap="round"
       fill="none"
       initial={false}
       animate={isWagging ? {
-        rotate: [0, 25, -20, 20, -15, 10, 0],
-        x: [0, 2, -2, 2, -1, 1, 0],
+        rotate: [0, 15, -12, 10, -8, 5, 0],
       } : {}}
-      style={{ originX: "80%", originY: "100%" }}
-      transition={{ duration: 0.6, ease: "easeInOut" }}
+      style={{ originX: "15%", originY: "85%" }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
     />
-    {/* Heart on tail when liked */}
-    {isLiked && (
-      <motion.path
-        d="M22 10C22 10 21.5 9.5 21 9.5C20.5 9.5 20 10 20 10.5C20 11 21 12 21 12C21 12 22 11 22 10.5C22 10 22 10 22 10Z"
-        fill="#ED4956"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.2 }}
+    {/* Fur detail lines */}
+    <motion.g
+      initial={false}
+      animate={isWagging ? {
+        rotate: [0, 15, -12, 10, -8, 5, 0],
+      } : {}}
+      style={{ originX: "15%", originY: "85%" }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+    >
+      <path
+        d="M8 13C9 12 10.5 11 11 10"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
-    )}
+      <path
+        d="M12 8C13 7 14.5 6 15 5.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </motion.g>
+    {/* Motion lines when wagging */}
+    <AnimatePresence>
+      {isWagging && (
+        <>
+          <motion.path
+            d="M21 3L23 2"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            initial={{ opacity: 0, x: -2 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+          />
+          <motion.path
+            d="M22 6L24 6"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            initial={{ opacity: 0, x: -2 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.1 }}
+          />
+          <motion.path
+            d="M21 9L23 10"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            initial={{ opacity: 0, x: -2 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.2 }}
+          />
+        </>
+      )}
+    </AnimatePresence>
   </svg>
 );
 
