@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import Cropper from "react-easy-crop";
 import { Area } from "react-easy-crop";
 import {
@@ -30,7 +29,6 @@ export const ProfileImageEditor = ({
   onImageUpdated,
 }: ProfileImageEditorProps) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -176,13 +174,18 @@ export const ProfileImageEditor = ({
         throw new Error(result.error || "Upload failed");
       }
 
+      // Update parent component with new URL
       onImageUpdated(result.url);
+      
+      // Show success message
       toast({
         title: "הצלחה!",
         description: "תמונת הפרופיל עודכנה בהצלחה",
       });
+      
+      // Close the editor
       handleClose();
-      navigate(-1);
+      
     } catch (error: any) {
       console.error("Error uploading avatar:", error);
       toast({
