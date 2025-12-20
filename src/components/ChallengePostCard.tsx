@@ -150,56 +150,33 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
           </div>
         )}
         
-        {/* CTA Overlay at bottom - starts dark, reveals color after 1 second */}
+        {/* CTA Overlay at bottom - Instagram style thin bar */}
         <motion.div 
-          className="absolute bottom-0 left-0 right-0 px-4 py-3"
-          initial={{ backgroundColor: "rgba(0, 0, 0, 0.7)" }}
+          className="absolute bottom-0 left-0 right-0 px-3 py-2"
+          initial={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}
           animate={{ 
-            backgroundColor: ctaRevealed ? "rgba(249, 115, 22, 0.85)" : "rgba(0, 0, 0, 0.7)"
+            backgroundColor: ctaRevealed ? "rgba(249, 115, 22, 0.75)" : "rgba(0, 0, 0, 0.6)"
           }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="text-white font-bold text-base drop-shadow-md">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Trophy className="w-3.5 h-3.5 text-white flex-shrink-0" />
+              <span className="text-white font-semibold text-xs truncate">
                 {challenge.title_he}
-              </h3>
-              {challenge.description_he && (
-                <p className="text-white/80 text-xs mt-0.5 line-clamp-1">
-                  {challenge.description_he}
-                </p>
-              )}
+              </span>
             </div>
             
-            <Button
+            <button
               onClick={handleJoinChallenge}
               disabled={isJoining}
-              size="sm"
               className={cn(
-                "rounded-full px-4 font-semibold text-xs transition-all duration-200 mr-3",
-                isJoined 
-                  ? "bg-white text-green-600 hover:bg-white/90" 
-                  : "bg-white text-orange-600 hover:bg-white/90"
+                "text-white font-bold text-xs px-2 py-0.5 rounded transition-all",
+                isJoined ? "opacity-70" : "hover:opacity-80"
               )}
             >
-              {isJoining ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
-                />
-              ) : isJoined ? (
-                <>
-                  <Trophy className="w-3 h-3 mr-1" />
-                  משתתף/ת
-                </>
-              ) : (
-                <>
-                  הצטרפו
-                  <ChevronLeft className="w-3 h-3 mr-0.5" />
-                </>
-              )}
-            </Button>
+              {isJoining ? "..." : isJoined ? "משתתף/ת ✓" : "הצטרפו"}
+            </button>
           </div>
         </motion.div>
       </div>
