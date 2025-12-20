@@ -189,7 +189,6 @@ interface SuggestedPost {
   likes_count: number;
   comments_count: number;
 }
-
 interface FeedChallenge {
   id: string;
   title: string;
@@ -204,7 +203,6 @@ interface FeedChallenge {
   is_joined?: boolean;
   created_at: string;
 }
-
 type FeedItem = {
   type: 'post';
   data: Post;
@@ -297,13 +295,11 @@ const Feed = () => {
   // Fetch challenges
   const fetchChallenges = useCallback(async () => {
     try {
-      const { data: challengesData } = await supabase
-        .from("challenges")
-        .select("*")
-        .eq("is_active", true)
-        .order("participant_count", { ascending: false })
-        .limit(5);
-
+      const {
+        data: challengesData
+      } = await supabase.from("challenges").select("*").eq("is_active", true).order("participant_count", {
+        ascending: false
+      }).limit(5);
       if (!challengesData) {
         setChallenges([]);
         return;
@@ -311,13 +307,10 @@ const Feed = () => {
 
       // Check if user joined any challenges
       if (user) {
-        const { data: participations } = await supabase
-          .from("challenge_participants")
-          .select("challenge_id")
-          .eq("user_id", user.id);
-
+        const {
+          data: participations
+        } = await supabase.from("challenge_participants").select("challenge_id").eq("user_id", user.id);
         const joinedIds = new Set(participations?.map(p => p.challenge_id) || []);
-        
         setChallenges(challengesData.map(c => ({
           ...c,
           is_joined: joinedIds.has(c.id),
@@ -333,7 +326,6 @@ const Feed = () => {
       console.error("Error fetching challenges:", error);
     }
   }, [user]);
-
   const fetchSuggestedPosts = useCallback(async () => {
     try {
       // Get users that the current user follows
@@ -904,25 +896,20 @@ const Feed = () => {
     }
 
     // Merge all items and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems, ...challengeItems]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems, ...challengeItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // Apply non-organic spacing rule: no two non-organic items in sequence
     const result: FeedItem[] = [];
     let lastWasNonOrganic = false;
-    
     for (const item of merged) {
       const isNonOrganic = item.type !== 'post';
-      
       if (isNonOrganic && lastWasNonOrganic) {
         // Skip this item to avoid consecutive non-organic cards
         continue;
       }
-      
       result.push(item);
       lastWasNonOrganic = isNonOrganic;
     }
-
     return result;
   }, [posts, adoptionPets, suggestedPosts, challenges, feedFilter, followingIds]);
 
@@ -1117,25 +1104,15 @@ const Feed = () => {
       duration: 0.4
     }}>
         {/* Rewards Bar */}
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          className="mx-4 mb-3 cursor-pointer rounded-2xl bg-gradient-to-br from-slate-50 to-white border border-slate-100 shadow-sm p-4" 
-          onClick={() => navigate('/rewards')}
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: -10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} className="mx-4 mb-3 cursor-pointer rounded-2xl bg-gradient-to-br from-slate-50 to-white border border-slate-100 shadow-sm p-4" onClick={() => navigate('/rewards')}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-4" dir="rtl">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-sm">
-                <Coins className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm font-semibold text-slate-700">הנקודות שלי</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full">
-              <span className="text-lg font-bold text-slate-800">{totalPoints}</span>
-              <span className="text-xs text-slate-500">נק׳</span>
-            </div>
-          </div>
+          
           
           {/* Cashback Progress */}
           <div className="space-y-1 mb-3" dir="rtl">
@@ -1144,12 +1121,14 @@ const Feed = () => {
               <span className="text-amber-600 font-medium">₪50</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500" 
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(totalPoints * 0.01 / 50 * 100, 100)}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
+              <motion.div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500" initial={{
+              width: 0
+            }} animate={{
+              width: `${Math.min(totalPoints * 0.01 / 50 * 100, 100)}%`
+            }} transition={{
+              duration: 0.8,
+              ease: "easeOut"
+            }} />
             </div>
           </div>
           
@@ -1160,12 +1139,14 @@ const Feed = () => {
               <span className="text-teal-600 font-medium">{totalPoints} נק׳</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-500" 
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(totalPoints / 1000 * 100, 100)}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
+              <motion.div className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-500" initial={{
+              width: 0
+            }} animate={{
+              width: `${Math.min(totalPoints / 1000 * 100, 100)}%`
+            }} transition={{
+              duration: 0.8,
+              ease: "easeOut"
+            }} />
             </div>
           </div>
         </motion.div>
@@ -1201,44 +1182,24 @@ const Feed = () => {
       </motion.div>
 
       {/* Feed Filter Tabs */}
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.22, duration: 0.3 }}
-        className="bg-white border-b border-gray-100"
-      >
+      <motion.div initial={{
+      opacity: 0,
+      y: 5
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.22,
+      duration: 0.3
+    }} className="bg-white border-b border-gray-100">
         <div className="flex">
-          <button
-            onClick={() => setFeedFilter("all")}
-            className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${
-              feedFilter === "all" 
-                ? "text-[#262626]" 
-                : "text-[#8E8E8E]"
-            }`}
-          >
+          <button onClick={() => setFeedFilter("all")} className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${feedFilter === "all" ? "text-[#262626]" : "text-[#8E8E8E]"}`}>
             הכל
-            {feedFilter === "all" && (
-              <motion.div 
-                layoutId="feedTabIndicator"
-                className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]"
-              />
-            )}
+            {feedFilter === "all" && <motion.div layoutId="feedTabIndicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]" />}
           </button>
-          <button
-            onClick={handleFollowingFilter}
-            className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${
-              feedFilter === "following" 
-                ? "text-[#262626]" 
-                : "text-[#8E8E8E]"
-            }`}
-          >
+          <button onClick={handleFollowingFilter} className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${feedFilter === "following" ? "text-[#262626]" : "text-[#8E8E8E]"}`}>
             עוקבים
-            {feedFilter === "following" && (
-              <motion.div 
-                layoutId="feedTabIndicator"
-                className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]"
-              />
-            )}
+            {feedFilter === "following" && <motion.div layoutId="feedTabIndicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]" />}
           </button>
         </div>
       </motion.div>
@@ -1394,11 +1355,7 @@ const Feed = () => {
               delay: Math.min(index * 0.05, 0.3),
               duration: 0.3
             }}>
-                    <ChallengePostCard 
-                      challenge={item.data} 
-                      gradientIndex={index} 
-                      onJoinChange={fetchChallenges}
-                    />
+                    <ChallengePostCard challenge={item.data} gradientIndex={index} onJoinChange={fetchChallenges} />
                   </motion.div>;
           }
           return null;
@@ -1444,37 +1401,27 @@ const Feed = () => {
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Floating Action Button for Create */}
-      <FloatingActionButton
-        icon={Plus}
-        label="צור תוכן חדש"
-        position="bottom-right"
-        variant="primary"
-        actions={[
-          {
-            icon: Camera,
-            label: "פוסט חדש",
-            onClick: handleCreatePost,
-          },
-          {
-            icon: Image,
-            label: "סטורי",
-            onClick: () => {
-              if (checkAuth("כדי ליצור סטורי, יש להתחבר")) {
-                navigate('/story/create');
-              }
-            },
-          },
-          {
-            icon: Video,
-            label: "ריל",
-            onClick: () => {
-              if (checkAuth("כדי ליצור ריל, יש להתחבר")) {
-                navigate('/reels/create');
-              }
-            },
-          },
-        ]}
-      />
+      <FloatingActionButton icon={Plus} label="צור תוכן חדש" position="bottom-right" variant="primary" actions={[{
+      icon: Camera,
+      label: "פוסט חדש",
+      onClick: handleCreatePost
+    }, {
+      icon: Image,
+      label: "סטורי",
+      onClick: () => {
+        if (checkAuth("כדי ליצור סטורי, יש להתחבר")) {
+          navigate('/story/create');
+        }
+      }
+    }, {
+      icon: Video,
+      label: "ריל",
+      onClick: () => {
+        if (checkAuth("כדי ליצור ריל, יש להתחבר")) {
+          navigate('/reels/create');
+        }
+      }
+    }]} />
 
       <BottomNav />
     </div>;
