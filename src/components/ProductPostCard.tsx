@@ -184,7 +184,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
       {/* Image with CTA strip */}
       <motion.div 
         ref={imageRef}
-        className="relative aspect-[3/4] overflow-hidden cursor-pointer"
+        className="relative aspect-square overflow-hidden cursor-pointer"
         animate={{ scale: isHovered ? 1.02 : 1 }}
         transition={{ duration: 0.3 }}
       >
