@@ -1377,7 +1377,7 @@ const Feed = () => {
       label: "ריל",
       onClick: () => {
         if (checkAuth("כדי ליצור ריל, יש להתחבר")) {
-          navigate('/reels/create');
+          navigate('/reels');
         }
       }
     }]} />
