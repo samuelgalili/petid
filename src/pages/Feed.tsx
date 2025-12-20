@@ -793,19 +793,17 @@ const Feed = () => {
     }
   }, [user]);
   const handleDoubleTap = useCallback((postId: string) => {
-    setPosts(prevPosts => {
-      const post = prevPosts.find(p => p.id === postId);
-      if (!post || post.is_liked) return prevPosts;
+    // Check if already liked
+    const post = posts.find(p => p.id === postId);
+    if (!post || post.is_liked) return;
 
-      // Show animation
-      setDoubleTapLike(postId);
-      setTimeout(() => setDoubleTapLike(null), 1000);
+    // Show animation
+    setDoubleTapLike(postId);
+    setTimeout(() => setDoubleTapLike(null), 1000);
 
-      // Trigger like
-      handleLike(postId);
-      return prevPosts;
-    });
-  }, [handleLike]);
+    // Trigger like
+    handleLike(postId);
+  }, [handleLike, posts]);
   const handleComment = useCallback(async (postId: string, comment: string) => {
     if (!user) {
       toast.error("יש להתחבר כדי להגיב");
