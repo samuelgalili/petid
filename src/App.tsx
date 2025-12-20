@@ -97,6 +97,7 @@ import { PageErrorBoundary } from "./components/PageErrorBoundary";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import Footer from "./components/Footer";
 import { LoginPromptDialog } from "./components/LoginPromptDialog";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -109,6 +110,7 @@ const AnimatedRoutes = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
+      <ScrollToTop />
       <LoginPromptDialog />
       <div className="flex-1">
         <AnimatePresence mode="wait">
