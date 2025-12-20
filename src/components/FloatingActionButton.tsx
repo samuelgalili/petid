@@ -50,9 +50,9 @@ export const FloatingActionButton = ({
   };
 
   const variantClasses = {
-    primary: "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/30",
-    success: "bg-success hover:bg-success/90 text-white shadow-success/30",
-    warning: "bg-warning hover:bg-warning/90 text-white shadow-warning/30"
+    primary: "bg-gradient-to-br from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] hover:opacity-90 text-white shadow-xl shadow-[#4ECDC4]/30",
+    success: "bg-gradient-to-br from-emerald-500 to-emerald-600 hover:opacity-90 text-white shadow-xl shadow-emerald-500/30",
+    warning: "bg-gradient-to-br from-amber-500 to-orange-500 hover:opacity-90 text-white shadow-xl shadow-amber-500/30"
   };
 
   const handleMainClick = () => {
@@ -114,17 +114,17 @@ export const FloatingActionButton = ({
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleActionClick(action)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-full shadow-lg transition-all group",
-                    action.color || "bg-background border border-border"
+                    "flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg transition-all group bg-white/95 backdrop-blur-md border border-[#4ECDC4]/20",
+                    action.color
                   )}
                   style={{ minHeight: TAP_TARGET.minimum }}
                   {...getAccessibleButtonProps(action.label)}
                 >
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                  <span className="text-sm font-medium text-slate-700 whitespace-nowrap">
                     {action.label}
                   </span>
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <action.icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1E5799]/10 to-[#4ECDC4]/20 flex items-center justify-center group-hover:from-[#1E5799]/20 group-hover:to-[#4ECDC4]/30 transition-all">
+                    <action.icon className="w-5 h-5 text-[#1E5799]" strokeWidth={1.5} />
                   </div>
                 </motion.button>
               ))}
