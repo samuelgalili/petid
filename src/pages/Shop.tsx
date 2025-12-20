@@ -645,10 +645,7 @@ const Shop = () => {
                   {/* Sale Badge */}
                   {product.originalPrice && (
                     <div 
-                      className="absolute top-2 right-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold"
-                      style={{
-                        background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)'
-                      }}
+                      className="absolute top-2 right-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500"
                     >
                       -{Math.round((1 - product.price / product.originalPrice) * 100)}%
                     </div>
