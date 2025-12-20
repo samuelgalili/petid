@@ -1084,8 +1084,14 @@ const Feed = () => {
           {/* Header */}
           
           
-          {/* Cashback Progress */}
-          <div className="space-y-1 mb-3" dir="rtl">
+        {/* Cashback Progress */}
+          <motion.div 
+            className="space-y-1 mb-3" 
+            dir="rtl"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+          >
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">קאשבק 5%</span>
               <span className="text-amber-600 font-medium">₪50</span>
@@ -1100,10 +1106,16 @@ const Feed = () => {
               ease: "easeOut"
             }} />
             </div>
-          </div>
+          </motion.div>
           
           {/* Points Progress */}
-          <div className="space-y-1" dir="rtl">
+          <motion.div 
+            className="space-y-1" 
+            dir="rtl"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+          >
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">נקודות פעילות</span>
               <span className="text-teal-600 font-medium">{totalPoints} נק׳</span>
@@ -1118,7 +1130,7 @@ const Feed = () => {
               ease: "easeOut"
             }} />
             </div>
-          </div>
+          </motion.div>
         </motion.div>
 
 
