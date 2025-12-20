@@ -1,4 +1,4 @@
-import { Camera, Calendar, Info, History, Heart, Stethoscope, Pill, Upload } from "lucide-react";
+import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
@@ -10,9 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
 import { AppHeader } from "@/components/AppHeader";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Pet {
   id: string;
@@ -27,12 +25,19 @@ interface Pet {
   created_at: string;
 }
 
-interface BreedHistory {
+interface PetDocument {
   id: string;
-  breed: string | null;
-  confidence: number | null;
-  detected_at: string;
-  avatar_url: string | null;
+  title: string;
+  document_type: string;
+  file_url: string;
+  uploaded_at: string;
+}
+
+interface PetPhoto {
+  id: string;
+  photo_url: string;
+  caption: string | null;
+  created_at: string;
 }
 
 const PetDetails = () => {
@@ -40,12 +45,11 @@ const PetDetails = () => {
   const { petId } = useParams<{ petId: string }>();
   const { toast } = useToast();
   const [pet, setPet] = useState<Pet | null>(null);
-  const [breedHistory, setBreedHistory] = useState<BreedHistory[]>([]);
+  const [documents, setDocuments] = useState<PetDocument[]>([]);
+  const [photos, setPhotos] = useState<PetPhoto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState({ name: '', breed: '' });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("documents");
 
   useEffect(() => {
     const fetchPetDetails = async () => {
@@ -73,17 +77,24 @@ const PetDetails = () => {
         }
 
         setPet(petData);
-        setEditFormData({ name: petData.name, breed: petData.breed || '' });
 
-        // Fetch breed detection history
-        const { data: historyData, error: historyError } = await supabase
-          .from('breed_detection_history')
+        // Fetch pet documents
+        const { data: docsData } = await supabase
+          .from('pet_documents')
           .select('*')
           .eq('pet_id', petId)
-          .order('detected_at', { ascending: false });
+          .order('uploaded_at', { ascending: false });
 
-        if (historyError) throw historyError;
-        setBreedHistory(historyData || []);
+        setDocuments(docsData || []);
+
+        // Fetch pet photos
+        const { data: photosData } = await supabase
+          .from('pet_photos')
+          .select('*')
+          .eq('pet_id', petId)
+          .order('created_at', { ascending: false });
+
+        setPhotos(photosData || []);
 
       } catch (error: any) {
         toast({
@@ -118,13 +129,11 @@ const PetDetails = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
 
-      // Create form data for edge function
       const formData = new FormData();
       formData.append("file", file);
       formData.append("type", "pet");
       formData.append("petId", pet.id);
 
-      // Upload via edge function
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`,
         {
@@ -144,62 +153,61 @@ const PetDetails = () => {
 
       setPet(prev => prev ? { ...prev, avatar_url: result.url } : null);
       sonnerToast.success("תמונת חיית המחמד עודכנה בהצלחה!");
-      navigate(-1);
     } catch (error: any) {
       console.error("Error uploading pet image:", error);
       sonnerToast.error(error.message || "שגיאה בהעלאת התמונה");
     } finally {
       setIsUploadingImage(false);
     }
-  }, [pet, navigate]);
-
-  const handleSaveEdit = async () => {
-    if (!pet) return;
-
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from("pets")
-        .update({
-          name: editFormData.name,
-          breed: editFormData.breed || null,
-        })
-        .eq("id", pet.id);
-
-      if (error) throw error;
-
-      setPet(prev => prev ? { ...prev, name: editFormData.name, breed: editFormData.breed || null } : null);
-      setIsEditSheetOpen(false);
-      sonnerToast.success("פרטי חיית המחמד עודכנו בהצלחה!");
-    } catch (error: any) {
-      console.error("Error saving pet:", error);
-      sonnerToast.error(error.message || "שגיאה בשמירת הנתונים");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  }, [pet]);
 
   const calculateAge = (birthDate: string | null) => {
-    if (!birthDate) return "Unknown";
+    if (!birthDate) return "לא ידוע";
     const birth = new Date(birthDate);
     const years = differenceInYears(new Date(), birth);
     const months = differenceInMonths(new Date(), birth) % 12;
     
     if (years === 0) {
-      return `${months} month${months !== 1 ? 's' : ''}`;
+      return `${months} חודשים`;
     }
-    return `${years} year${years !== 1 ? 's' : ''}${months > 0 ? `, ${months} month${months !== 1 ? 's' : ''}` : ''}`;
+    return `${years} שנים${months > 0 ? `, ${months} חודשים` : ''}`;
   };
+
+  // Training tasks based on breed
+  const getBreedTasks = (breed: string | null, type: string) => {
+    const baseTasks = [
+      { id: '1', title: 'אילוף לישיבה', completed: false, priority: 'high' },
+      { id: '2', title: 'אילוף להליכה ברצועה', completed: false, priority: 'medium' },
+      { id: '3', title: 'אילוף לזימון', completed: true, priority: 'high' },
+    ];
+
+    if (type === 'dog' && breed) {
+      if (breed.toLowerCase().includes('לברדור') || breed.toLowerCase().includes('labrador')) {
+        return [...baseTasks, { id: '4', title: 'אילוף שחייה', completed: false, priority: 'medium' }];
+      }
+      if (breed.toLowerCase().includes('גרמני') || breed.toLowerCase().includes('german')) {
+        return [...baseTasks, { id: '4', title: 'אילוף שמירה', completed: false, priority: 'high' }];
+      }
+    }
+    return baseTasks;
+  };
+
+  // Grooming packages
+  const groomingPackages = [
+    { id: '1', name: 'חבילה בסיסית', price: 80, includes: ['רחצה', 'ייבוש', 'הברשה'] },
+    { id: '2', name: 'חבילה מלאה', price: 150, includes: ['רחצה', 'תספורת', 'ציפורניים', 'אוזניים'] },
+    { id: '3', name: 'חבילת פרימיום', price: 220, includes: ['רחצה', 'תספורת', 'ציפורניים', 'אוזניים', 'ספא', 'בושם'] },
+  ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-background">
         <AppHeader title="פרופיל חיית מחמד" showBackButton={true} />
         <div className="px-4 pt-6">
           <div className="animate-pulse">
-            <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto mb-8"></div>
+            <div className="w-24 h-24 bg-muted rounded-full mx-auto mb-4"></div>
+            <div className="h-6 bg-muted rounded w-1/3 mx-auto mb-2"></div>
+            <div className="h-4 bg-muted rounded w-1/4 mx-auto mb-8"></div>
           </div>
         </div>
       </div>
@@ -208,27 +216,28 @@ const PetDetails = () => {
 
   if (!pet) return null;
 
-  return (
-    <div className="min-h-screen bg-white pb-20">
-      <AppHeader title="פרופיל חיית מחמד" showBackButton={true} />
+  const tasks = getBreedTasks(pet.breed, pet.type);
 
-      {/* Content */}
-      <div className="px-4 pt-6">
-        {/* Pet Avatar & Name */}
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      <AppHeader title={pet.name} showBackButton={true} />
+
+      {/* Pet Header - Compact */}
+      <div className="px-4 pt-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center mb-8"
+          className="flex items-center gap-4 mb-6"
         >
           <div className="relative">
-            <Avatar className="w-32 h-32 border-[4px] border-white ring-4 ring-gray-100 shadow-xl">
+            <Avatar className="w-20 h-20 border-4 border-background ring-2 ring-primary/20 shadow-lg">
               <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-gradient-secondary text-white text-4xl font-bold">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-2xl font-bold">
                 {pet.type === 'dog' ? '🐕' : '🐈'}
               </AvatarFallback>
             </Avatar>
-            <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center ring-2 ring-background cursor-pointer hover:bg-primary/90 transition-colors">
-              <Camera className="w-5 h-5 text-primary-foreground" />
+            <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background cursor-pointer hover:bg-primary/90 transition-colors">
+              <Camera className="w-3.5 h-3.5 text-primary-foreground" />
               <input
                 type="file"
                 accept="image/*"
@@ -236,316 +245,311 @@ const PetDetails = () => {
                 className="hidden"
                 disabled={isUploadingImage}
               />
-              {isUploadingImage && (
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
             </label>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 font-jakarta mb-1 mt-4">{pet.name}</h2>
-          <p className="text-base text-gray-500 font-jakarta capitalize">{pet.type}</p>
-        </motion.div>
-
-        {/* Profile Information */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-6"
-        >
-            <h3 className="text-lg font-bold text-foreground font-jakarta mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-primary" />
-              מידע על הפרופיל
-            </h3>
-          <Card className="p-5 bg-card border-2 border-border rounded-3xl shadow-sm">
-            <div className="space-y-4">
-              {/* Breed */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                    <span className="text-lg">🐾</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-jakarta">גזע</p>
-                    <p className="text-sm font-bold text-foreground font-jakarta">
-                      {pet.breed || "Unknown"}
-                    </p>
-                  </div>
-                </div>
-                {pet.breed_confidence !== null && (
-                  <span className={`text-2xl ${pet.breed_confidence > 70 ? 'text-success' : 'text-error'}`}>
-                    {pet.breed_confidence > 70 ? '✓' : '✗'}
-                  </span>
-                )}
-              </div>
-
-              {/* Age */}
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-jakarta">גיל</p>
-                  <p className="text-sm font-bold text-foreground font-jakarta">
-                    {calculateAge(pet.birth_date)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Birth Date */}
-              {pet.birth_date && (
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                    <span className="text-lg">🎂</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-jakarta">תאריך לידה</p>
-                    <p className="text-sm font-bold text-foreground font-jakarta">
-                      {format(new Date(pet.birth_date), 'MMMM d, yyyy')}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Gender */}
-              {pet.gender && (
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-lg">{pet.gender === 'male' ? '♂️' : '♀️'}</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-jakarta">מין</p>
-                    <p className="text-sm font-bold text-foreground font-jakarta capitalize">
-                      {pet.gender === 'male' ? 'זכר' : 'נקבה'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Neutered Status */}
-              {pet.is_neutered !== null && (
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-jakarta">סטטוס</p>
-                    <p className="text-sm font-bold text-foreground font-jakarta">
-                      {pet.is_neutered ? 'מסורס/מעוקר' : 'לא מסורס/מעוקר'}
-                    </p>
-                  </div>
-                </div>
-              )}
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground">{pet.name}</h1>
+            <p className="text-sm text-muted-foreground">{pet.breed || 'לא ידוע'}</p>
+            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+              <span>{calculateAge(pet.birth_date)}</span>
+              {pet.gender && <span>• {pet.gender === 'male' ? 'זכר' : 'נקבה'}</span>}
             </div>
-          </Card>
-        </motion.div>
-
-        {/* Breed Detection History */}
-        {breedHistory.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-6"
-          >
-            <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
-              <History className="w-5 h-5 text-secondary" />
-              Breed Detection History
-            </h3>
-            <div className="space-y-3">
-              {breedHistory.map((record, index) => (
-                <Card
-                  key={record.id}
-                  className="p-4 bg-white border-2 border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start gap-3">
-                    {record.avatar_url && (
-                      <img
-                        src={record.avatar_url}
-                        alt="Detection"
-                        className="w-16 h-16 rounded-xl object-cover"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-bold text-gray-900 font-jakarta">
-                          {record.breed || "Unknown"}
-                        </p>
-                        {record.confidence !== null && (
-                          <span className={`text-lg ${record.confidence > 70 ? 'text-success' : 'text-error'}`}>
-                            {record.confidence > 70 ? '✓' : '✗'}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 font-jakarta">
-                        {format(new Date(record.detected_at), 'MMM d, yyyy h:mm a')}
-                      </p>
-                      {record.confidence !== null && (
-                        <p className="text-xs text-gray-600 font-jakarta mt-1">
-                          Confidence: {record.confidence}%
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Health Records - Placeholder */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-6"
-        >
-            <h3 className="text-lg font-bold text-gray-900 font-jakarta mb-4 flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-secondary" />
-              Health Records
-            </h3>
-          <Card className="p-6 bg-gradient-to-br from-[#F5F5F5] to-[#FAFAFA] border-2 border-dashed border-gray-200 rounded-3xl">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#FFE8D6] to-[#FFE5F0] rounded-full flex items-center justify-center mb-4">
-                <Pill className="w-8 h-8 text-gray-400" />
-              </div>
-              <h4 className="text-base font-bold text-gray-900 font-jakarta mb-2">
-                No Health Records Yet
-              </h4>
-              <p className="text-sm text-gray-500 font-jakarta mb-4">
-                Start tracking vaccinations, medications, and vet visits
-              </p>
-              <Button
-                onClick={() => toast({ title: "Coming Soon", description: "Health records feature is under development" })}
-                className="bg-gradient-secondary hover:opacity-90 text-white rounded-full font-jakarta font-bold px-6 shadow-md"
-              >
-                Add Health Record
-              </Button>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="space-y-3 pb-6"
-        >
-          <Button
-            onClick={() => navigate(`/breed-history/${pet.id}`)}
-            className="w-full h-14 bg-white border-2 border-gray-200 hover:border-secondary hover:bg-secondary/5 text-gray-900 rounded-2xl font-jakarta font-bold shadow-sm"
-          >
-            <History className="w-5 h-5 mr-2" />
-            View Full Breed History
-          </Button>
-          <Button
-            onClick={() => {
-              setEditFormData({ name: pet.name, breed: pet.breed || '' });
-              setIsEditSheetOpen(true);
-            }}
-            className="w-full h-14 bg-gradient-primary hover:opacity-90 text-gray-900 rounded-2xl font-jakarta font-bold shadow-md"
-          >
-            Edit Profile
-          </Button>
+          </div>
         </motion.div>
       </div>
 
-      {/* Edit Pet Sheet */}
-      <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
-        <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
-          <SheetHeader>
-            <SheetTitle className="font-jakarta text-xl font-bold text-foreground">
-              עריכת פרטי חיית מחמד
-            </SheetTitle>
-            <SheetDescription className="font-jakarta text-sm text-muted-foreground">
-              עדכנו את פרטי חיית המחמד שלכם
-            </SheetDescription>
-          </SheetHeader>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full justify-start px-4 bg-transparent border-b border-border rounded-none h-auto pb-0 gap-0 overflow-x-auto flex-nowrap">
+          <TabsTrigger 
+            value="documents" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+          >
+            <FileText className="w-4 h-4 ml-1" />
+            מסמכים
+          </TabsTrigger>
+          <TabsTrigger 
+            value="tasks" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+          >
+            <CheckSquare className="w-4 h-4 ml-1" />
+            משימות
+          </TabsTrigger>
+          <TabsTrigger 
+            value="training" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+          >
+            <GraduationCap className="w-4 h-4 ml-1" />
+            אילוף
+          </TabsTrigger>
+          <TabsTrigger 
+            value="photos" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+          >
+            <Image className="w-4 h-4 ml-1" />
+            תמונות
+          </TabsTrigger>
+          <TabsTrigger 
+            value="insurance" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+          >
+            <Shield className="w-4 h-4 ml-1" />
+            ביטוח
+          </TabsTrigger>
+          <TabsTrigger 
+            value="grooming" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+          >
+            <Scissors className="w-4 h-4 ml-1" />
+            מספרה
+          </TabsTrigger>
+        </TabsList>
 
-          <div className="mt-6 space-y-6">
-            {/* Pet Avatar */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent/20 to-accent/10 shadow-lg overflow-hidden border-4 border-background">
-                  {pet.avatar_url ? (
-                    <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl">
-                      {pet.type === 'dog' ? '🐕' : '🐈'}
-                    </div>
-                  )}
-                  {isUploadingImage && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
-                </div>
-                <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-md border-2 border-background cursor-pointer hover:bg-accent-hover transition-colors">
-                  <Camera className="w-4 h-4 text-accent-foreground" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="hidden"
-                    disabled={isUploadingImage}
-                  />
-                </label>
-              </div>
-              <span className="text-sm text-accent font-semibold font-jakarta">
-                {isUploadingImage ? "מעלה..." : "שנה תמונה"}
-              </span>
-            </div>
+        {/* Documents Tab */}
+        <TabsContent value="documents" className="px-4 pt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground">מסמכים</h2>
+            <Button
+              size="sm"
+              onClick={() => navigate(`/documents?petId=${pet.id}`)}
+              className="rounded-full"
+            >
+              <Plus className="w-4 h-4 ml-1" />
+              העלאת מסמך
+            </Button>
+          </div>
 
-            {/* Name Field */}
-            <div className="space-y-2">
-              <Label htmlFor="pet-name" className="font-jakarta font-semibold text-foreground">
-                שם חיית המחמד
-              </Label>
-              <Input
-                id="pet-name"
-                value={editFormData.name}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="הכנס שם"
-                className="font-jakarta h-12 rounded-xl border-2 focus:border-accent focus:ring-accent"
-              />
-            </div>
-
-            {/* Breed Field */}
-            <div className="space-y-2">
-              <Label htmlFor="pet-breed" className="font-jakarta font-semibold text-foreground">
-                גזע
-              </Label>
-              <Input
-                id="pet-breed"
-                value={editFormData.breed}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, breed: e.target.value }))}
-                placeholder="הכנס גזע"
-                className="font-jakarta h-12 rounded-xl border-2 focus:border-accent focus:ring-accent"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
+          {documents.length === 0 ? (
+            <Card className="p-8 text-center border-dashed border-2">
+              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground mb-4">אין מסמכים עדיין</p>
               <Button
                 variant="outline"
-                onClick={() => setIsEditSheetOpen(false)}
-                className="flex-1 h-12 rounded-xl font-jakarta font-bold border-2"
+                size="sm"
+                onClick={() => navigate(`/documents?petId=${pet.id}`)}
+                className="rounded-full"
               >
-                ביטול
+                <Upload className="w-4 h-4 ml-1" />
+                העלאת מסמך ראשון
               </Button>
-              <Button
-                onClick={handleSaveEdit}
-                disabled={isSaving}
-                className="flex-1 h-12 rounded-xl font-jakarta font-bold bg-accent hover:bg-accent-hover text-accent-foreground shadow-md"
-              >
-                {isSaving ? "שומר..." : "שמור שינויים"}
-              </Button>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {documents.map((doc) => (
+                <Card key={doc.id} className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{doc.title}</p>
+                    <p className="text-xs text-muted-foreground">{doc.document_type}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(doc.uploaded_at), 'dd/MM/yy')}
+                  </span>
+                </Card>
+              ))}
             </div>
+          )}
+        </TabsContent>
+
+        {/* Tasks Tab */}
+        <TabsContent value="tasks" className="px-4 pt-4">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-foreground">משימות לפי גזע</h2>
+            <p className="text-sm text-muted-foreground">משימות מותאמות ל{pet.breed || pet.type}</p>
           </div>
-        </SheetContent>
-      </Sheet>
+
+          <div className="space-y-3">
+            {tasks.map((task) => (
+              <Card key={task.id} className={`p-4 flex items-center gap-3 ${task.completed ? 'bg-success/5 border-success/20' : ''}`}>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                  task.completed ? 'bg-success border-success' : 'border-muted-foreground'
+                }`}>
+                  {task.completed && <span className="text-white text-xs">✓</span>}
+                </div>
+                <div className="flex-1">
+                  <p className={`font-medium text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                    {task.title}
+                  </p>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  task.priority === 'high' ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
+                }`}>
+                  {task.priority === 'high' ? 'גבוהה' : 'בינונית'}
+                </span>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* Training Tab */}
+        <TabsContent value="training" className="px-4 pt-4">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-foreground">קורס אילוף</h2>
+            <p className="text-sm text-muted-foreground">מותאם ל{pet.breed || pet.type}</p>
+          </div>
+
+          {/* Progress Card */}
+          <Card className="p-4 mb-4 bg-gradient-to-r from-primary/10 to-accent/10 border-0">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">התקדמות כללית</span>
+              <span className="text-lg font-bold text-primary">35%</span>
+            </div>
+            <div className="w-full h-2 bg-background rounded-full overflow-hidden">
+              <div className="h-full w-[35%] bg-gradient-to-r from-primary to-accent rounded-full" />
+            </div>
+          </Card>
+
+          <div className="space-y-3">
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">שיעור 1: פקודות בסיסיות</h3>
+                <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">הושלם</span>
+              </div>
+              <p className="text-sm text-muted-foreground">שב, שכב, הישאר במקום</p>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">שיעור 2: הליכה ברצועה</h3>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">בתהליך</span>
+              </div>
+              <p className="text-sm text-muted-foreground">הליכה נכונה ליד הבעלים</p>
+            </Card>
+            <Card className="p-4 opacity-60">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium">שיעור 3: זימון מתקדם</h3>
+                <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">נעול</span>
+              </div>
+              <p className="text-sm text-muted-foreground">זימון בסביבות מפריעות</p>
+            </Card>
+          </div>
+
+          <Button 
+            className="w-full mt-4 rounded-xl"
+            onClick={() => navigate('/training')}
+          >
+            המשך לאילוף
+          </Button>
+        </TabsContent>
+
+        {/* Photos Tab */}
+        <TabsContent value="photos" className="px-4 pt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground">אלבום תמונות</h2>
+            <Button
+              size="sm"
+              onClick={() => navigate(`/photos?petId=${pet.id}`)}
+              className="rounded-full"
+            >
+              <Plus className="w-4 h-4 ml-1" />
+              הוספת תמונה
+            </Button>
+          </div>
+
+          {photos.length === 0 ? (
+            <Card className="p-8 text-center border-dashed border-2">
+              <Image className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground mb-4">אין תמונות עדיין</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/photos?petId=${pet.id}`)}
+                className="rounded-full"
+              >
+                <Upload className="w-4 h-4 ml-1" />
+                העלאת תמונה ראשונה
+              </Button>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-3 gap-1">
+              {photos.map((photo) => (
+                <div key={photo.id} className="aspect-square rounded-lg overflow-hidden">
+                  <img 
+                    src={photo.photo_url} 
+                    alt={photo.caption || 'Pet photo'} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Insurance Tab */}
+        <TabsContent value="insurance" className="px-4 pt-4">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-foreground">ביטוח חיית מחמד</h2>
+            <p className="text-sm text-muted-foreground">מותאם ל{pet.breed || pet.type}</p>
+          </div>
+
+          <Card className="p-4 mb-4 bg-gradient-to-r from-primary/10 to-accent/10 border-0">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield className="w-8 h-8 text-primary" />
+              <div>
+                <h3 className="font-bold">ביטוח פרימיום</h3>
+                <p className="text-xs text-muted-foreground">כיסוי מלא לחיית המחמד שלך</p>
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-primary mb-2">₪99<span className="text-sm font-normal text-muted-foreground">/חודש</span></div>
+            <ul className="text-sm space-y-1 mb-4">
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> טיפולי חירום
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> ניתוחים
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> תרופות
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> בדיקות שנתיות
+              </li>
+            </ul>
+            <Button className="w-full rounded-xl" onClick={() => navigate('/insurance')}>
+              קבל הצעת מחיר
+            </Button>
+          </Card>
+
+          <p className="text-xs text-center text-muted-foreground">
+            המחיר מותאם לגזע {pet.breed || pet.type} ולגיל {calculateAge(pet.birth_date)}
+          </p>
+        </TabsContent>
+
+        {/* Grooming Tab */}
+        <TabsContent value="grooming" className="px-4 pt-4">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-foreground">חבילות תספורת</h2>
+            <p className="text-sm text-muted-foreground">מותאם ל{pet.breed || pet.type}</p>
+          </div>
+
+          <div className="space-y-3">
+            {groomingPackages.map((pkg) => (
+              <Card key={pkg.id} className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold">{pkg.name}</h3>
+                  <span className="text-lg font-bold text-primary">₪{pkg.price}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {pkg.includes.map((item, idx) => (
+                    <span key={idx} className="text-xs bg-muted px-2 py-1 rounded-full">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full rounded-xl"
+                  onClick={() => navigate('/grooming')}
+                >
+                  הזמן תור
+                </Button>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
