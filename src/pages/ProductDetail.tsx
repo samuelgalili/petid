@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Percent, Leaf, Zap } from "lucide-react";
+import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Leaf, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -10,12 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useCart } from "@/contexts/CartContext";
-
 const ProductDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
-  const { addToCart } = useCart();
+  const {
+    toast
+  } = useToast();
+  const {
+    addToCart
+  } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState("עוף ואורז");
@@ -35,7 +38,7 @@ const ProductDetail = () => {
     category: "מזון",
     description: "מזון פרימיום איכותי לכלבים עשוי ממרכיבים טבעיים. מתאים לכל הגזעים ושלבי החיים. מכיל ויטמינים, מינרלים וחלבונים חיוניים לבריאות מיטבית.",
     rating: 4.8,
-    reviewCount: 234,
+    reviewCount: 234
   };
 
   // Normalize price to number
@@ -49,54 +52,70 @@ const ProductDetail = () => {
     ...rawProduct,
     price: getNumericPrice(rawProduct.price),
     originalPrice: rawProduct.originalPrice ? getNumericPrice(rawProduct.originalPrice) : null,
-    discount: rawProduct.originalPrice 
-      ? `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.originalPrice)) * 100)}% הנחה`
-      : null,
+    discount: rawProduct.originalPrice ? `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.originalPrice)) * 100)}% הנחה` : null
   };
-
-  const benefits = [
-    { icon: Leaf, title: "100% טבעי", description: "ללא חומרים משמרים מלאכותיים", color: "bg-green-100 text-green-600" },
-    { icon: Sparkles, title: "מתאים לחיות רגישות", description: "עדין לקיבה, קל לעיכול", color: "bg-purple-100 text-purple-600" },
-    { icon: Award, title: "איכות פרימיום", description: "מחיר הוגן, רכיבים יוצאי דופן", color: "bg-amber-100 text-amber-600" },
-    { icon: Zap, title: "משפר אנרגיה", description: "חיונות ושמחה בכל ביס", color: "bg-blue-100 text-blue-600" },
-  ];
-
-  const relatedProducts = [
-    { id: 1, name: "חטיפים לכלבים", price: 45, image: "https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=300&h=300&fit=crop" },
-    { id: 2, name: "ויטמינים לחיות", price: 89, image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop" },
-    { id: 3, name: "צעצועים לכלבים", price: 65, image: "https://images.unsplash.com/photo-1591769225440-811ad7d6eab3?w=300&h=300&fit=crop" },
-    { id: 4, name: "קערת אוכל", price: 55, image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop" },
-  ];
-
-  const images = rawProduct.images || [
-    product.image,
-    "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&h=600&fit=crop",
-  ];
-
-  const reviews = [
-    {
-      id: 1,
-      author: "שרה מ.",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-      rating: 5,
-      date: "לפני שבועיים",
-      comment: "מוצר מדהים! הכלב שלי פשוט מת על זה. האיכות יוצאת דופן ושמתי לב לשיפור משמעותי בפרווה שלו.",
-      petImage: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300&h=300&fit=crop",
-      helpful: 24,
-    },
-    {
-      id: 2,
-      author: "יוחנן ד.",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-      rating: 4,
-      date: "לפני חודש",
-      comment: "תמורה מעולה לכסף. חיית המחמד שלי בריאה יותר מאז שעברנו למוצר הזה. ממליץ בחום!",
-      petImage: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&h=300&fit=crop",
-      helpful: 18,
-    },
-  ];
-
+  const benefits = [{
+    icon: Leaf,
+    title: "100% טבעי",
+    description: "ללא חומרים משמרים מלאכותיים",
+    color: "bg-green-100 text-green-600"
+  }, {
+    icon: Sparkles,
+    title: "מתאים לחיות רגישות",
+    description: "עדין לקיבה, קל לעיכול",
+    color: "bg-purple-100 text-purple-600"
+  }, {
+    icon: Award,
+    title: "איכות פרימיום",
+    description: "מחיר הוגן, רכיבים יוצאי דופן",
+    color: "bg-amber-100 text-amber-600"
+  }, {
+    icon: Zap,
+    title: "משפר אנרגיה",
+    description: "חיונות ושמחה בכל ביס",
+    color: "bg-blue-100 text-blue-600"
+  }];
+  const relatedProducts = [{
+    id: 1,
+    name: "חטיפים לכלבים",
+    price: 45,
+    image: "https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=300&h=300&fit=crop"
+  }, {
+    id: 2,
+    name: "ויטמינים לחיות",
+    price: 89,
+    image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop"
+  }, {
+    id: 3,
+    name: "צעצועים לכלבים",
+    price: 65,
+    image: "https://images.unsplash.com/photo-1591769225440-811ad7d6eab3?w=300&h=300&fit=crop"
+  }, {
+    id: 4,
+    name: "קערת אוכל",
+    price: 55,
+    image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop"
+  }];
+  const images = rawProduct.images || [product.image, "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&h=600&fit=crop"];
+  const reviews = [{
+    id: 1,
+    author: "שרה מ.",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+    rating: 5,
+    date: "לפני שבועיים",
+    comment: "מוצר מדהים! הכלב שלי פשוט מת על זה. האיכות יוצאת דופן ושמתי לב לשיפור משמעותי בפרווה שלו.",
+    petImage: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300&h=300&fit=crop",
+    helpful: 24
+  }, {
+    id: 2,
+    author: "יוחנן ד.",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
+    rating: 4,
+    date: "לפני חודש",
+    comment: "תמורה מעולה לכסף. חיית המחמד שלי בריאה יותר מאז שעברנו למוצר הזה. ממליץ בחום!",
+    petImage: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&h=300&fit=crop",
+    helpful: 18
+  }];
   const handleAddToCart = () => {
     addToCart({
       id: `${product.name}-${selectedVariant}-${selectedSize}`,
@@ -105,80 +124,59 @@ const ProductDetail = () => {
       image: product.image,
       quantity: quantity,
       variant: selectedVariant,
-      size: selectedSize,
+      size: selectedSize
     });
     toast({
       title: "נוסף לעגלה 🛒",
-      description: `${product.name} x${quantity} נוסף בהצלחה`,
+      description: `${product.name} x${quantity} נוסף בהצלחה`
     });
   };
-
   const handleBuyNow = () => {
     handleAddToCart();
     navigate("/cart");
   };
-
   const toggleWishlist = () => {
     setIsWishlisted(!isWishlisted);
     toast({
       title: isWishlisted ? "הוסר מהמועדפים" : "נוסף למועדפים ❤️",
-      description: isWishlisted ? `${product.name} הוסר` : `${product.name} נשמר למועדפים`,
+      description: isWishlisted ? `${product.name} הוסר` : `${product.name} נשמר למועדפים`
     });
   };
-
   const nextImage = () => {
-    setSelectedImage((prev) => (prev + 1) % images.length);
+    setSelectedImage(prev => (prev + 1) % images.length);
   };
-
   const prevImage = () => {
-    setSelectedImage((prev) => (prev - 1 + images.length) % images.length);
+    setSelectedImage(prev => (prev - 1 + images.length) % images.length);
   };
-
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
-
   const handleTouchEnd = (e: React.TouchEvent) => {
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0) nextImage();
-      else prevImage();
+      if (diff > 0) nextImage();else prevImage();
     }
   };
-
-  return (
-    <div className="min-h-screen pb-52 bg-background" dir="rtl">
+  return <div className="min-h-screen pb-52 bg-background" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center justify-between px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-muted w-10 h-10"
-            onClick={() => navigate(-1)}
-          >
+          <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted w-10 h-10" onClick={() => navigate(-1)}>
             <ArrowRight className="w-5 h-5 text-foreground" />
           </Button>
           <h1 className="text-base font-bold font-jakarta text-foreground">פרטי מוצר</h1>
           <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="rounded-full hover:bg-muted w-10 h-10"
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                toast({ title: "הקישור הועתק", description: "קישור למוצר הועתק ללוח" });
-              }}
-            >
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted w-10 h-10" onClick={() => {
+            navigator.clipboard.writeText(window.location.href);
+            toast({
+              title: "הקישור הועתק",
+              description: "קישור למוצר הועתק ללוח"
+            });
+          }}>
               <Share2 className="w-5 h-5 text-foreground" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className={`rounded-full hover:bg-muted w-10 h-10 transition-all duration-300 ${isWishlisted ? 'text-red-500 scale-110' : 'text-foreground'}`}
-              onClick={toggleWishlist}
-            >
+            <Button variant="ghost" size="icon" className={`rounded-full hover:bg-muted w-10 h-10 transition-all duration-300 ${isWishlisted ? 'text-red-500 scale-110' : 'text-foreground'}`} onClick={toggleWishlist}>
               <Heart className={`w-5 h-5 transition-all duration-300 ${isWishlisted ? 'fill-current animate-pulse' : ''}`} />
             </Button>
           </div>
@@ -187,100 +185,79 @@ const ProductDetail = () => {
 
       {/* Product Images Gallery */}
       <div className="relative bg-gradient-to-b from-muted/50 to-background">
-        <div 
-          className="aspect-square max-w-md mx-auto relative overflow-hidden"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
+        <div className="aspect-square max-w-md mx-auto relative overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <AnimatePresence mode="wait">
-            <motion.img
-              key={selectedImage}
-              src={images[selectedImage]}
-              alt={product.name}
-              className="w-full h-full object-cover"
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.25 }}
-            />
+            <motion.img key={selectedImage} src={images[selectedImage]} alt={product.name} className="w-full h-full object-cover" initial={{
+            opacity: 0,
+            scale: 1.05
+          }} animate={{
+            opacity: 1,
+            scale: 1
+          }} exit={{
+            opacity: 0,
+            scale: 0.95
+          }} transition={{
+            duration: 0.25
+          }} />
           </AnimatePresence>
           
           {/* Discount Badge */}
-          {product.discount && (
-            <motion.div 
-              className="absolute top-4 left-4"
-              initial={{ scale: 0, rotate: -20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            >
+          {product.discount && <motion.div className="absolute top-4 left-4" initial={{
+          scale: 0,
+          rotate: -20
+        }} animate={{
+          scale: 1,
+          rotate: 0
+        }} transition={{
+          type: "spring",
+          stiffness: 400,
+          damping: 15
+        }}>
               <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold px-3 py-1.5 rounded-full text-sm shadow-lg shadow-red-500/30">
-                <Percent className="w-3.5 h-3.5 ml-1" />
+                
                 {product.discount}
               </Badge>
-            </motion.div>
-          )}
+            </motion.div>}
           
-          {images.length > 1 && (
-            <>
-              <button
-                onClick={nextImage}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95"
-              >
+          {images.length > 1 && <>
+              <button onClick={nextImage} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95">
                 <ChevronLeft className="w-5 h-5 text-foreground" />
               </button>
-              <button
-                onClick={prevImage}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95"
-              >
+              <button onClick={prevImage} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95">
                 <ChevronRight className="w-5 h-5 text-foreground" />
               </button>
-            </>
-          )}
+            </>}
         </div>
         
         {/* Image Indicators */}
         <div className="flex gap-2 justify-center py-4">
-          {images.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedImage(idx)}
-              className={`transition-all duration-300 ${
-                selectedImage === idx
-                  ? "w-8 h-2 bg-primary rounded-full"
-                  : "w-2 h-2 bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50"
-              }`}
-            />
-          ))}
+          {images.map((_, idx) => <button key={idx} onClick={() => setSelectedImage(idx)} className={`transition-all duration-300 ${selectedImage === idx ? "w-8 h-2 bg-primary rounded-full" : "w-2 h-2 bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50"}`} />)}
         </div>
         
         {/* Image Thumbnails */}
         <div className="flex gap-2 justify-center pb-4 px-4">
-          {images.map((img, idx) => (
-            <motion.button
-              key={idx}
-              onClick={() => setSelectedImage(idx)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-                selectedImage === idx
-                  ? "border-primary ring-4 ring-primary/20 shadow-lg"
-                  : "border-border/50 opacity-60 hover:opacity-100"
-              }`}
-            >
+          {images.map((img, idx) => <motion.button key={idx} onClick={() => setSelectedImage(idx)} whileHover={{
+          scale: 1.05
+        }} whileTap={{
+          scale: 0.95
+        }} className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 ${selectedImage === idx ? "border-primary ring-4 ring-primary/20 shadow-lg" : "border-border/50 opacity-60 hover:opacity-100"}`}>
               <img src={img} alt="" className="w-full h-full object-cover" />
-            </motion.button>
-          ))}
+            </motion.button>)}
         </div>
       </div>
 
       {/* Product Info Card */}
-      <motion.div 
-        className="mx-4 -mt-2 relative p-[2px] rounded-3xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
+      <motion.div className="mx-4 -mt-2 relative p-[2px] rounded-3xl overflow-hidden" style={{
+      background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
+    }} initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.1
+    }}>
         <div className="bg-white rounded-3xl overflow-hidden">
           {/* Title & Price Section */}
           <div className="p-5 border-b border-gray-100">
@@ -289,40 +266,37 @@ const ProductDetail = () => {
                 <h1 className="text-xl font-bold text-gray-800 font-jakarta leading-tight">{product.name}</h1>
                 <p className="text-sm text-gray-500 font-jakarta mt-1">{product.subtitle}</p>
               </div>
-              <div 
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full"
-                style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box', border: '1.5px solid transparent' }}
-              >
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full" style={{
+              background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box',
+              border: '1.5px solid transparent'
+            }}>
                 <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
                 <span className="font-bold text-gray-800 font-jakarta text-sm">{product.rating}</span>
               </div>
             </div>
             
             <div className="flex items-baseline gap-3">
-              <span 
-                className="text-3xl font-black bg-clip-text text-transparent font-jakarta"
-                style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
-              >
+              <span className="text-3xl font-black bg-clip-text text-transparent font-jakarta" style={{
+              backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+            }}>
                 ₪{product.price}
               </span>
-              {product.originalPrice && (
-                <span className="text-base text-gray-400 line-through font-jakarta">₪{product.originalPrice}</span>
-              )}
+              {product.originalPrice && <span className="text-base text-gray-400 line-through font-jakarta">₪{product.originalPrice}</span>}
             </div>
             
             {/* Delivery Info Pills */}
             <div className="flex items-center gap-2 mt-4 flex-wrap">
-              <div 
-                className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-gray-700"
-                style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box', border: '1px solid transparent' }}
-              >
+              <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-gray-700" style={{
+              background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box',
+              border: '1px solid transparent'
+            }}>
                 <Truck className="w-3.5 h-3.5 text-[#4ECDC4]" />
                 <span className="font-jakarta">משלוח חינם מעל ₪199</span>
               </div>
-              <div 
-                className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-gray-700"
-                style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8) border-box', border: '1px solid transparent' }}
-              >
+              <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-gray-700" style={{
+              background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8) border-box',
+              border: '1px solid transparent'
+            }}>
                 <Clock className="w-3.5 h-3.5 text-[#1E5799]" />
                 <span className="font-jakarta">2-4 ימי עסקים</span>
               </div>
@@ -334,51 +308,33 @@ const ProductDetail = () => {
             <div>
               <label className="text-sm font-bold mb-3 block text-gray-800 font-jakarta">בחר טעם</label>
               <div className="flex gap-2 flex-wrap">
-                {["עוף ואורז", "בקר וירקות", "סלמון ובטטה"].map((variant) => (
-                  <motion.button
-                    key={variant}
-                    onClick={() => setSelectedVariant(variant)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${
-                      selectedVariant === variant
-                        ? "text-gray-800 font-bold"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                    style={selectedVariant === variant 
-                      ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }
-                      : {}
-                    }
-                  >
+                {["עוף ואורז", "בקר וירקות", "סלמון ובטטה"].map(variant => <motion.button key={variant} onClick={() => setSelectedVariant(variant)} whileHover={{
+                scale: 1.02
+              }} whileTap={{
+                scale: 0.98
+              }} className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${selectedVariant === variant ? "text-gray-800 font-bold" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`} style={selectedVariant === variant ? {
+                background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+                border: '2px solid transparent'
+              } : {}}>
                     {selectedVariant === variant && <Check className="w-3.5 h-3.5 inline-block ml-1 text-[#4ECDC4]" />}
                     {variant}
-                  </motion.button>
-                ))}
+                  </motion.button>)}
               </div>
             </div>
 
             <div>
               <label className="text-sm font-bold mb-3 block text-gray-800 font-jakarta">בחר גודל</label>
               <div className="flex gap-2">
-                {["1 ק״ג", "2.5 ק״ג", "5 ק״ג", "10 ק״ג"].map((size) => (
-                  <motion.button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${
-                      selectedSize === size
-                        ? "text-gray-800 font-bold"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                    style={selectedSize === size 
-                      ? { background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }
-                      : {}
-                    }
-                  >
+                {["1 ק״ג", "2.5 ק״ג", "5 ק״ג", "10 ק״ג"].map(size => <motion.button key={size} onClick={() => setSelectedSize(size)} whileHover={{
+                scale: 1.02
+              }} whileTap={{
+                scale: 0.98
+              }} className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${selectedSize === size ? "text-gray-800 font-bold" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`} style={selectedSize === size ? {
+                background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+                border: '2px solid transparent'
+              } : {}}>
                     {size}
-                  </motion.button>
-                ))}
+                  </motion.button>)}
               </div>
             </div>
           </div>
@@ -388,29 +344,30 @@ const ProductDetail = () => {
             <h3 className="text-base font-bold mb-4 text-gray-800 font-jakarta">למה חיית המחמד שלך תאהב את זה</h3>
             <div className="grid grid-cols-2 gap-3">
               {benefits.map((benefit, idx) => {
-                const Icon = benefit.icon;
-                return (
-                  <motion.div 
-                    key={idx} 
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '1.5px solid transparent' }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + idx * 0.05 }}
-                  >
-                    <div 
-                      className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
-                    >
+              const Icon = benefit.icon;
+              return <motion.div key={idx} className="flex items-center gap-3 p-3 rounded-xl" style={{
+                background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+                border: '1.5px solid transparent'
+              }} initial={{
+                opacity: 0,
+                y: 10
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} transition={{
+                delay: 0.2 + idx * 0.05
+              }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{
+                  background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+                }}>
                       <Icon className="w-4 h-4 text-white" />
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-800 text-xs font-jakarta">{benefit.title}</h4>
                       <p className="text-[10px] text-gray-500 font-jakarta leading-tight">{benefit.description}</p>
                     </div>
-                  </motion.div>
-                );
-              })}
+                  </motion.div>;
+            })}
             </div>
           </div>
 
@@ -466,20 +423,24 @@ const ProductDetail = () => {
       </motion.div>
 
       {/* Reviews Section */}
-      <motion.div 
-        className="mx-4 mt-4 relative p-[2px] rounded-3xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
+      <motion.div className="mx-4 mt-4 relative p-[2px] rounded-3xl overflow-hidden" style={{
+      background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
+    }} initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.3
+    }}>
         <div className="bg-white rounded-3xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-gray-800 font-jakarta">ביקורות לקוחות</h3>
-            <div 
-              className="flex items-center gap-1 text-sm px-3 py-1 rounded-full"
-              style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box', border: '1.5px solid transparent' }}
-            >
+            <div className="flex items-center gap-1 text-sm px-3 py-1 rounded-full" style={{
+            background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box',
+            border: '1.5px solid transparent'
+          }}>
               <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
               <span className="font-bold text-gray-800 font-jakarta">{product.rating}</span>
               <span className="text-gray-500 font-jakarta">({product.reviewCount})</span>
@@ -487,24 +448,24 @@ const ProductDetail = () => {
           </div>
           
           <div className="space-y-3">
-            {reviews.map((review, idx) => (
-              <motion.div
-                key={review.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + idx * 0.1 }}
-              >
+            {reviews.map((review, idx) => <motion.div key={review.id} initial={{
+            opacity: 0,
+            x: -10
+          }} animate={{
+            opacity: 1,
+            x: 0
+          }} transition={{
+            delay: 0.4 + idx * 0.1
+          }}>
                 <Card className="p-4 bg-gray-50 border-0 rounded-xl">
                   <div className="flex items-start gap-3">
-                    <Avatar 
-                      className="w-10 h-10"
-                      style={{ boxShadow: '0 0 0 2px #4ECDC4' }}
-                    >
+                    <Avatar className="w-10 h-10" style={{
+                  boxShadow: '0 0 0 2px #4ECDC4'
+                }}>
                       <AvatarImage src={review.avatar} />
-                      <AvatarFallback 
-                        className="text-white font-bold text-sm"
-                        style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
-                      >
+                      <AvatarFallback className="text-white font-bold text-sm" style={{
+                    background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+                  }}>
                         {review.author[0]}
                       </AvatarFallback>
                     </Avatar>
@@ -514,27 +475,12 @@ const ProductDetail = () => {
                         <span className="text-xs text-gray-500 font-jakarta">{review.date}</span>
                       </div>
                       <div className="flex items-center gap-0.5 mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3.5 h-3.5 ${
-                              i < review.rating
-                                ? "fill-[#4ECDC4] text-[#4ECDC4]"
-                                : "fill-gray-200 text-gray-200"
-                            }`}
-                          />
-                        ))}
+                        {[...Array(5)].map((_, i) => <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? "fill-[#4ECDC4] text-[#4ECDC4]" : "fill-gray-200 text-gray-200"}`} />)}
                       </div>
                       <p className="text-sm text-gray-600 leading-relaxed font-jakarta">
                         {review.comment}
                       </p>
-                      {review.petImage && (
-                        <img 
-                          src={review.petImage} 
-                          alt="Pet" 
-                          className="mt-3 w-16 h-16 rounded-xl object-cover"
-                        />
-                      )}
+                      {review.petImage && <img src={review.petImage} alt="Pet" className="mt-3 w-16 h-16 rounded-xl object-cover" />}
                       <div className="flex items-center gap-2 mt-3">
                         <Button variant="ghost" size="sm" className="text-xs text-gray-500 hover:text-gray-700 h-7 px-2">
                           👍 מועיל ({review.helpful})
@@ -543,97 +489,103 @@ const ProductDetail = () => {
                     </div>
                   </div>
                 </Card>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div>
           
-          <Button 
-            variant="outline" 
-            className="w-full mt-4 rounded-xl font-jakarta font-bold text-gray-700"
-            style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
-          >
+          <Button variant="outline" className="w-full mt-4 rounded-xl font-jakarta font-bold text-gray-700" style={{
+          background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+          border: '2px solid transparent'
+        }}>
             הצג את כל הביקורות ({product.reviewCount})
           </Button>
         </div>
       </motion.div>
 
       {/* Recommended Products */}
-      <motion.div 
-        className="mx-4 mt-4 mb-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
+      <motion.div className="mx-4 mt-4 mb-6" initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.5
+    }}>
         <h3 className="text-base font-bold mb-4 text-gray-800 font-jakarta">לקוחות גם קנו</h3>
         <div className="grid grid-cols-2 gap-3">
-          {relatedProducts.map((item, idx) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5 + idx * 0.05 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative p-[1.5px] rounded-2xl cursor-pointer group"
-              style={{
-                background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
-              }}
-              onClick={() => navigate('/product/related', { state: { product: { ...item, price: item.price } } })}
-            >
+          {relatedProducts.map((item, idx) => <motion.div key={item.id} initial={{
+          opacity: 0,
+          scale: 0.95
+        }} animate={{
+          opacity: 1,
+          scale: 1
+        }} transition={{
+          delay: 0.5 + idx * 0.05
+        }} whileHover={{
+          scale: 1.02
+        }} whileTap={{
+          scale: 0.98
+        }} className="relative p-[1.5px] rounded-2xl cursor-pointer group" style={{
+          background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
+        }} onClick={() => navigate('/product/related', {
+          state: {
+            product: {
+              ...item,
+              price: item.price
+            }
+          }
+        })}>
               <div className="bg-white rounded-2xl overflow-hidden h-full transition-all group-hover:shadow-lg">
                 <div className="aspect-square bg-gradient-to-br from-gray-50 to-white overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                 </div>
                 <div className="p-3 bg-white">
                   <h4 className="font-bold text-sm text-gray-800 font-jakarta mb-1 truncate">{item.name}</h4>
-                  <p 
-                    className="text-sm font-black bg-clip-text text-transparent font-jakarta"
-                    style={{
-                      backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
-                    }}
-                  >
+                  <p className="text-sm font-black bg-clip-text text-transparent font-jakarta" style={{
+                backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+              }}>
                     ₪{item.price}
                   </p>
                 </div>
               </div>
-            </motion.div>
-          ))}
+            </motion.div>)}
         </div>
       </motion.div>
 
       {/* Trust Section */}
-      <motion.div 
-        className="mx-4 mb-6 relative p-[2px] rounded-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-      >
+      <motion.div className="mx-4 mb-6 relative p-[2px] rounded-2xl overflow-hidden" style={{
+      background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
+    }} initial={{
+      opacity: 0,
+      y: 20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      delay: 0.6
+    }}>
         <div className="bg-white rounded-2xl p-5">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="flex flex-col items-center">
-              <div 
-                className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2"
-                style={{ boxShadow: '0 0 0 2px #4ECDC4' }}
-              >
+              <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2" style={{
+              boxShadow: '0 0 0 2px #4ECDC4'
+            }}>
                 <Shield className="w-5 h-5 text-[#4ECDC4]" />
               </div>
               <p className="text-xs font-bold text-gray-800 font-jakarta">תשלום מאובטח</p>
             </div>
             <div className="flex flex-col items-center">
-              <div 
-                className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2"
-                style={{ boxShadow: '0 0 0 2px #7DB9E8' }}
-              >
+              <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2" style={{
+              boxShadow: '0 0 0 2px #7DB9E8'
+            }}>
                 <Truck className="w-5 h-5 text-[#7DB9E8]" />
               </div>
               <p className="text-xs font-bold text-gray-800 font-jakarta">משלוח מהיר</p>
             </div>
             <div className="flex flex-col items-center">
-              <div 
-                className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2"
-                style={{ boxShadow: '0 0 0 2px #1E5799' }}
-              >
+              <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2" style={{
+              boxShadow: '0 0 0 2px #1E5799'
+            }}>
                 <PackageCheck className="w-5 h-5 text-[#1E5799]" />
               </div>
               <p className="text-xs font-bold text-gray-800 font-jakarta">החזרות קלות</p>
@@ -643,56 +595,49 @@ const ProductDetail = () => {
       </motion.div>
 
       {/* Sticky Bottom CTA */}
-      <motion.div 
-        className="fixed bottom-16 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 p-4 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]"
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        transition={{ delay: 0.3, type: "spring", stiffness: 300, damping: 30 }}
-      >
+      <motion.div className="fixed bottom-16 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 p-4 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]" initial={{
+      y: 100
+    }} animate={{
+      y: 0
+    }} transition={{
+      delay: 0.3,
+      type: "spring",
+      stiffness: 300,
+      damping: 30
+    }}>
         <div className="max-w-lg mx-auto">
           {/* Quantity & Total */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-gray-800 font-jakarta">כמות:</span>
-              <div 
-                className="flex items-center rounded-xl"
-                style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="h-9 w-9 rounded-xl hover:bg-gray-100"
-                >
+              <div className="flex items-center rounded-xl" style={{
+              background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+              border: '2px solid transparent'
+            }}>
+                <Button variant="ghost" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-9 w-9 rounded-xl hover:bg-gray-100">
                   <Minus className="w-4 h-4 text-gray-700" />
                 </Button>
-                <motion.span 
-                  key={quantity}
-                  initial={{ scale: 1.2 }}
-                  animate={{ scale: 1 }}
-                  className="w-10 text-center text-base font-bold text-gray-800 font-jakarta"
-                >
+                <motion.span key={quantity} initial={{
+                scale: 1.2
+              }} animate={{
+                scale: 1
+              }} className="w-10 text-center text-base font-bold text-gray-800 font-jakarta">
                   {quantity}
                 </motion.span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="h-9 w-9 rounded-xl hover:bg-gray-100"
-                >
+                <Button variant="ghost" size="icon" onClick={() => setQuantity(quantity + 1)} className="h-9 w-9 rounded-xl hover:bg-gray-100">
                   <Plus className="w-4 h-4 text-gray-700" />
                 </Button>
               </div>
             </div>
             <div className="text-left">
               <p className="text-xs text-gray-500 font-jakarta">סה״כ</p>
-              <motion.p 
-                key={quantity}
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                className="text-xl font-black bg-clip-text text-transparent font-jakarta"
-                style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
-              >
+              <motion.p key={quantity} initial={{
+              scale: 1.1
+            }} animate={{
+              scale: 1
+            }} className="text-xl font-black bg-clip-text text-transparent font-jakarta" style={{
+              backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+            }}>
                 ₪{(product.price * quantity).toFixed(2)}
               </motion.p>
             </div>
@@ -700,22 +645,16 @@ const ProductDetail = () => {
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              size="lg"
-              className="flex-1 rounded-xl font-bold font-jakarta h-12 text-gray-700"
-              style={{ background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
-              onClick={handleAddToCart}
-            >
+            <Button variant="outline" size="lg" className="flex-1 rounded-xl font-bold font-jakarta h-12 text-gray-700" style={{
+            background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+            border: '2px solid transparent'
+          }} onClick={handleAddToCart}>
               <ShoppingCart className="w-4 h-4 ml-2" />
               הוסף לעגלה
             </Button>
-            <Button
-              size="lg"
-              className="flex-1 text-white rounded-xl font-bold font-jakarta shadow-lg h-12"
-              style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
-              onClick={handleBuyNow}
-            >
+            <Button size="lg" className="flex-1 text-white rounded-xl font-bold font-jakarta shadow-lg h-12" style={{
+            background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+          }} onClick={handleBuyNow}>
               קנה עכשיו
             </Button>
           </div>
@@ -723,8 +662,6 @@ const ProductDetail = () => {
       </motion.div>
 
       <BottomNav />
-    </div>
-  );
+    </div>;
 };
-
 export default ProductDetail;
