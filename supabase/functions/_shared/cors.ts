@@ -24,7 +24,8 @@ export function getCorsHeaders(origin?: string | null): Record<string, string> {
   const isAllowed = origin && (
     ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed)) ||
     origin.endsWith(".lovable.app") ||
-    origin.endsWith(".lovable.dev")
+    origin.endsWith(".lovable.dev") ||
+    origin.endsWith(".lovableproject.com")
   );
 
   return {
