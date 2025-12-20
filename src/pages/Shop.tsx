@@ -979,8 +979,8 @@ const Shop = () => {
                 </div>
               </div>
 
-              {/* Bottom Bar - Fixed at bottom */}
-              <div className="sticky bottom-0 left-0 right-0 border-t border-border px-4 py-4 bg-background/95 backdrop-blur-lg shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-10">
+              {/* Bottom Bar - Always visible at bottom */}
+              <div className="flex-shrink-0 border-t border-border px-4 py-4 bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
                 <div className="flex items-center gap-4">
                   <div className="flex-shrink-0">
                     <p className="text-xs text-muted-foreground">סה״כ</p>
@@ -997,9 +997,6 @@ const Shop = () => {
                     disabled={!selectedProduct.inStock}
                     whileTap={{ scale: 0.98 }}
                     whileHover={{ scale: 1.02 }}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
                     className="flex-1 h-14 text-base font-bold rounded-xl text-white flex items-center justify-center gap-2 transition-all hover:shadow-xl disabled:opacity-50 shadow-lg"
                     style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                   >
