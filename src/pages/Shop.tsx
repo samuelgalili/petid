@@ -675,6 +675,11 @@ const Shop = () => {
                   </div>
                   
                   <div className="flex items-center gap-2 justify-end">
+                    {product.originalPrice && (
+                      <span className="text-xs text-gray-400 line-through">
+                        ₪{product.originalPrice}
+                      </span>
+                    )}
                     <span 
                       className="text-sm font-bold bg-clip-text text-transparent"
                       style={{
@@ -683,11 +688,6 @@ const Shop = () => {
                     >
                       ₪{product.price}
                     </span>
-                    {product.originalPrice && (
-                      <span className="text-xs text-gray-400 line-through">
-                        ₪{product.originalPrice}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
