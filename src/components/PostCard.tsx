@@ -17,103 +17,82 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Custom Dog Tongue Icon Component
-const DogTongueIcon = ({ isLicking, isLiked, className }: { isLicking: boolean; isLiked: boolean; className?: string }) => (
+// Custom Dog Tail Icon Component
+const DogTailIcon = ({ isWagging, isLiked, className }: { isWagging: boolean; isLiked: boolean; className?: string }) => (
   <svg 
     viewBox="0 0 24 24" 
     className={className}
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    {/* Dog face - rounded shape */}
+    {/* Dog body silhouette */}
     <motion.path
-      d="M4 11C4 7 7 4 12 4C17 4 20 7 20 11C20 15 17 17 12 17C7 17 4 15 4 11Z"
+      d="M3 14C3 11 5 9 8 9C9 9 10 9.5 11 10L14 10C16 10 18 11 19 13C20 15 20 17 19 18C18 19 16 19 14 19L8 19C5 19 3 17 3 14Z"
       stroke="currentColor"
       strokeWidth="1.5"
       fill={isLiked ? "currentColor" : "none"}
-      initial={false}
+      strokeLinecap="round"
     />
-    {/* Left floppy ear */}
+    {/* Dog head */}
+    <motion.circle
+      cx="6"
+      cy="11"
+      r="3"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      fill={isLiked ? "currentColor" : "none"}
+    />
+    {/* Ear */}
     <path
-      d="M5.5 8C4.5 5 3 3.5 2 4C1 4.5 1.5 7 3 9"
+      d="M4 9C3.5 7.5 4 6 5 6C6 6 6.5 7 6 8.5"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       fill={isLiked ? "currentColor" : "none"}
     />
-    {/* Right floppy ear */}
+    {/* Eye */}
+    <circle cx="5.5" cy="10.5" r="0.7" fill={isLiked ? "white" : "currentColor"} />
+    {/* Nose */}
+    <circle cx="4" cy="12" r="0.5" fill={isLiked ? "#333" : "currentColor"} />
+    {/* Front leg */}
     <path
-      d="M18.5 8C19.5 5 21 3.5 22 4C23 4.5 22.5 7 21 9"
+      d="M9 19L9 22"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
-      fill={isLiked ? "currentColor" : "none"}
     />
-    {/* Left eye */}
-    <circle cx="8.5" cy="9.5" r="1.5" fill={isLiked ? "white" : "currentColor"} />
-    {/* Left eye sparkle */}
-    <circle cx="8" cy="9" r="0.5" fill={isLiked ? "currentColor" : "white"} />
-    {/* Right eye */}
-    <circle cx="15.5" cy="9.5" r="1.5" fill={isLiked ? "white" : "currentColor"} />
-    {/* Right eye sparkle */}
-    <circle cx="15" cy="9" r="0.5" fill={isLiked ? "currentColor" : "white"} />
-    {/* Nose - heart shaped */}
+    {/* Back leg */}
     <path
-      d="M12 11.5C12 11.5 10.5 11 10.5 12.5C10.5 13.5 12 14.5 12 14.5C12 14.5 13.5 13.5 13.5 12.5C13.5 11 12 11.5 12 11.5Z"
-      fill={isLiked ? "#333" : "currentColor"}
+      d="M15 19L15 22"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
     />
-    {/* Nose highlight */}
-    <ellipse cx="11.5" cy="12" rx="0.4" ry="0.3" fill={isLiked ? "#666" : "white"} opacity="0.6" />
-    {/* Left whiskers */}
-    <g stroke={isLiked ? "white" : "currentColor"} strokeWidth="0.5" strokeLinecap="round" opacity="0.7">
-      <line x1="6" y1="11" x2="3" y2="10" />
-      <line x1="6" y1="12" x2="3" y2="12" />
-      <line x1="6" y1="13" x2="3" y2="14" />
-    </g>
-    {/* Right whiskers */}
-    <g stroke={isLiked ? "white" : "currentColor"} strokeWidth="0.5" strokeLinecap="round" opacity="0.7">
-      <line x1="18" y1="11" x2="21" y2="10" />
-      <line x1="18" y1="12" x2="21" y2="12" />
-      <line x1="18" y1="13" x2="21" y2="14" />
-    </g>
-    {/* Mouth line */}
-    <path
-      d="M10 14.5C10.5 15 11.5 15.5 12 15.5C12.5 15.5 13.5 15 14 14.5"
-      stroke={isLiked ? "white" : "currentColor"}
-      strokeWidth="0.8"
+    {/* Wagging tail */}
+    <motion.path
+      d="M19 14C20 12 21.5 11 22.5 11.5C23 12 22.5 13 21.5 14C20.5 15 20 15.5 20 16"
+      stroke={isLiked ? "currentColor" : "currentColor"}
+      strokeWidth="2"
       strokeLinecap="round"
       fill="none"
-    />
-    {/* Tongue with licking animation */}
-    <motion.path
-      d="M12 15.5C12 15.5 10.5 17 10.5 19C10.5 20.5 11 21.5 12 21.5C13 21.5 13.5 20.5 13.5 19C13.5 17 12 15.5 12 15.5Z"
-      fill={isLiked ? "#ED4956" : "#FF9999"}
-      stroke={isLiked ? "#D62839" : "#FF6B6B"}
-      strokeWidth="0.5"
       initial={false}
-      animate={isLicking ? {
-        scaleY: [1, 1.4, 0.9, 1.3, 1],
-        y: [0, 3, -1, 2, 0],
-        rotate: [0, -8, 8, -5, 0]
+      animate={isWagging ? {
+        rotate: [0, 25, -20, 20, -15, 10, 0],
+        x: [0, 2, -2, 2, -1, 1, 0],
       } : {}}
+      style={{ originX: "80%", originY: "100%" }}
       transition={{ duration: 0.6, ease: "easeInOut" }}
     />
-    {/* Tongue center line */}
-    <motion.line
-      x1="12"
-      y1="16"
-      x2="12"
-      y2="20"
-      stroke={isLiked ? "#D62839" : "#FF6B6B"}
-      strokeWidth="0.3"
-      opacity="0.5"
-      initial={false}
-      animate={isLicking ? {
-        scaleY: [1, 1.4, 0.9, 1.3, 1],
-        y: [0, 3, -1, 2, 0],
-      } : {}}
-      transition={{ duration: 0.6, ease: "easeInOut" }}
-    />
+    {/* Heart on tail when liked */}
+    {isLiked && (
+      <motion.path
+        d="M22 10C22 10 21.5 9.5 21 9.5C20.5 9.5 20 10 20 10.5C20 11 21 12 21 12C21 12 22 11 22 10.5C22 10 22 10 22 10Z"
+        fill="#ED4956"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      />
+    )}
   </svg>
 );
 
@@ -569,8 +548,8 @@ export const PostCard = ({
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
               className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
             >
-              <DogTongueIcon 
-                isLicking={isLicking} 
+              <DogTailIcon 
+                isWagging={isLicking} 
                 isLiked={post.is_liked} 
                 className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956]' : 'text-[#262626]'}`} 
               />
