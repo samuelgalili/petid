@@ -193,7 +193,7 @@ const BottomNav = () => {
                 <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] flex items-center justify-center shadow-xl shadow-[#4ECDC4]/40 group-hover:shadow-2xl group-hover:shadow-[#4ECDC4]/50 transition-all duration-300 group-hover:scale-105">
                   {/* Inner shine */}
                   <div className="absolute inset-[2px] rounded-[14px] bg-gradient-to-br from-white/20 to-transparent" />
-                  <Plus className="w-7 h-7 text-white drop-shadow-sm relative z-10" strokeWidth={2.5} />
+                  <Grid3X3 className="w-7 h-7 text-white drop-shadow-sm relative z-10" strokeWidth={2} />
                 </div>
               </div>
             }
