@@ -148,7 +148,7 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="min-h-screen pb-36 bg-background" dir="rtl">
+    <div className="min-h-screen pb-52 bg-background" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center justify-between px-4 py-3">
