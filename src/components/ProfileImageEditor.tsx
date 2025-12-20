@@ -225,34 +225,34 @@ export const ProfileImageEditor = ({
             className="fixed inset-0 z-[201] flex items-center justify-center p-4"
           >
             <div
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+              className="bg-background rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-border/50"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="bg-gradient-primary p-6 flex items-center justify-between">
-                <h2 className="text-2xl font-black text-gray-900 font-jakarta">
+              <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">
                   עריכת תמונת פרופיל
                 </h2>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleClose}
-                  className="rounded-full hover:bg-white/30"
+                  className="rounded-full hover:bg-muted h-8 w-8"
                 >
-                  <X className="w-6 h-6 text-gray-900" />
+                  <X className="w-5 h-5 text-muted-foreground" />
                 </Button>
               </div>
 
               {/* Content */}
-              <div className="p-6">
+              <div className="p-4">
                 {!imageSrc ? (
-                  <div className="space-y-4">
-                    <div className="bg-secondary rounded-3xl p-12 text-center border-2 border-dashed border-border">
-                      <ImageIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground font-jakarta mb-6">
+                  <div className="space-y-3">
+                    <div className="bg-muted/50 rounded-xl p-8 text-center border border-dashed border-border">
+                      <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground mb-4">
                         בחר תמונה להעלאה
                       </p>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2">
                         <label className="cursor-pointer">
                           <input
                             type="file"
@@ -260,8 +260,11 @@ export const ProfileImageEditor = ({
                             onChange={handleFileSelect}
                             className="hidden"
                           />
-                          <div className="bg-accent text-white px-6 py-3 rounded-2xl font-bold font-jakarta inline-flex items-center gap-2 hover:bg-accent-hover transition-colors">
-                            <Upload className="w-5 h-5" />
+                          <div 
+                            className="text-white px-4 py-2.5 rounded-xl font-medium text-sm inline-flex items-center gap-2 transition-opacity hover:opacity-90"
+                            style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
+                          >
+                            <Upload className="w-4 h-4" />
                             העלה מהגלריה
                           </div>
                         </label>
@@ -273,8 +276,8 @@ export const ProfileImageEditor = ({
                             onChange={handleFileSelect}
                             className="hidden"
                           />
-                          <div className="bg-gray-900 text-white px-6 py-3 rounded-2xl font-bold font-jakarta inline-flex items-center gap-2 hover:bg-gray-800 transition-colors">
-                            <Camera className="w-5 h-5" />
+                          <div className="bg-muted text-foreground px-4 py-2.5 rounded-xl font-medium text-sm inline-flex items-center gap-2 hover:bg-muted/80 transition-colors border border-border">
+                            <Camera className="w-4 h-4" />
                             צלם תמונה
                           </div>
                         </label>
@@ -282,9 +285,9 @@ export const ProfileImageEditor = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Cropper */}
-                    <div className="relative h-96 bg-gray-900 rounded-2xl overflow-hidden">
+                    <div className="relative h-72 bg-muted rounded-xl overflow-hidden">
                       <Cropper
                         image={imageSrc}
                         crop={crop}
@@ -300,10 +303,10 @@ export const ProfileImageEditor = ({
                     </div>
 
                     {/* Controls */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {/* Zoom */}
                       <div>
-                        <label className="block text-sm font-bold text-gray-900 mb-2 font-jakarta">
+                        <label className="block text-xs font-medium text-muted-foreground mb-2">
                           זום
                         </label>
                         <Slider
@@ -319,14 +322,14 @@ export const ProfileImageEditor = ({
                       {/* Rotation */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="text-sm font-bold text-gray-900 font-jakarta">
+                          <label className="text-xs font-medium text-muted-foreground">
                             סיבוב
                           </label>
                           <button
                             onClick={() => setRotation((r) => r + 90)}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            className="p-1.5 hover:bg-muted rounded-full transition-colors"
                           >
-                            <RotateCw className="w-5 h-5 text-gray-700" />
+                            <RotateCw className="w-4 h-4 text-muted-foreground" />
                           </button>
                         </div>
                         <Slider
@@ -341,24 +344,25 @@ export const ProfileImageEditor = ({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 pt-2">
                       <Button
                         variant="outline"
                         onClick={() => setImageSrc(null)}
-                        className="flex-1 rounded-2xl py-6 font-bold font-jakarta"
+                        className="flex-1 rounded-xl h-10 text-sm font-medium"
                       >
                         בחר תמונה אחרת
                       </Button>
                       <Button
                         onClick={handleSave}
                         disabled={isUploading}
-                        className="flex-1 bg-success hover:bg-success-dark text-white rounded-2xl py-6 font-bold font-jakarta"
+                        className="flex-1 text-white rounded-xl h-10 text-sm font-medium"
+                        style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                       >
                         {isUploading ? (
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            <Check className="w-5 h-5 ml-2" />
+                            <Check className="w-4 h-4 ml-2" />
                             שמור תמונה
                           </>
                         )}
