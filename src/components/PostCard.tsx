@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag, Trophy, Sparkles, Link2, EyeOff, MinusCircle } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag, Trophy, Sparkles, Link2, EyeOff, MinusCircle, Heart } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -17,88 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Custom Dog Tail Icon Component
-const DogTailIcon = ({ isWagging, isLiked, className }: { isWagging: boolean; isLiked: boolean; className?: string }) => (
-  <svg 
-    viewBox="0 0 24 24" 
-    className={className}
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Dog tail - simple wagging tail */}
-    <motion.path
-      d="M4 20C6 18 8 14 10 10C11 8 12 6 14 5C16 4 18 4 20 5"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      fill="none"
-      initial={false}
-      animate={isWagging ? {
-        rotate: [0, 15, -12, 10, -8, 5, 0],
-      } : {}}
-      style={{ originX: "15%", originY: "85%" }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
-    />
-    {/* Fur detail lines */}
-    <motion.g
-      initial={false}
-      animate={isWagging ? {
-        rotate: [0, 15, -12, 10, -8, 5, 0],
-      } : {}}
-      style={{ originX: "15%", originY: "85%" }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
-    >
-      <path
-        d="M8 13C9 12 10.5 11 11 10"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 8C13 7 14.5 6 15 5.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </motion.g>
-    {/* Motion lines when wagging */}
-    <AnimatePresence>
-      {isWagging && (
-        <>
-          <motion.path
-            d="M21 3L23 2"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            initial={{ opacity: 0, x: -2 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-          />
-          <motion.path
-            d="M22 6L24 6"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            initial={{ opacity: 0, x: -2 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.1 }}
-          />
-          <motion.path
-            d="M21 9L23 10"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            initial={{ opacity: 0, x: -2 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.2 }}
-          />
-        </>
-      )}
-    </AnimatePresence>
-  </svg>
-);
 
 interface ProductTag {
   id: string;
@@ -552,10 +470,9 @@ export const PostCard = ({
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
               className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
             >
-              <DogTailIcon 
-                isWagging={isLicking} 
-                isLiked={post.is_liked} 
-                className={`w-7 h-7 ${post.is_liked ? 'text-[#ED4956]' : 'text-[#262626]'}`} 
+              <Heart 
+                className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956] fill-[#ED4956]' : 'text-[#262626]'}`} 
+                strokeWidth={1.5}
               />
             </motion.button>
             
