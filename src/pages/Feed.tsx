@@ -30,9 +30,7 @@ import { SuggestedPostCard } from "@/components/SuggestedPostCard";
 import { ParallaxScroll } from "@/components/ParallaxScroll";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
-import { ChallengesSection } from "@/components/ChallengesSection";
-import { ChallengeLeaderboard } from "@/components/ChallengeLeaderboard";
-import { ChallengeBadges } from "@/components/ChallengeBadges";
+import { ChallengePostCard } from "@/components/ChallengePostCard";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -191,6 +189,22 @@ interface SuggestedPost {
   likes_count: number;
   comments_count: number;
 }
+
+interface FeedChallenge {
+  id: string;
+  title: string;
+  title_he: string;
+  description: string | null;
+  description_he: string | null;
+  hashtag: string;
+  cover_image_url: string | null;
+  participant_count: number;
+  is_active: boolean;
+  ends_at: string | null;
+  is_joined?: boolean;
+  created_at: string;
+}
+
 type FeedItem = {
   type: 'post';
   data: Post;
@@ -210,6 +224,10 @@ type FeedItem = {
 } | {
   type: 'suggested';
   data: SuggestedPost;
+  created_at: string;
+} | {
+  type: 'challenge';
+  data: FeedChallenge;
   created_at: string;
 };
 const Feed = () => {
@@ -235,6 +253,7 @@ const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
   const [suggestedPosts, setSuggestedPosts] = useState<SuggestedPost[]>([]);
+  const [challenges, setChallenges] = useState<FeedChallenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -275,7 +294,46 @@ const Feed = () => {
     }
   }, []);
 
-  // Fetch suggested posts from users you don't follow
+  // Fetch challenges
+  const fetchChallenges = useCallback(async () => {
+    try {
+      const { data: challengesData } = await supabase
+        .from("challenges")
+        .select("*")
+        .eq("is_active", true)
+        .order("participant_count", { ascending: false })
+        .limit(5);
+
+      if (!challengesData) {
+        setChallenges([]);
+        return;
+      }
+
+      // Check if user joined any challenges
+      if (user) {
+        const { data: participations } = await supabase
+          .from("challenge_participants")
+          .select("challenge_id")
+          .eq("user_id", user.id);
+
+        const joinedIds = new Set(participations?.map(p => p.challenge_id) || []);
+        
+        setChallenges(challengesData.map(c => ({
+          ...c,
+          is_joined: joinedIds.has(c.id),
+          created_at: c.created_at || new Date().toISOString()
+        })));
+      } else {
+        setChallenges(challengesData.map(c => ({
+          ...c,
+          created_at: c.created_at || new Date().toISOString()
+        })));
+      }
+    } catch (error) {
+      console.error("Error fetching challenges:", error);
+    }
+  }, [user]);
+
   const fetchSuggestedPosts = useCallback(async () => {
     try {
       // Get users that the current user follows
@@ -581,6 +639,7 @@ const Feed = () => {
     fetchPosts(0, false);
     fetchAdoptionPets();
     fetchSuggestedPosts();
+    fetchChallenges();
 
     // Setup realtime subscription for new posts
     if (channelRef.current) {
@@ -600,6 +659,12 @@ const Feed = () => {
     }, () => {
       fetchAdoptionPets();
       setNewPostsAvailable(true);
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'challenges'
+    }, () => {
+      fetchChallenges();
     }).subscribe();
     channelRef.current = channel;
     return () => {
@@ -608,7 +673,7 @@ const Feed = () => {
         channelRef.current = null;
       }
     };
-  }, [fetchPosts, fetchAdoptionPets, fetchSuggestedPosts]);
+  }, [fetchPosts, fetchAdoptionPets, fetchSuggestedPosts, fetchChallenges]);
 
   // Listen for refresh-feed event from bottom nav
   useEffect(() => {
@@ -618,10 +683,11 @@ const Feed = () => {
       fetchPosts(0, false);
       fetchAdoptionPets();
       fetchSuggestedPosts();
+      fetchChallenges();
     };
     window.addEventListener('refresh-feed', handleRefreshFeed);
     return () => window.removeEventListener('refresh-feed', handleRefreshFeed);
-  }, [fetchPosts, fetchAdoptionPets]);
+  }, [fetchPosts, fetchAdoptionPets, fetchChallenges]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -824,13 +890,21 @@ const Feed = () => {
       created_at: new Date(Date.now() - (index + 3) * 5400000).toISOString()
     })) : [];
 
+    // Convert challenges to FeedItems (only show in "all" feed)
+    const challengeItems: FeedItem[] = feedFilter === "all" ? challenges.map((challenge, index) => ({
+      type: 'challenge' as const,
+      data: challenge,
+      // Spread challenges throughout the feed
+      created_at: new Date(Date.now() - (index + 1) * 4800000).toISOString()
+    })) : [];
+
     // If following filter, only show posts from followed users
     if (feedFilter === "following") {
       return postItems.filter(item => followingIds.includes((item.data as Post).user_id));
     }
 
     // Merge all items and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems]
+    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems, ...challengeItems]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // Apply non-organic spacing rule: no two non-organic items in sequence
@@ -850,7 +924,7 @@ const Feed = () => {
     }
 
     return result;
-  }, [posts, adoptionPets, suggestedPosts, feedFilter, followingIds]);
+  }, [posts, adoptionPets, suggestedPosts, challenges, feedFilter, followingIds]);
 
   // Handle following a suggested user - remove from suggested posts
   const handleSuggestedFollow = useCallback((userId: string) => {
@@ -1171,41 +1245,6 @@ const Feed = () => {
         </div>
       </motion.div>
 
-      {/* Challenges Section */}
-      <motion.div initial={{
-      opacity: 0,
-      y: 10
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.25,
-      duration: 0.4
-    }} className="bg-white px-4 py-3 border-b border-gray-100">
-        <ChallengesSection />
-        
-        {/* Challenge Badges for current user */}
-        {user && (
-          <motion.div 
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="mt-3 pt-3 border-t border-gray-100"
-          >
-            <ChallengeBadges />
-          </motion.div>
-        )}
-      </motion.div>
-      
-      {/* Challenge Leaderboard - show periodically */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
-        className="bg-white px-4 py-3 border-b border-gray-100"
-      >
-        <ChallengeLeaderboard limit={3} />
-      </motion.div>
 
 
       {/* Feed */}
@@ -1345,6 +1384,23 @@ const Feed = () => {
               duration: 0.3
             }}>
                     <SuggestedPostCard post={item.data} onFollow={handleSuggestedFollow} />
+                  </motion.div>;
+          } else if (item.type === 'challenge') {
+            return <motion.div key={`challenge-${item.data.id}`} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} transition={{
+              delay: Math.min(index * 0.05, 0.3),
+              duration: 0.3
+            }}>
+                    <ChallengePostCard 
+                      challenge={item.data} 
+                      gradientIndex={index} 
+                      onJoinChange={fetchChallenges}
+                    />
                   </motion.div>;
           }
           return null;
