@@ -21,7 +21,7 @@ export const MyPetsSheet = ({
 }: MyPetsSheetProps) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[320px] sm:w-[380px] p-0 overflow-hidden" dir="rtl">
+      <SheetContent side="left" className="w-[320px] sm:w-[380px] p-0 overflow-hidden" dir="rtl">
         <SheetHeader className="p-4 border-b border-border bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5">
           <SheetTitle className="flex items-center gap-2.5 text-slate-800">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4ECDC4] to-[#1E5799] flex items-center justify-center shadow-md">
