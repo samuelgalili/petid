@@ -919,7 +919,7 @@ const Feed = () => {
   const handleSuggestedFollow = useCallback((userId: string) => {
     setSuggestedPosts(prev => prev.filter(post => post.user_id !== userId));
   }, []);
-  return <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 pb-14" dir="rtl">
+  return <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 pb-24" dir="rtl">
       {/* Instagram-style Header with blur effect */}
       <motion.div initial={{
       y: -20,
