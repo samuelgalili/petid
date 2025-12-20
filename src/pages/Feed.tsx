@@ -1117,59 +1117,57 @@ const Feed = () => {
       duration: 0.4
     }}>
         {/* Rewards Bar */}
-        <motion.div initial={{
-        opacity: 0,
-        y: -10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} className="mx-4 py-1 mb-1 cursor-pointer" onClick={() => navigate('/rewards')}>
-          {/* Amount */}
-          <div className="flex justify-end mb-3">
-            <div className="text-right">
-              
-              
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="mx-4 mb-3 cursor-pointer rounded-2xl bg-gradient-to-br from-slate-50 to-white border border-slate-100 shadow-sm p-4" 
+          onClick={() => navigate('/rewards')}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4" dir="rtl">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-sm">
+                <Coins className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-slate-700">הנקודות שלי</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full">
+              <span className="text-lg font-bold text-slate-800">{totalPoints}</span>
+              <span className="text-xs text-slate-500">נק׳</span>
             </div>
           </div>
           
-          {/* Progress Bar */}
-          <div className="flex items-center gap-3 mb-2" dir="rtl">
-            <span className="text-gray-400 text-sm">קאשבק 5%</span>
-            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full" style={{
-              backgroundColor: '#FBBF24'
-            }} initial={{
-              width: 0
-            }} animate={{
-              width: `${Math.min(totalPoints * 0.01 / 50 * 100, 100)}%`
-            }} transition={{
-              duration: 0.8,
-              ease: "easeOut"
-            }} />
+          {/* Cashback Progress */}
+          <div className="space-y-1 mb-3" dir="rtl">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">קאשבק 5%</span>
+              <span className="text-amber-600 font-medium">₪50</span>
             </div>
-            <span className="text-foreground text-sm font-semibold">₪50</span>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500" 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(totalPoints * 0.01 / 50 * 100, 100)}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
           </div>
           
-          {/* Points Progress Bar */}
-          <div className="flex items-center gap-3 mb-2" dir="rtl">
-            <span className="text-gray-400 text-sm">נקודות פעילות</span>
-            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full" style={{
-              backgroundColor: '#4ECDC4'
-            }} initial={{
-              width: 0
-            }} animate={{
-              width: `${Math.min(totalPoints / 1000 * 100, 100)}%`
-            }} transition={{
-              duration: 0.8,
-              ease: "easeOut"
-            }} />
+          {/* Points Progress */}
+          <div className="space-y-1" dir="rtl">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">נקודות פעילות</span>
+              <span className="text-teal-600 font-medium">1000</span>
             </div>
-            <span className="text-foreground text-sm font-semibold">1000</span>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-500" 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(totalPoints / 1000 * 100, 100)}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
           </div>
-          
-          {/* Bottom Text */}
-          
         </motion.div>
 
         <div data-pets-section className="py-1 bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5 border-b border-[#4ECDC4]/10">
