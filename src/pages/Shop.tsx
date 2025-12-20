@@ -709,7 +709,7 @@ const Shop = () => {
 
       {/* Product Details Sheet */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t-0" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t-0 pb-20" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
