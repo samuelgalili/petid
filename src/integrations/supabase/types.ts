@@ -1697,6 +1697,7 @@ export type Database = {
           show_email: boolean | null
           show_location: boolean | null
           updated_at: string | null
+          whatsapp_number: string | null
         }
         Insert: {
           allow_messages_from?: string | null
@@ -1717,6 +1718,7 @@ export type Database = {
           show_email?: boolean | null
           show_location?: boolean | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           allow_messages_from?: string | null
@@ -1737,6 +1739,7 @@ export type Database = {
           show_email?: boolean | null
           show_location?: boolean | null
           updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
