@@ -50,7 +50,7 @@ const ProductDetail = () => {
     price: getNumericPrice(rawProduct.price),
     originalPrice: rawProduct.originalPrice ? getNumericPrice(rawProduct.originalPrice) : null,
     discount: rawProduct.originalPrice 
-      ? `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.originalPrice)) * 100)}% הנחה`
+      ? `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.originalPrice)) * 100)}`
       : null,
   };
 
