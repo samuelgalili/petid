@@ -47,6 +47,15 @@ import AdminParks from "./pages/admin/AdminParks";
 import AdminAdoption from "./pages/admin/AdminAdoption";
 import AdminReports from "./pages/admin/AdminReports";
 const AdminRoles = lazy(() => import("./pages/admin/AdminRoles"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminContent = lazy(() => import("./pages/admin/AdminContent"));
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
+const AdminBusiness = lazy(() => import("./pages/admin/AdminBusiness"));
+const AdminNotify = lazy(() => import("./pages/admin/AdminNotify"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
+const AdminProductImport = lazy(() => import("./pages/admin/AdminProductImport"));
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
 import Tasks from "./pages/Tasks";
@@ -148,6 +157,15 @@ const AnimatedRoutes = () => {
         <Route path="/admin/adoption" element={<ProtectedRoute><AdminRoute><PageTransition><AdminAdoption /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/reports" element={<ProtectedRoute><AdminRoute><PageTransition><AdminReports /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/roles" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminRoles /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminUsers /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/content" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminContent /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/products" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminProducts /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/products/import" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminProductImport /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/coupons" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminCoupons /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/business" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminBusiness /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/notify" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminNotify /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/settings" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminSettings /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/audit" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminAudit /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
         <Route path="/experiences" element={<PageTransition><Experiences /></PageTransition>} />
         <Route path="/parks" element={<PageTransition><Parks /></PageTransition>} />
