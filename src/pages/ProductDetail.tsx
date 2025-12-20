@@ -208,7 +208,7 @@ const ProductDetail = () => {
           {/* Discount Badge */}
           {product.discount && (
             <motion.div 
-              className="absolute top-4 right-4"
+              className="absolute top-4 left-4"
               initial={{ scale: 0, rotate: -20 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
