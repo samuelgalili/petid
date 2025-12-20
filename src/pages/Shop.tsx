@@ -645,7 +645,7 @@ const Shop = () => {
                   {/* Sale Badge */}
                   {product.originalPrice && (
                     <div 
-                      className="absolute top-2 right-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500"
+                      className="absolute top-2 left-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500"
                     >
                       -{Math.round((1 - product.price / product.originalPrice) * 100)}%
                     </div>
@@ -654,7 +654,7 @@ const Shop = () => {
                   {/* Save Button */}
                   <button
                     onClick={(e) => toggleFavorite(product.id, e)}
-                    className="absolute top-2 left-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
                   >
                     <Bookmark 
                       className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-petid-gold text-petid-gold" : "text-gray-400"}`} 
