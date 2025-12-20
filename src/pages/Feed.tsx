@@ -1,4 +1,5 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, Menu, ShoppingCart, Coins, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, Menu, ShoppingCart, Coins, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video } from "lucide-react";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { usePoints } from "@/contexts/PointsContext";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
@@ -823,14 +824,32 @@ const Feed = () => {
       created_at: new Date(Date.now() - (index + 3) * 5400000).toISOString()
     })) : [];
 
-    // Merge and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
     // If following filter, only show posts from followed users
     if (feedFilter === "following") {
-      return merged.filter(item => item.type === 'post' && followingIds.includes(item.data.user_id));
+      return postItems.filter(item => followingIds.includes((item.data as Post).user_id));
     }
-    return merged;
+
+    // Merge all items and sort by date
+    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Apply non-organic spacing rule: no two non-organic items in sequence
+    const result: FeedItem[] = [];
+    let lastWasNonOrganic = false;
+    
+    for (const item of merged) {
+      const isNonOrganic = item.type !== 'post';
+      
+      if (isNonOrganic && lastWasNonOrganic) {
+        // Skip this item to avoid consecutive non-organic cards
+        continue;
+      }
+      
+      result.push(item);
+      lastWasNonOrganic = isNonOrganic;
+    }
+
+    return result;
   }, [posts, adoptionPets, suggestedPosts, feedFilter, followingIds]);
 
   // Handle following a suggested user - remove from suggested posts
@@ -1109,6 +1128,49 @@ const Feed = () => {
         <StoriesBar />
       </motion.div>
 
+      {/* Feed Filter Tabs */}
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.22, duration: 0.3 }}
+        className="bg-white border-b border-gray-100"
+      >
+        <div className="flex">
+          <button
+            onClick={() => setFeedFilter("all")}
+            className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${
+              feedFilter === "all" 
+                ? "text-[#262626]" 
+                : "text-[#8E8E8E]"
+            }`}
+          >
+            הכל
+            {feedFilter === "all" && (
+              <motion.div 
+                layoutId="feedTabIndicator"
+                className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]"
+              />
+            )}
+          </button>
+          <button
+            onClick={handleFollowingFilter}
+            className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${
+              feedFilter === "following" 
+                ? "text-[#262626]" 
+                : "text-[#8E8E8E]"
+            }`}
+          >
+            עוקבים
+            {feedFilter === "following" && (
+              <motion.div 
+                layoutId="feedTabIndicator"
+                className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]"
+              />
+            )}
+          </button>
+        </div>
+      </motion.div>
+
       {/* Challenges Section */}
       <motion.div initial={{
       opacity: 0,
@@ -1326,6 +1388,39 @@ const Feed = () => {
 
       {/* Hamburger Menu */}
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+
+      {/* Floating Action Button for Create */}
+      <FloatingActionButton
+        icon={Plus}
+        label="צור תוכן חדש"
+        position="bottom-right"
+        variant="primary"
+        actions={[
+          {
+            icon: Camera,
+            label: "פוסט חדש",
+            onClick: handleCreatePost,
+          },
+          {
+            icon: Image,
+            label: "סטורי",
+            onClick: () => {
+              if (checkAuth("כדי ליצור סטורי, יש להתחבר")) {
+                navigate('/story/create');
+              }
+            },
+          },
+          {
+            icon: Video,
+            label: "ריל",
+            onClick: () => {
+              if (checkAuth("כדי ליצור ריל, יש להתחבר")) {
+                navigate('/reels/create');
+              }
+            },
+          },
+        ]}
+      />
 
       <BottomNav />
     </div>;

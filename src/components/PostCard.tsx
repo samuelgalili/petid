@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag, Trophy, Sparkles } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag, Trophy, Sparkles, Link2, EyeOff, MinusCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -322,12 +323,13 @@ export const PostCard = ({
             </Avatar>
           </motion.div>
           <motion.div 
-            className="cursor-pointer"
+            className="cursor-pointer flex flex-col"
             onClick={() => navigate(`/user/${post.user.id}`)}
             whileHover={{ x: 2 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <p className="font-semibold text-[#262626] text-[13px] leading-tight hover:text-[#0095F6] transition-colors duration-200">{post.user.full_name || "משתמש"}</p>
+            <p className="text-[11px] text-[#8E8E8E]">{getTimeAgo(post.created_at)}</p>
           </motion.div>
         </div>
         
@@ -360,7 +362,32 @@ export const PostCard = ({
                 <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
               </motion.button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-background z-50">
+              <DropdownMenuItem
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
+                  toast.success("הקישור הועתק");
+                }}
+              >
+                <Link2 className="w-4 h-4 ml-2" />
+                העתק קישור
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.success("הפוסט הוסתר");
+                }}
+              >
+                <EyeOff className="w-4 h-4 ml-2" />
+                הסתר פוסט
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.success("נציג לך פחות תוכן דומה");
+                }}
+              >
+                <MinusCircle className="w-4 h-4 ml-2" />
+                מעוניין בפחות דומים
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
                   if (checkAuth("כדי לדווח, יש להתחבר")) {
