@@ -41,7 +41,7 @@ export const AdPostCard = ({ ad }: AdPostCardProps) => {
       </div>
 
       {/* Ad Image */}
-      <div className="relative aspect-[16/9] overflow-hidden">
+      <div className="relative aspect-square overflow-hidden">
         <img
           src={ad.image}
           alt={ad.title}
