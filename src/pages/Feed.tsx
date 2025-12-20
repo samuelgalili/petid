@@ -1080,7 +1080,7 @@ const Feed = () => {
       }} animate={{
         opacity: 1,
         y: 0
-      }} className="mx-4 mb-3 cursor-pointer rounded-2xl bg-gradient-to-br from-slate-50 to-white border border-slate-100 shadow-sm p-4" onClick={() => navigate('/rewards')}>
+      }} className="px-4 py-2 cursor-pointer bg-white" onClick={() => navigate('/rewards')}>
           {/* Header */}
           
           
