@@ -1157,7 +1157,7 @@ const Feed = () => {
           <div className="space-y-1" dir="rtl">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500">נקודות פעילות</span>
-              <span className="text-teal-600 font-medium">1000</span>
+              <span className="text-teal-600 font-medium">{totalPoints}</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
               <motion.div 
