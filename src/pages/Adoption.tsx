@@ -324,11 +324,14 @@ const Adoption = () => {
                   }}
                   className="flex flex-col items-center gap-1 flex-shrink-0"
                 >
-                  <div className={`w-16 h-16 rounded-full p-[2px] ${
-                    (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
-                      ? "bg-gradient-primary"
-                      : "bg-muted"
-                  }`}>
+                  <div 
+                    className="w-16 h-16 rounded-full p-[2px]"
+                    style={{ 
+                      background: (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
+                        ? 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+                        : 'hsl(var(--muted))'
+                    }}
+                  >
                     <div className="w-full h-full rounded-full bg-card p-[2px]">
                       <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center">
                         <span className="text-2xl">{category.emoji}</span>
@@ -370,7 +373,7 @@ const Adoption = () => {
                   {/* Post Header */}
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-primary p-[2px]">
+                      <div className="w-9 h-9 rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}>
                         <div className="w-full h-full rounded-full bg-card p-[1px]">
                           <img
                             src={pet.image_url || "/placeholder.svg"}
@@ -494,9 +497,10 @@ const Adoption = () => {
                     {/* Adopt Button */}
                     <Button
                       onClick={() => handlePetClick(pet)}
-                      className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold mt-2"
+                      className="w-full h-10 text-white rounded-xl text-sm font-bold mt-2 shadow-lg"
+                      style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                     >
-                      <Heart className="w-4 h-4 ml-2" />
+                      <Heart className="w-4 h-4 ml-2" fill="white" />
                       רוצה לאמץ את {pet.name}
                     </Button>
                   </div>
@@ -620,7 +624,8 @@ const Adoption = () => {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleProceedToAdopt}
-                    className="flex-1 h-11 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-bold shadow-lg"
+                    className="flex-1 h-11 text-white rounded-xl text-sm font-bold shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                   >
                     <Heart className="w-4 h-4 ml-2" fill="white" />
                     אמץ את {selectedPet.name}
@@ -647,14 +652,14 @@ const Adoption = () => {
       <Dialog open={showAdoptionForm} onOpenChange={setShowAdoptionForm}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 border-0 rounded-2xl bg-white">
           {/* Header */}
-          <div className="bg-primary p-4 sticky top-0 z-10">
+          <div className="p-4 sticky top-0 z-10" style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-                <Heart className="w-6 h-6 text-primary-foreground" fill="currentColor" />
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <Heart className="w-6 h-6 text-white" fill="currentColor" />
               </div>
               <div>
-                <h2 className="text-primary-foreground font-bold text-base">בקשת אימוץ</h2>
-                <p className="text-primary-foreground/80 text-xs">{selectedPet?.name}</p>
+                <h2 className="text-white font-bold text-base">בקשת אימוץ</h2>
+                <p className="text-white/80 text-xs">{selectedPet?.name}</p>
               </div>
             </div>
           </div>
@@ -764,7 +769,8 @@ const Adoption = () => {
             <div className="flex gap-2 pt-2 sticky bottom-0 bg-card pb-1">
               <Button
                 type="submit"
-                className="flex-1 h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold"
+                className="flex-1 h-10 text-white rounded-xl text-sm font-bold shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
               >
                 שלח בקשה
               </Button>
