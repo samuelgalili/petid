@@ -824,23 +824,32 @@ const Shop = () => {
                   )}
                 </div>
 
-                <div className="px-4 space-y-5">
+                <div className="px-5 space-y-6 pb-4">
                   {/* Title & Rating */}
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground mb-2">{selectedProduct.name}</h2>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <h2 className="text-2xl font-bold text-foreground mb-3">{selectedProduct.name}</h2>
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#4ECDC4]/20 to-[#1E5799]/20 border border-[#4ECDC4]/30">
                         <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
-                        <span className="text-sm font-semibold text-foreground">{selectedProduct.rating}</span>
+                        <span className="text-sm font-bold text-foreground">{selectedProduct.rating}</span>
                       </div>
                       <span className="text-sm text-muted-foreground">({selectedProduct.reviews} ביקורות)</span>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Price */}
-                  <div className="flex items-baseline gap-3">
+                  <motion.div 
+                    className="flex items-baseline gap-3 p-4 rounded-2xl bg-gradient-to-br from-[#1E5799]/5 via-transparent to-[#4ECDC4]/5 border border-border/50"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                  >
                     <span 
-                      className="text-3xl font-bold bg-clip-text text-transparent"
+                      className="text-4xl font-black bg-clip-text text-transparent"
                       style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
                     >
                       ₪{selectedProduct.price}
@@ -848,38 +857,61 @@ const Shop = () => {
                     {selectedProduct.originalPrice && (
                       <span className="text-lg text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
                     )}
-                  </div>
+                  </motion.div>
 
                   {/* Shipping Info Pills */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <motion.div 
+                    className="flex items-center gap-2 flex-wrap"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
                     {selectedProduct.freeShipping && (
-                      <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-muted text-foreground">
-                        <Truck className="w-3.5 h-3.5 text-[#4ECDC4]" />
-                        <span>משלוח חינם</span>
+                      <div className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#4ECDC4]/15 to-[#4ECDC4]/5 border border-[#4ECDC4]/20 text-foreground shadow-sm">
+                        <Truck className="w-4 h-4 text-[#4ECDC4]" />
+                        <span className="font-medium">משלוח חינם</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full bg-muted text-foreground">
-                      <Shield className="w-3.5 h-3.5 text-[#1E5799]" />
-                      <span>אחריות מלאה</span>
+                    <div className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#1E5799]/15 to-[#1E5799]/5 border border-[#1E5799]/20 text-foreground shadow-sm">
+                      <Shield className="w-4 h-4 text-[#1E5799]" />
+                      <span className="font-medium">אחריות מלאה</span>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Description */}
-                  <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>
+                  <motion.p 
+                    className="text-sm text-muted-foreground leading-relaxed p-4 rounded-xl bg-muted/50 border border-border/30"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                  >
+                    {selectedProduct.description}
+                  </motion.p>
 
                   {/* Size Selector */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-3">בחר גודל</h3>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#1E5799] to-[#4ECDC4]" />
+                      בחר גודל
+                    </h3>
                     <div className="flex gap-2">
-                      {sizes.map((size) => (
+                      {sizes.map((size, index) => (
                         <motion.button
                           key={size}
                           onClick={() => setSelectedSize(size)}
                           whileTap={{ scale: 0.95 }}
-                          className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all ${
+                          whileHover={{ y: -2 }}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 + index * 0.05 }}
+                          className={`flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                             selectedSize === size
-                              ? "text-foreground bg-card"
-                              : "bg-muted text-muted-foreground hover:text-foreground"
+                              ? "text-foreground bg-card shadow-md"
+                              : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
                           }`}
                           style={selectedSize === size 
                             ? { background: 'linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }
@@ -890,44 +922,60 @@ const Shop = () => {
                         </motion.button>
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Quantity */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-3">כמות</h3>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                  >
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#1E5799] to-[#4ECDC4]" />
+                      כמות
+                    </h3>
                     <div 
-                      className="flex items-center gap-4 p-1 w-fit rounded-xl bg-card"
+                      className="flex items-center gap-4 p-1.5 w-fit rounded-xl bg-card shadow-sm"
                       style={{ background: 'linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
                     >
-                      <button
+                      <motion.button
                         onClick={decreaseQuantity}
-                        className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                        whileTap={{ scale: 0.9 }}
+                        whileHover={{ scale: 1.05 }}
+                        className="w-11 h-11 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
                       >
                         <Minus className="w-4 h-4 text-foreground" />
-                      </button>
-                      <span className="text-lg font-bold text-foreground w-8 text-center">{quantity}</span>
-                      <button
+                      </motion.button>
+                      <span className="text-xl font-black text-foreground w-10 text-center">{quantity}</span>
+                      <motion.button
                         onClick={increaseQuantity}
-                        className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                        whileTap={{ scale: 0.9 }}
+                        whileHover={{ scale: 1.05 }}
+                        className="w-11 h-11 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
                       >
                         <Plus className="w-4 h-4 text-foreground" />
-                      </button>
+                      </motion.button>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* More Details Link */}
-                  <button
+                  <motion.button
                     onClick={() => {
                       navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
                       setSelectedProduct(null);
                     }}
-                    className="w-full py-3 text-sm font-medium text-primary flex items-center justify-center gap-2 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors"
+                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.01 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="w-full py-3.5 text-sm font-semibold text-primary flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all shadow-sm"
                   >
                     <Info className="w-4 h-4" />
                     לפרטים נוספים ולביקורות
-                  </button>
+                  </motion.button>
 
-                  <div className="h-4" />
+                  <div className="h-2" />
                 </div>
               </div>
 
