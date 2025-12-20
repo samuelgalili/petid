@@ -1,14 +1,13 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Flame, Users, Hash, Trophy, Sparkles, Clock, ChevronLeft } from "lucide-react";
+import { Users, Trophy, ChevronLeft, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface Challenge {
   id: string;
@@ -30,20 +29,20 @@ interface ChallengePostCardProps {
   onJoinChange?: () => void;
 }
 
-const GRADIENT_VARIANTS = [
-  "from-orange-500 via-pink-500 to-purple-600",
-  "from-blue-500 via-cyan-400 to-teal-500",
-  "from-emerald-500 via-green-400 to-lime-500",
-  "from-violet-600 via-purple-500 to-fuchsia-500",
-  "from-rose-500 via-red-400 to-orange-500",
-];
-
 export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }: ChallengePostCardProps) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [isJoining, setIsJoining] = useState(false);
   const [isJoined, setIsJoined] = useState(challenge.is_joined || false);
   const [participantCount, setParticipantCount] = useState(challenge.participant_count);
+  const [ctaRevealed, setCtaRevealed] = useState(false);
+
+  // Reveal CTA after 1 second
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCtaRevealed(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleJoinChallenge = async () => {
     if (!user) {
@@ -54,7 +53,6 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
     setIsJoining(true);
     try {
       if (isJoined) {
-        // Leave challenge
         await supabase
           .from("challenge_participants")
           .delete()
@@ -65,7 +63,6 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
         setParticipantCount(prev => Math.max(0, prev - 1));
         toast.success("יצאת מהאתגר");
       } else {
-        // Join challenge
         await supabase
           .from("challenge_participants")
           .insert({
@@ -86,83 +83,60 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
     }
   };
 
-  const getTimeRemaining = (endsAt: string | null) => {
-    if (!endsAt) return null;
-    const end = new Date(endsAt);
-    const now = new Date();
-    const diff = end.getTime() - now.getTime();
-    
-    if (diff <= 0) return "הסתיים";
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (days > 0) return `${days} ימים`;
-    if (hours > 0) return `${hours} שעות`;
-    return "פחות משעה";
+  const getTimeAgo = () => {
+    return "אתגר פעיל";
   };
 
-  const gradient = GRADIENT_VARIANTS[gradientIndex % GRADIENT_VARIANTS.length];
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
+    <motion.div 
+      className="bg-card border-b border-border"
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border-b border-gray-100"
+      transition={{ duration: 0.3 }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
+      {/* Post Header - Same as PostCard */}
+      <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className={cn(
-              "w-10 h-10 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg",
-              gradient
-            )}>
-              <Flame className="w-5 h-5 text-white" />
-            </div>
-            <motion.div
-              className="absolute -top-0.5 -right-0.5"
-              animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-            </motion.div>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm">אתגר פעיל</span>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-orange-100 text-orange-600 border-0">
-                <Flame className="w-2.5 h-2.5 mr-0.5" />
-                חם
-              </Badge>
-            </div>
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Hash className="w-3 h-3" />
-              {challenge.hashtag}
-            </span>
-          </div>
+          <motion.div 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <Avatar className="w-8 h-8 ring-2 ring-transparent hover:ring-border transition-all duration-200">
+              <AvatarImage src={undefined} />
+              <AvatarFallback className="bg-gradient-to-br from-orange-400 to-pink-500 text-white text-xs font-medium">
+                <Flame className="w-4 h-4" />
+              </AvatarFallback>
+            </Avatar>
+          </motion.div>
+          <motion.div 
+            className="flex flex-col"
+            whileHover={{ x: 2 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <p className="font-semibold text-[#262626] text-[13px] leading-tight">#{challenge.hashtag}</p>
+            <p className="text-[11px] text-[#8E8E8E]">{getTimeAgo()}</p>
+          </motion.div>
         </div>
-        {challenge.ends_at && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
-            <Clock className="w-3 h-3" />
-            <span>{getTimeRemaining(challenge.ends_at)}</span>
-          </div>
-        )}
+        
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Users className="w-3.5 h-3.5" />
+          <span className="font-medium">{participantCount}</span>
+        </div>
       </div>
 
-      {/* Cover Image */}
-      <div className={cn(
-        "relative aspect-[2/1] bg-gradient-to-br overflow-hidden",
-        gradient
-      )}>
+      {/* Post Image - Same aspect ratio as PostCard */}
+      <div className="relative select-none">
         {challenge.cover_image_url ? (
-          <img
+          <OptimizedImage
             src={challenge.cover_image_url}
             alt={challenge.title_he}
-            className="w-full h-full object-cover"
+            className="w-full aspect-[3/4]"
+            objectFit="cover"
+            sizes="(max-width: 768px) 100vw, 672px"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-full aspect-[3/4] bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 flex items-center justify-center">
             <motion.div
               animate={{ 
                 scale: [1, 1.1, 1],
@@ -171,68 +145,72 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
               transition={{ repeat: Infinity, duration: 3 }}
               className="text-white/30"
             >
-              <Trophy className="w-24 h-24" />
+              <Trophy className="w-32 h-32" />
             </motion.div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         
-        {/* Title overlay */}
-        <div className="absolute bottom-4 right-4 left-4">
-          <h3 className="text-xl font-bold text-white drop-shadow-lg">
-            {challenge.title_he}
-          </h3>
-        </div>
+        {/* CTA Overlay at bottom - starts dark, reveals color after 1 second */}
+        <motion.div 
+          className="absolute bottom-0 left-0 right-0 px-4 py-3"
+          initial={{ backgroundColor: "rgba(0, 0, 0, 0.7)" }}
+          animate={{ 
+            backgroundColor: ctaRevealed ? "rgba(249, 115, 22, 0.85)" : "rgba(0, 0, 0, 0.7)"
+          }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h3 className="text-white font-bold text-base drop-shadow-md">
+                {challenge.title_he}
+              </h3>
+              {challenge.description_he && (
+                <p className="text-white/80 text-xs mt-0.5 line-clamp-1">
+                  {challenge.description_he}
+                </p>
+              )}
+            </div>
+            
+            <Button
+              onClick={handleJoinChallenge}
+              disabled={isJoining}
+              size="sm"
+              className={cn(
+                "rounded-full px-4 font-semibold text-xs transition-all duration-200 mr-3",
+                isJoined 
+                  ? "bg-white text-green-600 hover:bg-white/90" 
+                  : "bg-white text-orange-600 hover:bg-white/90"
+              )}
+            >
+              {isJoining ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                  className="w-3 h-3 border-2 border-current border-t-transparent rounded-full"
+                />
+              ) : isJoined ? (
+                <>
+                  <Trophy className="w-3 h-3 mr-1" />
+                  משתתף/ת
+                </>
+              ) : (
+                <>
+                  הצטרפו
+                  <ChevronLeft className="w-3 h-3 mr-0.5" />
+                </>
+              )}
+            </Button>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 py-3 space-y-3">
-        {/* Description */}
-        {challenge.description_he && (
-          <p className="text-sm text-foreground/80 leading-relaxed">
-            {challenge.description_he}
-          </p>
-        )}
-
-        {/* Stats & CTA */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Users className="w-4 h-4" />
-              <span className="font-medium">{participantCount}</span>
-              <span>משתתפים</span>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleJoinChallenge}
-            disabled={isJoining}
-            className={cn(
-              "rounded-full px-6 font-semibold transition-all duration-200",
-              isJoined 
-                ? "bg-green-500 hover:bg-green-600 text-white" 
-                : "bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 shadow-md"
-            )}
-          >
-            {isJoining ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
-              />
-            ) : isJoined ? (
-              <>
-                <Trophy className="w-4 h-4 mr-2" />
-                משתתף/ת
-              </>
-            ) : (
-              <>
-                הצטרפו לאתגר
-                <ChevronLeft className="w-4 h-4 mr-1" />
-              </>
-            )}
-          </Button>
-        </div>
+      {/* Caption area - minimal, like PostCard */}
+      <div className="px-3 py-2">
+        <p className="text-[13px] text-foreground">
+          <span className="font-semibold">אתגר #{challenge.hashtag}</span>
+          {" "}
+          <span className="text-muted-foreground">{participantCount} משתתפים</span>
+        </p>
       </div>
     </motion.div>
   );
