@@ -257,21 +257,6 @@ const BottomNav = () => {
         <div className="h-[env(safe-area-inset-bottom)] bg-background" />
       </nav>
 
-      {/* Floating Action Button for Create Post */}
-      <motion.button
-        onClick={() => setCreatePostOpen(true)}
-        whileTap={{ scale: 0.9 }}
-        whileHover={{ scale: 1.05 }}
-        className="fixed bottom-24 left-4 z-40 w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden group"
-        aria-label="יצירת פוסט חדש"
-      >
-        {/* Animated gradient border */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] bg-[length:200%_100%] animate-[shimmer_3s_linear_infinite] p-[2px]">
-          <div className="w-full h-full rounded-[14px] bg-background/95 backdrop-blur-md flex items-center justify-center">
-            <Camera className="w-6 h-6 text-[#1E5799]" strokeWidth={2} />
-          </div>
-        </div>
-      </motion.button>
 
       {/* Create Post Dialog */}
       <CreatePostDialog
