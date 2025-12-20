@@ -304,31 +304,19 @@ const BottomNav = () => {
                   <Link
                     to={category.path}
                     onClick={() => setCategoriesOpen(false)}
-                    className="flex flex-col items-center gap-2.5 p-3 rounded-2xl active:bg-muted/50 hover:bg-muted/30 transition-all duration-200 group"
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-muted/50 hover:bg-muted/30 transition-all duration-200 group"
                   >
                     <motion.div 
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center relative overflow-hidden shadow-sm"
-                      style={{ backgroundColor: `${category.color}15` }}
-                      whileHover={{ scale: 1.08, y: -2 }}
+                      whileHover={{ scale: 1.15, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {/* Glow effect on hover */}
-                      <div 
-                        className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-300 blur-sm"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      {/* Icon border ring */}
-                      <div 
-                        className="absolute inset-0 rounded-2xl border-2 opacity-20"
-                        style={{ borderColor: category.color }}
-                      />
                       <CategoryIcon 
-                        className="w-6 h-6 relative z-10 transition-transform group-hover:scale-110" 
+                        className="w-7 h-7 transition-transform group-hover:scale-110" 
                         style={{ color: category.color }} 
                         strokeWidth={1.5} 
                       />
                     </motion.div>
-                    <span className="text-xs font-semibold text-center text-foreground leading-tight group-hover:text-primary transition-colors">
+                    <span className="text-xs font-medium text-center text-foreground/80 leading-tight group-hover:text-foreground transition-colors">
                       {category.label}
                     </span>
                   </Link>
