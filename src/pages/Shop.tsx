@@ -674,7 +674,7 @@ const Shop = () => {
                     <span className="text-xs text-gray-500">{product.rating}</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 justify-start">
+                  <div className="flex items-center gap-2 justify-end">
                     <span 
                       className="text-sm font-bold bg-clip-text text-transparent"
                       style={{
