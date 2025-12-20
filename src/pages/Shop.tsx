@@ -660,7 +660,7 @@ const Shop = () => {
                     className="absolute top-2 left-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
                   >
                     <Bookmark 
-                      className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-[#1E5799] text-[#1E5799]" : "text-gray-400"}`} 
+                      className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-petid-gold text-petid-gold" : "text-gray-400"}`} 
                       strokeWidth={1.5} 
                     />
                   </button>
@@ -755,7 +755,7 @@ const Shop = () => {
                     className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
                   >
                     <Bookmark 
-                      className={`w-5 h-5 transition-colors ${favorites.includes(selectedProduct.id) ? "fill-primary text-primary" : "text-foreground"}`} 
+                      className={`w-5 h-5 transition-colors ${favorites.includes(selectedProduct.id) ? "fill-petid-gold text-petid-gold" : "text-foreground"}`} 
                       strokeWidth={1.5} 
                     />
                   </button>
