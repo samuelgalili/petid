@@ -63,6 +63,23 @@ const Profile = () => {
     enabled: !!profile?.id
   });
 
+  // Fetch cashback from orders
+  const { data: cashbackData } = useQuery({
+    queryKey: ['user-cashback', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return 0;
+      const { data } = await supabase
+        .from('orders')
+        .select('total')
+        .eq('user_id', profile.id);
+      
+      // Calculate 5% cashback from all orders
+      const totalSpent = data?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
+      return totalSpent * 0.05;
+    },
+    enabled: !!profile?.id
+  });
+
   // Fetch user posts
   const { data: posts } = useQuery({
     queryKey: ['user-posts', profile?.id],
@@ -216,11 +233,21 @@ const Profile = () => {
             {profile?.bio && (
               <p className="text-foreground text-sm mt-1">{profile.bio}</p>
             )}
-            {profile?.points > 0 && (
-              <p className="text-primary text-sm mt-1 font-medium">
-                ⭐ {profile.points} נקודות נאמנות
-              </p>
-            )}
+            {/* Points & Cashback Display */}
+            <div className="flex items-center gap-3 mt-2">
+              {profile?.points > 0 && (
+                <div className="flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-full">
+                  <span className="text-sm">⭐</span>
+                  <span className="text-xs font-semibold text-primary">{profile.points} נקודות</span>
+                </div>
+              )}
+              {(cashbackData || 0) > 0 && (
+                <div className="flex items-center gap-1.5 bg-green-500/10 px-2.5 py-1 rounded-full">
+                  <span className="text-sm">💰</span>
+                  <span className="text-xs font-semibold text-green-600 dark:text-green-400">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Action Buttons */}
