@@ -50,9 +50,15 @@ export const FloatingActionButton = ({
   };
 
   const variantClasses = {
-    primary: "bg-gradient-to-br from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] hover:opacity-90 text-white shadow-xl shadow-[#4ECDC4]/30",
-    success: "bg-gradient-to-br from-emerald-500 to-emerald-600 hover:opacity-90 text-white shadow-xl shadow-emerald-500/30",
-    warning: "bg-gradient-to-br from-amber-500 to-orange-500 hover:opacity-90 text-white shadow-xl shadow-amber-500/30"
+    primary: "bg-white/95 backdrop-blur-md border-2 border-transparent bg-clip-padding shadow-xl shadow-[#4ECDC4]/20",
+    success: "bg-white/95 backdrop-blur-md border-2 border-emerald-500 shadow-xl shadow-emerald-500/20",
+    warning: "bg-white/95 backdrop-blur-md border-2 border-amber-500 shadow-xl shadow-amber-500/20"
+  };
+
+  const iconColorClasses = {
+    primary: "text-[#1E5799]",
+    success: "text-emerald-600",
+    warning: "text-amber-600"
   };
 
   const handleMainClick = () => {
@@ -134,44 +140,47 @@ export const FloatingActionButton = ({
       </AnimatePresence>
 
       {/* Main FAB */}
-      <motion.button
-        variants={celebrate}
-        initial="initial"
-        whileHover={{ scale: 1.1, rotate: isExpanded ? 90 : 0 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={handleMainClick}
-        className={cn(
-          "fixed z-50 rounded-full shadow-2xl transition-all flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-offset-2",
-          positionClasses[position],
-          sizeClasses[size],
-          variantClasses[variant]
-        )}
-        {...getAccessibleButtonProps(label, isExpanded)}
-      >
-        <AnimatePresence mode="wait">
-          {isExpanded ? (
-            <motion.div
-              key="close"
-              variants={scaleIn}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-            >
-              <X className="w-6 h-6" strokeWidth={1.5} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="icon"
-              variants={scaleIn}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-            >
-              <Icon className="w-6 h-6" strokeWidth={1.5} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.button>
+      <div className={cn("fixed z-50", positionClasses[position])}>
+        {/* Gradient border wrapper */}
+        <div className="p-[2px] rounded-full bg-gradient-to-br from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] shadow-xl shadow-[#4ECDC4]/30">
+          <motion.button
+            variants={celebrate}
+            initial="initial"
+            whileHover={{ scale: 1.1, rotate: isExpanded ? 90 : 0 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleMainClick}
+            className={cn(
+              "rounded-full bg-white/95 backdrop-blur-md transition-all flex items-center justify-center focus:outline-none",
+              sizeClasses[size]
+            )}
+            {...getAccessibleButtonProps(label, isExpanded)}
+          >
+            <AnimatePresence mode="wait">
+              {isExpanded ? (
+                <motion.div
+                  key="close"
+                  variants={scaleIn}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                >
+                  <X className={cn("w-6 h-6", iconColorClasses[variant])} strokeWidth={2} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="icon"
+                  variants={scaleIn}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                >
+                  <Icon className={cn("w-6 h-6", iconColorClasses[variant])} strokeWidth={2} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
+      </div>
     </>
   );
 };
