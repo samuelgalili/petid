@@ -555,7 +555,7 @@ export const PostCard = ({
               <DogTailIcon 
                 isWagging={isLicking} 
                 isLiked={post.is_liked} 
-                className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956]' : 'text-[#262626]'}`} 
+                className={`w-7 h-7 ${post.is_liked ? 'text-[#ED4956]' : 'text-[#262626]'}`} 
               />
             </motion.button>
             
