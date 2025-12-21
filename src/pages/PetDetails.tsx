@@ -257,7 +257,7 @@ const PetDetails = () => {
       <AppHeader title={pet.name} showBackButton={true} />
 
       {/* Pet Header - Compact */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4" dir="rtl">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -324,92 +324,94 @@ const PetDetails = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
         <TabsList className="w-full justify-start px-4 bg-transparent border-b border-border rounded-none h-auto pb-0 gap-0 overflow-x-auto flex-nowrap">
           <TabsTrigger 
             value="documents" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
           >
-            <FileText className="w-4 h-4 ml-1" />
+            <FileText className="w-4 h-4" />
             מסמכים
           </TabsTrigger>
           <TabsTrigger 
             value="tasks" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
           >
-            <CheckSquare className="w-4 h-4 ml-1" />
+            <CheckSquare className="w-4 h-4" />
             משימות
           </TabsTrigger>
           <TabsTrigger 
             value="training" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
           >
-            <GraduationCap className="w-4 h-4 ml-1" />
+            <GraduationCap className="w-4 h-4" />
             אילוף
           </TabsTrigger>
           <TabsTrigger 
             value="photos" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
           >
-            <Image className="w-4 h-4 ml-1" />
+            <Image className="w-4 h-4" />
             תמונות
           </TabsTrigger>
           <TabsTrigger 
             value="insurance" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
           >
-            <Shield className="w-4 h-4 ml-1" />
+            <Shield className="w-4 h-4" />
             ביטוח
           </TabsTrigger>
           <TabsTrigger 
             value="grooming" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium"
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
           >
-            <Scissors className="w-4 h-4 ml-1" />
+            <Scissors className="w-4 h-4" />
             מספרה
           </TabsTrigger>
         </TabsList>
 
         {/* Documents Tab */}
-        <TabsContent value="documents" className="px-4 pt-4">
+        <TabsContent value="documents" className="px-4 pt-4" dir="rtl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-foreground">מסמכים</h2>
+            <h2 className="text-lg font-bold text-foreground">המסמכים של {pet.name}</h2>
             <Button
               size="sm"
               onClick={() => navigate(`/documents?petId=${pet.id}`)}
-              className="rounded-full"
+              className="rounded-full gap-2 bg-primary hover:bg-primary/90 shadow-md"
             >
-              <Plus className="w-4 h-4 ml-1" />
+              <Plus className="w-4 h-4" />
               העלאת מסמך
             </Button>
           </div>
 
           {documents.length === 0 ? (
-            <Card className="p-8 text-center border-dashed border-2">
-              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground mb-4">אין מסמכים עדיין</p>
+            <Card className="p-8 text-center border-dashed border-2 border-primary/20 bg-primary/5">
+              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-primary" />
+              </div>
+              <p className="text-base font-medium text-foreground mb-2">אין מסמכים עדיין</p>
+              <p className="text-sm text-muted-foreground mb-4">התחל להעלות מסמכים עבור {pet.name}</p>
               <Button
-                variant="outline"
-                size="sm"
+                size="default"
                 onClick={() => navigate(`/documents?petId=${pet.id}`)}
-                className="rounded-full"
+                className="rounded-full gap-2 bg-primary hover:bg-primary/90 shadow-md"
               >
-                <Upload className="w-4 h-4 ml-1" />
+                <Upload className="w-4 h-4" />
                 העלאת מסמך ראשון
               </Button>
             </Card>
           ) : (
             <div className="space-y-3">
               {documents.map((doc) => (
-                <Card key={doc.id} className="p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-primary" />
+                <Card key={doc.id} className="p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{doc.title}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{doc.title}</p>
                     <p className="text-xs text-muted-foreground">{doc.document_type}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {format(new Date(doc.uploaded_at), 'dd/MM/yy')}
                   </span>
                 </Card>
@@ -499,30 +501,32 @@ const PetDetails = () => {
         </TabsContent>
 
         {/* Photos Tab */}
-        <TabsContent value="photos" className="px-4 pt-4">
+        <TabsContent value="photos" className="px-4 pt-4" dir="rtl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-foreground">אלבום תמונות</h2>
+            <h2 className="text-lg font-bold text-foreground">התמונות של {pet.name}</h2>
             <Button
               size="sm"
               onClick={() => navigate(`/photos?petId=${pet.id}`)}
-              className="rounded-full"
+              className="rounded-full gap-2 bg-primary hover:bg-primary/90 shadow-md"
             >
-              <Plus className="w-4 h-4 ml-1" />
+              <Plus className="w-4 h-4" />
               הוספת תמונה
             </Button>
           </div>
 
           {photos.length === 0 ? (
-            <Card className="p-8 text-center border-dashed border-2">
-              <Image className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground mb-4">אין תמונות עדיין</p>
+            <Card className="p-8 text-center border-dashed border-2 border-primary/20 bg-primary/5">
+              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Image className="w-8 h-8 text-primary" />
+              </div>
+              <p className="text-base font-medium text-foreground mb-2">אין תמונות עדיין</p>
+              <p className="text-sm text-muted-foreground mb-4">הוסף תמונות של {pet.name}</p>
               <Button
-                variant="outline"
-                size="sm"
+                size="default"
                 onClick={() => navigate(`/photos?petId=${pet.id}`)}
-                className="rounded-full"
+                className="rounded-full gap-2 bg-primary hover:bg-primary/90 shadow-md"
               >
-                <Upload className="w-4 h-4 ml-1" />
+                <Upload className="w-4 h-4" />
                 העלאת תמונה ראשונה
               </Button>
             </Card>
