@@ -1,25 +1,17 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { 
-  Store, CheckCircle, XCircle, MoreHorizontal, 
-  Eye, Clock, MapPin, Phone, Mail, Globe
+  Store, CheckCircle, XCircle, MapPin, Phone, Star, BadgeCheck
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -30,8 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { he } from "date-fns/locale";
+import { SwipeableItem } from "@/components/ui/swipeable-item";
 
 interface BusinessData {
   id: string;
@@ -39,14 +30,9 @@ interface BusinessData {
   business_type: string;
   description: string | null;
   logo_url: string | null;
-  address: string | null;
   city: string | null;
   phone: string | null;
-  email: string | null;
-  website: string | null;
   is_verified: boolean | null;
-  verification_requested_at: string | null;
-  verification_notes: string | null;
   rating: number | null;
   total_reviews: number | null;
   created_at: string;
@@ -54,11 +40,11 @@ interface BusinessData {
 
 const businessTypeLabels: Record<string, string> = {
   pet_shop: "חנות חיות",
-  vet_clinic: "מרפאה וטרינרית",
+  vet_clinic: "מרפאה",
   groomer: "מספרה",
   trainer: "מאלף",
   boarding: "פנסיון",
-  pet_food: "מזון לחיות",
+  pet_food: "מזון",
   other: "אחר",
 };
 
@@ -66,8 +52,9 @@ const AdminBusiness = () => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
-  const [selectedBusiness, setSelectedBusiness] = useState<BusinessData | null>(null);
-  const [verifyDialog, setVerifyDialog] = useState<{ open: boolean; businessId?: string; action?: "verify" | "unverify" }>({ open: false });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<"all" | "verified" | "pending">("all");
+  const [verifyDialog, setVerifyDialog] = useState<{ open: boolean; business?: BusinessData; action?: "verify" | "unverify" }>({ open: false });
   const [verificationNotes, setVerificationNotes] = useState("");
 
   const { data: businesses = [], isLoading } = useQuery({
@@ -115,277 +102,153 @@ const AdminBusiness = () => {
     },
   });
 
-  const columns: Column<BusinessData>[] = [
-    {
-      key: "business",
-      header: "עסק",
-      render: (business) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="w-12 h-12 rounded-lg">
-            <AvatarImage src={business.logo_url || undefined} />
-            <AvatarFallback className="rounded-lg">{business.business_name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-medium">{business.business_name}</p>
-              {business.is_verified && (
-                <CheckCircle className="w-4 h-4 text-primary fill-primary/20" />
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {businessTypeLabels[business.business_type] || business.business_type}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "location",
-      header: "מיקום",
-      render: (business) => (
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <MapPin className="w-4 h-4" />
-          <span>{business.city || "-"}</span>
-        </div>
-      ),
-    },
-    {
-      key: "rating",
-      header: "דירוג",
-      render: (business) => (
-        <div className="text-sm">
-          {business.rating ? (
-            <span className="font-medium">{business.rating.toFixed(1)} ⭐</span>
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          )}
-          {business.total_reviews && (
-            <span className="text-muted-foreground mr-1">({business.total_reviews})</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "status",
-      header: "סטטוס",
-      render: (business) => (
-        <div className="flex flex-col gap-1">
-          {business.is_verified ? (
-            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 w-fit">
-              <CheckCircle className="w-3 h-3 ml-1" />
-              מאומת
-            </Badge>
-          ) : business.verification_requested_at ? (
-            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 w-fit">
-              <Clock className="w-3 h-3 ml-1" />
-              ממתין לאימות
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-xs w-fit">
-              לא מאומת
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "created_at",
-      header: "נוסף",
-      sortable: true,
-      render: (business) => (
-        <span className="text-sm text-muted-foreground">
-          {format(new Date(business.created_at), "d בMMM yyyy", { locale: he })}
-        </span>
-      ),
-    },
-    {
-      key: "actions",
-      header: "",
-      className: "w-12",
-      render: (business) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSelectedBusiness(business)}>
-              <Eye className="w-4 h-4 ml-2" />
-              צפייה בפרטים
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {business.is_verified ? (
-              <DropdownMenuItem 
-                onClick={() => setVerifyDialog({ open: true, businessId: business.id, action: "unverify" })}
-                className="text-destructive"
-              >
-                <XCircle className="w-4 h-4 ml-2" />
-                בטל אימות
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={() => setVerifyDialog({ open: true, businessId: business.id, action: "verify" })}>
-                <CheckCircle className="w-4 h-4 ml-2" />
-                אמת עסק
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ];
+  // Filter businesses
+  const filteredBusinesses = businesses.filter(b => {
+    const matchesSearch = b.business_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === "all" || 
+      (filter === "verified" && b.is_verified) || 
+      (filter === "pending" && !b.is_verified);
+    return matchesSearch && matchesFilter;
+  });
 
-  const filters: FilterOption[] = [
-    {
-      key: "business_type",
-      label: "סוג עסק",
-      options: Object.entries(businessTypeLabels).map(([value, label]) => ({ value, label })),
-    },
-    {
-      key: "is_verified",
-      label: "סטטוס אימות",
-      options: [
-        { value: "true", label: "מאומת" },
-        { value: "false", label: "לא מאומת" },
-      ],
-    },
-  ];
-
-  const pendingVerification = businesses.filter(
-    (b) => !b.is_verified && b.verification_requested_at
-  ).length;
+  const stats = {
+    total: businesses.length,
+    verified: businesses.filter(b => b.is_verified).length,
+    pending: businesses.filter(b => !b.is_verified).length,
+  };
 
   return (
-    <AdminLayout title="ניהול עסקים" breadcrumbs={[{ label: "עסקים" }]}>
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <Card className="p-4">
-          <p className="text-2xl font-bold">{businesses.length}</p>
-          <p className="text-sm text-muted-foreground">סה״כ עסקים</p>
+    <AdminLayout title="עסקים" breadcrumbs={[{ label: "עסקים" }]}>
+      {/* Stats - Instagram style */}
+      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        <Card className="p-4 min-w-[100px] text-center">
+          <p className="text-2xl font-bold">{stats.total}</p>
+          <p className="text-xs text-muted-foreground">סה״כ</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-2xl font-bold text-green-600">
-            {businesses.filter((b) => b.is_verified).length}
-          </p>
-          <p className="text-sm text-muted-foreground">מאומתים</p>
+        <Card className="p-4 min-w-[100px] text-center border-green-200 bg-green-50/50">
+          <p className="text-2xl font-bold text-green-600">{stats.verified}</p>
+          <p className="text-xs text-muted-foreground">מאומתים</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-2xl font-bold text-yellow-600">{pendingVerification}</p>
-          <p className="text-sm text-muted-foreground">ממתינים לאימות</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-2xl font-bold">
-            {businesses.filter((b) => b.rating && b.rating >= 4).length}
-          </p>
-          <p className="text-sm text-muted-foreground">דירוג 4+</p>
+        <Card className="p-4 min-w-[100px] text-center border-yellow-200 bg-yellow-50/50">
+          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+          <p className="text-xs text-muted-foreground">ממתינים</p>
         </Card>
       </div>
 
-      <DataTable
-        data={businesses}
-        columns={columns}
-        loading={isLoading}
-        filters={filters}
-        searchPlaceholder="חיפוש לפי שם עסק..."
-        searchKey={(item, query) => 
-          item.business_name.toLowerCase().includes(query.toLowerCase())
-        }
-        emptyIcon={<Store className="w-12 h-12" />}
-        emptyMessage="לא נמצאו עסקים"
-      />
+      {/* Search & Filter */}
+      <div className="space-y-3 mb-4">
+        <Input
+          placeholder="חיפוש עסק..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="rounded-xl"
+        />
+        <div className="flex gap-2">
+          {(["all", "verified", "pending"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
+                filter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {f === "all" ? "הכל" : f === "verified" ? "מאומתים" : "ממתינים"}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {/* Business Details Dialog */}
-      <Dialog open={!!selectedBusiness} onOpenChange={() => setSelectedBusiness(null)}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>פרטי עסק</DialogTitle>
-          </DialogHeader>
-          
-          {selectedBusiness && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16 rounded-lg">
-                  <AvatarImage src={selectedBusiness.logo_url || undefined} />
-                  <AvatarFallback className="rounded-lg text-xl">
-                    {selectedBusiness.business_name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-bold text-lg">{selectedBusiness.business_name}</h3>
-                  <p className="text-muted-foreground">
-                    {businessTypeLabels[selectedBusiness.business_type]}
-                  </p>
+      {/* Business Cards - Feed style */}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="p-4 animate-pulse">
+              <div className="flex gap-3">
+                <div className="w-14 h-14 rounded-xl bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                  <div className="h-3 bg-muted rounded w-1/3" />
                 </div>
               </div>
+            </Card>
+          ))}
+        </div>
+      ) : filteredBusinesses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <Store className="w-16 h-16 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">לא נמצאו עסקים</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredBusinesses.map((business, index) => (
+            <SwipeableItem
+              key={business.id}
+              onEdit={() => setVerifyDialog({ open: true, business, action: business.is_verified ? "unverify" : "verify" })}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+              >
+                <Card className="p-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-14 h-14 rounded-xl">
+                      <AvatarImage src={business.logo_url || undefined} />
+                      <AvatarFallback className="rounded-xl text-lg">
+                        {business.business_name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium truncate">{business.business_name}</span>
+                        {business.is_verified && (
+                          <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {businessTypeLabels[business.business_type] || business.business_type}
+                        </Badge>
+                        {business.city && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                            <MapPin className="w-3 h-3" />
+                            {business.city}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-3 mt-1">
+                        {business.rating && (
+                          <span className="text-xs flex items-center gap-0.5">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            {business.rating}
+                          </span>
+                        )}
+                        {business.phone && (
+                          <a href={`tel:${business.phone}`} className="text-xs text-primary flex items-center gap-0.5">
+                            <Phone className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
 
-              {selectedBusiness.description && (
-                <p className="text-sm">{selectedBusiness.description}</p>
-              )}
-
-              <div className="space-y-2 text-sm">
-                {selectedBusiness.address && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span>{selectedBusiness.address}, {selectedBusiness.city}</span>
+                    <Button
+                      size="sm"
+                      variant={business.is_verified ? "outline" : "default"}
+                      className="rounded-lg text-xs"
+                      onClick={() => setVerifyDialog({ open: true, business, action: business.is_verified ? "unverify" : "verify" })}
+                    >
+                      {business.is_verified ? "בטל" : "אמת"}
+                    </Button>
                   </div>
-                )}
-                {selectedBusiness.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span>{selectedBusiness.phone}</span>
-                  </div>
-                )}
-                {selectedBusiness.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span>{selectedBusiness.email}</span>
-                  </div>
-                )}
-                {selectedBusiness.website && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <a href={selectedBusiness.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                      {selectedBusiness.website}
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {selectedBusiness.verification_notes && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-xs font-medium mb-1">הערות אימות:</p>
-                  <p className="text-sm">{selectedBusiness.verification_notes}</p>
-                </div>
-              )}
-
-              <DialogFooter>
-                {selectedBusiness.is_verified ? (
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => {
-                      setSelectedBusiness(null);
-                      setVerifyDialog({ open: true, businessId: selectedBusiness.id, action: "unverify" });
-                    }}
-                  >
-                    <XCircle className="w-4 h-4 ml-2" />
-                    בטל אימות
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={() => {
-                      setSelectedBusiness(null);
-                      setVerifyDialog({ open: true, businessId: selectedBusiness.id, action: "verify" });
-                    }}
-                  >
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    אמת עסק
-                  </Button>
-                )}
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                </Card>
+              </motion.div>
+            </SwipeableItem>
+          ))}
+        </div>
+      )}
 
       {/* Verify Dialog */}
       <Dialog open={verifyDialog.open} onOpenChange={(open) => setVerifyDialog({ open })}>
@@ -397,11 +260,22 @@ const AdminBusiness = () => {
           </DialogHeader>
           
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {verifyDialog.action === "verify" 
-                ? "האם לאמת את העסק? עסקים מאומתים מקבלים תג כחול."
-                : "האם לבטל את אימות העסק?"}
-            </p>
+            {verifyDialog.business && (
+              <div className="flex items-center gap-3">
+                <Avatar className="w-12 h-12 rounded-lg">
+                  <AvatarImage src={verifyDialog.business.logo_url || undefined} />
+                  <AvatarFallback className="rounded-lg">
+                    {verifyDialog.business.business_name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{verifyDialog.business.business_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {businessTypeLabels[verifyDialog.business.business_type]}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div>
               <Label>הערות (אופציונלי)</Label>
@@ -420,9 +294,9 @@ const AdminBusiness = () => {
               <Button
                 variant={verifyDialog.action === "unverify" ? "destructive" : "default"}
                 onClick={() => {
-                  if (verifyDialog.businessId) {
+                  if (verifyDialog.business) {
                     verifyMutation.mutate({
-                      businessId: verifyDialog.businessId,
+                      businessId: verifyDialog.business.id,
                       verify: verifyDialog.action === "verify",
                       notes: verificationNotes,
                     });
@@ -430,7 +304,7 @@ const AdminBusiness = () => {
                 }}
                 disabled={verifyMutation.isPending}
               >
-                {verifyMutation.isPending ? "מעבד..." : verifyDialog.action === "verify" ? "אמת" : "בטל אימות"}
+                {verifyMutation.isPending ? "..." : verifyDialog.action === "verify" ? "אמת" : "בטל אימות"}
               </Button>
             </DialogFooter>
           </div>

@@ -32,6 +32,7 @@ import { ParallaxScroll } from "@/components/ParallaxScroll";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { ChallengePostCard } from "@/components/ChallengePostCard";
+import { BusinessFeedBanner } from "@/components/business/BusinessFeedBanner";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -1173,7 +1174,8 @@ const Feed = () => {
         </div>
       </motion.div>
 
-
+      {/* Business Feed Banner - for business owners */}
+      <BusinessFeedBanner />
 
       {/* Feed */}
       <div className="max-w-lg mx-auto">

@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { ShoppingBag, Tag, Plus, X, MoreVertical, Trash2, Edit2 } from 'lucide-react';
+import { ShoppingBag, Tag, Plus, X, Trash2, Star, StarOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { SwipeableItem } from '@/components/ui/swipeable-item';
 
 interface BusinessProduct {
   id: string;
@@ -26,6 +27,7 @@ interface BusinessShopTabProps {
 
 export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) => {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const queryClient = useQueryClient();
 
   const { data: products, isLoading } = useQuery({
@@ -75,16 +77,9 @@ export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) =
     }
   });
 
-  // Handle long press for mobile
-  const handleLongPress = (productId: string) => {
-    if (isOwner) {
-      setSelectedProduct(productId);
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 gap-1 p-1">
+      <div className="grid grid-cols-3 gap-0.5 p-0.5">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="animate-pulse aspect-square bg-muted" />
         ))}
@@ -112,109 +107,186 @@ export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) =
     );
   }
 
+  // Grid View (Instagram style)
+  const GridView = () => (
+    <div className="grid grid-cols-3 gap-0.5">
+      {products.map((product, index) => (
+        <motion.div
+          key={product.id}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: index * 0.03 }}
+          className="relative aspect-square cursor-pointer group"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            if (isOwner) setSelectedProduct(product.id);
+          }}
+        >
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+          
+          {/* Hover overlay with price */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="text-white font-bold">₪{product.price}</span>
+          </div>
+
+          {/* Sale Badge */}
+          {product.original_price && product.original_price > product.price && (
+            <div className="absolute top-1 right-1">
+              <Tag className="w-3 h-3 text-red-500" />
+            </div>
+          )}
+
+          {/* Featured indicator */}
+          {product.is_featured && (
+            <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-primary" />
+          )}
+
+          {/* Out of Stock */}
+          {!product.in_stock && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+              <span className="text-xs font-bold text-muted-foreground">אזל</span>
+            </div>
+          )}
+
+          {/* Quick Actions overlay */}
+          <AnimatePresence>
+            {isOwner && selectedProduct === product.id && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="absolute inset-0 bg-black/70 flex items-center justify-center gap-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="absolute top-2 right-2 text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                
+                <button 
+                  className="flex flex-col items-center gap-1 text-white"
+                  onClick={() => toggleFeaturedMutation.mutate({ productId: product.id, isFeatured: product.is_featured || false })}
+                >
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    {product.is_featured ? <StarOff className="w-5 h-5" /> : <Star className="w-5 h-5" />}
+                  </div>
+                  <span className="text-xs">{product.is_featured ? 'הסר מומלץ' : 'סמן מומלץ'}</span>
+                </button>
+                
+                <button 
+                  className="flex flex-col items-center gap-1 text-white"
+                  onClick={() => deleteMutation.mutate(product.id)}
+                >
+                  <div className="w-10 h-10 rounded-full bg-red-500/50 flex items-center justify-center">
+                    <Trash2 className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs">מחק</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      ))}
+
+      {/* Add Product Button */}
+      {isOwner && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="aspect-square bg-muted border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-colors"
+        >
+          <Plus className="w-6 h-6 text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground">הוסף</span>
+        </motion.button>
+      )}
+    </div>
+  );
+
+  // List View with swipe (for owners)
+  const ListView = () => (
+    <div className="divide-y">
+      {products.map((product, index) => (
+        <SwipeableItem
+          key={product.id}
+          disabled={!isOwner}
+          onDelete={() => deleteMutation.mutate(product.id)}
+          onEdit={() => toggleFeaturedMutation.mutate({ productId: product.id, isFeatured: product.is_featured || false })}
+        >
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="flex items-center gap-3 p-3 bg-background"
+          >
+            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-sm truncate">{product.name}</h4>
+                {product.is_featured && (
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="font-bold text-primary text-sm">₪{product.price}</span>
+                {product.original_price && product.original_price > product.price && (
+                  <span className="text-muted-foreground text-xs line-through">
+                    ₪{product.original_price}
+                  </span>
+                )}
+              </div>
+              {!product.in_stock && (
+                <Badge variant="secondary" className="text-[10px] mt-1">אזל מהמלאי</Badge>
+              )}
+            </div>
+          </motion.div>
+        </SwipeableItem>
+      ))}
+      
+      {isOwner && (
+        <Button className="w-full mt-4 gap-2 rounded-xl mx-3" style={{ width: 'calc(100% - 24px)' }}>
+          <Plus className="w-4 h-4" />
+          הוסף מוצר
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="relative">
-      {/* Instagram-style Grid */}
-      <div className="grid grid-cols-3 gap-0.5">
-        {products.map((product, index) => (
-          <motion.div
-            key={product.id}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: index * 0.03 }}
-            className="relative aspect-square cursor-pointer group"
-            onContextMenu={(e) => {
-              e.preventDefault();
-              handleLongPress(product.id);
-            }}
-            onClick={() => isOwner && selectedProduct !== product.id && setSelectedProduct(null)}
+      {/* View Toggle for owners */}
+      {isOwner && products.length > 0 && (
+        <div className="flex justify-center gap-2 py-2 border-b">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-3 py-1 text-xs rounded-full transition-colors ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
           >
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-            
-            {/* Hover overlay with price */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="text-white font-bold">₪{product.price}</span>
-            </div>
-
-            {/* Sale Badge - Small */}
-            {product.original_price && product.original_price > product.price && (
-              <div className="absolute top-1 right-1">
-                <Tag className="w-3 h-3 text-red-500" />
-              </div>
-            )}
-
-            {/* Featured indicator */}
-            {product.is_featured && (
-              <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-primary" />
-            )}
-
-            {/* Out of Stock */}
-            {!product.in_stock && (
-              <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                <span className="text-xs font-bold text-muted-foreground">אזל</span>
-              </div>
-            )}
-
-            {/* Quick Actions for Owner (on selection) */}
-            <AnimatePresence>
-              {isOwner && selectedProduct === product.id && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="absolute inset-0 bg-black/70 flex items-center justify-center gap-4"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    onClick={() => setSelectedProduct(null)}
-                    className="absolute top-2 right-2 text-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  
-                  <button 
-                    className="flex flex-col items-center gap-1 text-white"
-                    onClick={() => toggleFeaturedMutation.mutate({ productId: product.id, isFeatured: product.is_featured || false })}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                      <Edit2 className="w-5 h-5" />
-                    </div>
-                    <span className="text-xs">{product.is_featured ? 'הסר מומלץ' : 'סמן מומלץ'}</span>
-                  </button>
-                  
-                  <button 
-                    className="flex flex-col items-center gap-1 text-white"
-                    onClick={() => deleteMutation.mutate(product.id)}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-red-500/50 flex items-center justify-center">
-                      <Trash2 className="w-5 h-5" />
-                    </div>
-                    <span className="text-xs">מחק</span>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        ))}
-
-        {/* Add Product Button for Owner - as grid item */}
-        {isOwner && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="aspect-square bg-muted border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-colors"
+            רשת
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-3 py-1 text-xs rounded-full transition-colors ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
           >
-            <Plus className="w-6 h-6 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">הוסף</span>
-          </motion.button>
-        )}
-      </div>
+            רשימה
+          </button>
+        </div>
+      )}
 
-      {/* Floating tip for owners */}
+      {viewMode === 'grid' ? <GridView /> : <ListView />}
+
+      {/* Tip for owners */}
       {isOwner && products.length > 0 && !selectedProduct && (
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -222,7 +294,7 @@ export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) =
           transition={{ delay: 0.5 }}
           className="text-center text-xs text-muted-foreground mt-4 px-4"
         >
-          💡 לחץ לחיצה ארוכה על מוצר לעריכה מהירה
+          💡 {viewMode === 'grid' ? 'לחץ לחיצה ארוכה על מוצר לעריכה' : 'החלק שמאלה לפעולות מהירות'}
         </motion.p>
       )}
     </div>
