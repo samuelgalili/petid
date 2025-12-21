@@ -237,39 +237,55 @@ export default function Photos() {
         }}
       />
       
-      <div className="min-h-screen bg-background pb-24">
-        {/* Highlights Section - Instagram Style */}
+      <div className="min-h-screen bg-background pb-24" dir="rtl">
+        {/* Header Section with Gradient */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] opacity-90" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
+          
+          <div className="relative px-4 pt-6 pb-8">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                <Camera className="w-7 h-7 text-white" />
+              </div>
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-white">האלבום שלי</h1>
+                <p className="text-white/80 text-sm">כל הרגעים שלי במקום אחד</p>
+              </div>
+            </div>
+            
+            {/* Stats Cards */}
+            <div className="flex justify-center gap-4">
+              <motion.div 
+                className="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-center"
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="text-2xl font-bold text-white block">{posts.length}</span>
+                <span className="text-xs text-white/80">פוסטים</span>
+              </motion.div>
+              <motion.div 
+                className="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-center"
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="text-2xl font-bold text-white block">{totalLikes}</span>
+                <span className="text-xs text-white/80">לייקים</span>
+              </motion.div>
+              <motion.div 
+                className="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-center cursor-pointer"
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowCreateDialog(true)}
+              >
+                <span className="text-2xl font-bold text-white block">+</span>
+                <span className="text-xs text-white/80">העלאה</span>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* Highlights Section */}
         {user && (
           <HighlightsSection userId={user.id} isOwnProfile={true} />
         )}
-
-        {/* Stats Section - Instagram Style */}
-        <div className="px-4 py-5 border-b border-border/50">
-          <div className="flex justify-around text-center">
-            <motion.div 
-              className="flex flex-col"
-              whileTap={{ scale: 0.95 }}
-            >
-              <span className="text-xl font-bold text-foreground">{posts.length}</span>
-              <span className="text-xs text-muted-foreground">פוסטים</span>
-            </motion.div>
-            <motion.div 
-              className="flex flex-col"
-              whileTap={{ scale: 0.95 }}
-            >
-              <span className="text-xl font-bold text-foreground">{totalLikes}</span>
-              <span className="text-xs text-muted-foreground">לייקים</span>
-            </motion.div>
-            <motion.div 
-              className="flex flex-col cursor-pointer"
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <span className="text-xl font-bold text-primary">+</span>
-              <span className="text-xs text-muted-foreground">חדש</span>
-            </motion.div>
-          </div>
-        </div>
 
         {/* Instagram Style Tabs */}
         <div className="flex border-b border-border/50 sticky top-16 z-10 bg-background">
@@ -339,18 +355,18 @@ export default function Photos() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="w-24 h-24 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
-                <Camera className="w-12 h-12 text-foreground" strokeWidth={1} />
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] flex items-center justify-center mb-4 shadow-lg">
+                <Camera className="w-12 h-12 text-white" strokeWidth={1.5} />
               </div>
-              <h3 className="text-2xl font-light text-foreground mb-2">שתף תמונות</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-2">שתף תמונות</h3>
               <p className="text-muted-foreground text-center text-sm mb-6 max-w-xs">
-                כשתשתף תמונות, הן יופיעו בפרופיל שלך
+                כשתשתף תמונות, הן יופיעו באלבום שלך
               </p>
               <Button
                 onClick={() => setShowCreateDialog(true)}
-                variant="link"
-                className="text-primary font-semibold"
+                className="bg-gradient-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] text-white hover:opacity-90 rounded-xl px-6"
               >
+                <Plus className="w-4 h-4 ml-2" />
                 שתף את התמונה הראשונה שלך
               </Button>
             </motion.div>
@@ -360,16 +376,19 @@ export default function Photos() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] flex items-center justify-center mb-4 shadow-lg">
                 {filter === "saved" ? (
-                  <Bookmark className="w-10 h-10 text-foreground" strokeWidth={1} />
+                  <Bookmark className="w-10 h-10 text-white" strokeWidth={1.5} />
                 ) : (
-                  <Copy className="w-10 h-10 text-foreground" strokeWidth={1} />
+                  <Copy className="w-10 h-10 text-white" strokeWidth={1.5} />
                 )}
               </div>
-              <h3 className="text-xl font-light text-foreground">
+              <h3 className="text-xl font-bold text-foreground">
                 {filter === "saved" ? "אין פוסטים שמורים" : "אין תיוגים"}
               </h3>
+              <p className="text-muted-foreground text-sm mt-2">
+                {filter === "saved" ? "פוסטים ששמרת יופיעו כאן" : "פוסטים שתויגת בהם יופיעו כאן"}
+              </p>
             </motion.div>
           ) : (
             <div className="grid grid-cols-3 gap-px bg-border/30">
@@ -467,14 +486,15 @@ export default function Photos() {
         </div>
       </div>
 
-      {/* Floating Selection Bar - Instagram Style */}
+      {/* Floating Selection Bar */}
       <AnimatePresence>
         {selectionMode && selectedPosts.size > 0 && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-20 left-4 right-4 bg-background/95 backdrop-blur-lg border border-border rounded-2xl shadow-2xl p-4 z-50"
+            className="fixed bottom-20 left-4 right-4 bg-gradient-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] rounded-2xl shadow-2xl p-4 z-50"
+            dir="rtl"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -482,26 +502,25 @@ export default function Photos() {
                   variant="ghost"
                   size="sm"
                   onClick={exitSelectionMode}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-white/80 hover:text-white hover:bg-white/20"
                 >
                   ביטול
                 </Button>
-                <div className="h-4 w-px bg-border" />
+                <div className="h-4 w-px bg-white/30" />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={selectAll}
-                  className="text-primary"
+                  className="text-white hover:bg-white/20"
                   disabled={selectedPosts.size === posts.length}
                 >
                   בחר הכל
                 </Button>
               </div>
               <Button
-                variant="destructive"
                 size="sm"
                 onClick={() => setShowMultiDeleteDialog(true)}
-                className="rounded-full px-4"
+                className="bg-white text-red-500 hover:bg-white/90 rounded-full px-4"
               >
                 <Trash2 className="w-4 h-4 ml-1" />
                 מחק {selectedPosts.size}
