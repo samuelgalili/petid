@@ -290,48 +290,75 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          flavors: string[] | null
           id: string
           image_url: string
           images: string[] | null
           in_stock: boolean | null
           is_featured: boolean | null
           name: string
+          needs_image_review: boolean | null
+          needs_price_review: boolean | null
           original_price: number | null
           pet_type: Database["public"]["Enums"]["pet_type"] | null
           price: number
+          price_per_weight: number | null
+          price_suggestion_reason: string | null
+          sale_price: number | null
+          sku: string | null
+          suggested_price: number | null
           updated_at: string
+          weight_unit: string | null
         }
         Insert: {
           business_id: string
           category?: string | null
           created_at?: string
           description?: string | null
+          flavors?: string[] | null
           id?: string
           image_url: string
           images?: string[] | null
           in_stock?: boolean | null
           is_featured?: boolean | null
           name: string
+          needs_image_review?: boolean | null
+          needs_price_review?: boolean | null
           original_price?: number | null
           pet_type?: Database["public"]["Enums"]["pet_type"] | null
           price: number
+          price_per_weight?: number | null
+          price_suggestion_reason?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          suggested_price?: number | null
           updated_at?: string
+          weight_unit?: string | null
         }
         Update: {
           business_id?: string
           category?: string | null
           created_at?: string
           description?: string | null
+          flavors?: string[] | null
           id?: string
           image_url?: string
           images?: string[] | null
           in_stock?: boolean | null
           is_featured?: boolean | null
           name?: string
+          needs_image_review?: boolean | null
+          needs_price_review?: boolean | null
           original_price?: number | null
           pet_type?: Database["public"]["Enums"]["pet_type"] | null
           price?: number
+          price_per_weight?: number | null
+          price_suggestion_reason?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          suggested_price?: number | null
           updated_at?: string
+          weight_unit?: string | null
         }
         Relationships: [
           {
@@ -2128,6 +2155,39 @@ export type Database = {
           user_id?: string
           video_url?: string
           view_count?: number | null
+        }
+        Relationships: []
+      }
+      reference_prices: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          market_price: number
+          product_name: string
+          sku: string | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          market_price: number
+          product_name: string
+          sku?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          market_price?: number
+          product_name?: string
+          sku?: string | null
+          source?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
