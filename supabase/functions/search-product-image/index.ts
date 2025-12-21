@@ -81,8 +81,15 @@ Important:
 
     let images: string[] = [];
     try {
+      // Remove markdown code blocks if present
+      let cleanContent = content;
+      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        cleanContent = codeBlockMatch[1].trim();
+      }
+      
       // Try to parse JSON array from response
-      const jsonMatch = content.match(/\[[\s\S]*?\]/);
+      const jsonMatch = cleanContent.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed)) {
@@ -92,13 +99,15 @@ Important:
           );
         }
       }
+      console.log('Parsed images:', images.length);
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       // Try to extract URLs with regex as fallback
-      const urlRegex = /https?:\/\/[^\s"'\]]+\.(jpg|jpeg|png|webp|gif)/gi;
+      const urlRegex = /https?:\/\/[^\s"'\]\\]+\.(?:jpg|jpeg|png|webp|gif)/gi;
       const matches = content.match(urlRegex);
       if (matches) {
         images = matches.slice(0, limit);
+        console.log('Fallback regex found images:', images.length);
       }
     }
 
