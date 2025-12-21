@@ -94,7 +94,7 @@ const Shop = () => {
   }, [carouselApi]);
 
   // Fetch products from database
-  const { data: dbProducts = [], isLoading: isLoadingProducts } = useQuery({
+  const { data: dbProducts = [], isLoading: isLoadingProducts, refetch } = useQuery({
     queryKey: ["shop-products"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -106,7 +106,15 @@ const Shop = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
+
+  // Refetch on component mount to ensure fresh data
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // Transform database products to the format expected by the UI
   const products = useMemo(() => {
