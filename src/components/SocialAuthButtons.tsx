@@ -7,7 +7,7 @@ interface SocialAuthButtonsProps {
   redirectTo?: string;
 }
 
-export const SocialAuthButtons = ({ redirectTo = "/add-pet" }: SocialAuthButtonsProps) => {
+export const SocialAuthButtons = ({ redirectTo = "/" }: SocialAuthButtonsProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 

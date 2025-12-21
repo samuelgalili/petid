@@ -10,7 +10,7 @@ interface AppleSignInButtonProps {
 }
 
 export const AppleSignInButton = ({ 
-  redirectTo = "/add-pet", 
+  redirectTo = "/", 
   className 
 }: AppleSignInButtonProps) => {
   const [loading, setLoading] = useState(false);
