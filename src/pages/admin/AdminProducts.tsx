@@ -355,7 +355,7 @@ const AdminProducts = () => {
     : products;
 
   return (
-    <AdminLayout title="ניהול מוצרים" breadcrumbs={[{ label: "מוצרים" }]}>
+    <AdminLayout title="ניהול מוצרים" icon={Package} breadcrumbs={[{ label: "מוצרים" }]}>
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div className="flex gap-2 flex-wrap">
           <Button onClick={() => {

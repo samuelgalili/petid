@@ -1,7 +1,8 @@
 import { ReactNode, useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { LucideIcon } from "lucide-react";
 import { 
-  LayoutDashboard, 
+  LayoutDashboard,
   Users, 
   ShoppingCart, 
   Package, 
@@ -30,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface AdminLayoutProps {
   children: ReactNode;
   title: string;
+  icon?: LucideIcon;
   breadcrumbs?: { label: string; href?: string }[];
 }
 
@@ -50,7 +52,7 @@ const navItems = [
   { icon: Settings, label: "הגדרות", href: "/admin/settings" },
 ];
 
-export const AdminLayout = ({ children, title, breadcrumbs = [] }: AdminLayoutProps) => {
+export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
@@ -158,7 +160,10 @@ export const AdminLayout = ({ children, title, breadcrumbs = [] }: AdminLayoutPr
               <NavContent />
             </SheetContent>
           </Sheet>
-          <h1 className="font-bold text-base">{title}</h1>
+          <h1 className="font-bold text-base flex items-center gap-2">
+            {Icon && <Icon className="w-5 h-5" />}
+            {title}
+          </h1>
           <div className="w-10" />
         </div>
       </header>
@@ -194,7 +199,10 @@ export const AdminLayout = ({ children, title, breadcrumbs = [] }: AdminLayoutPr
                 </nav>
               )}
               {breadcrumbs.length === 0 && (
-                <h1 className="font-bold text-lg">{title}</h1>
+                <h1 className="font-bold text-lg flex items-center gap-2">
+                  {Icon && <Icon className="w-5 h-5" />}
+                  {title}
+                </h1>
               )}
             </div>
             <div className="flex items-center gap-2">
