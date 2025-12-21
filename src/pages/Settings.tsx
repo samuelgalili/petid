@@ -1,4 +1,4 @@
-import { User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff, Palette, ChevronLeft, Store } from "lucide-react";
+import { User, Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor, Type, Contrast, Zap, BellOff, Palette, ChevronLeft, Store, QrCode, Star, FileText, Calendar } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -21,6 +21,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { AppHeader } from "@/components/AppHeader";
+import { QRCodeProfile } from "@/components/QRCodeProfile";
+import { QuietModeSettings } from "@/components/QuietModeSettings";
+import { CloseFriendsManager } from "@/components/CloseFriendsManager";
+import { DraftPostsManager } from "@/components/DraftPostsManager";
+import { ScheduledPostsManager } from "@/components/ScheduledPostsManager";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -31,6 +36,11 @@ const Settings = () => {
   const { isSubscribed, isLoading, subscribe, unsubscribe, sendTestNotification } = usePushNotifications();
   const [notifications, setNotifications] = useState(true);
   const [location, setLocation] = useState(true);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [showQuietMode, setShowQuietMode] = useState(false);
+  const [showCloseFriends, setShowCloseFriends] = useState(false);
+  const [showDrafts, setShowDrafts] = useState(false);
+  const [showScheduled, setShowScheduled] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -74,6 +84,34 @@ const Settings = () => {
           action: () => navigate("/convert-to-business"),
           type: "link",
         },
+        {
+          icon: QrCode,
+          label: "קוד QR שלי",
+          description: "שתף את הפרופיל שלך עם קוד QR",
+          action: () => setShowQRCode(true),
+          type: "link",
+        },
+        {
+          icon: Star,
+          label: "חברים קרובים",
+          description: "נהל רשימת חברים קרובים לסטוריז",
+          action: () => setShowCloseFriends(true),
+          type: "link",
+        },
+        {
+          icon: FileText,
+          label: "טיוטות",
+          description: "פוסטים שנשמרו כטיוטה",
+          action: () => setShowDrafts(true),
+          type: "link",
+        },
+        {
+          icon: Calendar,
+          label: "פוסטים מתוזמנים",
+          description: "פוסטים שממתינים לפרסום",
+          action: () => setShowScheduled(true),
+          type: "link",
+        },
       ],
     },
     {
@@ -86,6 +124,13 @@ const Settings = () => {
           action: handlePushNotificationToggle,
           type: "toggle",
           value: isSubscribed,
+        },
+        {
+          icon: BellOff,
+          label: "מצב שקט",
+          description: "השתק התראות זמנית",
+          action: () => setShowQuietMode(true),
+          type: "link",
         },
         {
           icon: Bell,
@@ -319,6 +364,24 @@ const Settings = () => {
           <p className="text-xs text-muted-foreground">{t("settings.version")}</p>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <QRCodeProfile 
+        open={showQRCode} 
+        onOpenChange={setShowQRCode}
+        profile={{ id: user?.id || '', full_name: user?.user_metadata?.full_name, avatar_url: null }}
+      />
+      <QuietModeSettings open={showQuietMode} onOpenChange={setShowQuietMode} />
+      <CloseFriendsManager open={showCloseFriends} onOpenChange={setShowCloseFriends} />
+      <DraftPostsManager 
+        open={showDrafts} 
+        onOpenChange={setShowDrafts}
+        onEditDraft={(draft) => {
+          // Navigate or handle draft edit
+          toast.info("פתיחת טיוטה לעריכה");
+        }}
+      />
+      <ScheduledPostsManager open={showScheduled} onOpenChange={setShowScheduled} />
 
       <BottomNav />
     </div>

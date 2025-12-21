@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Camera, Image as ImageIcon, X, Loader2, Sparkles, Video, MapPin, PawPrint } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Loader2, Sparkles, Video, MapPin, PawPrint, Users, Calendar, Eye, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -13,6 +14,9 @@ import { VideoUploader } from "@/components/VideoUploader";
 import { PetTagSelector } from "@/components/PetTagSelector";
 import LocationPicker from "@/components/LocationPicker";
 import HashtagInput from "@/components/HashtagInput";
+import { CollaborativePostInvite } from "@/components/CollaborativePostInvite";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -43,6 +47,11 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
   const [selectedPets, setSelectedPets] = useState<string[]>([]);
   const [location, setLocation] = useState<Location | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
+  const [altText, setAltText] = useState("");
+  const [collaborators, setCollaborators] = useState<string[]>([]);
+  const [showCollabInvite, setShowCollabInvite] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,8 +104,33 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     setSelectedPets([]);
     setLocation(null);
     setHashtags([]);
+    setAltText("");
+    setCollaborators([]);
+    setScheduleDate(undefined);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
+  };
+
+  const saveDraft = async () => {
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from('draft_posts')
+        .insert({
+          user_id: user.id,
+          caption,
+          image_url: imagePreview,
+          alt_text: altText,
+          pet_id: selectedPets[0] || null
+        });
+      toast.success("נשמר כטיוטה");
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast.error("שגיאה בשמירת הטיוטה");
+    }
   };
 
   const handleCreatePost = async () => {
@@ -132,6 +166,25 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         fullCaption += "\n\n" + hashtags.map(h => `#${h}`).join(" ");
       }
 
+      // If scheduled, save to scheduled_posts
+      if (scheduleDate && scheduleDate > new Date()) {
+        await supabase
+          .from('scheduled_posts')
+          .insert({
+            user_id: user.id,
+            caption: fullCaption,
+            image_url: mediaUrl,
+            alt_text: altText || null,
+            pet_id: selectedPets[0] || null,
+            scheduled_for: scheduleDate.toISOString()
+          });
+        
+        toast.success("הפוסט תוזמן בהצלחה!");
+        resetForm();
+        onOpenChange(false);
+        return;
+      }
+
       // Create post
       const postData: any = {
         user_id: user.id,
@@ -140,17 +193,33 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         media_type: mediaType,
         location_id: location?.id || null,
         pet_id: selectedPets.length > 0 ? selectedPets[0] : null,
+        alt_text: altText || null,
       };
 
       if (mediaType === "video") {
         postData.video_url = mediaUrl;
       }
 
-      const { error: insertError } = await supabase
+      const { data: newPost, error: insertError } = await supabase
         .from("posts")
-        .insert(postData);
+        .insert(postData)
+        .select()
+        .single();
 
       if (insertError) throw insertError;
+
+      // Add collaborators if any
+      if (collaborators.length > 0 && newPost) {
+        for (const collabId of collaborators) {
+          await supabase
+            .from('post_collaborators')
+            .insert({
+              post_id: newPost.id,
+              collaborator_id: collabId,
+              status: 'pending'
+            });
+        }
+      }
 
       // Update hashtag counts
       for (const tag of hashtags) {
@@ -334,8 +403,80 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
             maxTags={10}
           />
 
+          {/* Alt Text for Accessibility */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Eye className="w-4 h-4" />
+              <span>טקסט חלופי (נגישות)</span>
+            </div>
+            <Input
+              placeholder="תאר את התמונה לאנשים עם לקות ראייה..."
+              value={altText}
+              onChange={(e) => setAltText(e.target.value)}
+              className="rounded-xl"
+              maxLength={200}
+            />
+          </div>
+
+          {/* Collaborators */}
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">פוסט משותף</span>
+              {collaborators.length > 0 && (
+                <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                  {collaborators.length}
+                </span>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCollabInvite(true)}
+            >
+              הוסף
+            </Button>
+          </div>
+
+          {/* Schedule */}
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">
+                {scheduleDate ? `מתוזמן ל-${scheduleDate.toLocaleDateString('he-IL')}` : "תזמן פרסום"}
+              </span>
+            </div>
+            <Popover open={showSchedulePicker} onOpenChange={setShowSchedulePicker}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  {scheduleDate ? "שנה" : "בחר"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarComponent
+                  mode="single"
+                  selected={scheduleDate}
+                  onSelect={(date) => {
+                    setScheduleDate(date);
+                    setShowSchedulePicker(false);
+                  }}
+                  disabled={(date) => date < new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
+            <Button
+              variant="outline"
+              className="rounded-2xl font-bold h-12"
+              onClick={saveDraft}
+              disabled={uploading || !hasMedia}
+            >
+              <FileText className="w-4 h-4 ml-1" />
+              טיוטה
+            </Button>
             <Button
               variant="outline"
               className="flex-1 rounded-2xl font-bold h-12"
@@ -354,6 +495,11 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
                   <Loader2 className="w-5 h-5 ml-2 animate-spin" strokeWidth={1.5} />
                   מפרסם...
                 </>
+              ) : scheduleDate ? (
+                <>
+                  <Calendar className="w-5 h-5 ml-2" strokeWidth={1.5} />
+                  תזמן
+                </>
               ) : (
                 <>
                   <Sparkles className="w-5 h-5 ml-2" strokeWidth={1.5} />
@@ -363,6 +509,15 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
             </Button>
           </div>
         </div>
+
+        {/* Collaborative Post Invite Dialog */}
+        <CollaborativePostInvite
+          open={showCollabInvite}
+          onOpenChange={setShowCollabInvite}
+          onCollaboratorAdded={(userId) => {
+            setCollaborators([...collaborators, userId]);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

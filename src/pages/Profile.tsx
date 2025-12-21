@@ -16,7 +16,10 @@ import {
   Heart,
   MessageCircle,
   Bookmark,
-  MoreHorizontal
+  MoreHorizontal,
+  Pin,
+  QrCode,
+  Star
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +34,9 @@ import { useQuery } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { HighlightsSection } from "@/components/HighlightsSection";
 import { RoleBadge } from "@/components/RoleBadge";
+import { QRCodeProfile } from "@/components/QRCodeProfile";
+import { CloseFriendsManager } from "@/components/CloseFriendsManager";
+import { PinnedPostsBadge } from "@/components/PinnedPostsBadge";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -41,6 +47,8 @@ const Profile = () => {
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [showCloseFriends, setShowCloseFriends] = useState(false);
 
   // Fetch user stats
   const { data: stats } = useQuery({
@@ -296,6 +304,30 @@ const Profile = () => {
             >
               <Mail className="w-4 h-4" />
             </Button>
+            <Button 
+              type="button"
+              variant="secondary"
+              className="h-9 px-4 font-semibold text-sm border border-border"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowQRCode(true);
+              }}
+            >
+              <QrCode className="w-4 h-4" />
+            </Button>
+            <Button 
+              type="button"
+              variant="secondary"
+              className="h-9 px-4 font-semibold text-sm border border-border"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowCloseFriends(true);
+              }}
+            >
+              <Star className="w-4 h-4" />
+            </Button>
           </div>
 
           {/* Story Highlights */}
@@ -364,11 +396,13 @@ const Profile = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Posts Grid */}
           <TabsContent value="posts" className="mt-0">
             {posts && posts.length > 0 ? (
               <div className="grid grid-cols-3 gap-0.5">
-                {posts.map((post) => (
+                {/* Show pinned posts first */}
+                {posts
+                  .sort((a, b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0))
+                  .map((post) => (
                   <motion.button
                     key={post.id}
                     className="aspect-square relative overflow-hidden bg-muted"
@@ -377,9 +411,14 @@ const Profile = () => {
                   >
                     <img 
                       src={post.image_url} 
-                      alt="" 
+                      alt={post.alt_text || ""} 
                       className="w-full h-full object-cover"
                     />
+                    {post.is_pinned && (
+                      <div className="absolute top-2 right-2">
+                        <PinnedPostsBadge isPinned={true} />
+                      </div>
+                    )}
                     {post.media_type === 'video' && (
                       <div className="absolute top-2 left-2">
                         <Film className="w-4 h-4 text-white drop-shadow-lg" />
@@ -449,6 +488,19 @@ const Profile = () => {
         onImageUpdated={(url) => {
           setProfile((prev: any) => ({ ...prev, avatar_url: url }));
         }}
+      />
+
+      {/* QR Code Dialog */}
+      <QRCodeProfile
+        open={showQRCode}
+        onOpenChange={setShowQRCode}
+        profile={profile}
+      />
+
+      {/* Close Friends Manager */}
+      <CloseFriendsManager
+        open={showCloseFriends}
+        onOpenChange={setShowCloseFriends}
       />
     </PageTransition>
   );

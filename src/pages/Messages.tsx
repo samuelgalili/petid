@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronDown, Edit, Camera } from "lucide-react";
+import { Loader2, ChevronDown, Edit, Camera, Ghost } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
+import { ActivityStatus } from "@/components/ActivityStatus";
+import { VanishModeToggle } from "@/components/VanishModeToggle";
 
 interface Conversation {
   userId: string;
@@ -25,6 +27,8 @@ export default function Messages() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserName, setCurrentUserName] = useState("");
+  const [vanishMode, setVanishMode] = useState(false);
+  const [showVanishDialog, setShowVanishDialog] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -136,6 +140,12 @@ export default function Messages() {
               <ChevronDown className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex items-center gap-4">
+              <button 
+                className={`p-1 ${vanishMode ? 'text-purple-500' : ''}`}
+                onClick={() => setShowVanishDialog(true)}
+              >
+                <Ghost className="h-6 w-6" />
+              </button>
               <button className="p-1">
                 <Edit className="h-6 w-6 text-foreground" />
               </button>
@@ -190,9 +200,9 @@ export default function Messages() {
                         {conversation.userName.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    {conversation.isOnline && (
-                      <div className="absolute bottom-0 left-0 w-4 h-4 bg-success rounded-full border-2 border-card" />
-                    )}
+                    <div className="absolute bottom-0 left-0">
+                      <ActivityStatus userId={conversation.userId} showText={false} />
+                    </div>
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -220,6 +230,14 @@ export default function Messages() {
           )}
         </div>
       </div>
+
+      {/* Vanish Mode Dialog */}
+      <VanishModeToggle
+        open={showVanishDialog}
+        onOpenChange={setShowVanishDialog}
+        vanishMode={vanishMode}
+        onToggle={setVanishMode}
+      />
       
       <BottomNav />
     </div>
