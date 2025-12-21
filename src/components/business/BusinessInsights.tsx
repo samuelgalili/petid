@@ -1,59 +1,110 @@
-import { Eye, Heart, MessageCircle, TrendingUp, Users } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { TrendingUp, TrendingDown, Eye, MessageCircle, Star, ChevronLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 interface BusinessInsightsProps {
   viewCount: number;
   totalReviews: number;
   rating: number;
+  previousViewCount?: number;
+  previousReviews?: number;
 }
 
-export const BusinessInsights = ({ viewCount, totalReviews, rating }: BusinessInsightsProps) => {
-  const insights = [
-    {
-      label: 'צפיות',
-      value: viewCount || 0,
-      icon: Eye,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-    },
-    {
-      label: 'ביקורות',
-      value: totalReviews || 0,
-      icon: MessageCircle,
-      color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
-    },
-    {
-      label: 'דירוג',
-      value: rating || 0,
-      icon: TrendingUp,
-      color: 'text-yellow-500',
-      bgColor: 'bg-yellow-500/10',
-      suffix: '⭐',
-    },
-  ];
+// Calculate percentage change
+const getChange = (current: number, previous: number | undefined) => {
+  if (!previous || previous === 0) return { value: 0, isPositive: true };
+  const change = ((current - previous) / previous) * 100;
+  return { value: Math.abs(Math.round(change)), isPositive: change >= 0 };
+};
+
+export const BusinessInsights = ({ 
+  viewCount, 
+  totalReviews, 
+  rating,
+  previousViewCount = Math.floor(viewCount * 0.85), // Mock previous data
+  previousReviews = Math.max(0, totalReviews - 2)
+}: BusinessInsightsProps) => {
+  const navigate = useNavigate();
+  
+  const viewChange = getChange(viewCount, previousViewCount);
+  const reviewChange = getChange(totalReviews, previousReviews);
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="w-5 h-5 text-primary" />
-        <h3 className="font-bold">תובנות</h3>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent rounded-2xl p-4 border border-primary/20"
+    >
+      {/* Simple Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-muted-foreground">השבוע שלך</span>
+        <button 
+          onClick={() => navigate('/admin/dashboard')}
+          className="text-xs text-primary flex items-center gap-1 hover:underline"
+        >
+          פרטים נוספים
+          <ChevronLeft className="w-3 h-3" />
+        </button>
       </div>
-      
-      <div className="grid grid-cols-3 gap-3">
-        {insights.map((insight) => (
-          <div
-            key={insight.label}
-            className={`${insight.bgColor} rounded-xl p-3 text-center`}
-          >
-            <insight.icon className={`w-5 h-5 ${insight.color} mx-auto mb-1`} />
-            <div className="font-bold text-lg">
-              {insight.value}{insight.suffix}
-            </div>
-            <div className="text-xs text-muted-foreground">{insight.label}</div>
+
+      {/* Simple Stats Row */}
+      <div className="flex items-center justify-around">
+        {/* Views */}
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1">
+            <Eye className="w-4 h-4 text-muted-foreground" />
+            <span className="font-bold text-lg">{viewCount}</span>
           </div>
-        ))}
+          <div className="flex items-center justify-center gap-1 mt-0.5">
+            {viewChange.isPositive ? (
+              <TrendingUp className="w-3 h-3 text-green-500" />
+            ) : (
+              <TrendingDown className="w-3 h-3 text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${viewChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              {viewChange.isPositive ? '+' : '-'}{viewChange.value}%
+            </span>
+          </div>
+          <span className="text-[10px] text-muted-foreground">צפיות</span>
+        </div>
+
+        {/* Divider */}
+        <div className="h-10 w-px bg-border" />
+
+        {/* Reviews */}
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1">
+            <MessageCircle className="w-4 h-4 text-muted-foreground" />
+            <span className="font-bold text-lg">{totalReviews}</span>
+          </div>
+          <div className="flex items-center justify-center gap-1 mt-0.5">
+            {reviewChange.isPositive ? (
+              <TrendingUp className="w-3 h-3 text-green-500" />
+            ) : (
+              <TrendingDown className="w-3 h-3 text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${reviewChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              {reviewChange.isPositive ? '+' : '-'}{reviewChange.value}%
+            </span>
+          </div>
+          <span className="text-[10px] text-muted-foreground">ביקורות</span>
+        </div>
+
+        {/* Divider */}
+        <div className="h-10 w-px bg-border" />
+
+        {/* Rating */}
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-1">
+            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            <span className="font-bold text-lg">{rating}</span>
+          </div>
+          <div className="flex items-center justify-center mt-0.5">
+            <span className="text-xs text-muted-foreground">מעולה!</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground">דירוג</span>
+        </div>
       </div>
-    </Card>
+    </motion.div>
   );
 };

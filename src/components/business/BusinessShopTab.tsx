@@ -1,9 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { ShoppingBag, Tag, Plus } from 'lucide-react';
+import { ShoppingBag, Tag, Plus, X, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface BusinessProduct {
   id: string;
@@ -23,6 +25,9 @@ interface BusinessShopTabProps {
 }
 
 export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) => {
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
   const { data: products, isLoading } = useQuery({
     queryKey: ['business-products', businessId],
     queryFn: async () => {
@@ -38,15 +43,50 @@ export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) =
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase
+        .from('business_products')
+        .delete()
+        .eq('id', productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-products', businessId] });
+      toast.success('המוצר נמחק');
+      setSelectedProduct(null);
+    },
+    onError: () => {
+      toast.error('שגיאה במחיקה');
+    }
+  });
+
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ productId, isFeatured }: { productId: string; isFeatured: boolean }) => {
+      const { error } = await supabase
+        .from('business_products')
+        .update({ is_featured: !isFeatured })
+        .eq('id', productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-products', businessId] });
+      toast.success('המוצר עודכן');
+    }
+  });
+
+  // Handle long press for mobile
+  const handleLongPress = (productId: string) => {
+    if (isOwner) {
+      setSelectedProduct(productId);
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 p-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="animate-pulse">
-            <div className="aspect-square bg-muted rounded-xl" />
-            <div className="h-4 bg-muted rounded mt-2 w-3/4" />
-            <div className="h-3 bg-muted rounded mt-1 w-1/2" />
-          </div>
+      <div className="grid grid-cols-3 gap-1 p-1">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="animate-pulse aspect-square bg-muted" />
         ))}
       </div>
     );
@@ -63,7 +103,7 @@ export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) =
           {isOwner ? 'הוסף מוצרים לחנות שלך' : 'העסק עדיין לא הוסיף מוצרים'}
         </p>
         {isOwner && (
-          <Button className="gap-2">
+          <Button className="gap-2 rounded-xl">
             <Plus className="w-4 h-4" />
             הוסף מוצר
           </Button>
@@ -73,78 +113,117 @@ export const BusinessShopTab = ({ businessId, isOwner }: BusinessShopTabProps) =
   }
 
   return (
-    <div className="p-4">
-      {/* Categories */}
-      <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
-        <Badge variant="default" className="cursor-pointer whitespace-nowrap">הכל</Badge>
-        {Array.from(new Set(products.map(p => p.category).filter(Boolean))).map((cat) => (
-          <Badge key={cat} variant="outline" className="cursor-pointer whitespace-nowrap">
-            {cat}
-          </Badge>
-        ))}
-      </div>
-
-      {/* Products Grid */}
-      <div className="grid grid-cols-2 gap-3">
+    <div className="relative">
+      {/* Instagram-style Grid */}
+      <div className="grid grid-cols-3 gap-0.5">
         {products.map((product, index) => (
           <motion.div
             key={product.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="group cursor-pointer"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: index * 0.03 }}
+            className="relative aspect-square cursor-pointer group"
+            onContextMenu={(e) => {
+              e.preventDefault();
+              handleLongPress(product.id);
+            }}
+            onClick={() => isOwner && selectedProduct !== product.id && setSelectedProduct(null)}
           >
-            <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              
-              {/* Sale Badge */}
-              {product.original_price && product.original_price > product.price && (
-                <Badge className="absolute top-2 right-2 bg-red-500 text-white">
-                  <Tag className="w-3 h-3 mr-1" />
-                  מבצע
-                </Badge>
-              )}
-
-              {/* Featured Badge */}
-              {product.is_featured && (
-                <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
-                  מומלץ
-                </Badge>
-              )}
-
-              {/* Out of Stock */}
-              {!product.in_stock && (
-                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                  <span className="font-bold text-muted-foreground">אזל</span>
-                </div>
-              )}
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+            
+            {/* Hover overlay with price */}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white font-bold">₪{product.price}</span>
             </div>
 
-            <div className="mt-2">
-              <h4 className="font-medium text-sm line-clamp-1">{product.name}</h4>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="font-bold text-primary">₪{product.price}</span>
-                {product.original_price && product.original_price > product.price && (
-                  <span className="text-muted-foreground text-sm line-through">
-                    ₪{product.original_price}
-                  </span>
-                )}
+            {/* Sale Badge - Small */}
+            {product.original_price && product.original_price > product.price && (
+              <div className="absolute top-1 right-1">
+                <Tag className="w-3 h-3 text-red-500" />
               </div>
-            </div>
+            )}
+
+            {/* Featured indicator */}
+            {product.is_featured && (
+              <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-primary" />
+            )}
+
+            {/* Out of Stock */}
+            {!product.in_stock && (
+              <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                <span className="text-xs font-bold text-muted-foreground">אזל</span>
+              </div>
+            )}
+
+            {/* Quick Actions for Owner (on selection) */}
+            <AnimatePresence>
+              {isOwner && selectedProduct === product.id && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="absolute inset-0 bg-black/70 flex items-center justify-center gap-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => setSelectedProduct(null)}
+                    className="absolute top-2 right-2 text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  
+                  <button 
+                    className="flex flex-col items-center gap-1 text-white"
+                    onClick={() => toggleFeaturedMutation.mutate({ productId: product.id, isFeatured: product.is_featured || false })}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                      <Edit2 className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs">{product.is_featured ? 'הסר מומלץ' : 'סמן מומלץ'}</span>
+                  </button>
+                  
+                  <button 
+                    className="flex flex-col items-center gap-1 text-white"
+                    onClick={() => deleteMutation.mutate(product.id)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-red-500/50 flex items-center justify-center">
+                      <Trash2 className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs">מחק</span>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ))}
+
+        {/* Add Product Button for Owner - as grid item */}
+        {isOwner && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="aspect-square bg-muted border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 hover:border-primary hover:bg-primary/5 transition-colors"
+          >
+            <Plus className="w-6 h-6 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">הוסף</span>
+          </motion.button>
+        )}
       </div>
 
-      {/* Add Product Button for Owner */}
-      {isOwner && (
-        <Button className="w-full mt-6 gap-2">
-          <Plus className="w-4 h-4" />
-          הוסף מוצר
-        </Button>
+      {/* Floating tip for owners */}
+      {isOwner && products.length > 0 && !selectedProduct && (
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-center text-xs text-muted-foreground mt-4 px-4"
+        >
+          💡 לחץ לחיצה ארוכה על מוצר לעריכה מהירה
+        </motion.p>
       )}
     </div>
   );
