@@ -92,6 +92,9 @@ const AdminProducts = () => {
     },
   });
 
+  // Default business ID for the store
+  const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
+
   const saveMutation = useMutation({
     mutationFn: async (product: Partial<ProductData>) => {
       const productData = {
@@ -124,12 +127,12 @@ const AdminProducts = () => {
           new_values: product,
         });
       } else {
-        // For new products, we need a business_id
+        // For new products, use the default business
         const { error } = await supabase
           .from("business_products")
           .insert({
             ...productData,
-            business_id: "00000000-0000-0000-0000-000000000000", // Placeholder
+            business_id: product.business_id || DEFAULT_BUSINESS_ID,
           });
 
         if (error) throw error;
