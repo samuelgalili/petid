@@ -252,7 +252,7 @@ export default function Documents() {
           <span>"{docToDelete.title}" נמחק</span>
           <button
             onClick={() => handleUndoDelete()}
-            className="px-3 py-1.5 bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+            className="px-3 py-1.5 bg-gradient-to-r from-primary via-accent to-primary-light text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
           >
             ביטול
           </button>
@@ -375,17 +375,17 @@ export default function Documents() {
         }}
       />
       
-      <div className="min-h-screen bg-background pb-28">
+      <div className="min-h-screen bg-background pb-28" dir="rtl">
         <div className="container mx-auto px-4 pt-4 pb-6 max-w-lg">
-          {/* Header Section */}
+          {/* Header Section with Gradient */}
           <div className="mb-5 text-center">
-            <div className="w-14 h-14 mx-auto mb-2.5 rounded-2xl bg-gradient-primary p-[2px] shadow-lg shadow-primary/20">
-              <div className="w-full h-full rounded-[12px] bg-card flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary" />
+            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-primary via-accent to-primary-light p-[2px] shadow-lg shadow-primary/20">
+              <div className="w-full h-full rounded-[14px] bg-card flex items-center justify-center">
+                <FileText className="w-7 h-7 text-primary" />
               </div>
             </div>
-            <h2 className="text-lg font-bold text-foreground">המסמכים שלי</h2>
-            <p className="text-muted-foreground text-xs mt-0.5">ניהול אישורי חיסון ומסמכים רפואיים</p>
+            <h2 className="text-xl font-bold text-foreground">המסמכים שלי</h2>
+            <p className="text-muted-foreground text-sm mt-1">ניהול אישורי חיסון ומסמכים רפואיים</p>
           </div>
 
           {/* Search Input - Separate */}
@@ -451,16 +451,16 @@ export default function Documents() {
 
           {/* Upload Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-card rounded-3xl">
-              {/* Header */}
-              <div className="bg-primary p-5">
+            <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-card rounded-3xl" dir="rtl">
+              {/* Header with Gradient */}
+              <div className="bg-gradient-to-r from-primary via-accent to-primary-light p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-primary-foreground font-bold text-lg">העלאת מסמך חדש</h2>
-                    <p className="text-primary-foreground/80 text-sm mt-1">שמור את המסמכים החשובים</p>
+                    <h2 className="text-white font-bold text-lg">העלאת מסמך חדש</h2>
+                    <p className="text-white/80 text-sm mt-1">שמור את המסמכים החשובים</p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                    <Upload className="w-6 h-6 text-primary-foreground" />
+                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </div>
@@ -468,11 +468,11 @@ export default function Documents() {
               <div className="p-5 space-y-4">
                 {/* Pet Selection */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium flex items-center gap-2">
+                  <Label className="text-foreground font-medium flex items-center gap-2">
                     <span>🐾</span> חיית מחמד
                   </Label>
                   <Select value={uploadPetId} onValueChange={setUploadPetId}>
-                    <SelectTrigger className="h-12 rounded-xl border-gray-200">
+                    <SelectTrigger className="h-12 rounded-xl border-border">
                       <SelectValue placeholder="בחר חיית מחמד" />
                     </SelectTrigger>
                     <SelectContent>
@@ -487,11 +487,11 @@ export default function Documents() {
 
                 {/* Document Type */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium flex items-center gap-2">
+                  <Label className="text-foreground font-medium flex items-center gap-2">
                     <span>📄</span> סוג מסמך
                   </Label>
                   <Select value={uploadDocType} onValueChange={setUploadDocType}>
-                    <SelectTrigger className="h-12 rounded-xl border-gray-200">
+                    <SelectTrigger className="h-12 rounded-xl border-border">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -504,32 +504,32 @@ export default function Documents() {
 
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium flex items-center gap-2">
+                  <Label className="text-foreground font-medium flex items-center gap-2">
                     <span>✏️</span> כותרת
                   </Label>
                   <Input
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
                     placeholder="לדוגמה: חיסון כלבת 2024"
-                    className="h-12 rounded-xl border-gray-200"
+                    className="h-12 rounded-xl border-border"
                   />
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium">תיאור (אופציונלי)</Label>
+                  <Label className="text-foreground font-medium">תיאור (אופציונלי)</Label>
                   <Textarea
                     value={uploadDescription}
                     onChange={(e) => setUploadDescription(e.target.value)}
                     placeholder="הוסף פרטים נוספים..."
                     rows={2}
-                    className="rounded-xl border-gray-200 resize-none"
+                    className="rounded-xl border-border resize-none"
                   />
                 </div>
 
                 {/* File Upload */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700 font-medium flex items-center gap-2">
+                  <Label className="text-foreground font-medium flex items-center gap-2">
                     <span>📁</span> קובץ
                   </Label>
                   <label
@@ -603,20 +603,20 @@ export default function Documents() {
           {/* Documents List */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] p-[2px] animate-spin">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-[#DD2A7B]" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary via-accent to-primary-light p-[2px] animate-spin">
+                <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-primary" />
                 </div>
               </div>
-              <p className="mt-3 text-gray-500 text-xs">טוען מסמכים...</p>
+              <p className="mt-4 text-muted-foreground text-sm">טוען מסמכים...</p>
             </div>
           ) : filteredDocuments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4">
-              <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
-                <FileText className="w-8 h-8 text-gray-300" />
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center mb-4">
+                <FileText className="w-10 h-10 text-muted-foreground" />
               </div>
-              <h3 className="text-base font-bold text-gray-800 mb-1">אין מסמכים</h3>
-              <p className="text-gray-500 text-xs text-center max-w-[200px] mb-4">
+              <h3 className="text-lg font-bold text-foreground mb-2">אין מסמכים</h3>
+              <p className="text-muted-foreground text-sm text-center max-w-[220px] mb-5">
                 {documents.length === 0
                   ? "העלה את המסמכים של חיית המחמד שלך"
                   : "לא נמצאו מסמכים התואמים לסינון"}
@@ -624,20 +624,20 @@ export default function Documents() {
               {documents.length === 0 && (
                 <Button 
                   onClick={() => setIsDialogOpen(true)}
-                  className="bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white rounded-lg px-5 h-9 text-sm font-medium hover:opacity-90"
+                  className="bg-gradient-to-r from-primary via-accent to-primary-light text-white rounded-xl px-6 h-11 text-sm font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-opacity gap-2"
                 >
-                  <Upload className="w-4 h-4 ml-1.5" />
+                  <Upload className="w-4 h-4" />
                   העלה מסמך
                 </Button>
               )}
             </div>
           ) : (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between px-1 mb-2">
-                <span className="text-xs font-medium text-gray-600">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1 mb-3">
+                <span className="text-sm font-medium text-foreground">
                   {filteredDocuments.length} מסמכים
                 </span>
-                <span className="text-[10px] text-gray-400">החלק שמאלה למחיקה</span>
+                <span className="text-xs text-muted-foreground">החלק שמאלה למחיקה</span>
               </div>
               {filteredDocuments.map((doc, index) => (
                 <SwipeableDocumentCard
