@@ -88,6 +88,9 @@ import BusinessDirectory from "./pages/BusinessDirectory";
 import BusinessProfile from "./pages/BusinessProfile";
 import ConvertToBusiness from "./pages/ConvertToBusiness";
 import PrivacySettings from "./pages/PrivacySettings";
+import Pricing from "./pages/Pricing";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailed from "./pages/PaymentFailed";
 
 import Support from "./pages/Support";
 import Deals from "./pages/Deals";
@@ -190,6 +193,9 @@ const AnimatedRoutes = () => {
         <Route path="/business/:id" element={<PageTransition><BusinessProfile /></PageTransition>} />
         <Route path="/convert-to-business" element={<ProtectedRoute><PageTransition><ConvertToBusiness /></PageTransition></ProtectedRoute>} />
         <Route path="/privacy-settings" element={<ProtectedRoute><PageTransition><PrivacySettings /></PageTransition></ProtectedRoute>} />
+        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
+        <Route path="/payment-success" element={<PageTransition><PaymentSuccess /></PageTransition>} />
+        <Route path="/payment-failed" element={<PageTransition><PaymentFailed /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
         </AnimatePresence>
