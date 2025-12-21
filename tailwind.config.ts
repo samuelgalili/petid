@@ -15,15 +15,16 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
-  				'Roboto',
-  				'ui-sans-serif',
+  				'Heebo',
   				'system-ui',
   				'-apple-system',
   				'BlinkMacSystemFont',
   				'Segoe UI',
-  				'Helvetica Neue',
-  				'Arial',
-  				'Noto Sans',
+  				'sans-serif'
+  			],
+  			heebo: [
+  				'Heebo',
+  				'system-ui',
   				'sans-serif'
   			],
   			jakarta: [
