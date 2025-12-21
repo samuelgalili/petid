@@ -1,14 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "./useAdmin";
 
 export const useAdminNotifications = () => {
   const { toast } = useToast();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, loading: isLoading } = useAdmin();
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    // Don't set up subscription while loading or if not admin
+    if (isLoading || !isAdmin) {
+      return;
+    }
+
+    // Prevent duplicate subscriptions
+    if (channelRef.current) {
+      return;
+    }
 
     console.log("Admin notifications: Setting up realtime subscription");
 
@@ -62,12 +71,19 @@ export const useAdminNotifications = () => {
         }
       )
       .subscribe((status) => {
-        console.log("Admin notifications subscription status:", status);
+        if (status !== 'SUBSCRIBED') {
+          console.log("Admin notifications subscription status:", status);
+        }
       });
+
+    channelRef.current = channel;
 
     return () => {
       console.log("Admin notifications: Cleaning up realtime subscription");
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [isAdmin, toast]);
+  }, [isAdmin, isLoading, toast]);
 };

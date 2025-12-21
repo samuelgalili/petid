@@ -75,9 +75,9 @@ const EditProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-24" dir="rtl">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-4">
+      <div className="bg-background border-b border-border sticky top-0 z-10 px-4 py-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <Button
             variant="ghost"
@@ -107,23 +107,23 @@ const EditProfile = () => {
           <div className="relative mb-4">
             <Avatar className="w-24 h-24">
               <AvatarImage src={profile?.avatar_url} />
-              <AvatarFallback className="text-2xl bg-gray-200 text-gray-600 font-black">
+              <AvatarFallback className="text-2xl bg-muted text-muted-foreground font-black">
                 {fullName?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <button
               onClick={() => setIsImageEditorOpen(true)}
-              className="absolute bottom-0 right-0 w-8 h-8 bg-[#0095F6] rounded-full flex items-center justify-center shadow-md border-2 border-white"
+              className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-md border-2 border-background"
             >
-              <Camera className="w-4 h-4 text-white" />
+              <Camera className="w-4 h-4 text-primary-foreground" />
             </button>
           </div>
           <Button
             variant="ghost"
             onClick={() => setIsImageEditorOpen(true)}
-            className="text-[#0095F6] font-semibold font-jakarta"
+            className="text-primary font-semibold font-jakarta"
           >
-            Change profile photo
+            שינוי תמונת פרופיל
           </Button>
         </div>
 
@@ -131,35 +131,35 @@ const EditProfile = () => {
         <div className="space-y-6">
           {/* Name Field */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium text-gray-900 font-jakarta">
-              Name
+            <Label htmlFor="name" className="text-sm font-medium text-foreground font-jakarta">
+              שם
             </Label>
             <div className="relative">
-              <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 id="name"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="pr-10 font-jakarta"
-                placeholder="Your name"
+                placeholder="השם שלך"
               />
             </div>
           </div>
 
           {/* Email Field (Read-only) */}
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-gray-900 font-jakarta">
-              Email
+            <Label htmlFor="email" className="text-sm font-medium text-foreground font-jakarta">
+              אימייל
             </Label>
             <div className="relative">
-              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
                 value={profile?.email || ""}
                 disabled
-                className="pr-10 font-jakarta bg-gray-50 text-gray-500"
+                className="pr-10 font-jakarta bg-muted text-muted-foreground"
               />
             </div>
             <p className="text-xs text-muted-foreground font-jakarta">לא ניתן לשנות את האימייל</p>
