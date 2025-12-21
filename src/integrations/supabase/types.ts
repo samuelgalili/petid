@@ -427,6 +427,175 @@ export type Database = {
         }
         Relationships: []
       }
+      cardcom_customers: {
+        Row: {
+          company: string | null
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cardcom_events: {
+        Row: {
+          id: string
+          payload_json: Json
+          received_at: string
+        }
+        Insert: {
+          id?: string
+          payload_json: Json
+          received_at?: string
+        }
+        Update: {
+          id?: string
+          payload_json?: Json
+          received_at?: string
+        }
+        Relationships: []
+      }
+      cardcom_payments: {
+        Row: {
+          amount_ils: number
+          cardcom_transaction_id: string | null
+          created_at: string
+          id: string
+          product_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_ils: number
+          cardcom_transaction_id?: string | null
+          created_at?: string
+          id?: string
+          product_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_ils?: number
+          cardcom_transaction_id?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cardcom_payments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "cardcom_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cardcom_products: {
+        Row: {
+          active: boolean
+          billing_period: string | null
+          cardcom_product_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price_ils: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          billing_period?: string | null
+          cardcom_product_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          price_ils: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          billing_period?: string | null
+          cardcom_product_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price_ils?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cardcom_subscriptions: {
+        Row: {
+          cardcom_subscription_id: string | null
+          created_at: string
+          current_period_end: string | null
+          id: string
+          product_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cardcom_subscription_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          product_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cardcom_subscription_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          product_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cardcom_subscriptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "cardcom_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_participants: {
         Row: {
           challenge_id: string
