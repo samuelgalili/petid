@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Sparkles, ImageIcon, Loader2, ExternalLink, Search } from "lucide-react";
+import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -99,6 +104,10 @@ export const ProductFormDialog = ({
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichedData, setEnrichedData] = useState<EnrichedData | null>(null);
   const [showEnrichmentDetails, setShowEnrichmentDetails] = useState(false);
+  const [showImageSearch, setShowImageSearch] = useState(false);
+  const [imageSearchQuery, setImageSearchQuery] = useState("");
+  const [imageSearchResults, setImageSearchResults] = useState<string[]>([]);
+  const [isSearchingImages, setIsSearchingImages] = useState(false);
   const enrichTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const enrichProduct = useCallback(async (productName: string, sku?: string) => {
@@ -246,6 +255,60 @@ export const ProductFormDialog = ({
     }
   };
 
+  const handleImageSearch = async () => {
+    const query = imageSearchQuery || product?.name || "";
+    if (!query) {
+      toast({
+        title: "נא להזין מילות חיפוש",
+        description: "הזן שם מוצר או מילות מפתח לחיפוש",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSearchingImages(true);
+    setImageSearchResults([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("search-product-image", {
+        body: { query, limit: 8 },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.images && data.images.length > 0) {
+        setImageSearchResults(data.images);
+      } else {
+        toast({
+          title: "לא נמצאו תמונות",
+          description: "נסה מילות חיפוש אחרות",
+        });
+      }
+    } catch (err) {
+      console.error("Image search failed:", err);
+      toast({
+        title: "שגיאה בחיפוש",
+        description: "לא ניתן לחפש תמונות כרגע",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearchingImages(false);
+    }
+  };
+
+  const selectSearchImage = (imageUrl: string) => {
+    onProductChange({ ...product, image_url: imageUrl });
+    setShowImageSearch(false);
+    setImageSearchResults([]);
+    setImageSearchQuery("");
+    toast({
+      title: "התמונה נבחרה",
+      description: "התמונה עודכנה בהצלחה",
+    });
+  };
+
   if (!product) return null;
 
   return (
@@ -304,33 +367,131 @@ export const ProductFormDialog = ({
             </div>
           </div>
 
-          {/* Image Upload */}
-          <div className="flex justify-center">
-            <div 
-              className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center cursor-pointer hover:border-primary transition-colors overflow-hidden relative"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {isUploading ? (
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              ) : product.image_url ? (
-                <img src={product.image_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <ImageIcon className="w-8 h-8 mx-auto mb-1" />
-                  <span className="text-xs">העלה תמונה</span>
+          {/* Image Section */}
+          <div className="space-y-3">
+            <Label className="text-center block">תמונת המוצר</Label>
+            <div className="flex flex-col items-center gap-3">
+              {/* Image Preview */}
+              <div className="relative">
+                <div 
+                  className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden bg-muted/30"
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                  ) : product.image_url ? (
+                    <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <ImageIcon className="w-8 h-8 mx-auto mb-1" />
+                      <span className="text-xs">אין תמונה</span>
+                    </div>
+                  )}
                 </div>
-              )}
+                {product.image_url && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full"
+                    onClick={() => onProductChange({ ...product, image_url: "" })}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Image Actions */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  <Upload className="w-4 h-4 ml-2" />
+                  העלה תמונה
+                </Button>
+                
+                <Popover open={showImageSearch} onOpenChange={setShowImageSearch}>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" size="sm">
+                      <Globe className="w-4 h-4 ml-2" />
+                      חפש ברשת
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="center" dir="rtl">
+                    <div className="space-y-3">
+                      <div className="font-medium text-sm">חיפוש תמונה ברשת</div>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder={product?.name || "הזן מילות חיפוש..."}
+                          value={imageSearchQuery}
+                          onChange={(e) => setImageSearchQuery(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleImageSearch()}
+                          className="flex-1"
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          onClick={handleImageSearch}
+                          disabled={isSearchingImages}
+                        >
+                          {isSearchingImages ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Search className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {/* Search Results */}
+                      {imageSearchResults.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                          {imageSearchResults.map((url, idx) => (
+                            <div
+                              key={idx}
+                              className="relative aspect-square cursor-pointer rounded-md overflow-hidden border-2 border-transparent hover:border-primary transition-colors group"
+                              onClick={() => selectSearchImage(url)}
+                            >
+                              <img
+                                src={url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-primary/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Check className="w-5 h-5 text-white" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {isSearchingImages && (
+                        <div className="text-center py-4">
+                          <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                          <p className="text-xs text-muted-foreground mt-2">מחפש תמונות...</p>
+                        </div>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onImageUpload(file);
+                }}
+              />
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) onImageUpload(file);
-              }}
-            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
