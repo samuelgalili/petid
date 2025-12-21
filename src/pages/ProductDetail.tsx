@@ -205,7 +205,8 @@ const ProductDetail = () => {
       if (diff > 0) nextImage();else prevImage();
     }
   };
-  return <div className="min-h-screen pb-52 bg-background" dir="rtl">
+  return (
+    <div className="min-h-screen pb-52 bg-background" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center justify-between px-4 py-3">
@@ -382,30 +383,31 @@ const ProductDetail = () => {
             <h3 className="text-base font-bold mb-4 text-gray-800 font-jakarta">למה חיית המחמד שלך תאהב את זה</h3>
             <div className="grid grid-cols-2 gap-3">
               {benefits.map((benefit, idx) => {
-              const Icon = benefit.icon;
-              return <motion.div key={idx} className="flex items-center gap-3 p-3 rounded-xl" style={{
-                background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
-                border: '1.5px solid transparent'
-              }} initial={{
-                opacity: 0,
-                y: 10
-              }} animate={{
-                opacity: 1,
-                y: 0
-              }} transition={{
-                delay: 0.2 + idx * 0.05
-              }}>
+                const Icon = benefit.icon;
+                return (
+                  <motion.div 
+                    key={idx} 
+                    className="flex items-center gap-3 p-3 rounded-xl" 
+                    style={{
+                      background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+                      border: '1.5px solid transparent'
+                    }} 
+                    initial={{ opacity: 0, y: 10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.2 + idx * 0.05 }}
+                  >
                     <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                  background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
-                }}>
+                      background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+                    }}>
                       <Icon className="w-4 h-4 text-white" />
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-800 text-xs font-jakarta">{benefit.title}</h4>
                       <p className="text-[10px] text-gray-500 font-jakarta leading-tight">{benefit.description}</p>
                     </div>
-                  </motion.div>;
-            })}
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
 
@@ -681,18 +683,28 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
-            <Button variant="outline" size="lg" className="flex-1 rounded-xl font-bold font-jakarta h-12 text-gray-700" style={{
-            background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
-            border: '2px solid transparent'
-          }} onClick={handleAddToCart}>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="flex-1 rounded-xl font-bold font-jakarta h-12 text-gray-700" 
+              style={{
+                background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+                border: '2px solid transparent'
+              }} 
+              onClick={handleAddToCart}
+            >
               <ShoppingCart className="w-4 h-4 ml-2" />
               הוסף לעגלה
             </Button>
-            <Button size="lg" className="flex-1 text-white rounded-xl font-bold font-jakarta shadow-lg h-12" style={{
-            background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
-          }} onClick={handleBuyNow}>
+            <Button 
+              size="lg" 
+              className="flex-1 text-white rounded-xl font-bold font-jakarta shadow-lg h-12" 
+              style={{
+                background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+              }} 
+              onClick={handleBuyNow}
+            >
               קנה עכשיו
             </Button>
           </div>
