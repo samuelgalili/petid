@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import confetti from "canvas-confetti";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
+import { supabase } from "@/integrations/supabase/client";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -36,12 +38,12 @@ const Shop = () => {
     const saved = localStorage.getItem("petid-search-history");
     return saved ? JSON.parse(saved) : [];
   });
-  const [favorites, setFavorites] = useState<number[]>(() => {
+  const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem("petid-favorites");
     return saved ? JSON.parse(saved) : [];
   });
 
-  const toggleFavorite = useCallback((productId: number, e?: React.MouseEvent) => {
+  const toggleFavorite = useCallback((productId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setFavorites(prev => {
       const newFavorites = prev.includes(productId)
@@ -90,172 +92,42 @@ const Shop = () => {
     });
   }, [carouselApi]);
 
-  const products = [
-    {
-      id: 1,
-      name: "מזון יבש פרימיום",
-      description: "מזון איכותי לכלבים בוגרים, עשיר בחלבון ובויטמינים חיוניים לבריאות מיטבית",
-      price: 189,
-      originalPrice: 249,
-      images: [
-        "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
-      popularity: 95,
-      likes: 1247,
-      rating: 4.8,
-      reviews: 324,
-      inStock: true,
-      freeShipping: true,
+  // Fetch products from database
+  const { data: dbProducts = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ["shop-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("business_products")
+        .select("*")
+        .eq("in_stock", true)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
     },
-    {
-      id: 2,
-      name: "חטיפי עוף מיובשים",
-      description: "חטיפים טבעיים 100% מעוף איכותי, ללא תוספים או חומרים משמרים",
-      price: 45,
-      originalPrice: null,
-      images: [
-        "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=500&h=500&fit=crop",
-      popularity: 78,
-      likes: 892,
+  });
+
+  // Transform database products to the format expected by the UI
+  const products = useMemo(() => {
+    return dbProducts.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description || "",
+      price: p.price,
+      originalPrice: p.original_price || p.sale_price ? p.price : null,
+      salePrice: p.sale_price,
+      images: p.images?.length ? p.images : [p.image_url],
+      image: p.image_url,
+      popularity: 80, // Default values for now
+      likes: Math.floor(Math.random() * 1000) + 100,
       rating: 4.5,
-      reviews: 156,
-      inStock: true,
-      freeShipping: false,
-    },
-    {
-      id: 3,
-      name: "מיטה אורתופדית",
-      description: "מיטה נוחה עם קצף זיכרון לתמיכה מושלמת בגוף, מתאימה לכלבים בכל הגילאים",
-      price: 299,
-      originalPrice: 399,
-      images: [
-        "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=500&h=500&fit=crop",
-      popularity: 88,
-      likes: 2103,
-      rating: 4.9,
-      reviews: 487,
-      inStock: true,
-      freeShipping: true,
-    },
-    {
-      id: 4,
-      name: "צעצוע אינטראקטיבי",
-      description: "צעצוע חכם שמפעיל את הכלב ומעסיק אותו לשעות, מתאים לכל הגזעים",
-      price: 129,
-      originalPrice: null,
-      images: [
-        "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500&h=500&fit=crop",
-      popularity: 65,
-      likes: 567,
-      rating: 4.3,
-      reviews: 89,
-      inStock: true,
-      freeShipping: false,
-    },
-    {
-      id: 5,
-      name: "שמפו טיפולי",
-      description: "שמפו עדין לעור רגיש, מפנק את הפרווה ומשאיר ניחוח נעים לאורך זמן",
-      price: 59,
-      originalPrice: 79,
-      images: [
-        "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
-      popularity: 72,
-      likes: 734,
-      rating: 4.6,
-      reviews: 203,
-      inStock: true,
-      freeShipping: false,
-    },
-    {
-      id: 6,
-      name: "קערה אוטומטית",
-      description: "קערת מים ואוכל חכמה עם חיישן מילוי אוטומטי, שומרת על מים טריים",
-      price: 169,
-      originalPrice: null,
-      images: [
-        "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
-      popularity: 81,
-      likes: 1456,
-      rating: 4.7,
-      reviews: 312,
-      inStock: true,
-      freeShipping: true,
-    },
-    {
-      id: 7,
-      name: "רצועה מעוצבת",
-      description: "רצועה איכותית ונוחה לאחיזה, עם חומרים עמידים ועיצוב אלגנטי",
-      price: 89,
-      originalPrice: 119,
-      images: [
-        "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
-      popularity: 77,
-      likes: 623,
-      rating: 4.4,
-      reviews: 178,
-      inStock: false,
-      freeShipping: false,
-    },
-    {
-      id: 8,
-      name: "כדור משחק",
-      description: "כדור גומי עמיד במיוחד, קופץ גבוה ומושלם למשחקי אפורט",
-      price: 35,
-      originalPrice: null,
-      images: [
-        "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500&h=500&fit=crop",
-      popularity: 69,
-      likes: 445,
-      rating: 4.2,
-      reviews: 95,
-      inStock: true,
-      freeShipping: false,
-    },
-    {
-      id: 9,
-      name: "מברשת פרווה",
-      description: "מברשת מקצועית להסרת פרווה מתה ולמניעת קשרים, עדינה לעור",
-      price: 49,
-      originalPrice: 65,
-      images: [
-        "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=500&h=500&fit=crop",
-      ],
-      image: "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
-      popularity: 74,
-      likes: 512,
-      rating: 4.5,
-      reviews: 134,
-      inStock: true,
-      freeShipping: false,
-    },
-  ];
+      reviews: Math.floor(Math.random() * 200) + 50,
+      inStock: p.in_stock ?? true,
+      freeShipping: p.price > 200,
+      category: p.category,
+      petType: p.pet_type,
+    }));
+  }, [dbProducts]);
 
   // Search suggestions based on query
   const searchSuggestions = useMemo(() => {
