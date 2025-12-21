@@ -178,11 +178,6 @@ const ProductDetail = () => {
       description: `${product.name} x${quantity} נוסף בהצלחה`
     });
   };
-    toast({
-      title: "נוסף לעגלה 🛒",
-      description: `${product.name} x${quantity} נוסף בהצלחה`
-    });
-  };
   const handleBuyNow = () => {
     handleAddToCart();
     navigate("/cart");
