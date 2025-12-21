@@ -5,6 +5,48 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function searchProductBySku(sku: string, apiKey: string): Promise<string | null> {
+  try {
+    console.log("Searching for SKU:", sku);
+    
+    const response = await fetch("https://api.firecrawl.dev/v1/search", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: `${sku} pet product Israel מוצר לחיות מחמד`,
+        limit: 5,
+        scrapeOptions: {
+          formats: ["markdown"],
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Firecrawl search error:", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("Firecrawl search results:", JSON.stringify(data).substring(0, 500));
+    
+    // Combine all search results into one context
+    let combinedContent = "";
+    if (data.data && Array.isArray(data.data)) {
+      for (const result of data.data) {
+        combinedContent += `\n\nSource: ${result.url}\nTitle: ${result.title || ""}\nContent: ${result.markdown || result.description || ""}\n`;
+      }
+    }
+    
+    return combinedContent || null;
+  } catch (error) {
+    console.error("Error searching product:", error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,38 +63,65 @@ serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+    
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // If SKU is provided, search the web first
+    let webSearchContext = "";
+    if (sku && FIRECRAWL_API_KEY) {
+      const searchResults = await searchProductBySku(sku, FIRECRAWL_API_KEY);
+      if (searchResults) {
+        webSearchContext = searchResults;
+        console.log("Found web search context for SKU");
+      }
     }
 
     const searchQuery = sku || productName;
     const categoryContext = category ? `Category: ${category}` : "";
     
-    const systemPrompt = `You are a pet products expert assistant. You help enrich product data for a pet store.
-Given a product name or SKU, provide accurate product information in Hebrew.
+    const systemPrompt = `You are a pet products expert assistant for an Israeli pet store called "PetID" (פטאיידי).
+You help enrich product data based on SKU numbers or product names.
+Your responses should be in Hebrew and match the brand voice of PetID - friendly, professional, and pet-loving.
 Focus on pet products - food, treats, toys, accessories, health products, grooming supplies.
-If you're not sure about specific details, provide reasonable estimates based on similar products.
+When analyzing web search results, extract accurate product information.
 Always respond in valid JSON format.`;
 
-    const userPrompt = `Enrich this pet product:
-Product: ${searchQuery}
+    const userPrompt = `Enrich this pet product based on the following information:
+${sku ? `SKU/מק"ט: ${sku}` : ""}
+${productName ? `Product Name: ${productName}` : ""}
 ${categoryContext}
 
-Return a JSON object with:
+${webSearchContext ? `
+Web Search Results (use this to extract accurate product information):
+${webSearchContext}
+` : ""}
+
+Return a JSON object with all these fields (use null if not applicable or unknown):
 {
-  "description": "תיאור מוצר מפורט בעברית (2-3 משפטים)",
+  "name": "שם המוצר בעברית (אם נמצא ברשת, תרגם לעברית)",
+  "description": "תיאור מוצר מפורט בעברית בסגנון של פטאיידי - ידידותי ומקצועי (2-3 משפטים)",
+  "petType": "dog" או "cat" או "both" או "other",
+  "category": "קטגוריה - אוכל יבש/אוכל רטוב/חטיפים/צעצועים/אביזרים/טיפוח/בריאות/אחר",
   "dimensions": "מידות המוצר אם רלוונטי (לדוגמה: 30x20x10 ס\"מ)",
+  "sizes": ["רשימת גדלים זמינים אם יש - S, M, L או משקל כמו 2 ק\"ג, 4 ק\"ג"],
   "colors": ["רשימת צבעים זמינים"],
   "flavors": ["רשימת טעמים אם רלוונטי למזון/חטיפים"],
+  "benefits": ["יתרונות המוצר - 3-5 יתרונות עיקריים"],
   "feedingGuide": "הוראות האכלה מומלצות אם זה מזון (לפי משקל הכלב/חתול)",
-  "brandWebsite": "כתובת אתר המותג הרשמי",
-  "suggestedPrice": מחיר מומלץ בש״ח (מספר בלבד),
-  "priceReason": "הסבר קצר למחיר המומלץ",
-  "petType": "dog" או "cat" או "both" או "other",
-  "imageSearchQuery": "search query in English to find product image"
+  "brandWebsite": "כתובת אתר המותג הרשמי הבינלאומי (לא האתר שמכר את המוצר)",
+  "suggestedPrice": מחיר מומלץ בש״ח לפי מחירי השוק בישראל - המחיר הגבוה (מספר בלבד),
+  "priceReason": "הסבר קצר למחיר המומלץ - מאיפה נלקח המחיר",
+  "imageSearchQuery": "search query in English to find product image on Google Images"
 }
 
-If a field is not applicable, use null.`;
+Important:
+- For price, use the HIGHER price found in Israeli market
+- For brand website, use the international brand's official website, NOT the Israeli retailer
+- Description should be in PetID's friendly, professional Hebrew style
+- If this is food, include detailed feeding guide based on manufacturer recommendations`;
 
     console.log("Enriching product:", searchQuery);
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Sparkles, ImageIcon, Loader2, ExternalLink } from "lucide-react";
+import { Sparkles, ImageIcon, Loader2, ExternalLink, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -40,10 +41,14 @@ interface ProductData {
 }
 
 interface EnrichedData {
+  name?: string;
   description?: string;
+  category?: string;
   dimensions?: string;
+  sizes?: string[];
   colors?: string[];
   flavors?: string[];
+  benefits?: string[];
   feedingGuide?: string;
   brandWebsite?: string;
   suggestedPrice?: number;
@@ -64,12 +69,17 @@ interface ProductFormDialogProps {
 }
 
 const categories = [
-  { value: "food", label: "מזון" },
+  { value: "dry-food", label: "אוכל יבש" },
+  { value: "wet-food", label: "אוכל רטוב" },
   { value: "treats", label: "חטיפים" },
   { value: "toys", label: "צעצועים" },
   { value: "accessories", label: "אביזרים" },
   { value: "health", label: "בריאות" },
   { value: "grooming", label: "טיפוח" },
+  { value: "beds", label: "מיטות" },
+  { value: "collars", label: "קולרים ורצועות" },
+  { value: "bowls", label: "קערות" },
+  { value: "other", label: "אחר" },
 ];
 
 export const ProductFormDialog = ({
@@ -122,29 +132,65 @@ export const ProductFormDialog = ({
         // Auto-fill fields
         const updates: Partial<ProductData> = { ...product };
         
-        if (enriched.description && !product?.description) {
+        // Fill name if enriched from SKU search
+        if (enriched.name && !product?.name) {
+          updates.name = enriched.name;
+        }
+        
+        if (enriched.description) {
           updates.description = enriched.description;
         }
+        
         if (enriched.suggestedPrice && !product?.price) {
           updates.price = enriched.suggestedPrice;
         }
+        
         if (enriched.flavors && enriched.flavors.length > 0) {
           updates.flavors = enriched.flavors;
         }
+        
         if (enriched.petType) {
           updates.pet_type = enriched.petType === "dog" ? "dog" : 
-                            enriched.petType === "cat" ? "cat" : null;
+                            enriched.petType === "cat" ? "cat" : 
+                            enriched.petType === "both" ? "both" : "other";
+        }
+        
+        // Map enriched category to our category values
+        if (enriched.category && !product?.category) {
+          const categoryMap: Record<string, string> = {
+            "אוכל יבש": "dry-food",
+            "אוכל רטוב": "wet-food",
+            "חטיפים": "treats",
+            "צעצועים": "toys",
+            "אביזרים": "accessories",
+            "בריאות": "health",
+            "טיפוח": "grooming",
+            "מיטות": "beds",
+            "קולרים ורצועות": "collars",
+            "קערות": "bowls",
+          };
+          const mappedCategory = Object.entries(categoryMap).find(
+            ([key]) => enriched.category?.includes(key)
+          );
+          if (mappedCategory) {
+            updates.category = mappedCategory[1];
+          }
         }
         
         onProductChange(updates);
         
         toast({
           title: "המוצר הועשר בהצלחה",
-          description: "המידע הושלם אוטומטית - ניתן לערוך",
+          description: sku ? "המידע נמשך מהרשת ועודכן" : "המידע הושלם אוטומטית",
         });
       }
     } catch (err) {
       console.error("Enrichment failed:", err);
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בהעשרת המוצר",
+        variant: "destructive",
+      });
     } finally {
       setIsEnriching(false);
     }
@@ -153,15 +199,16 @@ export const ProductFormDialog = ({
   const handleNameChange = (name: string) => {
     onProductChange({ ...product, name });
     
-    // Debounce enrichment
+    // Clear any pending enrichment
     if (enrichTimeoutRef.current) {
       clearTimeout(enrichTimeoutRef.current);
     }
     
-    if (name.length >= 3 && !product?.id) { // Only auto-enrich for new products
+    // Only auto-enrich for new products after 3 chars
+    if (name.length >= 3 && !product?.id) {
       enrichTimeoutRef.current = setTimeout(() => {
         enrichProduct(name, product?.sku || undefined);
-      }, 1500);
+      }, 2000);
     }
   };
 
@@ -172,10 +219,23 @@ export const ProductFormDialog = ({
       clearTimeout(enrichTimeoutRef.current);
     }
     
+    // Trigger enrichment after 5+ chars for SKU (more reliable search)
     if (sku.length >= 5 && !product?.id) {
       enrichTimeoutRef.current = setTimeout(() => {
         enrichProduct(product?.name || "", sku);
       }, 1500);
+    }
+  };
+
+  const handleSkuSearch = () => {
+    if (product?.sku && product.sku.length >= 3) {
+      enrichProduct(product?.name || "", product.sku);
+    } else {
+      toast({
+        title: "מק״ט קצר מדי",
+        description: "הזן לפחות 3 תווים לחיפוש",
+        variant: "destructive",
+      });
     }
   };
 
@@ -190,16 +250,53 @@ export const ProductFormDialog = ({
             {isEnriching && (
               <Badge variant="secondary" className="animate-pulse">
                 <Sparkles className="w-3 h-3 ml-1" />
-                מעשיר...
+                מחפש ברשת...
               </Badge>
             )}
           </DialogTitle>
+          <DialogDescription>
+            הזן מק״ט לחיפוש אוטומטי של פרטי המוצר מהרשת
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={(e) => {
           e.preventDefault();
           onSave();
         }} className="space-y-4">
+          {/* SKU with Search Button - Primary Input */}
+          <div className="bg-muted/30 p-4 rounded-lg border border-dashed border-primary/30">
+            <Label className="flex items-center gap-2 text-primary font-medium">
+              <Search className="w-4 h-4" />
+              חיפוש לפי מק״ט
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              הזן מק״ט והמערכת תמלא את כל הפרטים אוטומטית מהרשת
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={product.sku || ""}
+                onChange={(e) => handleSkuChange(e.target.value)}
+                placeholder="לדוגמה: 7290016026429"
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                onClick={handleSkuSearch}
+                disabled={isEnriching || !product.sku}
+                variant="default"
+              >
+                {isEnriching ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 ml-2" />
+                    חפש
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
           {/* Image Upload */}
           <div className="flex justify-center">
             <div 
@@ -230,37 +327,21 @@ export const ProductFormDialog = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Product Name with AI enrichment */}
+            {/* Product Name */}
             <div className="col-span-2">
-              <Label className="flex items-center gap-2">
-                שם המוצר *
-                {!product.id && (
-                  <span className="text-xs text-muted-foreground font-normal">
-                    (הקלד 3 תווים להעשרה אוטומטית)
-                  </span>
-                )}
-              </Label>
+              <Label>שם המוצר *</Label>
               <div className="relative">
                 <Input
                   value={product.name || ""}
                   onChange={(e) => handleNameChange(e.target.value)}
                   required
+                  placeholder="ימולא אוטומטית מחיפוש מק״ט"
                   className="pl-10"
                 />
                 {isEnriching && (
                   <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
                 )}
               </div>
-            </div>
-
-            {/* SKU */}
-            <div>
-              <Label>מק״ט</Label>
-              <Input
-                value={product.sku || ""}
-                onChange={(e) => handleSkuChange(e.target.value)}
-                placeholder="לדוגמה: ABC123"
-              />
             </div>
 
             {/* Category */}
@@ -280,6 +361,25 @@ export const ProductFormDialog = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Pet Type */}
+            <div>
+              <Label>סוג חיה</Label>
+              <Select 
+                value={product.pet_type || ""} 
+                onValueChange={(value) => onProductChange({ ...product, pet_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר סוג" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dog">כלב</SelectItem>
+                  <SelectItem value="cat">חתול</SelectItem>
+                  <SelectItem value="both">כלב וחתול</SelectItem>
+                  <SelectItem value="other">אחר</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             {/* Description */}
             <div className="col-span-2">
@@ -288,17 +388,17 @@ export const ProductFormDialog = ({
                 value={product.description || ""}
                 onChange={(e) => onProductChange({ ...product, description: e.target.value })}
                 rows={3}
-                placeholder="תיאור המוצר יושלם אוטומטית..."
+                placeholder="ימולא אוטומטית מחיפוש..."
               />
             </div>
 
             {/* Enrichment Details Panel */}
             {showEnrichmentDetails && enrichedData && (
-              <div className="col-span-2 bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="col-span-2 bg-primary/5 rounded-lg p-4 space-y-3 border border-primary/20">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-sm flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    מידע שהושלם אוטומטית
+                    מידע שנמשך מהרשת
                   </h4>
                   <Button
                     type="button"
@@ -315,6 +415,17 @@ export const ProductFormDialog = ({
                     <div>
                       <span className="text-muted-foreground">מידות:</span>
                       <p>{enrichedData.dimensions}</p>
+                    </div>
+                  )}
+                  
+                  {enrichedData.sizes && enrichedData.sizes.length > 0 && (
+                    <div>
+                      <span className="text-muted-foreground">גדלים זמינים:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {enrichedData.sizes.map((size, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">{size}</Badge>
+                        ))}
+                      </div>
                     </div>
                   )}
                   
@@ -340,18 +451,29 @@ export const ProductFormDialog = ({
                     </div>
                   )}
                   
+                  {enrichedData.benefits && enrichedData.benefits.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">יתרונות המוצר:</span>
+                      <ul className="list-disc list-inside text-xs mt-1 space-y-0.5">
+                        {enrichedData.benefits.map((benefit, i) => (
+                          <li key={i}>{benefit}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
                   {enrichedData.feedingGuide && (
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">הוראות האכלה:</span>
-                      <p className="text-xs mt-1">{enrichedData.feedingGuide}</p>
+                      <span className="text-muted-foreground">הוראות האכלה מומלצות:</span>
+                      <p className="text-xs mt-1 whitespace-pre-wrap">{enrichedData.feedingGuide}</p>
                     </div>
                   )}
                   
                   {enrichedData.brandWebsite && (
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">אתר המותג:</span>
+                      <span className="text-muted-foreground">אתר המותג הרשמי:</span>
                       <a 
-                        href={enrichedData.brandWebsite} 
+                        href={enrichedData.brandWebsite.startsWith("http") ? enrichedData.brandWebsite : `https://${enrichedData.brandWebsite}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-primary hover:underline flex items-center gap-1 text-xs mt-1"
@@ -364,7 +486,7 @@ export const ProductFormDialog = ({
                   
                   {enrichedData.priceReason && (
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">הסבר למחיר המומלץ:</span>
+                      <span className="text-muted-foreground">מקור המחיר המומלץ:</span>
                       <p className="text-xs mt-1">{enrichedData.priceReason}</p>
                     </div>
                   )}
@@ -422,25 +544,6 @@ export const ProductFormDialog = ({
               />
             </div>
 
-            {/* Pet Type */}
-            <div>
-              <Label>סוג חיה</Label>
-              <Select 
-                value={product.pet_type || ""} 
-                onValueChange={(value) => onProductChange({ ...product, pet_type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר סוג" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dog">כלב</SelectItem>
-                  <SelectItem value="cat">חתול</SelectItem>
-                  <SelectItem value="both">כלב וחתול</SelectItem>
-                  <SelectItem value="other">אחר</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Switches */}
             <div className="col-span-2 flex gap-6">
               <div className="flex items-center gap-2">
@@ -473,7 +576,7 @@ export const ProductFormDialog = ({
               {isEnriching ? (
                 <>
                   <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                  מעשיר...
+                  מחפש...
                 </>
               ) : (
                 <>
