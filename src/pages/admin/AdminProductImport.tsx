@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import * as XLSX from "xlsx";
 import {
   ArrowLeft,
   Upload,
@@ -77,17 +78,80 @@ const AdminProductImport = () => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 
-    if (!selectedFile.name.endsWith(".csv")) {
+    const fileName = selectedFile.name.toLowerCase();
+    const isCSV = fileName.endsWith(".csv");
+    const isExcel = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
+
+    if (!isCSV && !isExcel) {
       toast({
         title: "שגיאה",
-        description: "יש להעלות קובץ CSV בלבד",
+        description: "יש להעלות קובץ CSV או Excel (XLSX/XLS)",
         variant: "destructive",
       });
       return;
     }
 
     setFile(selectedFile);
-    parseCSV(selectedFile);
+    
+    if (isExcel) {
+      parseExcel(selectedFile);
+    } else {
+      parseCSV(selectedFile);
+    }
+  };
+
+  const parseExcel = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
+
+        if (jsonData.length < 2) {
+          toast({
+            title: "שגיאה",
+            description: "הקובץ ריק או לא תקין",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const headers = (jsonData[0] as string[]).map((h) => String(h || "").trim());
+        const rows = jsonData.slice(1).map((row) => 
+          (row as string[]).map((cell) => String(cell || "").trim())
+        );
+
+        setCsvHeaders(headers);
+        setCsvData(rows);
+
+        // Auto-map columns
+        const autoMappings: ColumnMapping[] = headers.map((header) => {
+          const matchedColumn = EXPECTED_COLUMNS.find(
+            (col) =>
+              col.key.toLowerCase() === header.toLowerCase() ||
+              col.label.includes(header) ||
+              header.includes(col.key)
+          );
+          return {
+            csvColumn: header,
+            dbColumn: matchedColumn?.key || "",
+          };
+        });
+        setColumnMappings(autoMappings);
+        setStep("mapping");
+      } catch (error) {
+        console.error("Excel parse error:", error);
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן לקרוא את קובץ האקסל",
+          variant: "destructive",
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const parseCSV = (file: File) => {
@@ -337,14 +401,14 @@ const AdminProductImport = () => {
             >
               <div className="text-center">
                 <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="font-medium mb-2">גרור קובץ CSV לכאן או לחץ להעלאה</p>
-                <p className="text-sm text-muted-foreground">תומך בקבצי CSV בלבד</p>
+                <p className="font-medium mb-2">גרור קובץ CSV או Excel לכאן או לחץ להעלאה</p>
+                <p className="text-sm text-muted-foreground">תומך בקבצי CSV, XLSX ו-XLS</p>
               </div>
             </Card>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv"
+              accept=".csv,.xlsx,.xls"
               className="hidden"
               onChange={handleFileUpload}
             />
