@@ -191,8 +191,8 @@ const Chat = () => {
               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
             </div>
             <div className="text-right">
-              <h1 className="text-base font-bold text-foreground font-jakarta">Petid AI</h1>
-              <p className="text-xs text-success font-jakarta">פעיל עכשיו</p>
+              <h1 className="text-base font-bold text-foreground font-heebo">Petid AI</h1>
+              <p className="text-xs text-success font-heebo">פעיל עכשיו</p>
             </div>
           </div>
           
@@ -219,8 +219,8 @@ const Chat = () => {
                     <span className="text-4xl">🐾</span>
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-foreground font-jakarta mb-1">Petid AI</h2>
-                <p className="text-sm text-muted-foreground font-jakarta mb-6">העוזר החכם לבעלי חיות מחמד</p>
+                <h2 className="text-xl font-bold text-foreground font-heebo mb-1">Petid AI</h2>
+                <p className="text-sm text-muted-foreground font-heebo mb-6">העוזר החכם לבעלי חיות מחמד</p>
                 
                 {/* Example Questions Grid */}
                 <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
@@ -234,7 +234,7 @@ const Chat = () => {
                       className="flex items-center gap-2 px-4 py-3 bg-secondary hover:bg-secondary/80 rounded-2xl transition-colors text-right"
                     >
                       <span className="text-xl">{q.icon}</span>
-                      <span className="text-sm text-foreground font-jakarta">{q.text}</span>
+                      <span className="text-sm text-foreground font-heebo">{q.text}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -261,13 +261,13 @@ const Chat = () => {
                   
                   {/* Message Bubble */}
                   <div
-                    className={`px-4 py-2.5 rounded-3xl ${
+                    className={`px-4 py-2.5 rounded-3xl font-heebo ${
                       message.role === "user"
                         ? "bg-gradient-instagram text-white rounded-br-lg"
                         : "bg-secondary text-foreground rounded-bl-lg"
                     }`}
                   >
-                    <p className="text-[15px] leading-relaxed font-jakarta whitespace-pre-wrap">
+                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
                       {message.content}
                     </p>
                   </div>
@@ -334,7 +334,7 @@ const Chat = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="כתוב הודעה..."
-                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-muted-foreground p-0 h-auto font-jakarta"
+                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-muted-foreground p-0 h-auto font-heebo"
                 disabled={isLoading}
                 dir="rtl"
               />
