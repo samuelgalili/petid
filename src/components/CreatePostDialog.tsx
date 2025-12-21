@@ -116,46 +116,14 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     try {
       let mediaUrl = "";
       
-      if (mediaType === "image" && selectedImage) {
-        // Upload image
-        const fileExt = selectedImage.name.split(".").pop()?.toLowerCase() || 'jpg';
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("posts")
-          .upload(fileName, selectedImage, {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: selectedImage.type,
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("posts")
-          .getPublicUrl(uploadData.path);
-        
-        mediaUrl = publicUrl;
-      } else if (mediaType === "video" && videoFile) {
-        // Upload video
-        const fileExt = videoFile.name.split(".").pop()?.toLowerCase() || 'mp4';
-        const fileName = `${user.id}/videos/${Date.now()}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("posts")
-          .upload(fileName, videoFile, {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: videoFile.type,
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("posts")
-          .getPublicUrl(uploadData.path);
-        
-        mediaUrl = publicUrl;
+      if (mediaType === "image" && selectedImage && imagePreview) {
+        // Use the base64 preview directly as the image URL
+        mediaUrl = imagePreview;
+      } else if (mediaType === "video" && videoFile && videoPreview) {
+        // For video, we need storage - show error
+        toast.error("העלאת וידאו אינה זמינה כרגע");
+        setUploading(false);
+        return;
       }
 
       // Build caption with hashtags
