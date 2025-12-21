@@ -35,6 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ParsedRow {
   rowNumber: number;
@@ -68,6 +69,7 @@ const AdminProductImport = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<"upload" | "mapping" | "preview" | "enriching" | "importing" | "done">("upload");
@@ -367,14 +369,16 @@ const AdminProductImport = () => {
         .insert({
           business_name: "חנות ראשית",
           business_type: "shop" as const,
+          user_id: user?.id || null,
         })
         .select("id")
         .single();
       
       if (createError || !newBusiness) {
+        console.error("Failed to create business profile:", createError);
         toast({
           title: "שגיאה",
-          description: "לא ניתן ליצור פרופיל עסקי",
+          description: `לא ניתן ליצור פרופיל עסקי: ${createError?.message || "שגיאה לא ידועה"}`,
           variant: "destructive",
         });
         setStep("preview");
