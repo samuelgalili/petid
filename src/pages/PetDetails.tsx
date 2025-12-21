@@ -1,4 +1,4 @@
-import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft } from "lucide-react";
+import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
@@ -11,6 +11,17 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
 import { AppHeader } from "@/components/AppHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Pet {
   id: string;
@@ -50,6 +61,29 @@ const PetDetails = () => {
   const [loading, setLoading] = useState(true);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [activeTab, setActiveTab] = useState("documents");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeletePet = async () => {
+    if (!petId) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('pets')
+        .delete()
+        .eq('id', petId);
+      
+      if (error) throw error;
+      
+      sonnerToast.success("חיית המחמד נמחקה בהצלחה");
+      navigate('/home');
+    } catch (error: any) {
+      console.error("Error deleting pet:", error);
+      sonnerToast.error("שגיאה במחיקת חיית המחמד");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchPetDetails = async () => {
@@ -255,6 +289,37 @@ const PetDetails = () => {
               {pet.gender && <span>• {pet.gender === 'male' ? 'זכר' : 'נקבה'}</span>}
             </div>
           </div>
+          
+          {/* Delete Pet Button */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>מחיקת חיית מחמד</AlertDialogTitle>
+                <AlertDialogDescription>
+                  האם אתה בטוח שברצונך למחוק את {pet.name}? פעולה זו לא ניתנת לביטול וכל המידע הקשור לחיית המחמד יימחק לצמיתות.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-row-reverse gap-2">
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeletePet}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? "מוחק..." : "מחק"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </motion.div>
       </div>
 
