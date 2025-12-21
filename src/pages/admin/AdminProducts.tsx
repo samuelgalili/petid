@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, Plus, Edit, Trash2, MoreHorizontal, 
@@ -50,6 +50,8 @@ interface ProductData {
   is_featured: boolean | null;
   business_id: string;
   created_at: string;
+  needs_image_review?: boolean | null;
+  needs_price_review?: boolean | null;
 }
 
 const emptyProduct: Partial<ProductData> = {
@@ -74,6 +76,7 @@ const categories = [
 
 const AdminProducts = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
@@ -83,6 +86,14 @@ const AdminProducts = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId?: string }>({ open: false });
   const [uploading, setUploading] = useState(false);
+  const [showNeedsReview, setShowNeedsReview] = useState(false);
+
+  // Check URL param for needs_review filter
+  useEffect(() => {
+    if (searchParams.get("filter") === "needs_review") {
+      setShowNeedsReview(true);
+    }
+  }, [searchParams]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products"],
@@ -254,7 +265,7 @@ const AdminProducts = () => {
       key: "status",
       header: "סטטוס",
       render: (product) => (
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {product.in_stock ? (
             <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
               במלאי
@@ -267,6 +278,12 @@ const AdminProducts = () => {
           {product.is_featured && (
             <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
               מקודם
+            </Badge>
+          )}
+          {(product.needs_image_review || product.needs_price_review) && (
+            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+              <AlertCircle className="w-3 h-3 ml-1" />
+              דורש בדיקה
             </Badge>
           )}
         </div>
@@ -320,10 +337,15 @@ const AdminProducts = () => {
     },
   ];
 
+  // Filter products for needs_review if enabled
+  const displayProducts = showNeedsReview 
+    ? products.filter(p => p.needs_image_review || p.needs_price_review)
+    : products;
+
   return (
     <AdminLayout title="ניהול מוצרים" breadcrumbs={[{ label: "מוצרים" }]}>
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex gap-2">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button onClick={() => {
             setEditingProduct(emptyProduct);
             setIsDialogOpen(true);
@@ -340,10 +362,33 @@ const AdminProducts = () => {
             ייצוא
           </Button>
         </div>
+        {/* Filter toggle for needs review */}
+        <div className="flex items-center gap-2">
+          {showNeedsReview && (
+            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+              <AlertCircle className="w-3 h-3 ml-1" />
+              מציג מוצרים לבדיקה ({displayProducts.length})
+            </Badge>
+          )}
+          <Button 
+            variant={showNeedsReview ? "default" : "outline"} 
+            size="sm"
+            onClick={() => {
+              setShowNeedsReview(!showNeedsReview);
+              // Clear URL param when toggling off
+              if (showNeedsReview) {
+                navigate('/admin/products', { replace: true });
+              }
+            }}
+          >
+            <AlertCircle className="w-4 h-4 ml-2" />
+            {showNeedsReview ? "הצג הכל" : "דורשים בדיקה"}
+          </Button>
+        </div>
       </div>
 
       <DataTable
-        data={products}
+        data={displayProducts}
         columns={columns}
         loading={isLoading}
         filters={filters}
@@ -355,7 +400,7 @@ const AdminProducts = () => {
         selectedItems={selectedProducts}
         onSelectionChange={setSelectedProducts}
         emptyIcon={<Package className="w-12 h-12" />}
-        emptyMessage="לא נמצאו מוצרים"
+        emptyMessage={showNeedsReview ? "אין מוצרים שדורשים בדיקה" : "לא נמצאו מוצרים"}
         bulkActions={
           <div className="flex gap-2">
             <Button size="sm" variant="destructive">
