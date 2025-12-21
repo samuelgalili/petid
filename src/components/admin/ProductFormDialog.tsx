@@ -412,10 +412,17 @@ export const ProductFormDialog = ({
                 <div 
                   className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden bg-muted/30"
                 >
-                  {isUploading ? (
+                {isUploading ? (
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                  ) : product.image_url ? (
-                    <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : product.image_url && product.image_url !== '/placeholder.svg' ? (
+                    <img 
+                      src={product.image_url} 
+                      alt="" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
                   ) : (
                     <div className="text-center text-muted-foreground">
                       <ImageIcon className="w-8 h-8 mx-auto mb-1" />
@@ -423,7 +430,7 @@ export const ProductFormDialog = ({
                     </div>
                   )}
                 </div>
-                {product.image_url && (
+                {product.image_url && product.image_url !== '/placeholder.svg' && (
                   <Button
                     type="button"
                     variant="destructive"
