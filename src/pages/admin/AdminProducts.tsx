@@ -85,6 +85,7 @@ const AdminProducts = () => {
   const [editingProduct, setEditingProduct] = useState<Partial<ProductData> | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId?: string }>({ open: false });
+  const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showNeedsReview, setShowNeedsReview] = useState(false);
 
@@ -189,6 +190,32 @@ const AdminProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast({ title: "המוצר נמחק" });
       setDeleteDialog({ open: false });
+    },
+    onError: () => {
+      toast({ title: "שגיאה", description: "המחיקה נכשלה", variant: "destructive" });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (productIds: string[]) => {
+      const { error } = await supabase
+        .from("business_products")
+        .delete()
+        .in("id", productIds);
+
+      if (error) throw error;
+
+      await logAction({
+        action_type: "product.deleted",
+        entity_type: "product",
+        metadata: { deleted_count: productIds.length, bulk: true },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: `${selectedProducts.length} מוצרים נמחקו` });
+      setBulkDeleteDialog(false);
+      setSelectedProducts([]);
     },
     onError: () => {
       toast({ title: "שגיאה", description: "המחיקה נכשלה", variant: "destructive" });
@@ -403,7 +430,11 @@ const AdminProducts = () => {
         emptyMessage={showNeedsReview ? "אין מוצרים שדורשים בדיקה" : "לא נמצאו מוצרים"}
         bulkActions={
           <div className="flex gap-2">
-            <Button size="sm" variant="destructive">
+            <Button 
+              size="sm" 
+              variant="destructive"
+              onClick={() => setBulkDeleteDialog(true)}
+            >
               <Trash2 className="w-4 h-4 ml-1" />
               מחק נבחרים
             </Button>
@@ -553,6 +584,21 @@ const AdminProducts = () => {
           if (deleteDialog.productId) {
             deleteMutation.mutate(deleteDialog.productId);
           }
+        }}
+        icon={<Trash2 className="w-5 h-5 text-destructive" />}
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <ConfirmDialog
+        open={bulkDeleteDialog}
+        onOpenChange={setBulkDeleteDialog}
+        title="מחיקת מוצרים"
+        description={`האם אתה בטוח שברצונך למחוק ${selectedProducts.length} מוצרים? פעולה זו לא ניתנת לביטול.`}
+        confirmLabel={`מחק ${selectedProducts.length} מוצרים`}
+        variant="destructive"
+        loading={bulkDeleteMutation.isPending}
+        onConfirm={() => {
+          bulkDeleteMutation.mutate(selectedProducts);
         }}
         icon={<Trash2 className="w-5 h-5 text-destructive" />}
       />
