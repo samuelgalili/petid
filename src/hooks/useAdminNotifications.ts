@@ -10,7 +10,7 @@ export const useAdminNotifications = () => {
 
   useEffect(() => {
     // Don't set up subscription while loading or if not admin
-    if (isLoading || !isAdmin) {
+    if (isLoading || isAdmin !== true) {
       return;
     }
 
