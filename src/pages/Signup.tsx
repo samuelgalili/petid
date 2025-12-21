@@ -6,6 +6,7 @@ import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
+import { supabase } from "@/integrations/supabase/client";
 import petidLogo from "@/assets/petid-logo.png";
 
 const cardVariants = {
@@ -14,21 +15,40 @@ const cardVariants = {
 };
 
 const Signup = () => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const { setGuestMode } = useGuest();
   const navigate = useNavigate();
   const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-      if (onboardingCompleted === 'true') {
-        navigate("/home");
-      } else {
-        navigate("/onboarding");
+    const checkUserPets = async () => {
+      if (!authLoading && isAuthenticated && user) {
+        // Check if user already has pets in the database
+        const { data: pets, error } = await supabase
+          .from('pets')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('archived', false)
+          .limit(1);
+        
+        if (!error && pets && pets.length > 0) {
+          // User has pets, mark onboarding as complete and go to home
+          localStorage.setItem('onboardingCompleted', 'true');
+          navigate("/");
+        } else {
+          // Check localStorage as fallback
+          const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+          if (onboardingCompleted === 'true') {
+            navigate("/");
+          } else {
+            navigate("/onboarding");
+          }
+        }
       }
-    }
-  }, [isAuthenticated, authLoading, navigate]);
+    };
+    
+    checkUserPets();
+  }, [isAuthenticated, authLoading, navigate, user]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 500);
