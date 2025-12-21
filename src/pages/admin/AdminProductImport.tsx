@@ -352,22 +352,35 @@ const AdminProductImport = () => {
     let failed = 0;
     let needsReview = 0;
 
-    // Get a business_id (we'll use the first one or create one if needed)
-    const { data: businesses } = await supabase
+    // Get a business_id (we'll use the first one or create one for admin import)
+    let { data: businesses } = await supabase
       .from("business_profiles")
       .select("id")
       .limit(1);
     
-    const businessId = businesses?.[0]?.id;
+    let businessId = businesses?.[0]?.id;
     
+    // If no business exists, create a default one for admin imports
     if (!businessId) {
-      toast({
-        title: "שגיאה",
-        description: "לא נמצא פרופיל עסקי. יש ליצור עסק קודם.",
-        variant: "destructive",
-      });
-      setStep("preview");
-      return;
+      const { data: newBusiness, error: createError } = await supabase
+        .from("business_profiles")
+        .insert({
+          business_name: "חנות ראשית",
+          business_type: "shop" as const,
+        })
+        .select("id")
+        .single();
+      
+      if (createError || !newBusiness) {
+        toast({
+          title: "שגיאה",
+          description: "לא ניתן ליצור פרופיל עסקי",
+          variant: "destructive",
+        });
+        setStep("preview");
+        return;
+      }
+      businessId = newBusiness.id;
     }
 
     // Get reference prices for comparison
