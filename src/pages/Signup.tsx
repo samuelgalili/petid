@@ -4,10 +4,10 @@ import { motion } from "framer-motion";
 import { SignupForm } from "@/components/SignupForm";
 import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
-import { useGuest } from "@/contexts/GuestContext";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import petidLogo from "@/assets/petid-logo.png";
+import { PawPrint, Sparkles, Users } from "lucide-react";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -16,14 +16,12 @@ const cardVariants = {
 
 const Signup = () => {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
-  const { setGuestMode } = useGuest();
   const navigate = useNavigate();
   const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     const checkUserPets = async () => {
       if (!authLoading && isAuthenticated && user) {
-        // Check if user already has pets in the database
         const { data: pets, error } = await supabase
           .from('pets')
           .select('id')
@@ -32,11 +30,9 @@ const Signup = () => {
           .limit(1);
         
         if (!error && pets && pets.length > 0) {
-          // User has pets, mark onboarding as complete and go to home
           localStorage.setItem('onboardingCompleted', 'true');
           navigate("/");
         } else {
-          // Check localStorage as fallback
           const onboardingCompleted = localStorage.getItem('onboardingCompleted');
           if (onboardingCompleted === 'true') {
             navigate("/");
@@ -55,24 +51,26 @@ const Signup = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleGuestMode = () => {
-    setGuestMode(true);
-    navigate("/add-pet");
-  };
-
   if (authLoading || pageLoading) {
     return <AuthLoadingSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-secondary/10 via-background to-primary/5 flex flex-col items-center justify-center px-4 py-8">
+      {/* Decorative Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-16 right-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+        <div className="absolute bottom-24 left-10 w-28 h-28 bg-secondary/15 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-20 w-14 h-14 bg-accent/10 rounded-full blur-xl" />
+      </div>
+
       {/* Main Card */}
       <motion.div
         variants={cardVariants}
         initial="hidden"
         animate="visible"
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-[350px] bg-white border border-gray-300 px-10 py-10 mb-3"
+        className="relative w-full max-w-[380px] bg-card/95 backdrop-blur-sm border border-border/50 rounded-2xl shadow-xl px-8 py-10 mb-4"
       >
         {/* Logo */}
         <motion.div
@@ -81,34 +79,63 @@ const Signup = () => {
           transition={{ delay: 0.1, duration: 0.3 }}
           className="flex justify-center mb-4"
         >
-          <img src={petidLogo} alt="Petid" className="h-14 object-contain" />
+          <div className="relative">
+            <img src={petidLogo} alt="Petid" className="h-16 object-contain" />
+            <motion.div
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.3, type: "spring" }}
+              className="absolute -left-3 -top-1"
+            >
+              <Sparkles className="w-5 h-5 text-primary" />
+            </motion.div>
+          </div>
         </motion.div>
 
-        {/* Tagline */}
-        <p className="text-center text-gray-500 font-semibold mb-6 text-base leading-tight">
-          Sign up to manage your pets and join our community.
-        </p>
+        {/* Welcome Text */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
+          className="text-center mb-6"
+        >
+          <h1 className="text-xl font-bold text-foreground mb-1">הצטרפו לפטיד</h1>
+          <p className="text-sm text-muted-foreground">צרו חשבון וניהלו את חיות המחמד שלכם</p>
+        </motion.div>
 
         {/* Social Auth First */}
-        <SocialAuthButtons redirectTo="/add-pet" />
+        <SocialAuthButtons redirectTo="/" />
 
         {/* OR Divider */}
-        <div className="flex items-center my-4">
-          <div className="flex-1 h-px bg-gray-300" />
-          <span className="px-4 text-sm font-semibold text-gray-500">OR</span>
-          <div className="flex-1 h-px bg-gray-300" />
+        <div className="flex items-center my-5">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          <span className="px-4 text-xs font-medium text-muted-foreground">או</span>
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
 
         {/* Signup Form */}
         <SignupForm />
 
-        {/* Guest Mode */}
-        <button
-          onClick={handleGuestMode}
-          className="w-full mt-4 text-sm text-[#00376B] font-semibold hover:text-gray-900"
+        {/* Benefits */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.3 }}
+          className="mt-6 flex justify-center gap-6 text-xs text-muted-foreground"
         >
-          Continue as Guest
-        </button>
+          <div className="flex items-center gap-1.5">
+            <PawPrint className="w-3.5 h-3.5 text-primary" />
+            <span>ניהול חיות</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-primary" />
+            <span>קהילה פעילה</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span>הטבות בלעדיות</span>
+          </div>
+        </motion.div>
       </motion.div>
 
       {/* Login Card */}
@@ -116,36 +143,14 @@ const Signup = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.3 }}
-        className="w-full max-w-[350px] bg-white border border-gray-300 py-5 text-center"
+        className="w-full max-w-[380px] bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl py-4 text-center"
       >
-        <p className="text-sm text-gray-900">
-          Have an account?{" "}
-          <Link to="/auth" className="text-[#0095F6] font-semibold hover:text-[#1877F2]">
-            Log in
+        <p className="text-sm text-foreground">
+          יש לך חשבון?{" "}
+          <Link to="/auth" className="text-primary font-semibold hover:text-primary/80 transition-colors">
+            התחברות
           </Link>
         </p>
-      </motion.div>
-
-      {/* App Download Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.3 }}
-        className="mt-5 text-center"
-      >
-        <p className="text-sm text-gray-900 mb-4">Get the app.</p>
-        <div className="flex gap-2 justify-center">
-          <img
-            src="https://static.cdninstagram.com/rsrc.php/v3/yz/r/c5Rp7Ym-Klz.png"
-            alt="Get it on Google Play"
-            className="h-10"
-          />
-          <img
-            src="https://static.cdninstagram.com/rsrc.php/v3/yu/r/EHY6QnZYdNX.png"
-            alt="Get it from Microsoft"
-            className="h-10"
-          />
-        </div>
       </motion.div>
 
       {/* Footer Links */}
@@ -153,11 +158,14 @@ const Signup = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.3 }}
-        className="mt-8 text-xs text-gray-500 text-center space-x-4"
+        className="mt-8 text-xs text-muted-foreground text-center space-x-4 rtl:space-x-reverse"
       >
-        <Link to="/terms" className="hover:underline">Terms</Link>
-        <Link to="/privacy" className="hover:underline">Privacy</Link>
-        <Link to="/support" className="hover:underline">Help</Link>
+        <Link to="/terms" className="hover:text-foreground transition-colors">תנאי שימוש</Link>
+        <span className="text-border">•</span>
+        <Link to="/privacy" className="hover:text-foreground transition-colors">פרטיות</Link>
+        <span className="text-border">•</span>
+        <Link to="/support" className="hover:text-foreground transition-colors">עזרה</Link>
+        <span className="text-border">•</span>
         <span>© 2024 Petid</span>
       </motion.footer>
     </div>
