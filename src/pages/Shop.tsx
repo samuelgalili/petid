@@ -136,7 +136,7 @@ const Shop = () => {
     return products.filter(p => 
       p.name.toLowerCase().includes(query)
     ).slice(0, 5);
-  }, [searchQuery]);
+  }, [searchQuery, products]);
 
   const filteredAndSortedProducts = useMemo(() => {
     let result = [...products];

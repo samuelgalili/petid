@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Leaf, Zap } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Leaf, Zap, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -10,9 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+
 const ProductDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams<{ id: string }>();
   const {
     toast
   } = useToast();
@@ -21,13 +25,29 @@ const ProductDetail = () => {
   } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState("עוף ואורז");
-  const [selectedSize, setSelectedSize] = useState("2.5 ק״ג");
+  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const touchStartX = useRef(0);
 
-  // Get product from location state or use default
-  const rawProduct = location.state?.product || {
+  // Fetch product from database if ID is provided
+  const { data: dbProduct, isLoading } = useQuery({
+    queryKey: ["product", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("business_products")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Get product from location state or database
+  const rawProduct = dbProduct || location.state?.product || {
     name: "מזון פרימיום לכלבים",
     subtitle: "בריאות טובה יותר. טעם מעולה. חיות מחמד מאושרות.",
     price: 207.84,
@@ -41,6 +61,16 @@ const ProductDetail = () => {
     reviewCount: 234
   };
 
+  // Get flavors from database product
+  const productFlavors: string[] = dbProduct?.flavors || rawProduct.flavors || [];
+
+  // Set initial variant when product loads
+  useEffect(() => {
+    if (productFlavors.length > 0 && !selectedVariant) {
+      setSelectedVariant(productFlavors[0]);
+    }
+  }, [productFlavors, selectedVariant]);
+
   // Normalize price to number
   const getNumericPrice = (price: string | number): number => {
     if (typeof price === 'number') return price;
@@ -50,10 +80,25 @@ const ProductDetail = () => {
   // Normalize product data
   const product = {
     ...rawProduct,
+    name: rawProduct.name,
+    subtitle: rawProduct.description || rawProduct.subtitle || "",
+    image: rawProduct.image_url || rawProduct.image,
     price: getNumericPrice(rawProduct.price),
-    originalPrice: rawProduct.originalPrice ? getNumericPrice(rawProduct.originalPrice) : null,
-    discount: rawProduct.originalPrice ? `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.originalPrice)) * 100)}% הנחה` : null
+    originalPrice: rawProduct.original_price ? getNumericPrice(rawProduct.original_price) : (rawProduct.originalPrice ? getNumericPrice(rawProduct.originalPrice) : null),
+    discount: rawProduct.original_price || rawProduct.originalPrice ? 
+      `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.original_price || rawProduct.originalPrice)) * 100)}% הנחה` : null,
+    rating: rawProduct.rating || 4.5,
+    reviewCount: rawProduct.reviewCount || 0,
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   const benefits = [{
     icon: Leaf,
     title: "100% טבעי",
@@ -96,7 +141,10 @@ const ProductDetail = () => {
     price: 55,
     image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop"
   }];
-  const images = rawProduct.images || [product.image, "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=600&h=600&fit=crop", "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&h=600&fit=crop"];
+  const images = (rawProduct.images && rawProduct.images.length > 0) ? rawProduct.images : 
+    (rawProduct.image_url ? [rawProduct.image_url] : 
+    (rawProduct.image ? [rawProduct.image] : 
+    ["https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=600&h=600&fit=crop"]));
   const reviews = [{
     id: 1,
     author: "שרה מ.",
@@ -118,14 +166,18 @@ const ProductDetail = () => {
   }];
   const handleAddToCart = () => {
     addToCart({
-      id: `${product.name}-${selectedVariant}-${selectedSize}`,
+      id: `${product.name}-${selectedVariant || 'default'}`,
       name: product.name,
       price: product.price,
       image: product.image,
       quantity: quantity,
-      variant: selectedVariant,
-      size: selectedSize
+      variant: selectedVariant || undefined,
     });
+    toast({
+      title: "נוסף לעגלה 🛒",
+      description: `${product.name} x${quantity} נוסף בהצלחה`
+    });
+  };
     toast({
       title: "נוסף לעגלה 🛒",
       description: `${product.name} x${quantity} נוסף בהצלחה`
@@ -303,41 +355,32 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Variant Selectors */}
-          <div className="p-5 border-b border-gray-100 space-y-5">
-            <div>
-              <label className="text-sm font-bold mb-3 block text-gray-800 font-jakarta">בחר טעם</label>
-              <div className="flex gap-2 flex-wrap">
-                {["עוף ואורז", "בקר וירקות", "סלמון ובטטה"].map(variant => <motion.button key={variant} onClick={() => setSelectedVariant(variant)} whileHover={{
-                scale: 1.02
-              }} whileTap={{
-                scale: 0.98
-              }} className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${selectedVariant === variant ? "text-gray-800 font-bold" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`} style={selectedVariant === variant ? {
-                background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
-                border: '2px solid transparent'
-              } : {}}>
-                    {selectedVariant === variant && <Check className="w-3.5 h-3.5 inline-block ml-1 text-[#4ECDC4]" />}
-                    {variant}
-                  </motion.button>)}
+          {/* Variant Selectors - Only show if there are flavors */}
+          {productFlavors.length > 0 && (
+            <div className="p-5 border-b border-gray-100 space-y-5">
+              <div>
+                <label className="text-sm font-bold mb-3 block text-gray-800 font-jakarta">טעם</label>
+                <div className="flex gap-2 flex-wrap">
+                  {productFlavors.map(variant => (
+                    <motion.button 
+                      key={variant} 
+                      onClick={() => setSelectedVariant(variant)} 
+                      whileHover={{ scale: 1.02 }} 
+                      whileTap={{ scale: 0.98 }} 
+                      className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${selectedVariant === variant ? "text-gray-800 font-bold" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`} 
+                      style={selectedVariant === variant ? {
+                        background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
+                        border: '2px solid transparent'
+                      } : {}}
+                    >
+                      {selectedVariant === variant && <Check className="w-3.5 h-3.5 inline-block ml-1 text-[#4ECDC4]" />}
+                      {variant}
+                    </motion.button>
+                  ))}
+                </div>
               </div>
             </div>
-
-            <div>
-              <label className="text-sm font-bold mb-3 block text-gray-800 font-jakarta">בחר גודל</label>
-              <div className="flex gap-2">
-                {["1 ק״ג", "2.5 ק״ג", "5 ק״ג", "10 ק״ג"].map(size => <motion.button key={size} onClick={() => setSelectedSize(size)} whileHover={{
-                scale: 1.02
-              }} whileTap={{
-                scale: 0.98
-              }} className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${selectedSize === size ? "text-gray-800 font-bold" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`} style={selectedSize === size ? {
-                background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
-                border: '2px solid transparent'
-              } : {}}>
-                    {size}
-                  </motion.button>)}
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Key Benefits */}
           <div className="p-5 border-b border-gray-100">
@@ -662,6 +705,8 @@ const ProductDetail = () => {
       </motion.div>
 
       <BottomNav />
-    </div>;
+    </div>
+  );
 };
+
 export default ProductDetail;
