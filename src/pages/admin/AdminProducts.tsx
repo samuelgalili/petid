@@ -3,37 +3,20 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, Plus, Edit, Trash2, MoreHorizontal, 
-  Upload, Download, Image as ImageIcon, AlertCircle
+  Upload, Download, AlertCircle
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
+import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { supabase } from "@/integrations/supabase/client";
@@ -443,133 +426,20 @@ const AdminProducts = () => {
       />
 
       {/* Edit/Create Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>{editingProduct?.id ? "עריכת מוצר" : "הוספת מוצר"}</DialogTitle>
-          </DialogHeader>
-          
-          {editingProduct && (
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              saveMutation.mutate(editingProduct);
-            }} className="space-y-4">
-              {/* Image Upload */}
-              <div className="flex justify-center">
-                <div 
-                  className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center cursor-pointer hover:border-primary transition-colors overflow-hidden"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {editingProduct.image_url ? (
-                    <img src={editingProduct.image_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <ImageIcon className="w-8 h-8 mx-auto mb-1" />
-                      <span className="text-xs">העלה תמונה</span>
-                    </div>
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file);
-                  }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label>שם המוצר *</Label>
-                  <Input
-                    value={editingProduct.name || ""}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                    required
-                  />
-                </div>
-                
-                <div className="col-span-2">
-                  <Label>תיאור</Label>
-                  <Textarea
-                    value={editingProduct.description || ""}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label>מחיר *</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editingProduct.price || ""}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label>מחיר לפני הנחה</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editingProduct.original_price || ""}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, original_price: parseFloat(e.target.value) || null })}
-                  />
-                </div>
-
-                <div>
-                  <Label>קטגוריה</Label>
-                  <Select 
-                    value={editingProduct.category || ""} 
-                    onValueChange={(value) => setEditingProduct({ ...editingProduct, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="בחר קטגוריה" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={editingProduct.in_stock ?? true}
-                      onCheckedChange={(checked) => setEditingProduct({ ...editingProduct, in_stock: checked })}
-                    />
-                    <Label>במלאי</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={editingProduct.is_featured ?? false}
-                      onCheckedChange={(checked) => setEditingProduct({ ...editingProduct, is_featured: checked })}
-                    />
-                    <Label>מקודם</Label>
-                  </div>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  ביטול
-                </Button>
-                <Button type="submit" disabled={saveMutation.isPending}>
-                  {saveMutation.isPending ? "שומר..." : "שמור"}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ProductFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        product={editingProduct}
+        onProductChange={setEditingProduct}
+        onSave={() => {
+          if (editingProduct) {
+            saveMutation.mutate(editingProduct);
+          }
+        }}
+        isSaving={saveMutation.isPending}
+        onImageUpload={handleImageUpload}
+        isUploading={uploading}
+      />
 
       {/* Delete Confirmation */}
       <ConfirmDialog
