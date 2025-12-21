@@ -46,6 +46,45 @@ export type Database = {
           },
         ]
       }
+      add_yours_responses: {
+        Row: {
+          created_at: string
+          id: string
+          sticker_id: string
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sticker_id: string
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sticker_id?: string
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "add_yours_responses_sticker_id_fkey"
+            columns: ["sticker_id"]
+            isOneToOne: false
+            referencedRelation: "story_stickers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "add_yours_responses_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action_type: string
@@ -713,6 +752,27 @@ export type Database = {
         }
         Relationships: []
       }
+      close_friends: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coupon_uses: {
         Row: {
           coupon_id: string
@@ -925,6 +985,42 @@ export type Database = {
           updated_by?: string | null
           verified?: boolean | null
           water?: boolean | null
+        }
+        Relationships: []
+      }
+      draft_posts: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          media_urls: string[] | null
+          pet_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          media_urls?: string[] | null
+          pet_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          media_urls?: string[] | null
+          pet_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1172,11 +1268,13 @@ export type Database = {
           created_at: string | null
           id: string
           is_read: boolean | null
+          is_vanish: boolean | null
           message_text: string
           message_type: string | null
           receiver_id: string
           sender_id: string
           updated_at: string | null
+          vanish_after_read: boolean | null
           voice_duration: number | null
           voice_url: string | null
         }
@@ -1184,11 +1282,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_read?: boolean | null
+          is_vanish?: boolean | null
           message_text: string
           message_type?: string | null
           receiver_id: string
           sender_id: string
           updated_at?: string | null
+          vanish_after_read?: boolean | null
           voice_duration?: number | null
           voice_url?: string | null
         }
@@ -1196,11 +1296,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_read?: boolean | null
+          is_vanish?: boolean | null
           message_text?: string
           message_type?: string | null
           receiver_id?: string
           sender_id?: string
           updated_at?: string | null
+          vanish_after_read?: boolean | null
           voice_duration?: number | null
           voice_url?: string | null
         }
@@ -1668,6 +1770,38 @@ export type Database = {
         }
         Relationships: []
       }
+      post_collaborators: {
+        Row: {
+          collaborator_id: string
+          created_at: string
+          id: string
+          post_id: string
+          status: string | null
+        }
+        Insert: {
+          collaborator_id: string
+          created_at?: string
+          id?: string
+          post_id: string
+          status?: string | null
+        }
+        Update: {
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_collaborators_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_comments: {
         Row: {
           comment_text: string
@@ -1796,6 +1930,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          alt_text: string | null
           caption: string | null
           created_at: string
           id: string
@@ -1814,6 +1949,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          alt_text?: string | null
           caption?: string | null
           created_at?: string
           id?: string
@@ -1832,6 +1968,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          alt_text?: string | null
           caption?: string | null
           created_at?: string
           id?: string
@@ -1887,9 +2024,12 @@ export type Database = {
           full_name: string | null
           id: string
           interests: string[] | null
+          last_active_at: string | null
           location_blur_enabled: boolean | null
           points: number
           profile_visibility: string | null
+          quiet_mode_until: string | null
+          show_activity_status: boolean | null
           show_email: boolean | null
           show_location: boolean | null
           updated_at: string | null
@@ -1908,9 +2048,12 @@ export type Database = {
           full_name?: string | null
           id: string
           interests?: string[] | null
+          last_active_at?: string | null
           location_blur_enabled?: boolean | null
           points?: number
           profile_visibility?: string | null
+          quiet_mode_until?: string | null
+          show_activity_status?: boolean | null
           show_email?: boolean | null
           show_location?: boolean | null
           updated_at?: string | null
@@ -1929,9 +2072,12 @@ export type Database = {
           full_name?: string | null
           id?: string
           interests?: string[] | null
+          last_active_at?: string | null
           location_blur_enabled?: boolean | null
           points?: number
           profile_visibility?: string | null
+          quiet_mode_until?: string | null
+          show_activity_status?: boolean | null
           show_email?: boolean | null
           show_location?: boolean | null
           updated_at?: string | null
@@ -2314,6 +2460,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scheduled_posts: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          image_url: string
+          media_urls: string[] | null
+          pet_id: string | null
+          scheduled_for: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          media_urls?: string[] | null
+          pet_id?: string | null
+          scheduled_for: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          media_urls?: string[] | null
+          pet_id?: string | null
+          scheduled_for?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       stories: {
         Row: {
@@ -3056,6 +3241,30 @@ export type Database = {
           follower_id?: string
           following_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      user_notes: {
+        Row: {
+          content: string
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
