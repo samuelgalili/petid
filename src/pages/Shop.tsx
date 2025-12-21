@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
@@ -632,7 +633,7 @@ const Shop = () => {
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto">
+              <ScrollArea className="flex-1">
                 {/* Product Image Carousel */}
                 <div className="relative px-4 mb-4">
                   <Carousel className="w-full" dir="ltr" setApi={setCarouselApi} opts={{ direction: "ltr" }}>
@@ -846,8 +847,7 @@ const Shop = () => {
 
                   <div className="h-2" />
                 </div>
-              </div>
-
+              </ScrollArea>
               {/* Bottom Bar - Always visible at bottom */}
               <div className="flex-shrink-0 border-t border-border px-4 py-4 bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
                 <div className="flex items-center gap-4">
