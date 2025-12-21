@@ -271,12 +271,13 @@ export default function Photos() {
                 <span className="text-xs text-white/80">לייקים</span>
               </motion.div>
               <motion.div 
-                className="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-center cursor-pointer"
+                className="bg-white rounded-2xl px-6 py-3 text-center cursor-pointer shadow-lg"
                 whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={() => setShowCreateDialog(true)}
               >
-                <span className="text-2xl font-bold text-white block">+</span>
-                <span className="text-xs text-white/80">העלאה</span>
+                <span className="text-2xl font-bold text-[hsl(var(--gradient-start))] block">+</span>
+                <span className="text-xs text-[hsl(var(--gradient-mid))] font-medium">העלאה</span>
               </motion.div>
             </div>
           </div>
