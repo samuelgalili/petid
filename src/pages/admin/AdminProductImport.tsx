@@ -322,7 +322,7 @@ const AdminProductImport = () => {
     }
 
     setParsedRows(enrichedRows);
-    setStep("preview");
+    // Don't change step here - let the caller continue with import
   };
 
   const startImport = async () => {
@@ -662,13 +662,17 @@ const AdminProductImport = () => {
               <Button variant="outline" onClick={() => setStep("mapping")} className="flex-1">
                 חזרה
               </Button>
-              {autoEnrich && (
-                <Button variant="secondary" onClick={enrichProducts} disabled={validCount === 0} className="flex-1">
-                  העשר מידע חסר
-                </Button>
-              )}
-              <Button onClick={startImport} disabled={validCount === 0} className="flex-1">
-                ייבא {validCount} מוצרים
+              <Button 
+                onClick={async () => {
+                  if (autoEnrich) {
+                    await enrichProducts();
+                  }
+                  startImport();
+                }} 
+                disabled={validCount === 0} 
+                className="flex-1"
+              >
+                {autoEnrich ? `העשר וייבא ${validCount} מוצרים` : `ייבא ${validCount} מוצרים`}
               </Button>
             </div>
           </motion.div>
