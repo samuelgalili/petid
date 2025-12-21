@@ -122,7 +122,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
         
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("avatars")
+          .from("posts")
           .upload(fileName, selectedImage, {
             cacheControl: "3600",
             upsert: false,
@@ -132,7 +132,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
-          .from("avatars")
+          .from("posts")
           .getPublicUrl(uploadData.path);
         
         mediaUrl = publicUrl;
@@ -142,7 +142,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         const fileName = `${user.id}/videos/${Date.now()}.${fileExt}`;
         
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("avatars")
+          .from("posts")
           .upload(fileName, videoFile, {
             cacheControl: "3600",
             upsert: false,
@@ -152,7 +152,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
-          .from("avatars")
+          .from("posts")
           .getPublicUrl(uploadData.path);
         
         mediaUrl = publicUrl;
