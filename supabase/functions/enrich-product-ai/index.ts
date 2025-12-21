@@ -5,9 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function searchProductBySku(sku: string, apiKey: string): Promise<string | null> {
+async function searchProduct(query: string, apiKey: string, isSku: boolean): Promise<string | null> {
   try {
-    console.log("Searching for SKU:", sku);
+    const searchQuery = isSku 
+      ? `${query} pet product Israel מוצר לחיות מחמד barcode`
+      : `${query} pet product Israel מוצר לחיות מחמד מחיר`;
+    
+    console.log("Searching for:", searchQuery, "isSku:", isSku);
     
     const response = await fetch("https://api.firecrawl.dev/v1/search", {
       method: "POST",
@@ -16,7 +20,7 @@ async function searchProductBySku(sku: string, apiKey: string): Promise<string |
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: `${sku} pet product Israel מוצר לחיות מחמד`,
+        query: searchQuery,
         limit: 5,
         scrapeOptions: {
           formats: ["markdown"],
@@ -69,13 +73,15 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // If SKU is provided, search the web first
+    // Search the web for product info
     let webSearchContext = "";
-    if (sku && FIRECRAWL_API_KEY) {
-      const searchResults = await searchProductBySku(sku, FIRECRAWL_API_KEY);
+    if (FIRECRAWL_API_KEY) {
+      const searchQuery = sku || productName;
+      const isSku = !!sku;
+      const searchResults = await searchProduct(searchQuery, FIRECRAWL_API_KEY, isSku);
       if (searchResults) {
         webSearchContext = searchResults;
-        console.log("Found web search context for SKU");
+        console.log("Found web search context for", isSku ? "SKU" : "product name");
       }
     }
 
