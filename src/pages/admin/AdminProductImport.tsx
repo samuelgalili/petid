@@ -746,7 +746,7 @@ const AdminProductImport = () => {
             <Card className="p-8 text-center">
               <Check className="w-12 h-12 mx-auto text-green-500 mb-4" />
               <h2 className="text-xl font-bold mb-2">הייבוא הושלם!</h2>
-              <div className="flex justify-center gap-4 mb-6 flex-wrap">
+              <div className="flex flex-col items-center gap-4 mb-6">
                 <Badge variant="default" className="bg-green-500 text-lg px-4 py-2">
                   {importResults.success} הצליחו
                 </Badge>
@@ -756,9 +756,13 @@ const AdminProductImport = () => {
                   </Badge>
                 )}
                 {importResults.needsReview > 0 && (
-                  <Badge variant="secondary" className="bg-amber-500 text-white text-lg px-4 py-2">
+                  <Button 
+                    variant="secondary" 
+                    className="bg-amber-500 hover:bg-amber-600 text-white text-lg px-6 py-3"
+                    onClick={() => navigate("/admin/products?filter=needs_review")}
+                  >
                     {importResults.needsReview} דורשים בדיקה
-                  </Badge>
+                  </Button>
                 )}
               </div>
               {importResults.needsReview > 0 && (
