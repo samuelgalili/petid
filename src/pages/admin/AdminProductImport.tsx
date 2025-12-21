@@ -435,14 +435,14 @@ const AdminProductImport = () => {
                     <div className="flex-1 p-2 bg-muted rounded text-sm">{mapping.csvColumn}</div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     <Select
-                      value={mapping.dbColumn}
-                      onValueChange={(value) => updateMapping(mapping.csvColumn, value)}
+                      value={mapping.dbColumn || "_none"}
+                      onValueChange={(value) => updateMapping(mapping.csvColumn, value === "_none" ? "" : value)}
                     >
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="בחר שדה" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">לא למפות</SelectItem>
+                        <SelectItem value="_none">לא למפות</SelectItem>
                         {EXPECTED_COLUMNS.map((col) => (
                           <SelectItem key={col.key} value={col.key}>
                             {col.label} {col.required && "*"}
