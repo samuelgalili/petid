@@ -50,10 +50,10 @@ interface ColumnMapping {
 
 const EXPECTED_COLUMNS = [
   { key: "name", label: "שם מוצר", required: true },
-  { key: "sku", label: "מק״ט", required: false },
+  { key: "sku", label: "מק״ט / ברקוד", required: false },
   { key: "description", label: "תיאור", required: false },
   { key: "category", label: "קטגוריה", required: false },
-  { key: "price", label: "מחיר", required: true },
+  { key: "price", label: "מחיר", required: false }, // Changed to not required - will default to 0
   { key: "sale_price", label: "מחיר מבצע", required: false },
   { key: "original_price", label: "מחיר לפני הנחה", required: false },
   { key: "price_per_weight", label: "מחיר לפי משקל", required: false },
@@ -134,14 +134,23 @@ const AdminProductImport = () => {
         setCsvHeaders(headers);
         setCsvData(rows);
 
-        // Auto-map columns
+        // Auto-map columns with improved matching
         const autoMappings: ColumnMapping[] = headers.map((header) => {
-          const matchedColumn = EXPECTED_COLUMNS.find(
-            (col) =>
-              col.key.toLowerCase() === header.toLowerCase() ||
-              col.label.includes(header) ||
-              header.includes(col.key)
-          );
+          const headerLower = header.toLowerCase().trim();
+          const matchedColumn = EXPECTED_COLUMNS.find((col) => {
+            // Exact match
+            if (col.key.toLowerCase() === headerLower) return true;
+            // Label contains header or vice versa
+            if (col.label.includes(header) || header.includes(col.label)) return true;
+            // Common variations
+            if (col.key === 'name' && (headerLower.includes('שם') || headerLower.includes('מוצר') || headerLower.includes('name') || headerLower.includes('product') || headerLower.includes('title'))) return true;
+            if (col.key === 'sku' && (headerLower.includes('ברקוד') || headerLower.includes('barcode') || headerLower.includes('מק') || headerLower.includes('sku') || headerLower.includes('קוד'))) return true;
+            if (col.key === 'price' && (headerLower.includes('מחיר') || headerLower.includes('price') || headerLower.includes('עלות'))) return true;
+            if (col.key === 'description' && (headerLower.includes('תיאור') || headerLower.includes('description') || headerLower.includes('פרטים'))) return true;
+            if (col.key === 'category' && (headerLower.includes('קטגוריה') || headerLower.includes('category') || headerLower.includes('סוג'))) return true;
+            if (col.key === 'image_url' && (headerLower.includes('תמונה') || headerLower.includes('image') || headerLower.includes('url') || headerLower.includes('קישור'))) return true;
+            return false;
+          });
           return {
             csvColumn: header,
             dbColumn: matchedColumn?.key || "",
@@ -182,14 +191,23 @@ const AdminProductImport = () => {
       setCsvHeaders(headers);
       setCsvData(data);
 
-      // Auto-map columns
+      // Auto-map columns with improved matching
       const autoMappings: ColumnMapping[] = headers.map((header) => {
-        const matchedColumn = EXPECTED_COLUMNS.find(
-          (col) =>
-            col.key.toLowerCase() === header.toLowerCase() ||
-            col.label.includes(header) ||
-            header.includes(col.key)
-        );
+        const headerLower = header.toLowerCase().trim();
+        const matchedColumn = EXPECTED_COLUMNS.find((col) => {
+          // Exact match
+          if (col.key.toLowerCase() === headerLower) return true;
+          // Label contains header or vice versa
+          if (col.label.includes(header) || header.includes(col.label)) return true;
+          // Common variations
+          if (col.key === 'name' && (headerLower.includes('שם') || headerLower.includes('מוצר') || headerLower.includes('name') || headerLower.includes('product') || headerLower.includes('title'))) return true;
+          if (col.key === 'sku' && (headerLower.includes('ברקוד') || headerLower.includes('barcode') || headerLower.includes('מק') || headerLower.includes('sku') || headerLower.includes('קוד'))) return true;
+          if (col.key === 'price' && (headerLower.includes('מחיר') || headerLower.includes('price') || headerLower.includes('עלות'))) return true;
+          if (col.key === 'description' && (headerLower.includes('תיאור') || headerLower.includes('description') || headerLower.includes('פרטים'))) return true;
+          if (col.key === 'category' && (headerLower.includes('קטגוריה') || headerLower.includes('category') || headerLower.includes('סוג'))) return true;
+          if (col.key === 'image_url' && (headerLower.includes('תמונה') || headerLower.includes('image') || headerLower.includes('url') || headerLower.includes('קישור'))) return true;
+          return false;
+        });
         return {
           csvColumn: header,
           dbColumn: matchedColumn?.key || "",
@@ -360,10 +378,10 @@ const AdminProductImport = () => {
     for (let i = 0; i < validRows.length; i++) {
       const row = validRows[i];
       try {
-        const price = parseFloat(row.data.price);
-        let needsPriceReview = false;
+        const price = row.data.price ? parseFloat(row.data.price) : 0; // Default to 0 if no price
+        let needsPriceReview = !row.data.price; // Mark for review if no price provided
         let suggestedPrice: number | null = null;
-        let priceSuggestionReason: string | null = null;
+        let priceSuggestionReason: string | null = !row.data.price ? "לא הוזן מחיר - יש להגדיר" : null;
 
         // Check price against reference prices
         if (refPrices && refPrices.length > 0) {
