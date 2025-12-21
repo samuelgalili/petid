@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { HighlightsSection } from "@/components/HighlightsSection";
+import { RoleBadge } from "@/components/RoleBadge";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -170,6 +171,7 @@ const Profile = () => {
               <h1 className="text-lg font-bold text-foreground">
                 {profile?.full_name?.split(' ')[0] || 'משתמש'}
               </h1>
+              <RoleBadge size="sm" />
               {profile?.points > 100 && (
                 <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {Math.floor((profile?.points || 0) / 100)}+
