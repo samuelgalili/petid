@@ -55,6 +55,8 @@ interface EnrichedData {
   priceReason?: string;
   petType?: string;
   imageSearchQuery?: string;
+  imageUrl?: string;
+  allImageUrls?: string[];
 }
 
 interface ProductFormDialogProps {
@@ -153,6 +155,11 @@ export const ProductFormDialog = ({
           updates.pet_type = enriched.petType === "dog" ? "dog" : 
                             enriched.petType === "cat" ? "cat" : 
                             enriched.petType === "both" ? "both" : "other";
+        }
+        
+        // Auto-fill image if found
+        if (enriched.imageUrl && !product?.image_url) {
+          updates.image_url = enriched.imageUrl;
         }
         
         // Map enriched category to our category values
