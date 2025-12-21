@@ -94,19 +94,25 @@ const AdminProducts = () => {
 
   const saveMutation = useMutation({
     mutationFn: async (product: Partial<ProductData>) => {
+      const productData = {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        original_price: product.original_price,
+        sale_price: (product as any).sale_price || null,
+        image_url: product.image_url || "/placeholder.svg",
+        category: product.category,
+        in_stock: product.in_stock,
+        is_featured: product.is_featured,
+        sku: (product as any).sku || null,
+        pet_type: (product as any).pet_type || null,
+        flavors: (product as any).flavors || null,
+      };
+
       if (product.id) {
         const { error } = await supabase
           .from("business_products")
-          .update({
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            original_price: product.original_price,
-            image_url: product.image_url,
-            category: product.category,
-            in_stock: product.in_stock,
-            is_featured: product.is_featured,
-          })
+          .update(productData)
           .eq("id", product.id);
 
         if (error) throw error;
@@ -119,18 +125,10 @@ const AdminProducts = () => {
         });
       } else {
         // For new products, we need a business_id
-        // In a real app, this would come from the selected business
         const { error } = await supabase
           .from("business_products")
           .insert({
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            original_price: product.original_price,
-            image_url: product.image_url || "/placeholder.svg",
-            category: product.category,
-            in_stock: product.in_stock,
-            is_featured: product.is_featured,
+            ...productData,
             business_id: "00000000-0000-0000-0000-000000000000", // Placeholder
           });
 
@@ -145,11 +143,12 @@ const AdminProducts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
-      toast({ title: editingProduct?.id ? "המוצר עודכן" : "המוצר נוסף" });
+      toast({ title: editingProduct?.id ? "המוצר עודכן" : "המוצר נוסף בהצלחה!" });
       setIsDialogOpen(false);
       setEditingProduct(null);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Save error:", error);
       toast({ title: "שגיאה", description: "הפעולה נכשלה", variant: "destructive" });
     },
   });
