@@ -37,12 +37,15 @@ interface ProductData {
   original_price: number | null;
   sale_price?: number | null;
   image_url: string;
+  images?: string[] | null;
   category: string | null;
   in_stock: boolean | null;
   is_featured: boolean | null;
   sku?: string | null;
   flavors?: string[] | null;
   pet_type?: string | null;
+  weight_unit?: string | null;
+  price_per_weight?: number | null;
 }
 
 interface EnrichedData {
@@ -101,6 +104,7 @@ export const ProductFormDialog = ({
 }: ProductFormDialogProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const additionalImageInputRef = useRef<HTMLInputElement>(null);
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichedData, setEnrichedData] = useState<EnrichedData | null>(null);
   const [showEnrichmentDetails, setShowEnrichmentDetails] = useState(false);
@@ -108,6 +112,7 @@ export const ProductFormDialog = ({
   const [imageSearchQuery, setImageSearchQuery] = useState("");
   const [imageSearchResults, setImageSearchResults] = useState<string[]>([]);
   const [isSearchingImages, setIsSearchingImages] = useState(false);
+  const [newFlavor, setNewFlavor] = useState("");
   const enrichTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const enrichProduct = useCallback(async (productName: string, sku?: string) => {
@@ -307,6 +312,37 @@ export const ProductFormDialog = ({
       title: "התמונה נבחרה",
       description: "התמונה עודכנה בהצלחה",
     });
+  };
+
+  const addFlavor = () => {
+    if (!newFlavor.trim()) return;
+    const currentFlavors = product?.flavors || [];
+    if (!currentFlavors.includes(newFlavor.trim())) {
+      onProductChange({ ...product, flavors: [...currentFlavors, newFlavor.trim()] });
+    }
+    setNewFlavor("");
+  };
+
+  const removeFlavor = (flavor: string) => {
+    const currentFlavors = product?.flavors || [];
+    onProductChange({ ...product, flavors: currentFlavors.filter(f => f !== flavor) });
+  };
+
+  const addAdditionalImage = (imageUrl: string) => {
+    const currentImages = product?.images || [];
+    if (!currentImages.includes(imageUrl)) {
+      onProductChange({ ...product, images: [...currentImages, imageUrl] });
+    }
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    const currentImages = product?.images || [];
+    onProductChange({ ...product, images: currentImages.filter((_, i) => i !== index) });
+  };
+
+  const handleAdditionalImageUpload = async (file: File) => {
+    await onImageUpload(file);
+    // The image_url will be set by the parent, we need to copy it to images array
   };
 
   if (!product) return null;
@@ -558,6 +594,120 @@ export const ProductFormDialog = ({
                 rows={3}
                 placeholder="ימולא אוטומטית מחיפוש..."
               />
+            </div>
+
+            {/* Flavors / Variants */}
+            <div className="col-span-2">
+              <Label>טעמים / וריאנטים</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {(product.flavors || []).map((flavor, idx) => (
+                  <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                    {flavor}
+                    <button
+                      type="button"
+                      onClick={() => removeFlavor(flavor)}
+                      className="hover:text-destructive"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newFlavor}
+                  onChange={(e) => setNewFlavor(e.target.value)}
+                  placeholder="הוסף טעם / וריאנט חדש"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addFlavor();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={addFlavor}>
+                  הוסף
+                </Button>
+              </div>
+            </div>
+
+            {/* Additional Images */}
+            <div className="col-span-2">
+              <Label>תמונות נוספות</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {(product.images || []).map((img, idx) => (
+                  <div key={idx} className="relative w-16 h-16">
+                    <img src={img} alt="" className="w-full h-full object-cover rounded-md border" />
+                    <button
+                      type="button"
+                      onClick={() => removeAdditionalImage(idx)}
+                      className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="כתובת URL לתמונה נוספת"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const input = e.target as HTMLInputElement;
+                      if (input.value) {
+                        addAdditionalImage(input.value);
+                        input.value = "";
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const input = document.querySelector('input[placeholder="כתובת URL לתמונה נוספת"]') as HTMLInputElement;
+                    if (input?.value) {
+                      addAdditionalImage(input.value);
+                      input.value = "";
+                    }
+                  }}
+                >
+                  הוסף
+                </Button>
+              </div>
+            </div>
+
+            {/* Weight and Unit */}
+            <div>
+              <Label>מחיר לפי משקל</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={product.price_per_weight || ""}
+                onChange={(e) => onProductChange({ ...product, price_per_weight: parseFloat(e.target.value) || null })}
+                placeholder="לדוגמה: 35.90"
+              />
+            </div>
+            <div>
+              <Label>יחידת משקל</Label>
+              <Select 
+                value={product.weight_unit || ""} 
+                onValueChange={(value) => onProductChange({ ...product, weight_unit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר יחידה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kg">ק״ג</SelectItem>
+                  <SelectItem value="g">גרם</SelectItem>
+                  <SelectItem value="l">ליטר</SelectItem>
+                  <SelectItem value="ml">מ״ל</SelectItem>
+                  <SelectItem value="unit">יחידה</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Enrichment Details Panel */}
