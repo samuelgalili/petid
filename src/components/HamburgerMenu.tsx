@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
+import { RoleBadge } from "@/components/RoleBadge";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -168,9 +169,12 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-right">
-                    <p className="text-[18px] font-semibold text-foreground">
-                      {profile?.full_name || "משתמש"}
-                    </p>
+                    <div className="flex items-center gap-2 justify-start flex-row-reverse">
+                      <p className="text-[18px] font-semibold text-foreground">
+                        {profile?.full_name || "משתמש"}
+                      </p>
+                      <RoleBadge size="sm" />
+                    </div>
                     <p className="text-[14px] text-muted-foreground">הצג פרופיל</p>
                   </div>
                 </button>
