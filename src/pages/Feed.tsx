@@ -33,6 +33,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { ChallengePostCard } from "@/components/ChallengePostCard";
 import { BusinessFeedBanner } from "@/components/business/BusinessFeedBanner";
+import { NotesSection } from "@/components/NotesSection";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -1173,6 +1174,11 @@ const Feed = () => {
           </button>
         </div>
       </motion.div>
+
+      {/* Notes Section - Instagram style status */}
+      <div className="py-3 border-b border-border">
+        <NotesSection />
+      </div>
 
       {/* Business Feed Banner - for business owners */}
       <BusinessFeedBanner />
