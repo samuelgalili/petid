@@ -31,6 +31,11 @@ export default {
   				'system-ui',
   				'sans-serif'
   			],
+  			heebo: [
+  				'Heebo',
+  				'system-ui',
+  				'sans-serif'
+  			],
   			serif: [
   				'Libre Caslon Text',
   				'ui-serif',
