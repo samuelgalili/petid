@@ -205,6 +205,7 @@ const BusinessProfile = () => {
               viewCount={business.view_count || 0}
               totalReviews={business.total_reviews || 0}
               rating={business.rating || 0}
+              businessId={business.id}
             />
           </motion.div>
         )}

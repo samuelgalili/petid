@@ -6,6 +6,7 @@ interface BusinessInsightsProps {
   viewCount: number;
   totalReviews: number;
   rating: number;
+  businessId?: string;
   previousViewCount?: number;
   previousReviews?: number;
 }
@@ -21,6 +22,7 @@ export const BusinessInsights = ({
   viewCount, 
   totalReviews, 
   rating,
+  businessId,
   previousViewCount = Math.floor(viewCount * 0.85), // Mock previous data
   previousReviews = Math.max(0, totalReviews - 2)
 }: BusinessInsightsProps) => {
@@ -28,6 +30,15 @@ export const BusinessInsights = ({
   
   const viewChange = getChange(viewCount, previousViewCount);
   const reviewChange = getChange(totalReviews, previousReviews);
+
+  const handleDetailsClick = () => {
+    // Navigate to business profile instead of admin dashboard
+    if (businessId) {
+      navigate(`/business/${businessId}`);
+    } else {
+      navigate('/profile');
+    }
+  };
 
   return (
     <motion.div
@@ -39,7 +50,7 @@ export const BusinessInsights = ({
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-muted-foreground">השבוע שלך</span>
         <button 
-          onClick={() => navigate('/admin/dashboard')}
+          onClick={handleDetailsClick}
           className="text-xs text-primary flex items-center gap-1 hover:underline"
         >
           פרטים נוספים
