@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, Plus, Edit, Trash2, MoreHorizontal, 
@@ -72,6 +73,7 @@ const categories = [
 ];
 
 const AdminProducts = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
@@ -329,7 +331,7 @@ const AdminProducts = () => {
             <Plus className="w-4 h-4 ml-2" />
             הוסף מוצר
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => navigate('/admin/products/import')}>
             <Upload className="w-4 h-4 ml-2" />
             ייבוא CSV
           </Button>
