@@ -120,11 +120,12 @@ const BottomNav = () => {
     color: "#1E5799"
   }];
   return <>
+      {/* Instagram-style bottom nav - minimal black icons on white */}
       <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border" style={{
       position: 'fixed',
       bottom: 0
     }} role="navigation" aria-label="ניווט ראשי">
-        <div className="flex justify-around items-center h-14 w-full max-w-2xl mx-auto px-2">
+        <div className="flex justify-around items-center h-12 w-full max-w-2xl mx-auto">
           {/* Home */}
           <NavItem onClick={() => {
           if (location.pathname === "/") {
@@ -136,36 +137,28 @@ const BottomNav = () => {
           } else {
             navigate("/");
           }
-        }} icon={<div className="p-2">
-                <Home className={cn("w-6 h-6 transition-colors", isActive("/") ? "text-foreground" : "text-muted-foreground")} strokeWidth={isActive("/") ? 2 : 1.5} fill={isActive("/") ? "currentColor" : "none"} />
-              </div>} isActive={isActive("/")} label="בית" />
+        }} icon={<Home className={cn("w-6 h-6", isActive("/") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/") ? "currentColor" : "none"} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
-          <NavItem to="/explore" icon={<div className="p-2">
-                <Compass className={cn("w-6 h-6 transition-colors", isActive("/explore") ? "text-foreground" : "text-muted-foreground")} strokeWidth={isActive("/explore") ? 2 : 1.5} fill={isActive("/explore") ? "currentColor" : "none"} />
-              </div>} isActive={isActive("/explore")} label="חיפוש" />
+          <NavItem to="/explore" icon={<Compass className={cn("w-6 h-6", isActive("/explore") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
 
-          {/* Categories - Center Button */}
-          <NavItem onClick={() => setCategoriesOpen(true)} icon={<div className="p-2">
-                <Grid3X3 className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
-              </div>} isActive={false} label="קטגוריות" />
+          {/* Create - Plus button */}
+          <NavItem onClick={() => setCreatePostOpen(true)} icon={<div className="w-6 h-6 rounded-md border border-foreground flex items-center justify-center">
+                <Plus className="w-4 h-4 text-foreground" strokeWidth={2} />
+              </div>} isActive={false} label="יצירה" />
 
-          {/* Shop */}
-          <NavItem to="/shop" icon={<div className="p-2">
-                <ShoppingBag className={cn("w-6 h-6 transition-colors", isActive("/shop") ? "text-foreground" : "text-muted-foreground")} strokeWidth={isActive("/shop") ? 2 : 1.5} fill={isActive("/shop") ? "currentColor" : "none"} />
-              </div>} isActive={isActive("/shop")} label="חנות" />
+          {/* Reels */}
+          <NavItem to="/reels" icon={<Clapperboard className={cn("w-6 h-6", isActive("/reels") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/reels") ? "currentColor" : "none"} />} isActive={isActive("/reels")} label="רילס" />
 
           {/* Profile with Avatar */}
-          <Link to="/profile" className="flex flex-col items-center justify-center flex-1 py-2" aria-label="פרופיל">
-            <div className="p-1">
-              <div className={cn("w-7 h-7 rounded-full overflow-hidden transition-all", isActive("/profile") ? "ring-2 ring-foreground" : "ring-1 ring-border")}>
-                <Avatar className="w-full h-full">
-                  <AvatarImage src={userAvatar} className="object-cover" />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
-                    <User className="w-4 h-4" />
-                  </AvatarFallback>
-                </Avatar>
-              </div>
+          <Link to="/profile" className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
+            <div className={cn("w-6 h-6 rounded-full overflow-hidden", isActive("/profile") ? "ring-[1.5px] ring-foreground" : "")}>
+              <Avatar className="w-full h-full">
+                <AvatarImage src={userAvatar} className="object-cover" />
+                <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                  <User className="w-3.5 h-3.5" />
+                </AvatarFallback>
+              </Avatar>
             </div>
           </Link>
         </div>

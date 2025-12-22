@@ -199,55 +199,44 @@ export const PostCard = ({
   };
 
   return (
-    <motion.div 
-      className="bg-card border-b border-border"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Post Header */}
-      <div className="flex items-center justify-between px-3 py-2.5">
-        <div className="flex items-center gap-3">
+    <div className="bg-background border-b border-border">
+      {/* Post Header - Instagram style */}
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center gap-2.5">
           <div 
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <Avatar className="w-8 h-8 ring-1 ring-border">
+            <Avatar className="w-8 h-8">
               <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
           </div>
           <div 
-            className="cursor-pointer flex flex-col"
+            className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <p className="font-semibold text-foreground text-[13px] leading-tight">{post.user.full_name || "משתמש"}</p>
-            <p className="text-[11px] text-muted-foreground">{getTimeAgo(post.created_at)}</p>
+            <p className="font-semibold text-foreground text-sm leading-tight">{post.user.full_name || "משתמש"}</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          {currentUserId !== post.user_id && (
+          {currentUserId !== post.user_id && !isFollowing && (
             <button
-              className={`text-[13px] font-semibold ${
-                isFollowing 
-                  ? 'text-foreground' 
-                  : 'text-primary'
-              }`}
+              className="text-sm font-semibold text-primary"
               onClick={(e) => {
                 e.stopPropagation();
                 handleFollow();
               }}
             >
-              {isFollowing ? "" : "עקוב"}
+              עקוב
             </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-foreground p-1 rounded-full hover:bg-muted transition-colors">
+              <button className="text-foreground">
                 <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </DropdownMenuTrigger>
@@ -271,14 +260,6 @@ export const PostCard = ({
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
-                  toast.success("נציג לך פחות תוכן דומה");
-                }}
-              >
-                <MinusCircle className="w-4 h-4 ml-2" />
-                מעוניין בפחות דומים
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
                   if (checkAuth("כדי לדווח, יש להתחבר")) {
                     setShowReportDialog(true);
                   }
@@ -286,153 +267,36 @@ export const PostCard = ({
                 className="text-destructive focus:text-destructive"
               >
                 <Flag className="w-4 h-4 ml-2" />
-                דווח על פוסט
+                דווח
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Post Image with Double Tap */}
+      {/* Post Image */}
       <div 
-        className="relative cursor-pointer select-none"
+        className="relative cursor-pointer"
         onDoubleClick={handleDoubleTap}
       >
         <OptimizedImage
           src={post.image_url}
           alt={post.caption || "פוסט"}
-          className="w-full aspect-[3/4]"
+          className="w-full aspect-square"
           objectFit="cover"
           sizes="(max-width: 768px) 100vw, 672px"
         />
         
-        {/* Double Tap Like Animation - Enhanced Heart Effect */}
+        {/* Double Tap Heart Animation */}
         <AnimatePresence>
           {showDoubleTapAnimation && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              {/* Glow effect behind heart */}
-              <motion.div
-                className="absolute w-40 h-40 rounded-full"
-                style={{
-                  background: "radial-gradient(circle, rgba(237,73,86,0.4) 0%, rgba(237,73,86,0) 70%)"
-                }}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: [0, 2, 2.5], opacity: [0, 0.8, 0] }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
-              
-              {/* Main heart */}
-              <motion.svg
-                viewBox="0 0 24 24"
-                className="w-32 h-32 drop-shadow-[0_4px_20px_rgba(237,73,86,0.6)]"
-                initial={{ scale: 0, rotate: -15 }}
-                animate={{ 
-                  scale: [0, 1.4, 0.95, 1.15, 1],
-                  rotate: [-15, 10, -5, 5, 0]
-                }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ 
-                  duration: 0.7,
-                  times: [0, 0.25, 0.45, 0.65, 1],
-                  ease: "easeOut"
-                }}
-              >
-                <defs>
-                  <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FF6B8A" />
-                    <stop offset="50%" stopColor="#ED4956" />
-                    <stop offset="100%" stopColor="#C13584" />
-                  </linearGradient>
-                  <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="1" result="glow"/>
-                    <feMerge>
-                      <feMergeNode in="glow"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-                <motion.path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                  fill="url(#heartGradient)"
-                  filter="url(#heartGlow)"
-                  stroke="white"
-                  strokeWidth="0.3"
-                />
-              </motion.svg>
-              
-              {/* Heart burst particles */}
-              {[...Array(12)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute"
-                  initial={{ 
-                    scale: 0,
-                    x: 0,
-                    y: 0,
-                    opacity: 1
-                  }}
-                  animate={{ 
-                    scale: [0, 1.2, 0.8],
-                    x: Math.cos((i / 12) * Math.PI * 2) * (60 + Math.random() * 40),
-                    y: Math.sin((i / 12) * Math.PI * 2) * (60 + Math.random() * 40),
-                    opacity: [1, 1, 0],
-                    rotate: [0, Math.random() * 360]
-                  }}
-                  transition={{ 
-                    duration: 0.7,
-                    delay: 0.05 + (i * 0.02),
-                    ease: "easeOut"
-                  }}
-                >
-                  {i % 2 === 0 ? (
-                    <svg viewBox="0 0 24 24" className="w-4 h-4">
-                      <path
-                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                        fill={i % 4 === 0 ? "#FF6B8A" : "#ED4956"}
-                      />
-                    </svg>
-                  ) : (
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ 
-                        background: i % 3 === 0 ? "#FF6B8A" : i % 3 === 1 ? "#ED4956" : "#FFB8C6"
-                      }}
-                    />
-                  )}
-                </motion.div>
-              ))}
-              
-              {/* Sparkles */}
-              {[...Array(6)].map((_, i) => (
-                <motion.div
-                  key={`sparkle-${i}`}
-                  className="absolute text-2xl"
-                  initial={{ 
-                    scale: 0,
-                    opacity: 0,
-                    x: (Math.random() - 0.5) * 40,
-                    y: (Math.random() - 0.5) * 40,
-                  }}
-                  animate={{ 
-                    scale: [0, 1, 0],
-                    opacity: [0, 1, 0],
-                    y: [(Math.random() - 0.5) * 40, (Math.random() - 0.5) * 100 - 30],
-                  }}
-                  transition={{ 
-                    duration: 0.8,
-                    delay: 0.2 + (i * 0.05),
-                    ease: "easeOut"
-                  }}
-                >
-                  ✨
-                </motion.div>
-              ))}
+              <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -503,102 +367,46 @@ export const PostCard = ({
           </p>
         )}
 
-        {/* Challenge CTA Banner */}
-        <AnimatePresence>
-          {showChallengeCTA && activeChallenge && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: "auto", marginTop: 8 }}
-              exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 p-[1px]"
-            >
-              <div className="relative bg-gradient-to-r from-orange-50 via-pink-50 to-purple-50 dark:from-orange-950/80 dark:via-pink-950/80 dark:to-purple-950/80 rounded-[11px] p-3">
-                <button
-                  onClick={() => setShowChallengeCTA(false)}
-                  className="absolute top-1 left-1 text-muted-foreground hover:text-foreground text-xs p-1"
-                >
-                  ✕
-                </button>
-                
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                      <Trophy className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-orange-600 dark:text-orange-400">#{activeChallenge.hashtag}</span>
-                        <Sparkles className="w-3 h-3 text-yellow-500" />
-                      </div>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        הצטרפו לאתגר וזכו ב-<span className="font-bold text-primary">50 נקודות</span>!
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <motion.button
-                    onClick={() => navigate('/feed')}
-                    className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-pink-600 text-white text-xs font-bold rounded-full shadow-md flex-shrink-0"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    הצטרף עכשיו
-                  </motion.button>
-                </div>
-                
-                <div className="flex items-center gap-1 mt-2 text-[10px] text-muted-foreground">
-                  <span>👥 {activeChallenge.participant_count} משתתפים</span>
-                  <span className="mx-1">•</span>
-                  <span className="text-green-600 dark:text-green-400 font-medium">🎁 +50 נק׳</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* View Comments */}
         {post.comments_count > 0 && (
           <button 
-            className="text-[#8E8E8E] text-[13px] mb-1"
+            className="text-muted-foreground text-sm"
             onClick={() => navigate(`/post/${post.id}`)}
           >
-            הצג את כל {post.comments_count} התגובות
+            View all {post.comments_count} comments
           </button>
         )}
 
         {/* Time ago */}
-        <p className="text-muted-foreground text-[10px] uppercase tracking-wide">
+        <p className="text-muted-foreground text-[10px] uppercase mt-1">
           {getTimeAgo(post.created_at)}
         </p>
       </div>
 
-      {/* Quick Reply Field */}
-      <div className="flex items-center gap-3 px-3 py-3 border-t border-border">
-        <Avatar className="w-7 h-7 flex-shrink-0">
+      {/* Add comment section */}
+      <div className="flex items-center gap-3 px-3 py-2.5 border-t border-border">
+        <Avatar className="w-6 h-6 flex-shrink-0">
           <AvatarImage src={currentUserAvatar} />
-          <AvatarFallback className="bg-secondary text-muted-foreground text-[10px]">
+          <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
             U
           </AvatarFallback>
         </Avatar>
         <input
           type="text"
-          placeholder={isAuthenticated ? "הוסף תגובה..." : "התחבר כדי להגיב..."}
+          placeholder="Add a comment..."
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleComment()}
           onFocus={() => !isAuthenticated && checkAuth("כדי להגיב על פוסטים, יש להתחבר")}
-          className="flex-1 bg-transparent text-[13px] text-foreground placeholder-muted-foreground outline-none"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground outline-none"
           readOnly={!isAuthenticated}
         />
-        <button className="text-muted-foreground p-1">
-          <Smile className="w-5 h-5" strokeWidth={1.5} />
-        </button>
         {commentText.trim() && (
           <button 
             onClick={handleComment}
-            className="text-[#0095F6] text-[13px] font-semibold"
+            className="text-primary text-sm font-semibold"
           >
-            פרסם
+            Post
           </button>
         )}
       </div>
@@ -610,6 +418,6 @@ export const PostCard = ({
         reportedUserId={post.user_id}
         reportedPostId={post.id}
       />
-    </motion.div>
+    </div>
   );
 };

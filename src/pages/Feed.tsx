@@ -919,129 +919,44 @@ const Feed = () => {
   const handleSuggestedFollow = useCallback((userId: string) => {
     setSuggestedPosts(prev => prev.filter(post => post.user_id !== userId));
   }, []);
-  return <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80 pb-24" dir="rtl">
-      {/* Instagram-style Header with blur effect */}
-      <motion.div initial={{
-      y: -20,
-      opacity: 0
-    }} animate={{
-      y: 0,
-      opacity: 1
-    }} transition={{
-      duration: 0.4,
-      ease: "easeOut"
-    }} className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50 shadow-sm">
-        <div className="max-w-lg mx-auto px-4 h-[56px] flex items-center justify-between">
-          {/* Left side - Hamburger menu */}
-          <div className="flex items-center gap-3">
-            <motion.button whileHover={{
-            scale: 1.1
-          }} whileTap={{
-            scale: 0.9
-          }} onClick={() => setIsMenuOpen(true)} className="active:opacity-50 transition-opacity p-1" aria-label="פתח תפריט">
-              <Menu className="w-6 h-6 text-[#262626] hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
-            </motion.button>
-            {/* Logo with PetID gradient and animation */}
-            <motion.div className="relative cursor-pointer" whileHover={{
-            scale: 1.05
-          }} whileTap={{
-            scale: 0.97
-          }} onClick={() => {
-            setPage(0);
-            setHasMore(true);
-            fetchPosts(0, false);
-          }}>
-              {/* Animated glow effect behind logo */}
-              <motion.div className="absolute -inset-2 bg-gradient-to-r from-[#1E5799]/20 via-[#4ECDC4]/30 to-[#7DB9E8]/20 blur-xl rounded-full" animate={{
-              opacity: [0.3, 0.6, 0.3],
-              scale: [0.95, 1.1, 0.95]
-            }} transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }} />
-              <h1 className="relative text-[30px] font-black cursor-pointer bg-gradient-to-r from-[#1E5799] via-[#4ECDC4] via-55% to-[#7DB9E8] bg-clip-text text-transparent font-jakarta tracking-tight">
-                Petid
-              </h1>
-            </motion.div>
+  return <div className="min-h-screen bg-background pb-24" dir="rtl">
+      {/* Instagram-style Header - Clean minimal */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
+        <div className="max-w-lg mx-auto px-4 h-11 flex items-center justify-between">
+          {/* Left side - Logo */}
+          <div className="flex items-center">
+            <h1 
+              className="text-[22px] font-semibold cursor-pointer text-foreground"
+              style={{ fontFamily: "'Billabong', cursive" }}
+              onClick={() => {
+                setPage(0);
+                setHasMore(true);
+                fetchPosts(0, false);
+              }}
+            >
+              Petid
+            </h1>
           </div>
           
-          {/* Right icons with Instagram colors */}
-          <div className="flex items-center gap-1.5">
-            {isAuthenticated && <motion.button 
-              whileHover={{ scale: 1.1 }} 
-              whileTap={{ scale: 0.9 }} 
-              onClick={() => setIsPetsSheetOpen(true)}
-              className={`active:opacity-50 transition-opacity relative flex items-center gap-0.5 p-1 ${newlyAddedPetIds.size > 0 ? 'animate-pulse' : ''}`}
+          {/* Right icons - Instagram style */}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={handleNavigateToNotifications} 
+              className="relative"
             >
-              <PawPrint className={`w-6 h-6 transition-colors ${newlyAddedPetIds.size > 0 ? 'text-[#4ECDC4]' : 'text-[#262626] hover:text-[#4ECDC4]'}`} strokeWidth={1.5} />
-              {pets.length > 0 && <motion.span 
-                initial={{ scale: 0 }} 
-                animate={{ scale: 1 }} 
-                className={`absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm ${newlyAddedPetIds.size > 0 ? 'animate-bounce' : ''}`}
-              >
-                {pets.length}
-              </motion.span>}
-            </motion.button>}
-            <motion.button whileHover={{
-            scale: 1.1
-          }} whileTap={{
-            scale: 0.9
-          }} onClick={handleNavigateToNotifications} className="active:opacity-50 transition-opacity relative p-1">
-              <Heart className="w-6 h-6 text-[#262626] hover:text-[#4ECDC4] transition-colors" strokeWidth={1.5} />
-            </motion.button>
-            <motion.button whileHover={{
-            scale: 1.1
-          }} whileTap={{
-            scale: 0.9
-          }} onClick={handleNavigateToMessages} className="active:opacity-50 transition-opacity p-1">
-              <Send className="w-6 h-6 text-[#262626] hover:text-[#1E5799] transition-colors" strokeWidth={1.5} />
-            </motion.button>
-            
-            {/* Cart Icon - appears when items added */}
-            <AnimatePresence>
-              {getTotalItems() > 0 && <motion.button ref={cartIconRef} initial={{
-              scale: 0,
-              opacity: 0
-            }} animate={{
-              scale: 1,
-              opacity: 1
-            }} exit={{
-              scale: 0,
-              opacity: 0
-            }} transition={{
-              type: "spring",
-              stiffness: 400,
-              damping: 15
-            }} whileHover={{
-              scale: 1.1
-            }} whileTap={{
-              scale: 0.9
-            }} onClick={() => navigate('/cart')} className={`active:opacity-50 transition-opacity p-1 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`} onAnimationComplete={() => {
-              if (cartIconRef.current) {
-                const rect = cartIconRef.current.getBoundingClientRect();
-                setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
-              }
-            }}>
-                  <ShoppingCart className="w-6 h-6 text-[#1E5799]" strokeWidth={1.5} />
-                  <motion.span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center" initial={{
-                scale: 0
-              }} animate={{
-                scale: 1
-              }} transition={{
-                type: "spring",
-                stiffness: 500
-              }}>
-                    {getTotalItems()}
-                  </motion.span>
-                </motion.button>}
-            </AnimatePresence>
+              <Heart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+            </button>
+            <button 
+              onClick={handleNavigateToMessages}
+            >
+              <Send className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+            </button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Spacer for fixed header */}
-      <div className="h-[56px]" />
+      <div className="h-11" />
 
       {/* New Posts Banner */}
       <AnimatePresence>
