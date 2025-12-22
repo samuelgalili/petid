@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, Menu, ShoppingCart, Coins, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, PawPrint, Menu, ShoppingCart, Coins, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { usePoints } from "@/contexts/PointsContext";
 import { useNavigate } from "react-router-dom";
@@ -276,6 +276,7 @@ const Feed = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPetsSheetOpen, setIsPetsSheetOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const POSTS_PER_PAGE = 10;
@@ -631,6 +632,15 @@ const Feed = () => {
       toast.error("שגיאה בהעברת חיית המחמד לארכיון");
     }
   };
+  // Scroll detection for hiding stories
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 100);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     fetchPosts(0, false);
     fetchAdoptionPets();
@@ -919,37 +929,40 @@ const Feed = () => {
   const handleSuggestedFollow = useCallback((userId: string) => {
     setSuggestedPosts(prev => prev.filter(post => post.user_id !== userId));
   }, []);
-  return <div className="min-h-screen bg-background pb-24" dir="rtl">
+  return <div className="min-h-screen bg-white pb-24" dir="rtl">
       {/* Instagram-style Header - Clean minimal */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
         <div className="max-w-lg mx-auto px-4 h-11 flex items-center justify-between">
           {/* Left side - Logo */}
           <div className="flex items-center">
             <h1 
-              className="text-[22px] font-semibold cursor-pointer text-foreground"
-              style={{ fontFamily: "'Billabong', cursive" }}
+              className="text-[24px] font-bold cursor-pointer text-[#262626]"
+              style={{ fontFamily: "'Fredoka', cursive" }}
               onClick={() => {
                 setPage(0);
                 setHasMore(true);
                 fetchPosts(0, false);
               }}
             >
-              Petid
+              🐾 Petid
             </h1>
           </div>
           
           {/* Right icons - Instagram style */}
           <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/explore')}>
+              <Search className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+            </button>
             <button 
               onClick={handleNavigateToNotifications} 
               className="relative"
             >
-              <Heart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+              <Heart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
             </button>
             <button 
               onClick={handleNavigateToMessages}
             >
-              <Send className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
             </button>
           </div>
         </div>
@@ -1053,42 +1066,21 @@ const Feed = () => {
         
       </motion.div>}
 
-      {/* Stories Bar */}
-      <motion.div initial={{
-      opacity: 0,
-      y: 10
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.2,
-      duration: 0.4
-    }} className="bg-white">
-        <StoriesBar />
-      </motion.div>
-
-      {/* Feed Filter Tabs */}
-      <motion.div initial={{
-      opacity: 0,
-      y: 5
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.22,
-      duration: 0.3
-    }} className="bg-white border-b border-gray-100">
-        <div className="flex">
-          <button onClick={() => setFeedFilter("all")} className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${feedFilter === "all" ? "text-[#262626]" : "text-[#8E8E8E]"}`}>
-            הכל
-            {feedFilter === "all" && <motion.div layoutId="feedTabIndicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]" />}
-          </button>
-          <button onClick={handleFollowingFilter} className={`flex-1 py-3 text-center text-sm font-semibold transition-all relative ${feedFilter === "following" ? "text-[#262626]" : "text-[#8E8E8E]"}`}>
-            עוקבים
-            {feedFilter === "following" && <motion.div layoutId="feedTabIndicator" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#262626]" />}
-          </button>
-        </div>
-      </motion.div>
+      {/* Stories Bar - Only visible at top */}
+      {!isScrolled && (
+        <motion.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.2,
+        duration: 0.4
+      }} className="bg-white border-b border-gray-100">
+          <StoriesBar />
+        </motion.div>
+      )}
 
       {/* Notes Section - Instagram style status */}
       <div className="py-3 border-b border-border">
