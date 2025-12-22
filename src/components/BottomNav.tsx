@@ -145,8 +145,8 @@ const BottomNav = () => {
           {/* Categories */}
           <NavItem onClick={() => setCategoriesOpen(true)} icon={<Grid3X3 className="w-6 h-6 text-foreground" strokeWidth={1.5} />} isActive={false} label="קטגוריות" />
 
-          {/* Reels */}
-          <NavItem to="/reels" icon={<Clapperboard className={cn("w-6 h-6", isActive("/reels") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/reels") ? "currentColor" : "none"} />} isActive={isActive("/reels")} label="רילס" />
+          {/* Shop */}
+          <NavItem to="/shop" icon={<ShoppingBag className={cn("w-6 h-6", isActive("/shop") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
 
           {/* Profile with Avatar */}
           <Link to="/profile" className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
