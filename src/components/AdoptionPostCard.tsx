@@ -313,41 +313,15 @@ export const AdoptionPostCard = ({
         </motion.div>
       </motion.div>
 
-      {/* Instagram Sponsored-style CTA Bar - Adoption Colors */}
-      <motion.button onClick={handleAdoptClick} className="w-full bg-gradient-to-r from-petid-blue to-petid-blue-dark hover:from-petid-blue-dark hover:to-petid-blue transition-all flex items-center justify-between px-4 py-3 group relative overflow-hidden" whileTap={{
-      scale: 0.99
+      {/* Instagram-style CTA Bar */}
+      <motion.button onClick={handleAdoptClick} className="w-full bg-[#0095F6] hover:bg-[#1877F2] transition-all flex items-center justify-between px-4 py-3 group" whileTap={{
+      scale: 0.98
     }}>
-        {/* Shimmer effect */}
-        <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12" initial={{
-        x: "-100%"
-      }} animate={{
-        x: "200%"
-      }} transition={{
-        duration: 2,
-        repeat: Infinity,
-        repeatDelay: 1,
-        ease: "easeInOut"
-      }} />
         <div className="flex items-center gap-2">
-          <motion.div className="flex items-center justify-center" whileHover={{
-          rotate: [0, -10, 10, -10, 0],
-          scale: 1.2
-        }} transition={{
-          duration: 0.5
-        }}>
-            <PawPrint className="w-5 h-5 text-white group-hover:animate-bounce" />
-          </motion.div>
-          <span className="text-white text-[15px] font-medium">אמץ עכשיו</span>
+          <PawPrint className="w-5 h-5 text-white" />
+          <span className="text-white text-[15px] font-semibold">אמץ עכשיו</span>
         </div>
-        <motion.div animate={{
-        x: [0, -3, 0]
-      }} transition={{
-        duration: 1,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }}>
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </motion.div>
+        <ChevronLeft className="w-5 h-5 text-white" />
       </motion.button>
 
       {/* Instagram-style Action Bar - Below CTA */}
