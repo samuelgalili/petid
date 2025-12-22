@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Leaf, Zap, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Leaf, Zap, Loader2, Bell } from "lucide-react";
+import { ProductReviews } from "@/components/shop/ProductReviews";
+import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -17,6 +20,8 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const {
     toast
   } = useToast();
@@ -24,6 +29,7 @@ const ProductDetail = () => {
     addToCart
   } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [showReviews, setShowReviews] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -462,84 +468,23 @@ const ProductDetail = () => {
         </div>
       </motion.div>
 
-      {/* Reviews Section */}
-      <motion.div className="mx-4 mt-4 relative p-[2px] rounded-3xl overflow-hidden" style={{
-      background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
-    }} initial={{
-      opacity: 0,
-      y: 20
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.3
-    }}>
-        <div className="bg-white rounded-3xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-gray-800 font-jakarta">ביקורות לקוחות</h3>
-            <div className="flex items-center gap-1 text-sm px-3 py-1 rounded-full" style={{
-            background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box',
-            border: '1.5px solid transparent'
-          }}>
-              <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
-              <span className="font-bold text-gray-800 font-jakarta">{product.rating}</span>
-              <span className="text-gray-500 font-jakarta">({product.reviewCount})</span>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            {reviews.map((review, idx) => <motion.div key={review.id} initial={{
-            opacity: 0,
-            x: -10
-          }} animate={{
-            opacity: 1,
-            x: 0
-          }} transition={{
-            delay: 0.4 + idx * 0.1
-          }}>
-                <Card className="p-4 bg-gray-50 border-0 rounded-xl">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-10 h-10" style={{
-                  boxShadow: '0 0 0 2px #4ECDC4'
-                }}>
-                      <AvatarImage src={review.avatar} />
-                      <AvatarFallback className="text-white font-bold text-sm" style={{
-                    background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
-                  }}>
-                        {review.author[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-gray-800 font-jakarta text-sm">{review.author}</span>
-                        <span className="text-xs text-gray-500 font-jakarta">{review.date}</span>
-                      </div>
-                      <div className="flex items-center gap-0.5 mb-2">
-                        {[...Array(5)].map((_, i) => <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? "fill-[#4ECDC4] text-[#4ECDC4]" : "fill-gray-200 text-gray-200"}`} />)}
-                      </div>
-                      <p className="text-sm text-gray-600 leading-relaxed font-jakarta">
-                        {review.comment}
-                      </p>
-                      {review.petImage && <img src={review.petImage} alt="Pet" className="mt-3 w-16 h-16 rounded-xl object-cover" />}
-                      <div className="flex items-center gap-2 mt-3">
-                        <Button variant="ghost" size="sm" className="text-xs text-gray-500 hover:text-gray-700 h-7 px-2">
-                          👍 מועיל ({review.helpful})
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>)}
-          </div>
-          
-          <Button variant="outline" className="w-full mt-4 rounded-xl font-jakarta font-bold text-gray-700" style={{
-          background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
-          border: '2px solid transparent'
-        }}>
-            הצג את כל הביקורות ({product.reviewCount})
-          </Button>
-        </div>
-      </motion.div>
+      {/* Price Alert Button */}
+      {id && (
+        <motion.div className="mx-4 mt-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+          <PriceAlertButton 
+            productId={id} 
+            currentPrice={product.price} 
+            productName={product.name}
+          />
+        </motion.div>
+      )}
+
+      {/* Reviews Section - Using ProductReviews Component */}
+      {id && (
+        <motion.div className="mx-4 mt-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <ProductReviews productId={id} />
+        </motion.div>
+      )}
 
       {/* Recommended Products */}
       <motion.div className="mx-4 mt-4 mb-6" initial={{

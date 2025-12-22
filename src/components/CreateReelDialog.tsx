@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Video, Upload, X, Loader2 } from 'lucide-react';
+import { ReelProductTagger } from '@/components/shop/ReelProductTagger';
 
 interface CreateReelDialogProps {
   open: boolean;
@@ -21,6 +22,16 @@ const CreateReelDialog: React.FC<CreateReelDialogProps> = ({ open, onOpenChange 
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [showProductTagger, setShowProductTagger] = useState(false);
+  const [taggedProducts, setTaggedProducts] = useState<Array<{
+    productId: string;
+    productName: string;
+    productPrice: number;
+    productImage: string;
+    positionX: number;
+    positionY: number;
+    timestampSeconds?: number;
+  }>>([]);
 
   const createReelMutation = useMutation({
     mutationFn: async () => {
@@ -53,6 +64,12 @@ const CreateReelDialog: React.FC<CreateReelDialogProps> = ({ open, onOpenChange 
         });
 
       if (insertError) throw insertError;
+
+      // If there are tagged products, we would save them here
+      // For now, just log them - they would be saved to reel_product_tags table
+      if (taggedProducts.length > 0) {
+        console.log('Tagged products for reel:', taggedProducts);
+      }
     },
     onSuccess: () => {
       toast.success('הרील נוצר בהצלחה!');
@@ -92,7 +109,17 @@ const CreateReelDialog: React.FC<CreateReelDialogProps> = ({ open, onOpenChange 
     setVideoFile(null);
     setVideoPreview(null);
     setCaption('');
+    setTaggedProducts([]);
+    setShowProductTagger(false);
     onOpenChange(false);
+  };
+
+  const handleTagProduct = (tag: typeof taggedProducts[0]) => {
+    setTaggedProducts([...taggedProducts, tag]);
+  };
+
+  const handleRemoveTag = (productId: string) => {
+    setTaggedProducts(taggedProducts.filter(t => t.productId !== productId));
   };
 
   const removeVideo = () => {
@@ -157,6 +184,17 @@ const CreateReelDialog: React.FC<CreateReelDialogProps> = ({ open, onOpenChange 
             rows={3}
             maxLength={2200}
           />
+
+          {/* Product Tagging */}
+          {videoPreview && (
+            <ReelProductTagger
+              onTagProduct={handleTagProduct}
+              onRemoveTag={handleRemoveTag}
+              tags={taggedProducts}
+              isActive={showProductTagger}
+              onToggle={() => setShowProductTagger(!showProductTagger)}
+            />
+          )}
 
           {/* Submit Button */}
           <Button
