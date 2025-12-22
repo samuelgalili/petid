@@ -345,62 +345,27 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
 
       </motion.div>
 
-      {/* Instagram Sponsored-style CTA Bar - Shop Colors */}
+      {/* Instagram-style CTA Bar */}
       <motion.button
         ref={buttonRef}
         onClick={handleAddToCart}
-        className={`w-full transition-all flex items-center justify-between px-4 py-3 relative overflow-hidden group ${
+        className={`w-full transition-all flex items-center justify-between px-4 py-3 ${
           showAddedAnimation 
-            ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-            : 'bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] hover:from-[#4ECDC4] hover:to-[#1E5799]'
+            ? 'bg-[#00C853]' 
+            : 'bg-[#0095F6] hover:bg-[#1877F2]'
         }`}
-        whileTap={{ scale: 0.99 }}
+        whileTap={{ scale: 0.98 }}
       >
-        {/* Shimmer effect */}
-        {!showAddedAnimation && (
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12"
-            initial={{ x: "-100%" }}
-            animate={{ x: "200%" }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1.5, ease: "easeInOut" }}
-          />
-        )}
         <div className="flex items-center gap-2">
-          <motion.div
-            className="flex items-center justify-center"
-            animate={showAddedAnimation ? { rotate: [0, 360], scale: [1, 1.3, 1] } : {}}
-            whileHover={{ rotate: [0, -15, 15, 0], scale: 1.2 }}
-            transition={{ duration: 0.5 }}
-          >
-            <ShoppingBag className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-white'}`} />
-          </motion.div>
-          <span className={`text-[15px] font-medium ${showAddedAnimation ? 'text-white' : 'text-white'}`}>
+          <ShoppingBag className="w-5 h-5 text-white" />
+          <span className="text-white text-[15px] font-semibold">
             {showAddedAnimation ? "נוסף לסל ✓" : "קנה עכשיו"}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`font-bold ${showAddedAnimation ? 'text-white' : 'text-white'}`}>{product.price}</span>
-          <motion.div
-            animate={{ x: [0, -3, 0] }}
-            transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronLeft className={`w-5 h-5 ${showAddedAnimation ? 'text-white' : 'text-white'}`} />
-          </motion.div>
+          <span className="text-white font-bold">{product.price}</span>
+          <ChevronLeft className="w-5 h-5 text-white" />
         </div>
-        
-        {/* Success ripple effect */}
-        <AnimatePresence>
-          {showAddedAnimation && (
-            <motion.div
-              className="absolute inset-0 bg-white/20"
-              initial={{ scale: 0, opacity: 1 }}
-              animate={{ scale: 3, opacity: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              style={{ borderRadius: "50%", transformOrigin: "center" }}
-            />
-          )}
-        </AnimatePresence>
       </motion.button>
 
       {/* Instagram-style Action Bar */}

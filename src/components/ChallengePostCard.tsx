@@ -150,52 +150,32 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
           </div>
         )}
         
-        {/* CTA Overlay at bottom - Instagram style inviting bar */}
-        <motion.div 
-          className="absolute bottom-0 left-0 right-0"
-          initial={{ opacity: 0.9 }}
-          animate={{ opacity: 1 }}
-        >
-          <motion.div
-            className="px-3 py-2.5 backdrop-blur-sm flex items-center justify-between"
-            initial={{ background: "linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.5))" }}
-            animate={{ 
-              background: ctaRevealed 
-                ? "linear-gradient(to right, rgba(236, 72, 153, 0.85), rgba(249, 115, 22, 0.85))" 
-                : "linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.5))"
-            }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+        {/* CTA Overlay at bottom - Instagram style */}
+        <div className="absolute bottom-0 left-0 right-0 bg-[#0095F6] px-3 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Flame className="w-4 h-4 text-white flex-shrink-0" />
+            <span className="text-white font-semibold text-[13px] truncate">
+              {challenge.title_he}
+            </span>
+            <span className="text-white/80 text-[11px] flex-shrink-0">
+              • {participantCount} משתתפים
+            </span>
+          </div>
+          
+          <motion.button
+            onClick={handleJoinChallenge}
+            disabled={isJoining}
+            className={cn(
+              "font-semibold text-[11px] px-3 py-1 rounded transition-all",
+              isJoined 
+                ? "bg-white/20 text-white" 
+                : "bg-white text-[#0095F6]"
+            )}
+            whileTap={{ scale: 0.95 }}
           >
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <motion.div
-                animate={ctaRevealed ? { rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] } : {}}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <Flame className="w-4 h-4 text-yellow-300 flex-shrink-0" />
-              </motion.div>
-              <span className="text-white font-bold text-[13px] truncate drop-shadow-sm">
-                {challenge.title_he}
-              </span>
-              <span className="text-white/70 text-[11px] flex-shrink-0">
-                • {participantCount} משתתפים
-              </span>
-            </div>
-            
-            <motion.button
-              onClick={handleJoinChallenge}
-              disabled={isJoining}
-              className={cn(
-                "font-bold text-[11px] px-3 py-1 rounded-full transition-all flex items-center gap-1",
-                isJoined 
-                  ? "bg-white/20 text-white border border-white/30" 
-                  : "bg-white text-pink-600 shadow-md hover:scale-105"
-              )}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isJoining ? "..." : isJoined ? "✓ משתתף/ת" : "הצטרפו עכשיו →"}
-            </motion.button>
-          </motion.div>
-        </motion.div>
+            {isJoining ? "..." : isJoined ? "✓ משתתף/ת" : "הצטרפו עכשיו"}
+          </motion.button>
+        </div>
       </div>
 
       {/* Caption area - minimal, like PostCard */}

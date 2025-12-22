@@ -69,11 +69,11 @@ export const AdPostCard = ({ ad }: AdPostCardProps) => {
         </div>
       </div>
 
-      {/* CTA Button */}
+      {/* CTA Button - Instagram style */}
       <div className="p-4">
         <Button
           onClick={() => navigate(ad.link)}
-          className={`w-full bg-gradient-to-r ${ad.gradient} hover:opacity-90 text-white font-semibold py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2`}
+          className="w-full bg-[#0095F6] hover:bg-[#1877F2] text-white font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
         >
           {ad.cta}
           <ArrowLeft className="w-4 h-4" />
