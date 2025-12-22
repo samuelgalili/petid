@@ -132,7 +132,7 @@ const Notifications = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-20" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       <AppHeader 
         title="התראות" 
         showBackButton={true}
@@ -145,46 +145,39 @@ const Notifications = () => {
       
       <div className="px-4 pt-4">
         {unreadCount > 0 && (
-          <p className="text-sm font-bold text-muted-foreground mb-4">{unreadCount} התראות חדשות</p>
+          <p className="text-sm font-semibold text-muted-foreground mb-4">{unreadCount} התראות חדשות</p>
         )}
       </div>
 
       {/* Content */}
       <div className="p-4 space-y-3">
         {notifications.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl p-8 text-center"
-          >
-            <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-foreground mb-2">אין התראות</h2>
-            <p className="text-muted-foreground">כל ההתראות שלך יופיעו כאן</p>
-          </motion.div>
+          <div className="bg-background rounded-xl p-8 text-center border border-border">
+            <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" strokeWidth={1} />
+            <h2 className="text-xl font-semibold text-foreground mb-2">אין התראות</h2>
+            <p className="text-muted-foreground text-sm">כל ההתראות שלך יופיעו כאן</p>
+          </div>
         ) : (
           notifications.map((notification, index) => (
-            <motion.div
+            <div
               key={notification.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`bg-white rounded-lg p-5 border border-border ${
-                !notification.is_read ? "border-l-4 border-l-primary" : ""
-              } hover:shadow-sm transition-shadow`}
+              className={`bg-background rounded-lg p-4 border border-border ${
+                !notification.is_read ? "border-r-2 border-r-primary" : ""
+              }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1">
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg flex-shrink-0">
                     {getNotificationIcon(notification.type)}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground mb-1 text-right font-jakarta">
+                    <h3 className="font-semibold text-foreground text-sm mb-1 text-right">
                       {notification.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-2 text-right font-jakarta">
+                    <p className="text-sm text-muted-foreground mb-2 text-right">
                       {notification.message}
                     </p>
-                    <p className="text-xs text-muted-foreground/70 text-right font-jakarta">
+                    <p className="text-xs text-muted-foreground text-right">
                       {format(new Date(notification.created_at), "dd/MM/yyyy HH:mm", { locale: he })}
                     </p>
                   </div>
@@ -196,7 +189,7 @@ const Notifications = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => markAsRead(notification.id)}
-                      className="hover:bg-primary/10 rounded-full"
+                      className="rounded-full h-8 w-8"
                     >
                       <Check className="w-4 h-4 text-primary" strokeWidth={1.5} />
                     </Button>
@@ -205,13 +198,13 @@ const Notifications = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => deleteNotification(notification.id)}
-                    className="hover:bg-destructive/10 rounded-full"
+                    className="rounded-full h-8 w-8"
                   >
                     <Trash2 className="w-4 h-4 text-destructive" strokeWidth={1.5} />
                   </Button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))
         )}
       </div>

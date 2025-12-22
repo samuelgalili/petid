@@ -209,59 +209,47 @@ export const PostCard = ({
       {/* Post Header */}
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-3">
-          <motion.div 
+          <div 
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <Avatar className="w-8 h-8 ring-2 ring-transparent hover:ring-border transition-all duration-200">
+            <Avatar className="w-8 h-8 ring-1 ring-border">
               <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-secondary text-muted-foreground text-xs font-medium">
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
-          </motion.div>
-          <motion.div 
+          </div>
+          <div 
             className="cursor-pointer flex flex-col"
             onClick={() => navigate(`/user/${post.user.id}`)}
-            whileHover={{ x: 2 }}
-            transition={{ type: "spring", stiffness: 300 }}
           >
-            <p className="font-semibold text-[#262626] text-[13px] leading-tight hover:text-[#0095F6] transition-colors duration-200">{post.user.full_name || "משתמש"}</p>
-            <p className="text-[11px] text-[#8E8E8E]">{getTimeAgo(post.created_at)}</p>
-          </motion.div>
+            <p className="font-semibold text-foreground text-[13px] leading-tight">{post.user.full_name || "משתמש"}</p>
+            <p className="text-[11px] text-muted-foreground">{getTimeAgo(post.created_at)}</p>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
           {currentUserId !== post.user_id && (
-            <motion.button
+            <button
               className={`text-[13px] font-semibold ${
                 isFollowing 
-                  ? 'text-[#262626]' 
-                  : 'text-[#0095F6]'
+                  ? 'text-foreground' 
+                  : 'text-primary'
               }`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleFollow();
               }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
               {isFollowing ? "" : "עקוב"}
-            </motion.button>
+            </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <motion.button 
-                className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
+              <button className="text-foreground p-1 rounded-full hover:bg-muted transition-colors">
                 <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
-              </motion.button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-background z-50">
               <DropdownMenuItem
@@ -463,115 +451,49 @@ export const PostCard = ({
       <div className="px-3 pt-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
-            <motion.button 
+            <button 
               onClick={handleLike}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
+              className="p-1"
             >
               <Heart 
-                className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956] fill-[#ED4956]' : 'text-[#262626]'}`} 
+                className={`w-6 h-6 ${post.is_liked ? 'text-destructive fill-destructive' : 'text-foreground'}`} 
                 strokeWidth={1.5}
               />
-            </motion.button>
+            </button>
             
-            <motion.button 
-              className="text-[#262626] p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
+            <button 
+              className="text-foreground p-1"
               onClick={() => navigate(`/post/${post.id}`)}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <MessageCircle className="w-6 h-6" strokeWidth={1.5} />
-            </motion.button>
+            </button>
             
-            <motion.button 
-              className="text-[#262626] p-1 rounded-full hover:bg-green-50 transition-colors duration-200"
-              whileHover={{ scale: 1.2, rotate: -15 }}
-              whileTap={{ scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
+            <button className="text-foreground p-1">
               <Share2 className="w-6 h-6" strokeWidth={1.5} />
-            </motion.button>
+            </button>
           </div>
-          <motion.button 
+          <button 
             onClick={handleSave}
-            className="text-[#262626] p-1 rounded-full hover:bg-yellow-50 transition-colors duration-200 relative"
-            whileHover={{ scale: 1.2, y: -2 }}
-            whileTap={{ scale: 0.8 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            className="text-foreground p-1 relative"
           >
-            <motion.div
-              animate={isSaveAnimating ? {
-                scale: [1, 0.8, 1.3, 1],
-                rotate: [0, -10, 10, 0]
-              } : {}}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            >
-              <Bookmark 
-                className={`w-6 h-6 transition-colors duration-200 ${post.is_saved ? 'fill-[#262626]' : ''}`} 
-                strokeWidth={1.5} 
-              />
-            </motion.div>
-            <AnimatePresence>
-              {isSaveAnimating && post.is_saved && (
-                <>
-                  {/* Sparkle effects */}
-                  {[...Array(6)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute text-yellow-500"
-                      style={{ fontSize: '8px' }}
-                      initial={{ 
-                        opacity: 1, 
-                        scale: 0,
-                        x: 0,
-                        y: 0 
-                      }}
-                      animate={{ 
-                        opacity: [1, 1, 0],
-                        scale: [0, 1.2, 0.8],
-                        x: Math.cos((i / 6) * Math.PI * 2) * 20,
-                        y: Math.sin((i / 6) * Math.PI * 2) * 20,
-                      }}
-                      exit={{ opacity: 0 }}
-                      transition={{ 
-                        duration: 0.5,
-                        delay: i * 0.03,
-                        ease: "easeOut"
-                      }}
-                    >
-                      ✨
-                    </motion.div>
-                  ))}
-                  {/* Check mark animation */}
-                  <motion.div
-                    className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: [0, 1.2, 1], opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                  >
-                    <span className="text-white text-[8px]">✓</span>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </motion.button>
+            <Bookmark 
+              className={`w-6 h-6 ${post.is_saved ? 'fill-foreground' : ''}`} 
+              strokeWidth={1.5} 
+            />
+          </button>
         </div>
 
         {/* Likes count */}
         {post.likes_count > 0 && (
-          <p className="text-[13px] text-[#262626] font-semibold mb-1">
+          <p className="text-sm text-foreground font-semibold mb-1">
             {post.likes_count.toLocaleString()} לייקים
           </p>
         )}
 
         {/* Post Caption */}
         {post.caption && (
-          <p className="text-[#262626] text-[13px] leading-[18px] mb-1">
-            <span 
+          <p className="text-foreground text-sm leading-[18px] mb-1">
+            <span
               className="font-semibold cursor-pointer"
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
