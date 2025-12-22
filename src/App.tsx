@@ -33,6 +33,7 @@ import StoryViewer from "./pages/StoryViewer";
 import HighlightViewer from "./pages/HighlightViewer";
 import Tracker from "./pages/Tracker";
 const Shop = lazy(() => import("./pages/Shop"));
+const ShopExplore = lazy(() => import("./pages/ShopExplore"));
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -143,7 +144,8 @@ const AnimatedRoutes = () => {
         <Route path="/reels" element={<PageTransition><PageErrorBoundary pageName="Reels"><Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div></div>}><Reels /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/explore" element={<PageTransition><PageErrorBoundary pageName="גילוי"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Explore /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
-        <Route path="/shop" element={<PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition>} />
+<Route path="/shop" element={<PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition>} />
+        <Route path="/shop/explore" element={<PageTransition><PageErrorBoundary pageName="גילוי מוצרים"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><ShopExplore /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
         <Route path="/cart" element={<ProtectedRoute><PageTransition><Cart /></PageTransition></ProtectedRoute>} />
         <Route path="/favorites" element={<ProtectedRoute><PageTransition><Favorites /></PageTransition></ProtectedRoute>} />
