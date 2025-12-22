@@ -377,72 +377,45 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Instagram-style Tabs */}
+      {/* Instagram-style Tabs - Shop & Guides */}
       <div className="bg-background border-b border-border">
         <div className="max-w-lg mx-auto flex">
           <button
             onClick={() => setActiveTab("grid")}
-            className={`flex-1 py-3 text-center border-b-2 transition-colors ${
+            className={`flex-1 py-3 text-center text-sm font-medium border-b transition-colors ${
               activeTab === "grid"
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground"
             }`}
           >
-            <Grid3X3 className="w-5 h-5 mx-auto" strokeWidth={1.5} />
+            Shop
           </button>
           <button
             onClick={() => setActiveTab("saved")}
-            className={`flex-1 py-3 text-center border-b-2 transition-colors ${
+            className={`flex-1 py-3 text-center text-sm font-medium border-b transition-colors ${
               activeTab === "saved"
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground"
             }`}
           >
-            <Bookmark className="w-5 h-5 mx-auto" strokeWidth={1.5} />
+            Wishlist
           </button>
         </div>
       </div>
 
-      {/* Categories Scroll - Instagram style */}
-      <div className="bg-background">
+      {/* Categories - Instagram pill style */}
+      <div className="bg-background border-b border-border">
         <div className="max-w-lg mx-auto">
-          <ScrollArea className="w-full">
-            <div className="flex gap-2 px-4 py-3">
-              {subCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.label)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === category.label
-                      ? "bg-foreground text-background"
-                      : "bg-muted text-foreground"
-                  }`}
-                >
-                  {category.label}
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-      </div>
-
-      {/* Sub-Categories Scroll */}
-      <div className="bg-background">
-        <div className="max-w-lg mx-auto">
-          <div className="flex gap-2 px-4 py-2.5 overflow-x-auto hide-scrollbar">
+          <div className="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar">
             {subCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.label)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category.label
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground bg-background border border-border"
+                    ? "bg-foreground text-background"
+                    : "border border-border text-foreground hover:bg-muted"
                 }`}
-                style={selectedCategory === category.label 
-                  ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
-                  : {}
-                }
               >
                 {category.label}
               </button>
@@ -451,17 +424,44 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Instagram-style Products Grid */}
+      {/* Instagram-style Products Grid with thin borders */}
       <div className="max-w-lg mx-auto">
-        <div className="grid grid-cols-2 gap-px bg-border">
-          {filteredAndSortedProducts.map((product) => (
-            <motion.div
+        {/* Editors' Picks Section */}
+        {activeTab === "grid" && filteredAndSortedProducts.length > 0 && (
+          <div className="px-4 py-4 border-b border-border">
+            <h2 className="text-sm font-semibold text-foreground mb-3">Editors' picks</h2>
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+              {filteredAndSortedProducts.slice(0, 4).map((product) => (
+                <div
+                  key={`pick-${product.id}`}
+                  onClick={() => handleProductClick(product)}
+                  className="flex-shrink-0 w-28 cursor-pointer"
+                >
+                  <div className="w-28 h-28 rounded-lg overflow-hidden bg-muted mb-2">
+                    <OptimizedImage
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full"
+                      objectFit="cover"
+                    />
+                  </div>
+                  <p className="text-xs text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-semibold text-foreground">₪{product.price}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Products Grid */}
+        <div className="grid grid-cols-2">
+          {filteredAndSortedProducts.map((product, index) => (
+            <div
               key={product.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-background cursor-pointer"
               onClick={() => handleProductClick(product)}
+              className={`bg-background cursor-pointer border-b border-border ${
+                index % 2 === 0 ? 'border-l border-l-border' : ''
+              }`}
             >
               {/* Square Image */}
               <div className="relative aspect-square bg-muted">
@@ -473,44 +473,38 @@ const Shop = () => {
                   sizes="(max-width: 768px) 50vw, 200px"
                 />
                 
-                {/* Wishlist button - Instagram style */}
+                {/* Wishlist button - transparent Instagram style */}
                 <button
                   onClick={(e) => toggleFavorite(product.id, e)}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/80 flex items-center justify-center"
+                  className="absolute top-2 right-2"
                 >
                   <Heart 
-                    className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-foreground"}`} 
-                    strokeWidth={1.5} 
+                    className={`w-5 h-5 drop-shadow-md ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-white"}`} 
+                    strokeWidth={2} 
                   />
                 </button>
               </div>
 
-              {/* Product Info - Instagram shop style */}
+              {/* Product Info */}
               <div className="p-3">
-                <h3 className="text-sm font-normal text-foreground line-clamp-1 mb-0.5">
+                <h3 className="text-sm font-normal text-foreground line-clamp-1">
                   {product.name}
                 </h3>
-                <p className="text-xs text-muted-foreground mb-1.5">Petid Shop</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    ₪{product.price}
-                  </span>
-                  {product.originalPrice && (
-                    <span className="text-xs text-muted-foreground line-through">
-                      ₪{product.originalPrice}
-                    </span>
-                  )}
-                </div>
+                <p className="text-xs text-[#8E8E8E] mb-1">Petid Shop</p>
+                <span className="text-sm font-bold text-foreground">
+                  ₪{product.price}
+                </span>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Empty State */}
         {filteredAndSortedProducts.length === 0 && (
           <div className="py-20 text-center">
-            <ShoppingBag className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" strokeWidth={1} />
-            <p className="text-sm text-muted-foreground">אין מוצרים להצגה</p>
+            <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" strokeWidth={1} />
+            <p className="text-sm font-medium text-foreground mb-1">No products yet</p>
+            <p className="text-xs text-muted-foreground">Check back later for new items</p>
           </div>
         )}
       </div>
