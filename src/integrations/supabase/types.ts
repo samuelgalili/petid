@@ -494,6 +494,7 @@ export type Database = {
       }
       business_products: {
         Row: {
+          average_rating: number | null
           business_id: string
           category: string | null
           created_at: string
@@ -512,6 +513,7 @@ export type Database = {
           price: number
           price_per_weight: number | null
           price_suggestion_reason: string | null
+          review_count: number | null
           sale_price: number | null
           sku: string | null
           suggested_price: number | null
@@ -519,6 +521,7 @@ export type Database = {
           weight_unit: string | null
         }
         Insert: {
+          average_rating?: number | null
           business_id: string
           category?: string | null
           created_at?: string
@@ -537,6 +540,7 @@ export type Database = {
           price: number
           price_per_weight?: number | null
           price_suggestion_reason?: string | null
+          review_count?: number | null
           sale_price?: number | null
           sku?: string | null
           suggested_price?: number | null
@@ -544,6 +548,7 @@ export type Database = {
           weight_unit?: string | null
         }
         Update: {
+          average_rating?: number | null
           business_id?: string
           category?: string | null
           created_at?: string
@@ -562,6 +567,7 @@ export type Database = {
           price?: number
           price_per_weight?: number | null
           price_suggestion_reason?: string | null
+          review_count?: number | null
           sale_price?: number | null
           sku?: string | null
           suggested_price?: number | null
@@ -1390,6 +1396,48 @@ export type Database = {
         }
         Relationships: []
       }
+      guide_products: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          guide_id: string
+          id: string
+          note: string | null
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          guide_id: string
+          id?: string
+          note?: string | null
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          guide_id?: string
+          id?: string
+          note?: string | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_products_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "product_guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hashtags: {
         Row: {
           created_at: string
@@ -1849,6 +1897,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_tracking: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          description: string | null
+          estimated_delivery: string | null
+          id: string
+          location: string | null
+          order_id: string
+          status: string
+          tracking_number: string | null
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          location?: string | null
+          order_id: string
+          status: string
+          tracking_number?: string | null
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          location?: string | null
+          order_id?: string
+          status?: string
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_tracking_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
@@ -2436,6 +2528,47 @@ export type Database = {
           },
         ]
       }
+      price_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          notified_at: string | null
+          original_price: number
+          product_id: string
+          target_price: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          notified_at?: string | null
+          original_price: number
+          product_id: string
+          target_price?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          notified_at?: string | null
+          original_price?: number
+          product_id?: string
+          target_price?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_collections: {
         Row: {
           business_id: string
@@ -2476,6 +2609,97 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_guides: {
+        Row: {
+          business_id: string
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_published: boolean | null
+          title: string
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          business_id: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          title: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          business_id?: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          title?: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_guides_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_reviews: {
+        Row: {
+          created_at: string
+          helpful_count: number | null
+          id: string
+          is_verified_purchase: boolean | null
+          photos: string[] | null
+          product_id: string
+          rating: number
+          review_text: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          photos?: string[] | null
+          product_id: string
+          rating: number
+          review_text?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          is_verified_purchase?: boolean | null
+          photos?: string[] | null
+          product_id?: string
+          rating?: number
+          review_text?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
             referencedColumns: ["id"]
           },
         ]
@@ -2764,6 +2988,51 @@ export type Database = {
             columns: ["reel_id"]
             isOneToOne: false
             referencedRelation: "reels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reel_product_tags: {
+        Row: {
+          created_at: string
+          id: string
+          position_x: number | null
+          position_y: number | null
+          post_id: string
+          product_id: string
+          timestamp_seconds: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          post_id: string
+          product_id: string
+          timestamp_seconds?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          post_id?: string
+          product_id?: string
+          timestamp_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reel_product_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reel_product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
             referencedColumns: ["id"]
           },
         ]
@@ -3887,6 +4156,38 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          notify_on_sale: boolean | null
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_on_sale?: boolean | null
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_on_sale?: boolean | null
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
             referencedColumns: ["id"]
           },
         ]
