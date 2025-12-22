@@ -199,7 +199,7 @@ export const PostCard = ({
   };
 
   return (
-    <div className="bg-background border-b border-border">
+    <div className="bg-white border-b border-[#DBDBDB]">
       {/* Post Header - Instagram style */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2.5">
@@ -207,9 +207,9 @@ export const PostCard = ({
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <Avatar className="w-8 h-8">
+            <Avatar className="w-8 h-8 ring-1 ring-[#DBDBDB]">
               <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+              <AvatarFallback className="bg-gray-100 text-[#262626] text-xs">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
@@ -218,14 +218,14 @@ export const PostCard = ({
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <p className="font-semibold text-foreground text-sm leading-tight">{post.user.full_name || "משתמש"}</p>
+            <p className="font-semibold text-[#262626] text-sm leading-tight">{post.user.full_name || "משתמש"}</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
           {currentUserId !== post.user_id && !isFollowing && (
             <button
-              className="text-sm font-semibold text-primary"
+              className="text-sm font-semibold text-[#0095F6]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleFollow();
@@ -236,16 +236,17 @@ export const PostCard = ({
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-foreground">
+              <button className="text-[#262626]">
                 <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background z-50">
+            <DropdownMenuContent align="end" className="bg-white z-50 border-[#DBDBDB]">
               <DropdownMenuItem
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
                   toast.success("הקישור הועתק");
                 }}
+                className="text-[#262626]"
               >
                 <Link2 className="w-4 h-4 ml-2" />
                 העתק קישור
@@ -254,6 +255,7 @@ export const PostCard = ({
                 onClick={() => {
                   toast.success("הפוסט הוסתר");
                 }}
+                className="text-[#262626]"
               >
                 <EyeOff className="w-4 h-4 ml-2" />
                 הסתר פוסט
@@ -264,7 +266,7 @@ export const PostCard = ({
                     setShowReportDialog(true);
                   }
                 }}
-                className="text-destructive focus:text-destructive"
+                className="text-[#ED4956] focus:text-[#ED4956]"
               >
                 <Flag className="w-4 h-4 ml-2" />
                 דווח
@@ -320,28 +322,28 @@ export const PostCard = ({
               className="p-1"
             >
               <Heart 
-                className={`w-6 h-6 ${post.is_liked ? 'text-destructive fill-destructive' : 'text-foreground'}`} 
+                className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956] fill-[#ED4956]' : 'text-[#262626]'}`} 
                 strokeWidth={1.5}
               />
             </button>
             
             <button 
-              className="text-foreground p-1"
+              className="text-[#262626] p-1"
               onClick={() => navigate(`/post/${post.id}`)}
             >
               <MessageCircle className="w-6 h-6" strokeWidth={1.5} />
             </button>
             
-            <button className="text-foreground p-1">
+            <button className="text-[#262626] p-1">
               <Share2 className="w-6 h-6" strokeWidth={1.5} />
             </button>
           </div>
           <button 
             onClick={handleSave}
-            className="text-foreground p-1 relative"
+            className="text-[#262626] p-1 relative"
           >
             <Bookmark 
-              className={`w-6 h-6 ${post.is_saved ? 'fill-foreground' : ''}`} 
+              className={`w-6 h-6 ${post.is_saved ? 'fill-[#262626]' : ''}`} 
               strokeWidth={1.5} 
             />
           </button>
@@ -349,14 +351,14 @@ export const PostCard = ({
 
         {/* Likes count */}
         {post.likes_count > 0 && (
-          <p className="text-sm text-foreground font-semibold mb-1">
+          <p className="text-sm text-[#262626] font-semibold mb-1">
             {post.likes_count.toLocaleString()} לייקים
           </p>
         )}
 
         {/* Post Caption */}
         {post.caption && (
-          <p className="text-foreground text-sm leading-[18px] mb-1">
+          <p className="text-[#262626] text-sm leading-[18px] mb-1">
             <span
               className="font-semibold cursor-pointer"
               onClick={() => navigate(`/user/${post.user.id}`)}
@@ -370,43 +372,43 @@ export const PostCard = ({
         {/* View Comments */}
         {post.comments_count > 0 && (
           <button 
-            className="text-muted-foreground text-sm"
+            className="text-[#8E8E8E] text-sm"
             onClick={() => navigate(`/post/${post.id}`)}
           >
-            View all {post.comments_count} comments
+            הצג את כל {post.comments_count} התגובות
           </button>
         )}
 
         {/* Time ago */}
-        <p className="text-muted-foreground text-[10px] uppercase mt-1">
+        <p className="text-[#8E8E8E] text-[10px] uppercase mt-1 mb-2">
           {getTimeAgo(post.created_at)}
         </p>
       </div>
 
       {/* Add comment section */}
-      <div className="flex items-center gap-3 px-3 py-2.5 border-t border-border">
+      <div className="flex items-center gap-3 px-3 py-2.5 border-t border-[#EFEFEF]">
         <Avatar className="w-6 h-6 flex-shrink-0">
           <AvatarImage src={currentUserAvatar} />
-          <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+          <AvatarFallback className="bg-gray-100 text-[#262626] text-[10px]">
             U
           </AvatarFallback>
         </Avatar>
         <input
           type="text"
-          placeholder="Add a comment..."
+          placeholder="הוסף תגובה..."
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleComment()}
           onFocus={() => !isAuthenticated && checkAuth("כדי להגיב על פוסטים, יש להתחבר")}
-          className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground outline-none"
+          className="flex-1 bg-transparent text-sm text-[#262626] placeholder-[#8E8E8E] outline-none"
           readOnly={!isAuthenticated}
         />
         {commentText.trim() && (
           <button 
             onClick={handleComment}
-            className="text-primary text-sm font-semibold"
+            className="text-[#0095F6] text-sm font-semibold"
           >
-            Post
+            פרסם
           </button>
         )}
       </div>
