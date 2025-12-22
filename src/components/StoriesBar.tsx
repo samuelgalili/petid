@@ -178,10 +178,10 @@ export const StoriesBar = () => {
   return (
     <>
       <div className="px-4 py-3 bg-background border-b border-border">
-        <div className="flex gap-4 overflow-x-auto no-scrollbar">
-          {/* Your Story / Add Story - Always first */}
+        <div className="flex gap-3 overflow-x-auto no-scrollbar">
+          {/* Your Story - Instagram style */}
           <div
-            className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
+            className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer"
             onClick={() => {
               if (currentUserHasStory && user) {
                 navigate(`/story/${user.id}`);
@@ -194,7 +194,7 @@ export const StoriesBar = () => {
               <div 
                 className={`w-16 h-16 rounded-full p-[2px] ${
                   currentUserHasStory 
-                    ? "bg-gradient-to-tr from-primary to-accent"
+                    ? "bg-gradient-to-tr from-[#FEDA75] via-[#FA7E1E] via-[#D62976] to-[#962FBF]"
                     : "bg-muted"
                 }`}
               >
@@ -204,8 +204,8 @@ export const StoriesBar = () => {
                       src={getDisplayImage(currentUserProfile?.pet_avatar_url, currentUserProfile?.avatar_url)} 
                       className="object-cover" 
                     />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-lg font-bold">
-                      {currentUserProfile?.pet_name?.charAt(0) || currentUserProfile?.full_name?.charAt(0) || (isAuthenticated ? "U" : "+")}
+                    <AvatarFallback className="bg-muted text-muted-foreground text-lg">
+                      {currentUserProfile?.pet_name?.charAt(0) || currentUserProfile?.full_name?.charAt(0) || "+"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -216,25 +216,25 @@ export const StoriesBar = () => {
                 </div>
               )}
             </div>
-            <span className="text-[10px] font-medium text-foreground max-w-16 truncate text-center">
-              {isAuthenticated ? "הסטורי שלך" : "הוסף סטורי"}
+            <span className="text-[11px] text-foreground max-w-16 truncate text-center">
+              Your story
             </span>
           </div>
 
-          {/* Other users' stories */}
+          {/* Other users' stories - Instagram gradient */}
           {storyUsers
             .filter(u => u.user_id !== user?.id)
             .map((storyUser) => (
               <div
                 key={storyUser.user_id}
-                className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer"
+                className="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer"
                 onClick={() => navigate(`/story/${storyUser.user_id}`)}
               >
                 <div 
                   className={`w-16 h-16 rounded-full p-[2px] ${
                     storyUser.has_viewed 
                       ? "bg-muted" 
-                      : "bg-gradient-to-tr from-primary to-accent"
+                      : "bg-gradient-to-tr from-[#FEDA75] via-[#FA7E1E] via-[#D62976] to-[#962FBF]"
                   }`}
                 >
                   <div className="w-full h-full rounded-full bg-background p-[2px]">
@@ -243,14 +243,14 @@ export const StoriesBar = () => {
                         src={getDisplayImage(storyUser.pet_avatar_url, storyUser.avatar_url)} 
                         className="object-cover" 
                       />
-                      <AvatarFallback className="bg-muted text-muted-foreground text-lg font-bold">
+                      <AvatarFallback className="bg-muted text-muted-foreground text-lg">
                         {storyUser.pet_name?.charAt(0) || storyUser.full_name?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                 </div>
-                <span className={`text-[10px] max-w-16 truncate text-center ${
-                  storyUser.has_viewed ? 'text-muted-foreground font-medium' : 'text-foreground font-medium'
+                <span className={`text-[11px] max-w-16 truncate text-center ${
+                  storyUser.has_viewed ? 'text-muted-foreground' : 'text-foreground'
                 }`}>
                   {storyUser.pet_name || storyUser.full_name}
                 </span>
