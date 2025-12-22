@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { 
   ArrowRight, Star, MapPin, Phone, Mail, Globe, BadgeCheck, 
   Stethoscope, Scissors, Store, GraduationCap, Dog, Share2, Heart,
-  Grid3X3, ShoppingBag, MessageCircle, Settings
+  Grid3X3, ShoppingBag, MessageCircle, Settings, Radio, Folder
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BottomNav from '@/components/BottomNav';
 import { BusinessShopTab } from '@/components/business/BusinessShopTab';
 import { BusinessInsights } from '@/components/business/BusinessInsights';
+import { ProductCollectionsManager } from '@/components/shop/ProductCollectionsManager';
+import { ProductCollectionsDisplay } from '@/components/shop/ProductCollectionsDisplay';
+import { LiveShoppingManager } from '@/components/shop/LiveShoppingManager';
 
 const businessTypeLabels: Record<string, { label: string; icon: React.ReactNode }> = {
   vet: { label: 'וטרינר', icon: <Stethoscope className="w-4 h-4" /> },
@@ -29,6 +32,8 @@ const BusinessProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('shop');
+  const [showCollectionsManager, setShowCollectionsManager] = useState(false);
+  const [showLiveShopping, setShowLiveShopping] = useState(false);
 
   const { data: business, isLoading } = useQuery({
     queryKey: ['business-profile', id],
@@ -199,13 +204,26 @@ const BusinessProfile = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4"
+            className="mt-4 space-y-3"
           >
             <BusinessInsights 
               viewCount={business.view_count || 0}
               totalReviews={business.total_reviews || 0}
               rating={business.rating || 0}
               businessId={business.id}
+            />
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setShowLiveShopping(true)}
+            >
+              <Radio className="w-4 h-4 ml-2" />
+              Live Shopping
+            </Button>
+            <LiveShoppingManager 
+              businessId={business.id} 
+              open={showLiveShopping}
+              onOpenChange={setShowLiveShopping}
             />
           </motion.div>
         )}
@@ -235,6 +253,28 @@ const BusinessProfile = () => {
         </TabsList>
 
         <TabsContent value="shop" className="mt-0">
+          {/* Collections Display for all users */}
+          <ProductCollectionsDisplay businessId={id!} />
+          
+          {/* Collections Manager for owners */}
+          {isOwner && (
+            <div className="px-4 py-3 border-b">
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowCollectionsManager(true)}
+              >
+                <Folder className="w-4 h-4 ml-2" />
+                ניהול אוספים
+              </Button>
+              <ProductCollectionsManager 
+                businessId={id!} 
+                open={showCollectionsManager}
+                onOpenChange={setShowCollectionsManager}
+              />
+            </div>
+          )}
+          
           <BusinessShopTab businessId={id!} isOwner={isOwner || false} />
         </TabsContent>
 
