@@ -983,6 +983,45 @@ export type Database = {
         }
         Relationships: []
       }
+      collection_products: {
+        Row: {
+          added_at: string
+          collection_id: string
+          display_order: number | null
+          id: string
+          product_id: string
+        }
+        Insert: {
+          added_at?: string
+          collection_id: string
+          display_order?: number | null
+          id?: string
+          product_id: string
+        }
+        Update: {
+          added_at?: string
+          collection_id?: string
+          display_order?: number | null
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_products_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "product_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_uses: {
         Row: {
           coupon_id: string
@@ -1483,6 +1522,104 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "lead_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_shopping_products: {
+        Row: {
+          display_order: number | null
+          featured_at: string | null
+          id: string
+          product_id: string
+          sale_price: number | null
+          sales_count: number | null
+          session_id: string
+        }
+        Insert: {
+          display_order?: number | null
+          featured_at?: string | null
+          id?: string
+          product_id: string
+          sale_price?: number | null
+          sales_count?: number | null
+          session_id: string
+        }
+        Update: {
+          display_order?: number | null
+          featured_at?: string | null
+          id?: string
+          product_id?: string
+          sale_price?: number | null
+          sales_count?: number | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_shopping_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_shopping_products_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_shopping_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_shopping_sessions: {
+        Row: {
+          business_id: string
+          created_at: string
+          description: string | null
+          ended_at: string | null
+          id: string
+          scheduled_at: string | null
+          started_at: string | null
+          status: string | null
+          stream_url: string | null
+          thumbnail_url: string | null
+          title: string
+          viewer_count: number | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          stream_url?: string | null
+          thumbnail_url?: string | null
+          title: string
+          viewer_count?: number | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          stream_url?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          viewer_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_shopping_sessions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2299,6 +2436,50 @@ export type Database = {
           },
         ]
       }
+      product_collections: {
+        Row: {
+          business_id: string
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          is_featured: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_featured?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_featured?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_collections_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           allow_messages_from: string | null
@@ -2907,6 +3088,48 @@ export type Database = {
             columns: ["sticker_id"]
             isOneToOne: false
             referencedRelation: "story_stickers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_product_tags: {
+        Row: {
+          created_at: string
+          id: string
+          position_x: number | null
+          position_y: number | null
+          product_id: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          product_id: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position_x?: number | null
+          position_y?: number | null
+          product_id?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_product_tags_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]
