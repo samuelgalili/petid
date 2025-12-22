@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Image as ImageIcon, X, Loader2, Type, Smile, Sparkles } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Loader2, Type, Smile, Sparkles, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { StoryProductTagger } from "@/components/shop/StoryProductTagger";
 
 interface TextOverlay {
   id: string;
@@ -43,6 +44,8 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
   const [showTextInput, setShowTextInput] = useState(false);
   const [newText, setNewText] = useState("");
   const [textColor, setTextColor] = useState("#FFFFFF");
+  const [showProductTagger, setShowProductTagger] = useState(false);
+  const [taggedProducts, setTaggedProducts] = useState<Array<{ productId: string; positionX: number; positionY: number }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -216,15 +219,29 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
         .getPublicUrl(uploadData.path);
 
       // Create story in database
-      const { error: insertError } = await supabase
+      const { data: storyData, error: insertError } = await supabase
         .from("stories")
         .insert({
           user_id: user.id,
           media_url: publicUrl,
           media_type: mediaType,
-        });
+        })
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
+
+      // Save product tags if any
+      if (taggedProducts.length > 0 && storyData) {
+        const productTags = taggedProducts.map(tag => ({
+          story_id: storyData.id,
+          product_id: tag.productId,
+          position_x: tag.positionX,
+          position_y: tag.positionY,
+        }));
+        
+        await supabase.from("story_product_tags").insert(productTags);
+      }
 
       toast.success("Petish Story פורסם בהצלחה!");
       
@@ -235,6 +252,7 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
       setTexts([]);
       setStickers([]);
       setFilter("none");
+      setTaggedProducts([]);
       onOpenChange(false);
       onStoryCreated();
     } catch (error: any) {
@@ -308,7 +326,41 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                     <Sparkles className="w-5 h-5" />
                   </Button>
                 </motion.div>
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md"
+                    onClick={() => setShowProductTagger(true)}
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                  </Button>
+                </motion.div>
               </motion.div>
+
+              {/* Product Tagger */}
+              <StoryProductTagger
+                onTagProduct={(tag) => {
+                  setTaggedProducts(prev => [...prev, { 
+                    productId: tag.productId, 
+                    positionX: tag.positionX, 
+                    positionY: tag.positionY 
+                  }]);
+                }}
+                onRemoveTag={(productId) => {
+                  setTaggedProducts(prev => prev.filter(t => t.productId !== productId));
+                }}
+                tags={taggedProducts.map(t => ({ 
+                  productId: t.productId, 
+                  productName: '', 
+                  productPrice: 0, 
+                  productImage: '', 
+                  positionX: t.positionX, 
+                  positionY: t.positionY 
+                }))}
+                isActive={showProductTagger}
+                onToggle={() => setShowProductTagger(!showProductTagger)}
+              />
 
               {/* Sticker Dropdown */}
               <div

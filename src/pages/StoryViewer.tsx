@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { StoryReplyDialog } from "@/components/StoryReplyDialog";
 import { StoryViewersDialog } from "@/components/StoryViewersDialog";
 import { AddToHighlightDialog } from "@/components/AddToHighlightDialog";
+import { StoryProductSticker } from "@/components/shop/StoryProductSticker";
 
 interface Story {
   id: string;
@@ -300,7 +301,7 @@ const StoryViewer = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="w-full h-full flex items-center justify-center"
+          className="w-full h-full flex items-center justify-center relative"
         >
           {currentStory.media_type === 'image' ? (
             <img
@@ -317,6 +318,8 @@ const StoryViewer = () => {
               playsInline
             />
           )}
+          {/* Product Tags */}
+          <StoryProductSticker storyId={currentStory.id} />
         </motion.div>
       </AnimatePresence>
 
