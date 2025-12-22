@@ -13,51 +13,42 @@ export default {
   		}
   	},
   	extend: {
-  		fontFamily: {
-  			sans: [
-  				'Heebo',
-  				'system-ui',
-  				'-apple-system',
-  				'BlinkMacSystemFont',
-  				'Segoe UI',
-  				'sans-serif'
-  			],
-  			heebo: [
-  				'Heebo',
-  				'system-ui',
-  				'sans-serif'
-  			],
-  			jakarta: [
-  				'Plus Jakarta Sans',
-  				'system-ui',
-  				'sans-serif'
-  			],
-  			heebo: [
-  				'Heebo',
-  				'system-ui',
-  				'sans-serif'
-  			],
-  			serif: [
-  				'Libre Caslon Text',
-  				'ui-serif',
-  				'Georgia',
-  				'Cambria',
-  				'Times New Roman',
-  				'Times',
-  				'serif'
-  			],
-  			mono: [
-  				'Roboto Mono',
-  				'ui-monospace',
-  				'SFMono-Regular',
-  				'Menlo',
-  				'Monaco',
-  				'Consolas',
-  				'Liberation Mono',
-  				'Courier New',
-  				'monospace'
-  			]
-  		},
+		fontFamily: {
+			sans: [
+				'Inter',
+				'-apple-system',
+				'BlinkMacSystemFont',
+				'Segoe UI',
+				'Roboto',
+				'sans-serif'
+			],
+			heebo: [
+				'Inter',
+				'-apple-system',
+				'sans-serif'
+			],
+			jakarta: [
+				'Inter',
+				'-apple-system',
+				'sans-serif'
+			],
+			serif: [
+				'Georgia',
+				'Cambria',
+				'Times New Roman',
+				'Times',
+				'serif'
+			],
+			mono: [
+				'SF Mono',
+				'ui-monospace',
+				'SFMono-Regular',
+				'Menlo',
+				'Monaco',
+				'Consolas',
+				'monospace'
+			]
+		},
   		fontWeight: {
   			normal: '400',
   			medium: '500',
