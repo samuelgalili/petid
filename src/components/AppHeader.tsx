@@ -42,7 +42,7 @@ export const AppHeader = ({
     <>
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       
-      <div className="fixed top-0 left-0 right-0 h-[44px] bg-background border-b border-border px-4 z-40 flex items-center justify-between" dir="rtl">
+      <div className="fixed top-0 left-0 right-0 h-11 bg-background border-b border-border px-4 z-40 flex items-center justify-between" dir="rtl">
         {/* Right Side: Back Button or Menu */}
         <div className="flex items-center gap-2 w-10">
           {showBackButton && (
@@ -50,13 +50,13 @@ export const AppHeader = ({
               variant="ghost"
               size="icon"
               onClick={handleBack}
-              className="rounded-full hover:bg-secondary transition-colors h-9 w-9"
+              className="rounded-full h-9 w-9"
               aria-label={backTo === "home" ? "חזור לדף הבית" : "חזור"}
             >
               {backTo === "home" ? (
                 <Home className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               ) : (
-                <ArrowRight className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+                <ArrowRight className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               )}
             </Button>
           )}
@@ -66,16 +66,16 @@ export const AppHeader = ({
               variant="ghost"
               size="icon"
               onClick={() => setIsMenuOpen(true)}
-              className="rounded-full hover:bg-gray-50 transition-colors h-9 w-9"
+              className="rounded-full h-9 w-9"
               aria-label="תפריט"
             >
-              <Menu className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </Button>
           )}
         </div>
 
         {/* Center: Title */}
-        <h1 className="text-base font-semibold text-[#262626] font-jakarta absolute left-1/2 -translate-x-1/2">
+        <h1 className="text-base font-semibold text-foreground absolute left-1/2 -translate-x-1/2">
           {title}
         </h1>
 
@@ -86,17 +86,17 @@ export const AppHeader = ({
               variant="ghost"
               size="icon"
               onClick={extraAction.onClick}
-              className="rounded-full hover:bg-gray-50 transition-colors h-9 w-9"
+              className="rounded-full h-9 w-9"
               aria-label="פעולה נוספת"
             >
-              <extraAction.icon className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <extraAction.icon className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </Button>
           )}
         </div>
       </div>
 
       {/* Spacer */}
-      <div className="h-[44px]" />
+      <div className="h-11" />
     </>
   );
 };

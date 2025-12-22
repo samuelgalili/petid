@@ -169,13 +169,13 @@ export default function Messages() {
         <div>
           {conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-4">
-              <div className="w-24 h-24 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
-                <Camera className="h-12 w-12 text-foreground" />
+              <div className="w-20 h-20 rounded-full border border-foreground flex items-center justify-center mb-4">
+                <Camera className="h-10 w-10 text-foreground" strokeWidth={1} />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 ההודעות שלך
               </h3>
-              <p className="text-sm text-gray-500 text-center max-w-[260px]">
+              <p className="text-sm text-muted-foreground text-center max-w-[260px]">
                 שלח תמונות והודעות פרטיות לחבר או לקבוצה
               </p>
               <button className="mt-4 text-primary font-semibold text-sm">
@@ -183,20 +183,17 @@ export default function Messages() {
               </button>
             </div>
           ) : (
-            conversations.map((conversation, index) => (
-              <motion.div
+            conversations.map((conversation) => (
+              <div
                 key={conversation.userId}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.03 }}
                 onClick={() => navigate(`/messages/${conversation.userId}`)}
-                className="hover:bg-muted/50 transition-colors cursor-pointer"
+                className="hover:bg-muted transition-colors cursor-pointer"
               >
                 <div className="px-4 py-3 flex items-center gap-3">
                   <div className="relative">
                     <Avatar className="h-14 w-14">
                       <AvatarImage src={conversation.userAvatar || undefined} />
-                      <AvatarFallback className="bg-gradient-primary text-primary-foreground text-lg">
+                      <AvatarFallback className="bg-muted text-foreground text-lg">
                         {conversation.userName.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
@@ -225,7 +222,7 @@ export default function Messages() {
                     <div className="w-2 h-2 rounded-full bg-primary" />
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))
           )}
         </div>
