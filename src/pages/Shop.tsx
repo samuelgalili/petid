@@ -279,18 +279,17 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Clean Header */}
-      <div className="bg-background/95 backdrop-blur-xl border-b border-border/40 sticky top-0 z-50">
+      {/* Instagram-style Header */}
+      <div className="bg-background border-b border-border sticky top-0 z-50">
         <div className="max-w-lg mx-auto px-4 py-3">
           {/* Top Row: Title + Cart */}
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-foreground">חנות</h1>
+            <h1 className="text-xl font-semibold text-foreground">Shop</h1>
             <motion.button 
               ref={cartIconRef}
-              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/cart')}
-              className={`active:opacity-50 transition-opacity p-1 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
+              className={`p-2 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
               onAnimationComplete={() => {
                 if (cartIconRef.current) {
                   const rect = cartIconRef.current.getBoundingClientRect();
@@ -298,11 +297,11 @@ const Shop = () => {
                 }
               }}
             >
-              <ShoppingCart className="w-6 h-6 text-primary" strokeWidth={1.5} />
+              <ShoppingBag className="w-6 h-6 text-foreground" strokeWidth={1.5} />
               <AnimatePresence>
                 {getTotalItems() > 0 && (
                   <motion.span 
-                    className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    className="absolute -top-0.5 -right-0.5 bg-[#FF3040] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
@@ -315,12 +314,12 @@ const Shop = () => {
             </motion.button>
           </div>
           
-          {/* Clean Search Bar */}
+          {/* Instagram-style Search Bar */}
           <div className="relative">
-            <div className={`flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-2.5 transition-all ${
-              isSearchFocused ? 'ring-2 ring-primary/30 border-primary/50' : ''
+            <div className={`flex items-center gap-3 bg-muted rounded-lg px-4 py-2 transition-all ${
+              isSearchFocused ? 'bg-muted/80' : ''
             }`}>
-              <Search className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
+              <Search className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -337,12 +336,12 @@ const Shop = () => {
                   setIsSearchFocused(false);
                   setTimeout(() => setShowSearchResults(false), 200);
                 }}
-                placeholder="חיפוש מוצרים..."
+                placeholder="חיפוש"
                 className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
               {searchQuery && (
-                <button onClick={clearSearch} className="p-1">
-                  <X className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
+                <button onClick={clearSearch} className="p-0.5">
+                  <X className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
                 </button>
               )}
             </div>
@@ -351,10 +350,10 @@ const Shop = () => {
             <AnimatePresence>
               {showSearchResults && searchQuery.trim() && searchSuggestions.length > 0 && (
                 <motion.div
-                  initial={{ opacity: 0, y: -8 }}
+                  initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-background rounded-xl border border-border shadow-lg overflow-hidden z-50"
+                  exit={{ opacity: 0, y: -4 }}
+                  className="absolute top-full left-0 right-0 mt-1 bg-background rounded-lg border border-border shadow-lg overflow-hidden z-50"
                 >
                   {searchSuggestions.map((product) => (
                     <button
@@ -362,7 +361,7 @@ const Shop = () => {
                       onClick={() => handleSearchSelect(product)}
                       className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-right"
                     >
-                      <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden">
+                      <div className="w-10 h-10 bg-muted rounded-md overflow-hidden">
                         <OptimizedImage src={product.image} alt={product.name} className="w-full h-full" objectFit="cover" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -378,55 +377,52 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Pet Type Selection - Clean minimal style */}
+      {/* Instagram-style Tabs */}
+      <div className="bg-background border-b border-border">
+        <div className="max-w-lg mx-auto flex">
+          <button
+            onClick={() => setActiveTab("grid")}
+            className={`flex-1 py-3 text-center border-b-2 transition-colors ${
+              activeTab === "grid"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground"
+            }`}
+          >
+            <Grid3X3 className="w-5 h-5 mx-auto" strokeWidth={1.5} />
+          </button>
+          <button
+            onClick={() => setActiveTab("saved")}
+            className={`flex-1 py-3 text-center border-b-2 transition-colors ${
+              activeTab === "saved"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground"
+            }`}
+          >
+            <Bookmark className="w-5 h-5 mx-auto" strokeWidth={1.5} />
+          </button>
+        </div>
+      </div>
+
+      {/* Categories Scroll - Instagram style */}
       <div className="bg-background">
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <div className="flex gap-2 justify-center">
-            <button
-              onClick={() => setSelectedPetType("all")}
-              className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedPetType === "all"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground bg-background border border-border"
-              }`}
-              style={selectedPetType === "all" 
-                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
-                : {}
-              }
-            >
-              הכל
-            </button>
-            <button
-              onClick={() => setSelectedPetType("dog")}
-              className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedPetType === "dog"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground bg-background border border-border"
-              }`}
-              style={selectedPetType === "dog" 
-                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
-                : {}
-              }
-            >
-              <Dog className="w-4 h-4" strokeWidth={1.5} />
-              כלב
-            </button>
-            <button
-              onClick={() => setSelectedPetType("cat")}
-              className={`flex items-center justify-center gap-1.5 px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedPetType === "cat"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground bg-background border border-border"
-              }`}
-              style={selectedPetType === "cat" 
-                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
-                : {}
-              }
-            >
-              <Cat className="w-4 h-4" strokeWidth={1.5} />
-              חתול
-            </button>
-          </div>
+        <div className="max-w-lg mx-auto">
+          <ScrollArea className="w-full">
+            <div className="flex gap-2 px-4 py-3">
+              {subCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.label)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                    selectedCategory === category.label
+                      ? "bg-foreground text-background"
+                      : "bg-muted text-foreground"
+                  }`}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       </div>
 
@@ -455,121 +451,55 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-background">
-        <div className="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowDealsOnly(!showDealsOnly)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                showDealsOnly
-                  ? "text-foreground"
-                  : "text-muted-foreground bg-background border border-border"
-              }`}
-              style={showDealsOnly 
-                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
-                : {}
-              }
-            >
-              <Tag className="w-3.5 h-3.5" strokeWidth={2} />
-              מבצעים
-            </button>
-            
-            <button
-              onClick={() => setSortBy(sortBy === "price-low" ? "none" : "price-low")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                sortBy === "price-low"
-                  ? "text-foreground"
-                  : "text-muted-foreground bg-background border border-border"
-              }`}
-              style={sortBy === "price-low" 
-                ? { background: 'linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent', borderRadius: '9999px' }
-                : {}
-              }
-            >
-              מחיר ↑
-            </button>
-          </div>
-
-          <span className="text-xs text-muted-foreground">
-            {filteredAndSortedProducts.length} מוצרים
-          </span>
-        </div>
-      </div>
-
-      {/* Clean Products Grid */}
-      <div className="max-w-lg mx-auto p-4">
-        <div className="grid grid-cols-2 gap-3">
+      {/* Instagram-style Products Grid */}
+      <div className="max-w-lg mx-auto">
+        <div className="grid grid-cols-2 gap-px bg-border">
           {filteredAndSortedProducts.map((product) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               whileTap={{ scale: 0.98 }}
-              className="relative p-[1.5px] rounded-xl cursor-pointer group"
-              style={{
-                background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
-              }}
+              className="bg-background cursor-pointer"
               onClick={() => handleProductClick(product)}
             >
-              <div className="bg-white rounded-xl overflow-hidden h-full transition-all group-hover:shadow-lg">
-                {/* Image */}
-                <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-white">
-                  <OptimizedImage
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full"
-                    objectFit="cover"
-                    sizes="(max-width: 768px) 50vw, 200px"
+              {/* Square Image */}
+              <div className="relative aspect-square bg-muted">
+                <OptimizedImage
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full"
+                  objectFit="cover"
+                  sizes="(max-width: 768px) 50vw, 200px"
+                />
+                
+                {/* Wishlist button - Instagram style */}
+                <button
+                  onClick={(e) => toggleFavorite(product.id, e)}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/80 flex items-center justify-center"
+                >
+                  <Heart 
+                    className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-foreground"}`} 
+                    strokeWidth={1.5} 
                   />
-                  
-                  {/* Sale Badge */}
+                </button>
+              </div>
+
+              {/* Product Info - Instagram shop style */}
+              <div className="p-3">
+                <h3 className="text-sm font-normal text-foreground line-clamp-1 mb-0.5">
+                  {product.name}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-1.5">Petid Shop</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">
+                    ₪{product.price}
+                  </span>
                   {product.originalPrice && (
-                    <div 
-                      className="absolute top-2 left-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500"
-                    >
-                      -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                    </div>
-                  )}
-
-                  {/* Save Button */}
-                  <button
-                    onClick={(e) => toggleFavorite(product.id, e)}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-sm"
-                  >
-                    <Bookmark 
-                      className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? "fill-petid-gold text-petid-gold" : "text-gray-400"}`} 
-                      strokeWidth={1.5} 
-                    />
-                  </button>
-                </div>
-
-                {/* Info */}
-                <div className="p-3 bg-white">
-                  <h3 className="text-sm font-semibold text-gray-800 line-clamp-1 mb-1">
-                    {product.name}
-                  </h3>
-                  
-                  <div className="flex items-center gap-1 mb-2">
-                    <Star className="w-3 h-3 fill-[#4ECDC4] text-[#4ECDC4]" />
-                    <span className="text-xs text-gray-500">{product.rating}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 justify-end">
-                    {product.originalPrice && (
-                      <span className="text-xs text-gray-400 line-through">
-                        ₪{product.originalPrice}
-                      </span>
-                    )}
-                    <span 
-                      className="text-sm font-bold bg-clip-text text-transparent"
-                      style={{
-                        backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
-                      }}
-                    >
-                      ₪{product.price}
+                    <span className="text-xs text-muted-foreground line-through">
+                      ₪{product.originalPrice}
                     </span>
-                  </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -578,62 +508,50 @@ const Shop = () => {
 
         {/* Empty State */}
         {filteredAndSortedProducts.length === 0 && (
-          <div className="py-16 text-center">
-            <Bookmark className="w-12 h-12 text-muted-foreground mx-auto mb-3" strokeWidth={1} />
-            <p className="text-sm text-muted-foreground">לא נמצאו מוצרים</p>
+          <div className="py-20 text-center">
+            <ShoppingBag className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" strokeWidth={1} />
+            <p className="text-sm text-muted-foreground">אין מוצרים להצגה</p>
           </div>
         )}
       </div>
 
-      {/* Product Details Sheet */}
+      {/* Product Details Sheet - Instagram style */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t-0 pb-20" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-background p-0 overflow-hidden border-t border-border pb-20" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
             <div className="flex flex-col h-full" dir="rtl">
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-2">
-                <div 
-                  className="w-12 h-1.5 rounded-full"
-                  style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
-                />
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
               </div>
               
               {/* Top Actions */}
               <div className="flex items-center justify-between px-4 pb-3">
                 <button
                   onClick={() => setSelectedProduct(null)}
-                  className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                  className="p-2"
                 >
-                  <X className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                  <X className="w-6 h-6 text-foreground" strokeWidth={1.5} />
                 </button>
                 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
-                      setSelectedProduct(null);
-                    }}
-                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
-                  >
-                    <Info className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                  </button>
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(window.location.href);
                       toast({ title: "הקישור הועתק", duration: 1500 });
                     }}
-                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                    className="p-2"
                   >
-                    <Share2 className="w-4 h-4 text-foreground" strokeWidth={1.5} />
+                    <Share2 className="w-5 h-5 text-foreground" strokeWidth={1.5} />
                   </button>
                   <button
                     onClick={() => toggleFavorite(selectedProduct.id)}
-                    className="w-10 h-10 rounded-full bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                    className="p-2"
                   >
-                    <Bookmark 
-                      className={`w-5 h-5 transition-colors ${favorites.includes(selectedProduct.id) ? "fill-petid-gold text-petid-gold" : "text-foreground"}`} 
+                    <Heart 
+                      className={`w-5 h-5 transition-colors ${favorites.includes(selectedProduct.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-foreground"}`} 
                       strokeWidth={1.5} 
                     />
                   </button>
@@ -642,7 +560,7 @@ const Shop = () => {
 
               {/* Scrollable Content */}
               <ScrollArea className="flex-1">
-                {/* Product Image Carousel */}
+                {/* Product Image */}
                 <div className="relative px-4 mb-4">
                   <Carousel className="w-full" dir="ltr" setApi={setCarouselApi} opts={{ direction: "ltr" }}>
                     <CarouselContent>
@@ -650,13 +568,12 @@ const Shop = () => {
                         <CarouselItem key={index}>
                           <motion.div 
                             ref={index === 0 ? productImageRef : undefined}
-                            className="relative p-[2px] rounded-2xl overflow-hidden"
-                            style={{ background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)' }}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.3 }}
+                            className="rounded-lg overflow-hidden bg-muted"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2 }}
                           >
-                            <div className="w-full aspect-square bg-card rounded-2xl overflow-hidden">
+                            <div className="w-full aspect-square">
                               <OptimizedImage
                                 src={img}
                                 alt={selectedProduct.name}
@@ -672,214 +589,145 @@ const Shop = () => {
                   
                   {/* Dots Indicator */}
                   {(selectedProduct.images?.length || 1) > 1 && (
-                    <div className="flex justify-center gap-1.5 mt-3">
+                    <div className="flex justify-center gap-1 mt-3">
                       {(selectedProduct.images || [selectedProduct.image]).map((_: string, index: number) => (
-                        <motion.div
+                        <div
                           key={index}
-                          className="h-1.5 rounded-full transition-all"
-                          animate={{ 
-                            width: currentImageIndex === index ? 20 : 6,
-                            background: currentImageIndex === index 
-                              ? 'linear-gradient(135deg, #1E5799, #4ECDC4)' 
-                              : 'hsl(var(--muted))'
-                          }}
+                          className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                            currentImageIndex === index ? 'bg-primary' : 'bg-muted-foreground/30'
+                          }`}
                         />
                       ))}
                     </div>
                   )}
-                  
-                  {/* Sale Badge */}
-                  {selectedProduct.originalPrice && (
-                    <motion.div 
-                      className="absolute top-4 right-6 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg"
-                      style={{ background: 'linear-gradient(135deg, #4ECDC4, #7DB9E8)' }}
-                      initial={{ scale: 0, rotate: -10 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                    >
-                      -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
-                    </motion.div>
-                  )}
                 </div>
 
-                <div className="px-5 space-y-6 pb-4">
-                  {/* Title & Rating */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <h2 className="text-2xl font-bold text-foreground mb-3">{selectedProduct.name}</h2>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#4ECDC4]/20 to-[#1E5799]/20 border border-[#4ECDC4]/30">
-                        <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
-                        <span className="text-sm font-bold text-foreground">{selectedProduct.rating}</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">({selectedProduct.reviews} ביקורות)</span>
-                    </div>
-                  </motion.div>
+                {/* Product Details - Instagram style */}
+                <div className="px-4 space-y-4 pb-4">
+                  {/* Title */}
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">{selectedProduct.name}</h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">Petid Shop</p>
+                  </div>
 
                   {/* Price */}
-                  <motion.div 
-                    className="flex items-baseline gap-3 p-4 rounded-2xl bg-gradient-to-br from-[#1E5799]/5 via-transparent to-[#4ECDC4]/5 border border-border/50"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                  >
-                    <span 
-                      className="text-4xl font-black bg-clip-text text-transparent"
-                      style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
-                    >
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-semibold text-foreground">
                       ₪{selectedProduct.price}
                     </span>
                     {selectedProduct.originalPrice && (
-                      <span className="text-lg text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
+                      <span className="text-sm text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
                     )}
-                  </motion.div>
+                  </div>
 
-                  {/* Shipping Info Pills */}
-                  <motion.div 
-                    className="flex items-center gap-2 flex-wrap"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                  >
+                  {/* Rating */}
+                  {selectedProduct.rating && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            className={`w-4 h-4 ${i < Math.floor(selectedProduct.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} 
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">({selectedProduct.reviews} ביקורות)</span>
+                    </div>
+                  )}
+
+                  {/* Info badges */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     {selectedProduct.freeShipping && (
-                      <div className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#4ECDC4]/15 to-[#4ECDC4]/5 border border-[#4ECDC4]/20 text-foreground shadow-sm">
-                        <Truck className="w-4 h-4 text-[#4ECDC4]" />
-                        <span className="font-medium">משלוח חינם</span>
+                      <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted text-foreground">
+                        <Truck className="w-3.5 h-3.5" />
+                        <span>משלוח חינם</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#1E5799]/15 to-[#1E5799]/5 border border-[#1E5799]/20 text-foreground shadow-sm">
-                      <Shield className="w-4 h-4 text-[#1E5799]" />
-                      <span className="font-medium">אחריות מלאה</span>
+                    <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted text-foreground">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>אחריות מלאה</span>
                     </div>
-                  </motion.div>
+                  </div>
 
                   {/* Description */}
-                  <motion.p 
-                    className="text-sm text-muted-foreground leading-relaxed p-4 rounded-xl bg-muted/50 border border-border/30"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                  >
-                    {selectedProduct.description}
-                  </motion.p>
+                  {selectedProduct.description && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {selectedProduct.description}
+                    </p>
+                  )}
 
                   {/* Size Selector */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#1E5799] to-[#4ECDC4]" />
-                      בחר גודל
-                    </h3>
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground mb-2">גודל</h3>
                     <div className="flex gap-2">
-                      {sizes.map((size, index) => (
-                        <motion.button
+                      {sizes.map((size) => (
+                        <button
                           key={size}
                           onClick={() => setSelectedSize(size)}
-                          whileTap={{ scale: 0.95 }}
-                          whileHover={{ y: -2 }}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3 + index * 0.05 }}
-                          className={`flex-1 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-sm ${
+                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
                             selectedSize === size
-                              ? "text-foreground bg-card shadow-md"
-                              : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                              ? "border-foreground text-foreground"
+                              : "border-border text-muted-foreground hover:border-foreground/50"
                           }`}
-                          style={selectedSize === size 
-                            ? { background: 'linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }
-                            : {}
-                          }
                         >
                           {size}
-                        </motion.button>
+                        </button>
                       ))}
                     </div>
-                  </motion.div>
+                  </div>
 
                   {/* Quantity */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                  >
-                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#1E5799] to-[#4ECDC4]" />
-                      כמות
-                    </h3>
-                    <div 
-                      className="flex items-center gap-4 p-1.5 w-fit rounded-xl bg-card shadow-sm"
-                      style={{ background: 'linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box', border: '2px solid transparent' }}
-                    >
-                      <motion.button
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground mb-2">כמות</h3>
+                    <div className="flex items-center gap-4 w-fit">
+                      <button
                         onClick={decreaseQuantity}
-                        whileTap={{ scale: 0.9 }}
-                        whileHover={{ scale: 1.05 }}
-                        className="w-11 h-11 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                        className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-muted"
                       >
                         <Minus className="w-4 h-4 text-foreground" />
-                      </motion.button>
-                      <span className="text-xl font-black text-foreground w-10 text-center">{quantity}</span>
-                      <motion.button
+                      </button>
+                      <span className="text-lg font-medium text-foreground w-8 text-center">{quantity}</span>
+                      <button
                         onClick={increaseQuantity}
-                        whileTap={{ scale: 0.9 }}
-                        whileHover={{ scale: 1.05 }}
-                        className="w-11 h-11 rounded-lg bg-muted flex items-center justify-center transition-colors hover:bg-muted/80"
+                        className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-muted"
                       >
                         <Plus className="w-4 h-4 text-foreground" />
-                      </motion.button>
+                      </button>
                     </div>
-                  </motion.div>
+                  </div>
 
-                  {/* More Details Link */}
-                  <motion.button
+                  {/* View more link */}
+                  <button
                     onClick={() => {
                       navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
                       setSelectedProduct(null);
                     }}
-                    whileTap={{ scale: 0.98 }}
-                    whileHover={{ scale: 1.01 }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="w-full py-3.5 text-sm font-semibold text-primary flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all shadow-sm"
+                    className="text-sm text-primary font-medium"
                   >
-                    <Info className="w-4 h-4" />
                     לפרטים נוספים ולביקורות
-                  </motion.button>
+                  </button>
 
-                  <div className="h-2" />
+                  <div className="h-4" />
                 </div>
               </ScrollArea>
-              {/* Bottom Bar - Always visible at bottom */}
-              <div className="flex-shrink-0 border-t border-border px-4 py-4 bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-                <div className="flex items-center gap-4">
+              {/* Bottom Bar - Instagram style */}
+              <div className="flex-shrink-0 border-t border-border px-4 py-3 bg-background">
+                <div className="flex items-center gap-3">
                   <div className="flex-shrink-0">
                     <p className="text-xs text-muted-foreground">סה״כ</p>
-                    <p 
-                      className="text-2xl font-bold bg-clip-text text-transparent"
-                      style={{ backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
-                    >
+                    <p className="text-lg font-semibold text-foreground">
                       ₪{selectedProduct.price * quantity}
                     </p>
                   </div>
                   
-                  <motion.button
+                  <button
                     onClick={handleAddToCart}
                     disabled={!selectedProduct.inStock}
-                    whileTap={{ scale: 0.98 }}
-                    whileHover={{ scale: 1.02 }}
-                    className="flex-1 h-14 text-base font-bold rounded-xl text-white flex items-center justify-center gap-2 transition-all hover:shadow-xl disabled:opacity-50 shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
+                    className="flex-1 h-11 text-sm font-semibold rounded-lg bg-primary text-primary-foreground flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    <ShoppingCart className="w-5 h-5" />
+                    <ShoppingBag className="w-4 h-4" />
                     {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
-                  </motion.button>
+                  </button>
                 </div>
               </div>
             </div>
