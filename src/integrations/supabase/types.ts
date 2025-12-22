@@ -246,6 +246,45 @@ export type Database = {
           },
         ]
       }
+      auto_replies: {
+        Row: {
+          away_enabled: boolean | null
+          away_end_time: string | null
+          away_message: string | null
+          away_start_time: string | null
+          created_at: string
+          greeting_enabled: boolean | null
+          greeting_message: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          away_enabled?: boolean | null
+          away_end_time?: string | null
+          away_message?: string | null
+          away_start_time?: string | null
+          created_at?: string
+          greeting_enabled?: boolean | null
+          greeting_message?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          away_enabled?: boolean | null
+          away_end_time?: string | null
+          away_message?: string | null
+          away_start_time?: string | null
+          created_at?: string
+          greeting_enabled?: boolean | null
+          greeting_message?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           condition_type: string
@@ -285,6 +324,45 @@ export type Database = {
         }
         Relationships: []
       }
+      branded_content: {
+        Row: {
+          created_at: string
+          id: string
+          partner_business_id: string
+          post_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          partner_business_id: string
+          post_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          partner_business_id?: string
+          post_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branded_content_partner_business_id_fkey"
+            columns: ["partner_business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branded_content_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       breed_detection_history: {
         Row: {
           avatar_url: string | null
@@ -319,6 +397,97 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_analytics: {
+        Row: {
+          business_id: string
+          id: string
+          viewed_at: string
+          viewer_age_range: string | null
+          viewer_city: string | null
+          viewer_id: string | null
+        }
+        Insert: {
+          business_id: string
+          id?: string
+          viewed_at?: string
+          viewer_age_range?: string | null
+          viewer_city?: string | null
+          viewer_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          id?: string
+          viewed_at?: string
+          viewer_age_range?: string | null
+          viewer_city?: string | null
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_analytics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          business_id: string
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          service_type: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          business_id: string
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          business_id?: string
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -492,6 +661,47 @@ export type Database = {
           working_hours?: Json | null
         }
         Relationships: []
+      }
+      business_subscriptions: {
+        Row: {
+          business_id: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          price: number | null
+          started_at: string
+          subscriber_id: string
+          tier: string | null
+        }
+        Insert: {
+          business_id: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          price?: number | null
+          started_at?: string
+          subscriber_id: string
+          tier?: string | null
+        }
+        Update: {
+          business_id?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          price?: number | null
+          started_at?: string
+          subscriber_id?: string
+          tier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cardcom_customers: {
         Row: {
@@ -1201,6 +1411,82 @@ export type Database = {
           },
         ]
       }
+      lead_forms: {
+        Row: {
+          business_id: string
+          created_at: string
+          description: string | null
+          fields: Json
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_forms_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_submissions: {
+        Row: {
+          created_at: string
+          data: Json
+          form_id: string
+          id: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          form_id: string
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          form_id?: string
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "lead_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address: string | null
@@ -1269,6 +1555,7 @@ export type Database = {
           id: string
           is_read: boolean | null
           is_vanish: boolean | null
+          label: Database["public"]["Enums"]["dm_label"] | null
           message_text: string
           message_type: string | null
           receiver_id: string
@@ -1283,6 +1570,7 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           is_vanish?: boolean | null
+          label?: Database["public"]["Enums"]["dm_label"] | null
           message_text: string
           message_type?: string | null
           receiver_id: string
@@ -1297,6 +1585,7 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           is_vanish?: boolean | null
+          label?: Database["public"]["Enums"]["dm_label"] | null
           message_text?: string
           message_type?: string | null
           receiver_id?: string
@@ -2159,6 +2448,39 @@ export type Database = {
           id?: string
           p256dh?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quick_replies: {
+        Row: {
+          created_at: string
+          id: string
+          message_text: string
+          shortcut: string | null
+          title: string
+          updated_at: string
+          use_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_text: string
+          shortcut?: string | null
+          title: string
+          updated_at?: string
+          use_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_text?: string
+          shortcut?: string | null
+          title?: string
+          updated_at?: string
+          use_count?: number | null
           user_id?: string
         }
         Relationships: []
@@ -3381,6 +3703,7 @@ export type Database = {
         | "pet_sitter"
         | "other"
         | "shelter"
+      dm_label: "primary" | "general" | "flagged" | "pending"
       order_status:
         | "pending"
         | "processing"
@@ -3527,6 +3850,7 @@ export const Constants = {
         "other",
         "shelter",
       ],
+      dm_label: ["primary", "general", "flagged", "pending"],
       order_status: [
         "pending",
         "processing",
