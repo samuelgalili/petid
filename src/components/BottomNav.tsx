@@ -142,10 +142,8 @@ const BottomNav = () => {
           {/* Explore */}
           <NavItem to="/explore" icon={<Compass className={cn("w-6 h-6", isActive("/explore") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
 
-          {/* Create - Plus button */}
-          <NavItem onClick={() => setCreatePostOpen(true)} icon={<div className="w-6 h-6 rounded-md border border-foreground flex items-center justify-center">
-                <Plus className="w-4 h-4 text-foreground" strokeWidth={2} />
-              </div>} isActive={false} label="יצירה" />
+          {/* Categories */}
+          <NavItem onClick={() => setCategoriesOpen(true)} icon={<Grid3X3 className="w-6 h-6 text-foreground" strokeWidth={1.5} />} isActive={false} label="קטגוריות" />
 
           {/* Reels */}
           <NavItem to="/reels" icon={<Clapperboard className={cn("w-6 h-6", isActive("/reels") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/reels") ? "currentColor" : "none"} />} isActive={isActive("/reels")} label="רילס" />
