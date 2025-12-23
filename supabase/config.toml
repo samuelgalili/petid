@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.pet-pilot-reasoning]
 verify_jwt = false
+
+[functions.reset-admin-password]
+verify_jwt = false
