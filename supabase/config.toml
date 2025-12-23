@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.enrich-product-ai]
 verify_jwt = false
+
+[functions.pet-pilot-reasoning]
+verify_jwt = false
