@@ -1,131 +1,38 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
-const emailOtpSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Invalid email address"),
-});
-
-const phoneOtpSchema = z.object({
-  phone: z.string().min(1, "Phone number is required").regex(/^\+?[0-9]{10,15}$/, "Phone must be 10-15 digits"),
+const loginSchema = z.object({
+  email: z.string().min(1, "נדרש אימייל").email("כתובת אימייל לא תקינה"),
+  password: z.string().min(6, "הסיסמה חייבת להכיל לפחות 6 תווים"),
 });
 
 interface FieldError {
   email?: string;
-  phone?: string;
+  password?: string;
 }
 
 export const LoginForm = () => {
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("phone");
   const [formData, setFormData] = useState({
     email: "",
-    phone: "",
+    password: "",
   });
-  const [showOTPInput, setShowOTPInput] = useState(false);
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
   const [generalError, setGeneralError] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [resendCountdown, setResendCountdown] = useState(0);
-  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (resendCountdown > 0) {
-      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [resendCountdown]);
-
-  useEffect(() => {
-    if (showOTPInput && otpInputRefs.current[0]) {
-      otpInputRefs.current[0].focus();
-    }
-  }, [showOTPInput]);
-
-  useEffect(() => {
-    const verifyOtp = async () => {
-      if (otp.every(d => d) && showOTPInput && !loading) {
-        setLoading(true);
-        setGeneralError("");
-        try {
-          const otpCode = otp.join('');
-          const { error } = loginMethod === "email" 
-            ? await supabase.auth.verifyOtp({ email: formData.email, token: otpCode, type: 'email' })
-            : await supabase.auth.verifyOtp({ phone: formData.phone, token: otpCode, type: 'sms' });
-
-          if (error) {
-            setGeneralError(error.message);
-            toast({ title: "האימות נכשל", description: error.message, variant: "destructive" });
-            setOtp(["", "", "", "", "", ""]);
-            otpInputRefs.current[0]?.focus();
-            setLoading(false);
-            return;
-          }
-
-          toast({ title: "התחברת בהצלחה!", description: "ברוכים השבים!" });
-          navigate("/add-pet");
-        } catch {
-          setGeneralError("אירעה שגיאה לא צפויה.");
-          setOtp(["", "", "", "", "", ""]);
-          otpInputRefs.current[0]?.focus();
-          setLoading(false);
-        }
-      }
-    };
-    verifyOtp();
-  }, [otp, showOTPInput, loading]);
-
-  const handleOtpChange = (index: number, value: string) => {
-    const digit = value.replace(/\D/g, '').slice(-1);
-    const newOtp = [...otp];
-    newOtp[index] = digit;
-    setOtp(newOtp);
-    if (digit && index < 5) otpInputRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace') {
-      if (!otp[index] && index > 0) {
-        otpInputRefs.current[index - 1]?.focus();
-      } else {
-        const newOtp = [...otp];
-        newOtp[index] = "";
-        setOtp(newOtp);
-      }
-    } else if (e.key === 'ArrowLeft' && index > 0) {
-      otpInputRefs.current[index - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    const newOtp = [...otp];
-    pastedData.split('').forEach((digit, index) => {
-      if (index < 6) newOtp[index] = digit;
-    });
-    setOtp(newOtp);
-    const nextEmptyIndex = newOtp.findIndex(d => !d);
-    otpInputRefs.current[nextEmptyIndex === -1 ? 5 : nextEmptyIndex]?.focus();
-  };
-
   const validateForm = (): boolean => {
     try {
-      if (loginMethod === "email") {
-        emailOtpSchema.parse({ email: formData.email });
-      } else {
-        phoneOtpSchema.parse({ phone: formData.phone });
-      }
+      loginSchema.parse(formData);
       setFieldErrors({});
       setGeneralError("");
       return true;
@@ -140,38 +47,38 @@ export const LoginForm = () => {
     }
   };
 
-  const sendOTP = async () => {
-    setLoading(true);
-    setGeneralError("");
-    try {
-      const { error } = loginMethod === "email"
-        ? await supabase.auth.signInWithOtp({ email: formData.email })
-        : await supabase.auth.signInWithOtp({ phone: formData.phone });
-
-      if (error) {
-        setGeneralError(error.message);
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-        setLoading(false);
-        return false;
-      }
-
-      toast({ title: "Code sent!", description: `Check your ${loginMethod === "email" ? "email" : "phone"}.` });
-      setShowOTPInput(true);
-      setResendCountdown(60);
-      setLoading(false);
-      return true;
-    } catch {
-      setGeneralError("Failed to send code.");
-      setLoading(false);
-      return false;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError("");
-    if (!showOTPInput && !validateForm()) return;
-    if (!showOTPInput) await sendOTP();
+    
+    if (!validateForm()) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          setGeneralError("אימייל או סיסמה שגויים");
+        } else if (error.message.includes("Email not confirmed")) {
+          setGeneralError("האימייל לא אומת. בדוק את תיבת הדואר שלך");
+        } else {
+          setGeneralError(error.message);
+        }
+        toast({ title: "שגיאה בהתחברות", description: "אימייל או סיסמה שגויים", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      toast({ title: "התחברת בהצלחה!", description: "ברוכים השבים!" });
+      navigate("/");
+    } catch {
+      setGeneralError("אירעה שגיאה לא צפויה");
+      setLoading(false);
+    }
   };
 
   return (
@@ -186,129 +93,78 @@ export const LoginForm = () => {
         </motion.div>
       )}
 
-      {!showOTPInput ? (
-        <>
-          {/* Method Toggle - Instagram style */}
-          <div className="flex border border-gray-300 rounded-sm overflow-hidden">
-            <button
-              type="button"
-              onClick={() => { setLoginMethod("phone"); setFieldErrors({}); }}
-              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
-                loginMethod === "phone" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
-              }`}
-            >
-              Phone
-            </button>
-            <button
-              type="button"
-              onClick={() => { setLoginMethod("email"); setFieldErrors({}); }}
-              className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-l border-gray-300 ${
-                loginMethod === "email" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
-              }`}
-            >
-              Email
-            </button>
-          </div>
+      {/* Email Input */}
+      <div>
+        <Input
+          type="email"
+          placeholder="אימייל"
+          value={formData.email}
+          onChange={(e) => {
+            setFormData({ ...formData, email: e.target.value });
+            setFieldErrors({ ...fieldErrors, email: undefined });
+          }}
+          disabled={loading}
+          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
+            fieldErrors.email ? "border-red-400" : ""
+          }`}
+          autoComplete="email"
+          dir="ltr"
+        />
+        {fieldErrors.email && (
+          <p className="text-xs text-red-500 mt-1 text-right">{fieldErrors.email}</p>
+        )}
+      </div>
 
-          {/* Input Field - Instagram style */}
-          <div>
-            <Input
-              type={loginMethod === "email" ? "email" : "tel"}
-              placeholder={loginMethod === "email" ? "Email" : "Phone number"}
-              value={loginMethod === "email" ? formData.email : formData.phone}
-              onChange={(e) => {
-                if (loginMethod === "email") {
-                  setFormData({ ...formData, email: e.target.value });
-                  setFieldErrors({ ...fieldErrors, email: undefined });
-                } else {
-                  setFormData({ ...formData, phone: e.target.value });
-                  setFieldErrors({ ...fieldErrors, phone: undefined });
-                }
-              }}
-              disabled={loading}
-              className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
-                (loginMethod === "email" ? fieldErrors.email : fieldErrors.phone) ? "border-red-400" : ""
-              }`}
-              autoComplete={loginMethod === "email" ? "email" : "tel"}
-            />
-            {(loginMethod === "email" ? fieldErrors.email : fieldErrors.phone) && (
-              <p className="text-xs text-red-500 mt-1">
-                {loginMethod === "email" ? fieldErrors.email : fieldErrors.phone}
-              </p>
-            )}
-          </div>
+      {/* Password Input */}
+      <div className="relative">
+        <Input
+          type={showPassword ? "text" : "password"}
+          placeholder="סיסמה"
+          value={formData.password}
+          onChange={(e) => {
+            setFormData({ ...formData, password: e.target.value });
+            setFieldErrors({ ...fieldErrors, password: undefined });
+          }}
+          disabled={loading}
+          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 pr-10 ${
+            fieldErrors.password ? "border-red-400" : ""
+          }`}
+          autoComplete="current-password"
+          dir="ltr"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          tabIndex={-1}
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+        {fieldErrors.password && (
+          <p className="text-xs text-red-500 mt-1 text-right">{fieldErrors.password}</p>
+        )}
+      </div>
 
-          {/* Login Button - Instagram blue */}
-          <Button
-            type="submit"
-            variant="instagram"
-            size="default"
-            disabled={loading || !(loginMethod === "email" ? formData.email : formData.phone)}
-            className="w-full h-10"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "התחברות"}
-          </Button>
-        </>
-      ) : (
-        /* OTP Input */
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground text-center">
-            הזן את הקוד בן 6 הספרות שנשלח ל{loginMethod === "email" ? "אימייל" : "טלפון"} שלך
-          </p>
-          
-          <div className="flex justify-center gap-2">
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => (otpInputRefs.current[index] = el)}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleOtpChange(index, e.target.value)}
-                onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                onPaste={index === 0 ? handleOtpPaste : undefined}
-                disabled={loading}
-                className="w-10 h-12 text-center text-xl font-semibold bg-gray-50 border border-gray-300 rounded-sm focus:border-gray-400 focus:outline-none transition-colors"
-              />
-            ))}
-          </div>
+      {/* Forgot Password Link */}
+      <div className="text-left">
+        <Link 
+          to="/forgot-password" 
+          className="text-xs text-primary hover:text-primary/80 transition-colors"
+        >
+          שכחת סיסמה?
+        </Link>
+      </div>
 
-          {loading && (
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-[#0095F6]" />
-              <span className="ml-2 text-sm text-gray-600">Verifying...</span>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Button
-              type="button"
-              variant="instagramSecondary"
-              size="sm"
-              onClick={() => resendCountdown === 0 && sendOTP()}
-              disabled={loading || resendCountdown > 0}
-              className="w-full"
-            >
-              {resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : "Resend code"}
-            </Button>
-            
-            <button
-              type="button"
-              onClick={() => {
-                setShowOTPInput(false);
-                setOtp(["", "", "", "", "", ""]);
-                setGeneralError("");
-                setResendCountdown(0);
-              }}
-              className="w-full text-sm text-gray-500 hover:text-gray-700"
-              disabled={loading}
-            >
-              Change {loginMethod === "email" ? "email" : "phone number"}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Login Button */}
+      <Button
+        type="submit"
+        variant="instagram"
+        size="default"
+        disabled={loading || !formData.email || !formData.password}
+        className="w-full h-10"
+      >
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "התחברות"}
+      </Button>
     </form>
   );
 };
