@@ -96,6 +96,7 @@ import PaymentFailed from "./pages/PaymentFailed";
 import Support from "./pages/Support";
 import Deals from "./pages/Deals";
 import HomeAIPilot from "./pages/HomeAIPilot";
+import HomeAIDebug from "./pages/HomeAIDebug";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -201,6 +202,8 @@ const AnimatedRoutes = () => {
         <Route path="/payment-failed" element={<PageTransition><PaymentFailed /></PageTransition>} />
         {/* Internal pilot page - not connected to navigation */}
         <Route path="/home-ai-pilot" element={<ProtectedRoute><PageTransition><HomeAIPilot /></PageTransition></ProtectedRoute>} />
+        {/* Internal debug page - decoder test only */}
+        <Route path="/home-ai-debug" element={<ProtectedRoute><PageTransition><HomeAIDebug /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
         </AnimatePresence>
