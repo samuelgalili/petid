@@ -152,136 +152,87 @@ export default function HomeAIBase() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* ==================== HEADER ==================== */}
-      <header className="fixed top-0 left-0 right-0 h-11 bg-background border-b border-border px-4 z-50 flex items-center justify-between">
+      {/* ==================== HEADER - 80px ==================== */}
+      <header className="fixed top-0 left-0 right-0 h-20 bg-white border-b border-border px-4 z-50 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
           <h1 
-            className="text-xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent cursor-pointer"
+            className="text-2xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent cursor-pointer"
             onClick={() => navigate("/")}
           >
-            🐾 Petid
+            🐾 PetID
           </h1>
         </div>
         
-        {/* Right Icons */}
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/explore")}>
-            <Search className="w-6 h-6 text-foreground" strokeWidth={1.5} />
-          </button>
-          <button onClick={() => navigate("/notifications")} className="relative">
-            <Heart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
-          </button>
-          <button onClick={() => navigate("/messages")}>
-            <Send className="w-6 h-6 text-foreground" strokeWidth={1.5} />
-          </button>
-          <button onClick={() => navigate("/cart")} className="relative">
-            <ShoppingCart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
-            {cartItems.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                {cartItems.length}
-              </span>
-            )}
-          </button>
-        </div>
+        {/* Profile Icon - Right */}
+        <button 
+          onClick={() => navigate("/profile")}
+          className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+        >
+          <User className="w-6 h-6 text-foreground" />
+        </button>
       </header>
 
       {/* Spacer for fixed header */}
-      <div className="h-11" />
+      <div className="h-20" />
 
       {/* Main Content */}
       <div ref={scrollContainerRef} className="overflow-y-auto">
         
-        {/* ==================== REWARDS HEADER ==================== */}
-        {isAuthenticated && (
-          <motion.section
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-4 mx-4 mt-2"
-            dir="rtl"
-          >
-            <div className="flex flex-row-reverse items-center gap-4">
-              {/* Gift Icon */}
-              <motion.button
-                onClick={() => navigate("/rewards")}
+        {/* ==================== WALLET CONTAINER ==================== */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-4 mt-4 p-4 rounded-xl"
+          style={{ backgroundColor: '#F5F5F5' }}
+          dir="rtl"
+        >
+          <p className="text-sm text-foreground text-center">
+            חסכת כבר <span className="font-bold text-primary">₪{(totalPoints * 0.01).toFixed(2)}</span> מהקניות האחרונות שלך
+          </p>
+        </motion.section>
+
+        {/* ==================== XP CONTAINER ==================== */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mx-4 mt-4 p-4 bg-card rounded-xl border border-border"
+          dir="rtl"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">XP Level</span>
+            <span className="text-primary font-bold">{totalPoints} XP</span>
+          </div>
+          <Progress value={xpProgress} className="h-3" />
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            רמה {Math.floor(totalPoints / 1000) + 1}
+          </p>
+        </motion.section>
+
+        {/* ==================== PRODUCTS/CATEGORIES GRID ==================== */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mx-4 mt-4"
+          dir="rtl"
+        >
+          <h3 className="text-sm font-semibold text-foreground mb-3">קטגוריות</h3>
+          <div className="grid grid-cols-4 gap-3">
+            {['מזון', 'צעצועים', 'טיפוח', 'בריאות'].map((category, index) => (
+              <motion.div
+                key={category}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex-shrink-0 w-16 h-16 rounded-full bg-surface-elevated flex items-center justify-center shadow-lg border-2 border-border"
+                className="aspect-square bg-muted rounded-xl flex items-center justify-center cursor-pointer"
+                onClick={() => navigate('/shop')}
               >
-                <img src={giftIcon} alt="מתנה" className="w-12 h-12 object-contain" />
-              </motion.button>
-
-              {/* Text */}
-              <div className="flex-1 text-right space-y-1">
-                <p className="text-sm text-muted-foreground">שלום, {user?.email?.split("@")[0] || "אורח"}</p>
-                <h2 className="text-base font-bold text-foreground">קונים, צוברים, נהנים!</h2>
-                <p className="text-xs text-muted-foreground">צוברים 5% מכל קנייה ב Petid</p>
-              </div>
-            </div>
-
-            {/* Rewards Link */}
-            <div className="mt-3 text-left">
-              <Button
-                variant="link"
-                onClick={() => navigate("/rewards")}
-                className="text-primary p-0 h-auto"
-              >
-                צבירה ומימוש
-                <ChevronLeft className="w-4 h-4 mr-1" />
-              </Button>
-            </div>
-          </motion.section>
-        )}
-
-        {/* ==================== CASHBACK PROGRESS ==================== */}
-        {isAuthenticated && (
-          <motion.section
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="px-4 mb-4"
-            dir="rtl"
-          >
-            <div className="bg-card rounded-xl p-4 border border-border shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-amber-500" />
-                  <span className="text-sm font-medium text-foreground">קאשבק 5%</span>
-                </div>
-                <span className="text-amber-600 font-bold">₪{(totalPoints * 0.01).toFixed(0)} / ₪50</span>
-              </div>
-              <Progress value={cashbackProgress} className="h-2 bg-muted" />
-              <p className="text-xs text-muted-foreground mt-2 text-right">
-                עוד ₪{Math.max(50 - totalPoints * 0.01, 0).toFixed(0)} לפדיון הבא
-              </p>
-            </div>
-          </motion.section>
-        )}
-
-        {/* ==================== XP PROGRESS ==================== */}
-        {isAuthenticated && (
-          <motion.section
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.15 }}
-            className="px-4 mb-4"
-            dir="rtl"
-          >
-            <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-4 border border-primary/20">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">נקודות XP</span>
-                </div>
-                <span className="text-primary font-bold">{totalPoints} XP</span>
-              </div>
-              <Progress value={xpProgress} className="h-2 bg-primary/20" />
-              <p className="text-xs text-muted-foreground mt-2 text-right">
-                רמה {Math.floor(totalPoints / 1000) + 1} • עוד {1000 - (totalPoints % 1000)} לרמה הבאה
-              </p>
-            </div>
-          </motion.section>
-        )}
+                <span className="text-xs text-muted-foreground">{category}</span>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
 
         {/* ==================== MY PETS ==================== */}
         {isAuthenticated && pets.length > 0 && (
