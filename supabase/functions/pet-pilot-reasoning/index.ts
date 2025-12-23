@@ -5,6 +5,60 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Pilot Decoder - Internal function to process pilot output
+// Takes pilot output and breaks it down into clear action bits
+// Does NOT display anything to the user
+interface DecodedPilotResult {
+  action_required: boolean;
+  missing_data: string[];
+  safe_to_recommend: boolean;
+  wait_required: boolean;
+  explanation: string;
+}
+
+interface PilotOutput {
+  next_action?: string;
+  required_data?: string[];
+  reason?: string;
+}
+
+function pilot_decoder(pilotOutput: PilotOutput | null): DecodedPilotResult {
+  const result: DecodedPilotResult = {
+    action_required: false,
+    missing_data: [],
+    safe_to_recommend: false,
+    wait_required: false,
+    explanation: ""
+  };
+
+  if (!pilotOutput || !pilotOutput.next_action) {
+    result.explanation = "Pilot output invalid.";
+    return result;
+  }
+
+  if (pilotOutput.next_action === "data_missing") {
+    result.action_required = true;
+    result.missing_data = pilotOutput.required_data || [];
+    result.explanation = "Missing mandatory pet data.";
+  }
+
+  if (pilotOutput.next_action === "safe_recommendation") {
+    result.safe_to_recommend = true;
+    result.explanation = pilotOutput.reason || "A safe recommendation exists.";
+  }
+
+  if (pilotOutput.next_action === "wait") {
+    result.wait_required = true;
+    result.explanation = "Better to wait.";
+  }
+
+  if (pilotOutput.next_action === "none") {
+    result.explanation = "No action needed.";
+  }
+
+  return result;
+}
+
 const PETID_SYSTEM_PROMPT = `You are the core decision logic of PetID.
 PetID is not a store and not a utility.
 PetID is a responsibility system for pet owners.
@@ -165,7 +219,11 @@ Remember:
       };
     }
 
-    return new Response(JSON.stringify({ reasoning }), {
+    // Decode the pilot output for internal use
+    const decoded = pilot_decoder(reasoning);
+    console.log("Decoded pilot output:", decoded);
+
+    return new Response(JSON.stringify({ reasoning, decoded }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
