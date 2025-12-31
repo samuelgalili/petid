@@ -324,122 +324,103 @@ Deno.serve(async (req) => {
     if (mode === 'scan') {
       console.log('Scan mode: Scraping page to find product URLs for', baseUrl);
       
-      // First try to scrape the page directly to extract links
-      const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${firecrawlKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: baseUrl,
-          formats: ['links', 'html'],
-          onlyMainContent: false,
-        }),
-      });
-
-      const scrapeData = await scrapeResponse.json();
+      const urlObj = new URL(baseUrl);
+      const baseDomain = urlObj.origin;
       
-      if (!scrapeResponse.ok) {
-        console.error('Scrape failed:', scrapeData);
-        throw new Error(scrapeData.error || 'Failed to scrape website');
-      }
-
-      // Get links from the scrape response
-      let allUrls: string[] = scrapeData.data?.links || scrapeData.links || [];
-      console.log('Found', allUrls.length, 'links from scrape');
-      
-      // Also extract product URLs from HTML if available
-      const html = scrapeData.data?.html || scrapeData.html || '';
-      if (html) {
-        const extractedUrls = extractProductUrls(html, new URL(baseUrl).origin);
-        console.log('Extracted', extractedUrls.length, 'product URLs from HTML');
-        
-        // Also get pagination URLs and scrape them for more products
-        const navUrls = extractNavigationUrls(html, new URL(baseUrl).origin);
-        console.log('Found', navUrls.length, 'navigation URLs');
-        
-        // Combine all URLs
-        allUrls = [...new Set([...allUrls, ...extractedUrls])];
-      }
-
-      // Filter for product URLs
-      let productUrls = allUrls.filter(url => {
-        const lowerUrl = url.toLowerCase();
-        let decodedUrl = lowerUrl;
-        try {
-          decodedUrl = decodeURIComponent(url).toLowerCase();
-        } catch (e) {}
-        
-        // Check if it's a product URL
-        return (lowerUrl.includes('/product/') || decodedUrl.includes('/product/')) && 
-               !lowerUrl.includes('/product-category/');
-      });
-
-      console.log('Found', productUrls.length, 'product URLs after filtering');
-
-      // If we found no product URLs, try the map API as fallback
-      if (productUrls.length === 0) {
-        console.log('No product URLs found, trying map API as fallback');
-        
-        // Get base domain for map API
-        const urlObj = new URL(baseUrl);
-        const baseDomain = urlObj.origin;
-        
-        const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
+      // Scrape the first page to extract links and find pagination
+      const scrapeFirstPage = async (pageUrl: string) => {
+        const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${firecrawlKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            url: baseDomain,
-            search: 'product',
-            limit: 5000,
-            includeSubdomains: false,
+            url: pageUrl,
+            formats: ['links', 'html'],
+            onlyMainContent: false,
           }),
         });
 
-        const mapData = await mapResponse.json();
+        const scrapeData = await scrapeResponse.json();
         
-        if (mapResponse.ok && mapData.links) {
-          const mapUrls: string[] = mapData.links || [];
-          console.log('Map API found', mapUrls.length, 'URLs');
-          
-          // Filter for product URLs that match the base URL category
-          const decodedBase = decodeURIComponent(baseUrl).toLowerCase();
-          productUrls = mapUrls.filter(url => {
-            const lowerUrl = url.toLowerCase();
-            let decodedUrl = lowerUrl;
-            try {
-              decodedUrl = decodeURIComponent(url).toLowerCase();
-            } catch (e) {}
-            
-            return (lowerUrl.includes('/product/') || decodedUrl.includes('/product/'));
-          });
-          
-          console.log('Filtered to', productUrls.length, 'product URLs from map');
+        if (!scrapeResponse.ok) {
+          console.error('Scrape failed for', pageUrl, ':', scrapeData);
+          return { links: [], html: '', productUrls: [], paginationUrls: [] };
+        }
+
+        const links: string[] = scrapeData.data?.links || scrapeData.links || [];
+        const html = scrapeData.data?.html || scrapeData.html || '';
+        const extractedUrls = html ? extractProductUrls(html, baseDomain) : [];
+        
+        // Find pagination URLs
+        const paginationUrls: string[] = [];
+        const pageMatches = html.matchAll(/href="([^"]*\/page\/(\d+)[^"]*)"/gi);
+        for (const match of pageMatches) {
+          let pageUrl = match[1];
+          if (!pageUrl.startsWith('http')) {
+            pageUrl = baseDomain + pageUrl;
+          }
+          if (!paginationUrls.includes(pageUrl)) {
+            paginationUrls.push(pageUrl);
+          }
+        }
+        
+        // Filter product URLs from links
+        const productUrls = links.filter(url => {
+          const lowerUrl = url.toLowerCase();
+          let decodedUrl = lowerUrl;
+          try {
+            decodedUrl = decodeURIComponent(url).toLowerCase();
+          } catch (e) {}
+          return (lowerUrl.includes('/product/') || decodedUrl.includes('/product/')) && 
+                 !lowerUrl.includes('/product-category/');
+        });
+        
+        return { 
+          links, 
+          html, 
+          productUrls: [...new Set([...productUrls, ...extractedUrls])],
+          paginationUrls 
+        };
+      };
+
+      // Scrape first page
+      console.log('Scraping first page:', baseUrl);
+      const firstPageResult = await scrapeFirstPage(baseUrl);
+      
+      let allProductUrls = [...firstPageResult.productUrls];
+      console.log('First page: found', allProductUrls.length, 'product URLs');
+      console.log('Pagination pages found:', firstPageResult.paginationUrls.length);
+      
+      // Scrape pagination pages (up to 10 pages to avoid timeout)
+      const maxPages = 10;
+      const paginationToScrape = firstPageResult.paginationUrls.slice(0, maxPages);
+      
+      for (const pageUrl of paginationToScrape) {
+        console.log('Scraping pagination page:', pageUrl);
+        try {
+          const pageResult = await scrapeFirstPage(pageUrl);
+          const newUrls = pageResult.productUrls.filter(url => !allProductUrls.includes(url));
+          allProductUrls = [...allProductUrls, ...newUrls];
+          console.log('Page added', newUrls.length, 'new products. Total:', allProductUrls.length);
+        } catch (e) {
+          console.error('Failed to scrape page:', pageUrl, e);
         }
       }
 
-      // Apply pet type and category filters if provided
-      if (petTypes.length > 0) {
-        productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
-        console.log('After pet type filter:', productUrls.length, 'URLs');
-      }
+      // Remove duplicates
+      allProductUrls = [...new Set(allProductUrls)];
+      console.log('Final result:', allProductUrls.length, 'unique product URLs');
 
-      if (productCategories.length > 0) {
-        productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
-        console.log('After category filter:', productUrls.length, 'URLs');
-      }
-
-      console.log('Final result:', productUrls.length, 'product URLs');
+      // Note: We don't filter by pet type/category here because the user already 
+      // selected a specific category page - all products on that page are relevant
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          totalUrls: allUrls.length,
-          productUrls: productUrls,
+          totalUrls: allProductUrls.length,
+          productUrls: allProductUrls,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
