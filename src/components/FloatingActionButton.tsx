@@ -99,7 +99,7 @@ export const FloatingActionButton = ({
             animate="visible"
             exit="hidden"
           >
-            <div className="flex flex-col-reverse gap-3 mb-4">
+            <div className="flex flex-col-reverse gap-3 mb-20">
               {actions.map((action, index) => (
                 <motion.button
                   key={action.label}
