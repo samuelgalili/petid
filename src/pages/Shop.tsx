@@ -93,18 +93,47 @@ const Shop = () => {
     });
   }, [carouselApi]);
 
-  // Fetch products from database
+  // Fetch products from database - combining business_products and scraped_products
   const { data: dbProducts = [], isLoading: isLoadingProducts, refetch } = useQuery({
     queryKey: ["shop-products"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First try to get from business_products
+      const { data: businessProducts, error: bpError } = await supabase
         .from("business_products")
         .select("*")
         .eq("in_stock", true)
         .order("created_at", { ascending: false });
       
-      if (error) throw error;
-      return data || [];
+      if (bpError) console.error("Error fetching business_products:", bpError);
+      
+      // Also get scraped products
+      const { data: scrapedProducts, error: spError } = await supabase
+        .from("scraped_products")
+        .select("*")
+        .order("scraped_at", { ascending: false });
+      
+      if (spError) console.error("Error fetching scraped_products:", spError);
+      
+      // Transform scraped products to match business_products format
+      const transformedScraped = (scrapedProducts || []).map(sp => ({
+        id: sp.id,
+        name: sp.product_name,
+        description: sp.long_description || sp.short_description || "",
+        price: sp.final_price || sp.regular_price || 0,
+        original_price: sp.regular_price,
+        sale_price: sp.sale_price,
+        image_url: sp.main_image_url || "/placeholder.svg",
+        images: sp.main_image_url ? [sp.main_image_url] : [],
+        category: sp.sub_category || sp.main_category,
+        pet_type: sp.pet_type,
+        in_stock: sp.stock_status === "in_stock",
+        sku: sp.sku,
+        flavors: sp.flavors,
+        created_at: sp.created_at,
+      }));
+      
+      // Combine both sources, business_products first
+      return [...(businessProducts || []), ...transformedScraped];
     },
     staleTime: 0,
     refetchOnMount: "always",
