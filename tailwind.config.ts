@@ -15,6 +15,7 @@ export default {
   	extend: {
 		fontFamily: {
 			sans: [
+				'Assistant',
 				'Inter',
 				'-apple-system',
 				'BlinkMacSystemFont',
@@ -22,12 +23,20 @@ export default {
 				'Roboto',
 				'sans-serif'
 			],
+			assistant: [
+				'Assistant',
+				'Inter',
+				'-apple-system',
+				'sans-serif'
+			],
 			heebo: [
+				'Assistant',
 				'Inter',
 				'-apple-system',
 				'sans-serif'
 			],
 			jakarta: [
+				'Assistant',
 				'Inter',
 				'-apple-system',
 				'sans-serif'
