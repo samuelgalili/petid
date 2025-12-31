@@ -5,6 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface ProductVariant {
+  name: string;
+  value: string;
+  price?: number;
+  sku?: string;
+  stock_status?: string;
+  image_url?: string;
+}
+
 interface ScrapedProduct {
   product_id?: string;
   sku?: string;
@@ -34,6 +43,14 @@ interface ScrapedProduct {
   rating?: number;
   review_count?: number;
   json_ld_data?: Record<string, any>;
+  // New fields for variants
+  variants?: ProductVariant[];
+  pet_type?: string;
+  weight?: string;
+  weight_unit?: string;
+  flavors?: string[];
+  sizes?: string[];
+  colors?: string[];
 }
 
 // Parse product data from HTML content
@@ -173,6 +190,118 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
     const ratingMatch = html.match(/class="[^"]*rating[^"]*"[^>]*>.*?([\d.]+)/is);
     const reviewCountMatch = html.match(/(\d+)\s*(?:ביקורות|reviews|חוות דעת)/i);
 
+    // ===== NEW: Extract variants, flavors, sizes, colors =====
+    const variants: ProductVariant[] = [];
+    const flavors: string[] = [];
+    const sizes: string[] = [];
+    const colors: string[] = [];
+    let petType: string | undefined;
+    let weight: string | undefined;
+    let weightUnit: string | undefined;
+
+    // Extract pet type from category or URL
+    const urlLower = url.toLowerCase();
+    let decodedUrl = urlLower;
+    try { decodedUrl = decodeURIComponent(url).toLowerCase(); } catch (e) {}
+    
+    if (decodedUrl.includes('כלב') || urlLower.includes('dog')) {
+      petType = 'dog';
+    } else if (decodedUrl.includes('חתול') || urlLower.includes('cat')) {
+      petType = 'cat';
+    } else if (decodedUrl.includes('ציפור') || urlLower.includes('bird')) {
+      petType = 'bird';
+    } else if (decodedUrl.includes('דג') || urlLower.includes('fish')) {
+      petType = 'fish';
+    }
+
+    // Extract weight from product name or description
+    const weightMatch = productName.match(/(\d+(?:\.\d+)?)\s*(ק"ג|קג|ק״ג|kg|גרם|g)\b/i) ||
+                       shortDescMatch?.[1]?.match(/(\d+(?:\.\d+)?)\s*(ק"ג|קג|ק״ג|kg|גרם|g)\b/i);
+    if (weightMatch) {
+      weight = weightMatch[1];
+      const unit = weightMatch[2].toLowerCase();
+      if (unit.includes('ק') || unit === 'kg') {
+        weightUnit = 'kg';
+      } else {
+        weightUnit = 'g';
+      }
+    }
+
+    // Extract WooCommerce variations from data attributes
+    const variationsMatch = html.match(/data-product_variations='([^']+)'/i) ||
+                            html.match(/data-product_variations="([^"]+)"/i);
+    if (variationsMatch) {
+      try {
+        const variationsData = JSON.parse(variationsMatch[1].replace(/&quot;/g, '"'));
+        if (Array.isArray(variationsData)) {
+          variationsData.forEach((v: any) => {
+            const attrs = v.attributes || {};
+            Object.entries(attrs).forEach(([key, value]: [string, any]) => {
+              if (value) {
+                variants.push({
+                  name: key.replace('attribute_', '').replace('pa_', ''),
+                  value: String(value),
+                  price: v.display_price,
+                  sku: v.sku,
+                  stock_status: v.is_in_stock ? 'in_stock' : 'out_of_stock',
+                  image_url: v.image?.url
+                });
+                
+                // Categorize variants
+                const keyLower = key.toLowerCase();
+                const valStr = String(value);
+                if (keyLower.includes('flavor') || keyLower.includes('taste') || keyLower.includes('טעם')) {
+                  if (!flavors.includes(valStr)) flavors.push(valStr);
+                } else if (keyLower.includes('size') || keyLower.includes('גודל') || keyLower.includes('משקל')) {
+                  if (!sizes.includes(valStr)) sizes.push(valStr);
+                } else if (keyLower.includes('color') || keyLower.includes('צבע')) {
+                  if (!colors.includes(valStr)) colors.push(valStr);
+                }
+              }
+            });
+          });
+        }
+      } catch (e) {
+        console.log('Failed to parse variations:', e);
+      }
+    }
+
+    // Extract from select/option elements (common pattern)
+    const selectMatches = html.matchAll(/<select[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/select>/gi);
+    for (const selectMatch of selectMatches) {
+      const selectId = selectMatch[1].toLowerCase();
+      const optionsHtml = selectMatch[2];
+      const options = optionsHtml.matchAll(/<option[^>]*value="([^"]*)"[^>]*>([^<]*)<\/option>/gi);
+      
+      for (const opt of options) {
+        const value = opt[1] || opt[2];
+        const label = opt[2]?.trim();
+        if (value && label && !value.includes('בחר')) {
+          if (selectId.includes('flavor') || selectId.includes('טעם')) {
+            if (!flavors.includes(label)) flavors.push(label);
+          } else if (selectId.includes('size') || selectId.includes('גודל') || selectId.includes('weight') || selectId.includes('משקל')) {
+            if (!sizes.includes(label)) sizes.push(label);
+          } else if (selectId.includes('color') || selectId.includes('צבע')) {
+            if (!colors.includes(label)) colors.push(label);
+          }
+        }
+      }
+    }
+
+    // Extract from swatches (WooCommerce Swatches plugin)
+    const swatchMatches = html.matchAll(/class="[^"]*swatch[^"]*"[^>]*data-value="([^"]+)"/gi);
+    for (const swatch of swatchMatches) {
+      const value = swatch[1];
+      if (value && !sizes.includes(value) && !flavors.includes(value)) {
+        // Determine category based on content
+        if (/^\d+/.test(value) || value.includes('kg') || value.includes('g')) {
+          if (!sizes.includes(value)) sizes.push(value);
+        } else {
+          if (!flavors.includes(value)) flavors.push(value);
+        }
+      }
+    }
+
     return {
       product_name: productName,
       product_url: url,
@@ -198,6 +327,14 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
       rating: ratingMatch ? parseFloat(ratingMatch[1]) : undefined,
       review_count: reviewCountMatch ? parseInt(reviewCountMatch[1]) : undefined,
       json_ld_data: jsonLdData,
+      // New fields
+      variants: variants.length > 0 ? variants : undefined,
+      pet_type: petType,
+      weight,
+      weight_unit: weightUnit,
+      flavors: flavors.length > 0 ? flavors : undefined,
+      sizes: sizes.length > 0 ? sizes : undefined,
+      colors: colors.length > 0 ? colors : undefined,
     };
   } catch (error) {
     console.error('Error parsing product:', error);
