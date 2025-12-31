@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Settings, Shield, Bell, Palette, Globe, 
-  Key, Database, Save, RefreshCw
+  Save, RefreshCw, Flag, Loader2
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -17,67 +17,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useAuditLog } from "@/hooks/useAuditLog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSystemSettings, SystemSettings } from "@/hooks/useSystemSettings";
 
 const AdminSettings = () => {
-  const { toast } = useToast();
-  const { logAction } = useAuditLog();
+  const { settings: savedSettings, isLoading, saveAllSettings, isSaving } = useSystemSettings();
   const [activeTab, setActiveTab] = useState("general");
-  const [saving, setSaving] = useState(false);
+  const [localSettings, setLocalSettings] = useState<SystemSettings | null>(null);
 
-  // Settings state (would be loaded from backend in production)
-  const [settings, setSettings] = useState({
-    // General
-    siteName: "PetID",
-    defaultLanguage: "he",
-    maintenanceMode: false,
-    
-    // Security
-    requireEmailVerification: true,
-    maxLoginAttempts: 5,
-    sessionTimeout: 60,
-    enable2FA: false,
-    
-    // Notifications
-    enablePushNotifications: true,
-    enableEmailNotifications: true,
-    notifyOnNewUser: true,
-    notifyOnNewOrder: true,
-    notifyOnReport: true,
-    
-    // Features
-    enableShop: true,
-    enableAdoption: true,
-    enableStories: true,
-    enableReels: true,
-    enableChat: true,
-  });
+  // Initialize local settings when saved settings load
+  useEffect(() => {
+    if (savedSettings && !localSettings) {
+      setLocalSettings(JSON.parse(JSON.stringify(savedSettings)));
+    }
+  }, [savedSettings, localSettings]);
 
   const handleSave = async () => {
-    setSaving(true);
-    try {
-      // In production, save to backend
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      await logAction({
-        action_type: "settings.updated",
-        entity_type: "settings",
-        new_values: settings,
-      });
-      
-      toast({ title: "ההגדרות נשמרו בהצלחה" });
-    } catch (error) {
-      toast({ title: "שגיאה", description: "השמירה נכשלה", variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
+    if (!localSettings) return;
+    await saveAllSettings(localSettings);
   };
+
+  // Check if there are unsaved changes
+  const hasChanges = localSettings && JSON.stringify(localSettings) !== JSON.stringify(savedSettings);
+
+  if (isLoading || !localSettings) {
+    return (
+      <AdminLayout title="הגדרות מערכת" breadcrumbs={[{ label: "הגדרות" }]}>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="הגדרות מערכת" breadcrumbs={[{ label: "הגדרות" }]}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="general" className="gap-2">
             <Settings className="w-4 h-4" />
             כללי
@@ -85,6 +62,10 @@ const AdminSettings = () => {
           <TabsTrigger value="security" className="gap-2">
             <Shield className="w-4 h-4" />
             אבטחה
+          </TabsTrigger>
+          <TabsTrigger value="moderation" className="gap-2">
+            <Flag className="w-4 h-4" />
+            מודרציה
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="w-4 h-4" />
@@ -106,16 +87,22 @@ const AdminSettings = () => {
                 <div>
                   <Label>שם האתר</Label>
                   <Input
-                    value={settings.siteName}
-                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                    value={localSettings.general.siteName}
+                    onChange={(e) => setLocalSettings({
+                      ...localSettings,
+                      general: { ...localSettings.general, siteName: e.target.value }
+                    })}
                   />
                 </div>
 
                 <div>
                   <Label>שפת ברירת מחדל</Label>
                   <Select 
-                    value={settings.defaultLanguage} 
-                    onValueChange={(value) => setSettings({ ...settings, defaultLanguage: value })}
+                    value={localSettings.general.defaultLanguage} 
+                    onValueChange={(value) => setLocalSettings({
+                      ...localSettings,
+                      general: { ...localSettings.general, defaultLanguage: value }
+                    })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -137,8 +124,11 @@ const AdminSettings = () => {
                   </p>
                 </div>
                 <Switch
-                  checked={settings.maintenanceMode}
-                  onCheckedChange={(checked) => setSettings({ ...settings, maintenanceMode: checked })}
+                  checked={localSettings.general.maintenanceMode}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    general: { ...localSettings.general, maintenanceMode: checked }
+                  })}
                 />
               </div>
             </div>
@@ -159,8 +149,11 @@ const AdminSettings = () => {
                   </p>
                 </div>
                 <Switch
-                  checked={settings.requireEmailVerification}
-                  onCheckedChange={(checked) => setSettings({ ...settings, requireEmailVerification: checked })}
+                  checked={localSettings.security.requireEmailVerification}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    security: { ...localSettings.security, requireEmailVerification: checked }
+                  })}
                 />
               </div>
 
@@ -172,8 +165,11 @@ const AdminSettings = () => {
                   </p>
                 </div>
                 <Switch
-                  checked={settings.enable2FA}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enable2FA: checked })}
+                  checked={localSettings.security.enable2FA}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    security: { ...localSettings.security, enable2FA: checked }
+                  })}
                 />
               </div>
 
@@ -183,8 +179,11 @@ const AdminSettings = () => {
                   <Input
                     type="number"
                     min="1"
-                    value={settings.maxLoginAttempts}
-                    onChange={(e) => setSettings({ ...settings, maxLoginAttempts: parseInt(e.target.value) })}
+                    value={localSettings.security.maxLoginAttempts}
+                    onChange={(e) => setLocalSettings({
+                      ...localSettings,
+                      security: { ...localSettings.security, maxLoginAttempts: parseInt(e.target.value) || 5 }
+                    })}
                   />
                 </div>
 
@@ -193,10 +192,105 @@ const AdminSettings = () => {
                   <Input
                     type="number"
                     min="5"
-                    value={settings.sessionTimeout}
-                    onChange={(e) => setSettings({ ...settings, sessionTimeout: parseInt(e.target.value) })}
+                    value={localSettings.security.sessionTimeout}
+                    onChange={(e) => setLocalSettings({
+                      ...localSettings,
+                      security: { ...localSettings.security, sessionTimeout: parseInt(e.target.value) || 60 }
+                    })}
                   />
                 </div>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Moderation - NEW */}
+        <TabsContent value="moderation">
+          <Card className="p-6">
+            <h2 className="text-lg font-bold mb-4">הגדרות מודרציה</h2>
+            
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>אפשר דיווח על משתמשים</Label>
+                  <p className="text-sm text-muted-foreground">
+                    משתמשים יכולים לדווח על פרופילים של אחרים
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.moderation.allowReportUsers}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    moderation: { ...localSettings.moderation, allowReportUsers: checked }
+                  })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>אפשר דיווח על פוסטים</Label>
+                  <p className="text-sm text-muted-foreground">
+                    משתמשים יכולים לדווח על פוסטים
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.moderation.allowReportPosts}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    moderation: { ...localSettings.moderation, allowReportPosts: checked }
+                  })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>דרוש אימות לפרסום</Label>
+                  <p className="text-sm text-muted-foreground">
+                    משתמשים חדשים צריכים לאמת אימייל לפני שיכולים לפרסם
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.moderation.requireVerificationForPosting}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    moderation: { ...localSettings.moderation, requireVerificationForPosting: checked }
+                  })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>הסתרה אוטומטית של תוכן מדווח</Label>
+                  <p className="text-sm text-muted-foreground">
+                    הסתר אוטומטית תוכן שקיבל מספר דיווחים
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.moderation.autoHideReportedContent}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    moderation: { ...localSettings.moderation, autoHideReportedContent: checked }
+                  })}
+                />
+              </div>
+
+              <div>
+                <Label>סף דיווחים להסתרה אוטומטית</Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  מספר הדיווחים הדרוש להסתרה אוטומטית
+                </p>
+                <Input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={localSettings.moderation.reportThreshold}
+                  onChange={(e) => setLocalSettings({
+                    ...localSettings,
+                    moderation: { ...localSettings.moderation, reportThreshold: parseInt(e.target.value) || 3 }
+                  })}
+                  className="w-24"
+                  disabled={!localSettings.moderation.autoHideReportedContent}
+                />
               </div>
             </div>
           </Card>
@@ -216,8 +310,11 @@ const AdminSettings = () => {
                   </p>
                 </div>
                 <Switch
-                  checked={settings.enablePushNotifications}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enablePushNotifications: checked })}
+                  checked={localSettings.notifications.enablePushNotifications}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    notifications: { ...localSettings.notifications, enablePushNotifications: checked }
+                  })}
                 />
               </div>
 
@@ -229,8 +326,11 @@ const AdminSettings = () => {
                   </p>
                 </div>
                 <Switch
-                  checked={settings.enableEmailNotifications}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableEmailNotifications: checked })}
+                  checked={localSettings.notifications.enableEmailNotifications}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    notifications: { ...localSettings.notifications, enableEmailNotifications: checked }
+                  })}
                 />
               </div>
 
@@ -241,24 +341,33 @@ const AdminSettings = () => {
               <div className="flex items-center justify-between">
                 <Label>משתמש חדש</Label>
                 <Switch
-                  checked={settings.notifyOnNewUser}
-                  onCheckedChange={(checked) => setSettings({ ...settings, notifyOnNewUser: checked })}
+                  checked={localSettings.notifications.notifyOnNewUser}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    notifications: { ...localSettings.notifications, notifyOnNewUser: checked }
+                  })}
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <Label>הזמנה חדשה</Label>
                 <Switch
-                  checked={settings.notifyOnNewOrder}
-                  onCheckedChange={(checked) => setSettings({ ...settings, notifyOnNewOrder: checked })}
+                  checked={localSettings.notifications.notifyOnNewOrder}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    notifications: { ...localSettings.notifications, notifyOnNewOrder: checked }
+                  })}
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <Label>דיווח חדש</Label>
                 <Switch
-                  checked={settings.notifyOnReport}
-                  onCheckedChange={(checked) => setSettings({ ...settings, notifyOnReport: checked })}
+                  checked={localSettings.notifications.notifyOnReport}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    notifications: { ...localSettings.notifications, notifyOnReport: checked }
+                  })}
                 />
               </div>
             </div>
@@ -277,8 +386,11 @@ const AdminSettings = () => {
                   <p className="text-sm text-muted-foreground">הפעל את מודול החנות</p>
                 </div>
                 <Switch
-                  checked={settings.enableShop}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableShop: checked })}
+                  checked={localSettings.features.enableShop}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    features: { ...localSettings.features, enableShop: checked }
+                  })}
                 />
               </div>
 
@@ -288,8 +400,11 @@ const AdminSettings = () => {
                   <p className="text-sm text-muted-foreground">הפעל את מודול האימוץ</p>
                 </div>
                 <Switch
-                  checked={settings.enableAdoption}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableAdoption: checked })}
+                  checked={localSettings.features.enableAdoption}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    features: { ...localSettings.features, enableAdoption: checked }
+                  })}
                 />
               </div>
 
@@ -299,8 +414,11 @@ const AdminSettings = () => {
                   <p className="text-sm text-muted-foreground">אפשר סטוריז</p>
                 </div>
                 <Switch
-                  checked={settings.enableStories}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableStories: checked })}
+                  checked={localSettings.features.enableStories}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    features: { ...localSettings.features, enableStories: checked }
+                  })}
                 />
               </div>
 
@@ -310,8 +428,11 @@ const AdminSettings = () => {
                   <p className="text-sm text-muted-foreground">אפשר Reels</p>
                 </div>
                 <Switch
-                  checked={settings.enableReels}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableReels: checked })}
+                  checked={localSettings.features.enableReels}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    features: { ...localSettings.features, enableReels: checked }
+                  })}
                 />
               </div>
 
@@ -321,8 +442,11 @@ const AdminSettings = () => {
                   <p className="text-sm text-muted-foreground">אפשר הודעות פרטיות</p>
                 </div>
                 <Switch
-                  checked={settings.enableChat}
-                  onCheckedChange={(checked) => setSettings({ ...settings, enableChat: checked })}
+                  checked={localSettings.features.enableChat}
+                  onCheckedChange={(checked) => setLocalSettings({
+                    ...localSettings,
+                    features: { ...localSettings.features, enableChat: checked }
+                  })}
                 />
               </div>
             </div>
@@ -331,17 +455,22 @@ const AdminSettings = () => {
       </Tabs>
 
       {/* Save Button */}
-      <div className="fixed bottom-4 left-4 right-4 lg:left-auto lg:right-6 lg:bottom-6">
-        <Button onClick={handleSave} disabled={saving} className="w-full lg:w-auto shadow-lg">
-          {saving ? (
+      <div className="fixed bottom-4 left-4 right-4 lg:left-auto lg:right-6 lg:bottom-6 z-50">
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving || !hasChanges} 
+          className="w-full lg:w-auto shadow-lg"
+        >
+          {isSaving ? (
             <>
-              <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
+              <Loader2 className="w-4 h-4 ml-2 animate-spin" />
               שומר...
             </>
           ) : (
             <>
               <Save className="w-4 h-4 ml-2" />
               שמור שינויים
+              {hasChanges && <span className="mr-2 px-1.5 py-0.5 bg-primary-foreground/20 rounded text-xs">יש שינויים</span>}
             </>
           )}
         </Button>
