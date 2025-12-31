@@ -124,9 +124,9 @@ const AdminScraper = () => {
   const [baseUrl, setBaseUrl] = useState("https://homepetcenter.co.il");
   const [maxProducts, setMaxProducts] = useState("");
   
-  // Scraping filters
-  const [scrapePetTypes, setScrapePetTypes] = useState<string[]>(['dog', 'cat', 'bird']);
-  const [scrapeProductCategories, setScrapeProductCategories] = useState<string[]>(['dry-food', 'wet-food', 'treats', 'toys', 'accessories']);
+  // Scraping filters - default empty, user must select
+  const [scrapePetTypes, setScrapePetTypes] = useState<string[]>([]);
+  const [scrapeProductCategories, setScrapeProductCategories] = useState<string[]>([]);
   
   // Categories for filter
   const [categories, setCategories] = useState<string[]>([]);
