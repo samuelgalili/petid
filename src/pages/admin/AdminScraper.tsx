@@ -79,6 +79,15 @@ interface ScrapingJob {
   completed_at: string | null;
 }
 
+interface ProductVariant {
+  name: string;
+  value: string;
+  price?: number;
+  sku?: string;
+  stock_status?: string;
+  image_url?: string;
+}
+
 interface PreviewProduct {
   product_name: string;
   product_url: string;
@@ -90,6 +99,15 @@ interface PreviewProduct {
   category_path?: string;
   brand?: string;
   short_description?: string;
+  sku?: string;
+  // New fields
+  variants?: ProductVariant[];
+  pet_type?: string;
+  weight?: string;
+  weight_unit?: string;
+  flavors?: string[];
+  sizes?: string[];
+  colors?: string[];
 }
 
 interface ScanResult {
@@ -1421,11 +1439,95 @@ const AdminScraper = () => {
                       {previewProduct.stock_status === 'in_stock' ? 'במלאי' : 'אזל'}
                     </Badge>
                   </div>
+
+                  {previewProduct.sku && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">מק״ט:</span>
+                      <div className="font-mono text-xs">{previewProduct.sku}</div>
+                    </div>
+                  )}
+
+                  {previewProduct.pet_type && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">סוג חיה:</span>
+                      <Badge variant="outline">
+                        {previewProduct.pet_type === 'dog' ? '🐕 כלב' : 
+                         previewProduct.pet_type === 'cat' ? '🐈 חתול' :
+                         previewProduct.pet_type === 'bird' ? '🐦 ציפור' :
+                         previewProduct.pet_type === 'fish' ? '🐟 דג' : previewProduct.pet_type}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {previewProduct.weight && (
+                    <div>
+                      <span className="font-medium text-muted-foreground">משקל:</span>
+                      <div>{previewProduct.weight} {previewProduct.weight_unit || ''}</div>
+                    </div>
+                  )}
                   
                   <div className="col-span-2">
                     <span className="font-medium text-muted-foreground">קטגוריה:</span>
                     <div>{previewProduct.category_path || 'לא זמין'}</div>
                   </div>
+
+                  {/* Sizes */}
+                  {previewProduct.sizes && previewProduct.sizes.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="font-medium text-muted-foreground">גדלים זמינים:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {previewProduct.sizes.map((size, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">{size}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Flavors */}
+                  {previewProduct.flavors && previewProduct.flavors.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="font-medium text-muted-foreground">טעמים זמינים:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {previewProduct.flavors.map((flavor, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">{flavor}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Colors */}
+                  {previewProduct.colors && previewProduct.colors.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="font-medium text-muted-foreground">צבעים זמינים:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {previewProduct.colors.map((color, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">{color}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Variants */}
+                  {previewProduct.variants && previewProduct.variants.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="font-medium text-muted-foreground">וריאנטים ({previewProduct.variants.length}):</span>
+                      <div className="mt-1 max-h-32 overflow-y-auto">
+                        <div className="grid gap-1">
+                          {previewProduct.variants.slice(0, 10).map((variant, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs bg-muted/50 p-1.5 rounded">
+                              <span>{variant.name}: {variant.value}</span>
+                              {variant.price && <span className="font-medium">₪{variant.price}</span>}
+                            </div>
+                          ))}
+                          {previewProduct.variants.length > 10 && (
+                            <div className="text-xs text-muted-foreground text-center">
+                              +{previewProduct.variants.length - 10} וריאנטים נוספים
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   {previewProduct.short_description && (
                     <div className="col-span-2">
