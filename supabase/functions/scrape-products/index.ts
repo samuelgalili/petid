@@ -143,10 +143,22 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
       categoryPath = links.map(l => l.replace(/>|<\/a>/g, '')).join(' > ');
     }
 
-    // Extract SKU
-    const skuMatch = html.match(/מק"ט[:\s]*([^<\s]+)/i) ||
-                     html.match(/sku[:\s]*([^<\s]+)/i) ||
-                     html.match(/data-sku="([^"]+)"/i);
+    // Extract SKU - more specific patterns to avoid JSON fragments
+    let sku: string | undefined;
+    const skuPatterns = [
+      /class="[^"]*sku[^"]*"[^>]*>([A-Za-z0-9\-_]+)</i,
+      /data-sku="([A-Za-z0-9\-_]+)"/i,
+      /מק"ט[:\s]*<[^>]+>([A-Za-z0-9\-_]+)</i,
+      /מק"ט[:\s]*([A-Za-z0-9\-_]+)/i,
+      /sku[:\s]*([A-Za-z0-9\-_]+)(?:\s|<|$)/i,
+    ];
+    for (const pattern of skuPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1] && match[1].length < 50 && !match[1].includes('quot')) {
+        sku = match[1].trim();
+        break;
+      }
+    }
 
     // Extract brand
     const brandMatch = html.match(/מותג[:\s]*([^<]+)/i) ||
@@ -227,6 +239,15 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
       }
     }
 
+    // Helper function to decode URL-encoded strings
+    const decodeValue = (val: string): string => {
+      try {
+        return decodeURIComponent(val.replace(/-/g, ' ').replace(/%/g, '%'));
+      } catch {
+        return val.replace(/-/g, ' ');
+      }
+    };
+
     // Extract WooCommerce variations from data attributes
     const variationsMatch = html.match(/data-product_variations='([^']+)'/i) ||
                             html.match(/data-product_variations="([^"]+)"/i);
@@ -238,24 +259,26 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
             const attrs = v.attributes || {};
             Object.entries(attrs).forEach(([key, value]: [string, any]) => {
               if (value) {
+                const decodedName = decodeValue(key.replace('attribute_', '').replace('pa_', ''));
+                const decodedValue = decodeValue(String(value));
+                
                 variants.push({
-                  name: key.replace('attribute_', '').replace('pa_', ''),
-                  value: String(value),
+                  name: decodedName,
+                  value: decodedValue,
                   price: v.display_price,
-                  sku: v.sku,
+                  sku: v.sku || undefined,
                   stock_status: v.is_in_stock ? 'in_stock' : 'out_of_stock',
                   image_url: v.image?.url
                 });
                 
                 // Categorize variants
-                const keyLower = key.toLowerCase();
-                const valStr = String(value);
+                const keyLower = decodedName.toLowerCase();
                 if (keyLower.includes('flavor') || keyLower.includes('taste') || keyLower.includes('טעם')) {
-                  if (!flavors.includes(valStr)) flavors.push(valStr);
+                  if (!flavors.includes(decodedValue)) flavors.push(decodedValue);
                 } else if (keyLower.includes('size') || keyLower.includes('גודל') || keyLower.includes('משקל')) {
-                  if (!sizes.includes(valStr)) sizes.push(valStr);
+                  if (!sizes.includes(decodedValue)) sizes.push(decodedValue);
                 } else if (keyLower.includes('color') || keyLower.includes('צבע')) {
-                  if (!colors.includes(valStr)) colors.push(valStr);
+                  if (!colors.includes(decodedValue)) colors.push(decodedValue);
                 }
               }
             });
@@ -305,7 +328,7 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
     return {
       product_name: productName,
       product_url: url,
-      sku: skuMatch?.[1]?.trim(),
+      sku: sku,
       brand: brandMatch?.[1]?.trim(),
       category_path: categoryPath || undefined,
       main_category: categoryPath?.split(' > ')[1],
