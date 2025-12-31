@@ -2657,6 +2657,44 @@ export type Database = {
           },
         ]
       }
+      product_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_main: boolean | null
+          product_id: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_main?: boolean | null
+          product_id?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_main?: boolean | null
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_reviews: {
         Row: {
           created_at: string
@@ -2700,6 +2738,53 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variations: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string | null
+          variation_name: string
+          variation_price: number | null
+          variation_sku: string | null
+          variation_stock_status:
+            | Database["public"]["Enums"]["stock_status"]
+            | null
+          variation_value: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          variation_name: string
+          variation_price?: number | null
+          variation_sku?: string | null
+          variation_stock_status?:
+            | Database["public"]["Enums"]["stock_status"]
+            | null
+          variation_value?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          variation_name?: string
+          variation_price?: number | null
+          variation_sku?: string | null
+          variation_stock_status?:
+            | Database["public"]["Enums"]["stock_status"]
+            | null
+          variation_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "scraped_products"
             referencedColumns: ["id"]
           },
         ]
@@ -3275,6 +3360,180 @@ export type Database = {
           scheduled_for?: string
           status?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      scraped_products: {
+        Row: {
+          badges: string[] | null
+          brand: string | null
+          bullet_points: string[] | null
+          canonical_url: string | null
+          category_path: string | null
+          created_at: string | null
+          currency: string | null
+          data_attributes: Json | null
+          discount_text: string | null
+          final_price: number | null
+          h1_title: string | null
+          id: string
+          ingredients: string | null
+          json_ld_data: Json | null
+          long_description: string | null
+          long_description_html: string | null
+          main_category: string | null
+          main_image_url: string | null
+          meta_description: string | null
+          meta_title: string | null
+          nutrition_info: Json | null
+          product_id: string | null
+          product_name: string
+          product_url: string
+          rating: number | null
+          regular_price: number | null
+          return_info: string | null
+          review_count: number | null
+          sale_price: number | null
+          sample_review: string | null
+          scraped_at: string | null
+          shipping_info: string | null
+          short_description: string | null
+          sku: string | null
+          stock_badge: string | null
+          stock_status: Database["public"]["Enums"]["stock_status"] | null
+          sub_category: string | null
+          technical_details: Json | null
+          updated_at: string | null
+          usage_instructions: string | null
+          warnings: string | null
+        }
+        Insert: {
+          badges?: string[] | null
+          brand?: string | null
+          bullet_points?: string[] | null
+          canonical_url?: string | null
+          category_path?: string | null
+          created_at?: string | null
+          currency?: string | null
+          data_attributes?: Json | null
+          discount_text?: string | null
+          final_price?: number | null
+          h1_title?: string | null
+          id?: string
+          ingredients?: string | null
+          json_ld_data?: Json | null
+          long_description?: string | null
+          long_description_html?: string | null
+          main_category?: string | null
+          main_image_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          nutrition_info?: Json | null
+          product_id?: string | null
+          product_name: string
+          product_url: string
+          rating?: number | null
+          regular_price?: number | null
+          return_info?: string | null
+          review_count?: number | null
+          sale_price?: number | null
+          sample_review?: string | null
+          scraped_at?: string | null
+          shipping_info?: string | null
+          short_description?: string | null
+          sku?: string | null
+          stock_badge?: string | null
+          stock_status?: Database["public"]["Enums"]["stock_status"] | null
+          sub_category?: string | null
+          technical_details?: Json | null
+          updated_at?: string | null
+          usage_instructions?: string | null
+          warnings?: string | null
+        }
+        Update: {
+          badges?: string[] | null
+          brand?: string | null
+          bullet_points?: string[] | null
+          canonical_url?: string | null
+          category_path?: string | null
+          created_at?: string | null
+          currency?: string | null
+          data_attributes?: Json | null
+          discount_text?: string | null
+          final_price?: number | null
+          h1_title?: string | null
+          id?: string
+          ingredients?: string | null
+          json_ld_data?: Json | null
+          long_description?: string | null
+          long_description_html?: string | null
+          main_category?: string | null
+          main_image_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          nutrition_info?: Json | null
+          product_id?: string | null
+          product_name?: string
+          product_url?: string
+          rating?: number | null
+          regular_price?: number | null
+          return_info?: string | null
+          review_count?: number | null
+          sale_price?: number | null
+          sample_review?: string | null
+          scraped_at?: string | null
+          shipping_info?: string | null
+          short_description?: string | null
+          sku?: string | null
+          stock_badge?: string | null
+          stock_status?: Database["public"]["Enums"]["stock_status"] | null
+          sub_category?: string | null
+          technical_details?: Json | null
+          updated_at?: string | null
+          usage_instructions?: string | null
+          warnings?: string | null
+        }
+        Relationships: []
+      }
+      scraping_jobs: {
+        Row: {
+          base_url: string
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          scraped_pages: number | null
+          scraped_products: number | null
+          started_at: string | null
+          status: string | null
+          total_pages: number | null
+          total_products: number | null
+        }
+        Insert: {
+          base_url: string
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          scraped_pages?: number | null
+          scraped_products?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_pages?: number | null
+          total_products?: number | null
+        }
+        Update: {
+          base_url?: string
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          scraped_pages?: number | null
+          scraped_products?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_pages?: number | null
+          total_products?: number | null
         }
         Relationships: []
       }
@@ -4243,6 +4502,7 @@ export type Database = {
       pet_type: "dog" | "cat" | "other" | "all"
       report_status: "pending" | "reviewed" | "resolved" | "dismissed"
       report_type: "spam" | "inappropriate" | "harassment" | "fake" | "other"
+      stock_status: "in_stock" | "out_of_stock" | "preorder" | "unknown"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4391,6 +4651,7 @@ export const Constants = {
       pet_type: ["dog", "cat", "other", "all"],
       report_status: ["pending", "reviewed", "resolved", "dismissed"],
       report_type: ["spam", "inappropriate", "harassment", "fake", "other"],
+      stock_status: ["in_stock", "out_of_stock", "preorder", "unknown"],
     },
   },
 } as const

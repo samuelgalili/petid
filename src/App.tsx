@@ -57,6 +57,7 @@ const AdminNotify = lazy(() => import("./pages/admin/AdminNotify"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
 const AdminProductImport = lazy(() => import("./pages/admin/AdminProductImport"));
+const AdminScraper = lazy(() => import("./pages/admin/AdminScraper"));
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
 import Tasks from "./pages/Tasks";
@@ -176,6 +177,7 @@ const AnimatedRoutes = () => {
         <Route path="/admin/notify" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminNotify /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminSettings /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/audit" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminAudit /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/scraper" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminScraper /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
         <Route path="/experiences" element={<PageTransition><Experiences /></PageTransition>} />
         <Route path="/parks" element={<PageTransition><Parks /></PageTransition>} />

@@ -35,6 +35,8 @@ interface AdminLayoutProps {
   breadcrumbs?: { label: string; href?: string }[];
 }
 
+import { Download } from "lucide-react";
+
 const navItems = [
   { icon: LayoutDashboard, label: "דשבורד", href: "/admin/dashboard" },
   { icon: Users, label: "משתמשים", href: "/admin/users" },
@@ -47,6 +49,7 @@ const navItems = [
   { icon: Ticket, label: "קופונים", href: "/admin/coupons" },
   { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders" },
   { icon: MapPin, label: "פארקים", href: "/admin/parks" },
+  { icon: Download, label: "סקראפר מוצרים", href: "/admin/scraper" },
   { icon: Bell, label: "התראות", href: "/admin/notifications" },
   { icon: History, label: "לוג פעילות", href: "/admin/audit" },
   { icon: Settings, label: "הגדרות", href: "/admin/settings" },
