@@ -502,23 +502,23 @@ const Explore = () => {
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
       {/* Search Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/30">
         <div className="p-4">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/60" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
-              placeholder="חיפוש"
-              className="pr-10 pl-10 h-10 rounded-xl bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
+              placeholder="🔍 חפש חיות, גזעים, בעלים..."
+              className="pr-10 pl-10 h-12 rounded-2xl bg-card border border-border/50 shadow-soft focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50 transition-all"
             />
             {searchQuery && (
               <button
                 onClick={clearSearch}
-                className="absolute left-3 top-1/2 -translate-y-1/2"
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
               >
-                <X className="w-5 h-5 text-muted-foreground" />
+                <X className="w-4 h-4 text-muted-foreground" />
               </button>
             )}
           </div>
@@ -526,31 +526,34 @@ const Explore = () => {
 
         {/* Tabs */}
         {!isSearchFocused && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 pb-2">
-            <TabsList className="w-full bg-transparent h-auto p-0 gap-1.5 flex-wrap">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 pb-3">
+            <TabsList className="w-full bg-muted/30 h-auto p-1 gap-1 rounded-2xl">
               <TabsTrigger 
                 value="pets" 
-                className="flex-1 min-w-[60px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full py-2 text-sm"
+                className="flex-1 min-w-[70px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
               >
-                <PawPrint className="w-4 h-4 ml-1" />
+                <PawPrint className="w-4 h-4" />
                 חיות
               </TabsTrigger>
               <TabsTrigger 
                 value="parks" 
-                className="flex-1 min-w-[60px] data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
+                className="flex-1 min-w-[70px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
               >
+                <Trees className="w-4 h-4" />
                 גינות
               </TabsTrigger>
               <TabsTrigger 
                 value="deals" 
-                className="flex-1 min-w-[60px] data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
+                className="flex-1 min-w-[70px] data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
               >
+                <Tag className="w-4 h-4" />
                 מבצעים
               </TabsTrigger>
               <TabsTrigger 
                 value="top" 
-                className="flex-1 min-w-[60px] data-[state=active]:bg-foreground data-[state=active]:text-background rounded-full py-2 text-sm"
+                className="flex-1 min-w-[70px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
               >
+                <TrendingUp className="w-4 h-4" />
                 מובילים
               </TabsTrigger>
             </TabsList>
@@ -559,7 +562,11 @@ const Explore = () => {
 
         {/* Pet Filters - Only show when pets tab is active */}
         {!isSearchFocused && activeTab === "pets" && (
-          <div className="px-4 py-2 space-y-3 border-t border-border/30">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-3 space-y-3 border-t border-border/20 bg-gradient-to-b from-muted/20 to-transparent"
+          >
             {/* Pet Type Filter */}
             <div className="flex gap-2">
               <Button
@@ -569,7 +576,11 @@ const Explore = () => {
                   setPetTypeFilter("all");
                   setBreedFilter("כל הגזעים");
                 }}
-                className="rounded-full gap-1.5"
+                className={`rounded-2xl gap-2 h-10 px-4 transition-all duration-200 ${
+                  petTypeFilter === "all" 
+                    ? "bg-primary text-primary-foreground shadow-md" 
+                    : "bg-card border-border/50 hover:bg-muted/50 hover:border-primary/30"
+                }`}
               >
                 <PawPrint className="w-4 h-4" />
                 הכל
@@ -581,7 +592,11 @@ const Explore = () => {
                   setPetTypeFilter("dog");
                   setBreedFilter("כל הגזעים");
                 }}
-                className="rounded-full gap-1.5"
+                className={`rounded-2xl gap-2 h-10 px-4 transition-all duration-200 ${
+                  petTypeFilter === "dog" 
+                    ? "bg-primary text-primary-foreground shadow-md" 
+                    : "bg-card border-border/50 hover:bg-muted/50 hover:border-primary/30"
+                }`}
               >
                 <Dog className="w-4 h-4" />
                 כלבים
@@ -593,7 +608,11 @@ const Explore = () => {
                   setPetTypeFilter("cat");
                   setBreedFilter("כל הגזעים");
                 }}
-                className="rounded-full gap-1.5"
+                className={`rounded-2xl gap-2 h-10 px-4 transition-all duration-200 ${
+                  petTypeFilter === "cat" 
+                    ? "bg-primary text-primary-foreground shadow-md" 
+                    : "bg-card border-border/50 hover:bg-muted/50 hover:border-primary/30"
+                }`}
               >
                 <Cat className="w-4 h-4" />
                 חתולים
@@ -602,23 +621,27 @@ const Explore = () => {
 
             {/* Breed Filter */}
             {petTypeFilter !== "all" && (
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground" />
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex items-center gap-2"
+              >
+                <Filter className="w-4 h-4 text-primary/60" />
                 <Select value={breedFilter} onValueChange={setBreedFilter}>
-                  <SelectTrigger className="w-[180px] h-9 rounded-full text-sm">
+                  <SelectTrigger className="w-[180px] h-10 rounded-2xl text-sm border-border/50 bg-card shadow-soft">
                     <SelectValue placeholder="בחר גזע" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl bg-card border-border/50 shadow-elevated z-50">
                     {(petTypeFilter === "dog" ? dogBreeds : catBreeds).map((breed) => (
-                      <SelectItem key={breed} value={breed}>
+                      <SelectItem key={breed} value={breed} className="rounded-lg">
                         {breed}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -875,11 +898,44 @@ const Explore = () => {
                     );
                   })
                 ) : (
-                  <div className="col-span-3 text-center py-20">
-                    <PawPrint className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                    <p className="text-muted-foreground">לא נמצאו חיות</p>
-                    <p className="text-sm text-muted-foreground/70 mt-1">נסה לשנות את הפילטרים</p>
-                  </div>
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="col-span-3 text-center py-16 px-6"
+                  >
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.1, 1],
+                          rotate: [0, 5, -5, 0]
+                        }}
+                        transition={{ 
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatType: "reverse"
+                        }}
+                      >
+                        <PawPrint className="w-12 h-12 text-primary/50" />
+                      </motion.div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      לא נמצאו חיות 🐾
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      נסו לשנות את הפילטרים או לחפש משהו אחר
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setPetTypeFilter("all");
+                        setBreedFilter("כל הגזעים");
+                      }}
+                      className="rounded-2xl gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                    >
+                      <X className="w-4 h-4" />
+                      נקה פילטרים
+                    </Button>
+                  </motion.div>
                 )}
               </div>
             </div>
