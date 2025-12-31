@@ -61,65 +61,65 @@ const Insurance = () => {
   });
   const [calculatedPremium, setCalculatedPremium] = useState<number | null>(null);
 
+  // Libra BFF Policy Tiers based on official policy document
   const pricingTiers: PricingTier[] = [
     {
-      name: "מסלול מקיף",
-      description: "כיסוי מלא למחלות ותאונות - ההמלצה שלנו",
-      price: 149,
-      billingPeriod: "לחודש",
-      buttonText: "הצטרף עכשיו",
-      buttonVariant: "default",
-      isPrimary: true,
-      featuresTitle: "מה כלול?",
-      features: [
-        { text: "כיסוי תאונות ופציעות" },
-        { text: "כיסוי מחלות וזיהומים" },
-        { text: "ניתוחים והליכים רפואיים" },
-        { text: "בדיקות דיאגנוסטיות (MRI, CT, אולטרסאונד)" },
-        { text: "תרופות במרשם" },
-        { text: "פיזיותרפיה והידרותרפיה" },
-        { text: "מזון רפואי (14 יום)" },
-        { text: "אשפוז בבית חולים" },
-        { text: "תקרה שנתית: ₪30,000", hasInfo: true },
-      ],
-    },
-    {
-      name: "מסלול תאונות",
-      description: "כיסוי לתאונות בלבד - מחיר משתלם",
-      price: 79,
+      name: "Libra BFF בסיסי",
+      description: "כיסוי הוצאות רפואיות בגין תאונה בלבד",
+      price: 49,
       billingPeriod: "לחודש",
       buttonText: "הצטרף עכשיו",
       buttonVariant: "outline",
       isPrimary: false,
-      featuresTitle: "מה כלול?",
+      featuresTitle: "מה כלול בפוליסה?",
       features: [
         { text: "כיסוי תאונות ופציעות" },
         { text: "ניתוחים בעקבות תאונה" },
-        { text: "בדיקות דיאגנוסטיות" },
-        { text: "תרופות במרשם" },
-        { text: "פיזיותרפיה (עד 4 טיפולים)" },
-        { text: "כיסוי עד 90 יום לתאונה" },
-        { text: "תקרה שנתית: ₪30,000", hasInfo: true },
+        { text: "בדיקות דיאגנוסטיות והדמיה (עד ₪500 למקרה)" },
+        { text: "תרופות במרשם וטרינר" },
+        { text: "אשפוז בעקבות ניתוח" },
+        { text: "תקופת אכשרה: 48 שעות", hasInfo: true },
+        { text: "פיצוי מוות מתאונה: ₪1,000-2,500" },
       ],
     },
     {
-      name: "מסלול פרימיום",
-      description: "הכיסוי המקיף ביותר לחיית המחמד שלך",
-      price: 249,
+      name: "Libra BFF מקיף",
+      description: "הכיסוי המומלץ - מחלות ותאונות",
+      price: 99,
+      billingPeriod: "לחודש",
+      buttonText: "הצטרף עכשיו",
+      buttonVariant: "default",
+      isPrimary: true,
+      featuresTitle: "מה כלול בפוליסה?",
+      features: [
+        { text: "כל כיסויי התאונות" },
+        { text: "כיסוי מחלות וזיהומים" },
+        { text: "טיפולים רפואיים ובדיקות מעבדה" },
+        { text: "בדיקות הדמיה ללא הגבלה" },
+        { text: "תרופות במרשם וטרינר" },
+        { text: "אשפוז לפני/אחרי ניתוח" },
+        { text: "תקופת אכשרה: 30 יום למחלות", hasInfo: true },
+        { text: "חבות צד שלישי (נזקי גוף ורכוש)" },
+      ],
+    },
+    {
+      name: "Libra BFF פרימיום",
+      description: "הכיסוי המקיף ביותר + צד שלישי מורחב",
+      price: 159,
       billingPeriod: "לחודש",
       buttonText: "צור קשר",
       buttonVariant: "secondary",
       isPrimary: false,
       featuresTitle: "הכל מהמקיף ועוד:",
       features: [
-        { text: "כל מה שבמסלול המקיף" },
-        { text: "כיסוי טיפולי סרטן וכימותרפיה" },
-        { text: "כיסוי מצבים כרוניים ללא הגבלה" },
-        { text: "ביקורי בית של וטרינר" },
-        { text: "כיסוי בחו״ל עד ₪10,000" },
-        { text: "טיפול התנהגותי" },
-        { text: "ללא השתתפות עצמית" },
-        { text: "תקרה שנתית: ₪50,000", hasInfo: true },
+        { text: "כל כיסויי המסלול המקיף" },
+        { text: "חבות צד שלישי מורחבת" },
+        { text: "כיסוי נזקי גוף לצד שלישי" },
+        { text: "כיסוי נזקי רכוש לצד שלישי" },
+        { text: "הוצאות משפט בתביעות צד ג׳" },
+        { text: "פיצוי מוות מתאונה: ₪2,500 (גזעי)" },
+        { text: "ביקור בית וטרינר (מקרי חירום)" },
+        { text: "ללא תקרה על הוצאות משפט", hasInfo: true },
       ],
     },
   ];
@@ -165,43 +165,55 @@ const Insurance = () => {
     },
   ];
 
+  // Libra BFF Policy Key Benefits
   const keyBenefits = [
-    { icon: ShieldCheck, title: "כיסוי מקיף", desc: "מחלות ותאונות", gradient: "from-amber-400 to-orange-500" },
-    { icon: Clock, title: "תקופת אכשרה", desc: "45 יום", gradient: "from-blue-400 to-indigo-500" },
-    { icon: Award, title: "תקרה שנתית", desc: "₪30,000", gradient: "from-emerald-400 to-teal-500" },
-    { icon: Calendar, title: "תקופת ביטוח", desc: "עד 5 שנים", gradient: "from-pink-400 to-rose-500" },
+    { icon: ShieldCheck, title: "Libra BFF", desc: "פוליסת ליברה", gradient: "from-amber-400 to-orange-500" },
+    { icon: Clock, title: "אכשרה תאונה", desc: "48 שעות", gradient: "from-blue-400 to-indigo-500" },
+    { icon: Calendar, title: "אכשרה מחלה", desc: "30 יום", gradient: "from-emerald-400 to-teal-500" },
+    { icon: Award, title: "גיל כניסה", desc: "4 חודשים-8 שנים", gradient: "from-pink-400 to-rose-500" },
   ];
 
+  // Libra BFF FAQ based on policy document
   const faqItems = [
     {
       id: "faq-1",
       question: "מתי הביטוח נכנס לתוקף?",
-      answer: "כיסוי תאונות נכנס לתוקף 72 שעות מתחילת הביטוח. כיסוי מחלות נכנס לתוקף לאחר תקופת אכשרה של 45 יום.",
+      answer: "בפוליסת Libra BFF, כיסוי תאונות נכנס לתוקף לאחר 48 שעות מתחילת הביטוח. כיסוי מחלות נכנס לתוקף לאחר תקופת אכשרה של 30 יום.",
     },
     {
       id: "faq-2",
       question: "האם יש הגבלת גיל לחיות?",
-      answer: "ניתן לבטח חיות מגיל 8 שבועות ועד גיל 12 שנים. חיות מבוטחות יכולות להמשיך להיות מבוטחות ללא הגבלת גיל.",
+      answer: "גיל כניסה מינימלי: 4 חודשים. גיל כניסה מקסימלי: 8 שנים (למעט כיסוי תאונות בלבד שניתן לאשר גיל גבוה יותר לפי שיקול דעת החברה).",
     },
     {
       id: "faq-3",
-      question: "מה התקרה השנתית?",
-      answer: "התקרה השנתית המקסימלית היא ₪30,000 לשני המסלולים הראשונים ו-₪50,000 למסלול הפרימיום.",
+      question: "מה הכיסוי לבדיקות הדמיה?",
+      answer: "בדיקות הדמיה (MRI, CT, אולטרסאונד וכו׳) מכוסות עד ₪500 למקרה ו-₪1,000 לכל תקופת הביטוח.",
     },
     {
       id: "faq-4",
       question: "מהי השתתפות עצמית?",
-      answer: "ההשתתפות העצמית נעה בין ₪250-500 לכל אירוע, תלוי במסלול הנבחר ובגיל חיית המחמד. במסלול פרימיום אין השתתפות עצמית.",
+      answer: "ההשתתפות העצמית נקבעת בדף פרטי הביטוח. ביקור חוזר אצל וטרינר תוך 3 חודשים מאותו מקרה לא יחויב בהשתתפות עצמית נוספת.",
     },
     {
       id: "faq-5",
-      question: "האם מכוסים מצבים כרוניים?",
-      answer: "כן! במסלול המקיף והפרימיום מכוסים מצבים כרוניים כגון סוכרת, אלרגיות, כשל כלייתי ומחלות לב.",
+      question: "מה הפיצוי במקרה מוות מתאונה?",
+      answer: "פיצוי מוות מתאונה: עד ₪1,000 לחיית מחמד לא גזעית, ועד ₪2,500 לחיית מחמד גזעית. הפוליסה מסתיימת עם תשלום הפיצוי.",
     },
     {
       id: "faq-6",
+      question: "מה לא מכוסה בפוליסה?",
+      answer: "לא מכוסים: מחלות לפני תחילת הביטוח, טיפולים מונעים (חיסונים, תולעים), ניתוחים קוסמטיים, עיקור/סירוס (למעט סיבות רפואיות), מומים מולדים, ומחלות נשימה/עיניים בגזעים מסוימים (בולדוג, שרפי וכו׳).",
+    },
+    {
+      id: "faq-7",
+      question: "האם יש כיסוי לחבות צד שלישי?",
+      answer: "כן! במסלולים המקיף והפרימיום יש כיסוי לחבות צד שלישי הכולל נזקי גוף ורכוש שנגרמו על ידי חיית המחמד, כולל הוצאות משפט.",
+    },
+    {
+      id: "faq-8",
       question: "איך מגישים תביעה?",
-      answer: "הגשת תביעה פשוטה! העלו את המסמכים הרפואיים דרך האפליקציה, ונטפל בתביעה תוך 5 ימי עסקים.",
+      answer: "יש להגיש טופס תביעה מלא וחתום, חשבוניות וקבלות מקוריות, וסיכום רפואי חתום על ידי וטרינר. ניתן להגיש דרך האפליקציה או באתר ליברה.",
     },
   ];
 
@@ -271,27 +283,27 @@ const Insurance = () => {
           
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
               </div>
-              <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">
-                שומרה ביטוח
+              <span className="text-sm font-bold text-violet-600 bg-violet-100 dark:bg-violet-900/30 dark:text-violet-300 px-3 py-1.5 rounded-full">
+                Libra BFF
               </span>
             </div>
 
             <h1 className="text-2xl font-black text-foreground mb-2">
-              הגנה מקיפה לחיית המחמד שלך 🐾
+              ביטוח כלבים וחתולים מבית ליברה 🐾
             </h1>
             
             <p className="text-muted-foreground text-sm mb-5">
-              החזר הוצאות רפואיות במקרה של מחלה או תאונה
+              פוליסת Libra BFF - הגנה מקיפה לחיית המחמד שלך
             </p>
 
             <div className="flex items-center gap-3">
               <div className="bg-background rounded-2xl px-4 py-3 shadow-sm">
                 <div className="text-xs text-muted-foreground mb-0.5">החל מ-</div>
-                <div className="text-2xl font-black text-primary">
-                  ₪79
+                <div className="text-2xl font-black text-violet-600">
+                  ₪49
                   <span className="text-sm font-medium text-muted-foreground">/חודש</span>
                 </div>
               </div>
@@ -338,17 +350,17 @@ const Insurance = () => {
       <div id="pricing-section">
         <Pricing
           icon={
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
               <Shield className="w-8 h-8 text-white" />
             </div>
           }
-          title="בחר את המסלול המתאים לך"
-          subtitle="כל המסלולים כוללים כיסוי מקיף וטיפול מהיר בתביעות"
+          title="מסלולי Libra BFF"
+          subtitle="פוליסת ביטוח כלבים וחתולים מבית ליברה - מהדורה ראשונה 2021"
           tiers={pricingTiers}
           onTierSelect={handleTierSelect}
-          footerTitle="צריך עזרה בבחירה?"
-          footerDescription="נציגינו ישמחו לעזור לך לבחור את המסלול המתאים ביותר"
-          footerButtonText="התקשרו אליי"
+          footerTitle="יש לך שאלות?"
+          footerDescription="נציגי ליברה ישמחו לעזור לך לבחור את המסלול המתאים"
+          footerButtonText="דברו עם נציג"
         />
       </div>
 
