@@ -99,7 +99,7 @@ export const FloatingActionButton = ({
             animate="visible"
             exit="hidden"
           >
-            <div className="flex flex-col-reverse gap-3 mb-3">
+            <div className="flex flex-col-reverse gap-3 mb-4">
               {actions.map((action, index) => (
                 <motion.button
                   key={action.label}
@@ -110,28 +110,23 @@ export const FloatingActionButton = ({
                       scale: 1,
                       y: 0,
                       transition: {
-                        delay: index * 0.05,
+                        delay: index * 0.06,
                         duration: ANIMATION_DURATION.normal,
                         ease: EASING.easeOut
                       }
                     }
                   }}
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleActionClick(action)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg transition-all group bg-white/95 backdrop-blur-md border border-[#4ECDC4]/20",
+                    "w-12 h-12 rounded-full shadow-lg transition-all bg-white/95 backdrop-blur-md border border-[#4ECDC4]/20 flex items-center justify-center hover:shadow-xl",
                     action.color
                   )}
-                  style={{ minHeight: TAP_TARGET.minimum }}
+                  title={action.label}
                   {...getAccessibleButtonProps(action.label)}
                 >
-                  <span className="text-sm font-medium text-slate-700 whitespace-nowrap">
-                    {action.label}
-                  </span>
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1E5799]/10 to-[#4ECDC4]/20 flex items-center justify-center group-hover:from-[#1E5799]/20 group-hover:to-[#4ECDC4]/30 transition-all">
-                    <action.icon className="w-5 h-5 text-[#1E5799]" strokeWidth={1.5} />
-                  </div>
+                  <action.icon className="w-5 h-5 text-[#1E5799]" strokeWidth={2} />
                 </motion.button>
               ))}
             </div>
