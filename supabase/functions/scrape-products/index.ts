@@ -78,12 +78,45 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
     }
 
     // Extract images - improved patterns for WooCommerce
-    const mainImageMatch = html.match(/data-large_image="([^"]+)"/i) ||
-                          html.match(/data-src="([^"]+)"/i) ||
-                          html.match(/class="[^"]*woocommerce-product-gallery__image[^"]*"[^>]*>.*?<img[^>]+src="([^"]+)"/is) ||
-                          html.match(/<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/i) ||
-                          html.match(/property="og:image"[^>]+content="([^"]+)"/i) ||
-                          html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
+    let mainImageUrl: string | undefined;
+    
+    // Try multiple patterns in order of preference
+    const imagePatterns = [
+      // WooCommerce gallery large image
+      /data-large_image="([^"]+)"/i,
+      // WooCommerce data-src
+      /data-src="([^"]+)"/i,
+      // OG image meta tag (most reliable)
+      /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i,
+      /property="og:image"[^>]+content="([^"]+)"/i,
+      // WooCommerce gallery wrapper
+      /class="[^"]*woocommerce-product-gallery__image[^"]*"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/i,
+      // WordPress post image
+      /<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/i,
+      // Any image with attachment or product in class
+      /<img[^>]+class="[^"]*(?:attachment|product)[^"]*"[^>]+src="([^"]+)"/i,
+      // Image in product figure
+      /<figure[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/i,
+      // General srcset (get highest res)
+      /srcset="([^"\s]+)[^"]*"/i,
+      // Any reasonable product image
+      /<img[^>]+src="(https?:\/\/[^"]+(?:\.jpg|\.jpeg|\.png|\.webp)[^"]*)"/i,
+    ];
+    
+    for (const pattern of imagePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1] && !match[1].includes('placeholder') && !match[1].includes('data:image')) {
+        mainImageUrl = match[1];
+        break;
+      }
+    }
+    
+    // Also try to find image URL in JSON-LD
+    const jsonLdImgMatch = html.match(/"image"\s*:\s*"([^"]+)"/i) ||
+                           html.match(/"image"\s*:\s*\[\s*"([^"]+)"/i);
+    if (!mainImageUrl && jsonLdImgMatch) {
+      mainImageUrl = jsonLdImgMatch[1];
+    }
     
     // Extract category/breadcrumb
     const breadcrumbMatch = html.match(/class="[^"]*breadcrumb[^"]*"[^>]*>(.*?)<\/nav>/is);
@@ -154,7 +187,7 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
       currency: '₪',
       discount_text: discountMatch?.[1],
       stock_status: stockStatus,
-      main_image_url: mainImageMatch?.[1],
+      main_image_url: mainImageUrl,
       short_description: shortDescMatch?.[1]?.replace(/<[^>]+>/g, '').trim(),
       long_description: longDescMatch?.[1]?.replace(/<[^>]+>/g, '').trim(),
       long_description_html: longDescMatch?.[1],
