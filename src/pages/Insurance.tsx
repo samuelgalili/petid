@@ -138,39 +138,40 @@ const Insurance = () => {
     });
   };
 
+  // Coverage categories with Libra brand colors
   const coverageCategories = [
     {
       icon: AlertCircle,
       title: "תאונות ופציעות",
       description: "נשיכות, קריעת רצועות, הכשת נחש, תאונות דרכים",
-      gradient: "from-rose-400 to-red-500",
+      gradient: "from-amber-500 to-orange-500",
     },
     {
       icon: Activity,
       title: "מחלות",
       description: "בדיקות, ביופסיה, הדמיות - מאבחון עד החלמה",
-      gradient: "from-blue-400 to-indigo-500",
+      gradient: "from-orange-400 to-amber-500",
     },
     {
       icon: Heart,
-      title: "מצבים כרוניים",
-      description: "אלרגיות, סוכרת, כשל כלייתי, מצבי לב",
-      gradient: "from-purple-400 to-violet-500",
+      title: "חבות צד שלישי",
+      description: "נזקי גוף ורכוש שנגרמו ע״י חיית המחמד",
+      gradient: "from-yellow-500 to-amber-500",
     },
     {
       icon: Star,
-      title: "מצבים גנטיים",
-      description: "מחלות אופייניות לגזע ומצבים תורשתיים",
-      gradient: "from-amber-400 to-orange-500",
+      title: "מוות מתאונה",
+      description: "פיצוי עד ₪2,500 לחיית מחמד גזעית",
+      gradient: "from-amber-400 to-yellow-500",
     },
   ];
 
-  // Libra BFF Policy Key Benefits
+  // Libra BFF Policy Key Benefits - using Libra brand colors (amber/orange)
   const keyBenefits = [
-    { icon: ShieldCheck, title: "Libra BFF", desc: "פוליסת ליברה", gradient: "from-amber-400 to-orange-500" },
-    { icon: Clock, title: "אכשרה תאונה", desc: "48 שעות", gradient: "from-blue-400 to-indigo-500" },
-    { icon: Calendar, title: "אכשרה מחלה", desc: "30 יום", gradient: "from-emerald-400 to-teal-500" },
-    { icon: Award, title: "גיל כניסה", desc: "4 חודשים-8 שנים", gradient: "from-pink-400 to-rose-500" },
+    { icon: ShieldCheck, title: "Libra BFF", desc: "פוליסת ליברה", gradient: "from-amber-500 to-orange-500" },
+    { icon: Clock, title: "אכשרה תאונה", desc: "48 שעות", gradient: "from-amber-400 to-yellow-500" },
+    { icon: Calendar, title: "אכשרה מחלה", desc: "30 יום", gradient: "from-orange-400 to-amber-500" },
+    { icon: Award, title: "גיל כניסה", desc: "4 חודשים-8 שנים", gradient: "from-yellow-500 to-amber-500" },
   ];
 
   // Libra BFF FAQ based on policy document
@@ -277,16 +278,16 @@ const Insurance = () => {
         transition={{ duration: 0.5 }}
         className="px-4 mb-8"
       >
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 p-6">
-          <div className="absolute top-0 left-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute bottom-0 right-0 w-40 h-40 bg-accent/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-6 border border-amber-200 dark:border-amber-800">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-amber-400/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-40 h-40 bg-orange-400/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
           
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <span className="text-sm font-bold text-violet-600 bg-violet-100 dark:bg-violet-900/30 dark:text-violet-300 px-3 py-1.5 rounded-full">
+              <span className="text-sm font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/50 dark:text-amber-300 px-3 py-1.5 rounded-full">
                 Libra BFF
               </span>
             </div>
@@ -300,15 +301,15 @@ const Insurance = () => {
             </p>
 
             <div className="flex items-center gap-3">
-              <div className="bg-background rounded-2xl px-4 py-3 shadow-sm">
+              <div className="bg-background rounded-2xl px-4 py-3 shadow-sm border border-amber-200 dark:border-amber-800">
                 <div className="text-xs text-muted-foreground mb-0.5">החל מ-</div>
-                <div className="text-2xl font-black text-violet-600">
+                <div className="text-2xl font-black text-amber-600">
                   ₪49
                   <span className="text-sm font-medium text-muted-foreground">/חודש</span>
                 </div>
               </div>
               <Button 
-                className="flex-1 rounded-2xl font-bold py-6"
+                className="flex-1 rounded-2xl font-bold py-6 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
                 onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 צפה במסלולים
@@ -350,7 +351,7 @@ const Insurance = () => {
       <div id="pricing-section">
         <Pricing
           icon={
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
               <Shield className="w-8 h-8 text-white" />
             </div>
           }
@@ -367,8 +368,8 @@ const Insurance = () => {
       {/* Coverage Categories */}
       <div className="px-4 py-8">
         <h2 className="text-xl font-black text-foreground mb-6 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-primary" />
-          מה מכוסה?
+          <Activity className="w-5 h-5 text-amber-500" />
+          מה מכוסה בפוליסת Libra BFF?
         </h2>
         <div className="grid grid-cols-2 gap-4">
           {coverageCategories.map((category, index) => (
