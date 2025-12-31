@@ -1028,6 +1028,45 @@ export type Database = {
           },
         ]
       }
+      content_reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_by: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupon_uses: {
         Row: {
           coupon_id: string
@@ -2133,6 +2172,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      personalization_scores: {
+        Row: {
+          content_type: string
+          factors: Json | null
+          id: string
+          last_calculated: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          content_type: string
+          factors?: Json | null
+          id?: string
+          last_calculated?: string
+          score?: number
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          factors?: Json | null
+          id?: string
+          last_calculated?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       pet_documents: {
         Row: {
@@ -4323,6 +4389,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_engagement: {
+        Row: {
+          action: string
+          content_id: string
+          content_type: string
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          content_id: string
+          content_type: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_follows: {
         Row: {
           created_at: string
@@ -4341,6 +4440,36 @@ export type Database = {
           follower_id?: string
           following_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      user_interests: {
+        Row: {
+          created_at: string
+          id: string
+          interest_type: string
+          interest_value: string
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interest_type: string
+          interest_value: string
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interest_type?: string
+          interest_value?: string
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
         }
         Relationships: []
       }
@@ -4386,6 +4515,51 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          id: string
+          location_city: string | null
+          location_lat: number | null
+          location_lng: number | null
+          pages_visited: string[] | null
+          preferred_tab: string | null
+          preferred_view_mode: string | null
+          session_end: string | null
+          session_start: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          location_city?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          pages_visited?: string[] | null
+          preferred_tab?: string | null
+          preferred_view_mode?: string | null
+          session_end?: string | null
+          session_start?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          location_city?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          pages_visited?: string[] | null
+          preferred_tab?: string | null
+          preferred_view_mode?: string | null
+          session_end?: string | null
+          session_start?: string
+          user_id?: string | null
         }
         Relationships: []
       }
