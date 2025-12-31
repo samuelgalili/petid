@@ -33,11 +33,16 @@ import {
   Pause,
   Dog,
   Cat,
-  Bird
+  Bird,
+  Info,
+  ImageIcon,
+  Sparkles
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ScrapedProduct {
   id: string;
@@ -114,6 +119,120 @@ interface ScanResult {
   totalUrls: number;
   productUrls: string[];
 }
+
+// Helper Components for Data Quality Indicators
+const DataQualityIndicator = ({ product }: { product: PreviewProduct }) => {
+  // Calculate data quality score
+  const requiredFields = [product.product_name, product.final_price, product.main_image_url];
+  const optionalFields = [product.sku, product.brand, product.category_path, product.pet_type, product.short_description];
+  
+  const requiredScore = requiredFields.filter(Boolean).length;
+  const optionalScore = optionalFields.filter(Boolean).length;
+  
+  // Red: missing required, Yellow: missing important optional, Green: all good
+  let status: 'green' | 'yellow' | 'red' = 'green';
+  let message = 'כל הנתונים תקינים';
+  
+  if (requiredScore < requiredFields.length) {
+    status = 'red';
+    message = 'חסרים נתונים חובה';
+  } else if (optionalScore < 3) {
+    status = 'yellow';
+    message = 'מומלץ לבדוק נתונים נוספים';
+  }
+  
+  const colors = {
+    green: 'bg-green-500',
+    yellow: 'bg-yellow-500',
+    red: 'bg-red-500'
+  };
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={`w-3 h-3 rounded-full ${colors[status]} cursor-help`} />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{message}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const DataFieldIndicator = ({ status, tooltip }: { status: 'green' | 'yellow' | 'red'; tooltip: string }) => {
+  const colors = {
+    green: 'text-green-500',
+    yellow: 'text-yellow-500',
+    red: 'text-red-500'
+  };
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className={`absolute -top-1 -left-1 ${colors[status]}`}>
+            <Info className="w-4 h-4" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const LabelWithIndicator = ({ 
+  label, 
+  required = false, 
+  hasValue 
+}: { 
+  label: string; 
+  required?: boolean; 
+  hasValue: boolean;
+}) => {
+  let status: 'green' | 'yellow' | 'red' = 'green';
+  let tooltip = 'נתון תקין';
+  
+  if (!hasValue) {
+    if (required) {
+      status = 'red';
+      tooltip = 'נתון חובה חסר';
+    } else {
+      status = 'yellow';
+      tooltip = 'נתון לא נמצא - מומלץ לבדוק';
+    }
+  }
+  
+  const colors = {
+    green: 'text-green-500',
+    yellow: 'text-yellow-500',
+    red: 'text-red-500'
+  };
+  
+  return (
+    <div className="flex items-center gap-2 mb-1">
+      <Label className="flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </Label>
+      {!hasValue && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className={`w-3.5 h-3.5 ${colors[status]} cursor-help`} />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+  );
+};
 
 const AdminScraper = () => {
   const navigate = useNavigate();
@@ -1387,163 +1506,278 @@ const AdminScraper = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Preview Product Dialog */}
+        {/* Preview Product Dialog - Styled like ProductFormDialog */}
         <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
-              <DialogTitle>תצוגה מקדימה של מוצר</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                תצוגה מקדימה של מוצר
+                {previewProduct && (
+                  <DataQualityIndicator product={previewProduct} />
+                )}
+              </DialogTitle>
               <DialogDescription>
-                בדוק שהנתונים נראים תקינים לפני שתמשיך לסריקה מלאה
+                בדוק שהנתונים נראים תקינים - רק מידע אמיתי שנמצא ברשת
               </DialogDescription>
             </DialogHeader>
             {previewProduct && (
               <div className="space-y-4 py-4">
-                {/* Product Image */}
-                {previewProduct.main_image_url && (
-                  <div className="flex justify-center">
-                    <img 
-                      src={previewProduct.main_image_url} 
-                      alt={previewProduct.product_name}
-                      className="max-w-[200px] max-h-[200px] object-contain rounded-lg border"
-                    />
-                  </div>
-                )}
-                
-                {/* Product Details */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-muted-foreground">שם המוצר:</span>
-                    <div className="font-semibold">{previewProduct.product_name}</div>
-                  </div>
-                  
-                  <div>
-                    <span className="font-medium text-muted-foreground">מחיר:</span>
-                    <div className="font-semibold text-primary">
-                      {previewProduct.final_price ? `₪${previewProduct.final_price.toFixed(2)}` : 'לא זמין'}
-                      {previewProduct.sale_price && previewProduct.regular_price && (
-                        <span className="text-muted-foreground line-through mr-2 text-xs">
-                          ₪{previewProduct.regular_price.toFixed(2)}
-                        </span>
+                {/* Image Section */}
+                <div className="space-y-3">
+                  <Label className="text-center block">תמונת המוצר</Label>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <div className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden bg-muted/30">
+                        {previewProduct.main_image_url ? (
+                          <img 
+                            src={previewProduct.main_image_url} 
+                            alt={previewProduct.product_name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                          />
+                        ) : (
+                          <div className="text-center text-muted-foreground">
+                            <ImageIcon className="w-8 h-8 mx-auto mb-1" />
+                            <span className="text-xs">אין תמונה</span>
+                          </div>
+                        )}
+                      </div>
+                      {!previewProduct.main_image_url && (
+                        <DataFieldIndicator status="red" tooltip="לא נמצאה תמונה למוצר" />
                       )}
                     </div>
                   </div>
-                  
-                  <div>
-                    <span className="font-medium text-muted-foreground">מותג:</span>
-                    <div>{previewProduct.brand || 'לא זמין'}</div>
-                  </div>
-                  
-                  <div>
-                    <span className="font-medium text-muted-foreground">סטטוס מלאי:</span>
-                    <Badge variant={previewProduct.stock_status === 'in_stock' ? 'default' : 'destructive'}>
-                      {previewProduct.stock_status === 'in_stock' ? 'במלאי' : 'אזל'}
-                    </Badge>
-                  </div>
+                </div>
 
-                  {previewProduct.sku && (
-                    <div>
-                      <span className="font-medium text-muted-foreground">מק״ט:</span>
-                      <div className="font-mono text-xs">{previewProduct.sku}</div>
-                    </div>
-                  )}
-
-                  {previewProduct.pet_type && (
-                    <div>
-                      <span className="font-medium text-muted-foreground">סוג חיה:</span>
-                      <Badge variant="outline">
-                        {previewProduct.pet_type === 'dog' ? '🐕 כלב' : 
-                         previewProduct.pet_type === 'cat' ? '🐈 חתול' :
-                         previewProduct.pet_type === 'bird' ? '🐦 ציפור' :
-                         previewProduct.pet_type === 'fish' ? '🐟 דג' : previewProduct.pet_type}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {previewProduct.weight && (
-                    <div>
-                      <span className="font-medium text-muted-foreground">משקל:</span>
-                      <div>{previewProduct.weight} {previewProduct.weight_unit || ''}</div>
-                    </div>
-                  )}
-                  
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Product Name */}
                   <div className="col-span-2">
-                    <span className="font-medium text-muted-foreground">קטגוריה:</span>
-                    <div>{previewProduct.category_path || 'לא זמין'}</div>
+                    <LabelWithIndicator 
+                      label="שם המוצר" 
+                      required 
+                      hasValue={!!previewProduct.product_name}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm font-medium">
+                      {previewProduct.product_name || 'לא זמין'}
+                    </div>
+                  </div>
+
+                  {/* Category and Pet Type */}
+                  <div>
+                    <LabelWithIndicator 
+                      label="קטגוריה" 
+                      hasValue={!!previewProduct.category_path}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm">
+                      {previewProduct.category_path || 'לא זמין'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <LabelWithIndicator 
+                      label="סוג חיה" 
+                      hasValue={!!previewProduct.pet_type}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm">
+                      {previewProduct.pet_type === 'dog' ? '🐕 כלב' : 
+                       previewProduct.pet_type === 'cat' ? '🐈 חתול' :
+                       previewProduct.pet_type === 'bird' ? '🐦 ציפור' :
+                       previewProduct.pet_type === 'fish' ? '🐟 דג' : 
+                       previewProduct.pet_type || 'לא זמין'}
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="col-span-2">
+                    <LabelWithIndicator 
+                      label="תיאור" 
+                      hasValue={!!previewProduct.short_description}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm min-h-[60px]">
+                      {previewProduct.short_description || 'לא זמין'}
+                    </div>
+                  </div>
+
+                  {/* SKU and Brand */}
+                  <div>
+                    <LabelWithIndicator 
+                      label="מק״ט" 
+                      hasValue={!!previewProduct.sku}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm font-mono">
+                      {previewProduct.sku || 'לא זמין'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <LabelWithIndicator 
+                      label="מותג" 
+                      hasValue={!!previewProduct.brand}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm">
+                      {previewProduct.brand || 'לא זמין'}
+                    </div>
+                  </div>
+
+                  {/* Flavors / Variants */}
+                  <div className="col-span-2">
+                    <LabelWithIndicator 
+                      label="טעמים / וריאנטים" 
+                      hasValue={!!(previewProduct.flavors?.length || previewProduct.variants?.length)}
+                    />
+                    <div className="flex flex-wrap gap-2 mb-2 min-h-[32px]">
+                      {previewProduct.flavors && previewProduct.flavors.length > 0 ? (
+                        previewProduct.flavors.map((flavor, idx) => (
+                          <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                            {flavor}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">לא נמצאו טעמים</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Sizes */}
                   {previewProduct.sizes && previewProduct.sizes.length > 0 && (
                     <div className="col-span-2">
-                      <span className="font-medium text-muted-foreground">גדלים זמינים:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <LabelWithIndicator 
+                        label="גדלים זמינים" 
+                        hasValue={true}
+                      />
+                      <div className="flex flex-wrap gap-2">
                         {previewProduct.sizes.map((size, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">{size}</Badge>
+                          <Badge key={i} variant="outline" className="text-xs">{size}</Badge>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Flavors */}
-                  {previewProduct.flavors && previewProduct.flavors.length > 0 && (
-                    <div className="col-span-2">
-                      <span className="font-medium text-muted-foreground">טעמים זמינים:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {previewProduct.flavors.map((flavor, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">{flavor}</Badge>
-                        ))}
-                      </div>
+                  {/* Weight */}
+                  <div>
+                    <LabelWithIndicator 
+                      label="משקל" 
+                      hasValue={!!previewProduct.weight}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm">
+                      {previewProduct.weight ? `${previewProduct.weight} ${previewProduct.weight_unit || ''}` : 'לא זמין'}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Colors */}
-                  {previewProduct.colors && previewProduct.colors.length > 0 && (
-                    <div className="col-span-2">
-                      <span className="font-medium text-muted-foreground">צבעים זמינים:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {previewProduct.colors.map((color, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">{color}</Badge>
-                        ))}
+                  <div>
+                    <LabelWithIndicator 
+                      label="סטטוס מלאי" 
+                      hasValue={!!previewProduct.stock_status}
+                    />
+                    <Badge variant={previewProduct.stock_status === 'in_stock' ? 'default' : 'destructive'}>
+                      {previewProduct.stock_status === 'in_stock' ? 'במלאי' : 'אזל'}
+                    </Badge>
+                  </div>
+
+                  {/* AI Enriched Data Section */}
+                  {(previewProduct.sizes?.length || previewProduct.flavors?.length || previewProduct.colors?.length || previewProduct.variants?.length) && (
+                    <div className="col-span-2 bg-primary/5 rounded-lg p-4 space-y-3 border border-primary/20">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          מידע שנמשך מהרשת
+                        </h4>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Variants */}
-                  {previewProduct.variants && previewProduct.variants.length > 0 && (
-                    <div className="col-span-2">
-                      <span className="font-medium text-muted-foreground">וריאנטים ({previewProduct.variants.length}):</span>
-                      <div className="mt-1 max-h-32 overflow-y-auto">
-                        <div className="grid gap-1">
-                          {previewProduct.variants.slice(0, 10).map((variant, i) => (
-                            <div key={i} className="flex items-center justify-between text-xs bg-muted/50 p-1.5 rounded">
-                              <span>{variant.name}: {variant.value}</span>
-                              {variant.price && <span className="font-medium">₪{variant.price}</span>}
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {previewProduct.sizes && previewProduct.sizes.length > 0 && (
+                          <div>
+                            <span className="text-muted-foreground">גדלים זמינים:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {previewProduct.sizes.map((size, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">{size}</Badge>
+                              ))}
                             </div>
-                          ))}
-                          {previewProduct.variants.length > 10 && (
-                            <div className="text-xs text-muted-foreground text-center">
-                              +{previewProduct.variants.length - 10} וריאנטים נוספים
+                          </div>
+                        )}
+                        
+                        {previewProduct.flavors && previewProduct.flavors.length > 0 && (
+                          <div>
+                            <span className="text-muted-foreground">טעמים:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {previewProduct.flavors.map((flavor, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">{flavor}</Badge>
+                              ))}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
+
+                        {previewProduct.colors && previewProduct.colors.length > 0 && (
+                          <div>
+                            <span className="text-muted-foreground">צבעים:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {previewProduct.colors.map((color, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">{color}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {previewProduct.variants && previewProduct.variants.length > 0 && (
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground">וריאנטים ({previewProduct.variants.length}):</span>
+                            <div className="mt-1 max-h-32 overflow-y-auto">
+                              <div className="grid gap-1">
+                                {previewProduct.variants.slice(0, 5).map((variant, i) => (
+                                  <div key={i} className="flex items-center justify-between text-xs bg-muted/50 p-1.5 rounded">
+                                    <span>{variant.name}: {variant.value}</span>
+                                    {variant.price && <span className="font-medium">₪{variant.price}</span>}
+                                  </div>
+                                ))}
+                                {previewProduct.variants.length > 5 && (
+                                  <div className="text-xs text-muted-foreground text-center">
+                                    +{previewProduct.variants.length - 5} וריאנטים נוספים
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
-                  
-                  {previewProduct.short_description && (
-                    <div className="col-span-2">
-                      <span className="font-medium text-muted-foreground">תיאור:</span>
-                      <div className="text-sm">{previewProduct.short_description}</div>
+
+                  {/* Price Section */}
+                  <div>
+                    <LabelWithIndicator 
+                      label="מחיר" 
+                      required
+                      hasValue={!!previewProduct.final_price}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-lg font-bold text-primary">
+                      {previewProduct.final_price ? `₪${previewProduct.final_price.toFixed(2)}` : 'לא זמין'}
                     </div>
-                  )}
-                  
+                  </div>
+
+                  <div>
+                    <LabelWithIndicator 
+                      label="מחיר לפני הנחה" 
+                      hasValue={!!previewProduct.regular_price && previewProduct.regular_price !== previewProduct.final_price}
+                    />
+                    <div className="bg-muted/30 p-2 rounded-md text-sm text-muted-foreground line-through">
+                      {previewProduct.regular_price && previewProduct.regular_price !== previewProduct.final_price 
+                        ? `₪${previewProduct.regular_price.toFixed(2)}` 
+                        : 'אין הנחה'}
+                    </div>
+                  </div>
+
+                  {/* URL */}
                   <div className="col-span-2">
-                    <span className="font-medium text-muted-foreground">URL:</span>
+                    <Label className="text-muted-foreground text-xs">קישור למוצר</Label>
                     <a 
                       href={previewProduct.product_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline text-xs break-all"
+                      className="text-primary hover:underline text-xs break-all flex items-center gap-1"
                     >
+                      <ExternalLink className="w-3 h-3" />
                       {previewProduct.product_url}
                     </a>
                   </div>
