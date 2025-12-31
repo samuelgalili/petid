@@ -778,10 +778,10 @@ const AdminScraper = () => {
                       className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 transition-all ${
                         isChecked 
                           ? 'bg-primary text-primary-foreground border-primary shadow-md' 
-                          : 'bg-background border-muted-foreground/20 hover:border-primary/50'
+                          : 'bg-background text-muted-foreground border-muted-foreground/20 hover:border-primary/50'
                       } ${scraping ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isChecked ? '' : 'opacity-50'}`} />
                       <span className="text-xs sm:text-sm font-medium">{pet.label}</span>
                     </button>
                   );
@@ -806,7 +806,7 @@ const AdminScraper = () => {
                       className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border transition-all text-xs sm:text-sm ${
                         isChecked 
                           ? 'bg-primary/10 text-primary border-primary/30 font-medium' 
-                          : 'bg-background border-muted-foreground/20 hover:border-primary/50'
+                          : 'bg-background text-muted-foreground border-muted-foreground/20 hover:border-primary/50'
                       } ${scraping ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {cat.label}
