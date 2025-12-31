@@ -3370,11 +3370,13 @@ export type Database = {
           bullet_points: string[] | null
           canonical_url: string | null
           category_path: string | null
+          colors: string[] | null
           created_at: string | null
           currency: string | null
           data_attributes: Json | null
           discount_text: string | null
           final_price: number | null
+          flavors: string[] | null
           h1_title: string | null
           id: string
           ingredients: string | null
@@ -3386,6 +3388,7 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           nutrition_info: Json | null
+          pet_type: string | null
           product_id: string | null
           product_name: string
           product_url: string
@@ -3398,6 +3401,7 @@ export type Database = {
           scraped_at: string | null
           shipping_info: string | null
           short_description: string | null
+          sizes: string[] | null
           sku: string | null
           stock_badge: string | null
           stock_status: Database["public"]["Enums"]["stock_status"] | null
@@ -3405,7 +3409,10 @@ export type Database = {
           technical_details: Json | null
           updated_at: string | null
           usage_instructions: string | null
+          variants: Json | null
           warnings: string | null
+          weight: string | null
+          weight_unit: string | null
         }
         Insert: {
           badges?: string[] | null
@@ -3413,11 +3420,13 @@ export type Database = {
           bullet_points?: string[] | null
           canonical_url?: string | null
           category_path?: string | null
+          colors?: string[] | null
           created_at?: string | null
           currency?: string | null
           data_attributes?: Json | null
           discount_text?: string | null
           final_price?: number | null
+          flavors?: string[] | null
           h1_title?: string | null
           id?: string
           ingredients?: string | null
@@ -3429,6 +3438,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           nutrition_info?: Json | null
+          pet_type?: string | null
           product_id?: string | null
           product_name: string
           product_url: string
@@ -3441,6 +3451,7 @@ export type Database = {
           scraped_at?: string | null
           shipping_info?: string | null
           short_description?: string | null
+          sizes?: string[] | null
           sku?: string | null
           stock_badge?: string | null
           stock_status?: Database["public"]["Enums"]["stock_status"] | null
@@ -3448,7 +3459,10 @@ export type Database = {
           technical_details?: Json | null
           updated_at?: string | null
           usage_instructions?: string | null
+          variants?: Json | null
           warnings?: string | null
+          weight?: string | null
+          weight_unit?: string | null
         }
         Update: {
           badges?: string[] | null
@@ -3456,11 +3470,13 @@ export type Database = {
           bullet_points?: string[] | null
           canonical_url?: string | null
           category_path?: string | null
+          colors?: string[] | null
           created_at?: string | null
           currency?: string | null
           data_attributes?: Json | null
           discount_text?: string | null
           final_price?: number | null
+          flavors?: string[] | null
           h1_title?: string | null
           id?: string
           ingredients?: string | null
@@ -3472,6 +3488,7 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           nutrition_info?: Json | null
+          pet_type?: string | null
           product_id?: string | null
           product_name?: string
           product_url?: string
@@ -3484,6 +3501,7 @@ export type Database = {
           scraped_at?: string | null
           shipping_info?: string | null
           short_description?: string | null
+          sizes?: string[] | null
           sku?: string | null
           stock_badge?: string | null
           stock_status?: Database["public"]["Enums"]["stock_status"] | null
@@ -3491,7 +3509,10 @@ export type Database = {
           technical_details?: Json | null
           updated_at?: string | null
           usage_instructions?: string | null
+          variants?: Json | null
           warnings?: string | null
+          weight?: string | null
+          weight_unit?: string | null
         }
         Relationships: []
       }
