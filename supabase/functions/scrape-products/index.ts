@@ -77,9 +77,13 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
       stockStatus = 'out_of_stock';
     }
 
-    // Extract images
-    const mainImageMatch = html.match(/class="[^"]*woocommerce-product-gallery__image[^"]*"[^>]*>.*?<img[^>]+src="([^"]+)"/is) ||
-                          html.match(/<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/i);
+    // Extract images - improved patterns for WooCommerce
+    const mainImageMatch = html.match(/data-large_image="([^"]+)"/i) ||
+                          html.match(/data-src="([^"]+)"/i) ||
+                          html.match(/class="[^"]*woocommerce-product-gallery__image[^"]*"[^>]*>.*?<img[^>]+src="([^"]+)"/is) ||
+                          html.match(/<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/i) ||
+                          html.match(/property="og:image"[^>]+content="([^"]+)"/i) ||
+                          html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
     
     // Extract category/breadcrumb
     const breadcrumbMatch = html.match(/class="[^"]*breadcrumb[^"]*"[^>]*>(.*?)<\/nav>/is);
@@ -354,15 +358,43 @@ Deno.serve(async (req) => {
               scrapedCount++;
               console.log('Saved product:', product.product_name);
 
-              // Extract and save images
-              const imageMatches = html.match(/data-large_image="([^"]+)"/gi) || [];
+              // Extract and save images - improved extraction
               const galleryImages: string[] = [];
               
-              for (const match of imageMatches) {
-                const imgUrl = match.match(/="([^"]+)"/)?.[1];
-                if (imgUrl && !galleryImages.includes(imgUrl)) {
-                  galleryImages.push(imgUrl);
+              // Try multiple patterns for images
+              const patterns = [
+                /data-large_image="([^"]+)"/gi,
+                /data-src="([^"]+\.(?:jpg|jpeg|png|webp|gif)[^"]*)"/gi,
+                /srcset="([^"\s]+\.(?:jpg|jpeg|png|webp|gif)[^"\s]*)[\s,]/gi,
+                /<img[^>]+src="([^"]+\.(?:jpg|jpeg|png|webp|gif)[^"]*)"/gi,
+              ];
+              
+              for (const pattern of patterns) {
+                const matches = html.matchAll(pattern);
+                for (const match of matches) {
+                  const imgUrl = match[1];
+                  if (imgUrl && 
+                      !galleryImages.includes(imgUrl) && 
+                      !imgUrl.includes('placeholder') &&
+                      !imgUrl.includes('woocommerce-placeholder') &&
+                      imgUrl.includes('homepetcenter')) {
+                    galleryImages.push(imgUrl);
+                  }
                 }
+              }
+              
+              // Also try og:image
+              const ogImageMatch = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
+              if (ogImageMatch && ogImageMatch[1] && !galleryImages.includes(ogImageMatch[1])) {
+                galleryImages.unshift(ogImageMatch[1]); // Add to beginning as main
+              }
+              
+              // Update product with main image if found
+              if (galleryImages.length > 0 && !product.main_image_url) {
+                await supabase
+                  .from('scraped_products')
+                  .update({ main_image_url: galleryImages[0] })
+                  .eq('id', insertedProduct.id);
               }
 
               if (insertedProduct && galleryImages.length > 0) {
@@ -373,7 +405,8 @@ Deno.serve(async (req) => {
                   display_order: index,
                 }));
 
-                await supabase.from('product_images').upsert(imageRecords);
+                await supabase.from('product_images').upsert(imageRecords, { onConflict: 'product_id,image_url' });
+                console.log('Saved', galleryImages.length, 'images for product');
               }
 
               // Extract variations
