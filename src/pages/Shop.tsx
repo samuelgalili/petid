@@ -14,6 +14,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import confetti from "canvas-confetti";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
+import { SkeletonProductGrid } from "@/components/ui/enhanced-skeleton";
 
 const Shop = () => {
   const navigate = useNavigate();
