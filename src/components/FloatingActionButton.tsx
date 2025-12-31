@@ -39,9 +39,9 @@ export const FloatingActionButton = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const positionClasses = {
-    "bottom-right": "bottom-20 left-6",
-    "bottom-left": "bottom-20 right-6",
-    "bottom-center": "bottom-20 left-1/2 -translate-x-1/2"
+    "bottom-right": "bottom-24 right-6",
+    "bottom-left": "bottom-24 left-6",
+    "bottom-center": "bottom-24 left-1/2 -translate-x-1/2"
   };
 
   const sizeClasses = {
