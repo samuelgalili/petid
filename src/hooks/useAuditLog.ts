@@ -4,6 +4,7 @@ import { useAuth } from "./useAuth";
 export type AuditAction = 
   | "user.blocked"
   | "user.unblocked"
+  | "user.deleted"
   | "user.role_added"
   | "user.role_removed"
   | "user.password_reset"
