@@ -35,6 +35,8 @@ import { BusinessFeedBanner } from "@/components/business/BusinessFeedBanner";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { SkeletonFeed } from "@/components/ui/enhanced-skeleton";
+import { FeedTabs, FeedViewSwitcher, FeedGridView, FeedVideoView, type FeedTab, type FeedViewMode } from "@/components/feed";
+import { useFeedPersonalization } from "@/hooks/useFeedPersonalization";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -265,6 +267,11 @@ const Feed = () => {
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [page, setPage] = useState(0);
+  
+  // New contextual feed state
+  const [activeTab, setActiveTab] = useState<FeedTab>("foryou");
+  const [viewMode, setViewMode] = useState<FeedViewMode>("feed");
+  const { config, features, sortByPriority, applyFeedRules, defaultTab, isBusiness, isOrg } = useFeedPersonalization();
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [pets, setPets] = useState<any[]>([]);
   const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
@@ -424,7 +431,20 @@ const Feed = () => {
   };
   const handleFollowingFilter = () => {
     if (!checkAuth("כדי לצפות בפוסטים של העוקבים שלך, יש להתחבר")) return;
-    setFeedFilter("following");
+    setActiveTab("following");
+  };
+  
+  // Handle tab changes
+  const handleTabChange = (tab: FeedTab) => {
+    setActiveTab(tab);
+    // Navigate to appropriate page for marketplace and adopt tabs
+    if (tab === "marketplace") {
+      // Stay on feed but filter to products
+    } else if (tab === "adopt") {
+      // Stay on feed but filter to adoption
+    } else if (tab === "nearby") {
+      // Would need location - for now just show local content
+    }
   };
   const fetchPosts = useCallback(async (pageNum: number, append = false) => {
     if (append) {
@@ -857,6 +877,7 @@ const Feed = () => {
   }, []);
 
   // Create mixed feed with posts, adoption pets, products, ads, and suggested posts
+  // Now enhanced with tab-based filtering and role-based personalization
   const mixedFeed = useMemo((): FeedItem[] => {
     // Convert posts to FeedItems
     const postItems: FeedItem[] = posts.map(post => ({
@@ -865,66 +886,99 @@ const Feed = () => {
       created_at: post.created_at
     }));
 
-    // Convert adoption pets to FeedItems (only show in "all" feed)
-    const adoptionItems: FeedItem[] = feedFilter === "all" ? adoptionPets.map(pet => ({
+    // Convert adoption pets to FeedItems
+    const adoptionItems: FeedItem[] = adoptionPets.map(pet => ({
       type: 'adoption' as const,
       data: pet,
       created_at: pet.created_at || new Date().toISOString()
-    })) : [];
+    }));
 
-    // Convert products to FeedItems (only show in "all" feed)
-    const productItems: FeedItem[] = feedFilter === "all" ? SHOP_PRODUCTS.map((product, index) => ({
+    // Convert products to FeedItems
+    const productItems: FeedItem[] = SHOP_PRODUCTS.map((product, index) => ({
       type: 'product' as const,
       data: product,
-      // Spread products throughout the feed
       created_at: new Date(Date.now() - (index + 2) * 3600000).toISOString()
-    })) : [];
+    }));
 
-    // Convert ads to FeedItems (only show in "all" feed)
-    const adItems: FeedItem[] = feedFilter === "all" ? FEED_ADS.map((ad, index) => ({
+    // Convert ads to FeedItems
+    const adItems: FeedItem[] = FEED_ADS.map((ad, index) => ({
       type: 'ad' as const,
       data: ad,
       created_at: new Date(Date.now() - (index + 4) * 7200000).toISOString()
-    })) : [];
+    }));
 
-    // Convert suggested posts to FeedItems (only show in "all" feed)
-    const suggestedItems: FeedItem[] = feedFilter === "all" ? suggestedPosts.map((post, index) => ({
+    // Convert suggested posts to FeedItems
+    const suggestedItems: FeedItem[] = suggestedPosts.map((post, index) => ({
       type: 'suggested' as const,
       data: post,
-      // Spread suggested posts throughout the feed
       created_at: new Date(Date.now() - (index + 3) * 5400000).toISOString()
-    })) : [];
+    }));
 
-    // Convert challenges to FeedItems (only show in "all" feed)
-    const challengeItems: FeedItem[] = feedFilter === "all" ? challenges.map((challenge, index) => ({
+    // Convert challenges to FeedItems
+    const challengeItems: FeedItem[] = challenges.map((challenge, index) => ({
       type: 'challenge' as const,
       data: challenge,
-      // Spread challenges throughout the feed
       created_at: new Date(Date.now() - (index + 1) * 4800000).toISOString()
-    })) : [];
+    }));
 
-    // If following filter, only show posts from followed users
-    if (feedFilter === "following") {
-      return postItems.filter(item => followingIds.includes((item.data as Post).user_id));
+    // Tab-based filtering
+    switch (activeTab) {
+      case "following":
+        // Only show posts from followed users
+        return postItems.filter(item => followingIds.includes((item.data as Post).user_id));
+      
+      case "marketplace":
+        // Prioritize products, include some posts
+        const marketItems = [...productItems, ...postItems.slice(0, 3)];
+        return marketItems.sort((a, b) => {
+          if (a.type === 'product' && b.type !== 'product') return -1;
+          if (a.type !== 'product' && b.type === 'product') return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      
+      case "adopt":
+        // Only adoption content with some emotional posts
+        const adoptItems = [...adoptionItems, ...postItems.filter(p => {
+          const post = p.data as Post;
+          return post.caption?.includes('אימוץ') || post.caption?.includes('adopt') || post.caption?.includes('הצלה');
+        })];
+        return adoptItems.sort((a, b) => {
+          if (a.type === 'adoption' && b.type !== 'adoption') return -1;
+          if (a.type !== 'adoption' && b.type === 'adoption') return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      
+      case "nearby":
+        // For now, just show a mix - would need location for real nearby
+        return [...postItems, ...adoptionItems, ...challengeItems].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      
+      case "foryou":
+      default:
+        // Merge all items and sort by date
+        const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems, ...challengeItems].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        // Apply role-based sorting if available
+        const sorted = sortByPriority ? sortByPriority(merged) : merged;
+
+        // Apply non-organic spacing rule: no two non-organic items in sequence
+        const result: FeedItem[] = [];
+        let lastWasNonOrganic = false;
+        for (const item of sorted) {
+          const isNonOrganic = item.type !== 'post';
+          if (isNonOrganic && lastWasNonOrganic) {
+            continue;
+          }
+          result.push(item);
+          lastWasNonOrganic = isNonOrganic;
+        }
+        
+        return applyFeedRules ? applyFeedRules(result) : result;
     }
-
-    // Merge all items and sort by date
-    const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems, ...challengeItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    // Apply non-organic spacing rule: no two non-organic items in sequence
-    const result: FeedItem[] = [];
-    let lastWasNonOrganic = false;
-    for (const item of merged) {
-      const isNonOrganic = item.type !== 'post';
-      if (isNonOrganic && lastWasNonOrganic) {
-        // Skip this item to avoid consecutive non-organic cards
-        continue;
-      }
-      result.push(item);
-      lastWasNonOrganic = isNonOrganic;
-    }
-    return result;
-  }, [posts, adoptionPets, suggestedPosts, challenges, feedFilter, followingIds]);
+  }, [posts, adoptionPets, suggestedPosts, challenges, activeTab, followingIds, sortByPriority, applyFeedRules]);
 
   // Handle following a suggested user - remove from suggested posts
   const handleSuggestedFollow = useCallback((userId: string) => {
@@ -981,6 +1035,19 @@ const Feed = () => {
 
       {/* Spacer for fixed header */}
       <div className="h-14" />
+
+      {/* Contextual Feed Tabs */}
+      <FeedTabs 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange}
+        isAuthenticated={isAuthenticated}
+        onAuthRequired={checkAuth}
+      />
+
+      {/* View Mode Switcher */}
+      <div className="flex justify-end px-4 py-2 bg-background">
+        <FeedViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
+      </div>
 
       {/* New Posts Banner */}
       <AnimatePresence>
@@ -1097,11 +1164,12 @@ const Feed = () => {
       {/* Business Feed Banner - for business owners */}
       <BusinessFeedBanner />
 
-      {/* Feed */}
+      {/* Feed - with view mode switching */}
       <div className="max-w-lg mx-auto">
-        {loading ?
-      // Enhanced skeleton using new component
-      <SkeletonFeed /> : mixedFeed.length === 0 ?
+        {loading ? <SkeletonFeed /> : 
+        viewMode === "grid" ? <FeedGridView items={mixedFeed} /> :
+        viewMode === "video" ? <FeedVideoView items={mixedFeed} currentUserId={user?.id} onLike={handleLike} onSave={handleSave} /> :
+        mixedFeed.length === 0 ?
       // Enhanced Empty state
       <motion.div initial={{
         opacity: 0,
@@ -1123,11 +1191,11 @@ const Feed = () => {
         }} className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
               <Camera className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
             </motion.div>
-            <h3 className="text-[24px] font-bold text-[#262626] mb-2">
-              {feedFilter === "following" ? "אין פוסטים" : "שתף תמונות"}
+            <h3 className="text-[24px] font-bold text-foreground mb-2">
+              {activeTab === "following" ? "אין פוסטים" : "שתף תמונות"}
             </h3>
-            <p className="text-[#8E8E8E] text-[15px] mb-6 max-w-xs mx-auto">
-              {feedFilter === "following" ? "עקוב אחרי אנשים כדי לראות תמונות" : "כשתשתף תמונות, הן יופיעו בפרופיל שלך"}
+            <p className="text-muted-foreground text-[15px] mb-6 max-w-xs mx-auto">
+              {activeTab === "following" ? "עקוב אחרי אנשים כדי לראות תמונות" : "כשתשתף תמונות, הן יופיעו בפרופיל שלך"}
             </p>
             <motion.button whileHover={{
           scale: 1.05
