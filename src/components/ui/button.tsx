@@ -5,26 +5,33 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-button hover:bg-primary-hover hover:shadow-button-hover hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
-        accent: "bg-accent text-accent-foreground shadow-button hover:bg-accent-hover hover:shadow-button-hover hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
-        outline: "border border-border bg-transparent hover:bg-muted/50 hover:border-muted-foreground/30 active:bg-muted active:scale-[0.98] transform",
-        secondary: "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary-light hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
+        default: "bg-primary text-primary-foreground shadow-button hover:bg-primary-hover hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        accent: "bg-accent text-accent-foreground shadow-button hover:bg-accent-hover hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        outline: "border-2 border-border bg-transparent hover:bg-muted/50 hover:border-primary/50 active:bg-muted active:scale-[0.98] transform",
+        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary-light hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         ghost: "bg-transparent hover:bg-muted/50 active:bg-muted active:scale-[0.98] transform",
         link: "text-primary underline-offset-4 hover:underline hover:opacity-80 active:opacity-60",
-        success: "bg-success text-success-foreground hover:bg-success-dark hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
-        instagram: "bg-primary text-primary-foreground font-semibold hover:bg-primary/90 hover:opacity-90 active:opacity-70 active:scale-[0.98] transform",
+        success: "bg-success text-success-foreground hover:bg-success-dark hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        // PetID specific variants
+        petid: "bg-gradient-petid text-white font-semibold shadow-button hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        warm: "bg-gradient-warm text-white font-semibold shadow-button hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        gold: "bg-petid-gold text-petid-gold-foreground font-semibold shadow-button hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        coral: "bg-petid-coral text-white font-semibold shadow-button hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        // Legacy aliases
+        instagram: "bg-primary text-primary-foreground font-semibold hover:bg-primary-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         instagramSecondary: "bg-transparent text-primary font-semibold hover:text-primary/80 hover:opacity-80 active:opacity-60",
       },
       size: {
         default: "h-11 px-6 py-3",
-        sm: "h-9 rounded-md px-4 py-2",
-        lg: "h-12 rounded-lg px-8 py-3",
-        icon: "h-10 w-10",
+        sm: "h-9 rounded-lg px-4 py-2",
+        lg: "h-12 rounded-2xl px-8 py-3",
+        xl: "h-14 rounded-2xl px-10 py-4 text-base",
+        icon: "h-10 w-10 rounded-xl",
       },
     },
     defaultVariants: {

@@ -14,280 +14,302 @@
 @tailwind utilities;
 
 /* 
- * INSTAGRAM-STYLE DESIGN SYSTEM
+ * PETID DESIGN SYSTEM
  * ==============================
- * Minimal, clean, high contrast
- * Black & white with strategic color accents
+ * Warm, caring, organic design
+ * Differentiated from Instagram with teal/gold palette
  */
 
 @layer base {
   :root {
     /* ===========================
-     * INSTAGRAM CORE COLORS
+     * PETID BRAND COLORS
      * =========================== */
     
-    /* Primary - Instagram Blue (used sparingly) */
-    --ig-blue: 209 100% 55%;                  /* #0095F6 */
-    --ig-blue-hover: 209 100% 48%;
-    --ig-blue-foreground: 0 0% 100%;
+    /* Primary - Warm Teal (caring, trustworthy) */
+    --petid-teal: 174 62% 47%;                /* #2EB8A6 - Warm Teal */
+    --petid-teal-hover: 174 62% 40%;
+    --petid-teal-light: 174 62% 55%;
+    --petid-teal-foreground: 0 0% 100%;
 
-    /* Like/Heart - Instagram Red */
-    --ig-red: 355 82% 60%;                    /* #ED4956 */
-    --ig-red-foreground: 0 0% 100%;
+    /* Secondary - Warm Gold (loyalty, premium) */
+    --petid-gold: 42 100% 50%;                /* #FFB800 - Warm Gold */
+    --petid-gold-light: 42 100% 60%;
+    --petid-gold-foreground: 0 0% 10%;
 
-    /* Neutral Palette - Minimalist */
-    --ig-black: 0 0% 0%;                      /* Pure black */
-    --ig-gray-900: 0 0% 15%;                  /* #262626 */
-    --ig-gray-700: 0 0% 38%;                  /* #616161 */
-    --ig-gray-500: 0 0% 56%;                  /* #8E8E8E */
-    --ig-gray-400: 0 0% 74%;                  /* #BDBDBD */
-    --ig-gray-300: 0 0% 86%;                  /* #DBDBDB */
-    --ig-gray-100: 0 0% 98%;                  /* #FAFAFA */
-    --ig-white: 0 0% 100%;                    /* Pure white */
+    /* Accent - Coral (love, warmth) */
+    --petid-coral: 12 76% 61%;                /* #E8725A - Soft Coral */
+    --petid-coral-light: 12 76% 70%;
+    --petid-coral-foreground: 0 0% 100%;
+
+    /* Like/Heart - Warm Rose */
+    --petid-heart: 350 80% 60%;               /* #E85A6F */
+    --petid-heart-foreground: 0 0% 100%;
+
+    /* Neutral Palette - Warm undertones */
+    --petid-black: 200 10% 10%;               /* Warm black */
+    --petid-gray-900: 200 8% 18%;
+    --petid-gray-700: 200 6% 40%;
+    --petid-gray-500: 200 4% 55%;
+    --petid-gray-400: 200 4% 72%;
+    --petid-gray-300: 200 6% 88%;
+    --petid-gray-100: 40 20% 98%;             /* Warm off-white */
+    --petid-white: 40 20% 99%;                /* Creamy white */
 
     /* ===========================
      * SEMANTIC TOKENS
      * =========================== */
 
-    /* Primary - Instagram Blue (for CTAs only) */
-    --primary: 209 100% 55%;
+    /* Primary - Warm Teal */
+    --primary: 174 62% 47%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 209 100% 48%;
-    --primary-light: 209 100% 65%;
-    --primary-dark: 209 100% 45%;
-    --primary-pressed: 209 100% 40%;
+    --primary-hover: 174 62% 40%;
+    --primary-light: 174 62% 55%;
+    --primary-dark: 174 62% 38%;
+    --primary-pressed: 174 62% 35%;
 
-    /* Secondary - Light gray */
-    --secondary: 0 0% 98%;
-    --secondary-foreground: 0 0% 15%;
-    --secondary-light: 0 0% 100%;
-    --secondary-dark: 0 0% 96%;
+    /* Secondary - Warm Gold */
+    --secondary: 42 100% 96%;
+    --secondary-foreground: 200 10% 15%;
+    --secondary-light: 42 100% 98%;
+    --secondary-dark: 42 100% 94%;
 
-    /* Accent - Same as primary for consistency */
-    --accent: 209 100% 55%;
+    /* Accent - Coral */
+    --accent: 12 76% 61%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 209 100% 48%;
-    --accent-light: 209 100% 65%;
+    --accent-hover: 12 76% 55%;
+    --accent-light: 12 76% 70%;
 
-    /* Success */
-    --success: 145 63% 42%;
+    /* Success - Friendly Green */
+    --success: 152 60% 45%;
     --success-foreground: 0 0% 100%;
-    --success-light: 145 63% 52%;
-    --success-dark: 145 63% 32%;
+    --success-light: 152 60% 55%;
+    --success-dark: 152 60% 35%;
 
-    /* Warning */
-    --warning: 28 91% 56%;
-    --warning-foreground: 0 0% 100%;
-    --warning-light: 28 91% 66%;
+    /* Warning - Warm Amber */
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 10%;
+    --warning-light: 38 92% 65%;
 
-    /* Error/Destructive */
-    --error: 355 82% 60%;
+    /* Error/Destructive - Soft Red */
+    --error: 350 80% 55%;
     --error-foreground: 0 0% 100%;
-    --error-light: 355 82% 70%;
-    --destructive: 355 82% 60%;
+    --error-light: 350 80% 65%;
+    --destructive: 350 80% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Info */
-    --info: 209 100% 55%;
+    /* Info - Teal */
+    --info: 174 62% 47%;
     --info-foreground: 0 0% 100%;
-    --info-light: 209 100% 68%;
+    --info-light: 174 62% 60%;
 
-    /* Background & Surface - Pure white */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
-    --surface: 0 0% 100%;
+    /* Background & Surface - Warm whites */
+    --background: 40 20% 99%;
+    --foreground: 200 10% 10%;
+    --surface: 40 20% 99%;
     --surface-elevated: 0 0% 100%;
 
-    /* Muted */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    /* Muted - Warm gray */
+    --muted: 40 15% 96%;
+    --muted-foreground: 200 8% 45%;
 
-    /* Border - Very subtle */
-    --border: 0 0% 86%;
-    --border-light: 0 0% 92%;
-    --input: 0 0% 98%;
-    --ring: 209 100% 55%;
+    /* Border - Warm subtle */
+    --border: 40 10% 88%;
+    --border-light: 40 10% 92%;
+    --input: 40 15% 97%;
+    --ring: 174 62% 47%;
 
     /* Card & Popover */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --card-border: 0 0% 86%;
+    --card-foreground: 200 10% 10%;
+    --card-border: 40 10% 88%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 200 10% 10%;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 0%;
-    --sidebar-primary: 209 100% 55%;
+    --sidebar-foreground: 200 10% 10%;
+    --sidebar-primary: 174 62% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 0 0% 86%;
-    --sidebar-ring: 209 100% 55%;
+    --sidebar-accent: 40 15% 96%;
+    --sidebar-accent-foreground: 200 10% 10%;
+    --sidebar-border: 40 10% 88%;
+    --sidebar-ring: 174 62% 47%;
     --sidebar: 0 0% 100%;
 
     /* Header/Footer */
     --header-bg: 0 0% 100%;
-    --header-text: 0 0% 0%;
+    --header-text: 200 10% 10%;
     --footer-bg: 0 0% 100%;
-    --footer-text: 0 0% 0%;
+    --footer-text: 200 10% 10%;
 
     /* Toast */
     --toast-bg: 0 0% 100%;
-    --toast-border: 0 0% 86%;
-    --toast-text: 0 0% 0%;
+    --toast-border: 40 10% 88%;
+    --toast-text: 200 10% 10%;
 
     /* Tags */
-    --tag-bg: 0 0% 96%;
-    --tag-text: 0 0% 0%;
-    --tag-border: 0 0% 86%;
+    --tag-bg: 40 15% 96%;
+    --tag-text: 200 10% 10%;
+    --tag-border: 40 10% 88%;
 
-    /* NO GRADIENTS - Instagram style */
-    --gradient-primary: linear-gradient(135deg, hsl(209 100% 55%) 0%, hsl(209 100% 45%) 100%);
-    --gradient-instagram: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-    --gradient-story: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    /* PETID Gradients - Warm & Organic */
+    --gradient-primary: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(174 62% 40%) 100%);
+    --gradient-petid: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(42 100% 50%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(12 76% 61%) 0%, hsl(42 100% 55%) 100%);
+    --gradient-story: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(12 76% 61%) 50%, hsl(42 100% 55%) 100%);
+    --gradient-instagram: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(12 76% 61%) 50%, hsl(42 100% 55%) 100%);
 
-    /* Minimal Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.1);
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
-    --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.12);
-    --shadow-button: none;
-    --shadow-button-hover: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --shadow-2xs: 0 1px 2px rgba(0, 0, 0, 0.03);
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.15);
+    /* Soft Shadows - More organic */
+    --shadow-sm: 0 2px 4px rgba(46, 184, 166, 0.08);
+    --shadow-md: 0 4px 8px rgba(46, 184, 166, 0.1);
+    --shadow-lg: 0 8px 16px rgba(46, 184, 166, 0.12);
+    --shadow-xl: 0 12px 24px rgba(46, 184, 166, 0.15);
+    --shadow-card: 0 2px 8px rgba(46, 184, 166, 0.08);
+    --shadow-elevated: 0 8px 24px rgba(46, 184, 166, 0.15);
+    --shadow-button: 0 2px 4px rgba(46, 184, 166, 0.2);
+    --shadow-button-hover: 0 4px 12px rgba(46, 184, 166, 0.25);
+    --shadow-2xs: 0 1px 2px rgba(46, 184, 166, 0.05);
+    --shadow-xs: 0 1px 3px rgba(46, 184, 166, 0.08);
+    --shadow: 0 2px 6px rgba(46, 184, 166, 0.1);
+    --shadow-2xl: 0 20px 40px rgba(46, 184, 166, 0.2);
 
-    /* Radius - Consistent */
-    --radius: 0.5rem;
-    --radius-lg: 0.75rem;
+    /* Radius - More rounded, organic feel */
+    --radius: 0.875rem;
+    --radius-lg: 1.375rem;
+    --radius-xl: 1.75rem;
 
     /* Charts */
-    --chart-1: 209 100% 55%;
-    --chart-2: 355 82% 60%;
-    --chart-3: 145 63% 42%;
-    --chart-4: 28 91% 56%;
-    --chart-5: 0 0% 56%;
+    --chart-1: 174 62% 47%;
+    --chart-2: 42 100% 50%;
+    --chart-3: 12 76% 61%;
+    --chart-4: 152 60% 45%;
+    --chart-5: 350 80% 60%;
 
     /* Typography */
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Assistant', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --tracking-normal: -0.011em;
     --spacing: 0.25rem;
 
-    /* Legacy support */
-    --petid-blue: 209 100% 55%;
-    --petid-blue-light: 209 100% 65%;
-    --petid-turquoise: 209 100% 55%;
-    --petid-gold: 45 100% 48%;
-    --petid-teal: 209 100% 55%;
-    --shop-blue: 209 100% 55%;
-    --shop-turquoise: 209 100% 55%;
-    --shop-light-blue: 209 100% 65%;
-    --ig-orange: 28 91% 56%;
-    --icon-base: 0 0% 15%;
-    --icon-blue: 209 100% 55%;
-    --icon-dark-blue: 209 100% 45%;
-    --icon-orange: 28 91% 56%;
-    --icon-active: 209 100% 55%;
-    --icon-disabled: 0 0% 56%;
-    --yellow-primary: 45 100% 48%;
+    /* Legacy support - Updated to PetID palette */
+    --petid-blue: 174 62% 47%;
+    --petid-blue-light: 174 62% 55%;
+    --petid-turquoise: 174 62% 47%;
+    --shop-blue: 174 62% 47%;
+    --shop-turquoise: 174 62% 47%;
+    --shop-light-blue: 174 62% 55%;
+    --ig-blue: 174 62% 47%;
+    --ig-blue-hover: 174 62% 40%;
+    --ig-blue-foreground: 0 0% 100%;
+    --ig-red: 350 80% 60%;
+    --ig-red-foreground: 0 0% 100%;
+    --ig-orange: 42 100% 50%;
+    --icon-base: 200 10% 15%;
+    --icon-blue: 174 62% 47%;
+    --icon-dark-blue: 174 62% 40%;
+    --icon-orange: 42 100% 50%;
+    --icon-active: 174 62% 47%;
+    --icon-disabled: 200 8% 55%;
+    --yellow-primary: 42 100% 50%;
     --yellow-primary-foreground: 0 0% 10%;
   }
 
-  /* DARK MODE - Pure black like Instagram */
+  /* DARK MODE - Warm dark theme */
   .dark {
-    --ig-blue: 209 100% 55%;
-    --ig-red: 355 82% 60%;
+    --petid-teal: 174 62% 50%;
+    --petid-gold: 42 100% 55%;
+    --petid-coral: 12 76% 65%;
+    --petid-heart: 350 80% 65%;
     
-    --ig-black: 0 0% 100%;
-    --ig-gray-900: 0 0% 92%;
-    --ig-gray-700: 0 0% 75%;
-    --ig-gray-500: 0 0% 60%;
-    --ig-gray-400: 0 0% 45%;
-    --ig-gray-300: 0 0% 30%;
-    --ig-gray-100: 0 0% 15%;
-    --ig-white: 0 0% 0%;
+    --petid-black: 0 0% 100%;
+    --petid-gray-900: 0 0% 92%;
+    --petid-gray-700: 0 0% 75%;
+    --petid-gray-500: 0 0% 60%;
+    --petid-gray-400: 0 0% 45%;
+    --petid-gray-300: 0 0% 30%;
+    --petid-gray-100: 0 0% 15%;
+    --petid-white: 0 0% 0%;
 
-    --primary: 209 100% 55%;
+    --primary: 174 62% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 209 100% 60%;
-    --primary-light: 209 100% 65%;
-    --primary-dark: 209 100% 45%;
+    --primary-hover: 174 62% 55%;
+    --primary-light: 174 62% 60%;
+    --primary-dark: 174 62% 42%;
 
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 92%;
     --secondary-light: 0 0% 20%;
 
-    --accent: 209 100% 55%;
+    --accent: 12 76% 65%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 145 63% 48%;
-    --warning: 28 91% 60%;
-    --error: 355 82% 64%;
-    --destructive: 355 82% 64%;
+    --success: 152 60% 50%;
+    --warning: 38 92% 60%;
+    --error: 350 80% 60%;
+    --destructive: 350 80% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --surface: 0 0% 0%;
-    --surface-elevated: 0 0% 8%;
+    --background: 200 15% 8%;
+    --foreground: 0 0% 98%;
+    --surface: 200 15% 8%;
+    --surface-elevated: 200 12% 12%;
 
-    --muted: 0 0% 15%;
+    --muted: 200 10% 18%;
     --muted-foreground: 0 0% 65%;
 
-    --border: 0 0% 20%;
-    --border-light: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 209 100% 55%;
+    --border: 200 10% 22%;
+    --border-light: 200 10% 18%;
+    --input: 200 10% 18%;
+    --ring: 174 62% 50%;
 
-    --card: 0 0% 0%;
-    --card-foreground: 0 0% 100%;
-    --card-border: 0 0% 20%;
+    --card: 200 15% 10%;
+    --card-foreground: 0 0% 98%;
+    --card-border: 200 10% 22%;
 
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 200 12% 12%;
+    --popover-foreground: 0 0% 98%;
 
-    --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 209 100% 55%;
+    --sidebar-background: 200 15% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 174 62% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar: 0 0% 0%;
+    --sidebar-accent: 200 10% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 200 10% 22%;
+    --sidebar: 200 15% 8%;
 
-    --header-bg: 0 0% 0%;
-    --header-text: 0 0% 100%;
-    --footer-bg: 0 0% 0%;
-    --footer-text: 0 0% 100%;
+    --header-bg: 200 15% 8%;
+    --header-text: 0 0% 98%;
+    --footer-bg: 200 15% 8%;
+    --footer-text: 0 0% 98%;
 
-    --toast-bg: 0 0% 15%;
-    --toast-border: 0 0% 25%;
-    --toast-text: 0 0% 100%;
+    --toast-bg: 200 10% 18%;
+    --toast-border: 200 10% 25%;
+    --toast-text: 0 0% 98%;
 
-    --tag-bg: 0 0% 15%;
-    --tag-text: 0 0% 100%;
-    --tag-border: 0 0% 25%;
+    --tag-bg: 200 10% 18%;
+    --tag-text: 0 0% 98%;
+    --tag-border: 200 10% 25%;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.5);
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
-    --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.6);
 
-    --chart-1: 209 100% 60%;
-    --chart-2: 355 82% 65%;
-    --chart-3: 145 63% 50%;
-    --chart-4: 28 91% 65%;
-    --chart-5: 0 0% 65%;
+    --chart-1: 174 62% 55%;
+    --chart-2: 42 100% 60%;
+    --chart-3: 12 76% 65%;
+    --chart-4: 152 60% 55%;
+    --chart-5: 350 80% 65%;
 
-    --petid-blue: 209 100% 55%;
-    --petid-turquoise: 209 100% 55%;
-    --shop-blue: 209 100% 55%;
-    --shop-turquoise: 209 100% 55%;
+    --petid-blue: 174 62% 50%;
+    --petid-turquoise: 174 62% 50%;
+    --shop-blue: 174 62% 50%;
+    --shop-turquoise: 174 62% 50%;
+    --ig-blue: 174 62% 50%;
+    --ig-red: 350 80% 65%;
+    --ig-orange: 42 100% 55%;
   }
 
   /* High Contrast Mode */
@@ -296,7 +318,7 @@
     --background: 0 0% 100%;
     --muted: 0 0% 70%;
     --border: 0 0% 0%;
-    --primary: 209 100% 40%;
+    --primary: 174 62% 35%;
   }
 
   .dark.high-contrast {
@@ -304,7 +326,7 @@
     --background: 0 0% 0%;
     --muted: 0 0% 40%;
     --border: 0 0% 100%;
-    --primary: 209 100% 60%;
+    --primary: 174 62% 55%;
   }
 
   /* Reduce Motion */
