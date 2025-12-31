@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { LayoutGrid, List, Play } from "lucide-react";
+import { LayoutGrid, List, Play, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export type FeedViewMode = "feed" | "grid" | "video";
+export type FeedViewMode = "feed" | "grid" | "video" | "masonry";
 
 interface FeedViewSwitcherProps {
   viewMode: FeedViewMode;
@@ -14,6 +14,7 @@ const viewModes: { id: FeedViewMode; label: string; icon: React.ElementType }[] 
   { id: "feed", label: "פיד", icon: List },
   { id: "grid", label: "גריד", icon: LayoutGrid },
   { id: "video", label: "וידאו", icon: Play },
+  { id: "masonry", label: "Pinterest", icon: LayoutDashboard },
 ];
 
 export const FeedViewSwitcher = ({ viewMode, onViewModeChange }: FeedViewSwitcherProps) => {

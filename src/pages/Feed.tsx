@@ -35,8 +35,11 @@ import { BusinessFeedBanner } from "@/components/business/BusinessFeedBanner";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { SkeletonFeed } from "@/components/ui/enhanced-skeleton";
-import { FeedTabs, FeedViewSwitcher, FeedGridView, FeedVideoView, type FeedTab, type FeedViewMode } from "@/components/feed";
+import { FeedTabs, FeedViewSwitcher, FeedGridView, FeedVideoView, FeedMasonryView, type FeedTab, type FeedViewMode } from "@/components/feed";
 import { useFeedPersonalization } from "@/hooks/useFeedPersonalization";
+import { useLocation } from "@/hooks/useLocation";
+import { useEngagement } from "@/hooks/useEngagement";
+import { filterSafeContent, sortBySafetyScore } from "@/lib/contentSafety";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -272,6 +275,8 @@ const Feed = () => {
   const [activeTab, setActiveTab] = useState<FeedTab>("foryou");
   const [viewMode, setViewMode] = useState<FeedViewMode>("feed");
   const { config, features, sortByPriority, applyFeedRules, defaultTab, isBusiness, isOrg } = useFeedPersonalization();
+  const { requestLocation, city, hasLocation, isNearby } = useLocation();
+  const { trackLike, trackSave, trackClick, startViewTimer, endViewTimer } = useEngagement();
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [pets, setPets] = useState<any[]>([]);
   const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
@@ -437,13 +442,9 @@ const Feed = () => {
   // Handle tab changes
   const handleTabChange = (tab: FeedTab) => {
     setActiveTab(tab);
-    // Navigate to appropriate page for marketplace and adopt tabs
-    if (tab === "marketplace") {
-      // Stay on feed but filter to products
-    } else if (tab === "adopt") {
-      // Stay on feed but filter to adoption
-    } else if (tab === "nearby") {
-      // Would need location - for now just show local content
+    // Request location for nearby tab
+    if (tab === "nearby" && !hasLocation) {
+      requestLocation();
     }
   };
   const fetchPosts = useCallback(async (pageNum: number, append = false) => {
@@ -1169,6 +1170,7 @@ const Feed = () => {
         {loading ? <SkeletonFeed /> : 
         viewMode === "grid" ? <FeedGridView items={mixedFeed} /> :
         viewMode === "video" ? <FeedVideoView items={mixedFeed} currentUserId={user?.id} onLike={handleLike} onSave={handleSave} /> :
+        viewMode === "masonry" ? <FeedMasonryView items={mixedFeed} /> :
         mixedFeed.length === 0 ?
       // Enhanced Empty state
       <motion.div initial={{
