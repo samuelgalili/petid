@@ -706,7 +706,7 @@ export default function Documents() {
               {documents.length === 0 && (
                 <Button 
                   onClick={() => setIsDialogOpen(true)}
-                  className="bg-gradient-to-r from-primary via-accent to-primary text-white rounded-xl px-8 h-12 text-base font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-opacity gap-2"
+                  className="bg-gradient-to-r from-teal-500 to-rose-400 text-white rounded-full px-8 h-12 text-base font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all gap-2"
                 >
                   <Upload className="w-5 h-5" />
                   העלה מסמך ראשון
