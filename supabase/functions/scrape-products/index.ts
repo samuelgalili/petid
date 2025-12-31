@@ -320,11 +320,12 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // SCAN MODE: Just map the site and return URL count
+    // SCAN MODE: Scrape the page and extract product URLs directly
     if (mode === 'scan') {
-      console.log('Scan mode: Mapping website URLs for', baseUrl);
+      console.log('Scan mode: Scraping page to find product URLs for', baseUrl);
       
-      const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
+      // First try to scrape the page directly to extract links
+      const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${firecrawlKey}`,
@@ -332,21 +333,37 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           url: baseUrl,
-          limit: 5000,
-          includeSubdomains: false,
+          formats: ['links', 'html'],
+          onlyMainContent: false,
         }),
       });
 
-      const mapData = await mapResponse.json();
+      const scrapeData = await scrapeResponse.json();
       
-      if (!mapResponse.ok) {
-        throw new Error(mapData.error || 'Failed to map website');
+      if (!scrapeResponse.ok) {
+        console.error('Scrape failed:', scrapeData);
+        throw new Error(scrapeData.error || 'Failed to scrape website');
       }
 
-      const allUrls: string[] = mapData.links || [];
-      console.log('Found', allUrls.length, 'total URLs');
+      // Get links from the scrape response
+      let allUrls: string[] = scrapeData.data?.links || scrapeData.links || [];
+      console.log('Found', allUrls.length, 'links from scrape');
+      
+      // Also extract product URLs from HTML if available
+      const html = scrapeData.data?.html || scrapeData.html || '';
+      if (html) {
+        const extractedUrls = extractProductUrls(html, new URL(baseUrl).origin);
+        console.log('Extracted', extractedUrls.length, 'product URLs from HTML');
+        
+        // Also get pagination URLs and scrape them for more products
+        const navUrls = extractNavigationUrls(html, new URL(baseUrl).origin);
+        console.log('Found', navUrls.length, 'navigation URLs');
+        
+        // Combine all URLs
+        allUrls = [...new Set([...allUrls, ...extractedUrls])];
+      }
 
-      // Filter for product URLs - be more inclusive
+      // Filter for product URLs
       let productUrls = allUrls.filter(url => {
         const lowerUrl = url.toLowerCase();
         let decodedUrl = lowerUrl;
@@ -354,25 +371,69 @@ Deno.serve(async (req) => {
           decodedUrl = decodeURIComponent(url).toLowerCase();
         } catch (e) {}
         
-        return lowerUrl.includes('/product/') || 
-               decodedUrl.includes('/product/') ||
-               (lowerUrl.includes('/product-category/') === false && lowerUrl.match(/homepetcenter\.co\.il\/[^\/]+\/?$/));
+        // Check if it's a product URL
+        return (lowerUrl.includes('/product/') || decodedUrl.includes('/product/')) && 
+               !lowerUrl.includes('/product-category/');
       });
 
-      // If filters are provided, apply them - otherwise keep all product URLs
-      if (petTypes.length > 0 || productCategories.length > 0) {
-        // Apply pet type filter
-        if (petTypes.length > 0) {
-          productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
-        }
+      console.log('Found', productUrls.length, 'product URLs after filtering');
 
-        // Apply product category filter
-        if (productCategories.length > 0) {
-          productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
+      // If we found no product URLs, try the map API as fallback
+      if (productUrls.length === 0) {
+        console.log('No product URLs found, trying map API as fallback');
+        
+        // Get base domain for map API
+        const urlObj = new URL(baseUrl);
+        const baseDomain = urlObj.origin;
+        
+        const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${firecrawlKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: baseDomain,
+            search: 'product',
+            limit: 5000,
+            includeSubdomains: false,
+          }),
+        });
+
+        const mapData = await mapResponse.json();
+        
+        if (mapResponse.ok && mapData.links) {
+          const mapUrls: string[] = mapData.links || [];
+          console.log('Map API found', mapUrls.length, 'URLs');
+          
+          // Filter for product URLs that match the base URL category
+          const decodedBase = decodeURIComponent(baseUrl).toLowerCase();
+          productUrls = mapUrls.filter(url => {
+            const lowerUrl = url.toLowerCase();
+            let decodedUrl = lowerUrl;
+            try {
+              decodedUrl = decodeURIComponent(url).toLowerCase();
+            } catch (e) {}
+            
+            return (lowerUrl.includes('/product/') || decodedUrl.includes('/product/'));
+          });
+          
+          console.log('Filtered to', productUrls.length, 'product URLs from map');
         }
       }
 
-      console.log('Found', productUrls.length, 'filtered product URLs');
+      // Apply pet type and category filters if provided
+      if (petTypes.length > 0) {
+        productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
+        console.log('After pet type filter:', productUrls.length, 'URLs');
+      }
+
+      if (productCategories.length > 0) {
+        productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
+        console.log('After category filter:', productUrls.length, 'URLs');
+      }
+
+      console.log('Final result:', productUrls.length, 'product URLs');
 
       return new Response(
         JSON.stringify({ 
