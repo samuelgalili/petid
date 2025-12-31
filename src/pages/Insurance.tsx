@@ -359,9 +359,10 @@ const Insurance = () => {
           subtitle="פוליסת ביטוח כלבים וחתולים מבית ליברה - מהדורה ראשונה 2021"
           tiers={pricingTiers}
           onTierSelect={handleTierSelect}
-          footerTitle="יש לך שאלות?"
-          footerDescription="נציגי ליברה ישמחו לעזור לך לבחור את המסלול המתאים"
-          footerButtonText="דברו עם נציג"
+          footerTitle="לפרטים נוספים והצטרפות"
+          footerDescription="עברו לאתר ליברה למילוי הצעה לביטוח"
+          footerButtonText="לרכישת פוליסה"
+          footerButtonLink="https://www.lbr.co.il/Pet/policyProposal/0"
         />
       </div>
 

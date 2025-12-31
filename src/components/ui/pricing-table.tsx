@@ -37,6 +37,7 @@ export interface PricingProps {
   footerTitle?: string
   footerDescription?: string
   footerButtonText?: string
+  footerButtonLink?: string
   className?: string
   onTierSelect?: (tierName: string) => void
 }
@@ -49,6 +50,7 @@ export function Pricing({
   footerTitle,
   footerDescription,
   footerButtonText,
+  footerButtonLink,
   className,
   onTierSelect,
 }: PricingProps) {
@@ -202,8 +204,19 @@ export function Pricing({
               )}
             </div>
             {footerButtonText && (
-              <Button variant="outline" className="shrink-0">
-                {footerButtonText}
+              <Button 
+                variant="outline" 
+                className="shrink-0"
+                onClick={() => footerButtonLink && window.open(footerButtonLink, '_blank')}
+                asChild={!!footerButtonLink}
+              >
+                {footerButtonLink ? (
+                  <a href={footerButtonLink} target="_blank" rel="noopener noreferrer">
+                    {footerButtonText}
+                  </a>
+                ) : (
+                  footerButtonText
+                )}
               </Button>
             )}
           </Card>
