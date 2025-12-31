@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppRole = 'user' | 'org' | 'business' | 'admin';
+export type AppRole = 'user' | 'org' | 'business' | 'moderator' | 'admin';
 
 interface UseUserRoleReturn {
   role: AppRole;
   roles: AppRole[];
   isAdmin: boolean;
+  isModerator: boolean;
   isBusiness: boolean;
   isOrg: boolean;
   isLoading: boolean;
   hasRole: (role: AppRole) => boolean;
+  isModeratorOrAdmin: boolean;
   refetch: () => Promise<void>;
 }
 
@@ -58,17 +60,23 @@ export const useUserRole = (): UseUserRoleReturn => {
   // Get highest priority role
   const getHighestRole = (): AppRole => {
     if (roles.includes('admin')) return 'admin';
+    if (roles.includes('moderator')) return 'moderator';
     if (roles.includes('business')) return 'business';
     if (roles.includes('org')) return 'org';
     return 'user';
   };
 
+  const isAdmin = hasRole('admin');
+  const isModerator = hasRole('moderator');
+
   return {
     role: getHighestRole(),
     roles,
-    isAdmin: hasRole('admin'),
+    isAdmin,
+    isModerator,
     isBusiness: hasRole('business'),
     isOrg: hasRole('org'),
+    isModeratorOrAdmin: isAdmin || isModerator,
     isLoading,
     hasRole,
     refetch: fetchRoles,
@@ -85,6 +93,7 @@ export const PERMISSIONS = {
     canCreateOrders: true,
     canViewOwnOrders: true,
     canReport: true,
+    canLikeAndComment: true,
   },
   // Org permissions (shelter/rescue)
   org: {
@@ -99,7 +108,16 @@ export const PERMISSIONS = {
     canCreateCoupons: true,
     canViewBusinessInsights: true,
   },
-  // Admin permissions
+  // Moderator permissions
+  moderator: {
+    canViewReports: true,
+    canHidePosts: true,
+    canLockPosts: true,
+    canFreezeComments: true,
+    canWarnUsers: true,
+    canModerate: true,
+  },
+  // Admin permissions (everything)
   admin: {
     canManageUsers: true,
     canManageAllContent: true,
@@ -107,15 +125,28 @@ export const PERMISSIONS = {
     canModerate: true,
     canViewReports: true,
     canManageRoles: true,
+    canBlockUsers: true,
+    canDeleteUsers: true,
+    canViewAuditLog: true,
   },
 } as const;
 
 export const usePermissions = () => {
-  const { role, hasRole } = useUserRole();
+  const { role, hasRole, isModeratorOrAdmin } = useUserRole();
 
   const can = (permission: string): boolean => {
     // Admin has all permissions
     if (hasRole('admin')) return true;
+
+    // Moderator has moderator + user permissions
+    if (hasRole('moderator')) {
+      if (permission in PERMISSIONS.moderator) {
+        return PERMISSIONS.moderator[permission as keyof typeof PERMISSIONS.moderator];
+      }
+      if (permission in PERMISSIONS.user) {
+        return PERMISSIONS.user[permission as keyof typeof PERMISSIONS.user];
+      }
+    }
 
     // Check role-specific permissions
     const rolePerms = PERMISSIONS[role as keyof typeof PERMISSIONS];
@@ -131,5 +162,5 @@ export const usePermissions = () => {
     return false;
   };
 
-  return { can, role, hasRole };
+  return { can, role, hasRole, isModeratorOrAdmin };
 };
