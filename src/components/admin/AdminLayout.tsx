@@ -19,7 +19,8 @@ import {
   X,
   LogOut,
   MapPin,
-  Ticket
+  Ticket,
+  Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -49,7 +50,7 @@ const navItems = [
   { icon: Ticket, label: "קופונים", href: "/admin/coupons" },
   { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders" },
   { icon: MapPin, label: "פארקים", href: "/admin/parks" },
-  { icon: Download, label: "סקראפר מוצרים", href: "/admin/scraper" },
+  { icon: Bot, label: "סקראפר מוצרים", href: "/admin/scraper" },
   { icon: Bell, label: "התראות", href: "/admin/notifications" },
   { icon: History, label: "לוג פעילות", href: "/admin/audit" },
   { icon: Settings, label: "הגדרות", href: "/admin/settings" },
