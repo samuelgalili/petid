@@ -233,39 +233,59 @@ function extractNavigationUrls(html: string, baseUrl: string): string[] {
   return urls;
 }
 
-// Map pet types to URL patterns
+// Map pet types to URL patterns (including URL-encoded Hebrew)
 const petTypePatterns: Record<string, string[]> = {
-  'dog': ['כלב', 'כלבים', 'dog', 'dogs', '/dogs/', '/dog/'],
-  'cat': ['חתול', 'חתולים', 'cat', 'cats', '/cats/', '/cat/'],
-  'bird': ['ציפור', 'ציפורים', 'bird', 'birds', '/birds/', '/bird/'],
+  'dog': ['כלב', 'כלבים', 'dog', 'dogs', '/dogs/', '/dog/', '%d7%9b%d7%9c%d7%91', '%D7%9B%D7%9C%D7%91'],
+  'cat': ['חתול', 'חתולים', 'cat', 'cats', '/cats/', '/cat/', '%d7%97%d7%aa%d7%95%d7%9c', '%D7%97%D7%AA%D7%95%D7%9C'],
+  'bird': ['ציפור', 'ציפורים', 'bird', 'birds', '/birds/', '/bird/', '%d7%a6%d7%99%d7%a4%d7%95%d7%a8', '%D6%A6%D7%99%D7%A4%D7%95%D7%A8'],
 };
 
-// Map product categories to URL patterns
+// Map product categories to URL patterns (including URL-encoded Hebrew)
 const productCategoryPatterns: Record<string, string[]> = {
-  'dry-food': ['מזון-יבש', 'dry-food', 'יבש'],
-  'wet-food': ['מזון-רטוב', 'wet-food', 'רטוב', 'פאוץ', 'שימורים'],
-  'treats': ['חטיפים', 'treats', 'snacks', 'חטיף'],
-  'toys': ['צעצועים', 'toys', 'צעצוע'],
-  'accessories': ['אביזרים', 'accessories', 'אביזר'],
-  'health': ['בריאות', 'health', 'vitamins', 'ויטמינים'],
-  'grooming': ['טיפוח', 'grooming', 'שמפו'],
+  'dry-food': ['מזון-יבש', 'dry-food', 'יבש', '%d7%99%d7%91%d7%a9', '%D7%99%D7%91%D7%A9', 'מזון'],
+  'wet-food': ['מזון-רטוב', 'wet-food', 'רטוב', 'פאוץ', 'שימורים', '%d7%a8%d7%98%d7%95%d7%91', '%D7%A8%D7%98%D7%95%D7%91'],
+  'treats': ['חטיפים', 'treats', 'snacks', 'חטיף', '%d7%97%d7%98%d7%99%d7%a4', '%D7%97%D7%98%D7%99%D7%A4'],
+  'toys': ['צעצועים', 'toys', 'צעצוע', '%d7%a6%d7%a2%d7%a6%d7%95%d7%a2', '%D6%A6%D7%A2%D6%A6%D7%95%D7%A2'],
+  'accessories': ['אביזרים', 'accessories', 'אביזר', '%d7%90%d7%91%d7%99%d7%96%d7%a8', '%D7%90%D7%91%D7%99%D7%96%D7%A8'],
+  'health': ['בריאות', 'health', 'vitamins', 'ויטמינים', '%d7%91%d7%a8%d7%99%d7%90%d7%95%d7%aa', '%D7%91%D7%A8%D7%99%D7%90%D7%95%D7%AA'],
+  'grooming': ['טיפוח', 'grooming', 'שמפו', '%d7%98%d7%99%d7%a4%d7%95%d7%97', '%D7%98%D7%99%D7%A4%D7%95%D7%97'],
 };
 
 function urlMatchesPetTypes(url: string, petTypes: string[]): boolean {
   if (!petTypes || petTypes.length === 0) return true;
-  const lowerUrl = url.toLowerCase();
+  // Decode the URL for Hebrew comparison
+  let decodedUrl = url.toLowerCase();
+  try {
+    decodedUrl = decodeURIComponent(url).toLowerCase();
+  } catch (e) {
+    // If decoding fails, use original
+  }
+  
   return petTypes.some(petType => {
     const patterns = petTypePatterns[petType] || [];
-    return patterns.some(pattern => lowerUrl.includes(pattern.toLowerCase()));
+    return patterns.some(pattern => 
+      decodedUrl.includes(pattern.toLowerCase()) || 
+      url.toLowerCase().includes(pattern.toLowerCase())
+    );
   });
 }
 
 function urlMatchesProductCategories(url: string, categories: string[]): boolean {
   if (!categories || categories.length === 0) return true;
-  const lowerUrl = url.toLowerCase();
+  // Decode the URL for Hebrew comparison
+  let decodedUrl = url.toLowerCase();
+  try {
+    decodedUrl = decodeURIComponent(url).toLowerCase();
+  } catch (e) {
+    // If decoding fails, use original
+  }
+  
   return categories.some(cat => {
     const patterns = productCategoryPatterns[cat] || [];
-    return patterns.some(pattern => lowerUrl.includes(pattern.toLowerCase()));
+    return patterns.some(pattern => 
+      decodedUrl.includes(pattern.toLowerCase()) || 
+      url.toLowerCase().includes(pattern.toLowerCase())
+    );
   });
 }
 
@@ -326,21 +346,30 @@ Deno.serve(async (req) => {
       const allUrls: string[] = mapData.links || [];
       console.log('Found', allUrls.length, 'total URLs');
 
-      // Filter for product URLs
-      let productUrls = allUrls.filter(url => 
-        url.includes('/product/') || 
-        url.includes('/shop/') ||
-        url.match(/\/[^\/]+\/$/)
-      );
+      // Filter for product URLs - be more inclusive
+      let productUrls = allUrls.filter(url => {
+        const lowerUrl = url.toLowerCase();
+        let decodedUrl = lowerUrl;
+        try {
+          decodedUrl = decodeURIComponent(url).toLowerCase();
+        } catch (e) {}
+        
+        return lowerUrl.includes('/product/') || 
+               decodedUrl.includes('/product/') ||
+               (lowerUrl.includes('/product-category/') === false && lowerUrl.match(/homepetcenter\.co\.il\/[^\/]+\/?$/));
+      });
 
-      // Apply pet type filter
-      if (petTypes.length > 0) {
-        productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
-      }
+      // If filters are provided, apply them - otherwise keep all product URLs
+      if (petTypes.length > 0 || productCategories.length > 0) {
+        // Apply pet type filter
+        if (petTypes.length > 0) {
+          productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
+        }
 
-      // Apply product category filter
-      if (productCategories.length > 0) {
-        productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
+        // Apply product category filter
+        if (productCategories.length > 0) {
+          productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
+        }
       }
 
       console.log('Found', productUrls.length, 'filtered product URLs');
