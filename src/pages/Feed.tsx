@@ -1082,10 +1082,6 @@ const Feed = () => {
         </motion.div>
       )}
 
-      {/* Notes Section - Instagram style status */}
-      <div className="py-3 border-b border-border">
-        <NotesSection />
-      </div>
 
       {/* Business Feed Banner - for business owners */}
       <BusinessFeedBanner />
