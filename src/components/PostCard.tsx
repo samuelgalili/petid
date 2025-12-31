@@ -1,14 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Smile, Flag, ShoppingBag, Trophy, Sparkles, Link2, EyeOff, MinusCircle, Heart } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Heart, Send } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { OptimizedImage } from "@/components/OptimizedImage";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { ReportDialog } from "@/components/ReportDialog";
 import { ProductTagOverlay } from "@/components/post/ProductTagOverlay";
+import { HeartBurstAnimation } from "@/components/post/HeartBurstAnimation";
+import { ImageCarousel } from "@/components/post/ImageCarousel";
+import { CommentsPreview } from "@/components/post/CommentsPreview";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -37,6 +39,7 @@ interface PostCardProps {
     id: string;
     user_id: string;
     image_url: string;
+    media_urls?: string[];
     caption: string;
     created_at: string;
     user: {
@@ -87,18 +90,21 @@ export const PostCard = ({
   } | null>(null);
   const [showChallengeCTA, setShowChallengeCTA] = useState(false);
 
+  // Get all images (support both single and multi-image posts)
+  const allImages = post.media_urls?.length 
+    ? post.media_urls 
+    : [post.image_url].filter(Boolean);
+
   // Check if post caption contains a challenge hashtag
   useEffect(() => {
     const checkForChallenge = async () => {
       if (!post.caption) return;
       
-      // Extract hashtags from caption
       const hashtagMatches = post.caption.match(/#[\u0590-\u05FFa-zA-Z0-9_]+/g);
       if (!hashtagMatches || hashtagMatches.length === 0) return;
       
       const hashtags = hashtagMatches.map(h => h.replace('#', ''));
       
-      // Check if any hashtag matches an active challenge
       const { data: challenges } = await supabase
         .from("challenges")
         .select("id, title_he, hashtag, participant_count")
@@ -123,48 +129,52 @@ export const PostCard = ({
     }
   };
 
-  // Play lick sound using Web Audio API
+  // Enhanced lick sound with better quality
   const playLickSound = () => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      // Create a "slurp/lick" sound with multiple oscillators
       const oscillator1 = audioContext.createOscillator();
       const oscillator2 = audioContext.createOscillator();
+      const oscillator3 = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       const filter = audioContext.createBiquadFilter();
       
-      // Setup filter for wet sound
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(800, audioContext.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(2000, audioContext.currentTime + 0.1);
-      filter.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.2);
+      filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(2500, audioContext.currentTime + 0.08);
+      filter.frequency.exponentialRampToValueAtTime(500, audioContext.currentTime + 0.2);
       
       oscillator1.connect(filter);
       oscillator2.connect(filter);
+      oscillator3.connect(filter);
       filter.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
-      // Sweeping frequency for lick effect
       oscillator1.type = 'sine';
-      oscillator1.frequency.setValueAtTime(300, audioContext.currentTime);
-      oscillator1.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.08);
-      oscillator1.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+      oscillator1.frequency.setValueAtTime(400, audioContext.currentTime);
+      oscillator1.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.06);
+      oscillator1.frequency.exponentialRampToValueAtTime(250, audioContext.currentTime + 0.15);
       
       oscillator2.type = 'triangle';
-      oscillator2.frequency.setValueAtTime(150, audioContext.currentTime);
-      oscillator2.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+      oscillator2.frequency.setValueAtTime(200, audioContext.currentTime);
+      oscillator2.frequency.exponentialRampToValueAtTime(500, audioContext.currentTime + 0.1);
       
-      // Volume envelope
+      oscillator3.type = 'sawtooth';
+      oscillator3.frequency.setValueAtTime(100, audioContext.currentTime);
+      oscillator3.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.05);
+      
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
-      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0.12, audioContext.currentTime + 0.02);
+      gainNode.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.1);
       gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
       
       oscillator1.start(audioContext.currentTime);
       oscillator2.start(audioContext.currentTime);
+      oscillator3.start(audioContext.currentTime);
       oscillator1.stop(audioContext.currentTime + 0.2);
       oscillator2.stop(audioContext.currentTime + 0.2);
+      oscillator3.stop(audioContext.currentTime + 0.2);
     } catch (error) {
       console.log('Could not play lick sound:', error);
     }
@@ -173,17 +183,17 @@ export const PostCard = ({
   const handleLike = () => {
     if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
     setIsLicking(true);
-    playLickSound();
+    if (!post.is_liked) playLickSound();
     onLike(post.id);
-    setTimeout(() => setIsLicking(false), 500);
+    setTimeout(() => setIsLicking(false), 600);
   };
 
   const handleDoubleTap = () => {
     if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
     setIsLicking(true);
-    playLickSound();
+    if (!post.is_liked) playLickSound();
     onDoubleTap(post.id);
-    setTimeout(() => setIsLicking(false), 500);
+    setTimeout(() => setIsLicking(false), 600);
   };
 
   const handleSave = () => {
@@ -198,41 +208,72 @@ export const PostCard = ({
     toggleFollow();
   };
 
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/post/${post.id}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'PetID Post',
+          text: post.caption || 'צפה בפוסט הזה!',
+          url: shareUrl,
+        });
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          navigator.clipboard.writeText(shareUrl);
+          toast.success("הקישור הועתק");
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("הקישור הועתק");
+    }
+  };
+
   return (
-    <div className="bg-white border-b border-[#DBDBDB]">
+    <motion.div 
+      className="bg-white border-b border-[#DBDBDB]"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Post Header - Instagram style */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2.5">
-          <div 
+          <motion.div 
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Avatar className="w-8 h-8 ring-1 ring-[#DBDBDB]">
+            <Avatar className="w-8 h-8 ring-2 ring-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 ring-offset-2">
               <AvatarImage src={post.user.avatar_url} />
               <AvatarFallback className="bg-gray-100 text-[#262626] text-xs">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
-          </div>
+          </motion.div>
           <div 
             className="cursor-pointer"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <p className="font-semibold text-[#262626] text-sm leading-tight">{post.user.full_name || "משתמש"}</p>
+            <p className="font-semibold text-[#262626] text-sm leading-tight hover:underline">{post.user.full_name || "משתמש"}</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
           {currentUserId !== post.user_id && !isFollowing && (
-            <button
+            <motion.button
               className="text-sm font-semibold text-[#0095F6]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleFollow();
               }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               עקוב
-            </button>
+            </motion.button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -276,32 +317,14 @@ export const PostCard = ({
         </div>
       </div>
 
-      {/* Post Image */}
-      <div 
-        className="relative cursor-pointer"
+      {/* Post Image with Carousel Support */}
+      <ImageCarousel
+        images={allImages}
+        alt={post.caption || "פוסט"}
         onDoubleClick={handleDoubleTap}
       >
-        <OptimizedImage
-          src={post.image_url}
-          alt={post.caption || "פוסט"}
-          className="w-full aspect-square"
-          objectFit="cover"
-          sizes="(max-width: 768px) 100vw, 672px"
-        />
-        
-        {/* Double Tap Heart Animation */}
-        <AnimatePresence>
-          {showDoubleTapAnimation && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
-              <Heart className="w-24 h-24 text-white fill-white drop-shadow-lg" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Heart Burst Animation */}
+        <HeartBurstAnimation isVisible={showDoubleTapAnimation} />
 
         {/* Product Tags Overlay */}
         {post.product_tags && post.product_tags.length > 0 && (
@@ -311,56 +334,82 @@ export const PostCard = ({
             onToggleTags={() => setShowProductTags(!showProductTags)}
           />
         )}
-      </div>
+      </ImageCarousel>
 
       {/* Post Actions */}
       <div className="px-3 pt-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
-            <button 
+            <motion.button 
               onClick={handleLike}
               className="p-1"
+              whileTap={{ scale: 0.8 }}
+              animate={isLicking ? { scale: [1, 1.2, 1] } : {}}
+              transition={{ duration: 0.3 }}
             >
               <Heart 
-                className={`w-6 h-6 ${post.is_liked ? 'text-[#ED4956] fill-[#ED4956]' : 'text-[#262626]'}`} 
+                className={`w-6 h-6 transition-colors duration-200 ${
+                  post.is_liked 
+                    ? 'text-[#ED4956] fill-[#ED4956]' 
+                    : 'text-[#262626] hover:text-[#8E8E8E]'
+                }`} 
                 strokeWidth={1.5}
               />
-            </button>
+            </motion.button>
             
-            <button 
+            <motion.button 
               className="text-[#262626] p-1"
               onClick={() => navigate(`/post/${post.id}`)}
+              whileTap={{ scale: 0.9 }}
             >
-              <MessageCircle className="w-6 h-6" strokeWidth={1.5} />
-            </button>
+              <MessageCircle className="w-6 h-6 hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
+            </motion.button>
             
-            <button className="text-[#262626] p-1">
-              <Share2 className="w-6 h-6" strokeWidth={1.5} />
-            </button>
+            <motion.button 
+              className="text-[#262626] p-1"
+              onClick={handleShare}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Send className="w-6 h-6 hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
+            </motion.button>
           </div>
-          <button 
+          <motion.button 
             onClick={handleSave}
             className="text-[#262626] p-1 relative"
+            whileTap={{ scale: 0.8 }}
+            animate={isSaveAnimating ? { scale: [1, 1.3, 1] } : {}}
           >
             <Bookmark 
-              className={`w-6 h-6 ${post.is_saved ? 'fill-[#262626]' : ''}`} 
+              className={`w-6 h-6 transition-all duration-200 ${
+                post.is_saved 
+                  ? 'fill-[#262626]' 
+                  : 'hover:text-[#8E8E8E]'
+              }`} 
               strokeWidth={1.5} 
             />
-          </button>
+          </motion.button>
         </div>
 
-        {/* Likes count */}
-        {post.likes_count > 0 && (
-          <p className="text-sm text-[#262626] font-semibold mb-1">
-            {post.likes_count.toLocaleString()} לייקים
-          </p>
-        )}
+        {/* Likes count with animation */}
+        <AnimatePresence mode="wait">
+          {post.likes_count > 0 && (
+            <motion.p 
+              key={post.likes_count}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 5 }}
+              className="text-sm text-[#262626] font-semibold mb-1"
+            >
+              {post.likes_count.toLocaleString()} לייקים
+            </motion.p>
+          )}
+        </AnimatePresence>
 
         {/* Post Caption */}
         {post.caption && (
           <p className="text-[#262626] text-sm leading-[18px] mb-1">
             <span
-              className="font-semibold cursor-pointer"
+              className="font-semibold cursor-pointer hover:underline"
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
               {post.user.full_name || "משתמש"}
@@ -369,18 +418,14 @@ export const PostCard = ({
           </p>
         )}
 
-        {/* View Comments */}
-        {post.comments_count > 0 && (
-          <button 
-            className="text-[#8E8E8E] text-sm"
-            onClick={() => navigate(`/post/${post.id}`)}
-          >
-            הצג את כל {post.comments_count} התגובות
-          </button>
-        )}
+        {/* Comments Preview */}
+        <CommentsPreview 
+          postId={post.id} 
+          totalComments={post.comments_count} 
+        />
 
         {/* Time ago */}
-        <p className="text-[#8E8E8E] text-[10px] uppercase mt-1 mb-2">
+        <p className="text-[#8E8E8E] text-[10px] uppercase mt-1.5 mb-2">
           {getTimeAgo(post.created_at)}
         </p>
       </div>
@@ -403,14 +448,19 @@ export const PostCard = ({
           className="flex-1 bg-transparent text-sm text-[#262626] placeholder-[#8E8E8E] outline-none"
           readOnly={!isAuthenticated}
         />
-        {commentText.trim() && (
-          <button 
-            onClick={handleComment}
-            className="text-[#0095F6] text-sm font-semibold"
-          >
-            פרסם
-          </button>
-        )}
+        <AnimatePresence>
+          {commentText.trim() && (
+            <motion.button 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={handleComment}
+              className="text-[#0095F6] text-sm font-semibold"
+            >
+              פרסם
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Report Dialog */}
@@ -420,6 +470,6 @@ export const PostCard = ({
         reportedUserId={post.user_id}
         reportedPostId={post.id}
       />
-    </div>
+    </motion.div>
   );
 };
