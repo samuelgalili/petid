@@ -120,12 +120,12 @@ const BottomNav = () => {
     color: "#1E5799"
   }];
   return <>
-      {/* Instagram-style bottom nav - minimal black icons on white */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border" style={{
+      {/* PetID-style bottom nav - warm, organic feel */}
+      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-md border-t border-border/30 shadow-[0_-4px_20px_rgba(46,184,166,0.08)]" style={{
       position: 'fixed',
       bottom: 0
     }} role="navigation" aria-label="ניווט ראשי">
-        <div className="flex justify-around items-center h-12 w-full max-w-2xl mx-auto">
+        <div className="flex justify-around items-center h-14 w-full max-w-2xl mx-auto px-2">
           {/* Home */}
           <NavItem onClick={() => {
           if (location.pathname === "/") {
@@ -137,23 +137,30 @@ const BottomNav = () => {
           } else {
             navigate("/");
           }
-        }} icon={<Home className={cn("w-6 h-6", isActive("/") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/") ? "currentColor" : "none"} />} isActive={isActive("/")} label="בית" />
+        }} icon={<Home className={cn("w-6 h-6 transition-colors", isActive("/") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/") ? "currentColor" : "none"} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
-          <NavItem to="/explore" icon={<Compass className={cn("w-6 h-6", isActive("/explore") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
+          <NavItem to="/explore" icon={<Compass className={cn("w-6 h-6 transition-colors", isActive("/explore") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
 
-          {/* Categories */}
-          <NavItem onClick={() => setCategoriesOpen(true)} icon={<Grid3X3 className="w-6 h-6 text-foreground" strokeWidth={1.5} />} isActive={false} label="קטגוריות" />
+          {/* Categories - Center button with accent */}
+          <NavItem onClick={() => setCategoriesOpen(true)} icon={
+            <div className={cn(
+              "w-10 h-10 rounded-2xl flex items-center justify-center transition-all",
+              categoriesOpen ? "bg-primary shadow-md" : "bg-primary/10"
+            )}>
+              <Grid3X3 className={cn("w-5 h-5", categoriesOpen ? "text-primary-foreground" : "text-primary")} strokeWidth={1.5} />
+            </div>
+          } isActive={false} label="קטגוריות" />
 
           {/* Shop */}
-          <NavItem to="/shop" icon={<ShoppingBag className={cn("w-6 h-6", isActive("/shop") ? "text-foreground" : "text-foreground")} strokeWidth={1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
+          <NavItem to="/shop" icon={<ShoppingBag className={cn("w-6 h-6 transition-colors", isActive("/shop") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
 
           {/* Profile with Avatar */}
           <Link to="/profile" className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
-            <div className={cn("w-6 h-6 rounded-full overflow-hidden", isActive("/profile") ? "ring-[1.5px] ring-foreground" : "")}>
+            <div className={cn("w-7 h-7 rounded-full overflow-hidden transition-all", isActive("/profile") ? "ring-2 ring-primary ring-offset-2 ring-offset-card" : "")}>
               <Avatar className="w-full h-full">
                 <AvatarImage src={userAvatar} className="object-cover" />
-                <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
                   <User className="w-3.5 h-3.5" />
                 </AvatarFallback>
               </Avatar>
@@ -162,27 +169,29 @@ const BottomNav = () => {
         </div>
         
         {/* Safe area for notched devices */}
-        <div className="h-[env(safe-area-inset-bottom)] bg-background" />
+        <div className="h-[env(safe-area-inset-bottom)] bg-card" />
       </nav>
 
 
       {/* Create Post Dialog */}
       <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {}} />
 
-      {/* Categories Sheet */}
+      {/* Categories Sheet - PetID styled */}
       <Sheet open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-2xl bg-background border-t border-border">
+        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-3xl bg-card border-t border-border/30 shadow-elevated">
           <SheetTitle className="sr-only">קטגוריות</SheetTitle>
           <SheetDescription className="sr-only">בחר קטגוריה לניווט</SheetDescription>
           
           {/* Handle bar */}
-          <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-2 mb-6" />
+          <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mt-3 mb-6" />
           
-          <div className="grid grid-cols-4 gap-4 px-4 pb-8">
+          <div className="grid grid-cols-4 gap-3 px-4 pb-8">
             {categories.map((category) => {
             const CategoryIcon = category.icon;
-            return <Link key={category.path} to={category.path} onClick={() => setCategoriesOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-xl active:bg-muted transition-colors">
-                  <CategoryIcon className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+            return <Link key={category.path} to={category.path} onClick={() => setCategoriesOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl active:bg-muted/50 hover:bg-muted/30 transition-all">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <CategoryIcon className="w-6 h-6 text-primary" strokeWidth={1.5} />
+                  </div>
                   <span className="text-xs font-medium text-foreground text-center leading-tight">
                     {category.label}
                   </span>
