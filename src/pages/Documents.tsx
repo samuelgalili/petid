@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, FileText, Search, X, ArrowUpDown } from "lucide-react";
+import { Loader2, Upload, FileText, Search, X, ArrowUpDown, Syringe, Stethoscope, File, Calendar, FolderOpen, Plus, Filter } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SwipeableDocumentCard } from "@/components/SwipeableDocumentCard";
+import { Card } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 
 interface PetDocument {
   id: string;
@@ -31,27 +34,39 @@ interface Pet {
 }
 
 export default function Documents() {
+  const [searchParams] = useSearchParams();
+  const preselectedPetId = searchParams.get('petId');
+  
   const [pets, setPets] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedPetId, setSelectedPetId] = useState<string>("all");
+  const [selectedPetId, setSelectedPetId] = useState<string>(preselectedPetId || "all");
   const [selectedDocType, setSelectedDocType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("date-desc");
   const [pendingDelete, setPendingDelete] = useState<{ id: string; fileUrl: string; doc: any } | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Upload form state
-  const [uploadPetId, setUploadPetId] = useState<string>("");
+  const [uploadPetId, setUploadPetId] = useState<string>(preselectedPetId || "");
   const [uploadDocType, setUploadDocType] = useState<string>("vaccination");
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadDescription, setUploadDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const { toast } = useToast();
+
+  // Document stats
+  const documentStats = useMemo(() => {
+    const vaccination = documents.filter(d => d.document_type === 'vaccination').length;
+    const medical = documents.filter(d => d.document_type === 'medical').length;
+    const other = documents.filter(d => d.document_type === 'other').length;
+    return { vaccination, medical, other, total: documents.length };
+  }, [documents]);
 
   useEffect(() => {
     fetchPets();
@@ -377,77 +392,138 @@ export default function Documents() {
       
       <div className="min-h-screen bg-background pb-28" dir="rtl">
         <div className="container mx-auto px-4 pt-4 pb-6 max-w-lg">
-          {/* Header Section with Gradient */}
-          <div className="mb-5 text-center">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-primary via-accent to-primary-light p-[2px] shadow-lg shadow-primary/20">
-              <div className="w-full h-full rounded-[14px] bg-card flex items-center justify-center">
-                <FileText className="w-7 h-7 text-primary" />
-              </div>
+          {/* Stats Cards */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-4 gap-2 mb-5"
+          >
+            <Card 
+              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'all' ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+              onClick={() => setSelectedDocType('all')}
+            >
+              <FolderOpen className="w-5 h-5 mx-auto mb-1 text-primary" />
+              <p className="text-lg font-bold">{documentStats.total}</p>
+              <p className="text-[10px] text-muted-foreground">הכל</p>
+            </Card>
+            <Card 
+              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'vaccination' ? 'ring-2 ring-success bg-success/5' : 'hover:bg-muted/50'}`}
+              onClick={() => setSelectedDocType(selectedDocType === 'vaccination' ? 'all' : 'vaccination')}
+            >
+              <Syringe className="w-5 h-5 mx-auto mb-1 text-success" />
+              <p className="text-lg font-bold text-success">{documentStats.vaccination}</p>
+              <p className="text-[10px] text-muted-foreground">חיסונים</p>
+            </Card>
+            <Card 
+              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'medical' ? 'ring-2 ring-info bg-info/5' : 'hover:bg-muted/50'}`}
+              onClick={() => setSelectedDocType(selectedDocType === 'medical' ? 'all' : 'medical')}
+            >
+              <Stethoscope className="w-5 h-5 mx-auto mb-1 text-info" />
+              <p className="text-lg font-bold text-info">{documentStats.medical}</p>
+              <p className="text-[10px] text-muted-foreground">רפואי</p>
+            </Card>
+            <Card 
+              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'other' ? 'ring-2 ring-muted-foreground bg-muted' : 'hover:bg-muted/50'}`}
+              onClick={() => setSelectedDocType(selectedDocType === 'other' ? 'all' : 'other')}
+            >
+              <File className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+              <p className="text-lg font-bold">{documentStats.other}</p>
+              <p className="text-[10px] text-muted-foreground">אחר</p>
+            </Card>
+          </motion.div>
+
+          {/* Search & Filter Row */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex gap-2 mb-4"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="חיפוש מסמך..."
+                className="h-11 pr-10 pl-10 rounded-xl bg-card border-0 shadow-sm text-sm placeholder:text-muted-foreground"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
-            <h2 className="text-xl font-bold text-foreground">המסמכים שלי</h2>
-            <p className="text-muted-foreground text-sm mt-1">ניהול אישורי חיסון ומסמכים רפואיים</p>
-          </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className={`h-11 w-11 rounded-xl ${showFilters ? 'bg-primary text-primary-foreground' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="w-4 h-4" />
+            </Button>
+          </motion.div>
 
-          {/* Search Input - Separate */}
-          <div className="relative mb-3">
-            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="חיפוש מסמך..."
-              className="h-11 pr-10 pl-10 rounded-xl bg-card border-0 shadow-sm text-sm placeholder:text-muted-foreground"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+          {/* Expandable Filters */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-4"
               >
-                <X className="w-3 h-3 text-muted-foreground" />
-              </button>
+                <div className="flex gap-2 pt-1">
+                  <Select value={selectedPetId} onValueChange={setSelectedPetId}>
+                    <SelectTrigger className="h-10 rounded-xl bg-card border-0 shadow-sm text-xs flex-1">
+                      <SelectValue placeholder="חיה" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">כל החיות</SelectItem>
+                      {pets.map((pet) => (
+                        <SelectItem key={pet.id} value={pet.id}>
+                          🐾 {pet.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="h-10 rounded-xl bg-card border-0 shadow-sm text-xs flex-1">
+                      <ArrowUpDown className="w-3.5 h-3.5 ml-1 text-muted-foreground" />
+                      <span>מיון</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date-desc">חדש → ישן</SelectItem>
+                      <SelectItem value="date-asc">ישן → חדש</SelectItem>
+                      <SelectItem value="name-asc">א → ת</SelectItem>
+                      <SelectItem value="name-desc">ת → א</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
 
-          {/* Filters & Sort - Compact Row */}
-          <div className="flex gap-2 mb-4">
-            <Select value={selectedPetId} onValueChange={setSelectedPetId}>
-              <SelectTrigger className="h-9 rounded-lg bg-card border-0 shadow-sm text-xs flex-1">
-                <SelectValue placeholder="חיה" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל החיות</SelectItem>
-                {pets.map((pet) => (
-                  <SelectItem key={pet.id} value={pet.id}>
-                    🐾 {pet.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedDocType} onValueChange={setSelectedDocType}>
-              <SelectTrigger className="h-9 rounded-lg bg-card border-0 shadow-sm text-xs flex-1">
-                <SelectValue placeholder="סוג" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">כל הסוגים</SelectItem>
-                <SelectItem value="vaccination">💉 חיסון</SelectItem>
-                <SelectItem value="medical">🏥 רפואי</SelectItem>
-                <SelectItem value="other">📄 אחר</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-9 rounded-lg bg-card border-0 shadow-sm text-xs w-[100px]">
-                <ArrowUpDown className="w-3.5 h-3.5 ml-1 text-muted-foreground" />
-                <span className="text-muted-foreground">מיון</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date-desc">חדש → ישן</SelectItem>
-                <SelectItem value="date-asc">ישן → חדש</SelectItem>
-                <SelectItem value="name-asc">א → ת</SelectItem>
-                <SelectItem value="name-desc">ת → א</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Quick Upload Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-5"
+          >
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary text-white font-bold text-base shadow-lg shadow-primary/25 hover:opacity-90 transition-all gap-3"
+            >
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <Plus className="w-5 h-5" />
+              </div>
+              העלאת מסמך חדש
+            </Button>
+          </motion.div>
 
           {/* Upload Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -602,55 +678,77 @@ export default function Documents() {
 
           {/* Documents List */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary via-accent to-primary-light p-[2px] animate-spin">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-16"
+            >
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent p-[3px] animate-spin">
                 <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-primary" />
+                  <FileText className="w-7 h-7 text-primary" />
                 </div>
               </div>
               <p className="mt-4 text-muted-foreground text-sm">טוען מסמכים...</p>
-            </div>
+            </motion.div>
           ) : filteredDocuments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 px-4">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center mb-4">
-                <FileText className="w-10 h-10 text-muted-foreground" />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-16 px-4"
+            >
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-5">
+                <FileText className="w-12 h-12 text-muted-foreground/50" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">אין מסמכים</h3>
-              <p className="text-muted-foreground text-sm text-center max-w-[220px] mb-5">
+              <h3 className="text-xl font-bold text-foreground mb-2">אין מסמכים</h3>
+              <p className="text-muted-foreground text-sm text-center max-w-[260px] mb-6">
                 {documents.length === 0
-                  ? "העלה את המסמכים של חיית המחמד שלך"
-                  : "לא נמצאו מסמכים התואמים לסינון"}
+                  ? "שמור את המסמכים החשובים של חיית המחמד שלך במקום אחד"
+                  : "לא נמצאו מסמכים התואמים לחיפוש"}
               </p>
               {documents.length === 0 && (
                 <Button 
                   onClick={() => setIsDialogOpen(true)}
-                  className="bg-gradient-to-r from-primary via-accent to-primary-light text-white rounded-xl px-6 h-11 text-sm font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-opacity gap-2"
+                  className="bg-gradient-to-r from-primary via-accent to-primary text-white rounded-xl px-8 h-12 text-base font-bold shadow-lg shadow-primary/25 hover:opacity-90 transition-opacity gap-2"
                 >
-                  <Upload className="w-4 h-4" />
-                  העלה מסמך
+                  <Upload className="w-5 h-5" />
+                  העלה מסמך ראשון
                 </Button>
               )}
-            </div>
+            </motion.div>
           ) : (
-            <div className="space-y-3">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-3"
+            >
               <div className="flex items-center justify-between px-1 mb-3">
                 <span className="text-sm font-medium text-foreground">
                   {filteredDocuments.length} מסמכים
                 </span>
                 <span className="text-xs text-muted-foreground">החלק שמאלה למחיקה</span>
               </div>
-              {filteredDocuments.map((doc, index) => (
-                <SwipeableDocumentCard
-                  key={doc.id}
-                  doc={doc}
-                  petName={getPetName(doc.pet_id)}
-                  documentTypeLabel={getDocumentTypeLabel(doc.document_type)}
-                  onDelete={handleDelete}
-                  onDownload={handleDownload}
-                  index={index}
-                />
-              ))}
-            </div>
+              <AnimatePresence>
+                {filteredDocuments.map((doc, index) => (
+                  <motion.div
+                    key={doc.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <SwipeableDocumentCard
+                      doc={doc}
+                      petName={getPetName(doc.pet_id)}
+                      documentTypeLabel={getDocumentTypeLabel(doc.document_type)}
+                      onDelete={handleDelete}
+                      onDownload={handleDownload}
+                      index={index}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
       </div>
