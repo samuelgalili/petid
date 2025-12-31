@@ -516,11 +516,9 @@ export default function Documents() {
           >
             <Button
               onClick={() => setIsDialogOpen(true)}
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-primary via-accent to-primary text-white font-bold text-base shadow-lg shadow-primary/25 hover:opacity-90 transition-all gap-3"
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm shadow-md transition-all gap-2"
             >
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <Plus className="w-5 h-5" />
-              </div>
+              <Plus className="w-4 h-4" />
               העלאת מסמך חדש
             </Button>
           </motion.div>
