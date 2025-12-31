@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2 } from "lucide-react";
+import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, Shield, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
+import { CHECKOUT, SUCCESS } from "@/lib/brandVoice";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(100, "Full name must be less than 100 characters"),
@@ -41,6 +43,7 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [wantRecurringOrder, setWantRecurringOrder] = useState(false);
   const [shippingData, setShippingData] = useState({
     fullName: "",
     email: "",
@@ -279,8 +282,15 @@ const Checkout = () => {
     <div className="min-h-screen pb-20 bg-background" dir="rtl">
       <AppHeader title="תשלום" showBackButton={true} />
 
+      {/* Calm Checkout Header Message */}
+      <div className="px-4 pt-4 pb-2 text-center">
+        <p className="text-sm text-muted-foreground">
+          {CHECKOUT.twoStepsOnly} • {CHECKOUT.transparentPricing}
+        </p>
+      </div>
+
       {/* Progress Steps */}
-      <div className="px-4 py-6 bg-muted/50">
+      <div className="px-4 py-4 bg-muted/50">
         <div className="flex items-center justify-between mb-8 max-w-md mx-auto">
           {steps.map((step, index) => {
             const StepIcon = step.icon;
@@ -838,6 +848,38 @@ const Checkout = () => {
                       total + (paymentMethod === "cash-on-delivery" ? 5 : 0)
                     ).toFixed(2)}
                   </span>
+                </div>
+              </Card>
+
+              {/* Recurring Order Option - Brand Voice */}
+              <Card className="p-4 border-dashed border-primary/30 bg-primary/5 max-w-md mx-auto">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="recurring"
+                    checked={wantRecurringOrder}
+                    onCheckedChange={(checked) => setWantRecurringOrder(checked as boolean)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="recurring" className="font-medium cursor-pointer">
+                      שמרו להזמנה קבועה
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      {CHECKOUT.saveForRecurring}
+                    </p>
+                    
+                    {/* Trust indicators */}
+                    <div className="flex flex-wrap gap-3 mt-3">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Bell className="w-3 h-3 text-primary" />
+                        <span>{CHECKOUT.reminderBeforeCharge}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Shield className="w-3 h-3 text-primary" />
+                        <span>{CHECKOUT.noAutoCharge}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </Card>
             </motion.div>

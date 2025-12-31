@@ -323,36 +323,37 @@ export default function HomeAIBase() {
 
       {/* Main Content */}
       <div ref={scrollContainerRef} className="overflow-y-auto">
-        
-        {/* ==================== WALLET CONTAINER ==================== */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-4 p-4 rounded-xl bg-muted"
-          dir="rtl"
-        >
-          <p className="text-sm text-foreground text-center">
-            חסכת כבר <span className="font-bold text-primary">₪{(totalPoints * 0.01).toFixed(2)}</span> מהקניות האחרונות שלך
-          </p>
-        </motion.section>
 
-        {/* ==================== XP CONTAINER ==================== */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mx-4 mt-4 p-4 bg-card rounded-xl border border-border"
-          dir="rtl"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">XP Level</span>
-            <span className="text-primary font-bold">{totalPoints} XP</span>
-          </div>
-          <Progress value={xpProgress} className="h-3" />
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            רמה {Math.floor(totalPoints / 1000) + 1}
-          </p>
-        </motion.section>
+        {/* ==================== REMINDER BANNER ==================== */}
+        <ReminderBanner 
+          daysLeft={6} 
+          onOrder={() => navigate("/shop?reorder=true")} 
+        />
+        
+        {/* ==================== CARE DASHBOARD ==================== */}
+        {isAuthenticated && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 mt-4"
+          >
+            <CareDashboard />
+          </motion.section>
+        )}
+
+        {/* ==================== WALLET CONTAINER (for non-authenticated) ==================== */}
+        {!isAuthenticated && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-4 mt-4 p-4 rounded-xl bg-muted"
+            dir="rtl"
+          >
+            <p className="text-sm text-foreground text-center">
+              חסכת כבר <span className="font-bold text-primary">₪{(totalPoints * 0.01).toFixed(2)}</span> מהקניות האחרונות שלך
+            </p>
+          </motion.section>
+        )}
 
         {/* ==================== CATEGORIES GRID ==================== */}
         <motion.section
@@ -490,6 +491,21 @@ export default function HomeAIBase() {
             </div>
           )}
         </section>
+
+        {/* ==================== COMMUNITY SECTION ==================== */}
+        {isAuthenticated && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 pb-4"
+          >
+            <CommunitySection 
+              points={totalPoints}
+              streak={3}
+              level={Math.floor(totalPoints / 500) + 1}
+            />
+          </motion.section>
+        )}
       </div>
 
       {/* ==================== BOTTOM NAV ==================== */}

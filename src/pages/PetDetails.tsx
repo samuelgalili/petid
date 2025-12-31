@@ -1,4 +1,4 @@
-import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft, Trash2 } from "lucide-react";
+import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft, Trash2, Package, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
@@ -8,9 +8,11 @@ import { toast as sonnerToast } from "sonner";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
 import { AppHeader } from "@/components/AppHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PET_CARD, ACTIONS, REMINDERS } from "@/lib/brandVoice";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -251,6 +253,10 @@ const PetDetails = () => {
   if (!pet) return null;
 
   const tasks = getBreedTasks(pet.breed, pet.type);
+  
+  // Mock data for stock - in real app would come from orders
+  const daysUntilReorder = 6;
+  const compatibilityScore = 92;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -261,7 +267,7 @@ const PetDetails = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4 mb-6"
+          className="flex items-center gap-4 mb-4"
         >
           <div className="relative">
             <Avatar className="w-20 h-20 border-4 border-background ring-2 ring-primary/20 shadow-lg">
@@ -320,6 +326,63 @@ const PetDetails = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </motion.div>
+
+        {/* Brand Voice: Smart Order Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-4"
+        >
+          <Card className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+            {/* Stock indicator */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">מלאי מזון</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                נשארו כ-{daysUntilReorder} ימים
+              </span>
+            </div>
+            <Progress value={(daysUntilReorder / 30) * 100} className="h-2 mb-3" />
+            
+            {/* Compatibility Score */}
+            <div className="flex items-center justify-between mb-3 p-2 bg-background/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-success" />
+                <span className="text-xs">{PET_CARD.compatibilityScore}</span>
+              </div>
+              <span className="text-sm font-bold text-success">{compatibilityScore}%</span>
+            </div>
+
+            {/* Order Suggestion */}
+            <p className="text-xs text-center text-muted-foreground mb-3">
+              {PET_CARD.orderSuggestion}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                size="sm" 
+                onClick={() => navigate("/shop?reorder=true")}
+                className="gap-1"
+              >
+                <Package className="w-4 h-4" />
+                {ACTIONS.smartOrder}
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate("/shop")}
+                className="gap-1"
+              >
+                <Sparkles className="w-4 h-4" />
+                {ACTIONS.checkCompatibility}
+              </Button>
+            </div>
+          </Card>
         </motion.div>
       </div>
 
