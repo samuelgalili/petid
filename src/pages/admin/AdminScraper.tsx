@@ -152,10 +152,37 @@ const AdminScraper = () => {
     fetchCurrentJob();
   }, []);
 
-  // Subscribe to job updates
+  // Subscribe to job updates with polling fallback
   useEffect(() => {
     if (!currentJob?.id) return;
 
+    // Polling fallback since Realtime may not always work
+    const pollInterval = setInterval(async () => {
+      const { data } = await supabase
+        .from('scraping_jobs')
+        .select('*')
+        .eq('id', currentJob.id)
+        .single();
+      
+      if (data) {
+        setCurrentJob(data as ScrapingJob);
+        if (data.status === 'completed') {
+          setScraping(false);
+          fetchProducts();
+          toast.success("הסקראפינג הושלם בהצלחה!");
+          clearInterval(pollInterval);
+        } else if (data.status === 'failed') {
+          setScraping(false);
+          toast.error("הסקראפינג נכשל: " + data.error_message);
+          clearInterval(pollInterval);
+        } else if (data.status === 'stopped') {
+          setScraping(false);
+          clearInterval(pollInterval);
+        }
+      }
+    }, 2000); // Poll every 2 seconds
+
+    // Also try Realtime subscription
     const channel = supabase
       .channel(`job-${currentJob.id}`)
       .on(
@@ -172,15 +199,18 @@ const AdminScraper = () => {
             setScraping(false);
             fetchProducts();
             toast.success("הסקראפינג הושלם בהצלחה!");
+            clearInterval(pollInterval);
           } else if (payload.new.status === 'failed') {
             setScraping(false);
             toast.error("הסקראפינג נכשל: " + payload.new.error_message);
+            clearInterval(pollInterval);
           }
         }
       )
       .subscribe();
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [currentJob?.id]);
