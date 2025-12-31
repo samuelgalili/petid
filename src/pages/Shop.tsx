@@ -95,9 +95,11 @@ const Shop = () => {
   }, [carouselApi]);
 
   // Fetch products from database - combining business_products and scraped_products
-  const { data: dbProducts = [], isLoading: isLoadingProducts, refetch } = useQuery({
+  const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching } = useQuery({
     queryKey: ["shop-products"],
     queryFn: async () => {
+      console.log("Fetching shop products...");
+      
       // First try to get from business_products
       const { data: businessProducts, error: bpError } = await supabase
         .from("business_products")
@@ -134,17 +136,13 @@ const Shop = () => {
       }));
       
       // Combine both sources, business_products first
-      return [...(businessProducts || []), ...transformedScraped];
+      const allProducts = [...(businessProducts || []), ...transformedScraped];
+      console.log("Fetched products:", allProducts.length);
+      return allProducts;
     },
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes (was cacheTime)
   });
-
-  // Refetch on component mount to ensure fresh data
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   // Transform database products to the format expected by the UI
   const products = useMemo(() => {
@@ -529,12 +527,20 @@ const Shop = () => {
           ))}
         </div>
 
-        {/* Empty State */}
-        {filteredAndSortedProducts.length === 0 && (
+        {/* Loading State */}
+        {(isLoadingProducts || isFetching) && filteredAndSortedProducts.length === 0 && (
+          <div className="py-20 text-center">
+            <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-foreground mb-1">טוען מוצרים...</p>
+          </div>
+        )}
+
+        {/* Empty State - only show when not loading and no products */}
+        {!isLoadingProducts && !isFetching && filteredAndSortedProducts.length === 0 && (
           <div className="py-20 text-center">
             <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" strokeWidth={1} />
-            <p className="text-sm font-medium text-foreground mb-1">No products yet</p>
-            <p className="text-xs text-muted-foreground">Check back later for new items</p>
+            <p className="text-sm font-medium text-foreground mb-1">אין מוצרים עדיין</p>
+            <p className="text-xs text-muted-foreground">בקרוב יעלו מוצרים חדשים</p>
           </div>
         )}
       </div>
