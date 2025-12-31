@@ -23,13 +23,14 @@ export const ActivityStatus = ({ userId, showLabel = true, size = 'md' }: Activi
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('last_seen_at, is_online')
+          .select('*')
           .eq('id', userId)
           .maybeSingle();
 
         if (profile) {
-          setIsOnline(profile.is_online || false);
-          setLastSeen(profile.last_seen_at ? new Date(profile.last_seen_at) : null);
+          const profileData = profile as any;
+          setIsOnline(profileData.is_online || false);
+          setLastSeen(profileData.last_seen_at ? new Date(profileData.last_seen_at) : null);
         }
       } catch (error) {
         console.error('Error fetching activity status:', error);

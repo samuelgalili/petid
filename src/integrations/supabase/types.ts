@@ -2718,7 +2718,9 @@ export type Database = {
           full_name: string | null
           id: string
           interests: string[] | null
+          is_online: boolean | null
           last_active_at: string | null
+          last_seen_at: string | null
           location_blur_enabled: boolean | null
           points: number
           profile_visibility: string | null
@@ -2742,7 +2744,9 @@ export type Database = {
           full_name?: string | null
           id: string
           interests?: string[] | null
+          is_online?: boolean | null
           last_active_at?: string | null
+          last_seen_at?: string | null
           location_blur_enabled?: boolean | null
           points?: number
           profile_visibility?: string | null
@@ -2766,7 +2770,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           interests?: string[] | null
+          is_online?: boolean | null
           last_active_at?: string | null
+          last_seen_at?: string | null
           location_blur_enabled?: boolean | null
           points?: number
           profile_visibility?: string | null
