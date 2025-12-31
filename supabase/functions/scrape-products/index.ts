@@ -601,7 +601,18 @@ Deno.serve(async (req) => {
       .eq('id', jobId);
 
     let scrapedCount = 0;
+    let skippedDuplicates = 0;
     const urlsToScrape = productUrls.slice(0, totalToScrape);
+
+    // Get existing product URLs for duplicate checking
+    const { data: existingProducts } = await supabase
+      .from('scraped_products')
+      .select('product_url, sku')
+      .in('product_url', urlsToScrape);
+    
+    const existingUrls = new Set(existingProducts?.map(p => p.product_url) || []);
+    const existingSkus = new Set(existingProducts?.filter(p => p.sku).map(p => p.sku) || []);
+    console.log('Found', existingUrls.size, 'existing products in database');
 
     // Step 2: Scrape each product page
     for (const productUrl of urlsToScrape) {
@@ -648,22 +659,52 @@ Deno.serve(async (req) => {
           // Check if it's actually a product page (has price or add to cart)
           if (html.includes('add-to-cart') || html.includes('₪') || product.final_price) {
             
-            // Insert or update product
+            // Check for duplicates by URL or SKU
+            const isDuplicate = existingUrls.has(productUrl) || 
+                               (product.sku && existingSkus.has(product.sku));
+            
+            if (isDuplicate) {
+              console.log('Skipping duplicate product:', productUrl);
+              skippedDuplicates++;
+              
+              // Still update if exists (upsert behavior)
+              const { error: updateError } = await supabase
+                .from('scraped_products')
+                .update({
+                  ...product,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('product_url', productUrl);
+              
+              if (!updateError) {
+                console.log('Updated existing product:', product.product_name);
+              }
+              continue;
+            }
+            
+            // Insert new product
             const { data: insertedProduct, error: insertError } = await supabase
               .from('scraped_products')
-              .upsert({
+              .insert({
                 ...product,
                 scraped_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-              }, { onConflict: 'product_url' })
+              })
               .select()
               .single();
 
             if (insertError) {
               console.error('Error inserting product:', insertError);
+              // If duplicate error, track it
+              if (insertError.code === '23505') {
+                skippedDuplicates++;
+                console.log('Duplicate detected:', productUrl);
+              }
             } else {
               scrapedCount++;
-              console.log('Saved product:', product.product_name);
+              existingUrls.add(productUrl);
+              if (product.sku) existingSkus.add(product.sku);
+              console.log('Saved NEW product:', product.product_name);
 
               // Extract and save images - improved extraction
               const galleryImages: string[] = [];
@@ -744,13 +785,14 @@ Deno.serve(async (req) => {
       })
       .eq('id', jobId);
 
-    console.log('Scraping completed. Total products:', scrapedCount);
+    console.log('Scraping completed. New products:', scrapedCount, 'Duplicates skipped/updated:', skippedDuplicates);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Scraping completed. Found ${scrapedCount} products.`,
-        scrapedCount 
+        message: `Scraping completed. Found ${scrapedCount} new products. ${skippedDuplicates} duplicates updated.`,
+        scrapedCount,
+        skippedDuplicates
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
