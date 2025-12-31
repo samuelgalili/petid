@@ -950,7 +950,18 @@ const Feed = () => {
         });
       
       case "nearby":
-        // For now, just show a mix - would need location for real nearby
+        // Filter by user city if location is available
+        if (hasLocation && city) {
+          // Filter posts and content from users in the same city
+          const nearbyItems = [...postItems, ...adoptionItems, ...challengeItems].filter(item => {
+            // For posts, we'd need location data on posts - for now show all
+            return true;
+          });
+          return nearbyItems.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        }
+        // Show all if no location
         return [...postItems, ...adoptionItems, ...challengeItems].sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -1145,7 +1156,7 @@ const Feed = () => {
         
       </motion.div>}
 
-      {/* Stories Bar - Only visible at top */}
+      {/* Stories Bar - Context-aware, only visible at top */}
       {!isScrolled && (
         <motion.div initial={{
         opacity: 0,
@@ -1157,7 +1168,11 @@ const Feed = () => {
         delay: 0.2,
         duration: 0.4
       }} className="bg-white border-b border-gray-100">
-          <StoriesBar />
+          <StoriesBar 
+            activeTab={activeTab} 
+            userCity={city} 
+            followingIds={followingIds}
+          />
         </motion.div>
       )}
 
