@@ -27,8 +27,14 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
-  Clock
+  Clock,
+  Square,
+  Dog,
+  Cat,
+  Bird
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface ScrapedProduct {
   id: string;
@@ -89,8 +95,29 @@ const AdminScraper = () => {
   const [baseUrl, setBaseUrl] = useState("https://homepetcenter.co.il");
   const [maxProducts, setMaxProducts] = useState("");
   
+  // Scraping filters
+  const [scrapePetTypes, setScrapePetTypes] = useState<string[]>(['dog', 'cat', 'bird']);
+  const [scrapeProductCategories, setScrapeProductCategories] = useState<string[]>(['dry-food', 'wet-food', 'treats', 'toys', 'accessories']);
+  
   // Categories for filter
   const [categories, setCategories] = useState<string[]>([]);
+  
+  // Available scraping options
+  const petTypeOptions = [
+    { id: 'dog', label: 'כלבים', icon: Dog },
+    { id: 'cat', label: 'חתולים', icon: Cat },
+    { id: 'bird', label: 'ציפורים', icon: Bird },
+  ];
+  
+  const productCategoryOptions = [
+    { id: 'dry-food', label: 'מזון יבש' },
+    { id: 'wet-food', label: 'מזון רטוב' },
+    { id: 'treats', label: 'חטיפים' },
+    { id: 'toys', label: 'צעצועים' },
+    { id: 'accessories', label: 'אביזרים' },
+    { id: 'health', label: 'בריאות' },
+    { id: 'grooming', label: 'טיפוח' },
+  ];
 
   useEffect(() => {
     fetchProducts();
@@ -176,6 +203,15 @@ const AdminScraper = () => {
   };
 
   const startScraping = async () => {
+    if (scrapePetTypes.length === 0) {
+      toast.error("יש לבחור לפחות סוג חיית מחמד אחד");
+      return;
+    }
+    if (scrapeProductCategories.length === 0) {
+      toast.error("יש לבחור לפחות קטגוריה אחת");
+      return;
+    }
+    
     try {
       setScraping(true);
       
@@ -193,12 +229,14 @@ const AdminScraper = () => {
 
       setCurrentJob(job as ScrapingJob);
 
-      // Start the scraping function
+      // Start the scraping function with filters
       const { error } = await supabase.functions.invoke('scrape-products', {
         body: {
           jobId: job.id,
           baseUrl,
           maxProducts: maxProducts ? parseInt(maxProducts) : undefined,
+          petTypes: scrapePetTypes,
+          productCategories: scrapeProductCategories,
         },
       });
 
@@ -210,6 +248,44 @@ const AdminScraper = () => {
       toast.error("שגיאה בהתחלת הסקראפינג");
       setScraping(false);
     }
+  };
+
+  const stopScraping = async () => {
+    if (!currentJob) return;
+    
+    try {
+      await supabase
+        .from('scraping_jobs')
+        .update({ 
+          status: 'stopped', 
+          error_message: 'Stopped by user',
+          completed_at: new Date().toISOString() 
+        })
+        .eq('id', currentJob.id);
+
+      setScraping(false);
+      setCurrentJob(prev => prev ? { ...prev, status: 'stopped' } : null);
+      toast.success("הסקראפינג נעצר");
+    } catch (error) {
+      console.error("Error stopping scrape:", error);
+      toast.error("שגיאה בעצירת הסקראפינג");
+    }
+  };
+
+  const togglePetType = (petType: string) => {
+    setScrapePetTypes(prev => 
+      prev.includes(petType) 
+        ? prev.filter(p => p !== petType)
+        : [...prev, petType]
+    );
+  };
+
+  const toggleProductCategory = (category: string) => {
+    setScrapeProductCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
   };
 
   const exportToCSV = () => {
@@ -341,7 +417,8 @@ const AdminScraper = () => {
               הגדרות סקראפינג
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Basic settings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">כתובת האתר</label>
@@ -362,24 +439,73 @@ const AdminScraper = () => {
                   disabled={scraping}
                 />
               </div>
-              <div className="flex items-end">
-                <Button 
-                  onClick={startScraping} 
-                  disabled={scraping || !baseUrl}
-                  className="w-full"
-                >
-                  {scraping ? (
-                    <>
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                      סורק...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 ml-2" />
-                      התחל סקראפינג
-                    </>
-                  )}
-                </Button>
+              <div className="flex items-end gap-2">
+                {!scraping ? (
+                  <Button 
+                    onClick={startScraping} 
+                    disabled={!baseUrl || scrapePetTypes.length === 0 || scrapeProductCategories.length === 0}
+                    className="flex-1"
+                  >
+                    <Play className="w-4 h-4 ml-2" />
+                    התחל סקראפינג
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={stopScraping} 
+                    variant="destructive"
+                    className="flex-1"
+                  >
+                    <Square className="w-4 h-4 ml-2" />
+                    עצור סקראפינג
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Pet type filters */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">סוג חיית מחמד לסריקה</label>
+              <div className="flex flex-wrap gap-4">
+                {petTypeOptions.map(pet => {
+                  const Icon = pet.icon;
+                  return (
+                    <div key={pet.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`pet-${pet.id}`}
+                        checked={scrapePetTypes.includes(pet.id)}
+                        onCheckedChange={() => togglePetType(pet.id)}
+                        disabled={scraping}
+                      />
+                      <Label 
+                        htmlFor={`pet-${pet.id}`} 
+                        className="flex items-center gap-1 cursor-pointer"
+                      >
+                        <Icon className="w-4 h-4" />
+                        {pet.label}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Product category filters */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">קטגוריות מוצרים לסריקה</label>
+              <div className="flex flex-wrap gap-4">
+                {productCategoryOptions.map(cat => (
+                  <div key={cat.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`cat-${cat.id}`}
+                      checked={scrapeProductCategories.includes(cat.id)}
+                      onCheckedChange={() => toggleProductCategory(cat.id)}
+                      disabled={scraping}
+                    />
+                    <Label htmlFor={`cat-${cat.id}`} className="cursor-pointer">
+                      {cat.label}
+                    </Label>
+                  </div>
+                ))}
               </div>
             </div>
 

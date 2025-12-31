@@ -233,13 +233,55 @@ function extractNavigationUrls(html: string, baseUrl: string): string[] {
   return urls;
 }
 
+// Map pet types to URL patterns
+const petTypePatterns: Record<string, string[]> = {
+  'dog': ['כלב', 'כלבים', 'dog', 'dogs', '/dogs/', '/dog/'],
+  'cat': ['חתול', 'חתולים', 'cat', 'cats', '/cats/', '/cat/'],
+  'bird': ['ציפור', 'ציפורים', 'bird', 'birds', '/birds/', '/bird/'],
+};
+
+// Map product categories to URL patterns
+const productCategoryPatterns: Record<string, string[]> = {
+  'dry-food': ['מזון-יבש', 'dry-food', 'יבש'],
+  'wet-food': ['מזון-רטוב', 'wet-food', 'רטוב', 'פאוץ', 'שימורים'],
+  'treats': ['חטיפים', 'treats', 'snacks', 'חטיף'],
+  'toys': ['צעצועים', 'toys', 'צעצוע'],
+  'accessories': ['אביזרים', 'accessories', 'אביזר'],
+  'health': ['בריאות', 'health', 'vitamins', 'ויטמינים'],
+  'grooming': ['טיפוח', 'grooming', 'שמפו'],
+};
+
+function urlMatchesPetTypes(url: string, petTypes: string[]): boolean {
+  if (!petTypes || petTypes.length === 0) return true;
+  const lowerUrl = url.toLowerCase();
+  return petTypes.some(petType => {
+    const patterns = petTypePatterns[petType] || [];
+    return patterns.some(pattern => lowerUrl.includes(pattern.toLowerCase()));
+  });
+}
+
+function urlMatchesProductCategories(url: string, categories: string[]): boolean {
+  if (!categories || categories.length === 0) return true;
+  const lowerUrl = url.toLowerCase();
+  return categories.some(cat => {
+    const patterns = productCategoryPatterns[cat] || [];
+    return patterns.some(pattern => lowerUrl.includes(pattern.toLowerCase()));
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { jobId, baseUrl = 'https://homepetcenter.co.il', maxProducts } = await req.json();
+    const { 
+      jobId, 
+      baseUrl = 'https://homepetcenter.co.il', 
+      maxProducts,
+      petTypes = [],
+      productCategories = []
+    } = await req.json();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -255,6 +297,16 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Check if job was stopped
+    const checkJobStatus = async (): Promise<boolean> => {
+      const { data } = await supabase
+        .from('scraping_jobs')
+        .select('status')
+        .eq('id', jobId)
+        .single();
+      return data?.status === 'stopped';
+    };
+
     // Update job status
     await supabase
       .from('scraping_jobs')
@@ -262,6 +314,8 @@ Deno.serve(async (req) => {
       .eq('id', jobId);
 
     console.log('Starting scrape for:', baseUrl);
+    console.log('Pet types filter:', petTypes);
+    console.log('Product categories filter:', productCategories);
 
     // Step 1: Map the website to get all URLs
     console.log('Mapping website URLs...');
@@ -287,14 +341,26 @@ Deno.serve(async (req) => {
     const allUrls: string[] = mapData.links || [];
     console.log('Found', allUrls.length, 'URLs');
 
-    // Filter for product URLs
-    const productUrls = allUrls.filter(url => 
+    // Filter for product URLs matching criteria
+    let productUrls = allUrls.filter(url => 
       url.includes('/product/') || 
       url.includes('/shop/') ||
       url.match(/\/[^\/]+\/$/) // Potential product pages
     );
 
-    console.log('Found', productUrls.length, 'potential product URLs');
+    // Apply pet type filter
+    if (petTypes.length > 0) {
+      productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
+      console.log('After pet type filter:', productUrls.length, 'URLs');
+    }
+
+    // Apply product category filter
+    if (productCategories.length > 0) {
+      productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
+      console.log('After category filter:', productUrls.length, 'URLs');
+    }
+
+    console.log('Found', productUrls.length, 'potential product URLs after filtering');
 
     // Update job with total
     const totalToScrape = maxProducts ? Math.min(productUrls.length, maxProducts) : productUrls.length;
@@ -308,6 +374,15 @@ Deno.serve(async (req) => {
 
     // Step 2: Scrape each product page
     for (const productUrl of urlsToScrape) {
+      // Check if job was stopped
+      if (await checkJobStatus()) {
+        console.log('Job stopped by user');
+        return new Response(
+          JSON.stringify({ success: true, message: 'Scraping stopped by user', scrapedCount }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       try {
         console.log('Scraping:', productUrl);
 
