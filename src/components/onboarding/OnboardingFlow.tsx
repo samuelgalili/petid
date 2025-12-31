@@ -1,72 +1,72 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dog, Cat, Heart, ShoppingBag, Bell, Camera, ChevronRight, Sparkles, X } from "lucide-react";
+import { PawPrint, Heart, Stethoscope, Users, ChevronRight } from "lucide-react";
 
 interface OnboardingStep {
   id: number;
   title: string;
   subtitle: string;
   icon: React.ReactNode;
-  color: string;
-  features: string[];
+  iconBg: string;
+  features: { emoji: string; text: string }[];
+  socialProof?: string;
 }
 
 const steps: OnboardingStep[] = [
   {
     id: 1,
-    title: "ברוכים הבאים ל-PetID",
-    subtitle: "האפליקציה שמקשרת בינך לבין חיית המחמד שלך",
-    icon: <Sparkles className="w-16 h-16" />,
-    color: "from-primary to-primary-dark",
+    title: "הכל מתחיל באחריות 🐾",
+    subtitle: "כי הם סומכים עליך — ואנחנו כאן לעזור",
+    icon: <PawPrint className="w-14 h-14" />,
+    iconBg: "bg-gradient-petid",
     features: [
-      "ניהול פרופיל לחיית המחמד",
-      "מעקב בריאות וחיסונים",
-      "קהילה של בעלי חיות"
-    ]
+      { emoji: "🐾", text: "ניהול פרופיל מלא לחיית המחמד" },
+      { emoji: "📋", text: "מעקב בריאות וחיסונים" },
+      { emoji: "💛", text: "קהילה תומכת של בעלי חיות" }
+    ],
+    socialProof: "50,000+ בעלי חיות כבר איתנו"
   },
   {
     id: 2,
-    title: "הוסף את החיה שלך",
-    subtitle: "צור פרופיל מלא עם תמונות ופרטים",
-    icon: <Dog className="w-16 h-16" />,
-    color: "from-amber-500 to-orange-500",
+    title: "כרטיס הזהות של החבר שלך",
+    subtitle: "כל המידע החשוב במקום אחד",
+    icon: <Heart className="w-14 h-14" />,
+    iconBg: "bg-gradient-warm",
     features: [
-      "זיהוי גזע אוטומטי בעזרת AI",
-      "שמירת מסמכים וטרינריים",
-      "תזכורות לחיסונים וטיפולים"
+      { emoji: "📸", text: "זיהוי גזע אוטומטי בעזרת AI" },
+      { emoji: "📁", text: "שמירת מסמכים וטרינריים" },
+      { emoji: "🔔", text: "תזכורות חכמות לטיפולים" }
     ]
   },
   {
     id: 3,
-    title: "גלה מוצרים מותאמים",
-    subtitle: "חנות מותאמת לסוג ולגיל החיה שלך",
-    icon: <ShoppingBag className="w-16 h-16" />,
-    color: "from-emerald-500 to-teal-500",
+    title: "דאגה לטווח ארוך",
+    subtitle: "לא חנות — מערכת ליווי",
+    icon: <Stethoscope className="w-14 h-14" />,
+    iconBg: "bg-petid-teal",
     features: [
-      "המלצות מותאמות אישית",
-      "מבצעים בלעדיים",
-      "משלוח מהיר"
+      { emoji: "🎯", text: "המלצות מותאמות לגיל ולגזע" },
+      { emoji: "⏰", text: "תזכורות להזמנה חוזרת" },
+      { emoji: "💚", text: "ללא לחץ, ללא דחיפות" }
     ]
   },
   {
     id: 4,
-    title: "הצטרף לקהילה",
-    subtitle: "שתף רגעים עם בעלי חיות אחרים",
-    icon: <Heart className="w-16 h-16" />,
-    color: "from-pink-500 to-rose-500",
+    title: "חלק ממשפחה גדולה",
+    subtitle: "קהילה שמבינה אותך",
+    icon: <Users className="w-14 h-14" />,
+    iconBg: "bg-petid-coral",
     features: [
-      "שיתוף תמונות וסטוריז",
-      "מציאת גינות כלבים",
-      "אימוץ חיות מחמד"
+      { emoji: "🌳", text: "מציאת גינות כלבים קרובות" },
+      { emoji: "🏥", text: "המלצות על וטרינרים" },
+      { emoji: "🐕", text: "אימוץ חיות שמחפשות בית" }
     ]
   }
 ];
 
 export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const navigate = useNavigate();
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -90,31 +90,33 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
 
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col" dir="rtl">
-      {/* Skip button */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* Header with skip and progress */}
+      <div className="flex items-center justify-between px-4 pt-4">
         <Button
           variant="ghost"
           size="sm"
           onClick={handleSkip}
-          className="text-muted-foreground"
+          className="text-muted-foreground hover:text-foreground"
         >
-          דלג
-          <X className="w-4 h-4 mr-1" />
+          אולי אחר כך
         </Button>
-      </div>
-
-      {/* Progress dots */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        {steps.map((_, index) => (
-          <motion.div
-            key={index}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              index === currentStep ? "bg-primary" : "bg-muted"
-            }`}
-            initial={{ scale: 0.8 }}
-            animate={{ scale: index === currentStep ? 1.2 : 1 }}
-          />
-        ))}
+        
+        {/* Progress dots */}
+        <div className="flex gap-2">
+          {steps.map((_, index) => (
+            <motion.div
+              key={index}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                index === currentStep 
+                  ? "bg-primary w-6" 
+                  : index < currentStep 
+                    ? "bg-primary/50" 
+                    : "bg-muted"
+              }`}
+              layout
+            />
+          ))}
+        </div>
       </div>
 
       {/* Content */}
@@ -130,10 +132,10 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
           >
             {/* Icon with gradient background */}
             <motion.div
-              className={`w-32 h-32 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white mb-8 shadow-lg`}
+              className={`w-28 h-28 rounded-full ${step.iconBg} flex items-center justify-center text-white mb-6 shadow-elevated`}
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", delay: 0.1 }}
+              transition={{ type: "spring", delay: 0.1, stiffness: 200 }}
             >
               {step.icon}
             </motion.div>
@@ -150,7 +152,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
 
             {/* Subtitle */}
             <motion.p
-              className="text-muted-foreground mb-8"
+              className="text-muted-foreground mb-8 text-base"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -158,7 +160,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
               {step.subtitle}
             </motion.p>
 
-            {/* Features */}
+            {/* Features with emojis */}
             <motion.div
               className="space-y-3 w-full"
               initial={{ opacity: 0 }}
@@ -168,16 +170,29 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
               {step.features.map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center gap-3 bg-muted/50 rounded-lg p-3"
+                  className="flex items-center gap-3 bg-muted/50 rounded-xl p-4 border border-border/50"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 + index * 0.1 }}
                 >
-                  <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${step.color}`} />
-                  <span className="text-sm text-foreground">{feature}</span>
+                  <span className="text-xl">{feature.emoji}</span>
+                  <span className="text-sm text-foreground font-medium">{feature.text}</span>
                 </motion.div>
               ))}
             </motion.div>
+
+            {/* Social proof */}
+            {step.socialProof && (
+              <motion.p
+                className="mt-6 text-sm text-primary font-medium flex items-center gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+              >
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                {step.socialProof}
+              </motion.p>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -186,10 +201,10 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
       <div className="p-6 pb-safe">
         <Button
           onClick={handleNext}
-          className="w-full h-12 text-base font-medium"
-          size="lg"
+          className="w-full h-14 text-base font-semibold rounded-2xl shadow-button"
+          size="xl"
         >
-          {isLastStep ? "בואו נתחיל!" : "הבא"}
+          {isLastStep ? "בואו נתחיל 💛" : "הבא"}
           <ChevronRight className="w-5 h-5 mr-2" />
         </Button>
 
