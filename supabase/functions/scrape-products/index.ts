@@ -360,8 +360,8 @@ Deno.serve(async (req) => {
       const urlObj = new URL(baseUrl);
       const baseDomain = urlObj.origin;
       
-      // Scrape the first page to extract links and find pagination
-      const scrapeFirstPage = async (pageUrl: string) => {
+      // Scrape a page to extract links and find pagination
+      const scrapePage = async (pageUrl: string) => {
         const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
           method: 'POST',
           headers: {
@@ -379,24 +379,52 @@ Deno.serve(async (req) => {
         
         if (!scrapeResponse.ok) {
           console.error('Scrape failed for', pageUrl, ':', scrapeData);
-          return { links: [], html: '', productUrls: [], paginationUrls: [] };
+          return { links: [], html: '', productUrls: [], paginationUrls: [], maxPage: 1 };
         }
 
         const links: string[] = scrapeData.data?.links || scrapeData.links || [];
         const html = scrapeData.data?.html || scrapeData.html || '';
         const extractedUrls = html ? extractProductUrls(html, baseDomain) : [];
         
-        // Find pagination URLs
+        // Find pagination URLs - multiple patterns
         const paginationUrls: string[] = [];
+        let maxPage = 1;
+        
+        // Pattern 1: /page/N/
         const pageMatches = html.matchAll(/href="([^"]*\/page\/(\d+)[^"]*)"/gi);
         for (const match of pageMatches) {
           let pageUrl = match[1];
+          const pageNum = parseInt(match[2]);
+          if (pageNum > maxPage) maxPage = pageNum;
           if (!pageUrl.startsWith('http')) {
             pageUrl = baseDomain + pageUrl;
           }
           if (!paginationUrls.includes(pageUrl)) {
             paginationUrls.push(pageUrl);
           }
+        }
+        
+        // Pattern 2: ?paged=N or &paged=N (WooCommerce)
+        const pagedMatches = html.matchAll(/href="([^"]*[?&]paged=(\d+)[^"]*)"/gi);
+        for (const match of pagedMatches) {
+          let pageUrl = match[1];
+          const pageNum = parseInt(match[2]);
+          if (pageNum > maxPage) maxPage = pageNum;
+          if (!pageUrl.startsWith('http')) {
+            pageUrl = baseDomain + pageUrl;
+          }
+          if (!paginationUrls.includes(pageUrl)) {
+            paginationUrls.push(pageUrl);
+          }
+        }
+        
+        // Look for "last page" or total pages indicator
+        const lastPageMatch = html.match(/page\/(\d+)[^"]*"[^>]*class="[^"]*last/i) ||
+                              html.match(/עמוד\s+\d+\s+מתוך\s+(\d+)/i) ||
+                              html.match(/Page\s+\d+\s+of\s+(\d+)/i);
+        if (lastPageMatch) {
+          const lastPage = parseInt(lastPageMatch[1]);
+          if (lastPage > maxPage) maxPage = lastPage;
         }
         
         // Filter product URLs from links
@@ -414,27 +442,59 @@ Deno.serve(async (req) => {
           links, 
           html, 
           productUrls: [...new Set([...productUrls, ...extractedUrls])],
-          paginationUrls 
+          paginationUrls,
+          maxPage
         };
       };
 
       // Scrape first page
       console.log('Scraping first page:', baseUrl);
-      const firstPageResult = await scrapeFirstPage(baseUrl);
+      const firstPageResult = await scrapePage(baseUrl);
       
       let allProductUrls = [...firstPageResult.productUrls];
       console.log('First page: found', allProductUrls.length, 'product URLs');
       console.log('Pagination pages found:', firstPageResult.paginationUrls.length);
+      console.log('Max page detected:', firstPageResult.maxPage);
       
-      // Scrape pagination pages (up to 10 pages to avoid timeout)
-      const maxPages = 10;
-      const paginationToScrape = firstPageResult.paginationUrls.slice(0, maxPages);
+      // Build pagination URLs if not found in links
+      const maxPagesToScrape = 50; // Increased from 10 to 50
+      let pagesToScrape: string[] = [...firstPageResult.paginationUrls];
       
-      for (const pageUrl of paginationToScrape) {
+      // If we found maxPage > what we have, generate missing page URLs
+      if (firstPageResult.maxPage > pagesToScrape.length + 1) {
+        const urlObj = new URL(baseUrl);
+        for (let i = 2; i <= Math.min(firstPageResult.maxPage, maxPagesToScrape); i++) {
+          // Try /page/N/ format
+          let pageUrl = baseUrl.replace(/\/?$/, '') + `/page/${i}/`;
+          if (!pagesToScrape.includes(pageUrl)) {
+            pagesToScrape.push(pageUrl);
+          }
+        }
+      }
+      
+      // If still no pagination found, try to generate pages anyway
+      if (pagesToScrape.length === 0 && allProductUrls.length >= 10) {
+        console.log('No pagination found but products exist, trying to generate page URLs...');
+        for (let i = 2; i <= 20; i++) {
+          pagesToScrape.push(baseUrl.replace(/\/?$/, '') + `/page/${i}/`);
+        }
+      }
+      
+      console.log('Will scrape', Math.min(pagesToScrape.length, maxPagesToScrape), 'pagination pages');
+      
+      // Scrape pagination pages
+      for (const pageUrl of pagesToScrape.slice(0, maxPagesToScrape)) {
         console.log('Scraping pagination page:', pageUrl);
         try {
-          const pageResult = await scrapeFirstPage(pageUrl);
+          const pageResult = await scrapePage(pageUrl);
           const newUrls = pageResult.productUrls.filter(url => !allProductUrls.includes(url));
+          
+          // If page returned 0 products, we've probably reached the end
+          if (pageResult.productUrls.length === 0) {
+            console.log('Empty page reached, stopping pagination');
+            break;
+          }
+          
           allProductUrls = [...allProductUrls, ...newUrls];
           console.log('Page added', newUrls.length, 'new products. Total:', allProductUrls.length);
         } catch (e) {
