@@ -25,6 +25,9 @@ import { Input } from "@/components/ui/input";
 import { StoriesBar } from "@/components/StoriesBar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { toast } from "sonner";
+import { CareDashboard } from "@/components/home/CareDashboard";
+import { ReminderBanner } from "@/components/home/ReminderFlow";
+import { CommunitySection } from "@/components/club/CommunitySection";
 
 // Category icons mapping
 const categoryIcons: Record<string, string> = {
