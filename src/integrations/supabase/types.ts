@@ -4666,6 +4666,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_moderator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       send_post_notification: {
         Args: {
           p_body: string
