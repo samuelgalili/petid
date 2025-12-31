@@ -12,7 +12,12 @@ import {
   Mail,
   QrCode,
   Star,
-  RefreshCw
+  RefreshCw,
+  Settings,
+  Award,
+  Sparkles,
+  Heart,
+  MessageCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +38,7 @@ import { PostGrid } from "@/components/profile/PostGrid";
 import { AnimatedCounter } from "@/components/profile/AnimatedCounter";
 import { MutualFollowers } from "@/components/profile/MutualFollowers";
 import { ActivityStatus } from "@/components/profile/ActivityStatus";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Profile = () => {
   const { toast } = useToast();
@@ -263,47 +269,90 @@ const Profile = () => {
           )}
         </AnimatePresence>
 
-        {/* PetID-style Header */}
-        <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-md border-b border-border/30 shadow-soft">
+        {/* Premium Header with Gradient */}
+        <motion.div 
+          className="sticky top-0 z-20 backdrop-blur-xl border-b border-border/20"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          style={{
+            background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%)',
+          }}
+        >
           <div className="flex items-center justify-between px-4 h-14">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-foreground">
+            <div className="flex items-center gap-3">
+              <motion.h1 
+                className="text-xl font-bold bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
                 {profile?.full_name?.split(' ')[0] || 'משתמש'}
-              </h1>
+              </motion.h1>
               <RoleBadge size="sm" />
               {profile?.points > 100 && (
-                <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  ⭐ {Math.floor((profile?.points || 0) / 100)}+
-                </span>
+                <motion.span 
+                  className="bg-gradient-to-r from-primary/20 to-accent/20 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring" }}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {Math.floor((profile?.points || 0) / 100)}+
+                </motion.span>
               )}
             </div>
-            <button 
-              onClick={() => setIsMenuOpen(true)}
-              className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
-            >
-              <Menu className="w-5 h-5 text-foreground" />
-            </button>
-          </div>
-        </div>
-
-        {/* Profile Header Section */}
-        <motion.div 
-          className="px-4 pt-4"
-          style={{ transform: `translateY(${pullDistance * 0.3}px)` }}
-        >
-          {/* Avatar and Stats Row */}
-          <div className="flex items-center gap-6 mb-4">
-            {/* Profile Picture */}
-            <div className="relative">
-              <motion.div 
-                className="w-20 h-20 rounded-full overflow-hidden ring-[3px] ring-gradient-to-br from-primary to-accent p-[2px] bg-gradient-to-br from-primary to-accent"
+            <div className="flex items-center gap-1">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.button 
+                      onClick={() => navigate('/settings')}
+                      className="p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Settings className="w-5 h-5 text-muted-foreground" />
+                    </motion.button>
+                  </TooltipTrigger>
+                  <TooltipContent>הגדרות</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <motion.button 
+                onClick={() => setIsMenuOpen(true)}
+                className="p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="w-full h-full rounded-full overflow-hidden bg-background">
+                <Menu className="w-5 h-5 text-foreground" />
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Profile Header Section */}
+        <motion.div 
+          className="px-4 pt-6"
+          style={{ transform: `translateY(${pullDistance * 0.3}px)` }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          {/* Avatar and Stats Row - Enhanced */}
+          <div className="flex items-center gap-5 mb-5">
+            {/* Profile Picture with Glow */}
+            <div className="relative">
+              <motion.div 
+                className="relative w-24 h-24"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {/* Animated gradient ring */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary via-accent to-primary opacity-80 animate-[spin_8s_linear_infinite] blur-[2px]" />
+                <div className="absolute inset-[3px] rounded-full bg-background" />
+                <div className="absolute inset-[4px] rounded-full overflow-hidden">
                   <Avatar className="w-full h-full">
                     <AvatarImage src={profile?.avatar_url} className="object-cover" />
-                    <AvatarFallback className="bg-muted text-foreground font-semibold text-2xl">
+                    <AvatarFallback className="bg-gradient-to-br from-muted to-muted/50 text-foreground font-bold text-3xl">
                       {profile?.full_name?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -311,183 +360,205 @@ const Profile = () => {
               </motion.div>
               <motion.button
                 onClick={() => setIsImageEditorOpen(true)}
-                className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background shadow-lg"
-                whileHover={{ scale: 1.1 }}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center ring-3 ring-background shadow-xl"
+                whileHover={{ scale: 1.15, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400 }}
               >
-                <Plus className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
+                <Camera className="w-4 h-4 text-primary-foreground" />
               </motion.button>
             </div>
 
-            {/* Stats with Animation */}
-            <div className="flex-1 flex justify-around">
-              <button className="text-center" onClick={() => setActiveTab("posts")}>
-                <p className="text-lg font-bold text-foreground">
-                  <AnimatedCounter value={stats?.posts || 0} />
-                </p>
-                <p className="text-xs text-muted-foreground">פוסטים</p>
-              </button>
-              <button className="text-center">
-                <p className="text-lg font-bold text-foreground">
-                  <AnimatedCounter value={stats?.followers || 0} />
-                </p>
-                <p className="text-xs text-muted-foreground">עוקבים</p>
-              </button>
-              <button className="text-center">
-                <p className="text-lg font-bold text-foreground">
-                  <AnimatedCounter value={stats?.following || 0} />
-                </p>
-                <p className="text-xs text-muted-foreground">עוקב</p>
-              </button>
+            {/* Stats with Enhanced Animation */}
+            <div className="flex-1 grid grid-cols-3 gap-2">
+              {[
+                { value: stats?.posts || 0, label: 'פוסטים', onClick: () => setActiveTab("posts") },
+                { value: stats?.followers || 0, label: 'עוקבים', onClick: () => {} },
+                { value: stats?.following || 0, label: 'עוקב', onClick: () => {} }
+              ].map((stat, index) => (
+                <motion.button 
+                  key={stat.label}
+                  className="text-center p-2 rounded-2xl hover:bg-muted/50 transition-colors"
+                  onClick={stat.onClick}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <p className="text-xl font-bold text-foreground">
+                    <AnimatedCounter value={stat.value} />
+                  </p>
+                  <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
+                </motion.button>
+              ))}
             </div>
           </div>
 
-          {/* Bio Section */}
-          <div className="mb-4">
+          {/* Bio Section - Enhanced */}
+          <motion.div 
+            className="mb-5 space-y-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-foreground text-sm">{profile?.full_name || "משתמש"}</h2>
+              <h2 className="font-bold text-foreground text-base">{profile?.full_name || "משתמש"}</h2>
               <ActivityStatus userId={profile?.id} size="sm" />
             </div>
             {pets.length > 0 && (
-              <p className="text-muted-foreground text-sm">בעל/ת {pets.length} חיות מחמד 🐾</p>
+              <p className="text-muted-foreground text-sm flex items-center gap-1">
+                <Heart className="w-3.5 h-3.5 text-accent" />
+                בעל/ת {pets.length} חיות מחמד
+              </p>
             )}
             {profile?.bio && (
-              <p className="text-foreground text-sm mt-1">{profile.bio}</p>
+              <p className="text-foreground/90 text-sm leading-relaxed">{profile.bio}</p>
             )}
             
-            {/* Points & Cashback Display */}
-            <div className="flex items-center gap-3 mt-2">
+            {/* Points & Cashback Display - Enhanced */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               {profile?.points > 0 && (
-                <motion.div 
-                  className="flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-full"
+                <motion.button 
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 to-primary/5 px-3 py-1.5 rounded-full border border-primary/20"
                   whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/rewards')}
                 >
-                  <span className="text-sm">⭐</span>
+                  <Award className="w-3.5 h-3.5 text-primary" />
                   <span className="text-xs font-semibold text-primary">{profile.points} נקודות</span>
-                </motion.div>
+                </motion.button>
               )}
               {(cashbackData || 0) > 0 && (
                 <motion.div 
-                  className="flex items-center gap-1.5 bg-green-500/10 px-2.5 py-1 rounded-full"
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-success/15 to-success/5 px-3 py-1.5 rounded-full border border-success/20"
                   whileHover={{ scale: 1.05 }}
                 >
-                  <span className="text-sm">💰</span>
-                  <span className="text-xs font-semibold text-green-600 dark:text-green-400">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
+                  <span className="text-xs font-semibold text-success">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
                 </motion.div>
               )}
             </div>
 
             {/* Mutual Followers */}
-            <div className="mt-2">
+            <div className="pt-1">
               <MutualFollowers userId={profile?.id} currentUserId={profile?.id} />
             </div>
-          </div>
+          </motion.div>
 
-          {/* Action Buttons - PetID styled */}
-          <div className="flex gap-2 mb-4 relative z-10">
+          {/* Action Buttons - Enhanced with Tooltips */}
+          <motion.div 
+            className="flex gap-2 mb-5 relative z-10"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
             <Button 
               type="button"
-              variant="outline"
-              className="flex-1 h-10 font-semibold text-sm rounded-2xl border-border/50 bg-card hover:bg-muted/50"
+              className="flex-1 h-11 font-semibold text-sm rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-foreground hover:from-primary/20 hover:to-accent/20 transition-all duration-300"
               onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 navigate('/edit-profile');
               }}
             >
-              ✏️ עריכת פרופיל
+              <Settings className="w-4 h-4 ml-1.5" />
+              עריכת פרופיל
             </Button>
-            <Button 
-              type="button"
-              variant="outline"
-              className="flex-1 h-10 font-semibold text-sm rounded-2xl border-success/30 bg-success/10 hover:bg-success/20 text-success"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (profile?.whatsapp_number) {
-                  window.open(`https://wa.me/${profile.whatsapp_number.replace(/[^0-9]/g, '')}`, '_blank');
-                } else {
-                  navigate('/edit-profile?tab=whatsapp');
-                }
-              }}
-            >
-              <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-              {profile?.whatsapp_number ? 'וואטסאפ' : 'חבר וואטסאפ'}
-            </Button>
-            <Button 
-              type="button"
-              variant="secondary"
-              className="h-9 px-4 font-semibold text-sm border border-border"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/messages');
-              }}
-            >
-              <Mail className="w-4 h-4" />
-            </Button>
-            <Button 
-              type="button"
-              variant="secondary"
-              className="h-9 px-4 font-semibold text-sm border border-border"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowQRCode(true);
-              }}
-            >
-              <QrCode className="w-4 h-4" />
-            </Button>
-            <Button 
-              type="button"
-              variant="secondary"
-              className="h-9 px-4 font-semibold text-sm border border-border"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowCloseFriends(true);
-              }}
-            >
-              <Star className="w-4 h-4" />
-            </Button>
-          </div>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="h-11 px-4 rounded-2xl border-border/50 bg-card hover:bg-muted/50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate('/messages');
+                    }}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>הודעות</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="h-11 px-4 rounded-2xl border-border/50 bg-card hover:bg-muted/50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowQRCode(true);
+                    }}
+                  >
+                    <QrCode className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>קוד QR</TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="h-11 px-4 rounded-2xl border-accent/30 bg-accent/10 hover:bg-accent/20 text-accent"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowCloseFriends(true);
+                    }}
+                  >
+                    <Star className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>חברים קרובים</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </motion.div>
 
-          {/* Pet Highlights */}
-          <div className="mb-4">
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Pet Highlights - Enhanced */}
+          <motion.div 
+            className="mb-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
               {/* Add New Pet */}
               <motion.button 
-                className="flex flex-col items-center gap-1.5 min-w-[64px]"
+                className="flex flex-col items-center gap-2 min-w-[72px]"
                 onClick={() => navigate('/add-pet')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="w-16 h-16 rounded-full border-2 border-dashed border-muted-foreground/50 flex items-center justify-center">
-                  <Plus className="w-6 h-6 text-muted-foreground" />
+                <div className="w-[68px] h-[68px] rounded-full border-2 border-dashed border-primary/40 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 transition-colors">
+                  <Plus className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-[10px] text-muted-foreground">חדש</span>
+                <span className="text-[11px] text-muted-foreground font-medium">הוסף חיה</span>
               </motion.button>
 
               {/* Pet Highlights */}
               {pets.map((pet, index) => (
                 <motion.button 
                   key={pet.id}
-                  className="flex flex-col items-center gap-1.5 min-w-[64px]"
+                  className="flex flex-col items-center gap-2 min-w-[72px]"
                   onClick={() => navigate(`/pet/${pet.id}`)}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-br from-primary/50 to-accent/50">
-                    <div className="w-full h-full rounded-full overflow-hidden bg-background">
+                  <div className="relative w-[68px] h-[68px]">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary to-accent opacity-70" />
+                    <div className="absolute inset-[2px] rounded-full bg-background" />
+                    <div className="absolute inset-[3px] rounded-full overflow-hidden">
                       {pet.avatar_url ? (
                         <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
                           {pet.type === 'dog' ? (
                             <img src={dogIcon} alt="dog" className="w-8 h-8" />
                           ) : (
@@ -497,31 +568,31 @@ const Profile = () => {
                       )}
                     </div>
                   </div>
-                  <span className="text-[10px] text-foreground truncate max-w-[64px]">{pet.name}</span>
+                  <span className="text-[11px] text-foreground font-medium truncate max-w-[72px]">{pet.name}</span>
                 </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         </motion.div>
 
-        {/* Content Tabs */}
+        {/* Content Tabs - Enhanced */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full h-12 rounded-none border-t border-border bg-transparent p-0">
+          <TabsList className="w-full h-14 rounded-none border-t border-border/50 bg-card/50 backdrop-blur-sm p-0 gap-0">
             <TabsTrigger 
               value="posts" 
-              className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-foreground data-[state=active]:shadow-none bg-transparent"
+              className="flex-1 h-full rounded-none data-[state=active]:border-b-[3px] data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none bg-transparent transition-all duration-200"
             >
               <Grid3X3 className="w-5 h-5" />
             </TabsTrigger>
             <TabsTrigger 
               value="reels" 
-              className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-foreground data-[state=active]:shadow-none bg-transparent"
+              className="flex-1 h-full rounded-none data-[state=active]:border-b-[3px] data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none bg-transparent transition-all duration-200"
             >
               <Film className="w-5 h-5" />
             </TabsTrigger>
             <TabsTrigger 
               value="tagged" 
-              className="flex-1 h-full rounded-none data-[state=active]:border-b-2 data-[state=active]:border-foreground data-[state=active]:shadow-none bg-transparent"
+              className="flex-1 h-full rounded-none data-[state=active]:border-b-[3px] data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none bg-transparent transition-all duration-200"
             >
               <UserSquare className="w-5 h-5" />
             </TabsTrigger>
@@ -532,23 +603,27 @@ const Profile = () => {
               <PostGrid posts={posts} />
             ) : (
               <motion.div 
-                className="flex flex-col items-center justify-center py-16 px-4"
+                className="flex flex-col items-center justify-center py-20 px-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
-                  <Camera className="w-10 h-10 text-foreground" strokeWidth={1} />
-                </div>
+                <motion.div 
+                  className="w-24 h-24 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-5"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Camera className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
+                </motion.div>
                 <h3 className="text-2xl font-bold text-foreground mb-2">שתף תמונות</h3>
-                <p className="text-muted-foreground text-center text-sm">
+                <p className="text-muted-foreground text-center text-sm max-w-[240px] mb-4">
                   כשתשתף תמונות, הן יופיעו בפרופיל שלך.
                 </p>
                 <Button 
-                  variant="link" 
-                  className="text-primary mt-2"
+                  className="bg-gradient-to-r from-primary to-primary-dark text-primary-foreground rounded-full px-6"
                   onClick={() => navigate('/')}
                 >
-                  שתף את התמונה הראשונה שלך
+                  <Plus className="w-4 h-4 ml-1" />
+                  שתף תמונה ראשונה
                 </Button>
               </motion.div>
             )}
@@ -556,15 +631,19 @@ const Profile = () => {
 
           <TabsContent value="reels" className="mt-0">
             <motion.div 
-              className="flex flex-col items-center justify-center py-16 px-4"
+              className="flex flex-col items-center justify-center py-20 px-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
-                <Film className="w-10 h-10 text-foreground" strokeWidth={1} />
-              </div>
+              <motion.div 
+                className="w-24 h-24 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-5"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                <Film className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
+              </motion.div>
               <h3 className="text-2xl font-bold text-foreground mb-2">סרטונים קצרים</h3>
-              <p className="text-muted-foreground text-center text-sm">
+              <p className="text-muted-foreground text-center text-sm max-w-[240px]">
                 צור וצפה בסרטונים קצרים ומהנים.
               </p>
             </motion.div>
@@ -572,15 +651,17 @@ const Profile = () => {
 
           <TabsContent value="tagged" className="mt-0">
             <motion.div 
-              className="flex flex-col items-center justify-center py-16 px-4"
+              className="flex flex-col items-center justify-center py-20 px-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
-                <UserSquare className="w-10 h-10 text-foreground" strokeWidth={1} />
-              </div>
+              <motion.div 
+                className="w-24 h-24 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-5"
+              >
+                <UserSquare className="w-12 h-12 text-muted-foreground" strokeWidth={1.5} />
+              </motion.div>
               <h3 className="text-2xl font-bold text-foreground mb-2">תמונות שתויגת בהן</h3>
-              <p className="text-muted-foreground text-center text-sm">
+              <p className="text-muted-foreground text-center text-sm max-w-[240px]">
                 כשאנשים מתייגים אותך בתמונות, הן יופיעו כאן.
               </p>
             </motion.div>
