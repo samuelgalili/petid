@@ -30,6 +30,7 @@ import {
   Store,
   Megaphone,
   Layers,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -387,6 +388,7 @@ const AdminDashboard = () => {
     { label: "לוג פעולות", icon: History, path: "/admin/audit", color: "bg-slate-500" },
     { label: "הגדרות", icon: Settings, path: "/admin/settings", color: "bg-gray-500" },
     { label: "ייבוא CSV", icon: Upload, path: "/admin/products/import", color: "bg-lime-500" },
+    { label: "סקראפר", icon: Bot, path: "/admin/scraper", color: "bg-sky-500" },
   ];
 
   const COLORS = ['#7DD3C0', '#FBD66A', '#F4C542', '#FF6B6B', '#4ECDC4'];
