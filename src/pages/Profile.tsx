@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Menu,
   Plus,
@@ -9,17 +9,10 @@ import {
   Grid3X3,
   Film,
   UserSquare,
-  Settings,
-  ChevronLeft,
-  BadgeCheck,
   Mail,
-  Heart,
-  MessageCircle,
-  Bookmark,
-  MoreHorizontal,
-  Pin,
   QrCode,
-  Star
+  Star,
+  RefreshCw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,17 +23,21 @@ import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
-import { HighlightsSection } from "@/components/HighlightsSection";
 import { RoleBadge } from "@/components/RoleBadge";
 import { QRCodeProfile } from "@/components/QRCodeProfile";
 import { CloseFriendsManager } from "@/components/CloseFriendsManager";
-import { PinnedPostsBadge } from "@/components/PinnedPostsBadge";
+import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
+import { PostGrid } from "@/components/profile/PostGrid";
+import { AnimatedCounter } from "@/components/profile/AnimatedCounter";
+import { MutualFollowers } from "@/components/profile/MutualFollowers";
+import { ActivityStatus } from "@/components/profile/ActivityStatus";
 
 const Profile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [pets, setPets] = useState<any[]>([]);
@@ -49,9 +46,12 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("posts");
   const [showQRCode, setShowQRCode] = useState(false);
   const [showCloseFriends, setShowCloseFriends] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [startY, setStartY] = useState(0);
 
   // Fetch user stats
-  const { data: stats } = useQuery({
+  const { data: stats, refetch: refetchStats } = useQuery({
     queryKey: ['profile-stats', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return { posts: 0, followers: 0, following: 0 };
@@ -72,7 +72,7 @@ const Profile = () => {
   });
 
   // Fetch cashback from orders
-  const { data: cashbackData } = useQuery({
+  const { data: cashbackData, refetch: refetchCashback } = useQuery({
     queryKey: ['user-cashback', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return 0;
@@ -81,34 +81,47 @@ const Profile = () => {
         .select('total')
         .eq('user_id', profile.id);
       
-      // Calculate 5% cashback from all orders
       const totalSpent = data?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
       return totalSpent * 0.05;
     },
     enabled: !!profile?.id
   });
 
-  // Fetch user posts
-  const { data: posts } = useQuery({
+  // Fetch user posts with likes/comments counts
+  const { data: posts, refetch: refetchPosts } = useQuery({
     queryKey: ['user-posts', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const { data } = await supabase
+      const { data: postsData } = await supabase
         .from('posts')
         .select('*')
         .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
-      return data || [];
-    },
-    enabled: !!profile?.id
-  });
+      
+      if (!postsData) return [];
 
-  // Fetch mutual followers
-  const { data: mutualFollowers } = useQuery({
-    queryKey: ['mutual-followers', profile?.id],
-    queryFn: async () => {
-      // This would need proper logic - for now return empty
-      return [];
+      // Fetch likes and comments counts
+      const postIds = postsData.map(p => p.id);
+      const [likesRes, commentsRes] = await Promise.all([
+        supabase.from('post_likes').select('post_id').in('post_id', postIds),
+        supabase.from('post_comments').select('post_id').in('post_id', postIds)
+      ]);
+
+      const likesCount: Record<string, number> = {};
+      const commentsCount: Record<string, number> = {};
+      
+      likesRes.data?.forEach(l => {
+        likesCount[l.post_id] = (likesCount[l.post_id] || 0) + 1;
+      });
+      commentsRes.data?.forEach(c => {
+        commentsCount[c.post_id] = (commentsCount[c.post_id] || 0) + 1;
+      });
+
+      return postsData.map(post => ({
+        ...post,
+        likes_count: likesCount[post.id] || 0,
+        comments_count: commentsCount[post.id] || 0
+      }));
     },
     enabled: !!profile?.id
   });
@@ -116,6 +129,29 @@ const Profile = () => {
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  // Update last seen on mount
+  useEffect(() => {
+    const updateLastSeen = async () => {
+      if (profile?.id) {
+        await supabase
+          .from('profiles')
+          .update({ last_seen_at: new Date().toISOString(), is_online: true } as any)
+          .eq('id', profile.id);
+      }
+    };
+    updateLastSeen();
+
+    // Set offline on unmount
+    return () => {
+      if (profile?.id) {
+        supabase
+          .from('profiles')
+          .update({ is_online: false } as any)
+          .eq('id', profile.id);
+      }
+    };
+  }, [profile?.id]);
 
   const fetchAllData = async () => {
     try {
@@ -127,7 +163,6 @@ const Profile = () => {
         return;
       }
 
-      // Fetch profile
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
@@ -136,7 +171,6 @@ const Profile = () => {
 
       setProfile({ ...profileData, id: user.id });
 
-      // Fetch pets
       const { data: petsData } = await supabase
         .from('pets')
         .select('*')
@@ -153,25 +187,82 @@ const Profile = () => {
     }
   };
 
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-  };
+  // Pull to refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      setStartY(e.touches[0].clientY);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (startY > 0 && window.scrollY === 0) {
+      const distance = e.touches[0].clientY - startY;
+      if (distance > 0) {
+        setPullDistance(Math.min(distance * 0.5, 100));
+      }
+    }
+  }, [startY]);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullDistance > 60) {
+      setIsRefreshing(true);
+      await Promise.all([
+        fetchAllData(),
+        refetchStats(),
+        refetchPosts(),
+        refetchCashback()
+      ]);
+      toast({ description: "הפרופיל עודכן" });
+      setIsRefreshing(false);
+    }
+    setPullDistance(0);
+    setStartY(0);
+  }, [pullDistance, refetchStats, refetchPosts, refetchCashback, toast]);
 
   if (loading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-background flex items-center justify-center pb-20">
-          <div className="w-12 h-12 border-3 border-border border-t-primary rounded-full animate-spin"></div>
-        </div>
+        <ProfileSkeleton />
+        <BottomNav />
       </PageTransition>
     );
   }
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <div 
+        className="min-h-screen bg-background pb-20" 
+        dir="rtl"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Pull to Refresh Indicator */}
+        <AnimatePresence>
+          {pullDistance > 0 && (
+            <motion.div 
+              className="absolute top-0 left-0 right-0 flex justify-center z-50 bg-background"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ 
+                height: pullDistance, 
+                opacity: pullDistance > 30 ? 1 : pullDistance / 30 
+              }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <motion.div
+                animate={{ 
+                  rotate: isRefreshing ? 360 : pullDistance * 3.6,
+                  scale: pullDistance > 60 ? 1.2 : 1 
+                }}
+                transition={isRefreshing ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}
+                className="flex items-center justify-center"
+              >
+                <RefreshCw className={`w-6 h-6 ${pullDistance > 60 ? 'text-primary' : 'text-muted-foreground'}`} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Instagram-style Header */}
         <div className="sticky top-0 z-20 bg-background border-b border-border">
           <div className="flex items-center justify-between px-4 h-14">
@@ -193,12 +284,19 @@ const Profile = () => {
         </div>
 
         {/* Profile Header Section */}
-        <div className="px-4 pt-4">
+        <motion.div 
+          className="px-4 pt-4"
+          style={{ transform: `translateY(${pullDistance * 0.3}px)` }}
+        >
           {/* Avatar and Stats Row */}
           <div className="flex items-center gap-6 mb-4">
             {/* Profile Picture */}
             <div className="relative">
-              <div className="w-20 h-20 rounded-full overflow-hidden ring-[3px] ring-gradient-to-br from-primary to-accent p-[2px] bg-gradient-to-br from-primary to-accent">
+              <motion.div 
+                className="w-20 h-20 rounded-full overflow-hidden ring-[3px] ring-gradient-to-br from-primary to-accent p-[2px] bg-gradient-to-br from-primary to-accent"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <div className="w-full h-full rounded-full overflow-hidden bg-background">
                   <Avatar className="w-full h-full">
                     <AvatarImage src={profile?.avatar_url} className="object-cover" />
@@ -207,27 +305,35 @@ const Profile = () => {
                     </AvatarFallback>
                   </Avatar>
                 </div>
-              </div>
-              <button
+              </motion.div>
+              <motion.button
                 onClick={() => setIsImageEditorOpen(true)}
                 className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background shadow-lg"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
               >
                 <Plus className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
-              </button>
+              </motion.button>
             </div>
 
-            {/* Stats */}
+            {/* Stats with Animation */}
             <div className="flex-1 flex justify-around">
               <button className="text-center" onClick={() => setActiveTab("posts")}>
-                <p className="text-lg font-bold text-foreground">{formatNumber(stats?.posts || 0)}</p>
+                <p className="text-lg font-bold text-foreground">
+                  <AnimatedCounter value={stats?.posts || 0} />
+                </p>
                 <p className="text-xs text-muted-foreground">פוסטים</p>
               </button>
               <button className="text-center">
-                <p className="text-lg font-bold text-foreground">{formatNumber(stats?.followers || 0)}</p>
+                <p className="text-lg font-bold text-foreground">
+                  <AnimatedCounter value={stats?.followers || 0} />
+                </p>
                 <p className="text-xs text-muted-foreground">עוקבים</p>
               </button>
               <button className="text-center">
-                <p className="text-lg font-bold text-foreground">{formatNumber(stats?.following || 0)}</p>
+                <p className="text-lg font-bold text-foreground">
+                  <AnimatedCounter value={stats?.following || 0} />
+                </p>
                 <p className="text-xs text-muted-foreground">עוקב</p>
               </button>
             </div>
@@ -235,27 +341,42 @@ const Profile = () => {
 
           {/* Bio Section */}
           <div className="mb-4">
-            <h2 className="font-bold text-foreground text-sm">{profile?.full_name || "משתמש"}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-foreground text-sm">{profile?.full_name || "משתמש"}</h2>
+              <ActivityStatus userId={profile?.id} size="sm" />
+            </div>
             {pets.length > 0 && (
               <p className="text-muted-foreground text-sm">בעל/ת {pets.length} חיות מחמד 🐾</p>
             )}
             {profile?.bio && (
               <p className="text-foreground text-sm mt-1">{profile.bio}</p>
             )}
+            
             {/* Points & Cashback Display */}
             <div className="flex items-center gap-3 mt-2">
               {profile?.points > 0 && (
-                <div className="flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-full">
+                <motion.div 
+                  className="flex items-center gap-1.5 bg-primary/10 px-2.5 py-1 rounded-full"
+                  whileHover={{ scale: 1.05 }}
+                >
                   <span className="text-sm">⭐</span>
                   <span className="text-xs font-semibold text-primary">{profile.points} נקודות</span>
-                </div>
+                </motion.div>
               )}
               {(cashbackData || 0) > 0 && (
-                <div className="flex items-center gap-1.5 bg-green-500/10 px-2.5 py-1 rounded-full">
+                <motion.div 
+                  className="flex items-center gap-1.5 bg-green-500/10 px-2.5 py-1 rounded-full"
+                  whileHover={{ scale: 1.05 }}
+                >
                   <span className="text-sm">💰</span>
                   <span className="text-xs font-semibold text-green-600 dark:text-green-400">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
-                </div>
+                </motion.div>
               )}
+            </div>
+
+            {/* Mutual Followers */}
+            <div className="mt-2">
+              <MutualFollowers userId={profile?.id} currentUserId={profile?.id} />
             </div>
           </div>
 
@@ -330,26 +451,33 @@ const Profile = () => {
             </Button>
           </div>
 
-          {/* Story Highlights */}
+          {/* Pet Highlights */}
           <div className="mb-4">
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {/* Add New Highlight */}
-              <button 
+              {/* Add New Pet */}
+              <motion.button 
                 className="flex flex-col items-center gap-1.5 min-w-[64px]"
                 onClick={() => navigate('/add-pet')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <div className="w-16 h-16 rounded-full border-2 border-dashed border-muted-foreground/50 flex items-center justify-center">
                   <Plus className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <span className="text-[10px] text-muted-foreground">חדש</span>
-              </button>
+              </motion.button>
 
               {/* Pet Highlights */}
-              {pets.map((pet) => (
-                <button 
+              {pets.map((pet, index) => (
+                <motion.button 
                   key={pet.id}
                   className="flex flex-col items-center gap-1.5 min-w-[64px]"
                   onClick={() => navigate(`/pet/${pet.id}`)}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-br from-primary/50 to-accent/50">
                     <div className="w-full h-full rounded-full overflow-hidden bg-background">
@@ -367,11 +495,11 @@ const Profile = () => {
                     </div>
                   </div>
                   <span className="text-[10px] text-foreground truncate max-w-[64px]">{pet.name}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -398,37 +526,13 @@ const Profile = () => {
 
           <TabsContent value="posts" className="mt-0">
             {posts && posts.length > 0 ? (
-              <div className="grid grid-cols-3 gap-0.5">
-                {/* Show pinned posts first */}
-                {posts
-                  .sort((a, b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0))
-                  .map((post) => (
-                  <motion.button
-                    key={post.id}
-                    className="aspect-square relative overflow-hidden bg-muted"
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate(`/post/${post.id}`)}
-                  >
-                    <img 
-                      src={post.image_url} 
-                      alt={post.alt_text || ""} 
-                      className="w-full h-full object-cover"
-                    />
-                    {post.is_pinned && (
-                      <div className="absolute top-2 right-2">
-                        <PinnedPostsBadge isPinned={true} />
-                      </div>
-                    )}
-                    {post.media_type === 'video' && (
-                      <div className="absolute top-2 left-2">
-                        <Film className="w-4 h-4 text-white drop-shadow-lg" />
-                      </div>
-                    )}
-                  </motion.button>
-                ))}
-              </div>
+              <PostGrid posts={posts} />
             ) : (
-              <div className="flex flex-col items-center justify-center py-16 px-4">
+              <motion.div 
+                className="flex flex-col items-center justify-center py-16 px-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
                 <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
                   <Camera className="w-10 h-10 text-foreground" strokeWidth={1} />
                 </div>
@@ -443,13 +547,16 @@ const Profile = () => {
                 >
                   שתף את התמונה הראשונה שלך
                 </Button>
-              </div>
+              </motion.div>
             )}
           </TabsContent>
 
-          {/* Reels Tab */}
           <TabsContent value="reels" className="mt-0">
-            <div className="flex flex-col items-center justify-center py-16 px-4">
+            <motion.div 
+              className="flex flex-col items-center justify-center py-16 px-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
               <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
                 <Film className="w-10 h-10 text-foreground" strokeWidth={1} />
               </div>
@@ -457,12 +564,15 @@ const Profile = () => {
               <p className="text-muted-foreground text-center text-sm">
                 צור וצפה בסרטונים קצרים ומהנים.
               </p>
-            </div>
+            </motion.div>
           </TabsContent>
 
-          {/* Tagged Tab */}
           <TabsContent value="tagged" className="mt-0">
-            <div className="flex flex-col items-center justify-center py-16 px-4">
+            <motion.div 
+              className="flex flex-col items-center justify-center py-16 px-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
               <div className="w-20 h-20 rounded-full border-2 border-foreground flex items-center justify-center mb-4">
                 <UserSquare className="w-10 h-10 text-foreground" strokeWidth={1} />
               </div>
@@ -470,7 +580,7 @@ const Profile = () => {
               <p className="text-muted-foreground text-center text-sm">
                 כשאנשים מתייגים אותך בתמונות, הן יופיעו כאן.
               </p>
-            </div>
+            </motion.div>
           </TabsContent>
         </Tabs>
 
