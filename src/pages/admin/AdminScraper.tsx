@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Trash2 } from "lucide-react";
 
 interface ScrapedProduct {
   id: string;
@@ -129,6 +130,11 @@ const AdminScraper = () => {
   
   // Categories for filter
   const [categories, setCategories] = useState<string[]>([]);
+  
+  // Selection for bulk delete
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   // Available scraping options
   const petTypeOptions = [
@@ -532,6 +538,51 @@ const AdminScraper = () => {
   };
 
   const filteredProducts = getFilteredProducts();
+
+  // Selection handlers
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProducts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProducts.size === filteredProducts.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+    }
+  };
+
+  const deleteSelectedProducts = async () => {
+    if (selectedProducts.size === 0) return;
+    
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('scraped_products')
+        .delete()
+        .in('id', Array.from(selectedProducts));
+
+      if (error) throw error;
+
+      toast.success(`${selectedProducts.size} מוצרים נמחקו בהצלחה`);
+      setSelectedProducts(new Set());
+      setShowDeleteConfirm(false);
+      fetchProducts();
+    } catch (error) {
+      console.error("Error deleting products:", error);
+      toast.error("שגיאה במחיקת המוצרים");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const getStockBadgeVariant = (status: string | null) => {
     switch (status) {
@@ -955,10 +1006,30 @@ const AdminScraper = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>מוצרים ({filteredProducts.length})</span>
-              <Button variant="ghost" size="sm" onClick={fetchProducts}>
-                <RefreshCw className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <span>מוצרים ({filteredProducts.length})</span>
+                {selectedProducts.size > 0 && (
+                  <Badge variant="secondary" className="gap-1">
+                    {selectedProducts.size} נבחרו
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedProducts.size > 0 && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="gap-1.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    מחק ({selectedProducts.size})
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={fetchProducts}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -978,40 +1049,63 @@ const AdminScraper = () => {
               <>
                 {/* Mobile Cards View */}
                 <div className="block sm:hidden space-y-3">
+                  {/* Select all for mobile */}
+                  <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg">
+                    <Checkbox 
+                      id="select-all-mobile"
+                      checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    <Label htmlFor="select-all-mobile" className="text-sm cursor-pointer">
+                      בחר הכל
+                    </Label>
+                  </div>
                   {filteredProducts.slice(0, 20).map((product) => (
                     <div 
                       key={product.id}
-                      className="flex gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => setSelectedProduct(product)}
+                      className={`flex gap-3 p-3 border rounded-lg transition-colors ${
+                        selectedProducts.has(product.id) ? 'bg-primary/5 border-primary/30' : 'hover:bg-muted/50'
+                      }`}
                     >
-                      {product.main_image_url ? (
-                        <img 
-                          src={product.main_image_url} 
-                          alt={product.product_name}
-                          className="w-16 h-16 object-cover rounded flex-shrink-0"
+                      <div className="flex items-center">
+                        <Checkbox 
+                          checked={selectedProducts.has(product.id)}
+                          onCheckedChange={() => toggleProductSelection(product.id)}
                         />
-                      ) : (
-                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                          <Package className="w-6 h-6 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm line-clamp-2">{product.product_name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{product.main_category || '-'}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-1.5">
-                            {product.sale_price && product.regular_price ? (
-                              <>
-                                <span className="font-bold text-sm text-green-600">₪{product.sale_price}</span>
-                                <span className="text-[10px] text-muted-foreground line-through">₪{product.regular_price}</span>
-                              </>
-                            ) : (
-                              <span className="font-medium text-sm">₪{product.final_price || '-'}</span>
-                            )}
+                      </div>
+                      <div 
+                        className="flex gap-3 flex-1 cursor-pointer"
+                        onClick={() => setSelectedProduct(product)}
+                      >
+                        {product.main_image_url ? (
+                          <img 
+                            src={product.main_image_url} 
+                            alt={product.product_name}
+                            className="w-16 h-16 object-cover rounded flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                            <Package className="w-6 h-6 text-muted-foreground" />
                           </div>
-                          <Badge variant={getStockBadgeVariant(product.stock_status)} className="text-[10px] px-1.5 py-0.5">
-                            {getStockLabel(product.stock_status)}
-                          </Badge>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm line-clamp-2">{product.product_name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{product.main_category || '-'}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-1.5">
+                              {product.sale_price && product.regular_price ? (
+                                <>
+                                  <span className="font-bold text-sm text-green-600">₪{product.sale_price}</span>
+                                  <span className="text-[10px] text-muted-foreground line-through">₪{product.regular_price}</span>
+                                </>
+                              ) : (
+                                <span className="font-medium text-sm">₪{product.final_price || '-'}</span>
+                              )}
+                            </div>
+                            <Badge variant={getStockBadgeVariant(product.stock_status)} className="text-[10px] px-1.5 py-0.5">
+                              {getStockLabel(product.stock_status)}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1028,6 +1122,12 @@ const AdminScraper = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox 
+                            checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                            onCheckedChange={toggleSelectAll}
+                          />
+                        </TableHead>
                         <TableHead className="w-16">תמונה</TableHead>
                         <TableHead>שם מוצר</TableHead>
                         <TableHead>קטגוריה</TableHead>
@@ -1040,10 +1140,17 @@ const AdminScraper = () => {
                       {filteredProducts.map((product) => (
                         <TableRow 
                           key={product.id}
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => setSelectedProduct(product)}
+                          className={`cursor-pointer ${
+                            selectedProducts.has(product.id) ? 'bg-primary/5' : 'hover:bg-muted/50'
+                          }`}
                         >
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox 
+                              checked={selectedProducts.has(product.id)}
+                              onCheckedChange={() => toggleProductSelection(product.id)}
+                            />
+                          </TableCell>
+                          <TableCell onClick={() => setSelectedProduct(product)}>
                             {product.main_image_url ? (
                               <img 
                                 src={product.main_image_url} 
@@ -1056,7 +1163,7 @@ const AdminScraper = () => {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setSelectedProduct(product)}>
                             <div>
                               <p className="font-medium line-clamp-1">{product.product_name}</p>
                               {product.sku && (
@@ -1064,10 +1171,10 @@ const AdminScraper = () => {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setSelectedProduct(product)}>
                             <span className="text-sm">{product.main_category || '-'}</span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setSelectedProduct(product)}>
                             <div className="flex flex-col">
                               {product.sale_price && product.regular_price ? (
                                 <>
@@ -1079,7 +1186,7 @@ const AdminScraper = () => {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell onClick={() => setSelectedProduct(product)}>
                             <Badge variant={getStockBadgeVariant(product.stock_status)}>
                               {getStockLabel(product.stock_status)}
                             </Badge>
@@ -1352,6 +1459,52 @@ const AdminScraper = () => {
               <Button onClick={startFullScraping}>
                 <Play className="w-4 h-4 ml-2" />
                 אשר והתחל סריקה
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="sm:max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="w-5 h-5" />
+                אישור מחיקה
+              </DialogTitle>
+              <DialogDescription>
+                האם אתה בטוח שברצונך למחוק {selectedProducts.size} מוצרים?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground text-center">
+                פעולה זו לא ניתנת לביטול. כל המוצרים הנבחרים יימחקו לצמיתות.
+              </p>
+            </div>
+            <DialogFooter className="flex gap-2 sm:gap-0">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+              >
+                ביטול
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={deleteSelectedProducts}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    מוחק...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 ml-2" />
+                    מחק {selectedProducts.size} מוצרים
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
