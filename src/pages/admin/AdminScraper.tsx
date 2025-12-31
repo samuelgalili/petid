@@ -530,81 +530,81 @@ const AdminScraper = () => {
     <AdminLayout title="סקראפר מוצרים" icon={Package}>
       <div className="space-y-6" dir="rtl">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg">
-              <Package className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg flex-shrink-0">
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">סקראפר מוצרים</h1>
-              <p className="text-muted-foreground text-sm">איסוף וניהול מוצרים מאתרי חנויות</p>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">סקראפר מוצרים</h1>
+              <p className="text-muted-foreground text-xs sm:text-sm truncate">איסוף וניהול מוצרים מאתרי חנויות</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={exportToCSV} disabled={products.length === 0} className="gap-2">
-              <FileSpreadsheet className="w-4 h-4" />
+            <Button variant="outline" onClick={exportToCSV} disabled={products.length === 0} size="sm" className="gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
+              <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               CSV
             </Button>
-            <Button variant="outline" onClick={exportToJSON} disabled={products.length === 0} className="gap-2">
-              <FileJson className="w-4 h-4" />
+            <Button variant="outline" onClick={exportToJSON} disabled={products.length === 0} size="sm" className="gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
+              <FileJson className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               JSON
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">סה"כ מוצרים</p>
-                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{products.length}</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400 font-medium truncate">סה"כ מוצרים</p>
+                  <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-300">{products.length}</p>
                 </div>
-                <Package className="w-8 h-8 text-blue-500/50" />
+                <Package className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500/50 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">במלאי</p>
-                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium truncate">במלאי</p>
+                  <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-300">
                     {products.filter(p => p.stock_status === 'in_stock').length}
                   </p>
                 </div>
-                <CheckCircle className="w-8 h-8 text-green-500/50" />
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500/50 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
           
           <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">קטגוריות</p>
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{categories.length}</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400 font-medium truncate">קטגוריות</p>
+                  <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-300">{categories.length}</p>
                 </div>
-                <Filter className="w-8 h-8 text-amber-500/50" />
+                <Filter className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500/50 flex-shrink-0" />
               </div>
             </CardContent>
           </Card>
           
           <Card className={`border ${scraping ? 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 animate-pulse' : 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 border-slate-200 dark:border-slate-800'}`}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-xs font-medium ${scraping ? 'text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-400'}`}>סטטוס</p>
-                  <p className={`text-lg font-bold ${scraping ? 'text-purple-700 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className={`text-[10px] sm:text-xs font-medium truncate ${scraping ? 'text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-400'}`}>סטטוס</p>
+                  <p className={`text-base sm:text-lg font-bold ${scraping ? 'text-purple-700 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>
                     {scraping ? 'פעיל' : 'לא פעיל'}
                   </p>
                 </div>
                 {scraping ? (
-                  <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                  <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 animate-spin flex-shrink-0" />
                 ) : (
-                  <Clock className="w-8 h-8 text-slate-500/50" />
+                  <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-slate-500/50 flex-shrink-0" />
                 )}
               </div>
             </CardContent>
@@ -623,10 +623,10 @@ const AdminScraper = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic settings */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                <label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                  <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                   כתובת האתר
                 </label>
                 <Input
@@ -634,12 +634,12 @@ const AdminScraper = () => {
                   onChange={(e) => setBaseUrl(e.target.value)}
                   placeholder="https://example.com"
                   disabled={scraping}
-                  className="font-mono text-sm"
+                  className="font-mono text-xs sm:text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Package className="w-4 h-4 text-muted-foreground" />
+                <label className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                  <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                   מקסימום מוצרים
                 </label>
                 <Input
@@ -648,43 +648,44 @@ const AdminScraper = () => {
                   onChange={(e) => setMaxProducts(e.target.value)}
                   placeholder="ללא הגבלה"
                   disabled={scraping}
+                  className="text-xs sm:text-sm"
                 />
               </div>
-              <div className="flex items-end gap-2">
+              <div className="flex items-end gap-2 sm:col-span-2 md:col-span-1">
                 {!scraping && !scanningUrls && !loadingPreview ? (
                   <Button 
                     onClick={scanForProducts} 
                     disabled={!baseUrl || scrapePetTypes.length === 0 || scrapeProductCategories.length === 0}
-                    className="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg"
+                    className="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg text-xs sm:text-sm"
                   >
-                    <Search className="w-4 h-4 ml-2" />
+                    <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
                     סרוק אתר
                   </Button>
                 ) : scanningUrls || loadingPreview ? (
-                  <Button disabled className="flex-1">
-                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                    {scanningUrls ? 'סורק...' : 'טוען תצוגה מקדימה...'}
+                  <Button disabled className="flex-1 text-xs sm:text-sm">
+                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 animate-spin" />
+                    {scanningUrls ? 'סורק...' : 'טוען...'}
                   </Button>
                 ) : (
                   <Button 
                     onClick={stopScraping} 
                     variant="destructive"
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm"
                   >
-                    <Square className="w-4 h-4 ml-2" />
-                    עצור סקראפינג
+                    <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
+                    עצור
                   </Button>
                 )}
               </div>
             </div>
 
             {/* Pet type filters */}
-            <div className="space-y-3 p-4 bg-muted/30 rounded-xl">
-              <label className="text-sm font-semibold flex items-center gap-2">
-                <Dog className="w-4 h-4" />
+            <div className="space-y-2 sm:space-y-3 p-3 sm:p-4 bg-muted/30 rounded-xl">
+              <label className="text-xs sm:text-sm font-semibold flex items-center gap-2">
+                <Dog className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 סוג חיית מחמד
               </label>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {petTypeOptions.map(pet => {
                   const Icon = pet.icon;
                   const isChecked = scrapePetTypes.includes(pet.id);
@@ -693,14 +694,14 @@ const AdminScraper = () => {
                       key={pet.id}
                       onClick={() => !scraping && togglePetType(pet.id)}
                       disabled={scraping}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
+                      className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border-2 transition-all ${
                         isChecked 
                           ? 'bg-primary text-primary-foreground border-primary shadow-md' 
                           : 'bg-background border-muted-foreground/20 hover:border-primary/50'
                       } ${scraping ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{pet.label}</span>
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="text-xs sm:text-sm font-medium">{pet.label}</span>
                     </button>
                   );
                 })}
@@ -708,12 +709,12 @@ const AdminScraper = () => {
             </div>
 
             {/* Product category filters */}
-            <div className="space-y-3 p-4 bg-muted/30 rounded-xl">
-              <label className="text-sm font-semibold flex items-center gap-2">
-                <Package className="w-4 h-4" />
+            <div className="space-y-2 sm:space-y-3 p-3 sm:p-4 bg-muted/30 rounded-xl">
+              <label className="text-xs sm:text-sm font-semibold flex items-center gap-2">
+                <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 קטגוריות מוצרים
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {productCategoryOptions.map(cat => {
                   const isChecked = scrapeProductCategories.includes(cat.id);
                   return (
@@ -721,7 +722,7 @@ const AdminScraper = () => {
                       key={cat.id}
                       onClick={() => !scraping && toggleProductCategory(cat.id)}
                       disabled={scraping}
-                      className={`px-3 py-1.5 rounded-lg border transition-all text-sm ${
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border transition-all text-xs sm:text-sm ${
                         isChecked 
                           ? 'bg-primary/10 text-primary border-primary/30 font-medium' 
                           : 'bg-background border-muted-foreground/20 hover:border-primary/50'
@@ -843,21 +844,21 @@ const AdminScraper = () => {
 
         {/* Filters */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-5">
+              <div className="relative col-span-2 md:col-span-1">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                 <Input
-                  placeholder="חיפוש לפי שם מוצר..."
+                  placeholder="חיפוש..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10"
+                  className="pr-9 sm:pr-10 text-xs sm:text-sm h-9 sm:h-10"
                 />
               </div>
               
               <Select value={categoryFilter || "all"} onValueChange={(v) => setCategoryFilter(v === "all" ? "" : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="כל הקטגוריות" />
+                <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
+                  <SelectValue placeholder="קטגוריות" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">כל הקטגוריות</SelectItem>
@@ -868,29 +869,31 @@ const AdminScraper = () => {
               </Select>
               
               <Select value={stockFilter || "all"} onValueChange={(v) => setStockFilter(v === "all" ? "" : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="סטטוס מלאי" />
+                <SelectTrigger className="text-xs sm:text-sm h-9 sm:h-10">
+                  <SelectValue placeholder="מלאי" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">הכל</SelectItem>
                   <SelectItem value="in_stock">במלאי</SelectItem>
-                  <SelectItem value="out_of_stock">אזל מהמלאי</SelectItem>
+                  <SelectItem value="out_of_stock">אזל</SelectItem>
                   <SelectItem value="preorder">הזמנה מראש</SelectItem>
                 </SelectContent>
               </Select>
               
               <Input
                 type="number"
-                placeholder="מחיר מינימלי"
+                placeholder="מחיר מינ׳"
                 value={priceMin}
                 onChange={(e) => setPriceMin(e.target.value)}
+                className="text-xs sm:text-sm h-9 sm:h-10"
               />
               
               <Input
                 type="number"
-                placeholder="מחיר מקסימלי"
+                placeholder="מחיר מקס׳"
                 value={priceMax}
                 onChange={(e) => setPriceMax(e.target.value)}
+                className="text-xs sm:text-sm h-9 sm:h-10"
               />
             </div>
             
@@ -936,94 +939,146 @@ const AdminScraper = () => {
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>לא נמצאו מוצרים</p>
-                <p className="text-sm">התחל סקראפינג כדי לאסוף מוצרים מהאתר</p>
+              <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                <Package className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+                <p className="text-sm sm:text-base">לא נמצאו מוצרים</p>
+                <p className="text-xs sm:text-sm">התחל סקראפינג כדי לאסוף מוצרים מהאתר</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">תמונה</TableHead>
-                    <TableHead>שם מוצר</TableHead>
-                    <TableHead>קטגוריה</TableHead>
-                    <TableHead>מחיר</TableHead>
-                    <TableHead>מלאי</TableHead>
-                    <TableHead>פעולות</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map((product) => (
-                    <TableRow 
+              <>
+                {/* Mobile Cards View */}
+                <div className="block sm:hidden space-y-3">
+                  {filteredProducts.slice(0, 20).map((product) => (
+                    <div 
                       key={product.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className="flex gap-3 p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => setSelectedProduct(product)}
                     >
-                      <TableCell>
-                        {product.main_image_url ? (
-                          <img 
-                            src={product.main_image_url} 
-                            alt={product.product_name}
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                            <Package className="w-6 h-6 text-muted-foreground" />
+                      {product.main_image_url ? (
+                        <img 
+                          src={product.main_image_url} 
+                          alt={product.product_name}
+                          className="w-16 h-16 object-cover rounded flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                          <Package className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm line-clamp-2">{product.product_name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{product.main_category || '-'}</p>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-1.5">
+                            {product.sale_price && product.regular_price ? (
+                              <>
+                                <span className="font-bold text-sm text-green-600">₪{product.sale_price}</span>
+                                <span className="text-[10px] text-muted-foreground line-through">₪{product.regular_price}</span>
+                              </>
+                            ) : (
+                              <span className="font-medium text-sm">₪{product.final_price || '-'}</span>
+                            )}
                           </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium line-clamp-1">{product.product_name}</p>
-                          {product.sku && (
-                            <p className="text-xs text-muted-foreground">מק"ט: {product.sku}</p>
-                          )}
+                          <Badge variant={getStockBadgeVariant(product.stock_status)} className="text-[10px] px-1.5 py-0.5">
+                            {getStockLabel(product.stock_status)}
+                          </Badge>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{product.main_category || '-'}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          {product.sale_price && product.regular_price ? (
-                            <>
-                              <span className="font-bold text-green-600">₪{product.sale_price}</span>
-                              <span className="text-xs text-muted-foreground line-through">₪{product.regular_price}</span>
-                            </>
-                          ) : (
-                            <span className="font-medium">₪{product.final_price || '-'}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStockBadgeVariant(product.stock_status)}>
-                          {getStockLabel(product.stock_status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(product.product_url, '_blank');
-                          }}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                  {filteredProducts.length > 20 && (
+                    <p className="text-center text-xs text-muted-foreground py-2">
+                      מציג 20 מתוך {filteredProducts.length} מוצרים
+                    </p>
+                  )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">תמונה</TableHead>
+                        <TableHead>שם מוצר</TableHead>
+                        <TableHead>קטגוריה</TableHead>
+                        <TableHead>מחיר</TableHead>
+                        <TableHead>מלאי</TableHead>
+                        <TableHead>פעולות</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredProducts.map((product) => (
+                        <TableRow 
+                          key={product.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => setSelectedProduct(product)}
+                        >
+                          <TableCell>
+                            {product.main_image_url ? (
+                              <img 
+                                src={product.main_image_url} 
+                                alt={product.product_name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                                <Package className="w-6 h-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium line-clamp-1">{product.product_name}</p>
+                              {product.sku && (
+                                <p className="text-xs text-muted-foreground">מק"ט: {product.sku}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">{product.main_category || '-'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              {product.sale_price && product.regular_price ? (
+                                <>
+                                  <span className="font-bold text-green-600">₪{product.sale_price}</span>
+                                  <span className="text-xs text-muted-foreground line-through">₪{product.regular_price}</span>
+                                </>
+                              ) : (
+                                <span className="font-medium">₪{product.final_price || '-'}</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStockBadgeVariant(product.stock_status)}>
+                              {getStockLabel(product.stock_status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(product.product_url, '_blank');
+                              }}
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
 
         {/* Product Detail Sheet */}
         <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-          <SheetContent side="left" className="w-[500px] sm:w-[600px]" dir="rtl">
+          <SheetContent side="left" className="w-[90vw] sm:w-[500px] md:w-[600px]" dir="rtl">
             <SheetHeader>
               <SheetTitle>פרטי מוצר</SheetTitle>
             </SheetHeader>
