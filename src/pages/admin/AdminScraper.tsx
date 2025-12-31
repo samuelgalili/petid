@@ -30,6 +30,7 @@ import {
   AlertCircle,
   Clock,
   Square,
+  Pause,
   Dog,
   Cat,
   Bird
@@ -375,6 +376,40 @@ const AdminScraper = () => {
     }
   };
 
+  const pauseScraping = async () => {
+    if (!currentJob) return;
+    
+    try {
+      await supabase
+        .from('scraping_jobs')
+        .update({ status: 'paused' })
+        .eq('id', currentJob.id);
+
+      setCurrentJob(prev => prev ? { ...prev, status: 'paused' } : null);
+      toast.success("הסקראפינג הושהה");
+    } catch (error) {
+      console.error("Error pausing scrape:", error);
+      toast.error("שגיאה בהשהיית הסקראפינג");
+    }
+  };
+
+  const resumeScraping = async () => {
+    if (!currentJob) return;
+    
+    try {
+      await supabase
+        .from('scraping_jobs')
+        .update({ status: 'running' })
+        .eq('id', currentJob.id);
+
+      setCurrentJob(prev => prev ? { ...prev, status: 'running' } : null);
+      toast.success("הסקראפינג ממשיך");
+    } catch (error) {
+      console.error("Error resuming scrape:", error);
+      toast.error("שגיאה בהמשך הסקראפינג");
+    }
+  };
+
   const togglePetType = (petType: string) => {
     setScrapePetTypes(prev => 
       prev.includes(petType) 
@@ -618,17 +653,20 @@ const AdminScraper = () => {
             </div>
 
             {/* Progress */}
-            {currentJob && (currentJob.status === 'running' || currentJob.status === 'pending') && (
-              <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+            {currentJob && (currentJob.status === 'running' || currentJob.status === 'pending' || currentJob.status === 'paused') && (
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {currentJob.status === 'running' ? (
                       <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    ) : currentJob.status === 'paused' ? (
+                      <Pause className="w-4 h-4 text-amber-500" />
                     ) : (
                       <Clock className="w-4 h-4 text-muted-foreground" />
                     )}
                     <span className="text-sm font-medium">
-                      {currentJob.status === 'running' ? 'סורק מוצרים...' : 'ממתין להתחלה...'}
+                      {currentJob.status === 'running' ? 'סורק מוצרים...' : 
+                       currentJob.status === 'paused' ? 'הסריקה מושהית' : 'ממתין להתחלה...'}
                     </span>
                   </div>
                   <span className="text-sm text-muted-foreground">
@@ -636,6 +674,41 @@ const AdminScraper = () => {
                   </span>
                 </div>
                 <Progress value={getJobProgress()} className="h-2" />
+                
+                {/* Control buttons */}
+                <div className="flex gap-2 pt-2">
+                  {currentJob.status === 'running' && (
+                    <Button 
+                      onClick={pauseScraping} 
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                    >
+                      <Pause className="w-4 h-4 ml-2" />
+                      השהה
+                    </Button>
+                  )}
+                  {currentJob.status === 'paused' && (
+                    <Button 
+                      onClick={resumeScraping} 
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                    >
+                      <Play className="w-4 h-4 ml-2" />
+                      המשך
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={stopScraping} 
+                    variant="destructive"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <Square className="w-4 h-4 ml-2" />
+                    עצור
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -644,6 +717,15 @@ const AdminScraper = () => {
                 <CheckCircle className="w-5 h-5 text-green-600" />
                 <span className="text-sm">
                   הסקראפינג הושלם! נמצאו {currentJob.scraped_products} מוצרים.
+                </span>
+              </div>
+            )}
+
+            {currentJob?.status === 'stopped' && (
+              <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950 rounded-lg">
+                <Square className="w-5 h-5 text-amber-600" />
+                <span className="text-sm">
+                  הסקראפינג נעצר. נמצאו {currentJob.scraped_products} מוצרים.
                 </span>
               </div>
             )}

@@ -409,14 +409,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if job was stopped
-    const checkJobStatus = async (): Promise<boolean> => {
+    // Check if job was stopped or paused
+    const checkJobStatus = async (): Promise<'running' | 'stopped' | 'paused'> => {
       const { data } = await supabase
         .from('scraping_jobs')
         .select('status')
         .eq('id', jobId)
         .single();
-      return data?.status === 'stopped';
+      return data?.status || 'running';
+    };
+
+    // Wait while paused
+    const waitIfPaused = async (): Promise<boolean> => {
+      let status = await checkJobStatus();
+      while (status === 'paused') {
+        console.log('Job paused, waiting...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        status = await checkJobStatus();
+      }
+      return status === 'stopped';
     };
 
     // Update job status
@@ -490,8 +501,9 @@ Deno.serve(async (req) => {
 
     // Step 2: Scrape each product page
     for (const productUrl of urlsToScrape) {
-      // Check if job was stopped
-      if (await checkJobStatus()) {
+      // Check if job was stopped or paused
+      const shouldStop = await waitIfPaused();
+      if (shouldStop) {
         console.log('Job stopped by user');
         return new Response(
           JSON.stringify({ success: true, message: 'Scraping stopped by user', scrapedCount }),
