@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Users, Ban, Unlock, Key, MoreHorizontal, 
-  Shield, Store, Heart, Eye, Mail
+  Shield, Store, Heart, Eye, Mail, Trash2, AlertTriangle
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
@@ -10,6 +10,8 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
+import { useSensitiveActionRateLimiter } from "@/hooks/useRateLimiter";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -39,8 +42,11 @@ const AdminUsers = () => {
   const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const rateLimiter = useSensitiveActionRateLimiter();
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [blockDialog, setBlockDialog] = useState<{ open: boolean; userId?: string; action?: "block" | "unblock" }>({ open: false });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; userId?: string; userName?: string }>({ open: false });
+  const [deleteReason, setDeleteReason] = useState("");
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -121,6 +127,46 @@ const AdminUsers = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       toast({ title: `${selectedUsers.length} משתמשים עודכנו` });
       setSelectedUsers([]);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
+      // Client-side rate limiting check
+      if (!rateLimiter.isAllowed()) {
+        throw new Error("יותר מדי פעולות. נסה שוב בעוד דקה.");
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("לא מחובר");
+      }
+
+      const response = await supabase.functions.invoke("delete-user", {
+        body: { userId, reason },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to delete user");
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ 
+        title: "המשתמש נמחק", 
+        description: "כל הנתונים נמחקו לצמיתות" 
+      });
+      setDeleteDialog({ open: false });
+      setDeleteReason("");
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "שגיאה", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     },
   });
 
@@ -240,6 +286,18 @@ const AdminUsers = () => {
                 חסום משתמש
               </DropdownMenuItem>
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => setDeleteDialog({ 
+                open: true, 
+                userId: user.id, 
+                userName: user.full_name || user.email || "משתמש" 
+              })}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-4 h-4 ml-2" />
+              מחק משתמש לצמיתות
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -323,6 +381,47 @@ const AdminUsers = () => {
           }
         }}
         icon={blockDialog.action === "block" ? <Ban className="w-5 h-5 text-destructive" /> : <Unlock className="w-5 h-5" />}
+      />
+
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => {
+          setDeleteDialog({ open });
+          if (!open) setDeleteReason("");
+        }}
+        title="מחיקת משתמש לצמיתות"
+        description={
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+              <p className="text-sm text-destructive font-medium">
+                פעולה זו בלתי הפיכה! כל הנתונים של {deleteDialog.userName} יימחקו לצמיתות.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="delete-reason">סיבת המחיקה (חובה)</Label>
+              <Input
+                id="delete-reason"
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="הזן סיבה למחיקה..."
+                dir="rtl"
+              />
+            </div>
+          </div>
+        }
+        confirmLabel="מחק לצמיתות"
+        variant="destructive"
+        loading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (deleteDialog.userId && deleteReason.trim()) {
+            deleteMutation.mutate({
+              userId: deleteDialog.userId,
+              reason: deleteReason.trim(),
+            });
+          }
+        }}
+        icon={<Trash2 className="w-5 h-5 text-destructive" />}
       />
     </AdminLayout>
   );
