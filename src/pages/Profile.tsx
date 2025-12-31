@@ -263,8 +263,8 @@ const Profile = () => {
           )}
         </AnimatePresence>
 
-        {/* Instagram-style Header */}
-        <div className="sticky top-0 z-20 bg-background border-b border-border">
+        {/* PetID-style Header */}
+        <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-md border-b border-border/30 shadow-soft">
           <div className="flex items-center justify-between px-4 h-14">
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-foreground">
@@ -272,13 +272,16 @@ const Profile = () => {
               </h1>
               <RoleBadge size="sm" />
               {profile?.points > 100 && (
-                <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {Math.floor((profile?.points || 0) / 100)}+
+                <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  ⭐ {Math.floor((profile?.points || 0) / 100)}+
                 </span>
               )}
             </div>
-            <button onClick={() => setIsMenuOpen(true)}>
-              <Menu className="w-6 h-6 text-foreground" />
+            <button 
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
+            >
+              <Menu className="w-5 h-5 text-foreground" />
             </button>
           </div>
         </div>
@@ -380,24 +383,24 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons - PetID styled */}
           <div className="flex gap-2 mb-4 relative z-10">
             <Button 
               type="button"
-              variant="secondary"
-              className="flex-1 h-9 font-semibold text-sm border border-border"
+              variant="outline"
+              className="flex-1 h-10 font-semibold text-sm rounded-2xl border-border/50 bg-card hover:bg-muted/50"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 navigate('/edit-profile');
               }}
             >
-              עריכת פרופיל
+              ✏️ עריכת פרופיל
             </Button>
             <Button 
               type="button"
-              variant="secondary"
-              className="flex-1 h-9 font-semibold text-sm border border-border bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400"
+              variant="outline"
+              className="flex-1 h-10 font-semibold text-sm rounded-2xl border-success/30 bg-success/10 hover:bg-success/20 text-success"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

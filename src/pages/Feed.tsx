@@ -937,47 +937,50 @@ const Feed = () => {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
 
-  return <div className="min-h-screen bg-white pb-24" dir="rtl">
-      {/* Instagram-style Header - Clean minimal */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 h-11 flex items-center justify-between">
+  return <div className="min-h-screen bg-background pb-24" dir="rtl">
+      {/* PetID-style Header - Warm, caring */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/30 shadow-soft">
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           {/* Left side - Logo */}
           <div className="flex items-center">
             <h1 
-              className="text-[24px] font-bold cursor-pointer text-[#262626]"
-              style={{ fontFamily: "'Fredoka', cursive" }}
+              className="text-xl font-bold cursor-pointer text-primary"
               onClick={() => {
                 setPage(0);
                 setHasMore(true);
                 fetchPosts(0, false);
               }}
             >
-              🐾 Petid
+              🐾 PetID
             </h1>
           </div>
           
-          {/* Right icons - Instagram style */}
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/explore')}>
-              <Search className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+          {/* Right icons - PetID style */}
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate('/explore')}
+              className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
+            >
+              <Search className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
             <button 
               onClick={handleNavigateToNotifications} 
-              className="relative"
+              className="relative p-2 rounded-xl hover:bg-muted/50 transition-colors"
             >
-              <Heart className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <Heart className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
             <button 
               onClick={handleNavigateToMessages}
+              className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
             >
-              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <Send className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
           </div>
         </div>
       </div>
 
       {/* Spacer for fixed header */}
-      <div className="h-11" />
+      <div className="h-14" />
 
       {/* New Posts Banner */}
       <AnimatePresence>
@@ -990,10 +993,10 @@ const Feed = () => {
       }} exit={{
         y: -50,
         opacity: 0
-      }} className="fixed top-[52px] left-0 right-0 z-40 bg-gradient-to-r from-[#1E5799] to-[#4ECDC4] text-white text-center cursor-pointer py-2.5 shadow-md" onClick={handleLoadNewPosts}>
-            <span className="text-[13px] font-medium flex items-center justify-center gap-2">
+      }} className="fixed top-[56px] left-0 right-0 z-40 bg-gradient-to-r from-primary to-primary-light text-primary-foreground text-center cursor-pointer py-2.5 shadow-md rounded-b-2xl mx-4" onClick={handleLoadNewPosts}>
+            <span className="text-sm font-medium flex items-center justify-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              פוסטים חדשים
+              🐾 פוסטים חדשים
             </span>
           </motion.div>}
       </AnimatePresence>
@@ -1009,31 +1012,31 @@ const Feed = () => {
       delay: 0.1,
       duration: 0.4
     }}>
-        {/* Rewards Bar */}
+        {/* Rewards Bar - PetID styled */}
         <motion.div initial={{
         opacity: 0,
         y: -10
       }} animate={{
         opacity: 1,
         y: 0
-      }} className="px-4 py-2 cursor-pointer bg-white" onClick={() => navigate('/rewards')}>
+      }} className="px-4 py-3 cursor-pointer bg-card border-b border-border/30" onClick={() => navigate('/rewards')}>
           {/* Header */}
           
           
         {/* Cashback Progress */}
           <motion.div 
-            className="space-y-1 mb-3" 
+            className="space-y-2 mb-3" 
             dir="rtl"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
           >
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">קאשבק 5%</span>
-              <span className="text-amber-600 font-medium">₪50</span>
+              <span className="text-muted-foreground">💰 קאשבק 5%</span>
+              <span className="text-primary font-semibold">₪50</span>
             </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500" initial={{
+            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+              <motion.div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-light" initial={{
               width: 0
             }} animate={{
               width: `${Math.min(totalPoints * 0.01 / 50 * 100, 100)}%`
@@ -1046,18 +1049,18 @@ const Feed = () => {
           
           {/* Points Progress */}
           <motion.div 
-            className="space-y-1" 
+            className="space-y-2" 
             dir="rtl"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, duration: 0.4 }}
           >
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">נקודות פעילות</span>
-              <span className="text-teal-600 font-medium">{totalPoints} נק׳</span>
+              <span className="text-muted-foreground">⭐ נקודות פעילות</span>
+              <span className="text-primary font-semibold">{totalPoints} נק׳</span>
             </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-500" initial={{
+            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+              <motion.div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-light" initial={{
               width: 0
             }} animate={{
               width: `${Math.min(totalPoints / 1000 * 100, 100)}%`

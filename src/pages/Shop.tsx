@@ -309,17 +309,17 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Instagram-style Header */}
-      <div className="bg-background border-b border-border sticky top-0 z-50">
-        <div className="max-w-lg mx-auto px-4 py-3">
+      {/* PetID-style Header */}
+      <div className="bg-gradient-to-b from-background to-muted/20 border-b border-border/30 sticky top-0 z-50 backdrop-blur-sm">
+        <div className="max-w-lg mx-auto px-4 py-4">
           {/* Top Row: Title + Cart */}
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-semibold text-foreground">Shop</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-bold text-foreground">🛒 חנות PetID</h1>
             <motion.button 
               ref={cartIconRef}
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/cart')}
-              className={`p-2 relative ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
+              className={`p-2.5 relative rounded-2xl bg-card shadow-soft border border-border/30 ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
               onAnimationComplete={() => {
                 if (cartIconRef.current) {
                   const rect = cartIconRef.current.getBoundingClientRect();
@@ -327,11 +327,11 @@ const Shop = () => {
                 }
               }}
             >
-              <ShoppingBag className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+              <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.5} />
               <AnimatePresence>
                 {getTotalItems() > 0 && (
                   <motion.span 
-                    className="absolute -top-0.5 -right-0.5 bg-[#FF3040] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                    className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
@@ -344,12 +344,12 @@ const Shop = () => {
             </motion.button>
           </div>
           
-          {/* Instagram-style Search Bar */}
+          {/* PetID-style Search Bar */}
           <div className="relative">
-            <div className={`flex items-center gap-3 bg-muted rounded-lg px-4 py-2 transition-all ${
-              isSearchFocused ? 'bg-muted/80' : ''
+            <div className={`flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border transition-all shadow-soft ${
+              isSearchFocused ? 'border-primary/50 shadow-md' : 'border-border/30'
             }`}>
-              <Search className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+              <Search className="w-5 h-5 text-primary/60" strokeWidth={1.5} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -366,11 +366,11 @@ const Shop = () => {
                   setIsSearchFocused(false);
                   setTimeout(() => setShowSearchResults(false), 200);
                 }}
-                placeholder="חיפוש"
+                placeholder="🔍 חפש מוצרים, קטגוריות..."
                 className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
               {searchQuery && (
-                <button onClick={clearSearch} className="p-0.5">
+                <button onClick={clearSearch} className="p-1 rounded-full hover:bg-muted transition-colors">
                   <X className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
                 </button>
               )}
@@ -383,20 +383,20 @@ const Shop = () => {
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full left-0 right-0 mt-1 bg-background rounded-lg border border-border shadow-lg overflow-hidden z-50"
+                  className="absolute top-full left-0 right-0 mt-2 bg-card rounded-2xl border border-border/30 shadow-elevated overflow-hidden z-50"
                 >
                   {searchSuggestions.map((product) => (
                     <button
                       key={product.id}
                       onClick={() => handleSearchSelect(product)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-muted transition-colors text-right"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-right"
                     >
-                      <div className="w-10 h-10 bg-muted rounded-md overflow-hidden">
+                      <div className="w-12 h-12 bg-muted rounded-xl overflow-hidden">
                         <OptimizedImage src={product.image} alt={product.name} className="w-full h-full" objectFit="cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">₪{product.price}</p>
+                        <p className="text-xs text-primary font-semibold">₪{product.price}</p>
                       </div>
                     </button>
                   ))}
@@ -407,44 +407,44 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Instagram-style Tabs - Shop & Guides */}
-      <div className="bg-background border-b border-border">
-        <div className="max-w-lg mx-auto flex">
+      {/* PetID-style Tabs */}
+      <div className="bg-background/80 backdrop-blur-sm border-b border-border/30">
+        <div className="max-w-lg mx-auto flex px-4 gap-2 py-2">
           <button
             onClick={() => setActiveTab("grid")}
-            className={`flex-1 py-3 text-center text-sm font-medium border-b transition-colors ${
+            className={`flex-1 py-2.5 text-center text-sm font-medium rounded-xl transition-all ${
               activeTab === "grid"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "bg-muted/50 text-muted-foreground hover:bg-muted"
             }`}
           >
-            Shop
+            🛍️ חנות
           </button>
           <button
             onClick={() => setActiveTab("saved")}
-            className={`flex-1 py-3 text-center text-sm font-medium border-b transition-colors ${
+            className={`flex-1 py-2.5 text-center text-sm font-medium rounded-xl transition-all ${
               activeTab === "saved"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "bg-muted/50 text-muted-foreground hover:bg-muted"
             }`}
           >
-            Wishlist
+            ❤️ מועדפים
           </button>
         </div>
       </div>
 
-      {/* Categories - Instagram pill style */}
-      <div className="bg-background border-b border-border">
+      {/* Categories - PetID pill style */}
+      <div className="bg-gradient-to-b from-background to-muted/10">
         <div className="max-w-lg mx-auto">
           <div className="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar">
             {subCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.label)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category.label
-                    ? "bg-foreground text-background"
-                    : "border border-border text-foreground hover:bg-muted"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-card border border-border/30 text-foreground hover:bg-muted/50 hover:border-primary/30"
                 }`}
               >
                 {category.label}
