@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -76,6 +77,24 @@ interface ScrapingJob {
   completed_at: string | null;
 }
 
+interface PreviewProduct {
+  product_name: string;
+  product_url: string;
+  final_price?: number;
+  regular_price?: number;
+  sale_price?: number;
+  stock_status?: string;
+  main_image_url?: string;
+  category_path?: string;
+  brand?: string;
+  short_description?: string;
+}
+
+interface ScanResult {
+  totalUrls: number;
+  productUrls: string[];
+}
+
 const AdminScraper = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<ScrapedProduct[]>([]);
@@ -83,6 +102,14 @@ const AdminScraper = () => {
   const [scraping, setScraping] = useState(false);
   const [currentJob, setCurrentJob] = useState<ScrapingJob | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ScrapedProduct | null>(null);
+  
+  // Preview/Approval flow state
+  const [scanningUrls, setScanningUrls] = useState(false);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [previewProduct, setPreviewProduct] = useState<PreviewProduct | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [showScanResultDialog, setShowScanResultDialog] = useState(false);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,15 +229,80 @@ const AdminScraper = () => {
     }
   };
 
-  const startScraping = async () => {
-    if (scrapePetTypes.length === 0) {
-      toast.error("יש לבחור לפחות סוג חיית מחמד אחד");
+  // Step 1: Scan URL to find products
+  const scanForProducts = async () => {
+    if (!baseUrl) {
+      toast.error("יש להזין כתובת אתר");
       return;
     }
-    if (scrapeProductCategories.length === 0) {
-      toast.error("יש לבחור לפחות קטגוריה אחת");
-      return;
+    
+    try {
+      setScanningUrls(true);
+      setScanResult(null);
+      
+      const { data, error } = await supabase.functions.invoke('scrape-products', {
+        body: {
+          mode: 'scan',
+          baseUrl,
+          petTypes: scrapePetTypes,
+          productCategories: scrapeProductCategories,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setScanResult({
+          totalUrls: data.totalUrls,
+          productUrls: data.productUrls,
+        });
+        setShowScanResultDialog(true);
+      } else {
+        throw new Error(data?.error || 'Failed to scan');
+      }
+    } catch (error) {
+      console.error("Error scanning:", error);
+      toast.error("שגיאה בסריקת האתר");
+    } finally {
+      setScanningUrls(false);
     }
+  };
+
+  // Step 2: Get preview of first product
+  const getProductPreview = async () => {
+    if (!scanResult?.productUrls?.length) return;
+    
+    try {
+      setLoadingPreview(true);
+      setShowScanResultDialog(false);
+      
+      const { data, error } = await supabase.functions.invoke('scrape-products', {
+        body: {
+          mode: 'preview',
+          baseUrl,
+          productUrl: scanResult.productUrls[0],
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.product) {
+        setPreviewProduct(data.product);
+        setShowPreviewDialog(true);
+      } else {
+        throw new Error(data?.error || 'Failed to get preview');
+      }
+    } catch (error) {
+      console.error("Error getting preview:", error);
+      toast.error("שגיאה בטעינת תצוגה מקדימה");
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  // Step 3: Start full scraping after approval
+  const startFullScraping = async () => {
+    setShowPreviewDialog(false);
     
     try {
       setScraping(true);
@@ -232,22 +324,33 @@ const AdminScraper = () => {
       // Start the scraping function with filters
       const { error } = await supabase.functions.invoke('scrape-products', {
         body: {
+          mode: 'full',
           jobId: job.id,
           baseUrl,
           maxProducts: maxProducts ? parseInt(maxProducts) : undefined,
           petTypes: scrapePetTypes,
           productCategories: scrapeProductCategories,
+          productUrls: scanResult?.productUrls,
         },
       });
 
       if (error) throw error;
 
-      toast.success("הסקראפינג התחיל!");
+      toast.success("הסקראפינג המלא התחיל!");
+      setScanResult(null);
+      setPreviewProduct(null);
     } catch (error) {
       console.error("Error starting scrape:", error);
       toast.error("שגיאה בהתחלת הסקראפינג");
       setScraping(false);
     }
+  };
+
+  const cancelScraping = () => {
+    setShowScanResultDialog(false);
+    setShowPreviewDialog(false);
+    setScanResult(null);
+    setPreviewProduct(null);
   };
 
   const stopScraping = async () => {
@@ -440,14 +543,19 @@ const AdminScraper = () => {
                 />
               </div>
               <div className="flex items-end gap-2">
-                {!scraping ? (
+                {!scraping && !scanningUrls && !loadingPreview ? (
                   <Button 
-                    onClick={startScraping} 
+                    onClick={scanForProducts} 
                     disabled={!baseUrl || scrapePetTypes.length === 0 || scrapeProductCategories.length === 0}
                     className="flex-1"
                   >
-                    <Play className="w-4 h-4 ml-2" />
-                    התחל סקראפינג
+                    <Search className="w-4 h-4 ml-2" />
+                    סרוק אתר
+                  </Button>
+                ) : scanningUrls || loadingPreview ? (
+                  <Button disabled className="flex-1">
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    {scanningUrls ? 'סורק...' : 'טוען תצוגה מקדימה...'}
                   </Button>
                 ) : (
                   <Button 
@@ -848,6 +956,139 @@ const AdminScraper = () => {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Scan Result Dialog */}
+        <Dialog open={showScanResultDialog} onOpenChange={setShowScanResultDialog}>
+          <DialogContent className="sm:max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                תוצאות סריקה
+              </DialogTitle>
+              <DialogDescription>
+                הסריקה הראשונית הושלמה
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-primary mb-2">
+                  {scanResult?.productUrls?.length || 0}
+                </div>
+                <div className="text-muted-foreground">
+                  מוצרים נמצאו באתר
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground text-center">
+                כדי להמשיך, נציג לך את המוצר הראשון לאישור
+              </div>
+            </div>
+            <DialogFooter className="flex gap-2 sm:gap-0">
+              <Button variant="outline" onClick={cancelScraping}>
+                ביטול
+              </Button>
+              <Button onClick={getProductPreview}>
+                הצג מוצר לדוגמה
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Preview Product Dialog */}
+        <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>תצוגה מקדימה של מוצר</DialogTitle>
+              <DialogDescription>
+                בדוק שהנתונים נראים תקינים לפני שתמשיך לסריקה מלאה
+              </DialogDescription>
+            </DialogHeader>
+            {previewProduct && (
+              <div className="space-y-4 py-4">
+                {/* Product Image */}
+                {previewProduct.main_image_url && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={previewProduct.main_image_url} 
+                      alt={previewProduct.product_name}
+                      className="max-w-[200px] max-h-[200px] object-contain rounded-lg border"
+                    />
+                  </div>
+                )}
+                
+                {/* Product Details */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-muted-foreground">שם המוצר:</span>
+                    <div className="font-semibold">{previewProduct.product_name}</div>
+                  </div>
+                  
+                  <div>
+                    <span className="font-medium text-muted-foreground">מחיר:</span>
+                    <div className="font-semibold text-primary">
+                      {previewProduct.final_price ? `₪${previewProduct.final_price.toFixed(2)}` : 'לא זמין'}
+                      {previewProduct.sale_price && previewProduct.regular_price && (
+                        <span className="text-muted-foreground line-through mr-2 text-xs">
+                          ₪{previewProduct.regular_price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <span className="font-medium text-muted-foreground">מותג:</span>
+                    <div>{previewProduct.brand || 'לא זמין'}</div>
+                  </div>
+                  
+                  <div>
+                    <span className="font-medium text-muted-foreground">סטטוס מלאי:</span>
+                    <Badge variant={previewProduct.stock_status === 'in_stock' ? 'default' : 'destructive'}>
+                      {previewProduct.stock_status === 'in_stock' ? 'במלאי' : 'אזל'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <span className="font-medium text-muted-foreground">קטגוריה:</span>
+                    <div>{previewProduct.category_path || 'לא זמין'}</div>
+                  </div>
+                  
+                  {previewProduct.short_description && (
+                    <div className="col-span-2">
+                      <span className="font-medium text-muted-foreground">תיאור:</span>
+                      <div className="text-sm">{previewProduct.short_description}</div>
+                    </div>
+                  )}
+                  
+                  <div className="col-span-2">
+                    <span className="font-medium text-muted-foreground">URL:</span>
+                    <a 
+                      href={previewProduct.product_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-xs break-all"
+                    >
+                      {previewProduct.product_url}
+                    </a>
+                  </div>
+                </div>
+                
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  <div className="text-sm text-center text-muted-foreground">
+                    אם הנתונים נראים תקינים, לחץ "אשר והתחל סריקה" כדי לסרוק את כל {scanResult?.productUrls?.length || 0} המוצרים
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter className="flex gap-2 sm:gap-0">
+              <Button variant="outline" onClick={cancelScraping}>
+                ביטול
+              </Button>
+              <Button onClick={startFullScraping}>
+                <Play className="w-4 h-4 ml-2" />
+                אשר והתחל סריקה
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

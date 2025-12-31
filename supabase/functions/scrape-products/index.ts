@@ -276,11 +276,14 @@ Deno.serve(async (req) => {
 
   try {
     const { 
+      mode = 'full', // 'scan', 'preview', or 'full'
       jobId, 
       baseUrl = 'https://homepetcenter.co.il', 
       maxProducts,
       petTypes = [],
-      productCategories = []
+      productCategories = [],
+      productUrl, // For preview mode
+      productUrls: providedUrls, // For full mode with pre-scanned URLs
     } = await req.json();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -296,6 +299,115 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // SCAN MODE: Just map the site and return URL count
+    if (mode === 'scan') {
+      console.log('Scan mode: Mapping website URLs for', baseUrl);
+      
+      const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: baseUrl,
+          limit: 5000,
+          includeSubdomains: false,
+        }),
+      });
+
+      const mapData = await mapResponse.json();
+      
+      if (!mapResponse.ok) {
+        throw new Error(mapData.error || 'Failed to map website');
+      }
+
+      const allUrls: string[] = mapData.links || [];
+      console.log('Found', allUrls.length, 'total URLs');
+
+      // Filter for product URLs
+      let productUrls = allUrls.filter(url => 
+        url.includes('/product/') || 
+        url.includes('/shop/') ||
+        url.match(/\/[^\/]+\/$/)
+      );
+
+      // Apply pet type filter
+      if (petTypes.length > 0) {
+        productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
+      }
+
+      // Apply product category filter
+      if (productCategories.length > 0) {
+        productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
+      }
+
+      console.log('Found', productUrls.length, 'filtered product URLs');
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          totalUrls: allUrls.length,
+          productUrls: productUrls,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // PREVIEW MODE: Scrape a single product and return its data
+    if (mode === 'preview') {
+      if (!productUrl) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Product URL is required for preview' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Preview mode: Scraping single product', productUrl);
+
+      const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: productUrl,
+          formats: ['html', 'markdown'],
+          onlyMainContent: false,
+        }),
+      });
+
+      const scrapeData = await scrapeResponse.json();
+
+      if (!scrapeResponse.ok || !scrapeData.success) {
+        throw new Error('Failed to scrape product');
+      }
+
+      const html = scrapeData.data?.html || scrapeData.html || '';
+      const product = parseProductFromHtml(html, productUrl);
+
+      if (!product) {
+        throw new Error('Could not parse product data');
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          product: product,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // FULL MODE: Full scraping with job tracking
+    if (!jobId) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Job ID is required for full scraping' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Check if job was stopped
     const checkJobStatus = async (): Promise<boolean> => {
@@ -313,54 +425,58 @@ Deno.serve(async (req) => {
       .update({ status: 'running', started_at: new Date().toISOString() })
       .eq('id', jobId);
 
-    console.log('Starting scrape for:', baseUrl);
+    console.log('Full mode: Starting scrape for:', baseUrl);
     console.log('Pet types filter:', petTypes);
     console.log('Product categories filter:', productCategories);
 
-    // Step 1: Map the website to get all URLs
-    console.log('Mapping website URLs...');
-    const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: baseUrl,
-        limit: 5000,
-        includeSubdomains: false,
-      }),
-    });
-
-    const mapData = await mapResponse.json();
+    // Use provided URLs if available, otherwise map the site
+    let productUrls: string[] = providedUrls || [];
     
-    if (!mapResponse.ok) {
-      throw new Error(mapData.error || 'Failed to map website');
+    if (productUrls.length === 0) {
+      console.log('Mapping website URLs...');
+      const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: baseUrl,
+          limit: 5000,
+          includeSubdomains: false,
+        }),
+      });
+
+      const mapData = await mapResponse.json();
+      
+      if (!mapResponse.ok) {
+        throw new Error(mapData.error || 'Failed to map website');
+      }
+
+      const allUrls: string[] = mapData.links || [];
+      console.log('Found', allUrls.length, 'URLs');
+
+      // Filter for product URLs matching criteria
+      productUrls = allUrls.filter(url => 
+        url.includes('/product/') || 
+        url.includes('/shop/') ||
+        url.match(/\/[^\/]+\/$/)
+      );
+
+      // Apply pet type filter
+      if (petTypes.length > 0) {
+        productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
+        console.log('After pet type filter:', productUrls.length, 'URLs');
+      }
+
+      // Apply product category filter
+      if (productCategories.length > 0) {
+        productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
+        console.log('After category filter:', productUrls.length, 'URLs');
+      }
     }
 
-    const allUrls: string[] = mapData.links || [];
-    console.log('Found', allUrls.length, 'URLs');
-
-    // Filter for product URLs matching criteria
-    let productUrls = allUrls.filter(url => 
-      url.includes('/product/') || 
-      url.includes('/shop/') ||
-      url.match(/\/[^\/]+\/$/) // Potential product pages
-    );
-
-    // Apply pet type filter
-    if (petTypes.length > 0) {
-      productUrls = productUrls.filter(url => urlMatchesPetTypes(url, petTypes));
-      console.log('After pet type filter:', productUrls.length, 'URLs');
-    }
-
-    // Apply product category filter
-    if (productCategories.length > 0) {
-      productUrls = productUrls.filter(url => urlMatchesProductCategories(url, productCategories));
-      console.log('After category filter:', productUrls.length, 'URLs');
-    }
-
-    console.log('Found', productUrls.length, 'potential product URLs after filtering');
+    console.log('Found', productUrls.length, 'potential product URLs');
 
     // Update job with total
     const totalToScrape = maxProducts ? Math.min(productUrls.length, maxProducts) : productUrls.length;
