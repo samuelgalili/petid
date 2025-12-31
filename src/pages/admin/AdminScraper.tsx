@@ -704,7 +704,7 @@ const AdminScraper = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic settings */}
-            <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-xs sm:text-sm font-medium flex items-center gap-2">
                   <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
@@ -731,32 +731,6 @@ const AdminScraper = () => {
                   disabled={scraping}
                   className="text-xs sm:text-sm"
                 />
-              </div>
-              <div className="flex items-end gap-2 sm:col-span-2 md:col-span-1">
-                {!scraping && !scanningUrls && !loadingPreview ? (
-                  <Button 
-                    onClick={scanForProducts} 
-                    disabled={!baseUrl || scrapePetTypes.length === 0 || scrapeProductCategories.length === 0}
-                    className="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg text-xs sm:text-sm"
-                  >
-                    <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
-                    סרוק אתר
-                  </Button>
-                ) : scanningUrls || loadingPreview ? (
-                  <Button disabled className="flex-1 text-xs sm:text-sm">
-                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 animate-spin" />
-                    {scanningUrls ? 'סורק...' : 'טוען...'}
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={stopScraping} 
-                    variant="destructive"
-                    className="flex-1 text-xs sm:text-sm"
-                  >
-                    <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
-                    עצור
-                  </Button>
-                )}
               </div>
             </div>
 
@@ -814,6 +788,34 @@ const AdminScraper = () => {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Scan button - moved to bottom */}
+            <div className="flex gap-2">
+              {!scraping && !scanningUrls && !loadingPreview ? (
+                <Button 
+                  onClick={scanForProducts} 
+                  disabled={!baseUrl || scrapePetTypes.length === 0 || scrapeProductCategories.length === 0}
+                  className="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg text-xs sm:text-sm"
+                >
+                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
+                  סרוק אתר
+                </Button>
+              ) : scanningUrls || loadingPreview ? (
+                <Button disabled className="flex-1 text-xs sm:text-sm">
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2 animate-spin" />
+                  {scanningUrls ? 'סורק...' : 'טוען...'}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={stopScraping} 
+                  variant="destructive"
+                  className="flex-1 text-xs sm:text-sm"
+                >
+                  <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" />
+                  עצור
+                </Button>
+              )}
             </div>
 
             {/* Progress */}
