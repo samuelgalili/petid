@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { 
@@ -7,14 +7,13 @@ import {
   Send, 
   ShoppingCart, 
   PawPrint,
-  Coins,
-  Sparkles,
-  ChevronLeft,
   Home,
   Compass,
   User,
   Plus,
-  Bookmark
+  Bookmark,
+  X,
+  MessageCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePoints } from "@/contexts/PointsContext";
@@ -22,8 +21,26 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { StoriesBar } from "@/components/StoriesBar";
-import giftIcon from "@/assets/gift-icon.gif";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
+import { toast } from "sonner";
+
+// Category icons mapping
+const categoryIcons: Record<string, string> = {
+  'מזון': '🍖',
+  'צעצועים': '🎾',
+  'טיפוח': '🛁',
+  'בריאות': '💊'
+};
+
+// Category to shop filter mapping
+const categoryFilters: Record<string, string> = {
+  'מזון': 'dry-food',
+  'צעצועים': 'toys',
+  'טיפוח': 'grooming',
+  'בריאות': 'health'
+};
 
 // Types
 interface Pet {
@@ -51,6 +68,8 @@ interface Post {
     name?: string | null;
     avatar_url?: string | null;
   } | null;
+  is_liked?: boolean;
+  likes_count?: number;
 }
 
 export default function HomeAIBase() {
@@ -65,6 +84,9 @@ export default function HomeAIBase() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"forYou" | "following">("forYou");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showCreatePost, setShowCreatePost] = useState(false);
   
   // Refs
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -89,7 +111,7 @@ export default function HomeAIBase() {
     fetchPets();
   }, [user?.id]);
 
-  // Fetch posts
+  // Fetch posts with like status
   useEffect(() => {
     const fetchPosts = async () => {
       setIsLoading(true);
@@ -110,13 +132,44 @@ export default function HomeAIBase() {
         .limit(20);
       
       if (data && !error) {
-        setPosts(data as unknown as Post[]);
+        // Fetch like status for each post if user is logged in
+        if (user?.id) {
+          const postIds = data.map(p => p.id);
+          const { data: likes } = await supabase
+            .from("post_likes")
+            .select("post_id")
+            .eq("user_id", user.id)
+            .in("post_id", postIds);
+          
+          const likedPostIds = new Set(likes?.map(l => l.post_id) || []);
+          
+          // Get like counts
+          const { data: likeCounts } = await supabase
+            .from("post_likes")
+            .select("post_id")
+            .in("post_id", postIds);
+          
+          const countMap: Record<string, number> = {};
+          likeCounts?.forEach(l => {
+            countMap[l.post_id] = (countMap[l.post_id] || 0) + 1;
+          });
+          
+          const postsWithLikes = data.map(post => ({
+            ...post,
+            is_liked: likedPostIds.has(post.id),
+            likes_count: countMap[post.id] || 0
+          }));
+          
+          setPosts(postsWithLikes as unknown as Post[]);
+        } else {
+          setPosts(data as unknown as Post[]);
+        }
       }
       setIsLoading(false);
     };
     
     fetchPosts();
-  }, [activeTab]);
+  }, [activeTab, user?.id]);
 
   // Scroll handler
   useEffect(() => {
@@ -131,8 +184,60 @@ export default function HomeAIBase() {
     return () => container?.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Calculate cashback progress
-  const cashbackProgress = Math.min((totalPoints * 0.01) / 50 * 100, 100);
+  // Handle like
+  const handleLike = useCallback(async (postId: string) => {
+    if (!user) {
+      toast.error("יש להתחבר כדי לאהוב פוסטים");
+      return;
+    }
+
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const wasLiked = post.is_liked;
+
+    // Optimistic update
+    setPosts(prev => prev.map(p => 
+      p.id === postId 
+        ? { ...p, is_liked: !wasLiked, likes_count: (p.likes_count || 0) + (wasLiked ? -1 : 1) }
+        : p
+    ));
+
+    try {
+      if (wasLiked) {
+        await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      } else {
+        await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
+      }
+    } catch (error) {
+      // Revert on error
+      setPosts(prev => prev.map(p => 
+        p.id === postId 
+          ? { ...p, is_liked: wasLiked, likes_count: (p.likes_count || 0) + (wasLiked ? 1 : -1) }
+          : p
+      ));
+      toast.error("שגיאה בשמירת הלייק");
+    }
+  }, [user, posts]);
+
+  // Handle search
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Handle category click
+  const handleCategoryClick = (category: string) => {
+    const filter = categoryFilters[category];
+    if (filter) {
+      navigate(`/shop?category=${filter}`);
+    } else {
+      navigate('/shop');
+    }
+  };
+
+  // Calculate XP progress
   const xpProgress = Math.min(totalPoints / 1000 * 100, 100);
 
   // Time ago helper
@@ -150,10 +255,17 @@ export default function HomeAIBase() {
     return `לפני ${diffDays} ימים`;
   };
 
+  // Refresh posts after creation
+  const handlePostCreated = () => {
+    setShowCreatePost(false);
+    // Trigger refetch
+    setActiveTab(prev => prev);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* ==================== HEADER - 80px ==================== */}
-      <header className="fixed top-0 left-0 right-0 h-20 bg-white border-b border-border px-4 z-50 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 h-20 bg-card border-b border-border px-4 z-50 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
           <h1 
@@ -164,13 +276,43 @@ export default function HomeAIBase() {
           </h1>
         </div>
         
-        {/* Profile Icon - Right */}
-        <button 
-          onClick={() => navigate("/profile")}
-          className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
-        >
-          <User className="w-6 h-6 text-foreground" />
-        </button>
+        {/* Search & Profile */}
+        <div className="flex items-center gap-2">
+          {showSearch ? (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: "200px", opacity: 1 }}
+              className="flex items-center gap-2"
+            >
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="חיפוש..."
+                className="h-9 text-sm"
+                dir="rtl"
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                autoFocus
+              />
+              <button onClick={() => { setShowSearch(false); setSearchQuery(""); }}>
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </motion.div>
+          ) : (
+            <button 
+              onClick={() => setShowSearch(true)}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <Search className="w-5 h-5 text-foreground" />
+            </button>
+          )}
+          
+          <button 
+            onClick={() => navigate("/profile")}
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+          >
+            <User className="w-6 h-6 text-foreground" />
+          </button>
+        </div>
       </header>
 
       {/* Spacer for fixed header */}
@@ -183,8 +325,7 @@ export default function HomeAIBase() {
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mt-4 p-4 rounded-xl"
-          style={{ backgroundColor: '#F5F5F5' }}
+          className="mx-4 mt-4 p-4 rounded-xl bg-muted"
           dir="rtl"
         >
           <p className="text-sm text-foreground text-center">
@@ -210,7 +351,7 @@ export default function HomeAIBase() {
           </p>
         </motion.section>
 
-        {/* ==================== PRODUCTS/CATEGORIES GRID ==================== */}
+        {/* ==================== CATEGORIES GRID ==================== */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -220,15 +361,16 @@ export default function HomeAIBase() {
         >
           <h3 className="text-sm font-semibold text-foreground mb-3">קטגוריות</h3>
           <div className="grid grid-cols-4 gap-3">
-            {['מזון', 'צעצועים', 'טיפוח', 'בריאות'].map((category, index) => (
+            {Object.entries(categoryIcons).map(([category, icon]) => (
               <motion.div
                 key={category}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="aspect-square bg-muted rounded-xl flex items-center justify-center cursor-pointer"
-                onClick={() => navigate('/shop')}
+                className="aspect-square bg-card rounded-xl flex flex-col items-center justify-center cursor-pointer border border-border hover:border-primary transition-colors gap-1"
+                onClick={() => handleCategoryClick(category)}
               >
-                <span className="text-xs text-muted-foreground">{category}</span>
+                <span className="text-2xl">{icon}</span>
+                <span className="text-xs text-foreground font-medium">{category}</span>
               </motion.div>
             ))}
           </div>
@@ -240,7 +382,7 @@ export default function HomeAIBase() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="px-4 mb-4"
+            className="px-4 mt-4 mb-4"
           >
             <div className="flex items-center justify-between mb-3" dir="rtl">
               <div className="flex items-center gap-2">
@@ -295,7 +437,7 @@ export default function HomeAIBase() {
         )}
 
         {/* ==================== FEED TABS ==================== */}
-        <section className="sticky top-11 bg-background z-40 border-b border-border">
+        <section className="sticky top-20 bg-background z-40 border-b border-border">
           <div className="flex" dir="rtl">
             <button
               onClick={() => setActiveTab("forYou")}
@@ -338,6 +480,7 @@ export default function HomeAIBase() {
                   key={post.id}
                   post={post}
                   getTimeAgo={getTimeAgo}
+                  onLike={() => handleLike(post.id)}
                   onClick={() => navigate(`/post/${post.id}`)}
                 />
               ))}
@@ -349,23 +492,45 @@ export default function HomeAIBase() {
       {/* ==================== BOTTOM NAV ==================== */}
       <nav className="fixed bottom-0 left-0 right-0 h-14 bg-background border-t border-border flex items-center justify-around z-50">
         <Link to="/" className="flex flex-col items-center justify-center flex-1 py-2">
-          <Home className="w-6 h-6 text-foreground" />
+          <Home className="w-6 h-6 text-primary" />
         </Link>
         <Link to="/explore" className="flex flex-col items-center justify-center flex-1 py-2">
           <Compass className="w-6 h-6 text-muted-foreground" />
         </Link>
-        <button className="flex flex-col items-center justify-center flex-1 py-2">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+        <button 
+          onClick={() => {
+            if (!isAuthenticated) {
+              toast.error("יש להתחבר כדי ליצור פוסט");
+              navigate("/auth");
+              return;
+            }
+            setShowCreatePost(true);
+          }}
+          className="flex flex-col items-center justify-center flex-1 py-2"
+        >
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shadow-lg">
             <Plus className="w-6 h-6 text-primary-foreground" />
           </div>
         </button>
-        <Link to="/shop" className="flex flex-col items-center justify-center flex-1 py-2">
+        <Link to="/shop" className="flex flex-col items-center justify-center flex-1 py-2 relative">
           <ShoppingCart className="w-6 h-6 text-muted-foreground" />
+          {cartItems.length > 0 && (
+            <span className="absolute -top-1 right-4 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+              {cartItems.length}
+            </span>
+          )}
         </Link>
         <Link to="/profile" className="flex flex-col items-center justify-center flex-1 py-2">
           <User className="w-6 h-6 text-muted-foreground" />
         </Link>
       </nav>
+
+      {/* Create Post Dialog */}
+      <CreatePostDialog
+        open={showCreatePost}
+        onOpenChange={setShowCreatePost}
+        onPostCreated={handlePostCreated}
+      />
     </div>
   );
 }
@@ -374,11 +539,11 @@ export default function HomeAIBase() {
 interface SimplePostCardProps {
   post: Post;
   getTimeAgo: (dateString: string) => string;
+  onLike: () => void;
   onClick: () => void;
 }
 
-const SimplePostCard = ({ post, getTimeAgo, onClick }: SimplePostCardProps) => {
-  const [liked, setLiked] = useState(false);
+const SimplePostCard = ({ post, getTimeAgo, onLike, onClick }: SimplePostCardProps) => {
   const [saved, setSaved] = useState(false);
 
   return (
@@ -425,10 +590,16 @@ const SimplePostCard = ({ post, getTimeAgo, onClick }: SimplePostCardProps) => {
       {/* Actions */}
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-4">
-          <button onClick={() => setLiked(!liked)}>
+          <button onClick={onLike} className="flex items-center gap-1">
             <Heart 
-              className={`w-6 h-6 transition-colors ${liked ? "fill-red-500 text-red-500" : "text-foreground"}`} 
+              className={`w-6 h-6 transition-colors ${post.is_liked ? "fill-red-500 text-red-500" : "text-foreground"}`} 
             />
+            {(post.likes_count || 0) > 0 && (
+              <span className="text-sm text-foreground">{post.likes_count}</span>
+            )}
+          </button>
+          <button onClick={onClick}>
+            <MessageCircle className="w-6 h-6 text-foreground" />
           </button>
           <button onClick={onClick}>
             <Send className="w-6 h-6 text-foreground" />
