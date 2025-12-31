@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { StoriesBar } from "@/components/StoriesBar";
 import { toast } from "sonner";
@@ -33,7 +32,9 @@ import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { ChallengePostCard } from "@/components/ChallengePostCard";
 import { BusinessFeedBanner } from "@/components/business/BusinessFeedBanner";
-import { NotesSection } from "@/components/NotesSection";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { SkeletonFeed } from "@/components/ui/enhanced-skeleton";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -929,6 +930,13 @@ const Feed = () => {
   const handleSuggestedFollow = useCallback((userId: string) => {
     setSuggestedPosts(prev => prev.filter(post => post.user_id !== userId));
   }, []);
+  const { showOnboarding, completeOnboarding } = useOnboarding();
+
+  // Show onboarding for new users
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={completeOnboarding} />;
+  }
+
   return <div className="min-h-screen bg-white pb-24" dir="rtl">
       {/* Instagram-style Header - Clean minimal */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
@@ -1089,38 +1097,8 @@ const Feed = () => {
       {/* Feed */}
       <div className="max-w-lg mx-auto">
         {loading ?
-      // Enhanced Instagram-style Loading skeleton
-      <div className="space-y-0">
-            {[...Array(3)].map((_, i) => <motion.div key={i} initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: i * 0.1,
-          duration: 0.3
-        }} className="bg-white border-b border-gray-100">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <Skeleton className="w-10 h-10 rounded-full" />
-                  <div className="space-y-1.5">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-2 w-16" />
-                  </div>
-                </div>
-                <Skeleton className="w-full aspect-square" />
-                <div className="px-4 py-3 space-y-3">
-                  <div className="flex gap-4">
-                    <Skeleton className="h-7 w-7 rounded-full" />
-                    <Skeleton className="h-7 w-7 rounded-full" />
-                    <Skeleton className="h-7 w-7 rounded-full" />
-                  </div>
-                  <Skeleton className="h-3 w-24" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-3/4" />
-                </div>
-              </motion.div>)}
-          </div> : mixedFeed.length === 0 ?
+      // Enhanced skeleton using new component
+      <SkeletonFeed /> : mixedFeed.length === 0 ?
       // Enhanced Empty state
       <motion.div initial={{
         opacity: 0,
