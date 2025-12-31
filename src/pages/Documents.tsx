@@ -706,10 +706,16 @@ export default function Documents() {
               {documents.length === 0 && (
                 <Button 
                   onClick={() => setIsDialogOpen(true)}
-                  className="bg-gradient-to-r from-teal-500 to-rose-400 text-white rounded-full px-8 h-12 text-base font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all gap-2"
+                  variant="outline"
+                  className="group relative rounded-full px-8 h-12 text-base font-bold bg-transparent border-2 border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+                  style={{
+                    background: 'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary))) border-box',
+                  }}
                 >
-                  <Upload className="w-5 h-5" />
-                  העלה מסמך ראשון
+                  <span className="relative z-10 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_3s_ease-in-out_infinite] flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-primary group-hover:text-accent transition-colors" />
+                    העלה מסמך ראשון
+                  </span>
                 </Button>
               )}
             </motion.div>
