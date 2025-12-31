@@ -1,4 +1,4 @@
-import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft, Trash2, Package, Heart, Sparkles } from "lucide-react";
+import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft, Trash2, Package, Heart, Sparkles, Activity, Weight, Utensils, AlertCircle, Star, MapPin, Clock, Stethoscope, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
@@ -262,124 +262,218 @@ const PetDetails = () => {
     <div className="min-h-screen bg-background pb-24">
       <AppHeader title={pet.name} showBackButton={true} />
 
-      {/* Pet Header - Compact */}
+      {/* Pet Header - Enhanced */}
       <div className="px-4 pt-4" dir="rtl">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4 mb-4"
+          transition={{ duration: 0.4 }}
+          className="relative mb-6"
         >
-          <div className="relative">
-            <Avatar className="w-20 h-20 border-4 border-background ring-2 ring-primary/20 shadow-lg">
-              <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-2xl font-bold">
-                {pet.type === 'dog' ? '🐕' : '🐈'}
-              </AvatarFallback>
-            </Avatar>
-            <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background cursor-pointer hover:bg-primary/90 transition-colors">
-              <Camera className="w-3.5 h-3.5 text-primary-foreground" />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-                disabled={isUploadingImage}
-              />
-            </label>
-          </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">{pet.name}</h1>
-            <p className="text-sm text-muted-foreground">{pet.breed || 'לא ידוע'}</p>
-            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-              <span>{calculateAge(pet.birth_date)}</span>
-              {pet.gender && <span>• {pet.gender === 'male' ? 'זכר' : 'נקבה'}</span>}
+          {/* Background Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent rounded-3xl -z-10" />
+          
+          <div className="flex items-start gap-4 p-4">
+            {/* Avatar Section */}
+            <div className="relative">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+              >
+                <Avatar className="w-24 h-24 border-4 border-background ring-2 ring-primary/30 shadow-xl">
+                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-3xl font-bold">
+                    {pet.type === 'dog' ? '🐕' : '🐈'}
+                  </AvatarFallback>
+                </Avatar>
+              </motion.div>
+              <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center ring-2 ring-background cursor-pointer hover:bg-primary/90 transition-all hover:scale-110 shadow-lg">
+                <Camera className="w-4 h-4 text-primary-foreground" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  disabled={isUploadingImage}
+                />
+              </label>
+              {isUploadingImage && (
+                <div className="absolute inset-0 bg-background/50 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
+
+            {/* Info Section */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground mb-1">{pet.name}</h1>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                      {pet.type === 'dog' ? '🐕 כלב' : '🐈 חתול'}
+                    </span>
+                    {pet.breed && (
+                      <span className="text-xs text-muted-foreground">{pet.breed}</span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Delete Button */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mt-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent dir="rtl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>מחיקת חיית מחמד</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        האם אתה בטוח שברצונך למחוק את {pet.name}? פעולה זו לא ניתנת לביטול.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-row-reverse gap-2">
+                      <AlertDialogCancel>ביטול</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeletePet}
+                        disabled={isDeleting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {isDeleting ? "מוחק..." : "מחק"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
+              {/* Stats Row */}
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{calculateAge(pet.birth_date)}</span>
+                </div>
+                {pet.gender && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <span>{pet.gender === 'male' ? '♂️' : '♀️'}</span>
+                    <span>{pet.gender === 'male' ? 'זכר' : 'נקבה'}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          
-          {/* Delete Pet Button */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-5 h-5" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent dir="rtl">
-              <AlertDialogHeader>
-                <AlertDialogTitle>מחיקת חיית מחמד</AlertDialogTitle>
-                <AlertDialogDescription>
-                  האם אתה בטוח שברצונך למחוק את {pet.name}? פעולה זו לא ניתנת לביטול וכל המידע הקשור לחיית המחמד יימחק לצמיתות.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="flex-row-reverse gap-2">
-                <AlertDialogCancel>ביטול</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeletePet}
-                  disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isDeleting ? "מוחק..." : "מחק"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </motion.div>
 
-        {/* Brand Voice: Smart Order Card */}
+        {/* Quick Stats Cards */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-3 gap-3 mb-4"
+        >
+          <Card className="p-3 text-center bg-gradient-to-br from-success/10 to-success/5 border-success/20">
+            <Activity className="w-5 h-5 text-success mx-auto mb-1" />
+            <p className="text-lg font-bold text-success">טוב</p>
+            <p className="text-[10px] text-muted-foreground">מצב בריאות</p>
+          </Card>
+          <Card className="p-3 text-center bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <Star className="w-5 h-5 text-primary mx-auto mb-1" />
+            <p className="text-lg font-bold text-primary">{compatibilityScore}%</p>
+            <p className="text-[10px] text-muted-foreground">התאמה</p>
+          </Card>
+          <Card className="p-3 text-center bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
+            <Clock className="w-5 h-5 text-accent mx-auto mb-1" />
+            <p className="text-lg font-bold text-accent">{daysUntilReorder}</p>
+            <p className="text-[10px] text-muted-foreground">ימים למלאי</p>
+          </Card>
+        </motion.div>
+
+        {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-4"
+          transition={{ delay: 0.3 }}
+          className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-4"
         >
-          <Card className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-            {/* Stock indicator */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">מלאי מזון</span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full gap-2 whitespace-nowrap"
+            onClick={() => navigate('/grooming')}
+          >
+            <Scissors className="w-4 h-4" />
+            הזמן תספורת
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full gap-2 whitespace-nowrap"
+            onClick={() => navigate('/training')}
+          >
+            <GraduationCap className="w-4 h-4" />
+            אילוף
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full gap-2 whitespace-nowrap"
+            onClick={() => navigate('/parks')}
+          >
+            <MapPin className="w-4 h-4" />
+            פארקים
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full gap-2 whitespace-nowrap"
+            onClick={() => navigate(`/documents?petId=${pet.id}`)}
+          >
+            <FileText className="w-4 h-4" />
+            מסמכים
+          </Button>
+        </motion.div>
+
+        {/* Smart Order Card - Enhanced */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="p-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/20 shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Package className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-xs text-muted-foreground">
-                נשארו כ-{daysUntilReorder} ימים
-              </span>
-            </div>
-            <Progress value={(daysUntilReorder / 30) * 100} className="h-2 mb-3" />
-            
-            {/* Compatibility Score */}
-            <div className="flex items-center justify-between mb-3 p-2 bg-background/50 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Heart className="w-4 h-4 text-success" />
-                <span className="text-xs">{PET_CARD.compatibilityScore}</span>
+              <div className="flex-1">
+                <h3 className="font-semibold text-sm">הזמנה חכמה</h3>
+                <p className="text-xs text-muted-foreground">המלאי עומד להיגמר בעוד {daysUntilReorder} ימים</p>
               </div>
-              <span className="text-sm font-bold text-success">{compatibilityScore}%</span>
             </div>
 
-            {/* Order Suggestion */}
-            <p className="text-xs text-center text-muted-foreground mb-3">
-              {PET_CARD.orderSuggestion}
-            </p>
+            <Progress value={(daysUntilReorder / 30) * 100} className="h-2 mb-4" />
 
-            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">
               <Button 
                 size="sm" 
                 onClick={() => navigate("/shop?reorder=true")}
-                className="gap-1"
+                className="gap-2 rounded-xl"
               >
                 <Package className="w-4 h-4" />
-                {ACTIONS.smartOrder}
+                הזמן עכשיו
               </Button>
               <Button 
                 size="sm" 
                 variant="outline"
                 onClick={() => navigate("/shop")}
-                className="gap-1"
+                className="gap-2 rounded-xl"
               >
                 <Sparkles className="w-4 h-4" />
-                {ACTIONS.checkCompatibility}
+                לחנות
               </Button>
             </div>
           </Card>
