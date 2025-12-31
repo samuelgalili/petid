@@ -530,45 +530,118 @@ const AdminScraper = () => {
     <AdminLayout title="סקראפר מוצרים" icon={Package}>
       <div className="space-y-6" dir="rtl">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">סקראפר מוצרים</h1>
-            <p className="text-muted-foreground">איסוף וניהול מוצרים מאתרי חנויות</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">סקראפר מוצרים</h1>
+              <p className="text-muted-foreground text-sm">איסוף וניהול מוצרים מאתרי חנויות</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={exportToCSV} disabled={products.length === 0}>
-              <FileSpreadsheet className="w-4 h-4 ml-2" />
-              ייצוא ל-CSV
+            <Button variant="outline" onClick={exportToCSV} disabled={products.length === 0} className="gap-2">
+              <FileSpreadsheet className="w-4 h-4" />
+              CSV
             </Button>
-            <Button variant="outline" onClick={exportToJSON} disabled={products.length === 0}>
-              <FileJson className="w-4 h-4 ml-2" />
-              ייצוא ל-JSON
+            <Button variant="outline" onClick={exportToJSON} disabled={products.length === 0} className="gap-2">
+              <FileJson className="w-4 h-4" />
+              JSON
             </Button>
           </div>
         </div>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">סה"כ מוצרים</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{products.length}</p>
+                </div>
+                <Package className="w-8 h-8 text-blue-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">במלאי</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                    {products.filter(p => p.stock_status === 'in_stock').length}
+                  </p>
+                </div>
+                <CheckCircle className="w-8 h-8 text-green-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 border-amber-200 dark:border-amber-800">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">קטגוריות</p>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{categories.length}</p>
+                </div>
+                <Filter className="w-8 h-8 text-amber-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className={`border ${scraping ? 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 animate-pulse' : 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 border-slate-200 dark:border-slate-800'}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-xs font-medium ${scraping ? 'text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-400'}`}>סטטוס</p>
+                  <p className={`text-lg font-bold ${scraping ? 'text-purple-700 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {scraping ? 'פעיל' : 'לא פעיל'}
+                  </p>
+                </div>
+                {scraping ? (
+                  <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                ) : (
+                  <Clock className="w-8 h-8 text-slate-500/50" />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Scraping Control Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              הגדרות סקראפינג
+        <Card className="border-2 border-dashed">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Search className="w-4 h-4 text-primary" />
+              </div>
+              הגדרות סריקה
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic settings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">כתובת האתר</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                  כתובת האתר
+                </label>
                 <Input
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="https://homepetcenter.co.il"
+                  placeholder="https://example.com"
                   disabled={scraping}
+                  className="font-mono text-sm"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">מקסימום מוצרים (ריק = הכל)</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                  מקסימום מוצרים
+                </label>
                 <Input
                   type="number"
                   value={maxProducts}
@@ -582,7 +655,7 @@ const AdminScraper = () => {
                   <Button 
                     onClick={scanForProducts} 
                     disabled={!baseUrl || scrapePetTypes.length === 0 || scrapeProductCategories.length === 0}
-                    className="flex-1"
+                    className="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 shadow-lg"
                   >
                     <Search className="w-4 h-4 ml-2" />
                     סרוק אתר
@@ -606,106 +679,124 @@ const AdminScraper = () => {
             </div>
 
             {/* Pet type filters */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium block">סוג חיית מחמד לסריקה</label>
-              <div className="flex flex-wrap gap-4">
+            <div className="space-y-3 p-4 bg-muted/30 rounded-xl">
+              <label className="text-sm font-semibold flex items-center gap-2">
+                <Dog className="w-4 h-4" />
+                סוג חיית מחמד
+              </label>
+              <div className="flex flex-wrap gap-3">
                 {petTypeOptions.map(pet => {
                   const Icon = pet.icon;
+                  const isChecked = scrapePetTypes.includes(pet.id);
                   return (
-                    <div key={pet.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`pet-${pet.id}`}
-                        checked={scrapePetTypes.includes(pet.id)}
-                        onCheckedChange={() => togglePetType(pet.id)}
-                        disabled={scraping}
-                      />
-                      <Label 
-                        htmlFor={`pet-${pet.id}`} 
-                        className="flex items-center gap-1 cursor-pointer"
-                      >
-                        <Icon className="w-4 h-4" />
-                        {pet.label}
-                      </Label>
-                    </div>
+                    <button
+                      key={pet.id}
+                      onClick={() => !scraping && togglePetType(pet.id)}
+                      disabled={scraping}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
+                        isChecked 
+                          ? 'bg-primary text-primary-foreground border-primary shadow-md' 
+                          : 'bg-background border-muted-foreground/20 hover:border-primary/50'
+                      } ${scraping ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-sm font-medium">{pet.label}</span>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             {/* Product category filters */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium block">קטגוריות מוצרים לסריקה</label>
-              <div className="flex flex-wrap gap-4">
-                {productCategoryOptions.map(cat => (
-                  <div key={cat.id} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`cat-${cat.id}`}
-                      checked={scrapeProductCategories.includes(cat.id)}
-                      onCheckedChange={() => toggleProductCategory(cat.id)}
+            <div className="space-y-3 p-4 bg-muted/30 rounded-xl">
+              <label className="text-sm font-semibold flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                קטגוריות מוצרים
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {productCategoryOptions.map(cat => {
+                  const isChecked = scrapeProductCategories.includes(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => !scraping && toggleProductCategory(cat.id)}
                       disabled={scraping}
-                    />
-                    <Label htmlFor={`cat-${cat.id}`} className="cursor-pointer">
+                      className={`px-3 py-1.5 rounded-lg border transition-all text-sm ${
+                        isChecked 
+                          ? 'bg-primary/10 text-primary border-primary/30 font-medium' 
+                          : 'bg-background border-muted-foreground/20 hover:border-primary/50'
+                      } ${scraping ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
                       {cat.label}
-                    </Label>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Progress */}
             {currentJob && (currentJob.status === 'running' || currentJob.status === 'pending' || currentJob.status === 'paused') && (
-              <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
+              <div className="space-y-4 p-5 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {currentJob.status === 'running' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    ) : currentJob.status === 'paused' ? (
-                      <Pause className="w-4 h-4 text-amber-500" />
-                    ) : (
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {currentJob.status === 'running' ? 'סורק מוצרים...' : 
-                       currentJob.status === 'paused' ? 'הסריקה מושהית' : 'ממתין להתחלה...'}
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      currentJob.status === 'running' ? 'bg-primary/20' : 
+                      currentJob.status === 'paused' ? 'bg-amber-500/20' : 'bg-muted'
+                    }`}>
+                      {currentJob.status === 'running' ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                      ) : currentJob.status === 'paused' ? (
+                        <Pause className="w-5 h-5 text-amber-500" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold">
+                        {currentJob.status === 'running' ? 'סורק מוצרים...' : 
+                         currentJob.status === 'paused' ? 'הסריקה מושהית' : 'ממתין להתחלה...'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {currentJob.scraped_products} מתוך {currentJob.total_products || '?'} מוצרים
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {currentJob.scraped_products} / {currentJob.total_products || '?'} מוצרים
-                  </span>
+                  <div className="text-left">
+                    <p className="text-2xl font-bold text-primary">{Math.round(getJobProgress())}%</p>
+                  </div>
                 </div>
-                <Progress value={getJobProgress()} className="h-2" />
+                <Progress value={getJobProgress()} className="h-3 bg-primary/20" />
                 
                 {/* Control buttons */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-3 pt-1">
                   {currentJob.status === 'running' && (
                     <Button 
                       onClick={pauseScraping} 
                       variant="outline"
-                      size="sm"
-                      className="flex-1"
+                      size="lg"
+                      className="flex-1 gap-2"
                     >
-                      <Pause className="w-4 h-4 ml-2" />
+                      <Pause className="w-4 h-4" />
                       השהה
                     </Button>
                   )}
                   {currentJob.status === 'paused' && (
                     <Button 
                       onClick={resumeScraping} 
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
+                      size="lg"
+                      className="flex-1 gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                     >
-                      <Play className="w-4 h-4 ml-2" />
+                      <Play className="w-4 h-4" />
                       המשך
                     </Button>
                   )}
                   <Button 
                     onClick={stopScraping} 
                     variant="destructive"
-                    size="sm"
-                    className="flex-1"
+                    size="lg"
+                    className="flex-1 gap-2"
                   >
-                    <Square className="w-4 h-4 ml-2" />
+                    <Square className="w-4 h-4" />
                     עצור
                   </Button>
                 </div>
@@ -713,29 +804,38 @@ const AdminScraper = () => {
             )}
 
             {currentJob?.status === 'completed' && (
-              <div className="flex items-center gap-2 p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm">
-                  הסקראפינג הושלם! נמצאו {currentJob.scraped_products} מוצרים.
-                </span>
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 rounded-xl border border-green-200 dark:border-green-800">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-green-700 dark:text-green-300">הסקראפינג הושלם!</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">נמצאו {currentJob.scraped_products} מוצרים</p>
+                </div>
               </div>
             )}
 
             {currentJob?.status === 'stopped' && (
-              <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950 rounded-lg">
-                <Square className="w-5 h-5 text-amber-600" />
-                <span className="text-sm">
-                  הסקראפינג נעצר. נמצאו {currentJob.scraped_products} מוצרים.
-                </span>
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Square className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-700 dark:text-amber-300">הסקראפינג נעצר</p>
+                  <p className="text-sm text-amber-600 dark:text-amber-400">נמצאו {currentJob.scraped_products} מוצרים</p>
+                </div>
               </div>
             )}
 
             {currentJob?.status === 'failed' && (
-              <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-950 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-sm text-red-600">
-                  שגיאה: {currentJob.error_message}
-                </span>
+              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950 rounded-xl border border-red-200 dark:border-red-800">
+                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-red-700 dark:text-red-300">שגיאה</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">{currentJob.error_message}</p>
+                </div>
               </div>
             )}
           </CardContent>
