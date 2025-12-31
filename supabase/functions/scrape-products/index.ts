@@ -365,29 +365,100 @@ function parseProductFromHtml(html: string, url: string): ScrapedProduct | null 
   }
 }
 
-// Extract product URLs from page
+// Extract product URLs from page - more comprehensive patterns
 function extractProductUrls(html: string, baseUrl: string): string[] {
   const urls: string[] = [];
-  const productLinkPattern = /href="(https?:\/\/[^"]*\/product\/[^"]+)"/gi;
-  const matches = html.matchAll(productLinkPattern);
+  const urlObj = new URL(baseUrl);
+  const domain = urlObj.origin;
   
-  for (const match of matches) {
-    const url = match[1];
-    if (url.startsWith(baseUrl) && !urls.includes(url)) {
-      urls.push(url);
+  // Multiple patterns for different WooCommerce setups
+  const patterns = [
+    // Standard /product/ path
+    /href="(https?:\/\/[^"]*\/product\/[^"#?]+)/gi,
+    // Shop page products
+    /href="(https?:\/\/[^"]*\/shop\/[^"#?]+)/gi,
+    // Hebrew product category pages with product links
+    /href="(https?:\/\/[^"]*\/[^"]*-[^"]*\/)"[^>]*class="[^"]*woocommerce-loop-product__link/gi,
+    // Product links by data-product-id
+    /data-product_id="[^"]*"[^>]*href="([^"#?]+)"/gi,
+    // WooCommerce product image links
+    /<a[^>]*href="([^"#?]+)"[^>]*class="[^"]*woocommerce-LoopProduct-link/gi,
+    // Any link inside product element
+    /<li[^>]*class="[^"]*product[^"]*"[^>]*>[\s\S]*?href="([^"#?]+)"/gi,
+    // Post type product links
+    /href="([^"#?]+)"[^>]*class="[^"]*post-type-product/gi,
+    // Products with data-id
+    /data-id="[^"]*"[^>]*>[\s\S]*?href="([^"#?]+)"/gi,
+  ];
+  
+  for (const pattern of patterns) {
+    const matches = html.matchAll(pattern);
+    for (const match of matches) {
+      let url = match[1];
+      // Clean URL
+      url = url.split('?')[0].split('#')[0];
+      // Make absolute if relative
+      if (url.startsWith('/')) {
+        url = domain + url;
+      }
+      // Validate URL belongs to the domain and is not a category
+      if (url.startsWith(domain) && 
+          !urls.includes(url) && 
+          !url.includes('/product-category/') &&
+          !url.includes('/product-tag/') &&
+          !url.includes('/cart') &&
+          !url.includes('/checkout') &&
+          !url.includes('/my-account') &&
+          !url.endsWith('/shop/') &&
+          !url.endsWith('/')) { // Skip directory-like URLs
+        urls.push(url);
+      }
     }
   }
 
-  // Also look for WooCommerce product links
-  const wooPattern = /href="(https?:\/\/[^"]*\?add-to-cart=[^"]+)"/gi;
+  // Also look for WooCommerce add-to-cart links to find product pages
+  const wooPattern = /href="([^"]*\?add-to-cart=\d+)"/gi;
   const wooMatches = html.matchAll(wooPattern);
   
   for (const match of wooMatches) {
-    const cartUrl = match[1];
-    // Extract the actual product page URL
+    let cartUrl = match[1];
+    // Make absolute
+    if (cartUrl.startsWith('/')) {
+      cartUrl = domain + cartUrl;
+    }
+    // Extract the actual product page URL (before query params)
     const productPageUrl = cartUrl.split('?')[0];
-    if (productPageUrl.startsWith(baseUrl) && !urls.includes(productPageUrl)) {
+    if (productPageUrl.startsWith(domain) && 
+        !urls.includes(productPageUrl) && 
+        !productPageUrl.endsWith('/')) {
       urls.push(productPageUrl);
+    }
+  }
+
+  // Look for products in structured JSON-LD data
+  const jsonLdMatches = html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
+  for (const match of jsonLdMatches) {
+    try {
+      const jsonData = JSON.parse(match[1]);
+      // Handle ItemList schema
+      if (jsonData['@type'] === 'ItemList' && jsonData.itemListElement) {
+        for (const item of jsonData.itemListElement) {
+          const productUrl = item.url || item.item?.url;
+          if (productUrl && productUrl.startsWith(domain) && !urls.includes(productUrl)) {
+            urls.push(productUrl);
+          }
+        }
+      }
+      // Handle Product array
+      if (Array.isArray(jsonData)) {
+        for (const item of jsonData) {
+          if (item['@type'] === 'Product' && item.url) {
+            if (!urls.includes(item.url)) urls.push(item.url);
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore JSON parse errors
     }
   }
 
@@ -587,15 +658,32 @@ Deno.serve(async (req) => {
           if (lastPage > maxPage) maxPage = lastPage;
         }
         
-        // Filter product URLs from links
+        // Filter product URLs from links - more inclusive filtering
         const productUrls = links.filter(url => {
           const lowerUrl = url.toLowerCase();
           let decodedUrl = lowerUrl;
           try {
             decodedUrl = decodeURIComponent(url).toLowerCase();
           } catch (e) {}
-          return (lowerUrl.includes('/product/') || decodedUrl.includes('/product/')) && 
-                 !lowerUrl.includes('/product-category/');
+          // Include any product-like URL from the same domain
+          return url.startsWith(baseDomain) &&
+                 (lowerUrl.includes('/product/') || 
+                  decodedUrl.includes('/product/') ||
+                  lowerUrl.includes('/shop/') ||
+                  lowerUrl.includes('/store/')) && 
+                 !lowerUrl.includes('/product-category/') &&
+                 !lowerUrl.includes('/product-tag/') &&
+                 !lowerUrl.includes('/cart') &&
+                 !lowerUrl.includes('/checkout') &&
+                 !lowerUrl.includes('/my-account');
+        });
+        
+        // Also find category URLs for deeper crawling
+        const categoryUrls = links.filter(url => {
+          const lowerUrl = url.toLowerCase();
+          return url.startsWith(baseDomain) &&
+                 (lowerUrl.includes('/product-category/') ||
+                  lowerUrl.includes('/shop/') && lowerUrl.split('/').length > 5);
         });
         
         return { 
@@ -603,6 +691,7 @@ Deno.serve(async (req) => {
           html, 
           productUrls: [...new Set([...productUrls, ...extractedUrls])],
           paginationUrls,
+          categoryUrls,
           maxPage
         };
       };
@@ -643,22 +732,50 @@ Deno.serve(async (req) => {
       console.log('Will scrape', Math.min(pagesToScrape.length, maxPagesToScrape), 'pagination pages');
       
       // Scrape pagination pages
+      let emptyPageCount = 0;
+      const maxEmptyPages = 3; // Allow up to 3 consecutive empty pages before stopping
+      
       for (const pageUrl of pagesToScrape.slice(0, maxPagesToScrape)) {
         console.log('Scraping pagination page:', pageUrl);
         try {
           const pageResult = await scrapePage(pageUrl);
           const newUrls = pageResult.productUrls.filter(url => !allProductUrls.includes(url));
           
-          // If page returned 0 products, we've probably reached the end
           if (pageResult.productUrls.length === 0) {
-            console.log('Empty page reached, stopping pagination');
-            break;
+            emptyPageCount++;
+            console.log(`Empty page (${emptyPageCount}/${maxEmptyPages})`);
+            if (emptyPageCount >= maxEmptyPages) {
+              console.log('Too many consecutive empty pages, stopping pagination');
+              break;
+            }
+          } else {
+            emptyPageCount = 0; // Reset counter when we find products
           }
           
           allProductUrls = [...allProductUrls, ...newUrls];
           console.log('Page added', newUrls.length, 'new products. Total:', allProductUrls.length);
         } catch (e) {
           console.error('Failed to scrape page:', pageUrl, e);
+          // Don't count errors as empty pages
+        }
+      }
+      
+      // Also scrape discovered category pages if we still don't have many products
+      const categoryUrls = firstPageResult.categoryUrls || [];
+      if (allProductUrls.length < 50 && categoryUrls.length > 0) {
+        console.log('Scanning', categoryUrls.length, 'category pages for more products');
+        const categoryUrlsToScrape = categoryUrls.slice(0, 10);
+        
+        for (const catUrl of categoryUrlsToScrape) {
+          console.log('Scraping category:', catUrl);
+          try {
+            const catResult = await scrapePage(catUrl);
+            const newUrls = catResult.productUrls.filter(url => !allProductUrls.includes(url));
+            allProductUrls = [...allProductUrls, ...newUrls];
+            console.log('Category added', newUrls.length, 'new products. Total:', allProductUrls.length);
+          } catch (e) {
+            console.error('Failed to scrape category:', catUrl, e);
+          }
         }
       }
 
