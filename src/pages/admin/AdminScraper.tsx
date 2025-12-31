@@ -439,24 +439,24 @@ const AdminScraper = () => {
                 />
               </div>
               
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select value={categoryFilter || "all"} onValueChange={(v) => setCategoryFilter(v === "all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="כל הקטגוריות" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">כל הקטגוריות</SelectItem>
+                  <SelectItem value="all">כל הקטגוריות</SelectItem>
                   {categories.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               
-              <Select value={stockFilter} onValueChange={setStockFilter}>
+              <Select value={stockFilter || "all"} onValueChange={(v) => setStockFilter(v === "all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="סטטוס מלאי" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">הכל</SelectItem>
+                  <SelectItem value="all">הכל</SelectItem>
                   <SelectItem value="in_stock">במלאי</SelectItem>
                   <SelectItem value="out_of_stock">אזל מהמלאי</SelectItem>
                   <SelectItem value="preorder">הזמנה מראש</SelectItem>
