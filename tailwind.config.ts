@@ -144,32 +144,23 @@ export default {
 			background: 'hsl(var(--background))',
 			foreground: 'hsl(var(--foreground))',
 			petid: {
-				blue: 'hsl(var(--petid-blue))',
-				'blue-light': 'hsl(var(--petid-blue-light))',
-				'blue-dark': 'hsl(var(--petid-blue-dark))',
-				turquoise: 'hsl(var(--petid-turquoise))',
-				'turquoise-light': 'hsl(var(--petid-turquoise-light))',
-				'turquoise-dark': 'hsl(var(--petid-turquoise-dark))',
+				teal: 'hsl(var(--petid-teal))',
+				'teal-light': 'hsl(var(--petid-teal-light))',
+				'teal-hover': 'hsl(var(--petid-teal-hover))',
 				gold: 'hsl(var(--petid-gold))',
 				'gold-light': 'hsl(var(--petid-gold-light))',
-				'gold-dark': 'hsl(var(--petid-gold-dark))',
-				teal: 'hsl(var(--petid-teal))'
+				coral: 'hsl(var(--petid-coral))',
+				'coral-light': 'hsl(var(--petid-coral-light))',
+				heart: 'hsl(var(--petid-heart))',
+				// Legacy aliases
+				blue: 'hsl(var(--petid-teal))',
+				'blue-light': 'hsl(var(--petid-teal-light))',
+				turquoise: 'hsl(var(--petid-teal))'
 			},
 			shop: {
 				blue: 'hsl(var(--shop-blue))',
 				turquoise: 'hsl(var(--shop-turquoise))',
 				'light-blue': 'hsl(var(--shop-light-blue))'
-			},
-			instagram: {
-				blue: 'hsl(var(--ig-blue))',
-				red: 'hsl(var(--ig-red))',
-				black: 'hsl(var(--ig-black))',
-				'gray-dark': 'hsl(var(--ig-gray-dark))',
-				gray: 'hsl(var(--ig-gray))',
-				'gray-light': 'hsl(var(--ig-gray-light))',
-				border: 'hsl(var(--ig-border))',
-				'bg-light': 'hsl(var(--ig-bg-light))',
-				white: 'hsl(var(--ig-white))'
 			},
 			icon: {
 				base: 'hsl(var(--icon-base))',
@@ -273,10 +264,12 @@ export default {
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 4px)',
-  			sm: 'calc(var(--radius) - 8px)',
+  			sm: 'calc(var(--radius) - 6px)',
   			xl: 'var(--radius-lg)',
-  			'2xl': '1.375rem',
-  			'3xl': '1.75rem'
+  			'2xl': 'var(--radius-xl)',
+  			'3xl': '2rem',
+  			'4xl': '2.5rem',
+  			'organic': '1.375rem'
   		},
 		boxShadow: {
 			sm: 'var(--shadow-sm)',
@@ -295,13 +288,10 @@ export default {
 		},
 		backgroundImage: {
 			'gradient-primary': 'var(--gradient-primary)',
-			'gradient-instagram': 'var(--gradient-instagram)',
-			'gradient-petid': 'var(--gradient-instagram)',
-			'gradient-shop': 'var(--gradient-shop)',
-			'gradient-story': 'var(--gradient-story)',
-			'gradient-hero': 'var(--gradient-hero)',
+			'gradient-petid': 'var(--gradient-petid)',
 			'gradient-warm': 'var(--gradient-warm)',
-			'gradient-card': 'var(--gradient-card)'
+			'gradient-story': 'var(--gradient-story)',
+			'gradient-instagram': 'var(--gradient-instagram)'
 		},
 		keyframes: {
 			'accordion-down': {
