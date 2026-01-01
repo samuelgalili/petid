@@ -1096,7 +1096,7 @@ const Feed = () => {
               <img src={petidIcon} alt="Petid" className="w-8 h-8 object-contain" />
             </motion.div>
             <h1 
-              className="text-lg font-bold cursor-pointer text-foreground"
+              className="text-xl font-fredoka font-semibold cursor-pointer text-foreground tracking-wide"
               onClick={() => {
                 setPage(0);
                 setHasMore(true);

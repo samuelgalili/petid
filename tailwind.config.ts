@@ -29,6 +29,11 @@ export default {
 				'-apple-system',
 				'sans-serif'
 			],
+			fredoka: [
+				'Fredoka',
+				'Assistant',
+				'sans-serif'
+			],
 			heebo: [
 				'Assistant',
 				'Inter',
