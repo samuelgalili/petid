@@ -181,6 +181,8 @@ const Shop = () => {
         sku: sp.sku,
         flavors: sp.flavors,
         created_at: sp.created_at,
+        is_flagged: sp.is_flagged || false,
+        flagged_reason: sp.flagged_reason,
       }));
       
       // Filter business products that are in stock
@@ -215,6 +217,8 @@ const Shop = () => {
       freeShipping: (typeof p.price === 'string' ? parseFloat(p.price) : p.price) > 200,
       category: p.category,
       petType: p.pet_type,
+      isFlagged: p.is_flagged || false,
+      flaggedReason: p.flagged_reason,
     }));
   }, [dbProducts]);
 
@@ -550,10 +554,20 @@ const Shop = () => {
                 <OptimizedImage
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-full"
+                  className={`w-full h-full ${product.isFlagged ? 'opacity-50' : ''}`}
                   objectFit="cover"
                   sizes="(max-width: 768px) 50vw, 200px"
                 />
+                
+                {/* Flagged indicator */}
+                {product.isFlagged && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="bg-red-500 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium shadow-lg">
+                      <Flag className="w-3.5 h-3.5" />
+                      <span>בבדיקה</span>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Wishlist button - transparent Instagram style */}
                 <button
@@ -875,6 +889,17 @@ const Shop = () => {
               </ScrollArea>
               {/* Bottom Bar - Instagram style */}
               <div className="flex-shrink-0 border-t border-border px-4 py-3 bg-background">
+                {/* Flagged product warning */}
+                {selectedProduct.isFlagged && (
+                  <div className="flex items-center gap-2 p-3 mb-3 rounded-xl bg-red-50 border border-red-200 text-red-700">
+                    <Flag className="w-4 h-4 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium">מוצר זה נמצא בבדיקה</p>
+                      <p className="text-xs text-red-600">לא ניתן לרכוש עד לסיום הטיפול</p>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0">
                     <p className="text-xs text-muted-foreground">סה״כ</p>
@@ -885,11 +910,24 @@ const Shop = () => {
                   
                   <button
                     onClick={handleAddToCart}
-                    disabled={!selectedProduct.inStock}
-                    className="flex-1 h-11 text-sm font-semibold rounded-lg bg-primary text-primary-foreground flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-50"
+                    disabled={!selectedProduct.inStock || selectedProduct.isFlagged}
+                    className={`flex-1 h-11 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-opacity disabled:opacity-50 ${
+                      selectedProduct.isFlagged 
+                        ? 'bg-red-100 text-red-600 cursor-not-allowed' 
+                        : 'bg-primary text-primary-foreground hover:opacity-90'
+                    }`}
                   >
-                    <ShoppingBag className="w-4 h-4" />
-                    {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
+                    {selectedProduct.isFlagged ? (
+                      <>
+                        <Flag className="w-4 h-4" />
+                        מוצר בבדיקה
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="w-4 h-4" />
+                        {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

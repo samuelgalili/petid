@@ -499,12 +499,15 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          flagged_at: string | null
+          flagged_reason: string | null
           flavors: string[] | null
           id: string
           image_url: string
           images: string[] | null
           in_stock: boolean | null
           is_featured: boolean | null
+          is_flagged: boolean | null
           name: string
           needs_image_review: boolean | null
           needs_price_review: boolean | null
@@ -526,12 +529,15 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          flagged_at?: string | null
+          flagged_reason?: string | null
           flavors?: string[] | null
           id?: string
           image_url: string
           images?: string[] | null
           in_stock?: boolean | null
           is_featured?: boolean | null
+          is_flagged?: boolean | null
           name: string
           needs_image_review?: boolean | null
           needs_price_review?: boolean | null
@@ -553,12 +559,15 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          flagged_at?: string | null
+          flagged_reason?: string | null
           flavors?: string[] | null
           id?: string
           image_url?: string
           images?: string[] | null
           in_stock?: boolean | null
           is_featured?: boolean | null
+          is_flagged?: boolean | null
           name?: string
           needs_image_review?: boolean | null
           needs_price_review?: boolean | null
@@ -3442,10 +3451,13 @@ export type Database = {
           data_attributes: Json | null
           discount_text: string | null
           final_price: number | null
+          flagged_at: string | null
+          flagged_reason: string | null
           flavors: string[] | null
           h1_title: string | null
           id: string
           ingredients: string | null
+          is_flagged: boolean | null
           json_ld_data: Json | null
           long_description: string | null
           long_description_html: string | null
@@ -3492,10 +3504,13 @@ export type Database = {
           data_attributes?: Json | null
           discount_text?: string | null
           final_price?: number | null
+          flagged_at?: string | null
+          flagged_reason?: string | null
           flavors?: string[] | null
           h1_title?: string | null
           id?: string
           ingredients?: string | null
+          is_flagged?: boolean | null
           json_ld_data?: Json | null
           long_description?: string | null
           long_description_html?: string | null
@@ -3542,10 +3557,13 @@ export type Database = {
           data_attributes?: Json | null
           discount_text?: string | null
           final_price?: number | null
+          flagged_at?: string | null
+          flagged_reason?: string | null
           flavors?: string[] | null
           h1_title?: string | null
           id?: string
           ingredients?: string | null
+          is_flagged?: boolean | null
           json_ld_data?: Json | null
           long_description?: string | null
           long_description_html?: string | null
