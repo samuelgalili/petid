@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Heart, Send } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Send } from "lucide-react";
+import pawHeartIcon from "@/assets/paw-heart-icon.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
@@ -356,13 +357,15 @@ export const PostCard = ({
               animate={isLicking ? { scale: [1, 1.2, 1] } : {}}
               transition={{ duration: 0.3 }}
             >
-              <Heart 
-                className={`w-6 h-6 transition-colors duration-200 ${
+              <img 
+                src={pawHeartIcon} 
+                alt="Like"
+                className={`w-6 h-6 transition-all duration-200 ${
                   post.is_liked 
-                    ? 'text-destructive fill-destructive' 
-                    : 'text-foreground hover:text-muted-foreground'
-                }`} 
-                strokeWidth={1.5}
+                    ? 'filter-none' 
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+                style={post.is_liked ? { filter: 'invert(27%) sepia(94%) saturate(6037%) hue-rotate(352deg) brightness(91%) contrast(91%)' } : {}}
               />
             </motion.button>
             
