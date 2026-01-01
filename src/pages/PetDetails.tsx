@@ -284,225 +284,249 @@ const PetDetails = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <AppHeader title={pet.name} showBackButton={true} />
+      {/* Hero Header - Immersive Design */}
+      <div className="relative h-[320px] overflow-hidden">
+        {/* Background Image/Gradient */}
+        <div className="absolute inset-0">
+          {pet.avatar_url ? (
+            <>
+              <img 
+                src={pet.avatar_url} 
+                alt={pet.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-background" />
+            </>
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br ${
+              pet.type === 'dog' 
+                ? 'from-primary via-primary/80 to-accent' 
+                : 'from-purple-500 via-pink-500 to-accent'
+            }`}>
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute top-10 right-10 w-32 h-32 rounded-full bg-white/20 blur-3xl" />
+                <div className="absolute bottom-20 left-10 w-40 h-40 rounded-full bg-white/20 blur-3xl" />
+              </div>
+            </div>
+          )}
+        </div>
 
-      {/* Pet Header - Enhanced */}
-      <div className="px-4 pt-4" dir="rtl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="relative mb-6"
-        >
-          {/* Background Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent rounded-3xl -z-10" />
+        {/* Top Navigation */}
+        <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </Button>
           
-          <div className="flex items-start gap-4 p-4">
-            {/* Avatar Section */}
-            <div className="relative">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-              >
-                <Avatar className="w-24 h-24 border-4 border-background ring-2 ring-primary/30 shadow-xl">
-                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-3xl font-bold">
+          <div className="flex items-center gap-2">
+            <label className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center cursor-pointer hover:bg-black/40 transition-all">
+              <Camera className="w-5 h-5" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+                disabled={isUploadingImage}
+              />
+            </label>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive/80"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent dir="rtl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>מחיקת חיית מחמד</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    האם אתה בטוח שברצונך למחוק את {pet.name}? פעולה זו לא ניתנת לביטול.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-row-reverse gap-2">
+                  <AlertDialogCancel>ביטול</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeletePet}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? "מוחק..." : "מחק"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+
+        {/* Upload Overlay */}
+        <AnimatePresence>
+          {isUploadingImage && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-30 bg-black/60 backdrop-blur-sm flex items-center justify-center"
+            >
+              <div className="text-center text-white">
+                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm">מעלה תמונה...</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pet Info Overlay */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="absolute bottom-0 left-0 right-0 p-5"
+          dir="rtl"
+        >
+          <div className="flex items-end gap-4">
+            {/* Avatar with Ring */}
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+              className="relative"
+            >
+              <div className="w-24 h-24 rounded-2xl p-1 bg-gradient-to-br from-primary via-accent to-secondary shadow-2xl">
+                <Avatar className="w-full h-full rounded-xl border-2 border-background">
+                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover rounded-xl" />
+                  <AvatarFallback className="bg-gradient-to-br from-primary/50 to-accent/50 text-white text-4xl font-bold rounded-xl">
                     {pet.type === 'dog' ? '🐕' : '🐈'}
                   </AvatarFallback>
                 </Avatar>
-              </motion.div>
-              <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center ring-2 ring-background cursor-pointer hover:bg-primary/90 transition-all hover:scale-110 shadow-lg">
-                <Camera className="w-4 h-4 text-primary-foreground" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                  disabled={isUploadingImage}
-                />
-              </label>
-              {isUploadingImage && (
-                <div className="absolute inset-0 bg-background/50 rounded-full flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-            </div>
-
-            {/* Info Section */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground mb-1">{pet.name}</h1>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                      {pet.type === 'dog' ? '🐕 כלב' : '🐈 חתול'}
-                    </span>
-                    {pet.breed && (
-                      <span className="text-xs text-muted-foreground">{pet.breed}</span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Delete Button */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mt-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent dir="rtl">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>מחיקת חיית מחמד</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        האם אתה בטוח שברצונך למחוק את {pet.name}? פעולה זו לא ניתנת לביטול.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-row-reverse gap-2">
-                      <AlertDialogCancel>ביטול</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeletePet}
-                        disabled={isDeleting}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        {isDeleting ? "מוחק..." : "מחק"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
+              {/* Verified Badge */}
+              <div className="absolute -bottom-1 -left-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background shadow-lg">
+                <span className="text-sm">✓</span>
+              </div>
+            </motion.div>
 
-              {/* Stats Row */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{calculateAge(pet.birth_date)}</span>
-                </div>
-                {pet.gender && (
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <span>{pet.gender === 'male' ? '♂️' : '♀️'}</span>
-                    <span>{pet.gender === 'male' ? 'זכר' : 'נקבה'}</span>
-                  </div>
+            {/* Name & Info */}
+            <div className="flex-1 mb-1">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="text-3xl font-black text-white drop-shadow-lg mb-1"
+              >
+                {pet.name}
+              </motion.h1>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex items-center gap-2 flex-wrap"
+              >
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 backdrop-blur-md text-white rounded-full text-xs font-medium">
+                  {pet.type === 'dog' ? '🐕 כלב' : '🐈 חתול'}
+                </span>
+                {pet.breed && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 backdrop-blur-md text-white rounded-full text-xs font-medium">
+                    {pet.breed}
+                  </span>
                 )}
-              </div>
+              </motion.div>
             </div>
           </div>
         </motion.div>
+      </div>
 
-        {/* Quick Stats Cards */}
+      {/* Stats Cards - Floating Style */}
+      <div className="px-4 -mt-4 relative z-10" dir="rtl">
         <motion.div 
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-3 gap-3 mb-4"
+          transition={{ delay: 0.5 }}
+          className="grid grid-cols-4 gap-2"
         >
-          <Card className="p-3 text-center bg-gradient-to-br from-success/10 to-success/5 border-success/20">
-            <Activity className="w-5 h-5 text-success mx-auto mb-1" />
-            <p className="text-lg font-bold text-success">טוב</p>
-            <p className="text-[10px] text-muted-foreground">מצב בריאות</p>
+          <Card className="p-3 text-center bg-card/95 backdrop-blur-md border-border/50 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+            <div className="text-2xl mb-1">📅</div>
+            <p className="text-base font-bold text-foreground">{calculateAge(pet.birth_date).split(' ')[0]}</p>
+            <p className="text-[10px] text-muted-foreground">גיל</p>
           </Card>
-          <Card className="p-3 text-center bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <Star className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-lg font-bold text-primary">{compatibilityScore}%</p>
+          <Card className="p-3 text-center bg-card/95 backdrop-blur-md border-border/50 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+            <div className="text-2xl mb-1">{pet.gender === 'male' ? '♂️' : '♀️'}</div>
+            <p className="text-base font-bold text-foreground">{pet.gender === 'male' ? 'זכר' : 'נקבה'}</p>
+            <p className="text-[10px] text-muted-foreground">מין</p>
+          </Card>
+          <Card className="p-3 text-center bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+            <div className="text-2xl mb-1">💚</div>
+            <p className="text-base font-bold text-green-600">מעולה</p>
+            <p className="text-[10px] text-muted-foreground">בריאות</p>
+          </Card>
+          <Card className="p-3 text-center bg-gradient-to-br from-primary/20 to-primary/10 border-primary/30 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+            <div className="text-2xl mb-1">⭐</div>
+            <p className="text-base font-bold text-primary">{compatibilityScore}%</p>
             <p className="text-[10px] text-muted-foreground">התאמה</p>
-          </Card>
-          <Card className="p-3 text-center bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
-            <Clock className="w-5 h-5 text-accent mx-auto mb-1" />
-            <p className="text-lg font-bold text-accent">{daysUntilReorder}</p>
-            <p className="text-[10px] text-muted-foreground">ימים למלאי</p>
-          </Card>
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-4"
-        >
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full gap-2 whitespace-nowrap"
-            onClick={() => navigate('/grooming')}
-          >
-            <Scissors className="w-4 h-4" />
-            הזמן תספורת
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full gap-2 whitespace-nowrap"
-            onClick={() => navigate('/training')}
-          >
-            <GraduationCap className="w-4 h-4" />
-            אילוף
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full gap-2 whitespace-nowrap"
-            onClick={() => navigate('/parks')}
-          >
-            <MapPin className="w-4 h-4" />
-            פארקים
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full gap-2 whitespace-nowrap"
-            onClick={() => navigate(`/documents?petId=${pet.id}`)}
-          >
-            <FileText className="w-4 h-4" />
-            מסמכים
-          </Button>
-        </motion.div>
-
-        {/* Smart Order Card - Enhanced */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="p-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/20 shadow-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <Package className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm">הזמנה חכמה</h3>
-                <p className="text-xs text-muted-foreground">המלאי עומד להיגמר בעוד {daysUntilReorder} ימים</p>
-              </div>
-            </div>
-
-            <Progress value={(daysUntilReorder / 30) * 100} className="h-2 mb-4" />
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                size="sm" 
-                onClick={() => navigate("/shop?reorder=true")}
-                className="gap-2 rounded-xl"
-              >
-                <Package className="w-4 h-4" />
-                הזמן עכשיו
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => navigate("/shop")}
-                className="gap-2 rounded-xl"
-              >
-                <Sparkles className="w-4 h-4" />
-                לחנות
-              </Button>
-            </div>
           </Card>
         </motion.div>
       </div>
+
+      {/* Quick Actions - Pill Style */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="flex gap-2 overflow-x-auto px-4 py-4 scrollbar-hide"
+        dir="rtl"
+      >
+        <Button
+          size="sm"
+          className="rounded-full gap-2 whitespace-nowrap shadow-md bg-primary hover:bg-primary/90"
+          onClick={() => navigate('/shop')}
+        >
+          <Package className="w-4 h-4" />
+          הזמן מוצרים
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-full gap-2 whitespace-nowrap border-border/50"
+          onClick={() => navigate('/grooming')}
+        >
+          <Scissors className="w-4 h-4" />
+          תספורת
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-full gap-2 whitespace-nowrap border-border/50"
+          onClick={() => navigate('/training')}
+        >
+          <GraduationCap className="w-4 h-4" />
+          אילוף
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-full gap-2 whitespace-nowrap border-border/50"
+          onClick={() => navigate('/parks')}
+        >
+          <MapPin className="w-4 h-4" />
+          פארקים
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-full gap-2 whitespace-nowrap border-border/50"
+          onClick={() => navigate(`/documents?petId=${pet.id}`)}
+        >
+          <FileText className="w-4 h-4" />
+          מסמכים
+        </Button>
+      </motion.div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
