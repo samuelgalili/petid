@@ -11,7 +11,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
 import { AppHeader } from "@/components/AppHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, AnimatedTabsTrigger } from "@/components/ui/tabs";
 import { PET_CARD, ACTIONS, REMINDERS } from "@/lib/brandVoice";
 import { BreedInfoCard } from "@/components/pet/BreedInfoCard";
 import { RecommendedProducts } from "@/components/pet/RecommendedProducts";
@@ -614,42 +614,22 @@ const PetDetails = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-        <TabsList className="w-full justify-start px-4 bg-transparent border-b border-border rounded-none h-auto pb-0 gap-0 overflow-x-auto flex-nowrap">
-          <TabsTrigger 
-            value="overview" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <Sparkles className="w-4 h-4" />
+        <TabsList className="w-full justify-start">
+          <AnimatedTabsTrigger value="overview" icon={<Sparkles className="w-4 h-4" />} layoutId="petDetailsTabs">
             סקירה
-          </TabsTrigger>
-          <TabsTrigger 
-            value="breed" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <Info className="w-4 h-4" />
+          </AnimatedTabsTrigger>
+          <AnimatedTabsTrigger value="breed" icon={<Info className="w-4 h-4" />} layoutId="petDetailsTabs">
             הגזע
-          </TabsTrigger>
-          <TabsTrigger 
-            value="documents" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <FileText className="w-4 h-4" />
+          </AnimatedTabsTrigger>
+          <AnimatedTabsTrigger value="documents" icon={<FileText className="w-4 h-4" />} layoutId="petDetailsTabs">
             מסמכים
-          </TabsTrigger>
-          <TabsTrigger 
-            value="training" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <GraduationCap className="w-4 h-4" />
+          </AnimatedTabsTrigger>
+          <AnimatedTabsTrigger value="training" icon={<GraduationCap className="w-4 h-4" />} layoutId="petDetailsTabs">
             אילוף
-          </TabsTrigger>
-          <TabsTrigger 
-            value="photos" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <Image className="w-4 h-4" />
+          </AnimatedTabsTrigger>
+          <AnimatedTabsTrigger value="photos" icon={<Image className="w-4 h-4" />} layoutId="petDetailsTabs">
             תמונות
-          </TabsTrigger>
+          </AnimatedTabsTrigger>
         </TabsList>
 
         {/* Overview Tab - NEW */}
