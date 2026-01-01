@@ -103,6 +103,8 @@ const ProductDetail = () => {
       `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.original_price || rawProduct.originalPrice)) * 100)}% הנחה` : null,
     rating: rawProduct.rating || 4.5,
     reviewCount: rawProduct.reviewCount || 0,
+    isFlagged: rawProduct.is_flagged || false,
+    flaggedReason: rawProduct.flagged_reason,
   };
 
   // Show loading state
@@ -750,7 +752,18 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          {/* Flagged product warning */}
+          {product.isFlagged && (
+            <div className="flex items-center gap-2 p-3 mb-3 rounded-xl bg-red-50 border border-red-200 text-red-700">
+              <Flag className="w-4 h-4 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium">מוצר זה נמצא בבדיקה</p>
+                <p className="text-xs text-red-600">לא ניתן לרכוש עד לסיום הטיפול</p>
+              </div>
+            </div>
+          )}
+
+            <div className="flex gap-3">
             <Button 
               variant="outline" 
               size="lg" 
@@ -760,19 +773,30 @@ const ProductDetail = () => {
                 border: '2px solid transparent'
               }} 
               onClick={handleAddToCart}
+              disabled={product.isFlagged}
             >
-              <ShoppingCart className="w-4 h-4 ml-2" />
-              הוסף לעגלה
+              {product.isFlagged ? (
+                <>
+                  <Flag className="w-4 h-4 ml-2" />
+                  מוצר בבדיקה
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-4 h-4 ml-2" />
+                  הוסף לעגלה
+                </>
+              )}
             </Button>
             <Button 
               size="lg" 
               className="flex-1 text-white rounded-xl font-bold font-jakarta shadow-lg h-12" 
               style={{
-                background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
+                background: product.isFlagged ? '#ccc' : 'linear-gradient(135deg, #1E5799, #4ECDC4)'
               }} 
               onClick={handleBuyNow}
+              disabled={product.isFlagged}
             >
-              קנה עכשיו
+              {product.isFlagged ? 'לא זמין' : 'קנה עכשיו'}
             </Button>
           </div>
         </div>

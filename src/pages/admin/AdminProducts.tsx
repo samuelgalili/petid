@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, Plus, Edit, Trash2, MoreHorizontal, 
-  Upload, Download, AlertCircle
+  Upload, Download, AlertCircle, Flag, CheckCircle
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
@@ -35,6 +35,9 @@ interface ProductData {
   created_at: string;
   needs_image_review?: boolean | null;
   needs_price_review?: boolean | null;
+  is_flagged?: boolean | null;
+  flagged_reason?: string | null;
+  flagged_at?: string | null;
 }
 
 const emptyProduct: Partial<ProductData> = {
@@ -71,6 +74,33 @@ const AdminProducts = () => {
   const [bulkDeleteDialog, setBulkDeleteDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showNeedsReview, setShowNeedsReview] = useState(false);
+  const [showFlagged, setShowFlagged] = useState(false);
+
+  // Unflag product mutation
+  const unflagMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase
+        .from("business_products")
+        .update({ is_flagged: false, flagged_at: null, flagged_reason: null })
+        .eq("id", productId);
+      if (error) throw error;
+
+      await logAction({
+        action_type: "product.updated",
+        entity_type: "product",
+        entity_id: productId,
+        new_values: { is_flagged: false },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "המוצר הוסר מבדיקה", description: "המוצר זמין לרכישה שוב" });
+    },
+    onError: (error) => {
+      console.error("Error unflagging product:", error);
+      toast({ title: "שגיאה", description: "נכשל בהסרת הדגל", variant: "destructive" });
+    },
+  });
 
   // Check URL param for needs_review filter
   useEffect(() => {
@@ -278,6 +308,12 @@ const AdminProducts = () => {
       header: "סטטוס",
       render: (product) => (
         <div className="flex gap-1 flex-wrap">
+          {product.is_flagged && (
+            <Badge variant="destructive" className="text-xs bg-red-100 text-red-700 border-red-200">
+              <Flag className="w-3 h-3 ml-1" />
+              מדווח
+            </Badge>
+          )}
           {product.in_stock ? (
             <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
               במלאי
@@ -313,6 +349,15 @@ const AdminProducts = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {product.is_flagged && (
+              <DropdownMenuItem 
+                onClick={() => unflagMutation.mutate(product.id)}
+                className="text-green-600"
+              >
+                <CheckCircle className="w-4 h-4 ml-2" />
+                הסר דגל - טופל
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => {
               setEditingProduct(product);
               setIsDialogOpen(true);
@@ -349,10 +394,12 @@ const AdminProducts = () => {
     },
   ];
 
-  // Filter products for needs_review if enabled
-  const displayProducts = showNeedsReview 
-    ? products.filter(p => p.needs_image_review || p.needs_price_review)
-    : products;
+  // Filter products based on active filters
+  const displayProducts = showFlagged 
+    ? products.filter(p => p.is_flagged)
+    : showNeedsReview 
+      ? products.filter(p => p.needs_image_review || p.needs_price_review)
+      : products;
 
   return (
     <AdminLayout title="ניהול מוצרים" icon={Package} breadcrumbs={[{ label: "מוצרים" }]}>
@@ -374,27 +421,45 @@ const AdminProducts = () => {
             ייצוא
           </Button>
         </div>
-        {/* Filter toggle for needs review */}
-        <div className="flex items-center gap-2">
+        {/* Filter toggles */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {showFlagged && (
+            <Badge variant="secondary" className="bg-red-100 text-red-800">
+              <Flag className="w-3 h-3 ml-1" />
+              מוצרים מדווחים ({products.filter(p => p.is_flagged).length})
+            </Badge>
+          )}
           {showNeedsReview && (
             <Badge variant="secondary" className="bg-amber-100 text-amber-800">
               <AlertCircle className="w-3 h-3 ml-1" />
-              מציג מוצרים לבדיקה ({displayProducts.length})
+              מציג מוצרים לבדיקה ({products.filter(p => p.needs_image_review || p.needs_price_review).length})
             </Badge>
           )}
+          <Button 
+            variant={showFlagged ? "default" : "outline"} 
+            size="sm"
+            className={showFlagged ? "bg-red-500 hover:bg-red-600" : ""}
+            onClick={() => {
+              setShowFlagged(!showFlagged);
+              if (showFlagged) setShowNeedsReview(false);
+            }}
+          >
+            <Flag className="w-4 h-4 ml-2" />
+            מדווחים ({products.filter(p => p.is_flagged).length})
+          </Button>
           <Button 
             variant={showNeedsReview ? "default" : "outline"} 
             size="sm"
             onClick={() => {
               setShowNeedsReview(!showNeedsReview);
-              // Clear URL param when toggling off
+              if (showNeedsReview) setShowFlagged(false);
               if (showNeedsReview) {
                 navigate('/admin/products', { replace: true });
               }
             }}
           >
             <AlertCircle className="w-4 h-4 ml-2" />
-            {showNeedsReview ? "הצג הכל" : "דורשים בדיקה"}
+            דורשים בדיקה
           </Button>
         </div>
       </div>
