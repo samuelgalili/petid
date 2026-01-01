@@ -29,9 +29,9 @@ export const FeedTabs = ({ activeTab, onTabChange, isAuthenticated, onAuthRequir
   };
 
   return (
-    <div className="sticky top-14 z-40 bg-card/95 backdrop-blur-md border-b border-border/30">
+    <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-xl border-b border-border/20">
       <div className="max-w-lg mx-auto">
-        <div className="flex overflow-x-auto scrollbar-hide px-2 py-1.5 gap-1">
+        <div className="flex overflow-x-auto scrollbar-hide px-3 py-2 gap-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -41,23 +41,24 @@ export const FeedTabs = ({ activeTab, onTabChange, isAuthenticated, onAuthRequir
                 key={tab.id}
                 onClick={() => handleTabClick(tab)}
                 className={cn(
-                  "relative flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors min-w-fit",
+                  "relative flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all min-w-fit",
                   isActive 
-                    ? "text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "text-primary-foreground shadow-md" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60 active:scale-95"
                 )}
+                whileHover={{ scale: isActive ? 1 : 1.02 }}
                 whileTap={{ scale: 0.95 }}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute inset-0 bg-primary rounded-full"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                    className="absolute inset-0 bg-gradient-to-r from-primary to-primary-light rounded-2xl shadow-sm"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
                 <span className="relative z-10 flex items-center gap-1.5">
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.labelHe}</span>
+                  <Icon className={cn("w-4 h-4", isActive && "drop-shadow-sm")} />
+                  <span className={cn(isActive && "font-semibold")}>{tab.labelHe}</span>
                 </span>
               </motion.button>
             );
