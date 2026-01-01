@@ -144,6 +144,13 @@ export default {
 			background: 'hsl(var(--background))',
 			foreground: 'hsl(var(--foreground))',
 			petid: {
+				pink: 'hsl(var(--petid-pink))',
+				'pink-light': 'hsl(var(--petid-pink-light))',
+				'pink-hover': 'hsl(var(--petid-pink-hover))',
+				purple: 'hsl(var(--petid-purple))',
+				'purple-light': 'hsl(var(--petid-purple-light))',
+				cyan: 'hsl(var(--petid-cyan))',
+				'cyan-light': 'hsl(var(--petid-cyan-light))',
 				teal: 'hsl(var(--petid-teal))',
 				'teal-light': 'hsl(var(--petid-teal-light))',
 				'teal-hover': 'hsl(var(--petid-teal-hover))',
@@ -153,9 +160,9 @@ export default {
 				'coral-light': 'hsl(var(--petid-coral-light))',
 				heart: 'hsl(var(--petid-heart))',
 				// Legacy aliases
-				blue: 'hsl(var(--petid-teal))',
-				'blue-light': 'hsl(var(--petid-teal-light))',
-				turquoise: 'hsl(var(--petid-teal))'
+				blue: 'hsl(var(--petid-pink))',
+				'blue-light': 'hsl(var(--petid-pink-light))',
+				turquoise: 'hsl(var(--petid-cyan))'
 			},
 			shop: {
 				blue: 'hsl(var(--shop-blue))',
