@@ -557,61 +557,6 @@ const PetDetails = () => {
         </motion.div>
       </div>
 
-      {/* Quick Actions - Premium Style */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="flex gap-3 overflow-x-auto px-4 py-4 scrollbar-hide"
-        dir="rtl"
-      >
-        <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/shop')}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl whitespace-nowrap shadow-lg bg-gradient-to-r from-primary to-accent text-white font-medium text-sm transition-all hover:shadow-xl hover:shadow-primary/30"
-        >
-          <Package className="w-5 h-5" />
-          הזמן מוצרים
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/grooming')}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl whitespace-nowrap bg-card border-2 border-border/50 text-foreground font-medium text-sm shadow-md hover:border-primary/50 hover:bg-primary/5 transition-all"
-        >
-          <Scissors className="w-5 h-5 text-pink-500" />
-          תספורת
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/training')}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl whitespace-nowrap bg-card border-2 border-border/50 text-foreground font-medium text-sm shadow-md hover:border-primary/50 hover:bg-primary/5 transition-all"
-        >
-          <GraduationCap className="w-5 h-5 text-purple-500" />
-          אילוף
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/parks')}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl whitespace-nowrap bg-card border-2 border-border/50 text-foreground font-medium text-sm shadow-md hover:border-primary/50 hover:bg-primary/5 transition-all"
-        >
-          <MapPin className="w-5 h-5 text-green-500" />
-          פארקים
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate(`/documents?petId=${pet.id}`)}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl whitespace-nowrap bg-card border-2 border-border/50 text-foreground font-medium text-sm shadow-md hover:border-primary/50 hover:bg-primary/5 transition-all"
-        >
-          <FileText className="w-5 h-5 text-blue-500" />
-          מסמכים
-        </motion.button>
-      </motion.div>
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
         <TabsList className="w-full justify-start">
