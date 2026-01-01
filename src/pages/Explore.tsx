@@ -31,6 +31,7 @@ import petCollar from "@/assets/products/pet-collar.jpg";
 
 // Pet default avatar
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
+import petidIcon from "@/assets/petid-icon.png";
 
 const parkImages = [parkImage1, parkImage2, parkImage3, parkImage4, parkImage5, parkImage6];
 const productImages = [dogFood, catFood, dogTreats, dogToys, petBed, petCollar];
@@ -506,9 +507,7 @@ const Explore = () => {
         {/* Title Bar */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
-              <Compass className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src={petidIcon} alt="PetID" className="w-10 h-10 object-contain" />
             <div>
               <h1 className="text-xl font-bold text-foreground">גלה</h1>
               <p className="text-xs text-muted-foreground">חקור את עולם החיות</p>

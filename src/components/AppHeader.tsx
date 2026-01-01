@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
-
+import petidIcon from "@/assets/petid-icon.png";
 interface AppHeaderProps {
   title: string;
   showBackButton?: boolean;
@@ -64,10 +64,13 @@ export const AppHeader = ({
           )}
         </div>
 
-        {/* Center: Title */}
-        <h1 className="text-base font-semibold text-foreground absolute left-1/2 -translate-x-1/2">
-          {title}
-        </h1>
+        {/* Center: Title with Icon */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+          <img src={petidIcon} alt="PetID" className="w-6 h-6 object-contain" />
+          <h1 className="text-base font-semibold text-foreground">
+            {title}
+          </h1>
+        </div>
 
         {/* Left Side: Extra Action */}
         <div className="flex items-center gap-2 w-10 justify-end">

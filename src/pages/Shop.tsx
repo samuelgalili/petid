@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import petidIcon from "@/assets/petid-icon.png";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -371,7 +372,10 @@ const Shop = () => {
         <div className="max-w-lg mx-auto px-4 py-4">
           {/* Top Row: Title + Cart */}
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-foreground">🛒 חנות PetID</h1>
+            <div className="flex items-center gap-2">
+              <img src={petidIcon} alt="PetID" className="w-8 h-8 object-contain" />
+              <h1 className="text-xl font-bold text-foreground">חנות PetID</h1>
+            </div>
             <motion.button 
               ref={cartIconRef}
               whileTap={{ scale: 0.9 }}
