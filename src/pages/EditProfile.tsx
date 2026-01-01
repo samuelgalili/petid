@@ -15,7 +15,7 @@ import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 const EditProfile = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [fullName, setFullName] = useState("");
@@ -24,12 +24,15 @@ const EditProfile = () => {
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking user
+    if (authLoading) return;
+    
     if (!user) {
       navigate("/auth");
       return;
     }
     fetchProfile();
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchProfile = async () => {
     if (!user) return;
