@@ -717,6 +717,15 @@ const Shop = () => {
                   
                   <button
                     onClick={() => {
+                      navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
+                      setSelectedProduct(null);
+                    }}
+                    className="p-2"
+                  >
+                    <Info className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => {
                       navigator.clipboard.writeText(window.location.href);
                       toast({ title: "הקישור הועתק", duration: 1500 });
                     }}
