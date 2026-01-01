@@ -43,10 +43,10 @@ const BottomNav = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string>("");
 
-  // Auth pages where we don't show bottom nav
-  const authRoutes = ['/auth', '/signup', '/forgot-password', '/reset-password', '/splash', '/add-pet', '/onboarding'];
-  const isAuthPage = authRoutes.some(route => location.pathname.startsWith(route));
-  if (isAuthPage) return null;
+  // Pages where we hide bottom nav completely (fullscreen experiences)
+  const hiddenRoutes = ['/auth', '/signup', '/forgot-password', '/reset-password', '/splash', '/add-pet', '/onboarding', '/stories', '/reels', '/story'];
+  const isHiddenPage = hiddenRoutes.some(route => location.pathname.startsWith(route));
+  if (isHiddenPage) return null;
 
   // Fetch user avatar
   useEffect(() => {
@@ -67,7 +67,17 @@ const BottomNav = () => {
     };
     fetchUserAvatar();
   }, []);
+  
   const isActive = (path: string) => location.pathname === path;
+  
+  // Scroll to top when clicking on current tab
+  const handleNavClick = (path: string) => {
+    if (location.pathname === path) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate(path);
+    }
+  };
   const categories = [{
     icon: FileText,
     label: "מסמכים",
@@ -140,7 +150,7 @@ const BottomNav = () => {
         }} icon={<Home className={cn("w-6 h-6 transition-colors", isActive("/") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/") ? "currentColor" : "none"} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
-          <NavItem to="/explore" icon={<Compass className={cn("w-6 h-6 transition-colors", isActive("/explore") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
+          <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className={cn("w-6 h-6 transition-colors", isActive("/explore") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
 
           {/* Categories - Center button with accent */}
           <NavItem onClick={() => setCategoriesOpen(true)} icon={
@@ -153,10 +163,10 @@ const BottomNav = () => {
           } isActive={false} label="קטגוריות" />
 
           {/* Shop */}
-          <NavItem to="/shop" icon={<ShoppingBag className={cn("w-6 h-6 transition-colors", isActive("/shop") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
+          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={cn("w-6 h-6 transition-colors", isActive("/shop") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
 
           {/* Profile with Avatar */}
-          <Link to="/profile" className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
+          <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
             <div className={cn("w-7 h-7 rounded-full overflow-hidden transition-all", isActive("/profile") ? "ring-2 ring-primary ring-offset-2 ring-offset-card" : "")}>
               <Avatar className="w-full h-full">
                 <AvatarImage src={userAvatar} className="object-cover" />
@@ -165,7 +175,7 @@ const BottomNav = () => {
                 </AvatarFallback>
               </Avatar>
             </div>
-          </Link>
+          </button>
         </div>
         
         {/* Safe area for notched devices */}
