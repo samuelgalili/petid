@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, TrendingUp, Hash, MapPin, Users, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Rss, Star, Percent, Sparkles, Lightbulb, Flame, Dog, Cat, PawPrint, Filter } from "lucide-react";
+import { Search, X, TrendingUp, Hash, MapPin, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Star, Sparkles, Lightbulb, Flame, Dog, Cat, PawPrint, Filter, ShoppingBag, ArrowLeft, Compass, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -500,23 +500,47 @@ const Explore = () => {
   }, [posts]);
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Search Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/30">
-        <div className="p-4">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-20" dir="rtl">
+      {/* Hero Header */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/20">
+        {/* Title Bar */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
+              <Compass className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">גלה</h1>
+              <p className="text-xs text-muted-foreground">חקור את עולם החיות</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/notifications")}
+            className="w-10 h-10 rounded-2xl hover:bg-muted/80"
+          >
+            <Zap className="w-5 h-5 text-muted-foreground" />
+          </Button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="px-4 pb-3">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/60" />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Search className="w-4 h-4 text-primary" />
+            </div>
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
-              placeholder="🔍 חפש חיות, גזעים, בעלים..."
-              className="pr-10 pl-10 h-12 rounded-2xl bg-card border border-border/50 shadow-soft focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50 transition-all"
+              placeholder="חפש חיות, גזעים, בעלים..."
+              className="pr-14 pl-12 h-14 rounded-2xl bg-card border-2 border-border/30 shadow-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all text-base"
             />
             {searchQuery && (
               <button
                 onClick={clearSearch}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-muted/80 flex items-center justify-center hover:bg-muted transition-colors"
               >
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -524,40 +548,36 @@ const Explore = () => {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Pill Style */}
         {!isSearchFocused && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 pb-3">
-            <TabsList className="w-full bg-muted/30 h-auto p-1 gap-1 rounded-2xl">
-              <TabsTrigger 
-                value="pets" 
-                className="flex-1 min-w-[70px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
-              >
-                <PawPrint className="w-4 h-4" />
-                חיות
-              </TabsTrigger>
-              <TabsTrigger 
-                value="parks" 
-                className="flex-1 min-w-[70px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
-              >
-                <Trees className="w-4 h-4" />
-                גינות
-              </TabsTrigger>
-              <TabsTrigger 
-                value="deals" 
-                className="flex-1 min-w-[70px] data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
-              >
-                <Tag className="w-4 h-4" />
-                מבצעים
-              </TabsTrigger>
-              <TabsTrigger 
-                value="top" 
-                className="flex-1 min-w-[70px] data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-xl py-2.5 text-sm font-medium transition-all duration-200 gap-1.5"
-              >
-                <TrendingUp className="w-4 h-4" />
-                מובילים
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="px-4 pb-4">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {[
+                { id: "pets", label: "חיות", icon: PawPrint, color: "primary" },
+                { id: "parks", label: "גינות", icon: Trees, color: "green" },
+                { id: "deals", label: "מבצעים", icon: Tag, color: "orange" },
+                { id: "top", label: "מובילים", icon: TrendingUp, color: "purple" },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <motion.button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    whileTap={{ scale: 0.95 }}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-medium text-sm whitespace-nowrap transition-all duration-300 ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                        : "bg-card border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Pet Filters - Only show when pets tab is active */}
@@ -760,150 +780,191 @@ const Explore = () => {
         )}
       </AnimatePresence>
 
-      {/* AI Insights Section */}
-      {!isSearchFocused && aiInsights && (
+      {/* AI Insights Section - Enhanced Design */}
+      {!isSearchFocused && (
         <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="px-4 py-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 py-4"
         >
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">מומלץ עבורך</span>
-            {loadingInsights && (
-              <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />
+          <div className="bg-gradient-to-br from-primary/5 via-card to-secondary/5 rounded-3xl p-4 border border-border/30 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">מומלץ עבורך</h3>
+                <p className="text-xs text-muted-foreground">המלצות מותאמות אישית</p>
+              </div>
+              {loadingInsights && (
+                <div className="w-6 h-6 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+              )}
+            </div>
+            
+            {aiInsights?.summary && (
+              <p className="text-sm text-foreground/80 mb-4 leading-relaxed">{aiInsights.summary}</p>
+            )}
+            
+            {aiInsights?.insights && aiInsights.insights.length > 0 ? (
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                {aiInsights.insights.slice(0, 4).map((insight, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="flex-shrink-0 w-40 bg-card rounded-2xl p-4 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                        insight.type === "trend" 
+                          ? "bg-orange-100 dark:bg-orange-900/30" 
+                          : insight.type === "recommendation" 
+                            ? "bg-yellow-100 dark:bg-yellow-900/30" 
+                            : "bg-primary/10"
+                      }`}>
+                        {insight.type === "trend" ? (
+                          <Flame className="w-4 h-4 text-orange-500" />
+                        ) : insight.type === "recommendation" ? (
+                          <Lightbulb className="w-4 h-4 text-yellow-500" />
+                        ) : (
+                          <Star className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        {insight.type === "trend" ? "טרנד" : insight.type === "recommendation" ? "המלצה" : "מומלץ"}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-foreground line-clamp-2">{insight.title}</p>
+                  </motion.div>
+                ))}
+              </div>
+            ) : !loadingInsights && (
+              <div className="flex items-center gap-3 py-2">
+                <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center">
+                  <Compass className="w-6 h-6 text-muted-foreground/50" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">אין המלצות כרגע</p>
+                  <p className="text-xs text-muted-foreground/70">נסה לגלול ולחקור תוכן חדש</p>
+                </div>
+              </div>
+            )}
+            
+            {aiInsights?.trending_topics && aiInsights.trending_topics.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/30">
+                {aiInsights.trending_topics.slice(0, 5).map((topic, idx) => (
+                  <motion.span 
+                    key={idx}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="text-xs bg-primary/10 text-primary font-medium px-3 py-1.5 rounded-full cursor-pointer hover:bg-primary/20 transition-colors"
+                  >
+                    #{topic}
+                  </motion.span>
+                ))}
+              </div>
             )}
           </div>
-          
-          {aiInsights.summary && (
-            <p className="text-sm text-foreground mb-3">{aiInsights.summary}</p>
-          )}
-          
-          {aiInsights.insights && aiInsights.insights.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-              {aiInsights.insights.slice(0, 4).map((insight, idx) => (
-                <div 
-                  key={idx} 
-                  className="flex-shrink-0 w-36 bg-muted/50 rounded-lg p-3"
-                >
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    {insight.type === "trend" ? (
-                      <Flame className="w-3 h-3 text-orange-500" />
-                    ) : insight.type === "recommendation" ? (
-                      <Lightbulb className="w-3 h-3 text-yellow-500" />
-                    ) : (
-                      <Star className="w-3 h-3 text-primary" />
-                    )}
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                      {insight.type === "trend" ? "טרנד" : insight.type === "recommendation" ? "המלצה" : "מומלץ"}
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium line-clamp-2">{insight.title}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {aiInsights.trending_topics && aiInsights.trending_topics.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {aiInsights.trending_topics.slice(0, 4).map((topic, idx) => (
-                <span 
-                  key={idx} 
-                  className="text-xs text-primary font-medium"
-                >
-                  #{topic}
-                </span>
-              ))}
-            </div>
-          )}
         </motion.div>
       )}
 
       {/* Content based on active tab */}
       {!isSearchFocused && (
-        <div className="p-2">
+        <div className="px-4 pb-4">
           {loading ? (
-            /* Skeleton Grid */
-            <div className="grid grid-cols-3 gap-0.5">
-              {[...Array(12)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`aspect-square bg-muted animate-pulse ${i % 5 === 0 ? 'row-span-2' : ''}`}
+            /* Enhanced Skeleton Grid */
+            <div className="grid grid-cols-2 gap-3">
+              {[...Array(6)].map((_, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="aspect-[4/5] bg-gradient-to-br from-muted to-muted/50 rounded-3xl animate-pulse"
                 />
               ))}
             </div>
           ) : activeTab === "pets" ? (
-            /* Pets Tab with Search */
+            /* Pets Tab - Enhanced Card Design */
             <div className="space-y-4">
               {/* Pet Search Component */}
-              <PetSearch className="px-2" />
+              <PetSearch className="" />
               
-              <div className="flex items-center justify-between mb-2 px-1">
-                <span className="text-xs text-muted-foreground">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
                   {pets.length} חיות נמצאו
                   {petTypeFilter !== "all" && ` • ${petTypeFilter === "dog" ? "כלבים" : "חתולים"}`}
                   {breedFilter !== "כל הגזעים" && ` • ${breedFilter}`}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
+              
+              <div className="grid grid-cols-2 gap-3">
                 {pets.length > 0 ? (
-                  pets.map((pet, index) => {
-                    const isLarge = index % 7 === 0;
-                    return (
-                      <motion.div
-                        key={pet.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.03 }}
-                        onClick={() => navigate(`/pet/${pet.id}`)}
-                        className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
-                      >
+                  pets.map((pet, index) => (
+                    <motion.div
+                      key={pet.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => navigate(`/pet/${pet.id}`)}
+                      className="relative cursor-pointer group"
+                    >
+                      <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">
                         <img
                           src={pet.avatar_url || defaultPetAvatar}
                           alt={pet.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
-                        {/* Hover overlay */}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
-                          <span className="text-white font-bold text-sm text-center px-2">{pet.name}</span>
-                          {pet.breed && (
-                            <span className="text-white/80 text-xs">{pet.breed}</span>
-                          )}
-                          <div className="flex items-center gap-1 text-white/70 text-xs">
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        
+                        {/* Pet type badge */}
+                        <div className="absolute top-3 right-3">
+                          <div className={`w-9 h-9 rounded-2xl flex items-center justify-center backdrop-blur-md ${
+                            pet.type === "dog" 
+                              ? "bg-amber-500/80" 
+                              : "bg-purple-500/80"
+                          }`}>
                             {pet.type === "dog" ? (
-                              <Dog className="w-3 h-3" />
+                              <Dog className="w-5 h-5 text-white" />
                             ) : (
-                              <Cat className="w-3 h-3" />
-                            )}
-                            <span>{pet.type === "dog" ? "כלב" : "חתול"}</span>
-                            {pet.gender && (
-                              <span>• {pet.gender === "male" ? "זכר" : "נקבה"}</span>
+                              <Cat className="w-5 h-5 text-white" />
                             )}
                           </div>
                         </div>
-                        {/* Pet type indicator */}
-                        <div className="absolute top-1 right-1 bg-black/60 rounded-full p-1">
-                          {pet.type === "dog" ? (
-                            <Dog className="w-3 h-3 text-white" />
-                          ) : (
-                            <Cat className="w-3 h-3 text-white" />
+                        
+                        {/* Pet info */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                          <h3 className="text-white font-bold text-lg mb-1">{pet.name}</h3>
+                          {pet.breed && (
+                            <p className="text-white/80 text-sm mb-2">{pet.breed}</p>
                           )}
+                          <div className="flex items-center gap-2">
+                            {pet.gender && (
+                              <span className="text-xs bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded-lg">
+                                {pet.gender === "male" ? "זכר" : "נקבה"}
+                              </span>
+                            )}
+                            {pet.age && (
+                              <span className="text-xs bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded-lg">
+                                {pet.age} שנים
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        {/* Name badge */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                          <span className="text-white text-xs font-medium">{pet.name}</span>
-                        </div>
-                      </motion.div>
-                    );
-                  })
+                      </div>
+                    </motion.div>
+                  ))
                 ) : (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="col-span-3 text-center py-16 px-6"
+                    className="col-span-2 text-center py-16 px-6"
                   >
-                    <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
                       <motion.div
                         animate={{ 
                           scale: [1, 1.1, 1],
@@ -915,22 +976,21 @@ const Explore = () => {
                           repeatType: "reverse"
                         }}
                       >
-                        <PawPrint className="w-12 h-12 text-primary/50" />
+                        <PawPrint className="w-14 h-14 text-primary/50" />
                       </motion.div>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                    <h3 className="text-xl font-bold text-foreground mb-2">
                       לא נמצאו חיות 🐾
                     </h3>
-                    <p className="text-muted-foreground mb-4">
+                    <p className="text-muted-foreground mb-6">
                       נסו לשנות את הפילטרים או לחפש משהו אחר
                     </p>
                     <Button
-                      variant="outline"
                       onClick={() => {
                         setPetTypeFilter("all");
                         setBreedFilter("כל הגזעים");
                       }}
-                      className="rounded-2xl gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                      className="rounded-2xl gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
                     >
                       <X className="w-4 h-4" />
                       נקה פילטרים
@@ -940,224 +1000,285 @@ const Explore = () => {
               </div>
             </div>
           ) : activeTab === "parks" ? (
-            /* Parks Grid - Instagram style */
-            <>
+            /* Parks - Enhanced Card Design */
+            <div className="space-y-4">
               {userLocation && (
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <MapPin className="w-3 h-3 text-primary" />
-                  <span className="text-xs text-muted-foreground">ממויין לפי קרבה אליך</span>
+                <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 rounded-2xl p-3">
+                  <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
+                    <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-sm text-green-700 dark:text-green-300">ממויין לפי קרבה אליך</span>
                 </div>
               )}
               {!userLocation && locationError && (
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <MapPin className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">ממויין לפי דירוג</span>
+                <div className="flex items-center gap-2 bg-muted/50 rounded-2xl p-3">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">ממויין לפי דירוג</span>
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
+              
+              <div className="grid grid-cols-2 gap-3">
                 {parks.length > 0 ? (
-                  parks.map((park, index) => {
-                    const isLarge = index % 5 === 0;
-                    return (
-                      <motion.div
-                        key={park.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.03 }}
-                        onClick={() => navigate("/parks")}
-                        className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
-                      >
+                  parks.map((park, index) => (
+                    <motion.div
+                      key={park.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => navigate("/parks")}
+                      className="relative cursor-pointer group"
+                    >
+                      <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">
                         <img
                           src={parkImages[index % parkImages.length]}
                           alt={park.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
-                        {/* Hover overlay */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
-                          <span className="text-white font-semibold text-sm text-center px-2 line-clamp-2">{park.name}</span>
-                          <div className="flex items-center gap-1 text-white/90">
-                            <MapPin className="w-3 h-3" />
-                            <span className="text-xs">{park.city}</span>
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        
+                        {/* Distance badge */}
+                        {park.distance !== undefined && park.distance < 999999 && (
+                          <div className="absolute top-3 left-3">
+                            <div className="bg-white/90 backdrop-blur-md rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-sm">
+                              <MapPin className="w-3.5 h-3.5 text-green-600" />
+                              <span className="text-xs font-semibold text-foreground">{park.distance.toFixed(1)} ק״מ</span>
+                            </div>
                           </div>
-                          {park.distance !== undefined && park.distance < 999999 && (
-                            <span className="text-white/90 text-xs">{park.distance.toFixed(1)} ק״מ</span>
-                          )}
+                        )}
+                        
+                        {/* Park icon */}
+                        <div className="absolute top-3 right-3">
+                          <div className="w-9 h-9 rounded-2xl bg-green-500/80 backdrop-blur-md flex items-center justify-center">
+                            <Trees className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                        
+                        {/* Park info */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                          <h3 className="text-white font-bold text-lg mb-1 line-clamp-1">{park.name}</h3>
+                          <div className="flex items-center gap-2 mb-2">
+                            <MapPin className="w-3.5 h-3.5 text-white/80" />
+                            <span className="text-white/80 text-sm">{park.city}</span>
+                          </div>
                           {park.rating && (
-                            <div className="flex items-center gap-1">
-                              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                              <span className="text-white text-xs">{park.rating.toFixed(1)}</span>
+                            <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg px-2 py-1 w-fit">
+                              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                              <span className="text-white text-sm font-medium">{park.rating.toFixed(1)}</span>
+                              {park.total_reviews && (
+                                <span className="text-white/70 text-xs">({park.total_reviews})</span>
+                              )}
                             </div>
                           )}
                         </div>
-                        {/* Distance badge */}
-                        {park.distance !== undefined && park.distance < 999999 && (
-                          <div className="absolute top-1 left-1 bg-black/60 rounded px-1.5 py-0.5">
-                            <span className="text-white text-[10px] font-medium">{park.distance.toFixed(1)} ק״מ</span>
-                          </div>
-                        )}
-                        {/* Park icon indicator */}
-                        <div className="absolute top-1 right-1">
-                          <Trees className="w-4 h-4 text-white drop-shadow-lg" />
-                        </div>
-                      </motion.div>
-                    );
-                  })
-                ) : (
-                  <div className="col-span-3 text-center py-20">
-                    <Trees className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                    <p className="text-muted-foreground">אין גינות כלבים להצגה</p>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : activeTab === "deals" ? (
-            /* Deals Grid - Instagram style */
-            <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
-              {deals.length > 0 ? (
-                deals.map((deal, index) => {
-                  const isLarge = index % 5 === 0;
-                  return (
-                    <motion.div
-                      key={deal.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.03 }}
-                      onClick={() => navigate(deal.button_link || "/shop")}
-                      className={`relative cursor-pointer group ${isLarge ? 'row-span-2' : ''}`}
-                    >
-                      <img
-                        src={productImages[index % productImages.length]}
-                        alt={deal.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 pointer-events-none">
-                        <span className="text-white font-semibold text-sm text-center px-2 line-clamp-2">{deal.title}</span>
-                        <span className="text-white/80 text-xs">{deal.subtitle}</span>
-                      </div>
-                      {/* Deal badge */}
-                      <div className="absolute top-1 right-1">
-                        <Badge className="bg-red-500 text-white border-0 text-[10px] px-1.5 py-0.5">
-                          {deal.badge_text}
-                        </Badge>
                       </div>
                     </motion.div>
-                  );
-                })
-              ) : (
-                <div className="col-span-3 text-center py-20">
-                  <Tag className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">אין מבצעים כרגע</p>
-                </div>
-              )}
+                  ))
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="col-span-2 text-center py-16 px-6"
+                  >
+                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-800/20 flex items-center justify-center">
+                      <Trees className="w-14 h-14 text-green-500/50" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">אין גינות כלבים 🌳</h3>
+                    <p className="text-muted-foreground">לא נמצאו גינות כלבים באזורך</p>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          ) : activeTab === "deals" ? (
+            /* Deals - Enhanced Card Design */
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {deals.length > 0 ? (
+                  deals.map((deal, index) => (
+                    <motion.div
+                      key={deal.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => navigate(deal.button_link || "/shop")}
+                      className="relative cursor-pointer group"
+                    >
+                      <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">
+                        <img
+                          src={productImages[index % productImages.length]}
+                          alt={deal.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        
+                        {/* Deal badge */}
+                        <div className="absolute top-3 right-3">
+                          <div className="bg-red-500 text-white rounded-xl px-3 py-1.5 font-bold text-sm shadow-lg">
+                            {deal.badge_text}
+                          </div>
+                        </div>
+                        
+                        {/* Deal info */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                          <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">{deal.title}</h3>
+                          <p className="text-white/80 text-sm line-clamp-1">{deal.subtitle}</p>
+                          <div className="flex items-center gap-2 mt-3">
+                            <div className="flex-1 bg-white/20 backdrop-blur-sm rounded-xl py-2 text-center">
+                              <span className="text-white text-sm font-medium">לצפייה</span>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                              <ShoppingBag className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="col-span-2 text-center py-16 px-6"
+                  >
+                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 flex items-center justify-center">
+                      <Tag className="w-14 h-14 text-orange-500/50" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">אין מבצעים כרגע 🏷️</h3>
+                    <p className="text-muted-foreground mb-6">חזרו בקרוב לעדכונים על מבצעים חדשים</p>
+                    <Button
+                      onClick={() => navigate("/shop")}
+                      className="rounded-2xl gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      לחנות
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
             </div>
           ) : (
-            /* Posts Grid for top and feeds tabs */
-            <>
-              <div className="grid grid-cols-3 gap-0.5 auto-rows-fr">
-                {gridItems.map(({ post, span }, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.03 }}
-                    className={`relative cursor-pointer group ${span}`}
-                    onClick={() => navigate(`/post/${post.id}`)}
-                    onDoubleClick={(e) => {
-                      e.stopPropagation();
-                      handleDoubleTap(post.id);
-                    }}
-                  >
-                    <img
-                      src={post.image_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    
-                    {/* Video indicator */}
-                    {post.media_type === "video" && (
-                      <div className="absolute top-2 left-2">
-                        <Play className="w-6 h-6 text-white drop-shadow-lg" fill="white" />
-                      </div>
-                    )}
+            /* Posts Grid - Enhanced Design for top tab */
+            <div className="space-y-4">
+              {posts.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {posts.map((post, index) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="relative cursor-pointer group"
+                      onClick={() => navigate(`/post/${post.id}`)}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        handleDoubleTap(post.id);
+                      }}
+                    >
+                      <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">
+                        <img
+                          src={post.image_url}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                        
+                        {/* Video indicator */}
+                        {post.media_type === "video" && (
+                          <div className="absolute top-3 left-3">
+                            <div className="w-9 h-9 rounded-2xl bg-black/50 backdrop-blur-md flex items-center justify-center">
+                              <Play className="w-5 h-5 text-white" fill="white" />
+                            </div>
+                          </div>
+                        )}
 
-                    {/* Hover overlay with stats */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 pointer-events-none">
-                      <div className="flex items-center gap-1.5 text-white font-semibold">
-                        <Heart className="w-5 h-5" fill="white" />
-                        <span>{post.likes_count}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-white font-semibold">
-                        <MessageCircle className="w-5 h-5" fill="white" />
-                        <span>{post.comments_count}</span>
-                      </div>
-                    </div>
+                        {/* Stats overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5 text-white">
+                              <Heart className="w-5 h-5" fill="white" />
+                              <span className="text-sm font-semibold">{post.likes_count}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-white">
+                              <MessageCircle className="w-5 h-5" fill="white" />
+                              <span className="text-sm font-semibold">{post.comments_count}</span>
+                            </div>
+                          </div>
+                        </div>
 
-                    {/* Double Tap Heart Animation */}
-                    <AnimatePresence>
-                      {doubleTapPostId === post.id && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-                        >
-                          <motion.svg
-                            viewBox="0 0 24 24"
-                            className="w-20 h-20 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
-                            initial={{ scale: 0, rotate: -15 }}
-                            animate={{ 
-                              scale: [0, 1.3, 1.1, 1.2, 1],
-                              rotate: [-15, 10, -5, 5, 0]
-                            }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ 
-                              duration: 0.6,
-                              times: [0, 0.3, 0.5, 0.7, 1],
-                              ease: "easeOut"
-                            }}
-                          >
-                            <motion.path
-                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                              fill="white"
-                              stroke="white"
-                              strokeWidth="0.5"
-                            />
-                          </motion.svg>
-                          
-                          {/* Particle effects */}
-                          {[...Array(6)].map((_, i) => (
+                        {/* Double Tap Heart Animation */}
+                        <AnimatePresence>
+                          {doubleTapPostId === post.id && (
                             <motion.div
-                              key={i}
-                              className="absolute w-2 h-2 rounded-full bg-white"
-                              initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
-                              animate={{ 
-                                scale: [0, 1, 0],
-                                x: Math.cos((i / 6) * Math.PI * 2) * 50,
-                                y: Math.sin((i / 6) * Math.PI * 2) * 50,
-                                opacity: [1, 1, 0]
-                              }}
-                              transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-                            />
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
-              </div>
-
-              {posts.length === 0 && (
-                <div className="text-center py-20">
-                  <Grid3X3 className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">אין פוסטים להצגה</p>
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                            >
+                              <motion.svg
+                                viewBox="0 0 24 24"
+                                className="w-24 h-24 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+                                initial={{ scale: 0, rotate: -15 }}
+                                animate={{ 
+                                  scale: [0, 1.3, 1.1, 1.2, 1],
+                                  rotate: [-15, 10, -5, 5, 0]
+                                }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ 
+                                  duration: 0.6,
+                                  times: [0, 0.3, 0.5, 0.7, 1],
+                                  ease: "easeOut"
+                                }}
+                              >
+                                <motion.path
+                                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                  fill="white"
+                                  stroke="white"
+                                  strokeWidth="0.5"
+                                />
+                              </motion.svg>
+                              
+                              {/* Particle effects */}
+                              {[...Array(8)].map((_, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="absolute w-2.5 h-2.5 rounded-full bg-white"
+                                  initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                                  animate={{ 
+                                    scale: [0, 1, 0],
+                                    x: Math.cos((i / 8) * Math.PI * 2) * 60,
+                                    y: Math.sin((i / 8) * Math.PI * 2) * 60,
+                                    opacity: [1, 1, 0]
+                                  }}
+                                  transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+                                />
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-16 px-6"
+                >
+                  <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/20 flex items-center justify-center">
+                    <TrendingUp className="w-14 h-14 text-purple-500/50" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">אין פוסטים מובילים 📈</h3>
+                  <p className="text-muted-foreground">חזרו בקרוב לראות תוכן טרנדי</p>
+                </motion.div>
               )}
-            </>
+            </div>
           )}
         </div>
       )}
