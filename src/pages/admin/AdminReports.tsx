@@ -49,6 +49,9 @@ interface Report {
   status: string;
   admin_notes: string | null;
   created_at: string;
+  source: 'reports' | 'content_reports';
+  content_id?: string;
+  content_type?: string;
   reporter?: {
     full_name: string;
     avatar_url: string;
@@ -60,6 +63,10 @@ interface Report {
   reported_post?: {
     image_url: string;
     caption: string;
+  };
+  product?: {
+    name: string;
+    image_url: string;
   };
 }
 
@@ -76,6 +83,10 @@ const typeConfig = {
   harassment: { label: "הטרדה", icon: UserX },
   fake: { label: "פרופיל מזויף", icon: Flag },
   other: { label: "אחר", icon: MoreHorizontal },
+  price: { label: "מחיר שגוי", icon: AlertTriangle },
+  image: { label: "תמונה לא מתאימה", icon: AlertTriangle },
+  description: { label: "תיאור שגוי", icon: AlertTriangle },
+  product: { label: "דיווח מוצר", icon: Flag },
 };
 
 const AdminReports = () => {
@@ -102,6 +113,7 @@ const AdminReports = () => {
     try {
       setLoading(true);
 
+      // Fetch from original reports table
       const { data: reportsData, error } = await supabase
         .from("reports")
         .select("*")
@@ -109,10 +121,21 @@ const AdminReports = () => {
 
       if (error) throw error;
 
-      // Fetch related data
+      // Also fetch from content_reports (product reports)
+      const { data: contentReportsData, error: crError } = await supabase
+        .from("content_reports")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (crError) console.error("Error fetching content_reports:", crError);
+
+      // Fetch related data for original reports
       const enrichedReports = await Promise.all(
         (reportsData || []).map(async (report) => {
-          const enriched: Report = { ...report };
+          const enriched: Report = { 
+            ...report, 
+            source: 'reports' as const 
+          };
 
           // Fetch reporter profile
           if (report.reporter_id) {
@@ -148,7 +171,53 @@ const AdminReports = () => {
         })
       );
 
-      setReports(enrichedReports);
+      // Enrich content reports (product reports)
+      const enrichedContentReports = await Promise.all(
+        (contentReportsData || []).map(async (cr) => {
+          const enriched: Report = {
+            id: cr.id,
+            reporter_id: cr.reporter_id,
+            reported_user_id: null,
+            reported_post_id: null,
+            report_type: cr.reason || 'product',
+            description: cr.description,
+            status: cr.status || 'pending',
+            admin_notes: null,
+            created_at: cr.created_at,
+            source: 'content_reports' as const,
+            content_id: cr.content_id,
+            content_type: cr.content_type,
+          };
+
+          // Fetch reporter profile
+          if (cr.reporter_id && cr.reporter_id !== '00000000-0000-0000-0000-000000000000') {
+            const { data: reporter } = await supabase
+              .from("profiles")
+              .select("full_name, avatar_url")
+              .eq("id", cr.reporter_id)
+              .maybeSingle();
+            if (reporter) enriched.reporter = reporter;
+          }
+
+          // Fetch product info if it's a product report
+          if (cr.content_type === 'product' && cr.content_id) {
+            const { data: product } = await supabase
+              .from("business_products")
+              .select("name, image_url")
+              .eq("id", cr.content_id)
+              .maybeSingle();
+            if (product) enriched.product = product;
+          }
+
+          return enriched;
+        })
+      );
+
+      // Combine and sort by date
+      const allReports = [...enrichedReports, ...enrichedContentReports]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setReports(allReports);
     } catch (error) {
       console.error("Error fetching reports:", error);
       toast({
@@ -180,22 +249,37 @@ const AdminReports = () => {
     setFilteredReports(filtered);
   };
 
-  const updateReportStatus = async (reportId: string, newStatus: string) => {
+  const updateReportStatus = async (reportId: string, newStatus: string, report?: Report) => {
     try {
       setUpdating(true);
       const { data: { user } } = await supabase.auth.getUser();
 
+      const targetReport = report || selectedReport;
+      const tableName = targetReport?.source === 'content_reports' ? 'content_reports' : 'reports';
+
       const { error } = await supabase
-        .from("reports")
+        .from(tableName)
         .update({
           status: newStatus as any,
-          admin_notes: adminNotes || null,
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
+          ...(tableName === 'reports' ? { 
+            admin_notes: adminNotes || null,
+            reviewed_by: user?.id,
+            reviewed_at: new Date().toISOString(),
+          } : {
+            reviewed_by: user?.id,
+          }),
         })
         .eq("id", reportId);
 
       if (error) throw error;
+
+      // If resolving a product report, also unflag the product
+      if (newStatus === 'resolved' && targetReport?.content_type === 'product' && targetReport?.content_id) {
+        await supabase
+          .from("business_products")
+          .update({ is_flagged: false, flagged_at: null, flagged_reason: null })
+          .eq("id", targetReport.content_id);
+      }
 
       setReports((prev) =>
         prev.map((r) =>
@@ -304,8 +388,14 @@ const AdminReports = () => {
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Post preview or user avatar */}
-                    {report.reported_post ? (
+                    {/* Post/Product preview or user avatar */}
+                    {report.product ? (
+                      <img
+                        src={report.product.image_url}
+                        alt=""
+                        className="w-16 h-16 rounded-lg object-cover border-2 border-red-200"
+                      />
+                    ) : report.reported_post ? (
                       <img
                         src={report.reported_post.image_url}
                         alt=""
@@ -323,10 +413,15 @@ const AdminReports = () => {
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        {report.source === 'content_reports' && (
+                          <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                            מוצר
+                          </Badge>
+                        )}
                         <TypeIcon className="w-4 h-4 text-destructive" />
                         <span className="font-medium text-sm">
-                          {typeConfig[report.report_type as keyof typeof typeConfig]?.label}
+                          {typeConfig[report.report_type as keyof typeof typeConfig]?.label || report.report_type}
                         </span>
                         <Badge className={`text-xs ${status?.color}`}>
                           <StatusIcon className="w-3 h-3 ml-1" />
@@ -334,8 +429,14 @@ const AdminReports = () => {
                         </Badge>
                       </div>
 
+                      {report.product && (
+                        <p className="text-xs font-medium text-foreground mb-1 truncate">
+                          {report.product.name}
+                        </p>
+                      )}
+
                       <p className="text-xs text-muted-foreground mb-1">
-                        דווח על ידי: {report.reporter?.full_name || "לא ידוע"}
+                        דווח על ידי: {report.reporter?.full_name || "משתמש אנונימי"}
                       </p>
 
                       {report.reported_user && (
