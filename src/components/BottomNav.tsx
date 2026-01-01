@@ -9,6 +9,23 @@ import { motion } from "framer-motion";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Camera, FileText, Heart, Shield, Trees, GraduationCap, Scissors, CheckSquare, Gift, MessageCircle } from "lucide-react";
 import { FeatureHintWrapper } from "@/components/FeatureHintWrapper";
+
+// Gradient icon wrapper for active state
+const GradientIcon = ({ children, isActive, id }: { children: React.ReactNode; isActive: boolean; id: string }) => {
+  if (!isActive) return <>{children}</>;
+  
+  return (
+    <svg width="0" height="0" className="absolute">
+      <defs>
+        <linearGradient id={`gradient-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="hsl(var(--primary))" />
+          <stop offset="100%" stopColor="hsl(var(--accent))" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+};
+
 interface NavItemProps {
   to?: string;
   icon: React.ReactNode;
@@ -131,6 +148,16 @@ const BottomNav = () => {
     color: "#1E5799"
   }];
   return <>
+      {/* SVG Gradient definitions */}
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          <linearGradient id="nav-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#2EB8A6" />
+            <stop offset="100%" stopColor="#4ECDC4" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       {/* PetID-style bottom nav - warm, organic feel */}
       <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-md border-t border-border/30 shadow-[0_-4px_20px_rgba(46,184,166,0.08)]" style={{
       position: 'fixed',
@@ -153,7 +180,7 @@ const BottomNav = () => {
             } else {
               navigate("/");
             }
-          }} icon={<Home className={cn("w-6 h-6 transition-colors", isActive("/") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/") ? "currentColor" : "none"} />} isActive={isActive("/")} label="בית" />
+          }} icon={<Home className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/")} label="בית" />
           </FeatureHintWrapper>
 
           {/* Explore */}
@@ -162,7 +189,7 @@ const BottomNav = () => {
             title="חיפוש וגילוי"
             description="גלה חיות מחמד, בעלים ותכנים חדשים. חפש לפי שם, גזע או מיקום"
           >
-            <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className={cn("w-6 h-6 transition-colors", isActive("/explore") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
+            <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/explore") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/explore")} label="חיפוש" />
           </FeatureHintWrapper>
 
           {/* Categories - Center button with accent */}
@@ -174,9 +201,9 @@ const BottomNav = () => {
             <NavItem onClick={() => setCategoriesOpen(true)} icon={
               <div className={cn(
                 "w-10 h-10 rounded-2xl flex items-center justify-center transition-all",
-                categoriesOpen ? "bg-primary shadow-md" : "bg-primary/10"
+                categoriesOpen ? "bg-gradient-to-br from-primary to-accent shadow-md" : "bg-primary/10"
               )}>
-                <Grid3X3 className={cn("w-5 h-5", categoriesOpen ? "text-primary-foreground" : "text-primary")} strokeWidth={1.5} />
+                <Grid3X3 className={cn("w-5 h-5", categoriesOpen ? "text-white" : "text-primary")} strokeWidth={1.5} />
               </div>
             } isActive={false} label="קטגוריות" />
           </FeatureHintWrapper>
@@ -187,7 +214,7 @@ const BottomNav = () => {
             title="חנות"
             description="מוצרים מומלצים לחיית המחמד שלך, מבצעים והטבות מיוחדות"
           >
-            <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={cn("w-6 h-6 transition-colors", isActive("/shop") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
+            <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/shop") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/shop")} label="חנות" />
           </FeatureHintWrapper>
 
           {/* Profile with Avatar */}
