@@ -3,44 +3,52 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cardcom-signature',
 };
 
 // CardCom Webhook Secret for verification
 const CARDCOM_WEBHOOK_SECRET = Deno.env.get('CARDCOM_WEBHOOK_SECRET');
 
-// TODO: Implement actual signature verification based on CardCom documentation
-function verifyWebhookSignature(payload: string, signature: string | null): boolean {
+// Verify webhook signature using HMAC-SHA256
+async function verifyWebhookSignature(payload: string, signature: string | null): Promise<boolean> {
   if (!CARDCOM_WEBHOOK_SECRET) {
     console.warn('CARDCOM_WEBHOOK_SECRET not set, skipping signature verification');
-    return true; // Allow in development, should fail in production
+    return true; // Allow in development
   }
 
   if (!signature) {
-    console.warn('No signature provided in webhook request');
+    console.error('No signature provided in webhook request');
     return false;
   }
 
-  // TODO: Implement actual CardCom signature verification
-  // This typically involves:
-  // 1. Computing HMAC-SHA256 of the payload using the webhook secret
-  // 2. Comparing with the provided signature
-  // 
-  // Example (pseudo-code):
-  // const crypto = await import("https://deno.land/std@0.168.0/crypto/mod.ts");
-  // const encoder = new TextEncoder();
-  // const key = await crypto.subtle.importKey(
-  //   "raw",
-  //   encoder.encode(CARDCOM_WEBHOOK_SECRET),
-  //   { name: "HMAC", hash: "SHA-256" },
-  //   false,
-  //   ["sign"]
-  // );
-  // const signed = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-  // const computedSignature = btoa(String.fromCharCode(...new Uint8Array(signed)));
-  // return computedSignature === signature;
-
-  return true; // Placeholder - always returns true for development
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(CARDCOM_WEBHOOK_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(payload)
+    );
+    
+    const expectedSignature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)));
+    const isValid = signature === expectedSignature;
+    
+    if (!isValid) {
+      console.error('Webhook signature mismatch');
+    }
+    
+    return isValid;
+  } catch (error) {
+    console.error('Error verifying webhook signature:', error);
+    return false;
+  }
 }
 
 interface CardComWebhookPayload {
@@ -80,7 +88,8 @@ serve(async (req) => {
     const signature = req.headers.get('X-CardCom-Signature') || req.headers.get('x-cardcom-signature');
 
     // Verify webhook signature
-    if (!verifyWebhookSignature(rawBody, signature)) {
+    const isValidSignature = await verifyWebhookSignature(rawBody, signature);
+    if (!isValidSignature) {
       console.error('Invalid webhook signature');
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),
