@@ -434,15 +434,15 @@ const PetDetails = () => {
                     האם אתה בטוח שברצונך למחוק את {pet.name}? פעולה זו לא ניתנת לביטול.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="flex-row-reverse gap-2">
-                  <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogFooter className="flex-row gap-3 justify-center sm:justify-center">
                   <AlertDialogAction
                     onClick={handleDeletePet}
                     disabled={isDeleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full px-8"
                   >
                     {isDeleting ? "מוחק..." : "מחק"}
                   </AlertDialogAction>
+                  <AlertDialogCancel className="rounded-full px-8 border-border">ביטול</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
