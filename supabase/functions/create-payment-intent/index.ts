@@ -116,15 +116,13 @@ serve(async (req) => {
     // Build webhook URL
     const webhookUrl = `${supabaseUrl}/functions/v1/cardcom-webhook`;
 
-    // TODO: Replace with actual CardCom API call
-    // This is a placeholder implementation
     console.log('Creating CardCom payment intent:', {
       terminal: CARDCOM_TERMINAL,
       amount: product.price_ils,
       paymentId: payment.id
     });
 
-    // CardCom API Request (placeholder)
+    // CardCom API Request
     const cardcomRequest: CardComPaymentRequest = {
       TerminalNumber: CARDCOM_TERMINAL || '',
       ApiName: CARDCOM_API_NAME || '',
@@ -139,8 +137,7 @@ serve(async (req) => {
       }
     };
 
-    // TODO: Uncomment and use actual CardCom API when ready
-    /*
+    // Make actual CardCom API call
     const cardcomResponse = await fetch(CARDCOM_API_URL, {
       method: 'POST',
       headers: {
@@ -151,8 +148,17 @@ serve(async (req) => {
 
     const cardcomData = await cardcomResponse.json();
     
+    console.log('CardCom API response:', cardcomData);
+
     if (cardcomData.ResponseCode !== 0) {
       console.error('CardCom error:', cardcomData);
+      
+      // Update payment status to failed
+      await supabaseAdmin
+        .from('cardcom_payments')
+        .update({ status: 'failed' })
+        .eq('id', payment.id);
+      
       return new Response(
         JSON.stringify({ error: 'שגיאה מהשרת של CardCom', details: cardcomData.Description }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -160,10 +166,6 @@ serve(async (req) => {
     }
 
     const paymentUrl = cardcomData.Url;
-    */
-
-    // Placeholder payment URL for development
-    const paymentUrl = `https://secure.cardcom.solutions/external/LowProfile.aspx?mock=true&payment_id=${payment.id}`;
 
     console.log('Payment intent created successfully:', {
       paymentId: payment.id,
