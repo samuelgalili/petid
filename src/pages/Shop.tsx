@@ -219,6 +219,7 @@ const Shop = () => {
       petType: p.pet_type,
       isFlagged: p.is_flagged || false,
       flaggedReason: p.flagged_reason,
+      flavors: p.flavors || [],
     }));
   }, [dbProducts]);
 
@@ -833,25 +834,27 @@ const Shop = () => {
                     </p>
                   )}
 
-                  {/* Size Selector */}
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground mb-2">גודל</h3>
-                    <div className="flex gap-2">
-                      {sizes.map((size) => (
-                        <button
-                          key={size}
-                          onClick={() => setSelectedSize(size)}
-                          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
-                            selectedSize === size
-                              ? "border-foreground text-foreground"
-                              : "border-border text-muted-foreground hover:border-foreground/50"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      ))}
+                  {/* Variants/Flavors Selector - only show if product has flavors */}
+                  {selectedProduct.flavors && selectedProduct.flavors.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-foreground mb-2">טעמים זמינים</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.flavors.map((flavor: string, index: number) => (
+                          <button
+                            key={index}
+                            onClick={() => setSelectedSize(flavor)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                              selectedSize === flavor
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            }`}
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Quantity */}
                   <div>
