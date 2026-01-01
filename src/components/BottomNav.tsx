@@ -192,19 +192,19 @@ const BottomNav = () => {
             <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/explore") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/explore")} label="חיפוש" />
           </FeatureHintWrapper>
 
-          {/* Categories - Center button with accent */}
+          {/* Categories - Center button */}
           <FeatureHintWrapper
             featureId="nav_categories"
             title="קטגוריות"
             description="גישה מהירה לכל השירותים: מסמכים, ביטוח, גינות כלבים, אילוף ועוד"
           >
             <NavItem onClick={() => setCategoriesOpen(true)} icon={
-              <div className={cn(
-                "w-10 h-10 rounded-2xl flex items-center justify-center transition-all",
-                categoriesOpen ? "bg-gradient-to-br from-primary to-accent shadow-md" : "bg-primary/10"
-              )}>
-                <Grid3X3 className={cn("w-5 h-5", categoriesOpen ? "text-white" : "text-primary")} strokeWidth={1.5} />
-              </div>
+              <Grid3X3 
+                className="w-6 h-6 transition-colors" 
+                strokeWidth={2} 
+                fill="none" 
+                style={categoriesOpen ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} 
+              />
             } isActive={false} label="קטגוריות" />
           </FeatureHintWrapper>
 
