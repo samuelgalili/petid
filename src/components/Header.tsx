@@ -1,5 +1,6 @@
 import { Menu, Bell, User, Search, ShoppingCart, X } from "lucide-react";
 import petidLogo from "@/assets/petid-logo.png";
+import petidIcon from "@/assets/petid-icon.png";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,8 +78,9 @@ export const Header = () => {
               </TooltipContent>
             </Tooltip>
             
-            {/* Center: Petid Logo */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            {/* Center: Petid Logo with Icon */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
+              <img src={petidIcon} alt="Petid Icon" className="h-7 w-7 object-contain" />
               <img src={petidLogo} alt="Petid" className="h-6 w-auto" />
             </div>
             
