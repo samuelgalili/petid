@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { PawPrint, Heart, Stethoscope, Users, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import { Heart, Stethoscope, Users, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
+import petidIcon from "@/assets/petid-icon.png";
 
 interface OnboardingStep {
   id: number;
@@ -18,8 +19,8 @@ const steps: OnboardingStep[] = [
     id: 1,
     title: "הכל מתחיל באחריות",
     subtitle: "כי הם סומכים עליך — ואנחנו כאן לעזור",
-    icon: <PawPrint className="w-12 h-12" />,
-    iconBg: "bg-gradient-to-br from-primary via-primary to-primary-light",
+    icon: <img src={petidIcon} alt="Petid" className="w-12 h-12 object-contain" />,
+    iconBg: "bg-white shadow-xl",
     features: [
       { emoji: "🐾", text: "ניהול פרופיל מלא לחיית המחמד" },
       { emoji: "📋", text: "מעקב בריאות וחיסונים" },
