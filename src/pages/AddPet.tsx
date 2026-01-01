@@ -566,25 +566,6 @@ const AddPet = () => {
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => {
-                      setPetType("dog");
-                      nextStep();
-                    }} 
-                    className={cn(
-                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
-                      petType === "dog" 
-                        ? "border-primary shadow-[var(--shadow-shop)]" 
-                        : "border-border hover:border-primary/50 hover:shadow-[var(--shadow-elevated)]"
-                    )}
-                  >
-                    <img src={dogIcon} alt="כלב" className="w-28 h-28 object-contain mb-3" />
-                    <span className="font-semibold text-foreground text-lg">כלב</span>
-                  </motion.button>
-                  
-                  <motion.button 
-                    type="button" 
-                    whileHover={{ scale: 1.03, y: -4 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
                       setPetType("cat");
                       nextStep();
                     }} 
@@ -597,6 +578,25 @@ const AddPet = () => {
                   >
                     <img src={catIcon} alt="חתול" className="w-24 h-24 object-contain mb-3" />
                     <span className="font-semibold text-foreground text-lg">חתול</span>
+                  </motion.button>
+                  
+                  <motion.button 
+                    type="button" 
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      setPetType("dog");
+                      nextStep();
+                    }} 
+                    className={cn(
+                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
+                      petType === "dog" 
+                        ? "border-primary shadow-[var(--shadow-shop)]" 
+                        : "border-border hover:border-primary/50 hover:shadow-[var(--shadow-elevated)]"
+                    )}
+                  >
+                    <img src={dogIcon} alt="כלב" className="w-28 h-28 object-contain mb-3" />
+                    <span className="font-semibold text-foreground text-lg">כלב</span>
                   </motion.button>
                 </div>
               </motion.div>
