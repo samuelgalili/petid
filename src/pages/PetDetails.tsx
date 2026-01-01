@@ -67,12 +67,18 @@ const PetDetails = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteAnimation, setShowDeleteAnimation] = useState(false);
   const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
   const handleDeletePet = async () => {
     if (!petId) return;
     
     setIsDeleting(true);
+    setShowDeleteAnimation(true);
+    
+    // Wait for animation to play
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     try {
       const { error } = await supabase
         .from('pets')
@@ -86,6 +92,7 @@ const PetDetails = () => {
     } catch (error: any) {
       console.error("Error deleting pet:", error);
       sonnerToast.error("שגיאה במחיקת חיית המחמד");
+      setShowDeleteAnimation(false);
     } finally {
       setIsDeleting(false);
     }
@@ -283,7 +290,83 @@ const PetDetails = () => {
   const compatibilityScore = 92;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <motion.div 
+      className="min-h-screen bg-background pb-24"
+      animate={showDeleteAnimation ? {
+        opacity: [1, 0],
+        scale: [1, 0.8],
+        filter: ["blur(0px)", "blur(10px)"],
+        y: [0, -50],
+      } : {}}
+      transition={{ duration: 0.8, ease: "easeInOut" }}
+    >
+      {/* Delete Animation Overlay */}
+      <AnimatePresence>
+        {showDeleteAnimation && (
+          <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="text-center"
+              initial={{ scale: 1, opacity: 1 }}
+              animate={{ 
+                scale: [1, 1.2, 0],
+                opacity: [1, 1, 0],
+                rotate: [0, 0, 180],
+              }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+            >
+              <motion.div
+                className="w-24 h-24 mx-auto mb-4 rounded-full bg-destructive/20 flex items-center justify-center"
+                animate={{
+                  boxShadow: [
+                    "0 0 0 0 rgba(239, 68, 68, 0.4)",
+                    "0 0 0 20px rgba(239, 68, 68, 0)",
+                  ],
+                }}
+                transition={{ duration: 0.6, repeat: 1 }}
+              >
+                <Trash2 className="w-12 h-12 text-destructive" />
+              </motion.div>
+              <motion.p 
+                className="text-lg font-semibold text-foreground"
+                animate={{ opacity: [1, 0] }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+              >
+                מוחק את {pet.name}...
+              </motion.p>
+            </motion.div>
+            
+            {/* Particle effects */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-3 h-3 rounded-full bg-destructive/60"
+                initial={{ 
+                  x: 0, 
+                  y: 0, 
+                  opacity: 1,
+                  scale: 1 
+                }}
+                animate={{ 
+                  x: Math.cos(i * 30 * Math.PI / 180) * 150,
+                  y: Math.sin(i * 30 * Math.PI / 180) * 150,
+                  opacity: 0,
+                  scale: 0 
+                }}
+                transition={{ 
+                  duration: 0.6, 
+                  delay: 0.2,
+                  ease: "easeOut" 
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Hero Header - Immersive Design */}
       <div className="relative h-[320px] overflow-hidden">
         {/* Background Image/Gradient */}
@@ -841,7 +924,7 @@ const PetDetails = () => {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </motion.div>
   );
 };
 
