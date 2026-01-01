@@ -388,10 +388,10 @@ const AddPet = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24" dir="rtl">
-      {/* Gradient Header */}
+      {/* Gradient Header - New Cyan/Purple/Pink */}
       <div 
-        className="sticky top-0 z-40 backdrop-blur-xl border-b border-border/40"
-        style={{ background: 'linear-gradient(135deg, hsl(214 66% 36% / 0.95) 0%, hsl(174 59% 55% / 0.95) 50%, hsl(210 70% 70% / 0.95) 100%)' }}
+        className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/10"
+        style={{ background: 'linear-gradient(135deg, hsl(190 90% 50%) 0%, hsl(280 75% 55%) 50%, hsl(310 85% 60%) 100%)' }}
       >
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -401,38 +401,41 @@ const AddPet = () => {
                 animate={{ opacity: 1, x: 0 }}
                 type="button"
                 onClick={prevStep}
-                className="p-2 bg-white/20 rounded-full backdrop-blur-sm"
+                className="p-2.5 bg-white/20 rounded-full backdrop-blur-sm hover:bg-white/30 transition-colors"
               >
                 <ArrowRight className="w-5 h-5 text-white" />
               </motion.button>
             ) : (
-              <div className="w-9" />
+              <div className="w-10" />
             )}
-            <h1 className="text-xl font-bold text-white">
-              {isOnboarding ? "ברוכים הבאים" : "הוספת חיית מחמד"}
-            </h1>
-            <div className="w-9" />
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🐾</span>
+              <h1 className="text-xl font-bold text-white">
+                {isOnboarding ? "ברוכים הבאים" : "הוספת חיית מחמד"}
+              </h1>
+            </div>
+            <div className="w-10" />
           </div>
           
           {/* Progress Bar in Header */}
           {currentStep > 0 && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-white/80">
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-white/90">
                   שלב {displayStep} מתוך {progressSteps}
                 </span>
                 {autoSaveStatus === 'saved' && (
-                  <span className="text-xs text-white/80 flex items-center gap-1">
+                  <span className="text-xs text-white/80 flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
                     <Check className="w-3 h-3" /> נשמר
                   </span>
                 )}
               </div>
-              <div className="h-1.5 bg-white/30 rounded-full overflow-hidden">
+              <div className="h-2 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
                 <motion.div 
-                  className="h-full bg-white rounded-full"
+                  className="h-full bg-white rounded-full shadow-sm"
                   initial={{ width: 0 }}
                   animate={{ width: `${(displayStep / progressSteps) * 100}%` }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
                 />
               </div>
             </div>
