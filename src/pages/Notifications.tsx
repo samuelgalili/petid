@@ -96,15 +96,15 @@ const Notifications = () => {
   const getNotificationColor = (type: string) => {
     switch (type) {
       case "story_view":
-        return "bg-gradient-to-r from-yellow-100 to-amber-100 border-[#FFD700]";
+        return "bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30";
       case "success":
-        return "bg-green-100 border-green-500";
+        return "bg-green-500/10 border-green-500/30";
       case "warning":
-        return "bg-yellow-100 border-yellow-500";
+        return "bg-amber-500/10 border-amber-500/30";
       case "error":
-        return "bg-red-100 border-red-500";
+        return "bg-destructive/10 border-destructive/30";
       default:
-        return "bg-blue-100 border-blue-500";
+        return "bg-primary/10 border-primary/30";
     }
   };
 
@@ -152,22 +152,27 @@ const Notifications = () => {
       {/* Content */}
       <div className="p-4 space-y-3">
         {notifications.length === 0 ? (
-          <div className="bg-background rounded-xl p-8 text-center border border-border">
-            <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" strokeWidth={1} />
+          <div className="bg-card rounded-2xl p-8 text-center border border-border shadow-soft">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Bell className="w-8 h-8 text-primary" strokeWidth={1.5} />
+            </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">אין התראות</h2>
             <p className="text-muted-foreground text-sm">כל ההתראות שלך יופיעו כאן</p>
           </div>
         ) : (
           notifications.map((notification, index) => (
-            <div
+            <motion.div
               key={notification.id}
-              className={`bg-background rounded-lg p-4 border border-border ${
-                !notification.is_read ? "border-r-2 border-r-primary" : ""
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className={`bg-card rounded-2xl p-4 border border-border shadow-soft ${
+                !notification.is_read ? "border-r-4 border-r-primary" : ""
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-lg flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg flex-shrink-0">
                     {getNotificationIcon(notification.type)}
                   </div>
                   <div className="flex-1">
@@ -204,7 +209,7 @@ const Notifications = () => {
                   </Button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>

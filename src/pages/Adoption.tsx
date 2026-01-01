@@ -325,12 +325,11 @@ const Adoption = () => {
                   className="flex flex-col items-center gap-1 flex-shrink-0"
                 >
                   <div 
-                    className="w-16 h-16 rounded-full p-[2px]"
-                    style={{ 
-                      background: (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
-                        ? 'linear-gradient(135deg, #1E5799, #4ECDC4)'
-                        : 'hsl(var(--muted))'
-                    }}
+                    className={`w-16 h-16 rounded-full p-[2px] ${
+                      (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
+                        ? 'bg-gradient-to-br from-primary via-accent to-secondary'
+                        : 'bg-muted'
+                    }`}
                   >
                     <div className="w-full h-full rounded-full bg-card p-[2px]">
                       <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center">
@@ -373,7 +372,7 @@ const Adoption = () => {
                   {/* Post Header */}
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}>
+                      <div className="w-9 h-9 rounded-full p-[2px] bg-gradient-to-br from-primary via-accent to-secondary">
                         <div className="w-full h-full rounded-full bg-card p-[1px]">
                           <img
                             src={pet.image_url || "/placeholder.svg"}

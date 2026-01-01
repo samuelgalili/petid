@@ -52,18 +52,18 @@ const Cart = () => {
             transition={{ duration: 0.3 }}
             className="text-center"
           >
-            <div className="w-32 h-32 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShoppingBag className="w-16 h-16 text-muted-foreground" strokeWidth={1.5} />
+            <div className="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ShoppingBag className="w-16 h-16 text-primary" strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-3 font-jakarta">
+            <h2 className="text-2xl font-bold text-foreground mb-3">
               העגלה שלך ריקה
             </h2>
-            <p className="text-muted-foreground mb-8 font-jakarta">
+            <p className="text-muted-foreground mb-8">
               הוסף מוצרים מהחנות כדי להתחיל
             </p>
             <Button
               onClick={() => navigate("/shop")}
-              className="bg-accent hover:bg-accent-hover text-foreground font-bold px-8 py-6 rounded-2xl shadow-lg font-jakarta"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 rounded-2xl shadow-lg"
             >
               המשך לקניות
             </Button>
@@ -222,7 +222,7 @@ const Cart = () => {
               >
                 <Button
                   onClick={handleCheckout}
-                  className="w-full h-14 bg-primary hover:bg-primary/90 text-foreground text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3 font-jakarta"
+                  className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3"
                 >
                   המשך לתשלום
                 </Button>

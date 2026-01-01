@@ -695,15 +695,15 @@ const Parks = () => {
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.8 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                className="p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
+                className="p-1 rounded-full hover:bg-destructive/10 transition-colors duration-200"
               >
                 <Heart 
-                  className={`w-6 h-6 transition-colors ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-[#262626]'}`}
+                  className={`w-6 h-6 transition-colors ${isLiked ? 'fill-destructive text-destructive' : 'text-foreground'}`}
                 />
               </motion.button>
               
               <motion.button 
-                className="text-[#262626] p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
+                className="text-foreground p-1 rounded-full hover:bg-primary/10 transition-colors duration-200"
                 onClick={() => {
                   setSelectedParkForReview(park);
                   setReviewsListOpen(true);
@@ -716,7 +716,7 @@ const Parks = () => {
               </motion.button>
               
               <motion.button 
-                className="text-[#262626] p-1 rounded-full hover:bg-gray-50 transition-colors duration-200"
+                className="text-foreground p-1 rounded-full hover:bg-muted transition-colors duration-200"
                 onClick={() => openInMaps(park)}
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.8 }}
@@ -1353,7 +1353,7 @@ const Parks = () => {
                 <motion.button
                   onClick={() => document.getElementById('camera-input')?.click()}
                   disabled={uploadingPhoto}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#0095F6] text-white rounded-xl font-semibold hover:bg-[#1877F2] transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors"
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >
@@ -1361,7 +1361,7 @@ const Parks = () => {
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                      className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"
                     />
                   ) : (
                     <>
@@ -1373,7 +1373,7 @@ const Parks = () => {
                 <motion.button
                   onClick={() => photoInputRef.current?.click()}
                   disabled={uploadingPhoto}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-gray-300 rounded-xl text-gray-600 hover:border-[#0095F6] hover:text-[#0095F6] transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-border rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >

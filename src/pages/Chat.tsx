@@ -355,7 +355,7 @@ const Chat = () => {
                 <Send className="w-4 h-4" />
               </motion.button>
             ) : (
-              <button className="w-9 h-9 flex items-center justify-center text-[#ED4956] hover:bg-gray-50 rounded-full transition-colors">
+              <button className="w-9 h-9 flex items-center justify-center text-destructive hover:bg-muted rounded-full transition-colors">
                 <Heart className="w-5 h-5" />
               </button>
             )}

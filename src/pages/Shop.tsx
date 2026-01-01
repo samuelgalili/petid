@@ -288,7 +288,7 @@ const Shop = () => {
       particleCount: 60,
       spread: 55,
       origin: { y: 0.8 },
-      colors: ['#0095F6', '#ED4956', '#262626'],
+      colors: ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--secondary))'],
     });
 
     toast({

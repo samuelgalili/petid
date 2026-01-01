@@ -50,24 +50,24 @@ interface MenuItemProps {
 const MenuItem = ({ icon: Icon, label, onClick, badge, isNew }: MenuItemProps) => (
   <button
     onClick={onClick}
-    className="w-full flex items-center gap-4 px-6 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+    className="w-full flex items-center gap-4 px-6 py-3.5 hover:bg-muted/50 active:bg-muted transition-colors"
   >
-    <Icon className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
-    <span className="flex-1 text-[16px] text-[#262626] text-right">{label}</span>
+    <Icon className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+    <span className="flex-1 text-[16px] text-foreground text-right">{label}</span>
     {badge && badge > 0 && (
-      <span className="bg-[#FF3040] text-white text-[12px] font-semibold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+      <span className="bg-destructive text-destructive-foreground text-[12px] font-semibold px-2 py-0.5 rounded-full min-w-[20px] text-center">
         {badge}
       </span>
     )}
     {isNew && (
-      <span className="bg-[#FF3040] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+      <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded">
         חדש
       </span>
     )}
   </button>
 );
 
-const Divider = () => <div className="h-[6px] bg-[#FAFAFA]" />;
+const Divider = () => <div className="h-[6px] bg-muted" />;
 
 export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const navigate = useNavigate();
