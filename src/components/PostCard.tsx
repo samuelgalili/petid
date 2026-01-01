@@ -350,19 +350,19 @@ export const PostCard = ({
               <Heart 
                 className={`w-6 h-6 transition-colors duration-200 ${
                   post.is_liked 
-                    ? 'text-[#ED4956] fill-[#ED4956]' 
-                    : 'text-[#262626] hover:text-[#8E8E8E]'
+                    ? 'text-destructive fill-destructive' 
+                    : 'text-foreground hover:text-muted-foreground'
                 }`} 
                 strokeWidth={1.5}
               />
             </motion.button>
             
             <motion.button 
-              className="text-[#262626] p-1"
+              className="text-foreground p-1"
               onClick={() => navigate(`/post/${post.id}`)}
               whileTap={{ scale: 0.9 }}
             >
-              <MessageCircle className="w-6 h-6 hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
+              <MessageCircle className="w-6 h-6 hover:text-muted-foreground transition-colors" strokeWidth={1.5} />
             </motion.button>
             
             <motion.button 
