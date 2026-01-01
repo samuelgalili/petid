@@ -629,8 +629,8 @@ const ProductDetail = () => {
         </motion.div>
       )}
 
-      {/* Recommended Products */}
-      <motion.div className="mx-4 mt-4 mb-6" initial={{
+      {/* Recommended Products - Horizontal Carousel */}
+      <motion.div className="mt-4 mb-6" initial={{
       opacity: 0,
       y: 20
     }} animate={{
@@ -639,8 +639,8 @@ const ProductDetail = () => {
     }} transition={{
       delay: 0.5
     }}>
-        <h3 className="text-base font-bold mb-4 text-gray-800 font-jakarta">לקוחות גם קנו</h3>
-        <div className="grid grid-cols-2 gap-3">
+        <h3 className="text-base font-bold mb-4 text-gray-800 font-jakarta mx-4">לקוחות גם קנו</h3>
+        <div className="flex gap-3 overflow-x-auto pb-2 px-4 hide-scrollbar">
           {relatedProducts.map((item, idx) => <motion.div key={item.id} initial={{
           opacity: 0,
           scale: 0.95
@@ -653,15 +653,15 @@ const ProductDetail = () => {
           scale: 1.02
         }} whileTap={{
           scale: 0.98
-        }} className="relative p-[1.5px] rounded-2xl cursor-pointer group" style={{
+        }} className="relative p-[1.5px] rounded-2xl cursor-pointer group flex-shrink-0 w-36" style={{
           background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
         }} onClick={() => navigate(`/product/${item.id}`)}>
               <div className="bg-white rounded-2xl overflow-hidden h-full transition-all group-hover:shadow-lg">
                 <div className="aspect-square bg-gradient-to-br from-gray-50 to-white overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                 </div>
-                <div className="p-3 bg-white">
-                  <h4 className="font-bold text-sm text-gray-800 font-jakarta mb-1 truncate">{item.name}</h4>
+                <div className="p-2.5 bg-white">
+                  <h4 className="font-bold text-xs text-gray-800 font-jakarta mb-1 truncate">{item.name}</h4>
                   <p className="text-sm font-black bg-clip-text text-transparent font-jakarta" style={{
                 backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
               }}>
