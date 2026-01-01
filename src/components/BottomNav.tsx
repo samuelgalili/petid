@@ -142,7 +142,6 @@ const BottomNav = () => {
             featureId="nav_home"
             title="דף הבית"
             description="כאן תמצא את הפיד הראשי, עדכונים וכל מה שקורה עם חיות המחמד שלך"
-            position="top"
           >
             <NavItem onClick={() => {
             if (location.pathname === "/") {
@@ -162,7 +161,6 @@ const BottomNav = () => {
             featureId="nav_explore"
             title="חיפוש וגילוי"
             description="גלה חיות מחמד, בעלים ותכנים חדשים. חפש לפי שם, גזע או מיקום"
-            position="top"
           >
             <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className={cn("w-6 h-6 transition-colors", isActive("/explore") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/explore") ? "currentColor" : "none"} />} isActive={isActive("/explore")} label="חיפוש" />
           </FeatureHintWrapper>
@@ -172,7 +170,6 @@ const BottomNav = () => {
             featureId="nav_categories"
             title="קטגוריות"
             description="גישה מהירה לכל השירותים: מסמכים, ביטוח, גינות כלבים, אילוף ועוד"
-            position="top"
           >
             <NavItem onClick={() => setCategoriesOpen(true)} icon={
               <div className={cn(
@@ -189,7 +186,6 @@ const BottomNav = () => {
             featureId="nav_shop"
             title="חנות"
             description="מוצרים מומלצים לחיית המחמד שלך, מבצעים והטבות מיוחדות"
-            position="top"
           >
             <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={cn("w-6 h-6 transition-colors", isActive("/shop") ? "text-primary" : "text-muted-foreground")} strokeWidth={1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
           </FeatureHintWrapper>
@@ -199,7 +195,6 @@ const BottomNav = () => {
             featureId="nav_profile"
             title="הפרופיל שלך"
             description="צפה בחיות המחמד שלך, ערוך פרטים ונהל את החשבון"
-            position="top"
           >
             <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
               <div className={cn("w-7 h-7 rounded-full overflow-hidden transition-all", isActive("/profile") ? "ring-2 ring-primary ring-offset-2 ring-offset-card" : "")}>

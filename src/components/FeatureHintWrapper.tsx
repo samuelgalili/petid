@@ -1,4 +1,4 @@
-import { ReactNode, useRef, useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useFeatureHint } from "@/hooks/useFeatureHint";
 import { FeatureHint } from "./FeatureHint";
@@ -8,7 +8,6 @@ interface FeatureHintWrapperProps {
   featureId: string;
   title: string;
   description: string;
-  position?: "top" | "bottom" | "left" | "right";
   triggerOnClick?: boolean;
   triggerOnMount?: boolean;
   delay?: number;
@@ -19,12 +18,10 @@ export const FeatureHintWrapper = ({
   featureId,
   title,
   description,
-  position = "bottom",
   triggerOnClick = true,
   triggerOnMount = false,
   delay = 500
 }: FeatureHintWrapperProps) => {
-  const wrapperRef = useRef<HTMLDivElement>(null);
   const { shouldShowHint, isHintVisible, triggerHint, dismissHint } = useFeatureHint(featureId);
 
   useEffect(() => {
@@ -44,51 +41,21 @@ export const FeatureHintWrapper = ({
     }
   };
 
-  const getHintPosition = () => {
-    if (!wrapperRef.current) return { top: 0, left: 0 };
-    const rect = wrapperRef.current.getBoundingClientRect();
-    
-    return {
-      top: rect.top + window.scrollY,
-      left: rect.left + window.scrollX,
-      width: rect.width,
-      height: rect.height
-    };
-  };
-
-  const pos = getHintPosition();
-
   return (
-    <div 
-      ref={wrapperRef} 
-      className="relative"
-      onClick={handleClick}
-    >
-      {children}
+    <>
+      <div onClick={handleClick}>
+        {children}
+      </div>
       
       {isHintVisible && createPortal(
-        <div 
-          style={{
-            position: 'absolute',
-            top: pos.top,
-            left: pos.left,
-            width: pos.width,
-            height: pos.height,
-            pointerEvents: 'none'
-          }}
-        >
-          <div className="relative w-full h-full pointer-events-auto">
-            <FeatureHint
-              isVisible={isHintVisible}
-              onDismiss={dismissHint}
-              title={title}
-              description={description}
-              position={position}
-            />
-          </div>
-        </div>,
+        <FeatureHint
+          isVisible={isHintVisible}
+          onDismiss={dismissHint}
+          title={title}
+          description={description}
+        />,
         document.body
       )}
-    </div>
+    </>
   );
 };
