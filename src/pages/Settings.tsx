@@ -330,9 +330,9 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="w-18 h-18 border-4 border-primary/20 shadow-lg">
-                  <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" />
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold text-lg">
-                    {(user?.user_metadata?.full_name || "מ")[0]}
+                    {(user?.user_metadata?.full_name || user?.email || "מ")[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-md">
