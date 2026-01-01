@@ -1,4 +1,4 @@
-import { ArrowRight, Menu, Home, LucideIcon } from "lucide-react";
+import { ArrowRight, Menu, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -8,7 +8,6 @@ interface AppHeaderProps {
   title: string;
   showBackButton?: boolean;
   showMenuButton?: boolean;
-  backTo?: "home" | "previous"; // New prop
   extraAction?: {
     icon: LucideIcon;
     onClick: () => void;
@@ -19,20 +18,15 @@ export const AppHeader = ({
   title,
   showBackButton = false,
   showMenuButton = false,
-  backTo = "home", // Default to home
   extraAction,
 }: AppHeaderProps) => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleBack = () => {
-    if (backTo === "previous") {
-      // Check if there's history to go back to
-      if (window.history.length > 1) {
-        navigate(-1);
-      } else {
-        navigate("/");
-      }
+    // Always go back to previous page
+    if (window.history.length > 1) {
+      navigate(-1);
     } else {
       navigate("/");
     }
@@ -51,13 +45,9 @@ export const AppHeader = ({
               size="icon"
               onClick={handleBack}
               className="rounded-full h-9 w-9"
-              aria-label={backTo === "home" ? "חזור לדף הבית" : "חזור"}
+              aria-label="חזור"
             >
-              {backTo === "home" ? (
-                <Home className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-              ) : (
-                <ArrowRight className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-              )}
+              <ArrowRight className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </Button>
           )}
           
