@@ -85,7 +85,7 @@ export const Header = () => {
             </div>
             
             {/* Right: Cart, User, Notifications, Search - Close together */}
-            <div className="flex items-center -space-x-2">
+            <div className="flex items-center -space-x-3">
               <div 
                 className="relative"
                 onMouseEnter={handleMouseEnter}

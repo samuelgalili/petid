@@ -349,7 +349,7 @@ export const PostCard = ({
       {/* Post Actions */}
       <div className="px-3 pt-2">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <motion.button 
               onClick={handleLike}
               className="p-1"
