@@ -338,28 +338,34 @@ export const BreedInfoCard = ({ breed, petType, petName }: BreedInfoCardProps) =
       </div>
 
       {/* מידע בסיסי */}
-      <Card className="p-4 bg-gradient-to-br from-card to-muted/30 border-border/50">
+      <Card className="p-5 bg-card border-2 border-border shadow-lg">
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Clock className="w-4 h-4 text-primary" />
+          <div className="p-3 rounded-2xl bg-primary/10">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-primary" />
+              </div>
             </div>
-            <p className="text-lg font-bold text-primary">{breedData.lifeExpectancy.min}-{breedData.lifeExpectancy.max}</p>
-            <p className="text-[10px] text-muted-foreground">שנות חיים</p>
+            <p className="text-2xl font-bold text-foreground">{breedData.lifeExpectancy.min}-{breedData.lifeExpectancy.max}</p>
+            <p className="text-xs font-medium text-muted-foreground mt-1">שנות חיים</p>
           </div>
-          <div>
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Scale className="w-4 h-4 text-accent" />
+          <div className="p-3 rounded-2xl bg-accent/10">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                <Scale className="w-5 h-5 text-accent" />
+              </div>
             </div>
-            <p className="text-lg font-bold text-accent">{breedData.weight.min}-{breedData.weight.max}</p>
-            <p className="text-[10px] text-muted-foreground">{breedData.weight.unit}</p>
+            <p className="text-2xl font-bold text-foreground">{breedData.weight.min}-{breedData.weight.max}</p>
+            <p className="text-xs font-medium text-muted-foreground mt-1">{breedData.weight.unit}</p>
           </div>
-          <div>
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Activity className="w-4 h-4 text-secondary" />
+          <div className="p-3 rounded-2xl bg-secondary/10">
+            <div className="flex items-center justify-center mb-2">
+              <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-secondary" />
+              </div>
             </div>
-            <p className="text-lg font-bold text-secondary">{breedData.height.min}-{breedData.height.max}</p>
-            <p className="text-[10px] text-muted-foreground">{breedData.height.unit}</p>
+            <p className="text-2xl font-bold text-foreground">{breedData.height.min}-{breedData.height.max}</p>
+            <p className="text-xs font-medium text-muted-foreground mt-1">{breedData.height.unit}</p>
           </div>
         </div>
       </Card>
