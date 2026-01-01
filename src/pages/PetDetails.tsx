@@ -1,11 +1,11 @@
-import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, ChevronLeft, Trash2, Package, Heart, Sparkles, Activity, Weight, Utensils, AlertCircle, Star, MapPin, Clock, Stethoscope, Pill } from "lucide-react";
+import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, Trash2, Package, Heart, Sparkles, Activity, Star, MapPin, Clock, Info, TrendingUp, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +13,9 @@ import { format, differenceInYears, differenceInMonths } from "date-fns";
 import { AppHeader } from "@/components/AppHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PET_CARD, ACTIONS, REMINDERS } from "@/lib/brandVoice";
+import { BreedInfoCard } from "@/components/pet/BreedInfoCard";
+import { RecommendedProducts } from "@/components/pet/RecommendedProducts";
+import { PointsRewardsCard } from "@/components/pet/PointsRewardsCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,8 +65,9 @@ const PetDetails = () => {
   const [photos, setPhotos] = useState<PetPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [activeTab, setActiveTab] = useState("documents");
+  const [activeTab, setActiveTab] = useState("overview");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
   const handleDeletePet = async () => {
     if (!petId) return;
@@ -131,6 +135,26 @@ const PetDetails = () => {
           .order('created_at', { ascending: false });
 
         setPhotos(photosData || []);
+
+        // Fetch recommended products
+        const { data: productsData } = await supabase
+          .from('scraped_products')
+          .select('id, product_name, main_image_url, final_price, regular_price, pet_type, rating')
+          .neq('stock_status', 'out_of_stock')
+          .limit(10);
+
+        if (productsData) {
+          const mapped = productsData.map(p => ({
+            id: p.id,
+            name: p.product_name,
+            image: p.main_image_url,
+            price: typeof p.final_price === 'string' ? parseFloat(p.final_price) : (p.final_price || 0),
+            originalPrice: typeof p.regular_price === 'string' ? parseFloat(p.regular_price) : (p.regular_price || undefined),
+            petType: p.pet_type,
+            rating: p.rating
+          }));
+          setRecommendedProducts(mapped);
+        }
 
       } catch (error: any) {
         toast({
@@ -484,18 +508,25 @@ const PetDetails = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
         <TabsList className="w-full justify-start px-4 bg-transparent border-b border-border rounded-none h-auto pb-0 gap-0 overflow-x-auto flex-nowrap">
           <TabsTrigger 
+            value="overview" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
+          >
+            <Sparkles className="w-4 h-4" />
+            סקירה
+          </TabsTrigger>
+          <TabsTrigger 
+            value="breed" 
+            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
+          >
+            <Info className="w-4 h-4" />
+            הגזע
+          </TabsTrigger>
+          <TabsTrigger 
             value="documents" 
             className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
           >
             <FileText className="w-4 h-4" />
             מסמכים
-          </TabsTrigger>
-          <TabsTrigger 
-            value="tasks" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <CheckSquare className="w-4 h-4" />
-            משימות
           </TabsTrigger>
           <TabsTrigger 
             value="training" 
@@ -511,21 +542,30 @@ const PetDetails = () => {
             <Image className="w-4 h-4" />
             תמונות
           </TabsTrigger>
-          <TabsTrigger 
-            value="insurance" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <Shield className="w-4 h-4" />
-            ביטוח
-          </TabsTrigger>
-          <TabsTrigger 
-            value="grooming" 
-            className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-3 text-xs font-medium gap-1"
-          >
-            <Scissors className="w-4 h-4" />
-            מספרה
-          </TabsTrigger>
         </TabsList>
+
+        {/* Overview Tab - NEW */}
+        <TabsContent value="overview" className="px-4 pt-4 space-y-6" dir="rtl">
+          {/* נקודות ותגמולים */}
+          <PointsRewardsCard petName={pet.name} />
+          
+          {/* מוצרים מומלצים */}
+          <RecommendedProducts 
+            petType={pet.type} 
+            petBreed={pet.breed} 
+            petName={pet.name}
+            products={recommendedProducts}
+          />
+        </TabsContent>
+
+        {/* Breed Info Tab - NEW */}
+        <TabsContent value="breed" className="px-4 pt-4" dir="rtl">
+          <BreedInfoCard 
+            breed={pet.breed} 
+            petType={pet.type} 
+            petName={pet.name} 
+          />
+        </TabsContent>
 
         {/* Documents Tab */}
         <TabsContent value="documents" className="px-4 pt-4" dir="rtl">
