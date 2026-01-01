@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -26,6 +26,7 @@ import { CloseFriendsManager } from "@/components/CloseFriendsManager";
 import { DraftPostsManager } from "@/components/DraftPostsManager";
 import { ScheduledPostsManager } from "@/components/ScheduledPostsManager";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -41,6 +42,28 @@ const Settings = () => {
   const [showCloseFriends, setShowCloseFriends] = useState(false);
   const [showDrafts, setShowDrafts] = useState(false);
   const [showScheduled, setShowScheduled] = useState(false);
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+
+  // Fetch profile data from profiles table
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('id', user.id)
+        .single();
+      
+      if (data) {
+        setProfileAvatar(data.avatar_url);
+        setProfileName(data.full_name);
+      }
+    };
+    
+    fetchProfile();
+  }, [user?.id]);
 
   const handleLogout = async () => {
     try {
@@ -330,9 +353,9 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <Avatar className="w-18 h-18 border-4 border-primary/20 shadow-lg">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarImage src={profileAvatar || undefined} />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold text-lg">
-                    {(user?.user_metadata?.full_name || user?.email || "מ")[0].toUpperCase()}
+                    {(profileName || user?.email || "מ")[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-md">
@@ -341,7 +364,7 @@ const Settings = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-lg text-foreground truncate">
-                  {user?.user_metadata?.full_name || "משתמש"}
+                  {profileName || "משתמש"}
                 </h3>
                 <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
               </div>
