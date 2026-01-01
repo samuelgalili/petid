@@ -1003,52 +1003,79 @@ const Feed = () => {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
 
-  return <div className="min-h-screen bg-background pb-24" dir="rtl">
-      {/* PetID-style Header - Warm, caring */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/30 shadow-soft">
+  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24" dir="rtl">
+      {/* PetID-style Header - Modern, Clean */}
+      <motion.div 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled 
+            ? "bg-card/98 backdrop-blur-xl border-b border-border/40 shadow-sm" 
+            : "bg-transparent"
+        }`}
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Left side - Logo */}
-          <div className="flex items-center">
+          {/* Left side - Logo with animation */}
+          <motion.div 
+            className="flex items-center gap-2"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <motion.div
+              className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-sm"
+              whileHover={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 0.5 }}
+            >
+              <PawPrint className="w-4 h-4 text-primary-foreground" />
+            </motion.div>
             <h1 
-              className="text-xl font-bold cursor-pointer text-primary"
+              className="text-lg font-bold cursor-pointer bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent"
               onClick={() => {
                 setPage(0);
                 setHasMore(true);
                 fetchPosts(0, false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
-              🐾 PetID
+              PetID
             </h1>
-          </div>
+          </motion.div>
           
-          {/* Right icons - PetID style */}
-          <div className="flex items-center gap-3">
-            <button 
+          {/* Right icons - Refined style */}
+          <div className="flex items-center gap-1">
+            <motion.button 
               onClick={() => navigate('/explore')}
-              className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
+              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Search className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-            </button>
-            <button 
+              <Search className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
+            <motion.button 
               onClick={handleNavigateToNotifications} 
-              className="relative p-2 rounded-xl hover:bg-muted/50 transition-colors"
+              className="relative p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Heart className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-            </button>
-            <button 
+              <Heart className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
+            <motion.button 
               onClick={handleNavigateToMessages}
-              className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
+              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Send className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-            </button>
+              <Send className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Spacer for fixed header */}
       <div className="h-14" />
 
-      {/* Contextual Feed Tabs */}
+      {/* Contextual Feed Tabs - Improved */}
       <FeedTabs 
         activeTab={activeTab} 
         onTabChange={handleTabChange}
@@ -1056,8 +1083,8 @@ const Feed = () => {
         onAuthRequired={checkAuth}
       />
 
-      {/* View Mode Switcher */}
-      <div className="flex justify-end px-4 py-2 bg-background">
+      {/* View Mode Switcher - More subtle */}
+      <div className="flex justify-end px-4 py-1.5 bg-background/80 backdrop-blur-sm sticky top-14 z-30">
         <FeedViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
       </div>
 
@@ -1156,25 +1183,24 @@ const Feed = () => {
         
       </motion.div>}
 
-      {/* Stories Bar - Context-aware, only visible at top */}
-      {!isScrolled && (
-        <motion.div initial={{
-        opacity: 0,
-        y: 10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.2,
-        duration: 0.4
-      }} className="bg-white border-b border-gray-100">
-          <StoriesBar 
-            activeTab={activeTab} 
-            userCity={city} 
-            followingIds={followingIds}
-          />
-        </motion.div>
-      )}
+      {/* Stories Bar - Context-aware, smooth transition */}
+      <AnimatePresence>
+        {!isScrolled && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="bg-card/50 backdrop-blur-sm border-b border-border/20 overflow-hidden"
+          >
+            <StoriesBar 
+              activeTab={activeTab} 
+              userCity={city} 
+              followingIds={followingIds}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
       {/* Business Feed Banner - for business owners */}
@@ -1187,41 +1213,57 @@ const Feed = () => {
         viewMode === "video" ? <FeedVideoView items={mixedFeed} currentUserId={user?.id} onLike={handleLike} onSave={handleSave} /> :
         viewMode === "masonry" ? <FeedMasonryView items={mixedFeed} /> :
         mixedFeed.length === 0 ?
-      // Enhanced Empty state
-      <motion.div initial={{
-        opacity: 0,
-        scale: 0.95
-      }} animate={{
-        opacity: 1,
-        scale: 1
-      }} transition={{
-        duration: 0.4
-      }} className="text-center py-20 px-6">
-            <motion.div initial={{
-          scale: 0
-        }} animate={{
-          scale: 1
-        }} transition={{
-          delay: 0.2,
-          type: "spring",
-          stiffness: 200
-        }} className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <Camera className="w-12 h-12 text-gray-300" strokeWidth={1.5} />
-            </motion.div>
-            <h3 className="text-[24px] font-bold text-foreground mb-2">
-              {activeTab === "following" ? "אין פוסטים" : "שתף תמונות"}
-            </h3>
-            <p className="text-muted-foreground text-[15px] mb-6 max-w-xs mx-auto">
-              {activeTab === "following" ? "עקוב אחרי אנשים כדי לראות תמונות" : "כשתשתף תמונות, הן יופיעו בפרופיל שלך"}
-            </p>
-            <motion.button whileHover={{
-          scale: 1.05
-        }} whileTap={{
-          scale: 0.95
-        }} onClick={handleCreatePost} className="text-[#0095F6] font-semibold text-[15px] px-6 py-2.5 rounded-full bg-[#0095F6]/10 hover:bg-[#0095F6]/20 transition-colors">
-              שתף את התמונה הראשונה שלך
-            </motion.button>
-          </motion.div> : <div className="space-y-0">
+      // Enhanced Empty state - Beautiful and inviting
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="text-center py-16 px-6"
+      >
+        <motion.div 
+          initial={{ scale: 0, rotate: -10 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
+          className="relative w-28 h-28 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-3xl flex items-center justify-center mx-auto mb-6"
+        >
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-3xl"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <Camera className="w-12 h-12 text-primary/60" strokeWidth={1.5} />
+        </motion.div>
+        <motion.h3 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-xl font-bold text-foreground mb-2"
+        >
+          {activeTab === "following" ? "אין עדיין פוסטים" : "שתפו רגעים"}
+        </motion.h3>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto leading-relaxed"
+        >
+          {activeTab === "following" 
+            ? "עקבו אחרי חברים כדי לראות את הפוסטים שלהם" 
+            : "שתפו תמונות של חיית המחמד שלכם והצטרפו לקהילה"}
+        </motion.p>
+        <motion.button 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={handleCreatePost} 
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all"
+        >
+          <Camera className="w-4 h-4" />
+          שתף את התמונה הראשונה
+        </motion.button>
+      </motion.div> : <div className="space-y-0">
             {mixedFeed.map((item, index) => {
           if (item.type === 'post') {
             return <motion.div key={`post-${item.data.id}`} initial={{
@@ -1321,18 +1363,34 @@ const Feed = () => {
           </div>}
       </div>
 
-      {/* End of Feed */}
-      {!loading && !hasMore && mixedFeed.length > 0 && <motion.div initial={{
-      opacity: 0
-    }} animate={{
-      opacity: 1
-    }} className="text-center py-8 border-t border-gray-100 bg-gradient-to-b from-transparent to-gray-50/50">
-          <div className="flex items-center justify-center gap-2 text-[#8E8E8E]">
-            <div className="w-8 h-px bg-gray-200" />
-            <span className="text-[13px]">סיימת לראות הכל</span>
-            <div className="w-8 h-px bg-gray-200" />
+      {/* End of Feed - Refined design */}
+      {!loading && !hasMore && mixedFeed.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-10 px-6"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-px bg-gradient-to-r from-transparent to-border" />
+              <PawPrint className="w-5 h-5 text-muted-foreground/50" />
+              <div className="w-12 h-px bg-gradient-to-l from-transparent to-border" />
+            </div>
+            <p className="text-sm text-muted-foreground">סיימת לראות הכל 🐾</p>
+            <button 
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setPage(0);
+                setHasMore(true);
+                fetchPosts(0, false);
+              }}
+              className="text-xs text-primary font-medium hover:underline"
+            >
+              חזור למעלה
+            </button>
           </div>
-        </motion.div>}
+        </motion.div>
+      )}
 
       <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {
       setPage(0);
