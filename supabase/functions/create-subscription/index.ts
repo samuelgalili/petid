@@ -129,7 +129,6 @@ serve(async (req) => {
     // Calculate number of payments for recurring
     const numberOfPayments = product.billing_period === 'yearly' ? 12 : 0; // 0 = unlimited for monthly
 
-    // TODO: Replace with actual CardCom API call
     console.log('Creating CardCom subscription:', {
       terminal: CARDCOM_TERMINAL,
       amount: product.price_ils,
@@ -137,7 +136,7 @@ serve(async (req) => {
       subscriptionId: subscription.id
     });
 
-    // CardCom Recurring Request (placeholder)
+    // CardCom Recurring Request
     const cardcomRequest: CardComSubscriptionRequest = {
       TerminalNumber: CARDCOM_TERMINAL || '',
       ApiName: CARDCOM_API_NAME || '',
@@ -154,8 +153,7 @@ serve(async (req) => {
       WebHookUrl: webhookUrl
     };
 
-    // TODO: Uncomment and use actual CardCom API when ready
-    /*
+    // Make actual CardCom API call
     const cardcomResponse = await fetch(CARDCOM_RECURRING_URL, {
       method: 'POST',
       headers: {
@@ -166,8 +164,17 @@ serve(async (req) => {
 
     const cardcomData = await cardcomResponse.json();
     
+    console.log('CardCom API response:', cardcomData);
+
     if (cardcomData.ResponseCode !== 0) {
       console.error('CardCom error:', cardcomData);
+      
+      // Update subscription status to failed
+      await supabaseAdmin
+        .from('cardcom_subscriptions')
+        .update({ status: 'failed' })
+        .eq('id', subscription.id);
+      
       return new Response(
         JSON.stringify({ error: 'שגיאה מהשרת של CardCom', details: cardcomData.Description }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -175,10 +182,6 @@ serve(async (req) => {
     }
 
     const paymentUrl = cardcomData.Url;
-    */
-
-    // Placeholder payment URL for development
-    const paymentUrl = `https://secure.cardcom.solutions/external/LowProfile.aspx?mock=true&subscription_id=${subscription.id}`;
 
     console.log('Subscription created successfully:', {
       subscriptionId: subscription.id,
