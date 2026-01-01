@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import petidLogo from "@/assets/petid-logo.png";
+import petidIcon from "@/assets/petid-icon.png";
 import dogIcon from "@/assets/dog-icon.gif";
 import catIcon from "@/assets/cat-icon.gif";
 
@@ -79,20 +80,36 @@ export const AuthLoadingSkeleton = () => {
             }}
           />
 
-          {/* Logo with breathing animation */}
-          <motion.img
-            src={petidLogo}
-            alt="Petid"
-            className="h-24 w-auto relative z-10 drop-shadow-lg"
-            animate={{
-              scale: [1, 1.05, 1],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
+          {/* Icon and Logo with breathing animation */}
+          <div className="flex items-center gap-3 relative z-10">
+            <motion.img
+              src={petidIcon}
+              alt="Petid Icon"
+              className="h-16 w-16 object-contain drop-shadow-lg"
+              animate={{
+                scale: [1, 1.05, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.img
+              src={petidLogo}
+              alt="Petid"
+              className="h-20 w-auto drop-shadow-lg"
+              animate={{
+                scale: [1, 1.03, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.2,
+              }}
+            />
+          </div>
 
           {/* Sparkle effect */}
           <motion.div
