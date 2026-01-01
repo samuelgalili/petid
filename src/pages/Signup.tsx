@@ -6,8 +6,9 @@ import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 import { supabase } from "@/integrations/supabase/client";
-import petidLogo from "@/assets/petid-logo.png";
-import { PawPrint, Sparkles, Users } from "lucide-react";
+import { PetidLogo } from "@/components/PetidLogo";
+import { Sparkles, Users } from "lucide-react";
+import petidIcon from "@/assets/petid-icon.png";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -73,24 +74,7 @@ const Signup = () => {
         className="relative w-full max-w-[380px] bg-card/95 backdrop-blur-sm border border-border/50 rounded-2xl shadow-xl px-8 py-10 mb-4"
       >
         {/* Logo */}
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.3 }}
-          className="flex justify-center mb-4"
-        >
-          <div className="relative">
-            <img src={petidLogo} alt="Petid" className="h-16 object-contain" />
-            <motion.div
-              initial={{ scale: 0, rotate: -20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.3, type: "spring" }}
-              className="absolute -left-3 -top-1"
-            >
-              <Sparkles className="w-5 h-5 text-primary" />
-            </motion.div>
-          </div>
-        </motion.div>
+        <PetidLogo showAnimals={false} size="sm" className="mb-2" />
 
         {/* Welcome Text */}
         <motion.div
@@ -124,7 +108,7 @@ const Signup = () => {
           className="mt-6 flex justify-center gap-6 text-xs text-muted-foreground"
         >
           <div className="flex items-center gap-1.5">
-            <PawPrint className="w-3.5 h-3.5 text-primary" />
+            <img src={petidIcon} alt="Petid" className="w-3.5 h-3.5 object-contain" />
             <span>ניהול חיות</span>
           </div>
           <div className="flex items-center gap-1.5">

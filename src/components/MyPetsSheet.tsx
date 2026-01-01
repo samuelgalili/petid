@@ -1,6 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { MyPetsSection } from "@/components/home/MyPetsSection";
-import { PawPrint } from "lucide-react";
+import petidIcon from "@/assets/petid-icon.png";
 
 interface MyPetsSheetProps {
   open: boolean;
@@ -24,8 +24,8 @@ export const MyPetsSheet = ({
       <SheetContent side="left" className="w-[320px] sm:w-[380px] p-0 overflow-hidden" dir="rtl">
         <SheetHeader className="p-4 border-b border-border bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5">
           <SheetTitle className="flex items-center gap-2.5 text-slate-800">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4ECDC4] to-[#1E5799] flex items-center justify-center shadow-md">
-              <PawPrint className="w-4.5 h-4.5 text-white" />
+            <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
+              <img src={petidIcon} alt="Petid" className="w-6 h-6 object-contain" />
             </div>
             חיות המחמד שלי
           </SheetTitle>
