@@ -27,7 +27,11 @@ export const FeatureHint = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 z-[9998]"
-            onClick={onDismiss}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDismiss();
+            }}
           />
           
           {/* Centered hint card */}
@@ -45,7 +49,11 @@ export const FeatureHint = ({
           >
             {/* Close button */}
             <button
-              onClick={onDismiss}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDismiss();
+              }}
               className="absolute top-4 left-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
             >
               <X className="w-4 h-4 text-gray-500" />
@@ -59,7 +67,11 @@ export const FeatureHint = ({
 
             {/* Got it button */}
             <button
-              onClick={onDismiss}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDismiss();
+              }}
               className="w-full mt-6 py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-600 transition-colors text-white font-bold text-base"
             >
               הבנתי!
