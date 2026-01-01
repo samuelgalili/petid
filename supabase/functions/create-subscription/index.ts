@@ -148,8 +148,8 @@ serve(async (req) => {
         NumberOfPayments: numberOfPayments,
         FlexiblePayments: false
       },
-      SuccessRedirectUrl: success_url || `${req.headers.get('origin')}/subscription-success?subscription_id=${subscription.id}`,
-      FailedRedirectUrl: cancel_url || `${req.headers.get('origin')}/subscription-failed?subscription_id=${subscription.id}`,
+      SuccessRedirectUrl: success_url || `${req.headers.get('origin')}/payment-success?subscription_id=${subscription.id}`,
+      FailedRedirectUrl: cancel_url || `${req.headers.get('origin')}/payment-failed?subscription_id=${subscription.id}`,
       WebHookUrl: webhookUrl
     };
 
