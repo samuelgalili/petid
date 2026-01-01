@@ -261,6 +261,7 @@ const Feed = () => {
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
   const [suggestedPosts, setSuggestedPosts] = useState<SuggestedPost[]>([]);
   const [challenges, setChallenges] = useState<FeedChallenge[]>([]);
+  const [shopProducts, setShopProducts] = useState<FeedProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -293,6 +294,68 @@ const Feed = () => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const POSTS_PER_PAGE = 10;
+
+  // Fetch shop products from database
+  const fetchShopProducts = useCallback(async () => {
+    try {
+      // First try business_products
+      let { data: products, error } = await supabase
+        .from("business_products")
+        .select("id, name, price, sale_price, original_price, image_url, description, average_rating, review_count, is_featured")
+        .eq("in_stock", true)
+        .order("is_featured", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(6);
+      
+      // If no business products, try scraped_products
+      if ((!products || products.length === 0) && !error) {
+        const { data: scrapedProducts } = await supabase
+          .from("scraped_products")
+          .select("id, product_name, final_price, regular_price, main_image_url, short_description, rating, review_count, created_at")
+          .order("created_at", { ascending: false })
+          .limit(6);
+        
+        if (scrapedProducts && scrapedProducts.length > 0) {
+          const formattedProducts: FeedProduct[] = scrapedProducts.map((p: any) => ({
+            id: p.id,
+            title: p.product_name || "מוצר",
+            price: `₪${p.final_price || 0}`,
+            originalPrice: p.regular_price ? `₪${p.regular_price}` : undefined,
+            image: p.main_image_url || "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
+            description: p.short_description || "",
+            hasSale: p.regular_price && p.final_price < p.regular_price,
+            rating: p.rating || 4.5,
+            reviews: p.review_count || Math.floor(Math.random() * 200) + 50
+          }));
+          setShopProducts(formattedProducts);
+          return;
+        }
+      }
+      
+      if (error) throw error;
+      
+      if (products && products.length > 0) {
+        const formattedProducts: FeedProduct[] = products.map((p: any) => ({
+          id: p.id,
+          title: p.name,
+          price: `₪${p.sale_price || p.price}`,
+          originalPrice: p.original_price ? `₪${p.original_price}` : undefined,
+          image: p.image_url || "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
+          description: p.description || "",
+          hasSale: !!(p.sale_price && p.sale_price < p.price),
+          rating: p.average_rating || 4.5,
+          reviews: p.review_count || 0
+        }));
+        setShopProducts(formattedProducts);
+      } else {
+        // Fallback to demo products if no DB products available
+        setShopProducts(SHOP_PRODUCTS);
+      }
+    } catch (error) {
+      console.error("Error fetching shop products:", error);
+      setShopProducts(SHOP_PRODUCTS);
+    }
+  }, []);
 
   // Fetch adoption pets
   const fetchAdoptionPets = useCallback(async () => {
@@ -668,6 +731,7 @@ const Feed = () => {
     fetchAdoptionPets();
     fetchSuggestedPosts();
     fetchChallenges();
+    fetchShopProducts();
 
     // Setup realtime subscription for new posts
     if (channelRef.current) {
@@ -701,7 +765,7 @@ const Feed = () => {
         channelRef.current = null;
       }
     };
-  }, [fetchPosts, fetchAdoptionPets, fetchSuggestedPosts, fetchChallenges]);
+  }, [fetchPosts, fetchAdoptionPets, fetchSuggestedPosts, fetchChallenges, fetchShopProducts]);
 
   // Listen for refresh-feed event from bottom nav
   useEffect(() => {
@@ -712,10 +776,11 @@ const Feed = () => {
       fetchAdoptionPets();
       fetchSuggestedPosts();
       fetchChallenges();
+      fetchShopProducts();
     };
     window.addEventListener('refresh-feed', handleRefreshFeed);
     return () => window.removeEventListener('refresh-feed', handleRefreshFeed);
-  }, [fetchPosts, fetchAdoptionPets, fetchChallenges]);
+  }, [fetchPosts, fetchAdoptionPets, fetchChallenges, fetchShopProducts]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -894,8 +959,9 @@ const Feed = () => {
       created_at: pet.created_at || new Date().toISOString()
     }));
 
-    // Convert products to FeedItems
-    const productItems: FeedItem[] = SHOP_PRODUCTS.map((product, index) => ({
+    // Convert products to FeedItems - use shopProducts from DB, fallback to SHOP_PRODUCTS
+    const productsToUse = shopProducts.length > 0 ? shopProducts : SHOP_PRODUCTS;
+    const productItems: FeedItem[] = productsToUse.map((product, index) => ({
       type: 'product' as const,
       data: product,
       created_at: new Date(Date.now() - (index + 2) * 3600000).toISOString()
@@ -990,7 +1056,7 @@ const Feed = () => {
         
         return applyFeedRules ? applyFeedRules(result) : result;
     }
-  }, [posts, adoptionPets, suggestedPosts, challenges, activeTab, followingIds, sortByPriority, applyFeedRules]);
+  }, [posts, adoptionPets, suggestedPosts, challenges, shopProducts, activeTab, followingIds, sortByPriority, applyFeedRules]);
 
   // Handle following a suggested user - remove from suggested posts
   const handleSuggestedFollow = useCallback((userId: string) => {
