@@ -11,12 +11,12 @@ interface FeedTabsProps {
   onAuthRequired: (message: string) => boolean;
 }
 
-const tabs: { id: FeedTab; label: string; labelHe: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
-  { id: "foryou", label: "For You", labelHe: "בשבילך", icon: Sparkles },
-  { id: "following", label: "Following", labelHe: "עוקבים", icon: Users, requiresAuth: true },
-  { id: "nearby", label: "Nearby", labelHe: "קרוב אליי", icon: MapPin },
-  { id: "marketplace", label: "Shop", labelHe: "חנות", icon: ShoppingBag },
-  { id: "adopt", label: "Adopt", labelHe: "אימוץ", icon: Heart },
+const tabs: { id: FeedTab; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
+  { id: "foryou", label: "בשבילך", icon: Sparkles },
+  { id: "following", label: "עוקבים", icon: Users, requiresAuth: true },
+  { id: "nearby", label: "קרוב אליי", icon: MapPin },
+  { id: "marketplace", label: "חנות", icon: ShoppingBag },
+  { id: "adopt", label: "אימוץ", icon: Heart },
 ];
 
 export const FeedTabs = ({ activeTab, onTabChange, isAuthenticated, onAuthRequired }: FeedTabsProps) => {
@@ -58,7 +58,7 @@ export const FeedTabs = ({ activeTab, onTabChange, isAuthenticated, onAuthRequir
                 )}
                 <span className="relative z-10 flex items-center gap-1.5">
                   <Icon className={cn("w-4 h-4", isActive && "drop-shadow-sm")} />
-                  <span className={cn(isActive && "font-semibold")}>{tab.labelHe}</span>
+                  <span className={cn(isActive && "font-semibold")}>{tab.label}</span>
                 </span>
               </motion.button>
             );
