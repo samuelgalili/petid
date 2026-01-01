@@ -1109,7 +1109,7 @@ const Feed = () => {
           </motion.div>
           
           {/* Right icons - Refined style */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center -space-x-1">
             <motion.button 
               onClick={() => navigate('/explore')}
               className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
