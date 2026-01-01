@@ -136,27 +136,46 @@ const ProductDetail = () => {
     description: "חיונות ושמחה בכל ביס",
     color: "bg-blue-100 text-blue-600"
   }];
-  const relatedProducts = [{
-    id: 1,
-    name: "חטיפים לכלבים",
-    price: 45,
-    image: "https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=300&h=300&fit=crop"
-  }, {
-    id: 2,
-    name: "ויטמינים לחיות",
-    price: 89,
-    image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop"
-  }, {
-    id: 3,
-    name: "צעצועים לכלבים",
-    price: 65,
-    image: "https://images.unsplash.com/photo-1591769225440-811ad7d6eab3?w=300&h=300&fit=crop"
-  }, {
-    id: 4,
-    name: "קערת אוכל",
-    price: 55,
-    image: "https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=300&h=300&fit=crop"
-  }];
+  // Fetch related products from database
+  const { data: relatedProducts = [] } = useQuery({
+    queryKey: ["related-products", id],
+    queryFn: async () => {
+      // First try business_products
+      const { data: businessProducts } = await supabase
+        .from("business_products")
+        .select("id, name, price, image_url")
+        .neq("id", id || "")
+        .limit(4);
+      
+      if (businessProducts && businessProducts.length > 0) {
+        return businessProducts.map(p => ({
+          id: p.id,
+          name: p.name,
+          price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
+          image: p.image_url || "/placeholder.svg"
+        }));
+      }
+      
+      // Fallback to scraped_products
+      const { data: scrapedProducts } = await supabase
+        .from("scraped_products")
+        .select("id, product_name, final_price, main_image_url")
+        .neq("id", id || "")
+        .limit(4);
+      
+      if (scrapedProducts && scrapedProducts.length > 0) {
+        return scrapedProducts.map(p => ({
+          id: p.id,
+          name: p.product_name,
+          price: p.final_price || 0,
+          image: p.main_image_url || "/placeholder.svg"
+        }));
+      }
+      
+      return [];
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
   const images = (rawProduct.images && rawProduct.images.length > 0) ? rawProduct.images : 
     (rawProduct.image_url ? [rawProduct.image_url] : 
     (rawProduct.image ? [rawProduct.image] : 
@@ -636,14 +655,7 @@ const ProductDetail = () => {
           scale: 0.98
         }} className="relative p-[1.5px] rounded-2xl cursor-pointer group" style={{
           background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
-        }} onClick={() => navigate('/product/related', {
-          state: {
-            product: {
-              ...item,
-              price: item.price
-            }
-          }
-        })}>
+        }} onClick={() => navigate(`/product/${item.id}`)}>
               <div className="bg-white rounded-2xl overflow-hidden h-full transition-all group-hover:shadow-lg">
                 <div className="aspect-square bg-gradient-to-br from-gray-50 to-white overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
