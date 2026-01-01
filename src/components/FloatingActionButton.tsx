@@ -50,13 +50,13 @@ export const FloatingActionButton = ({
   };
 
   const variantClasses = {
-    primary: "bg-white/95 backdrop-blur-md border-2 border-transparent bg-clip-padding shadow-xl shadow-[#4ECDC4]/20",
-    success: "bg-white/95 backdrop-blur-md border-2 border-emerald-500 shadow-xl shadow-emerald-500/20",
-    warning: "bg-white/95 backdrop-blur-md border-2 border-amber-500 shadow-xl shadow-amber-500/20"
+    primary: "bg-card/95 backdrop-blur-md border-2 border-primary/20 shadow-xl shadow-primary/20",
+    success: "bg-card/95 backdrop-blur-md border-2 border-emerald-500/30 shadow-xl shadow-emerald-500/20",
+    warning: "bg-card/95 backdrop-blur-md border-2 border-amber-500/30 shadow-xl shadow-amber-500/20"
   };
 
   const iconColorClasses = {
-    primary: "text-[#1E5799]",
+    primary: "text-primary",
     success: "text-emerald-600",
     warning: "text-amber-600"
   };
@@ -120,13 +120,13 @@ export const FloatingActionButton = ({
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleActionClick(action)}
                   className={cn(
-                    "w-12 h-12 rounded-full shadow-lg transition-all bg-white/95 backdrop-blur-md border border-[#4ECDC4]/20 flex items-center justify-center hover:shadow-xl",
+                    "w-12 h-12 rounded-full shadow-lg transition-all bg-card/95 backdrop-blur-md border border-border flex items-center justify-center hover:shadow-xl hover:border-primary/30",
                     action.color
                   )}
                   title={action.label}
                   {...getAccessibleButtonProps(action.label)}
                 >
-                  <action.icon className="w-5 h-5 text-[#1E5799]" strokeWidth={2} />
+                  <action.icon className="w-5 h-5 text-primary" strokeWidth={2} />
                 </motion.button>
               ))}
             </div>
@@ -137,7 +137,7 @@ export const FloatingActionButton = ({
       {/* Main FAB */}
       <div className={cn("fixed z-50", positionClasses[position])}>
         {/* Gradient border wrapper */}
-        <div className="p-[2px] rounded-full bg-gradient-to-br from-[#1E5799] via-[#4ECDC4] to-[#7DB9E8] shadow-xl shadow-[#4ECDC4]/30">
+        <div className="p-[2px] rounded-full bg-gradient-to-br from-primary via-accent to-secondary shadow-xl shadow-primary/30">
           <motion.button
             variants={celebrate}
             initial="initial"
@@ -145,7 +145,7 @@ export const FloatingActionButton = ({
             whileTap={{ scale: 0.9 }}
             onClick={handleMainClick}
             className={cn(
-              "rounded-full bg-white/95 backdrop-blur-md transition-all flex items-center justify-center focus:outline-none",
+              "rounded-full bg-card/95 backdrop-blur-md transition-all flex items-center justify-center focus:outline-none",
               sizeClasses[size]
             )}
             {...getAccessibleButtonProps(label, isExpanded)}
