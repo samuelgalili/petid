@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2 } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2, Flag, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -15,9 +15,15 @@ import confetti from "canvas-confetti";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { supabase } from "@/integrations/supabase/client";
 import { SkeletonProductGrid } from "@/components/ui/enhanced-skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/useAuth";
 
 const Shop = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { addToCart, getTotalItems, cartShake } = useCart();
   const { triggerFly, setCartIconPosition } = useFlyingCart();
   const { toast } = useToast();
@@ -44,6 +50,47 @@ const Shop = () => {
     const saved = localStorage.getItem("petid-favorites");
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Report dialog state
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("price");
+  const [reportDetails, setReportDetails] = useState("");
+  const [isReporting, setIsReporting] = useState(false);
+
+  const handleReportIssue = async () => {
+    if (!selectedProduct) return;
+    setIsReporting(true);
+    try {
+      const { error } = await supabase
+        .from('content_reports')
+        .insert({
+          content_type: 'product',
+          content_id: selectedProduct.id || 'unknown',
+          reason: reportReason,
+          description: reportDetails || `דיווח על ${reportReason === 'price' ? 'מחיר שגוי' : reportReason === 'image' ? 'תמונה לא מתאימה' : reportReason === 'description' ? 'תיאור שגוי' : 'בעיה אחרת'}`,
+          reporter_id: user?.id || '00000000-0000-0000-0000-000000000000',
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "תודה על הדיווח! 🙏",
+        description: "הדיווח התקבל ויטופל בהקדם",
+      });
+      setReportDialogOpen(false);
+      setReportReason("price");
+      setReportDetails("");
+    } catch (error) {
+      console.error("Error reporting issue:", error);
+      toast({
+        title: "שגיאה בשליחת הדיווח",
+        description: "אנא נסה שוב מאוחר יותר",
+        variant: "destructive",
+      });
+    } finally {
+      setIsReporting(false);
+    }
+  };
 
   const toggleFavorite = useCallback((productId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -573,7 +620,86 @@ const Shop = () => {
                   <X className="w-6 h-6 text-foreground" strokeWidth={1.5} />
                 </button>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {/* Report Issue Button */}
+                  <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button className="p-2 hover:bg-orange-50 rounded-full transition-colors">
+                        <Flag className="w-5 h-5 text-muted-foreground hover:text-orange-500" strokeWidth={1.5} />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md" dir="rtl">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-right">
+                          <AlertTriangle className="w-5 h-5 text-orange-500" />
+                          דיווח על תקלה
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <p className="text-sm text-muted-foreground">
+                          מצאת משהו שלא נראה נכון? ספר לנו ונטפל בזה
+                        </p>
+                        
+                        <RadioGroup value={reportReason} onValueChange={setReportReason} className="space-y-3">
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                            <RadioGroupItem value="price" id="sheet-price" />
+                            <Label htmlFor="sheet-price" className="flex-1 cursor-pointer">
+                              <span className="font-medium">מחיר שגוי</span>
+                              <p className="text-xs text-muted-foreground">המחיר לא נכון או שהמבצע לא אמיתי</p>
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                            <RadioGroupItem value="image" id="sheet-image" />
+                            <Label htmlFor="sheet-image" className="flex-1 cursor-pointer">
+                              <span className="font-medium">תמונה לא מתאימה</span>
+                              <p className="text-xs text-muted-foreground">התמונה לא מייצגת את המוצר</p>
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                            <RadioGroupItem value="description" id="sheet-description" />
+                            <Label htmlFor="sheet-description" className="flex-1 cursor-pointer">
+                              <span className="font-medium">תיאור שגוי</span>
+                              <p className="text-xs text-muted-foreground">המידע על המוצר לא מדויק</p>
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                            <RadioGroupItem value="other" id="sheet-other" />
+                            <Label htmlFor="sheet-other" className="flex-1 cursor-pointer">
+                              <span className="font-medium">בעיה אחרת</span>
+                              <p className="text-xs text-muted-foreground">משהו אחר שצריך לתקן</p>
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                        
+                        <Textarea
+                          placeholder="פרטים נוספים (אופציונלי)..."
+                          value={reportDetails}
+                          onChange={(e) => setReportDetails(e.target.value)}
+                          className="min-h-[80px] resize-none"
+                        />
+                      </div>
+                      <DialogFooter className="gap-2 sm:gap-0">
+                        <DialogClose asChild>
+                          <Button variant="outline" className="rounded-xl">
+                            ביטול
+                          </Button>
+                        </DialogClose>
+                        <Button 
+                          onClick={handleReportIssue}
+                          disabled={isReporting}
+                          className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-2"
+                        >
+                          {isReporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Flag className="w-4 h-4" />
+                          )}
+                          שלח דיווח
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(window.location.href);
