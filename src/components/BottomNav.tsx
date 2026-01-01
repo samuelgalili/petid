@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, User, Compass, Clapperboard, Plus, Grid3X3 } from "lucide-react";
+import { Home, ShoppingBag, User, Compass, Grid3X3, Search } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -6,9 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { motion } from "framer-motion";
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Camera, FileText, Heart, Shield, Trees, GraduationCap, Scissors, CheckSquare, Gift, MessageCircle } from "lucide-react";
 import { FeatureHintWrapper } from "@/components/FeatureHintWrapper";
+import { SmartActionSearch } from "@/components/SmartActionSearch";
 
 // Gradient icon wrapper for active state
 const GradientIcon = ({ children, isActive, id }: { children: React.ReactNode; isActive: boolean; id: string }) => {
@@ -58,7 +57,7 @@ const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [createPostOpen, setCreatePostOpen] = useState(false);
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string>("");
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
@@ -96,57 +95,7 @@ const BottomNav = () => {
       navigate(path);
     }
   };
-  const categories = [{
-    icon: FileText,
-    label: "מסמכים",
-    path: "/documents",
-    color: "#1E5799"
-  }, {
-    icon: Camera,
-    label: "אלבום תמונות",
-    path: "/photos",
-    color: "#7DB9E8"
-  }, {
-    icon: Heart,
-    label: "אימוץ",
-    path: "/adoption",
-    color: "#4ECDC4"
-  }, {
-    icon: Shield,
-    label: "ביטוח",
-    path: "/insurance",
-    color: "#1E5799"
-  }, {
-    icon: Trees,
-    label: "גינות כלבים",
-    path: "/parks",
-    color: "#4ECDC4"
-  }, {
-    icon: GraduationCap,
-    label: "אילוף",
-    path: "/training",
-    color: "#7DB9E8"
-  }, {
-    icon: Scissors,
-    label: "מספרה",
-    path: "/grooming",
-    color: "#4ECDC4"
-  }, {
-    icon: CheckSquare,
-    label: "משימות",
-    path: "/tasks",
-    color: "#1E5799"
-  }, {
-    icon: Gift,
-    label: "פרסים",
-    path: "/rewards",
-    color: "#4ECDC4"
-  }, {
-    icon: MessageCircle,
-    label: "צ'אט AI",
-    path: "/chat",
-    color: "#1E5799"
-  }];
+  
   return <>
       {/* SVG Gradient definitions */}
       <svg width="0" height="0" className="absolute">
@@ -192,20 +141,20 @@ const BottomNav = () => {
             <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/explore") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/explore")} label="חיפוש" />
           </FeatureHintWrapper>
 
-          {/* Categories - Center button */}
+          {/* Search - Center button */}
           <FeatureHintWrapper
-            featureId="nav_categories"
-            title="קטגוריות"
-            description="גישה מהירה לכל השירותים: מסמכים, ביטוח, גינות כלבים, אילוף ועוד"
+            featureId="nav_search_actions"
+            title="חיפוש פעולות"
+            description="חפש בקלות מה שאתה רוצה לעשות - מסמכים, אילוף, גינות ועוד"
           >
-            <NavItem onClick={() => setCategoriesOpen(true)} icon={
-              <Grid3X3 
+            <NavItem onClick={() => setSearchOpen(true)} icon={
+              <Search 
                 className="w-6 h-6 transition-colors" 
                 strokeWidth={2} 
                 fill="none" 
-                style={categoriesOpen ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} 
+                style={searchOpen ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} 
               />
-            } isActive={false} label="קטגוריות" />
+            } isActive={false} label="חיפוש פעולות" />
           </FeatureHintWrapper>
 
           {/* Shop */}
@@ -244,30 +193,8 @@ const BottomNav = () => {
       {/* Create Post Dialog */}
       <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {}} />
 
-      {/* Categories Sheet - PetID styled */}
-      <Sheet open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-3xl bg-card border-t border-border/30 shadow-elevated">
-          <SheetTitle className="sr-only">קטגוריות</SheetTitle>
-          <SheetDescription className="sr-only">בחר קטגוריה לניווט</SheetDescription>
-          
-          {/* Handle bar */}
-          <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mt-3 mb-6" />
-          
-          <div className="grid grid-cols-4 gap-3 px-4 pb-8">
-            {categories.map((category) => {
-            const CategoryIcon = category.icon;
-            return <Link key={category.path} to={category.path} onClick={() => setCategoriesOpen(false)} className="flex flex-col items-center gap-2 p-3 rounded-2xl active:bg-muted/50 hover:bg-muted/30 transition-all">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <CategoryIcon className="w-6 h-6 text-primary" strokeWidth={1.5} />
-                  </div>
-                  <span className="text-xs font-medium text-foreground text-center leading-tight">
-                    {category.label}
-                  </span>
-                </Link>;
-          })}
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Smart Action Search */}
+      <SmartActionSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>;
 };
 export default BottomNav;
