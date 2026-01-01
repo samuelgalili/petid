@@ -120,9 +120,9 @@ const NotFound = () => {
                 rotate: [0, -5, 5, -5, 0],
                 transition: { duration: 0.5 }
               }}
-              className="w-[80px] h-[80px] md:w-[120px] md:h-[120px] rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center cursor-pointer"
+              className="cursor-pointer"
             >
-              <span className="text-5xl md:text-7xl select-none">👻</span>
+              <span className="text-[80px] md:text-[120px] select-none">👻</span>
             </motion.div>
             
             <motion.span 
