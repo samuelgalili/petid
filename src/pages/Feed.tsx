@@ -1090,11 +1090,10 @@ const Feed = () => {
             whileTap={{ scale: 0.98 }}
           >
             <motion.div
-              className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center shadow-sm"
               whileHover={{ rotate: [0, -10, 10, 0] }}
               transition={{ duration: 0.5 }}
             >
-              <PawPrint className="w-4 h-4 text-primary-foreground" />
+              <img src={petidIcon} alt="Petid" className="w-8 h-8 object-contain" />
             </motion.div>
             <h1 
               className="text-lg font-bold cursor-pointer bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent"
@@ -1440,7 +1439,7 @@ const Feed = () => {
           <div className="flex flex-col items-center gap-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-px bg-gradient-to-r from-transparent to-border" />
-              <PawPrint className="w-5 h-5 text-muted-foreground/50" />
+              <img src={petidIcon} alt="Petid" className="w-5 h-5 object-contain opacity-50" />
               <div className="w-12 h-px bg-gradient-to-l from-transparent to-border" />
             </div>
             <p className="text-sm text-muted-foreground">סיימת לראות הכל 🐾</p>
