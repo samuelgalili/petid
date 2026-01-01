@@ -360,12 +360,12 @@ export const PostCard = ({
               <img 
                 src={pawHeartIcon} 
                 alt="Like"
-                className={`w-6 h-6 transition-all duration-200 ${
+                className={`w-7 h-7 transition-all duration-300 ${
                   post.is_liked 
-                    ? 'filter-none' 
-                    : 'opacity-70 hover:opacity-100'
+                    ? 'scale-110' 
+                    : 'opacity-80 hover:opacity-100 hover:scale-105'
                 }`}
-                style={post.is_liked ? { filter: 'invert(27%) sepia(94%) saturate(6037%) hue-rotate(352deg) brightness(91%) contrast(91%)' } : {}}
+                style={post.is_liked ? { filter: 'invert(36%) sepia(98%) saturate(1752%) hue-rotate(330deg) brightness(95%) contrast(95%)' } : {}}
               />
             </motion.button>
             
