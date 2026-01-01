@@ -455,10 +455,7 @@ const Profile = () => {
             <Button 
               type="button"
               className="flex-1 h-11 font-semibold text-sm rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-foreground hover:from-primary/20 hover:to-accent/20 transition-all duration-300"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/edit-profile');
-              }}
+              onClick={() => navigate('/edit-profile')}
             >
               <Settings className="w-4 h-4 ml-1.5" />
               עריכת פרופיל
