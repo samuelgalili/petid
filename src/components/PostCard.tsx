@@ -129,61 +129,70 @@ export const PostCard = ({
     }
   };
 
-  // Enhanced lick sound with better quality
-  const playLickSound = () => {
+  // Heart/like sound - warm and pleasant "pop" with shimmer
+  const playLikeSound = () => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      const oscillator1 = audioContext.createOscillator();
-      const oscillator2 = audioContext.createOscillator();
-      const oscillator3 = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
+      // Main "pop" tone - warm and round
+      const mainOsc = audioContext.createOscillator();
+      const mainGain = audioContext.createGain();
+      mainOsc.connect(mainGain);
+      mainGain.connect(audioContext.destination);
       
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1000, audioContext.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(2500, audioContext.currentTime + 0.08);
-      filter.frequency.exponentialRampToValueAtTime(500, audioContext.currentTime + 0.2);
+      mainOsc.type = 'sine';
+      mainOsc.frequency.setValueAtTime(880, audioContext.currentTime); // A5 - pleasant
+      mainOsc.frequency.exponentialRampToValueAtTime(1175, audioContext.currentTime + 0.08); // D6
+      mainOsc.frequency.exponentialRampToValueAtTime(1047, audioContext.currentTime + 0.15); // C6
       
-      oscillator1.connect(filter);
-      oscillator2.connect(filter);
-      oscillator3.connect(filter);
-      filter.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      mainGain.gain.setValueAtTime(0, audioContext.currentTime);
+      mainGain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.02);
+      mainGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
       
-      oscillator1.type = 'sine';
-      oscillator1.frequency.setValueAtTime(400, audioContext.currentTime);
-      oscillator1.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.06);
-      oscillator1.frequency.exponentialRampToValueAtTime(250, audioContext.currentTime + 0.15);
+      mainOsc.start(audioContext.currentTime);
+      mainOsc.stop(audioContext.currentTime + 0.25);
       
-      oscillator2.type = 'triangle';
-      oscillator2.frequency.setValueAtTime(200, audioContext.currentTime);
-      oscillator2.frequency.exponentialRampToValueAtTime(500, audioContext.currentTime + 0.1);
+      // High shimmer for sparkle effect
+      const shimmerOsc = audioContext.createOscillator();
+      const shimmerGain = audioContext.createGain();
+      shimmerOsc.connect(shimmerGain);
+      shimmerGain.connect(audioContext.destination);
       
-      oscillator3.type = 'sawtooth';
-      oscillator3.frequency.setValueAtTime(100, audioContext.currentTime);
-      oscillator3.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.05);
+      shimmerOsc.type = 'sine';
+      shimmerOsc.frequency.setValueAtTime(2093, audioContext.currentTime + 0.05); // C7
+      shimmerOsc.frequency.exponentialRampToValueAtTime(2637, audioContext.currentTime + 0.12); // E7
       
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.12, audioContext.currentTime + 0.02);
-      gainNode.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.1);
-      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+      shimmerGain.gain.setValueAtTime(0, audioContext.currentTime + 0.05);
+      shimmerGain.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.07);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
       
-      oscillator1.start(audioContext.currentTime);
-      oscillator2.start(audioContext.currentTime);
-      oscillator3.start(audioContext.currentTime);
-      oscillator1.stop(audioContext.currentTime + 0.2);
-      oscillator2.stop(audioContext.currentTime + 0.2);
-      oscillator3.stop(audioContext.currentTime + 0.2);
+      shimmerOsc.start(audioContext.currentTime + 0.05);
+      shimmerOsc.stop(audioContext.currentTime + 0.2);
+      
+      // Soft sub bass for warmth
+      const bassOsc = audioContext.createOscillator();
+      const bassGain = audioContext.createGain();
+      bassOsc.connect(bassGain);
+      bassGain.connect(audioContext.destination);
+      
+      bassOsc.type = 'sine';
+      bassOsc.frequency.setValueAtTime(220, audioContext.currentTime); // A3
+      
+      bassGain.gain.setValueAtTime(0, audioContext.currentTime);
+      bassGain.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+      bassGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.12);
+      
+      bassOsc.start(audioContext.currentTime);
+      bassOsc.stop(audioContext.currentTime + 0.12);
     } catch (error) {
-      console.log('Could not play lick sound:', error);
+      console.log('Could not play like sound:', error);
     }
   };
 
   const handleLike = () => {
     if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
     setIsLicking(true);
-    if (!post.is_liked) playLickSound();
+    if (!post.is_liked) playLikeSound();
     onLike(post.id);
     setTimeout(() => setIsLicking(false), 600);
   };
@@ -191,7 +200,7 @@ export const PostCard = ({
   const handleDoubleTap = () => {
     if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
     setIsLicking(true);
-    if (!post.is_liked) playLickSound();
+    if (!post.is_liked) playLikeSound();
     onDoubleTap(post.id);
     setTimeout(() => setIsLicking(false), 600);
   };
