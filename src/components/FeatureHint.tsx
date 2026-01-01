@@ -37,8 +37,8 @@ export const FeatureHint = ({
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={cn(
-              "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999]",
-              "w-[85%] max-w-sm p-6 rounded-3xl bg-white shadow-2xl",
+              "fixed z-[9999] inset-x-4 top-1/2 -translate-y-1/2",
+              "p-6 rounded-3xl bg-white shadow-2xl",
               className
             )}
             dir="rtl"
