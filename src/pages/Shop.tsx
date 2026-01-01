@@ -96,18 +96,18 @@ const Shop = () => {
 
   // Fetch products from database - combining business_products and scraped_products
   const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching } = useQuery({
-    queryKey: ["shop-products"],
+    queryKey: ["shop-products-v2"],
     queryFn: async () => {
-      console.log("Fetching shop products...");
+      console.log("Fetching shop products v2...");
       
       // First try to get from business_products
       const { data: businessProducts, error: bpError } = await supabase
         .from("business_products")
         .select("*")
-        .eq("in_stock", true)
         .order("created_at", { ascending: false });
       
       if (bpError) console.error("Error fetching business_products:", bpError);
+      console.log("Business products:", businessProducts?.length || 0);
       
       // Also get scraped products
       const { data: scrapedProducts, error: spError } = await supabase
@@ -116,6 +116,7 @@ const Shop = () => {
         .order("scraped_at", { ascending: false });
       
       if (spError) console.error("Error fetching scraped_products:", spError);
+      console.log("Scraped products:", scrapedProducts?.length || 0);
       
       // Transform scraped products to match business_products format
       const transformedScraped = (scrapedProducts || []).map(sp => ({
@@ -123,44 +124,48 @@ const Shop = () => {
         name: sp.product_name,
         description: sp.long_description || sp.short_description || "",
         price: sp.final_price || sp.regular_price || 0,
-        original_price: sp.regular_price,
+        original_price: sp.regular_price !== sp.final_price ? sp.regular_price : null,
         sale_price: sp.sale_price,
         image_url: sp.main_image_url || "/placeholder.svg",
         images: sp.main_image_url ? [sp.main_image_url] : [],
         category: sp.sub_category || sp.main_category,
         pet_type: sp.pet_type,
-        in_stock: sp.stock_status === "in_stock",
+        in_stock: sp.stock_status === "in_stock" || !sp.stock_status,
         sku: sp.sku,
         flavors: sp.flavors,
         created_at: sp.created_at,
       }));
       
+      // Filter business products that are in stock
+      const filteredBusiness = (businessProducts || []).filter(p => p.in_stock !== false);
+      
       // Combine both sources, business_products first
-      const allProducts = [...(businessProducts || []), ...transformedScraped];
-      console.log("Fetched products:", allProducts.length);
+      const allProducts = [...filteredBusiness, ...transformedScraped];
+      console.log("Total products to display:", allProducts.length);
       return allProducts;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes (was cacheTime)
+    staleTime: 0, // Always refetch
+    gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Transform database products to the format expected by the UI
   const products = useMemo(() => {
+    console.log("Transforming products, dbProducts count:", dbProducts.length);
     return dbProducts.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description || "",
-      price: p.price,
-      originalPrice: p.original_price || p.sale_price ? p.price : null,
+      price: typeof p.price === 'string' ? parseFloat(p.price) : (p.price || 0),
+      originalPrice: p.original_price || p.sale_price ? (typeof p.price === 'string' ? parseFloat(p.price) : p.price) : null,
       salePrice: p.sale_price,
       images: p.images?.length ? p.images : [p.image_url],
-      image: p.image_url,
+      image: p.image_url || "/placeholder.svg",
       popularity: 80, // Default values for now
       likes: Math.floor(Math.random() * 1000) + 100,
       rating: 4.5,
       reviews: Math.floor(Math.random() * 200) + 50,
       inStock: p.in_stock ?? true,
-      freeShipping: p.price > 200,
+      freeShipping: (typeof p.price === 'string' ? parseFloat(p.price) : p.price) > 200,
       category: p.category,
       petType: p.pet_type,
     }));
@@ -176,6 +181,7 @@ const Shop = () => {
   }, [searchQuery, products]);
 
   const filteredAndSortedProducts = useMemo(() => {
+    console.log("Filtering products, total:", products.length);
     let result = [...products];
 
     // Filter by search query
@@ -204,8 +210,9 @@ const Shop = () => {
         break;
     }
 
+    console.log("Filtered products:", result.length);
     return result;
-  }, [sortBy, showDealsOnly, activeTab, favorites, searchQuery]);
+  }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery]);
 
   const addToSearchHistory = useCallback((query: string) => {
     if (!query.trim()) return;
