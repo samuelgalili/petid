@@ -27,23 +27,23 @@
      * Pink-Purple-Cyan vibrant gradient
      * =========================== */
     
-    /* Primary - Vibrant Magenta/Pink */
-    --petid-pink: 310 85% 60%;               /* Vibrant Pink */
-    --petid-pink-hover: 310 85% 52%;
-    --petid-pink-light: 310 85% 70%;
-    --petid-pink-foreground: 0 0% 100%;
+    /* Primary - Vibrant Cyan/Turquoise */
+    --petid-cyan: 190 90% 50%;               /* Vibrant Cyan */
+    --petid-cyan-hover: 190 90% 42%;
+    --petid-cyan-light: 190 90% 60%;
+    --petid-cyan-foreground: 0 0% 100%;
 
     /* Secondary - Purple */
     --petid-purple: 280 75% 55%;             /* Vibrant Purple */
     --petid-purple-light: 280 75% 65%;
     --petid-purple-foreground: 0 0% 100%;
 
-    /* Accent - Cyan/Turquoise */
-    --petid-cyan: 190 90% 50%;               /* Vibrant Cyan */
-    --petid-cyan-light: 190 90% 60%;
-    --petid-cyan-foreground: 0 0% 100%;
+    /* Accent - Pink/Magenta */
+    --petid-pink: 310 85% 60%;               /* Vibrant Pink */
+    --petid-pink-light: 310 85% 70%;
+    --petid-pink-foreground: 0 0% 100%;
 
-    /* Legacy Teal - Now maps to Cyan */
+    /* Legacy Teal - Maps to Cyan */
     --petid-teal: 190 90% 50%;
     --petid-teal-hover: 190 90% 42%;
     --petid-teal-light: 190 90% 60%;
@@ -77,13 +77,13 @@
      * SEMANTIC TOKENS
      * =========================== */
 
-    /* Primary - Vibrant Gradient Start (Pink/Magenta) */
-    --primary: 310 85% 60%;
+    /* Primary - Vibrant Cyan (main color) */
+    --primary: 190 90% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 310 85% 52%;
-    --primary-light: 310 85% 70%;
-    --primary-dark: 310 85% 48%;
-    --primary-pressed: 310 85% 45%;
+    --primary-hover: 190 90% 42%;
+    --primary-light: 190 90% 60%;
+    --primary-dark: 190 90% 38%;
+    --primary-pressed: 190 90% 35%;
 
     /* Secondary - Purple */
     --secondary: 280 15% 96%;
@@ -91,11 +91,11 @@
     --secondary-light: 280 15% 98%;
     --secondary-dark: 280 15% 94%;
 
-    /* Accent - Cyan */
-    --accent: 190 90% 50%;
+    /* Accent - Pink */
+    --accent: 310 85% 60%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 190 90% 42%;
-    --accent-light: 190 90% 60%;
+    --accent-hover: 310 85% 52%;
+    --accent-light: 310 85% 70%;
 
     /* Success - Friendly Green */
     --success: 152 60% 45%;
@@ -119,6 +119,9 @@
     --info: 190 90% 50%;
     --info-foreground: 0 0% 100%;
     --info-light: 190 90% 60%;
+
+    /* Ring - Cyan */
+    --ring: 190 90% 50%;
 
     /* Background & Surface - Warm whites */
     --background: 40 20% 99%;
@@ -170,38 +173,38 @@
     --tag-text: 200 10% 10%;
     --tag-border: 40 10% 88%;
 
-    /* PETID Gradients - Vibrant Pink-Purple-Cyan */
-    --gradient-primary: linear-gradient(135deg, hsl(310 85% 60%) 0%, hsl(280 75% 55%) 50%, hsl(190 90% 50%) 100%);
-    --gradient-petid: linear-gradient(135deg, hsl(310 85% 60%) 0%, hsl(280 75% 55%) 50%, hsl(190 90% 50%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(310 85% 65%) 0%, hsl(280 70% 60%) 100%);
-    --gradient-story: linear-gradient(135deg, hsl(310 85% 60%) 0%, hsl(280 75% 55%) 50%, hsl(190 90% 50%) 100%);
-    --gradient-instagram: linear-gradient(135deg, hsl(310 85% 60%) 0%, hsl(280 75% 55%) 50%, hsl(190 90% 50%) 100%);
-    --gradient-subtle: linear-gradient(135deg, hsl(310 30% 97%) 0%, hsl(190 30% 98%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(280 10% 99%) 100%);
+    /* PETID Gradients - Cyan-Purple-Pink (Cyan dominant) */
+    --gradient-primary: linear-gradient(135deg, hsl(190 90% 50%) 0%, hsl(280 75% 55%) 50%, hsl(310 85% 60%) 100%);
+    --gradient-petid: linear-gradient(135deg, hsl(190 90% 50%) 0%, hsl(280 75% 55%) 50%, hsl(310 85% 60%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(190 90% 55%) 0%, hsl(280 70% 60%) 100%);
+    --gradient-story: linear-gradient(135deg, hsl(190 90% 50%) 0%, hsl(280 75% 55%) 50%, hsl(310 85% 60%) 100%);
+    --gradient-instagram: linear-gradient(135deg, hsl(190 90% 50%) 0%, hsl(280 75% 55%) 50%, hsl(310 85% 60%) 100%);
+    --gradient-subtle: linear-gradient(135deg, hsl(190 30% 97%) 0%, hsl(310 30% 98%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(190 10% 99%) 100%);
 
-    /* Soft Shadows - With new palette */
-    --shadow-sm: 0 2px 4px rgba(200, 80, 180, 0.08);
-    --shadow-md: 0 4px 8px rgba(200, 80, 180, 0.1);
-    --shadow-lg: 0 8px 16px rgba(200, 80, 180, 0.12);
-    --shadow-xl: 0 12px 24px rgba(200, 80, 180, 0.15);
-    --shadow-card: 0 2px 8px rgba(200, 80, 180, 0.08);
-    --shadow-elevated: 0 8px 24px rgba(200, 80, 180, 0.15);
-    --shadow-button: 0 2px 4px rgba(200, 80, 180, 0.2);
-    --shadow-button-hover: 0 4px 12px rgba(200, 80, 180, 0.25);
-    --shadow-2xs: 0 1px 2px rgba(200, 80, 180, 0.05);
-    --shadow-xs: 0 1px 3px rgba(200, 80, 180, 0.08);
-    --shadow: 0 2px 6px rgba(200, 80, 180, 0.1);
-    --shadow-2xl: 0 20px 40px rgba(200, 80, 180, 0.2);
+    /* Soft Shadows - With cyan tint */
+    --shadow-sm: 0 2px 4px rgba(0, 180, 200, 0.08);
+    --shadow-md: 0 4px 8px rgba(0, 180, 200, 0.1);
+    --shadow-lg: 0 8px 16px rgba(0, 180, 200, 0.12);
+    --shadow-xl: 0 12px 24px rgba(0, 180, 200, 0.15);
+    --shadow-card: 0 2px 8px rgba(0, 180, 200, 0.08);
+    --shadow-elevated: 0 8px 24px rgba(0, 180, 200, 0.15);
+    --shadow-button: 0 2px 4px rgba(0, 180, 200, 0.2);
+    --shadow-button-hover: 0 4px 12px rgba(0, 180, 200, 0.25);
+    --shadow-2xs: 0 1px 2px rgba(0, 180, 200, 0.05);
+    --shadow-xs: 0 1px 3px rgba(0, 180, 200, 0.08);
+    --shadow: 0 2px 6px rgba(0, 180, 200, 0.1);
+    --shadow-2xl: 0 20px 40px rgba(0, 180, 200, 0.2);
 
     /* Radius - More rounded, organic feel */
     --radius: 0.875rem;
     --radius-lg: 1.375rem;
     --radius-xl: 1.75rem;
 
-    /* Charts - New gradient colors */
-    --chart-1: 310 85% 60%;
+    /* Charts - Cyan dominant */
+    --chart-1: 190 90% 50%;
     --chart-2: 280 75% 55%;
-    --chart-3: 190 90% 50%;
+    --chart-3: 310 85% 60%;
     --chart-4: 152 60% 45%;
     --chart-5: 42 100% 50%;
 
@@ -210,34 +213,34 @@
     --tracking-normal: -0.011em;
     --spacing: 0.25rem;
 
-    /* Legacy support - Updated to new gradient palette */
-    --petid-blue: 310 85% 60%;
-    --petid-blue-light: 310 85% 70%;
+    /* Legacy support - Cyan dominant palette */
+    --petid-blue: 190 90% 50%;
+    --petid-blue-light: 190 90% 60%;
     --petid-turquoise: 190 90% 50%;
-    --shop-blue: 310 85% 60%;
+    --shop-blue: 190 90% 50%;
     --shop-turquoise: 190 90% 50%;
     --shop-light-blue: 190 90% 60%;
-    --ig-blue: 310 85% 60%;
-    --ig-blue-hover: 310 85% 52%;
+    --ig-blue: 190 90% 50%;
+    --ig-blue-hover: 190 90% 42%;
     --ig-blue-foreground: 0 0% 100%;
     --ig-red: 330 85% 55%;
     --ig-red-foreground: 0 0% 100%;
     --ig-orange: 42 100% 50%;
     --icon-base: 200 10% 15%;
-    --icon-blue: 310 85% 60%;
+    --icon-blue: 190 90% 50%;
     --icon-dark-blue: 280 75% 55%;
     --icon-orange: 42 100% 50%;
-    --icon-active: 310 85% 60%;
+    --icon-active: 190 90% 50%;
     --icon-disabled: 200 8% 55%;
     --yellow-primary: 42 100% 50%;
     --yellow-primary-foreground: 0 0% 10%;
   }
 
-  /* DARK MODE - New gradient palette */
+  /* DARK MODE - Cyan dominant palette */
   .dark {
-    --petid-pink: 310 85% 65%;
-    --petid-purple: 280 75% 60%;
     --petid-cyan: 190 90% 55%;
+    --petid-purple: 280 75% 60%;
+    --petid-pink: 310 85% 65%;
     --petid-teal: 190 90% 55%;
     --petid-gold: 42 100% 55%;
     --petid-coral: 12 76% 65%;
@@ -252,17 +255,17 @@
     --petid-gray-100: 0 0% 15%;
     --petid-white: 0 0% 0%;
 
-    --primary: 310 85% 65%;
+    --primary: 190 90% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 310 85% 70%;
-    --primary-light: 310 85% 75%;
-    --primary-dark: 310 85% 55%;
+    --primary-hover: 190 90% 60%;
+    --primary-light: 190 90% 65%;
+    --primary-dark: 190 90% 45%;
 
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 92%;
     --secondary-light: 0 0% 20%;
 
-    --accent: 190 90% 55%;
+    --accent: 310 85% 65%;
     --accent-foreground: 0 0% 100%;
 
     --success: 152 60% 50%;
@@ -271,47 +274,47 @@
     --destructive: 350 80% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --background: 260 15% 8%;
+    --background: 200 15% 8%;
     --foreground: 0 0% 98%;
-    --surface: 260 15% 8%;
-    --surface-elevated: 260 12% 12%;
+    --surface: 200 15% 8%;
+    --surface-elevated: 200 12% 12%;
 
-    --muted: 260 10% 18%;
+    --muted: 200 10% 18%;
     --muted-foreground: 0 0% 65%;
 
-    --border: 260 10% 22%;
-    --border-light: 260 10% 18%;
-    --input: 260 10% 18%;
-    --ring: 310 85% 65%;
+    --border: 200 10% 22%;
+    --border-light: 200 10% 18%;
+    --input: 200 10% 18%;
+    --ring: 190 90% 55%;
 
-    --card: 260 15% 10%;
+    --card: 200 15% 10%;
     --card-foreground: 0 0% 98%;
-    --card-border: 260 10% 22%;
+    --card-border: 200 10% 22%;
 
-    --popover: 260 12% 12%;
+    --popover: 200 12% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --sidebar-background: 260 15% 8%;
+    --sidebar-background: 200 15% 8%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 310 85% 65%;
+    --sidebar-primary: 190 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 10% 18%;
+    --sidebar-accent: 200 10% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 260 10% 22%;
-    --sidebar: 260 15% 8%;
+    --sidebar-border: 200 10% 22%;
+    --sidebar: 200 15% 8%;
 
-    --header-bg: 260 15% 8%;
+    --header-bg: 200 15% 8%;
     --header-text: 0 0% 98%;
-    --footer-bg: 260 15% 8%;
+    --footer-bg: 200 15% 8%;
     --footer-text: 0 0% 98%;
 
-    --toast-bg: 260 10% 18%;
-    --toast-border: 260 10% 25%;
+    --toast-bg: 200 10% 18%;
+    --toast-border: 200 10% 25%;
     --toast-text: 0 0% 98%;
 
-    --tag-bg: 260 10% 18%;
+    --tag-bg: 200 10% 18%;
     --tag-text: 0 0% 98%;
-    --tag-border: 260 10% 25%;
+    --tag-border: 200 10% 25%;
 
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
@@ -319,17 +322,17 @@
     --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
     --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.6);
 
-    --chart-1: 310 85% 65%;
+    --chart-1: 190 90% 55%;
     --chart-2: 280 75% 60%;
-    --chart-3: 190 90% 55%;
+    --chart-3: 310 85% 65%;
     --chart-4: 152 60% 55%;
     --chart-5: 42 100% 55%;
 
-    --petid-blue: 310 85% 65%;
+    --petid-blue: 190 90% 55%;
     --petid-turquoise: 190 90% 55%;
-    --shop-blue: 310 85% 65%;
+    --shop-blue: 190 90% 55%;
     --shop-turquoise: 190 90% 55%;
-    --ig-blue: 310 85% 65%;
+    --ig-blue: 190 90% 55%;
     --ig-red: 330 85% 60%;
     --ig-orange: 42 100% 55%;
   }
