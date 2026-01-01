@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
 import { ActivityStatus } from "@/components/ActivityStatus";
 import { VanishModeToggle } from "@/components/VanishModeToggle";
+import petidIcon from "@/assets/petid-icon.png";
 
 interface Conversation {
   userId: string;
@@ -133,7 +134,8 @@ export default function Messages() {
         {/* Instagram-style Header */}
         <div className="bg-background border-b border-border sticky top-0 z-10">
           <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
               <h1 className="text-xl font-bold text-foreground">
                 {currentUserName || "הודעות"}
               </h1>

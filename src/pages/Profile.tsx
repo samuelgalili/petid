@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
+import petidIcon from "@/assets/petid-icon.png";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -280,6 +281,7 @@ const Profile = () => {
         >
           <div className="flex items-center justify-between px-4 h-14">
             <div className="flex items-center gap-3">
+              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
               <motion.h1 
                 className="text-xl font-bold bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text"
                 initial={{ opacity: 0, x: -10 }}
