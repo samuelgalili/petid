@@ -1093,7 +1093,7 @@ const Feed = () => {
               whileHover={{ rotate: [0, -10, 10, 0] }}
               transition={{ duration: 0.5 }}
             >
-              <img src={petidIcon} alt="Petid" className="w-8 h-8 object-contain" />
+              <img src={petidIcon} alt="Petid" className="w-12 h-12 object-contain" />
             </motion.div>
             <h1 
               className="text-xl font-fredoka font-semibold cursor-pointer text-foreground tracking-wide"
