@@ -6,7 +6,7 @@ import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 import { supabase } from "@/integrations/supabase/client";
-import petidLogo from "@/assets/petid-logo.png";
+import { PetidLogo } from "@/components/PetidLogo";
 import { PawPrint, Heart, Shield } from "lucide-react";
 
 const cardVariants = {
@@ -73,24 +73,7 @@ const Auth = () => {
         className="relative w-full max-w-[380px] bg-card/95 backdrop-blur-sm border border-border/50 rounded-2xl shadow-xl px-8 py-10 mb-4"
       >
         {/* Logo */}
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.3 }}
-          className="flex justify-center mb-6"
-        >
-          <div className="relative">
-            <img src={petidLogo} alt="Petid" className="h-16 object-contain" />
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: "spring" }}
-              className="absolute -right-2 -top-1"
-            >
-              <PawPrint className="w-5 h-5 text-primary" />
-            </motion.div>
-          </div>
-        </motion.div>
+        <PetidLogo showAnimals={false} size="sm" className="mb-2" />
 
         {/* Welcome Text */}
         <motion.div
