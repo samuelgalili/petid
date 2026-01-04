@@ -180,7 +180,7 @@ export const PetidLogo = ({
               delay: 2
             }}
           >
-            <span className="text-2xl">❤️</span>
+            <span className="text-4xl">❤️</span>
           </motion.div>
 
           {/* Cat animation */}
