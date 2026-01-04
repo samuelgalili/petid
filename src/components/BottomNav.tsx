@@ -107,19 +107,14 @@ const BottomNav = () => {
         </defs>
       </svg>
 
-      {/* PetID-style bottom nav - clean, professional feel */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-md border-t border-border/30 shadow-[0_-4px_20px_rgba(0,120,200,0.08)]" style={{
+      {/* Instagram-style bottom nav */}
+      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border" style={{
       position: 'fixed',
       bottom: 0
     }} role="navigation" aria-label="ניווט ראשי">
-        <div className="flex justify-around items-center h-14 w-full max-w-2xl mx-auto px-2">
+        <div className="flex justify-around items-center h-12 w-full max-w-lg mx-auto">
           {/* Home */}
-          <FeatureHintWrapper
-            featureId="nav_home"
-            title="דף הבית"
-            description="כאן תמצא את הפיד הראשי, עדכונים וכל מה שקורה עם חיות המחמד שלך"
-          >
-            <NavItem onClick={() => {
+          <NavItem onClick={() => {
             if (location.pathname === "/") {
               window.scrollTo({
                 top: 0,
@@ -129,60 +124,33 @@ const BottomNav = () => {
             } else {
               navigate("/");
             }
-          }} icon={<Home className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/")} label="בית" />
-          </FeatureHintWrapper>
+          }} icon={<Home className="w-6 h-6" strokeWidth={isActive("/") ? 2.5 : 1.5} fill={isActive("/") ? "currentColor" : "none"} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
-          <FeatureHintWrapper
-            featureId="nav_explore"
-            title="חיפוש וגילוי"
-            description="גלה חיות מחמד, בעלים ותכנים חדשים. חפש לפי שם, גזע או מיקום"
-          >
-            <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/explore") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/explore")} label="חיפוש" />
-          </FeatureHintWrapper>
+          <NavItem onClick={() => handleNavClick("/explore")} icon={<Search className="w-6 h-6" strokeWidth={isActive("/explore") ? 2.5 : 1.5} />} isActive={isActive("/explore")} label="חיפוש" />
 
-          {/* Search - Center button */}
-          <FeatureHintWrapper
-            featureId="nav_search_actions"
-            title="חיפוש פעולות"
-            description="חפש בקלות מה שאתה רוצה לעשות - מסמכים, אילוף, גינות ועוד"
-          >
-            <NavItem onClick={() => setSearchOpen(true)} icon={
-              <Search 
-                className="w-6 h-6 transition-colors" 
-                strokeWidth={2} 
-                fill="none" 
-                style={searchOpen ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} 
-              />
-            } isActive={false} label="חיפוש פעולות" />
-          </FeatureHintWrapper>
+          {/* Search Actions */}
+          <NavItem onClick={() => setSearchOpen(true)} icon={
+            <Compass 
+              className="w-6 h-6" 
+              strokeWidth={1.5}
+            />
+          } isActive={false} label="גילוי" />
 
           {/* Shop */}
-          <FeatureHintWrapper
-            featureId="nav_shop"
-            title="חנות"
-            description="מוצרים מומלצים לחיית המחמד שלך, מבצעים והטבות מיוחדות"
-          >
-            <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className="w-6 h-6 transition-colors" strokeWidth={2} fill="none" style={isActive("/shop") ? { stroke: "url(#nav-gradient)" } : { stroke: "hsl(var(--muted-foreground))" }} />} isActive={isActive("/shop")} label="חנות" />
-          </FeatureHintWrapper>
+          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className="w-6 h-6" strokeWidth={isActive("/shop") ? 2.5 : 1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
 
           {/* Profile with Avatar */}
-          <FeatureHintWrapper
-            featureId="nav_profile"
-            title="הפרופיל שלך"
-            description="צפה בחיות המחמד שלך, ערוך פרטים ונהל את החשבון"
-          >
-            <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
-              <div className={cn("w-7 h-7 rounded-full overflow-hidden transition-all", isActive("/profile") ? "ring-2 ring-primary ring-offset-2 ring-offset-card" : "")}>
-                <Avatar className="w-full h-full">
-                  <AvatarImage src={userAvatar} className="object-cover" />
-                  <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
-                    <User className="w-3.5 h-3.5" />
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            </button>
-          </FeatureHintWrapper>
+          <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
+            <div className={cn("w-7 h-7 rounded-full overflow-hidden transition-all", isActive("/profile") ? "ring-[2px] ring-foreground" : "")}>
+              <Avatar className="w-full h-full">
+                <AvatarImage src={userAvatar} className="object-cover" />
+                <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                  <User className="w-3.5 h-3.5" />
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </button>
         </div>
         
         {/* Safe area for notched devices */}
