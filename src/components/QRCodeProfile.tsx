@@ -100,7 +100,7 @@ export const QRCodeProfile = ({ open, onOpenChange, profile }: QRCodeProfileProp
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${profile?.full_name || "פרופיל"} - Petish`,
+          title: `${profile?.full_name || "פרופיל"} - Petid`,
           url: profileUrl
         });
       } catch {
@@ -116,7 +116,7 @@ export const QRCodeProfile = ({ open, onOpenChange, profile }: QRCodeProfileProp
     if (!canvas) return;
 
     const link = document.createElement('a');
-    link.download = 'petish-qr-code.png';
+    link.download = 'petid-qr-code.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
     toast.success("ה-QR Code נשמר!");

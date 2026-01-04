@@ -1,4 +1,4 @@
-# E2E Tests - Petid/Petish
+# E2E Tests - Petid
 
 ![E2E Tests](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/e2e-tests.yml/badge.svg)
 
@@ -58,7 +58,7 @@ npx playwright show-report
 | קובץ | תיאור |
 |------|--------|
 | `auth.spec.ts` | בדיקות זרימת התחברות והרשמה |
-| `feed.spec.ts` | בדיקות הפיד הסוציאלי (Petish) |
+| `feed.spec.ts` | בדיקות הפיד הסוציאלי |
 | `shop.spec.ts` | בדיקות החנות והעגלה |
 | `checkout.spec.ts` | בדיקות תהליך הצ'קאאוט המלא |
 | `add-pet.spec.ts` | בדיקות הוספת חיית מחמד |

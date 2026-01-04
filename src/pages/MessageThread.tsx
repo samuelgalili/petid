@@ -274,7 +274,7 @@ export default function MessageThread() {
               </AvatarFallback>
             </Avatar>
             <h3 className="text-lg font-bold text-[#262626]">{otherUser.full_name}</h3>
-            <p className="text-sm text-gray-500 mt-1">Petish</p>
+            <p className="text-sm text-gray-500 mt-1">Petid</p>
             <button 
               onClick={() => navigate(`/profile/${userId}`)}
               className="mt-3 text-sm font-medium text-gray-500 hover:text-[#262626]"

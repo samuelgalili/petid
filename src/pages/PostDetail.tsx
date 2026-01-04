@@ -341,14 +341,14 @@ const PostDetail = () => {
   if (!post) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center" dir="rtl">
-        <p className="text-gray-500 font-jakarta">Petish Post לא נמצא</p>
+        <p className="text-gray-500 font-jakarta">הפוסט לא נמצא</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Petish Post Header */}
+      {/* Post Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
           <Button
@@ -359,7 +359,7 @@ const PostDetail = () => {
           >
             <ArrowRight className="w-6 h-6" />
           </Button>
-          <h1 className="text-xl font-jakarta font-black">Petish Post</h1>
+          <h1 className="text-xl font-jakarta font-black">פוסט</h1>
           <div className="w-10" />
         </div>
       </div>

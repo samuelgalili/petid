@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { PostCard } from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCardErrorBoundary } from "@/components/PostCardErrorBoundary";
-import { PetishAnimations } from "@/animations/petish";
+import { PetidAnimations } from "@/animations/petid";
 import { MyPetsSection } from "@/components/home/MyPetsSection";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
 import { playPetAddedSound } from "@/lib/sounds";
@@ -616,7 +616,7 @@ const Feed = () => {
       }
     } catch (error: any) {
       console.error("Error fetching posts:", error);
-      toast.error("שגיאה בטעינת ה-Petish Feed");
+      toast.error("שגיאה בטעינת הפיד");
     } finally {
       setLoading(false);
       setLoadingMore(false);
