@@ -97,18 +97,18 @@ const BottomNav = () => {
   };
   
   return <>
-      {/* SVG Gradient definitions */}
+      {/* SVG Gradient definitions - Light Blue (תכלת) */}
       <svg width="0" height="0" className="absolute">
         <defs>
           <linearGradient id="nav-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2EB8A6" />
-            <stop offset="100%" stopColor="#4ECDC4" />
+            <stop offset="0%" stopColor="#0099E6" />
+            <stop offset="100%" stopColor="#0080CC" />
           </linearGradient>
         </defs>
       </svg>
 
-      {/* PetID-style bottom nav - warm, organic feel */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-md border-t border-border/30 shadow-[0_-4px_20px_rgba(46,184,166,0.08)]" style={{
+      {/* PetID-style bottom nav - clean, professional feel */}
+      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-card/95 backdrop-blur-md border-t border-border/30 shadow-[0_-4px_20px_rgba(0,120,200,0.08)]" style={{
       position: 'fixed',
       bottom: 0
     }} role="navigation" aria-label="ניווט ראשי">
