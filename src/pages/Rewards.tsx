@@ -530,11 +530,6 @@ const Rewards = () => {
                                   • בקנייה מעל ₪{reward.minOrderAmount}
                                 </span>
                               )}
-                              {reward.requiresApproval && (
-                                <span className="text-[10px] text-amber-600">
-                                  • דורש אישור
-                                </span>
-                              )}
                             </div>
 
                             <div className="flex items-center justify-between">
