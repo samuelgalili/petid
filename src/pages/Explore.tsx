@@ -785,13 +785,13 @@ const Explore = () => {
           animate={{ opacity: 1, y: 0 }}
           className="px-4 py-4"
         >
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
             {[
-              { id: "share-post", icon: Heart, title: "בוא נשתף רגע מתוק! 💕", points: 10, color: "bg-pink-100 dark:bg-pink-900/30", iconColor: "text-pink-500", link: "/tasks" },
-              { id: "add-pet-photo", icon: PawPrint, title: "הראה לנו את החמוד! 📸", points: 15, color: "bg-primary/10", iconColor: "text-primary", link: "/tasks" },
-              { id: "breed-info", icon: Dog, title: "גלה עוד על הגזע שלך! 🐕", points: 10, color: "bg-purple-100 dark:bg-purple-900/30", iconColor: "text-purple-500", link: "/breed-history" },
-              { id: "visit-park", icon: Trees, title: "יוצאים לטייל? 🌳", points: 20, color: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-500", link: "/parks" },
-              { id: "invite-friend", icon: Star, title: "הזמן חבר וקבל בונוס! ⭐", points: 50, color: "bg-yellow-100 dark:bg-yellow-900/30", iconColor: "text-yellow-500", link: "/tasks" },
+              { id: "share-post", icon: Heart, title: "שתף רגע מתוק", points: 10, color: "bg-pink-100 dark:bg-pink-900/30", iconColor: "text-pink-500", link: "/tasks" },
+              { id: "add-pet-photo", icon: PawPrint, title: "העלה תמונה", points: 15, color: "bg-primary/10", iconColor: "text-primary", link: "/tasks" },
+              { id: "breed-info", icon: Dog, title: "גלה על הגזע", points: 10, color: "bg-purple-100 dark:bg-purple-900/30", iconColor: "text-purple-500", link: "/breed-history" },
+              { id: "visit-park", icon: Trees, title: "טייל בגינה", points: 20, color: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-500", link: "/parks" },
+              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, color: "bg-yellow-100 dark:bg-yellow-900/30", iconColor: "text-yellow-500", link: "/tasks" },
             ].map((mission, idx) => {
               const Icon = mission.icon;
               return (
@@ -801,15 +801,15 @@ const Explore = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.1 }}
                   onClick={() => navigate(mission.link)}
-                  className="flex-shrink-0 w-40 bg-card rounded-2xl p-4 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="flex-shrink-0 w-32 bg-card rounded-xl px-3 py-2.5 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mission.color}`}>
-                      <Icon className={`w-5 h-5 ${mission.iconColor}`} />
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${mission.color}`}>
+                      <Icon className={`w-3.5 h-3.5 ${mission.iconColor}`} />
                     </div>
-                    <span className="text-xs text-primary font-bold">+{mission.points} נק׳</span>
+                    <p className="text-xs font-semibold text-foreground truncate">{mission.title}</p>
                   </div>
-                  <p className="text-sm font-medium text-foreground line-clamp-2">{mission.title}</p>
+                  <p className="text-[11px] text-primary font-bold">+{mission.points} נקודות</p>
                 </motion.div>
               );
             })}
