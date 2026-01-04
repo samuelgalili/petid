@@ -285,77 +285,67 @@ const Rewards = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-background pb-24" dir="rtl">
-        {/* Instagram-style Header */}
-        <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button 
-              onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/profile')}
-              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors active:scale-95"
-            >
-              <ChevronLeft className="w-5 h-5 text-foreground" />
-            </button>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-black bg-gradient-petid bg-clip-text text-transparent font-jakarta">
+        {/* Clean Header - like Feed */}
+        <motion.div 
+          className="sticky top-0 z-40 bg-card/98 backdrop-blur-xl border-b border-border/40"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
+          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/profile')}
+                className="p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              >
+                <ChevronLeft className="w-5 h-5 text-foreground" />
+              </button>
+              <h1 className="text-xl font-semibold text-foreground">
                 פרסים והטבות
-              </span>
-              <Sparkles className="w-5 h-5 text-petid-blue" />
+              </h1>
             </div>
-            
-            <div className="w-10 h-10 rounded-full bg-gradient-petid p-[2px]">
-              <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                <Gift className="w-4 h-4 text-petid-blue" />
-              </div>
+            <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full">
+              <Star className="w-4 h-4 text-primary" fill="currentColor" />
+              <span className="text-sm font-bold text-primary">{totalPoints}</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="px-4 pt-4">
-          {/* Points Balance Card - Instagram Story Style */}
+        <div className="max-w-lg mx-auto px-4 pt-4">
+          {/* Points Card - Clean style */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-instagram p-6 mb-6 shadow-xl shadow-instagram"
+            className="relative overflow-hidden rounded-2xl bg-card border border-border p-5 mb-5"
           >
-            {/* Decorative circles */}
-            <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-            
-            <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown className="w-5 h-5 text-yellow-300" />
-                  <span className="text-white/90 text-sm font-jakarta">הנקודות שלך</span>
-                </div>
+                <p className="text-muted-foreground text-sm mb-1">הנקודות שלך</p>
                 <motion.div 
-                  className="text-5xl font-black text-white"
+                  className="text-4xl font-bold text-foreground"
                   initial={{ scale: 0.5 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 200 }}
                 >
                   {totalPoints}
                 </motion.div>
-                <p className="text-white/70 text-xs mt-2 font-jakarta">
-                  השלם משימות לצבירת נקודות נוספות ✨
+                <p className="text-muted-foreground text-xs mt-1">
+                  צבור נקודות ומימוש להטבות
                 </p>
               </div>
-              <motion.div 
-                className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"
-                whileHover={{ scale: 1.1, rotate: 10 }}
-              >
-                <Trophy className="w-10 h-10 text-yellow-300" />
-              </motion.div>
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Trophy className="w-8 h-8 text-primary" />
+              </div>
             </div>
 
-            {/* Progress indicator */}
-            <div className="mt-4 relative z-10">
-              <div className="flex justify-between text-xs text-white/70 mb-1 font-jakarta">
-                <span>רמה נוכחית</span>
-                <span>{totalPoints}/500 לרמה הבאה</span>
+            {/* Progress bar */}
+            <div className="mt-4">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                <span>התקדמות</span>
+                <span>{totalPoints}/500</span>
               </div>
-              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-yellow-300 to-yellow-400 rounded-full"
+                  className="h-full bg-primary rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min((totalPoints / 500) * 100, 100)}%` }}
                   transition={{ duration: 1, delay: 0.3 }}
@@ -364,41 +354,39 @@ const Rewards = () => {
             </div>
           </motion.div>
 
-          {/* Instagram-style Tabs */}
-          <div className="flex gap-2 mb-6">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
+          {/* Clean Tabs */}
+          <div className="flex gap-2 mb-5 border-b border-border pb-3">
+            <button
               onClick={() => setActiveTab("available")}
-              className={`flex-1 py-3 rounded-2xl text-sm font-bold font-jakarta transition-all ${
+              className={`flex-1 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "available"
-                  ? "bg-gradient-instagram text-white shadow-lg shadow-instagram"
-                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                  ? "text-foreground border-b-2 border-foreground -mb-[13px]"
+                  : "text-muted-foreground"
               }`}
             >
-              <span className="flex items-center justify-center gap-2">
+              <span className="flex items-center justify-center gap-1.5">
                 <Gift className="w-4 h-4" />
                 פרסים זמינים
               </span>
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
+            </button>
+            <button
               onClick={() => setActiveTab("redeemed")}
-              className={`flex-1 py-3 rounded-2xl text-sm font-bold font-jakarta transition-all ${
+              className={`flex-1 py-2.5 text-sm font-medium transition-all ${
                 activeTab === "redeemed"
-                  ? "bg-gradient-instagram text-white shadow-lg shadow-instagram"
-                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                  ? "text-foreground border-b-2 border-foreground -mb-[13px]"
+                  : "text-muted-foreground"
               }`}
             >
-              <span className="flex items-center justify-center gap-2">
+              <span className="flex items-center justify-center gap-1.5">
                 <Star className="w-4 h-4" />
                 הפרסים שלי
                 {redeemedRewards.filter(r => r.status === "active").length > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                  <span className="w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
                     {redeemedRewards.filter(r => r.status === "active").length}
                   </span>
                 )}
               </span>
-            </motion.button>
+            </button>
           </div>
 
           {/* Available Rewards */}
@@ -427,67 +415,53 @@ const Rewards = () => {
                   availableRewards.map((reward, index) => (
                     <motion.div
                       key={reward.id}
-                      initial={{ opacity: 0, y: 30 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="bg-card rounded-3xl overflow-hidden shadow-lg shadow-primary/5 border border-border"
+                      transition={{ delay: index * 0.03 }}
+                      className="bg-card rounded-xl overflow-hidden border border-border"
                     >
-                      <div className="p-5">
-                        <div className="flex items-start gap-4">
-                          {/* Icon with gradient ring */}
-                          <div className="relative">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary-light/10 flex items-center justify-center">
-                              <span className="text-4xl">{reward.icon}</span>
-                            </div>
-                            {totalPoints >= reward.points && (
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center"
-                              >
-                                <Zap className="w-3 h-3 text-white" />
-                              </motion.div>
-                            )}
+                      <div className="p-4">
+                        <div className="flex items-start gap-3">
+                          {/* Icon */}
+                          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                            <span className="text-2xl">{reward.icon}</span>
                           </div>
 
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-1">
-                              <h3 className="text-lg font-black text-foreground font-jakarta">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h3 className="text-base font-semibold text-foreground truncate">
                                 {reward.title}
                               </h3>
-                              <span className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-primary/10 to-accent/10 text-primary border border-primary/20">
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary flex-shrink-0">
                                 {reward.value}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground font-jakarta mb-1 line-clamp-2">
+                            <p className="text-xs text-muted-foreground mb-1 line-clamp-1">
                               {reward.description}
                             </p>
-                            <p className="text-[10px] text-muted-foreground/60 font-jakarta mb-2">
-                              * להטבה בחנות PetID בלבד
+                            <p className="text-[10px] text-muted-foreground/50 mb-2">
+                              * בחנות PetID בלבד
                             </p>
 
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-6 h-6 rounded-full bg-gradient-primary flex items-center justify-center">
-                                  <Star className="w-3.5 h-3.5 text-primary-foreground" fill="currentColor" />
-                                </div>
-                                <span className="text-sm font-bold text-foreground font-jakarta">
+                              <div className="flex items-center gap-1">
+                                <Star className="w-3.5 h-3.5 text-primary" fill="currentColor" />
+                                <span className="text-xs font-medium text-foreground">
                                   {reward.points} נקודות
                                 </span>
                               </div>
 
-                              <motion.button
-                                whileTap={{ scale: 0.95 }}
+                              <button
                                 onClick={() => handleRedeemReward(reward)}
                                 disabled={totalPoints < reward.points}
-                                className={`px-5 py-2.5 rounded-xl text-sm font-bold font-jakarta transition-all ${
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                   totalPoints >= reward.points
-                                    ? "bg-gradient-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl"
+                                    ? "bg-foreground text-background hover:bg-foreground/90"
                                     : "bg-muted text-muted-foreground cursor-not-allowed"
                                 }`}
                               >
-                                {totalPoints >= reward.points ? "מימוש ✨" : `חסרות ${reward.points - totalPoints}`}
-                              </motion.button>
+                                {totalPoints >= reward.points ? "מימוש" : `חסרות ${reward.points - totalPoints}`}
+                              </button>
                             </div>
                           </div>
                         </div>
