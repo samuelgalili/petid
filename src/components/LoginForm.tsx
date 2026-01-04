@@ -31,20 +31,23 @@ export const LoginForm = () => {
   const navigate = useNavigate();
 
   const validateForm = (): boolean => {
-    try {
-      loginSchema.parse(formData);
+    const result = loginSchema.safeParse(formData);
+    
+    if (result.success) {
       setFieldErrors({});
       setGeneralError("");
       return true;
-    } catch (error: any) {
-      const errors: FieldError = {};
-      error.errors.forEach((err: any) => {
-        const field = err.path[0] as keyof FieldError;
-        errors[field] = err.message;
-      });
-      setFieldErrors(errors);
-      return false;
     }
+    
+    const errors: FieldError = {};
+    result.error.issues.forEach((issue) => {
+      const field = issue.path[0] as keyof FieldError;
+      if (field) {
+        errors[field] = issue.message;
+      }
+    });
+    setFieldErrors(errors);
+    return false;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

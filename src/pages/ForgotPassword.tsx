@@ -27,10 +27,9 @@ const ForgotPassword = () => {
     setError("");
 
     // Validate email
-    try {
-      emailSchema.parse({ email });
-    } catch (err: any) {
-      setError(err.errors[0].message);
+    const result = emailSchema.safeParse({ email });
+    if (!result.success) {
+      setError(result.error.issues[0]?.message || "אימייל לא תקין");
       return;
     }
 
