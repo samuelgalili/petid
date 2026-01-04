@@ -534,7 +534,7 @@ const Explore = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               placeholder="חפש חיות, גזעים, בעלים..."
-              className="pr-14 pl-12 h-14 rounded-2xl bg-card border-2 border-border/30 shadow-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all text-base"
+              className="pr-14 pl-12 h-14 rounded-2xl bg-card border-2 border-border/30 shadow-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all text-base font-sans"
             />
             {searchQuery && (
               <button
