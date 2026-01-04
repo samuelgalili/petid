@@ -1101,35 +1101,7 @@ const Feed = () => {
         transition={{ duration: 0.3 }}
       >
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Right side - Icons */}
-          <div className="flex items-center -space-x-1">
-            <motion.button 
-              onClick={() => navigate('/explore')}
-              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Search className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-            </motion.button>
-            <motion.button 
-              onClick={handleNavigateToNotifications} 
-              className="relative p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Heart className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-            </motion.button>
-            <motion.button 
-              onClick={handleNavigateToMessages}
-              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Send className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-            </motion.button>
-          </div>
-          
-          {/* Center - Logo with animation */}
+          {/* Right side (in RTL) - Logo */}
           <motion.div 
             className="flex items-center gap-2"
             whileHover={{ scale: 1.02 }}
@@ -1152,17 +1124,43 @@ const Feed = () => {
             >
               PetID
             </h1>
+            <motion.button 
+              onClick={handleNavigateToNotifications} 
+              className="relative p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Heart className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
           </motion.div>
           
-          {/* Left side - Hamburger Menu */}
-          <motion.button 
-            onClick={() => setIsMenuOpen(true)}
-            className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Menu className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-          </motion.button>
+          {/* Left side (in RTL) - Hamburger + Icons */}
+          <div className="flex items-center gap-1">
+            <motion.button 
+              onClick={() => navigate('/explore')}
+              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Search className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
+            <motion.button 
+              onClick={handleNavigateToMessages}
+              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Send className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
+            <motion.button 
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Menu className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
