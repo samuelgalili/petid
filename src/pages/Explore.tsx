@@ -120,14 +120,13 @@ interface UserLocation {
   longitude: number;
 }
 
-interface Deal {
+interface ProductDeal {
   id: string;
-  title: string;
-  subtitle: string;
-  badge_text: string;
-  gradient_from: string;
-  gradient_to: string;
-  button_link: string;
+  name: string;
+  price: number;
+  sale_price: number | null;
+  image_url: string;
+  category: string | null;
 }
 
 interface Pet {
@@ -172,11 +171,11 @@ const Explore = () => {
   const { checkAuth } = useRequireAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [activeTab, setActiveTab] = useState("pets");
+  const [activeTab, setActiveTab] = useState("top");
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [parks, setParks] = useState<DogPark[]>([]);
-  const [deals, setDeals] = useState<Deal[]>([]);
+  const [deals, setDeals] = useState<ProductDeal[]>([]);
   const [pets, setPets] = useState<Pet[]>([]);
   const [loading, setLoading] = useState(true);
   const [aiInsights, setAiInsights] = useState<SmartDiscoveryResult | null>(null);
@@ -339,10 +338,11 @@ const Explore = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from("promotional_offers")
-        .select("id, title, subtitle, badge_text, gradient_from, gradient_to, button_link")
-        .eq("is_active", true)
-        .order("display_order", { ascending: true })
+        .from("business_products")
+        .select("id, name, price, sale_price, image_url, category")
+        .not("sale_price", "is", null)
+        .eq("in_stock", true)
+        .order("created_at", { ascending: false })
         .limit(20);
 
       if (error) throw error;
@@ -552,10 +552,9 @@ const Explore = () => {
           <div className="px-4 pb-4">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               {[
-                { id: "pets", label: "חיות", icon: PawPrint, color: "primary" },
+                { id: "top", label: "מובילים", icon: TrendingUp, color: "purple" },
                 { id: "parks", label: "גינות", icon: Trees, color: "green" },
                 { id: "deals", label: "מבצעים", icon: Tag, color: "orange" },
-                { id: "top", label: "מובילים", icon: TrendingUp, color: "purple" },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -1090,52 +1089,55 @@ const Explore = () => {
               </div>
             </div>
           ) : activeTab === "deals" ? (
-            /* Deals - Enhanced Card Design */
+            /* Deals - Real Products on Sale */
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {deals.length > 0 ? (
-                  deals.map((deal, index) => (
-                    <motion.div
-                      key={deal.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      onClick={() => navigate(deal.button_link || "/shop")}
-                      className="relative cursor-pointer group"
-                    >
-                      <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">
-                        <img
-                          src={productImages[index % productImages.length]}
-                          alt={deal.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        {/* Gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                        
-                        {/* Deal badge */}
-                        <div className="absolute top-3 right-3">
-                          <div className="bg-red-500 text-white rounded-xl px-3 py-1.5 font-bold text-sm shadow-lg">
-                            {deal.badge_text}
-                          </div>
-                        </div>
-                        
-                        {/* Deal info */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">{deal.title}</h3>
-                          <p className="text-white/80 text-sm line-clamp-1">{deal.subtitle}</p>
-                          <div className="flex items-center gap-2 mt-3">
-                            <div className="flex-1 bg-white/20 backdrop-blur-sm rounded-xl py-2 text-center">
-                              <span className="text-white text-sm font-medium">לצפייה</span>
-                            </div>
-                            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                              <ShoppingBag className="w-5 h-5 text-white" />
+                  deals.map((deal, index) => {
+                    const discountPercent = deal.sale_price ? Math.round((1 - deal.sale_price / deal.price) * 100) : 0;
+                    return (
+                      <motion.div
+                        key={deal.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        onClick={() => navigate(`/product/${deal.id}`)}
+                        className="relative cursor-pointer group"
+                      >
+                        <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">
+                          <img
+                            src={deal.image_url || productImages[index % productImages.length]}
+                            alt={deal.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                          {/* Gradient overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          
+                          {/* Deal badge */}
+                          <div className="absolute top-3 right-3">
+                            <div className="bg-red-500 text-white rounded-xl px-3 py-1.5 font-bold text-sm shadow-lg">
+                              {discountPercent}% הנחה
                             </div>
                           </div>
+                          
+                          {/* Deal info */}
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">{deal.name}</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-white font-bold text-lg">₪{deal.sale_price}</span>
+                              <span className="text-white/60 line-through text-sm">₪{deal.price}</span>
+                            </div>
+                            {deal.category && (
+                              <span className="text-xs bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded-lg">
+                                {deal.category}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))
+                      </motion.div>
+                    );
+                  })
                 ) : (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
