@@ -50,12 +50,25 @@ export const StoriesBar = ({ activeTab = "foryou", userCity, followingIds = [] }
   const [storyUsers, setStoryUsers] = useState<StoryUser[]>([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [shouldHide, setShouldHide] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState<{ 
     avatar_url: string; 
     full_name: string;
     pet_avatar_url: string | null;
     pet_name: string | null;
   } | null>(null);
+
+  // Hide stories bar after 1 second if no stories exist
+  useEffect(() => {
+    if (!loading && storyUsers.length === 0) {
+      const timer = setTimeout(() => {
+        setShouldHide(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShouldHide(false);
+    }
+  }, [loading, storyUsers.length]);
 
   useEffect(() => {
     fetchStories();
@@ -252,9 +265,20 @@ export const StoriesBar = ({ activeTab = "foryou", userCity, followingIds = [] }
     );
   }
 
+  // Hide the entire component if no stories after delay
+  if (shouldHide) {
+    return null;
+  }
+
   return (
     <>
-      <div className="px-4 py-3 bg-card border-b border-border">
+      <AnimatePresence>
+      <motion.div 
+        className="px-4 py-3 bg-card border-b border-border"
+        initial={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="flex gap-3 overflow-x-auto no-scrollbar">
           {/* Your Story */}
           <motion.div
@@ -430,7 +454,8 @@ export const StoriesBar = ({ activeTab = "foryou", userCity, followingIds = [] }
             </motion.div>
           )}
         </div>
-      </div>
+      </motion.div>
+      </AnimatePresence>
 
       <CreateStoryDialog
         open={createDialogOpen}
