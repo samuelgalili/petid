@@ -1124,18 +1124,18 @@ const Feed = () => {
             >
               PetID
             </h1>
+          </motion.div>
+          
+          {/* Left side (in RTL) - All Icons + Hamburger */}
+          <div className="flex items-center gap-1">
             <motion.button 
               onClick={handleNavigateToNotifications} 
-              className="relative p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              className="relative p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Heart className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </motion.button>
-          </motion.div>
-          
-          {/* Left side (in RTL) - Hamburger + Icons */}
-          <div className="flex items-center gap-1">
             <motion.button 
               onClick={() => navigate('/explore')}
               className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
