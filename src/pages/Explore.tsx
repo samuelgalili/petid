@@ -787,10 +787,10 @@ const Explore = () => {
         >
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {[
-              { id: "share-post", icon: Heart, title: "שתף פוסט", points: 10, color: "bg-pink-100 dark:bg-pink-900/30", iconColor: "text-pink-500" },
-              { id: "add-pet-photo", icon: PawPrint, title: "העלה תמונה", points: 15, color: "bg-primary/10", iconColor: "text-primary" },
-              { id: "visit-park", icon: Trees, title: "בקר בגינה", points: 20, color: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-500" },
-              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, color: "bg-yellow-100 dark:bg-yellow-900/30", iconColor: "text-yellow-500" },
+              { id: "share-post", icon: Heart, title: "בוא נשתף רגע מתוק! 💕", points: 10, color: "bg-pink-100 dark:bg-pink-900/30", iconColor: "text-pink-500" },
+              { id: "add-pet-photo", icon: PawPrint, title: "הראה לנו את החמוד! 📸", points: 15, color: "bg-primary/10", iconColor: "text-primary" },
+              { id: "visit-park", icon: Trees, title: "יוצאים לטייל? 🌳", points: 20, color: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-500" },
+              { id: "invite-friend", icon: Star, title: "הזמן חבר וקבל בונוס! ⭐", points: 50, color: "bg-yellow-100 dark:bg-yellow-900/30", iconColor: "text-yellow-500" },
             ].map((mission, idx) => {
               const Icon = mission.icon;
               return (
