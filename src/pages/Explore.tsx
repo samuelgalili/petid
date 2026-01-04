@@ -501,11 +501,11 @@ const Explore = () => {
   }, [posts]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-20" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-16" dir="rtl">
       {/* Hero Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/20">
         {/* Title Bar */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
           <div className="flex items-center gap-3">
             <img src={petidIcon} alt="PetID" className="w-10 h-10 object-contain" />
             <div>
@@ -524,7 +524,7 @@ const Explore = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-2">
           <div className="relative">
             <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
               <Search className="w-4 h-4 text-primary" />
@@ -534,7 +534,7 @@ const Explore = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               placeholder="חפש חיות, גזעים, בעלים..."
-              className="pr-14 pl-12 h-14 rounded-2xl bg-card border-2 border-border/30 shadow-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all text-base font-sans"
+              className="pr-14 pl-12 h-12 rounded-2xl bg-card border-2 border-border/30 shadow-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all text-base font-sans"
             />
             {searchQuery && (
               <button
@@ -783,7 +783,7 @@ const Explore = () => {
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="px-4 py-4"
+          className="px-4 py-2"
         >
           <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
             {[
