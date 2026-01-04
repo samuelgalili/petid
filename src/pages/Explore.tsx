@@ -801,7 +801,7 @@ const Explore = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.1 }}
                   onClick={() => navigate(mission.link)}
-                  className="flex-shrink-0 w-32 bg-card rounded-xl px-3 py-2.5 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  className="flex-shrink-0 w-44 bg-card rounded-xl px-3 py-2.5 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${mission.color}`}>
