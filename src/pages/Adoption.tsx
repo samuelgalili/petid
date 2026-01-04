@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { AppHeader } from "@/components/AppHeader";
+import catDogSilhouette from "@/assets/adoption/cat-dog-silhouette.png";
 
 interface AdoptionPet {
   id: string;
@@ -278,15 +279,6 @@ const Adoption = () => {
     return parts.join(" ו");
   };
 
-  // Instagram-style story categories
-  const storyCategories = [
-    { id: "all", emoji: "✨", label: "הכל" },
-    { id: "כלב", emoji: "🐕", label: "כלבים" },
-    { id: "חתול", emoji: "🐱", label: "חתולים" },
-    { id: "קטן", emoji: "🐾", label: "קטנים" },
-    { id: "גדול", emoji: "🦁", label: "גדולים" },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white pb-24 pt-20 px-4 flex items-center justify-center">
@@ -308,46 +300,85 @@ const Adoption = () => {
       
       <div className="min-h-screen bg-background pb-28">
         <div className="max-w-lg mx-auto">
-          {/* Instagram-style Stories Bar */}
-          <div className="px-4 py-3 border-b border-border/50">
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {storyCategories.map((category, index) => (
-                <motion.button
-                  key={category.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
+          {/* Pet Type Filter - Dog & Cat Image */}
+          <div className="px-4 py-6 border-b border-border/50">
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative flex justify-center"
+            >
+              <div className="relative">
+                <img 
+                  src={catDogSilhouette} 
+                  alt="בחר כלב או חתול" 
+                  className="h-24 object-contain"
+                />
+                
+                {/* Clickable areas for dog and cat */}
+                <button
                   onClick={() => {
-                    if (category.id === "all") {
+                    if (typeFilter === "כלב") {
                       setTypeFilter("all");
+                    } else {
+                      setTypeFilter("כלב");
                       setSizeFilter("all");
-                    } else if (category.id === "כלב" || category.id === "חתול") {
-                      setTypeFilter(category.id);
-                      setSizeFilter("all");
-                    } else if (category.id === "קטן" || category.id === "גדול") {
-                      setSizeFilter(category.id);
-                      setTypeFilter("all");
                     }
                   }}
-                  className="flex flex-col items-center gap-1 flex-shrink-0"
-                >
-                  <div 
-                    className={`w-16 h-16 rounded-full p-[2px] ${
-                      (typeFilter === category.id || sizeFilter === category.id || (category.id === "all" && typeFilter === "all" && sizeFilter === "all"))
-                        ? 'bg-gradient-to-br from-primary via-accent to-secondary'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <div className="w-full h-full rounded-full bg-card p-[2px]">
-                      <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center">
-                        <span className="text-2xl">{category.emoji}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground font-medium">{category.label}</span>
-                </motion.button>
-              ))}
+                  className={`absolute left-0 top-0 w-1/2 h-full rounded-l-2xl transition-all ${
+                    typeFilter === "כלב" 
+                      ? "bg-primary/20 ring-2 ring-primary ring-offset-2" 
+                      : "hover:bg-primary/10"
+                  }`}
+                  aria-label="סנן לכלבים"
+                />
+                <button
+                  onClick={() => {
+                    if (typeFilter === "חתול") {
+                      setTypeFilter("all");
+                    } else {
+                      setTypeFilter("חתול");
+                      setSizeFilter("all");
+                    }
+                  }}
+                  className={`absolute right-0 top-0 w-1/2 h-full rounded-r-2xl transition-all ${
+                    typeFilter === "חתול" 
+                      ? "bg-accent/20 ring-2 ring-accent ring-offset-2" 
+                      : "hover:bg-accent/10"
+                  }`}
+                  aria-label="סנן לחתולים"
+                />
+              </div>
+            </motion.div>
+            
+            {/* Filter Labels */}
+            <div className="flex justify-center gap-8 mt-3">
+              <span className={`text-sm font-medium transition-colors ${
+                typeFilter === "כלב" ? "text-primary" : "text-muted-foreground"
+              }`}>
+                כלבים 🐕
+              </span>
+              <span className={`text-sm font-medium transition-colors ${
+                typeFilter === "חתול" ? "text-accent" : "text-muted-foreground"
+              }`}>
+                חתולים 🐱
+              </span>
             </div>
+            
+            {/* Active Filter Indicator */}
+            {typeFilter !== "all" && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex justify-center mt-3"
+              >
+                <button
+                  onClick={() => setTypeFilter("all")}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-3 py-1.5 rounded-full bg-secondary"
+                >
+                  מציג: {typeFilter === "כלב" ? "כלבים" : "חתולים"} • לחץ להצגת הכל
+                </button>
+              </motion.div>
+            )}
           </div>
 
           {/* Search Bar - Instagram Style */}
