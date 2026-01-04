@@ -778,92 +778,45 @@ const Explore = () => {
         )}
       </AnimatePresence>
 
-      {/* AI Insights Section - Enhanced Design */}
-      {!isSearchFocused && (
+      {/* AI Insights - Only Cards */}
+      {!isSearchFocused && aiInsights?.insights && aiInsights.insights.length > 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="px-4 py-4"
         >
-          <div className="bg-gradient-to-br from-primary/5 via-card to-secondary/5 rounded-3xl p-4 border border-border/30 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground">מומלץ עבורך</h3>
-                <p className="text-xs text-muted-foreground">המלצות מותאמות אישית</p>
-              </div>
-              {loadingInsights && (
-                <div className="w-6 h-6 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-              )}
-            </div>
-            
-            {aiInsights?.summary && (
-              <p className="text-sm text-foreground/80 mb-4 leading-relaxed">{aiInsights.summary}</p>
-            )}
-            
-            {aiInsights?.insights && aiInsights.insights.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
-                {aiInsights.insights.slice(0, 4).map((insight, idx) => (
-                  <motion.div 
-                    key={idx} 
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="flex-shrink-0 w-40 bg-card rounded-2xl p-4 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                        insight.type === "trend" 
-                          ? "bg-orange-100 dark:bg-orange-900/30" 
-                          : insight.type === "recommendation" 
-                            ? "bg-yellow-100 dark:bg-yellow-900/30" 
-                            : "bg-primary/10"
-                      }`}>
-                        {insight.type === "trend" ? (
-                          <Flame className="w-4 h-4 text-orange-500" />
-                        ) : insight.type === "recommendation" ? (
-                          <Lightbulb className="w-4 h-4 text-yellow-500" />
-                        ) : (
-                          <Star className="w-4 h-4 text-primary" />
-                        )}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        {insight.type === "trend" ? "טרנד" : insight.type === "recommendation" ? "המלצה" : "מומלץ"}
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-foreground line-clamp-2">{insight.title}</p>
-                  </motion.div>
-                ))}
-              </div>
-            ) : !loadingInsights && (
-              <div className="flex items-center gap-3 py-2">
-                <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center">
-                  <Compass className="w-6 h-6 text-muted-foreground/50" />
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {aiInsights.insights.slice(0, 4).map((insight, idx) => (
+              <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.1 }}
+                className="flex-shrink-0 w-40 bg-card rounded-2xl p-4 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    insight.type === "trend" 
+                      ? "bg-orange-100 dark:bg-orange-900/30" 
+                      : insight.type === "recommendation" 
+                        ? "bg-yellow-100 dark:bg-yellow-900/30" 
+                        : "bg-primary/10"
+                  }`}>
+                    {insight.type === "trend" ? (
+                      <Flame className="w-4 h-4 text-orange-500" />
+                    ) : insight.type === "recommendation" ? (
+                      <Lightbulb className="w-4 h-4 text-yellow-500" />
+                    ) : (
+                      <Star className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                    {insight.type === "trend" ? "טרנד" : insight.type === "recommendation" ? "המלצה" : "מומלץ"}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">אין המלצות כרגע</p>
-                  <p className="text-xs text-muted-foreground/70">נסה לגלול ולחקור תוכן חדש</p>
-                </div>
-              </div>
-            )}
-            
-            {aiInsights?.trending_topics && aiInsights.trending_topics.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/30">
-                {aiInsights.trending_topics.slice(0, 5).map((topic, idx) => (
-                  <motion.span 
-                    key={idx}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="text-xs bg-primary/10 text-primary font-medium px-3 py-1.5 rounded-full cursor-pointer hover:bg-primary/20 transition-colors"
-                  >
-                    #{topic}
-                  </motion.span>
-                ))}
-              </div>
-            )}
+                <p className="text-sm font-medium text-foreground line-clamp-2">{insight.title}</p>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       )}
