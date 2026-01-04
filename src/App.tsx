@@ -75,7 +75,6 @@ import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
 const Training = lazy(() => import("./pages/Training"));
 import Grooming from "./pages/Grooming";
-import ColorSystemShowcase from "./pages/ColorSystemShowcase";
 // Onboarding merged into AddPet
 import Achievements from "./pages/Achievements";
 import Messages from "./pages/Messages";
@@ -96,9 +95,6 @@ import PaymentFailed from "./pages/PaymentFailed";
 
 import Support from "./pages/Support";
 import Deals from "./pages/Deals";
-import HomeAIPilot from "./pages/HomeAIPilot";
-import HomeAIDebug from "./pages/HomeAIDebug";
-import HomeAIBase from "./pages/HomeAIBase";
 import { AdminRoute } from "./components/AdminRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PageErrorBoundary } from "./components/PageErrorBoundary";
@@ -187,7 +183,6 @@ const AnimatedRoutes = () => {
         <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />
         <Route path="/messages" element={<ProtectedRoute><PageTransition><Messages /></PageTransition></ProtectedRoute>} />
         <Route path="/messages/:userId" element={<ProtectedRoute><PageTransition><MessageThread /></PageTransition></ProtectedRoute>} />
-        <Route path="/color-system" element={<ProtectedRoute><PageTransition><ColorSystemShowcase /></PageTransition></ProtectedRoute>} />
         <Route path="/accessibility" element={<PageTransition><Accessibility /></PageTransition>} />
         <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
         <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
@@ -200,12 +195,6 @@ const AnimatedRoutes = () => {
         <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
         <Route path="/payment-success" element={<PageTransition><PaymentSuccess /></PageTransition>} />
         <Route path="/payment-failed" element={<PageTransition><PaymentFailed /></PageTransition>} />
-        {/* Internal pilot page - not connected to navigation */}
-        <Route path="/home-ai-pilot" element={<ProtectedRoute><PageTransition><HomeAIPilot /></PageTransition></ProtectedRoute>} />
-        {/* Internal debug page - decoder test only */}
-        <Route path="/home-ai-debug" element={<ProtectedRoute><PageTransition><HomeAIDebug /></PageTransition></ProtectedRoute>} />
-        {/* Home AI Base - clean home with logic bindings */}
-        <Route path="/home-ai-base" element={<ProtectedRoute><PageTransition><HomeAIBase /></PageTransition></ProtectedRoute>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
         </AnimatePresence>
