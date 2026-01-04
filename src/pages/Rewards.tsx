@@ -32,12 +32,16 @@ interface Reward {
   color: string;
   bgGradient: string;
   expires?: string;
+  minOrderAmount?: number;
+  monthlyLimit?: number;
+  requiresApproval?: boolean;
+  minMembershipDays?: number;
 }
 
 interface RedeemedReward extends Reward {
   redeemedAt: string;
   code: string;
-  status: "active" | "used" | "expired";
+  status: "active" | "used" | "expired" | "pending";
 }
 
 const Rewards = () => {
@@ -51,6 +55,9 @@ const Rewards = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"available" | "redeemed">("available");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [monthlyRedemptions, setMonthlyRedemptions] = useState(0);
+  const [userMembershipDays, setUserMembershipDays] = useState(0);
+  const MAX_MONTHLY_REDEMPTIONS = 2;
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -64,7 +71,7 @@ const Rewards = () => {
         if (error) throw error;
 
         if (data) {
-          const mappedRewards: Reward[] = data.map((reward) => ({
+          const mappedRewards: Reward[] = data.map((reward: any) => ({
             id: reward.id,
             title: reward.title,
             description: reward.description,
@@ -74,6 +81,10 @@ const Rewards = () => {
             icon: reward.icon,
             color: reward.gradient,
             bgGradient: reward.gradient,
+            minOrderAmount: reward.min_order_amount || 0,
+            monthlyLimit: reward.monthly_limit || 50,
+            requiresApproval: reward.requires_approval || false,
+            minMembershipDays: reward.min_membership_days || 0,
           }));
           setAvailableRewards(mappedRewards);
         }
@@ -89,7 +100,43 @@ const Rewards = () => {
       }
     };
 
+    const fetchUserStats = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get monthly redemptions count
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        
+        const { count } = await supabase
+          .from('redemptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('redeemed_at', startOfMonth.toISOString())
+          .neq('status', 'expired');
+        
+        setMonthlyRedemptions(count || 0);
+
+        // Get user membership days
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('created_at')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.created_at) {
+          const days = Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24));
+          setUserMembershipDays(days);
+        }
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      }
+    };
+
     fetchRewards();
+    fetchUserStats();
   }, [toast]);
 
   useEffect(() => {
@@ -135,7 +182,35 @@ const Rewards = () => {
     fetchRedeemedRewards();
   }, []);
 
+  const canRedeem = (reward: Reward): { allowed: boolean; reason?: string } => {
+    // Check monthly limit
+    if (monthlyRedemptions >= MAX_MONTHLY_REDEMPTIONS) {
+      return { allowed: false, reason: `הגעת למגבלת ${MAX_MONTHLY_REDEMPTIONS} מימושים לחודש` };
+    }
+    
+    // Check membership days
+    if (reward.minMembershipDays && userMembershipDays < reward.minMembershipDays) {
+      return { allowed: false, reason: `נדרשת חברות של ${reward.minMembershipDays} יום לפחות` };
+    }
+    
+    // Check points
+    if (totalPoints < reward.points) {
+      return { allowed: false, reason: `חסרות ${reward.points - totalPoints} נקודות` };
+    }
+    
+    return { allowed: true };
+  };
+
   const handleRedeemReward = (reward: Reward) => {
+    const { allowed, reason } = canRedeem(reward);
+    if (!allowed) {
+      toast({
+        title: "לא ניתן לממש",
+        description: reason,
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedReward(reward);
     setShowRedeemDialog(true);
   };
@@ -153,10 +228,11 @@ const Rewards = () => {
   const confirmRedemption = async () => {
     if (!selectedReward) return;
 
-    if (totalPoints < selectedReward.points) {
+    const { allowed, reason } = canRedeem(selectedReward);
+    if (!allowed) {
       toast({
-        title: "אין מספיק נקודות 😔",
-        description: `חסרות לך עוד ${selectedReward.points - totalPoints} נקודות למימוש`,
+        title: "לא ניתן לממש",
+        description: reason,
         variant: "destructive",
       });
       setShowRedeemDialog(false);
@@ -185,8 +261,11 @@ const Rewards = () => {
         service: 'שירות',
       };
       const hebrewType = typeMap[selectedReward.type] || 'פרס';
-      const code = `${hebrewType}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const code = `PETID-${hebrewType}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      // Expiry is now handled by DB trigger (14 days)
+      
+      // Check if requires approval
+      const status = selectedReward.requiresApproval ? 'pending' : 'active';
 
       const { error } = await supabase
         .from('redemptions')
@@ -194,18 +273,21 @@ const Rewards = () => {
           user_id: user.id,
           reward_id: selectedReward.id,
           redemption_code: code,
-          status: 'active',
-          expires_at: expiresAt.toISOString(),
-        });
+          status: status,
+          expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        } as any);
 
       if (error) throw error;
+
+      // Update monthly count
+      setMonthlyRedemptions(prev => prev + 1);
 
       const newRedemption: RedeemedReward = {
         ...selectedReward,
         redeemedAt: new Date().toISOString().split("T")[0],
         code,
-        status: "active",
-        expires: expiresAt.toISOString().split("T")[0],
+        status: status as "active" | "pending",
+        expires: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       };
 
       setRedeemedRewards((prev) => [newRedemption, ...prev]);
@@ -329,7 +411,7 @@ const Rewards = () => {
                   {totalPoints}
                 </motion.div>
                 <p className="text-muted-foreground text-xs mt-1">
-                  צבור נקודות ומימוש להטבות
+                  {monthlyRedemptions}/{MAX_MONTHLY_REDEMPTIONS} מימושים החודש
                 </p>
               </div>
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -439,9 +521,21 @@ const Rewards = () => {
                             <p className="text-xs text-muted-foreground mb-1 line-clamp-1">
                               {reward.description}
                             </p>
-                            <p className="text-[10px] text-muted-foreground/50 mb-2">
-                              * בחנות PetID בלבד
-                            </p>
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              <span className="text-[10px] text-muted-foreground/50">
+                                * בחנות PetID בלבד
+                              </span>
+                              {reward.minOrderAmount && reward.minOrderAmount > 0 && (
+                                <span className="text-[10px] text-muted-foreground/50">
+                                  • בקנייה מעל ₪{reward.minOrderAmount}
+                                </span>
+                              )}
+                              {reward.requiresApproval && (
+                                <span className="text-[10px] text-amber-600">
+                                  • דורש אישור
+                                </span>
+                              )}
+                            </div>
 
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1">
@@ -451,17 +545,22 @@ const Rewards = () => {
                                 </span>
                               </div>
 
-                              <button
-                                onClick={() => handleRedeemReward(reward)}
-                                disabled={totalPoints < reward.points}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                  totalPoints >= reward.points
-                                    ? "bg-foreground text-background hover:bg-foreground/90"
-                                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                                }`}
-                              >
-                                {totalPoints >= reward.points ? "מימוש" : `חסרות ${reward.points - totalPoints}`}
-                              </button>
+                              {(() => {
+                                const { allowed, reason } = canRedeem(reward);
+                                return (
+                                  <button
+                                    onClick={() => handleRedeemReward(reward)}
+                                    disabled={!allowed}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                      allowed
+                                        ? "bg-foreground text-background hover:bg-foreground/90"
+                                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                                    }`}
+                                  >
+                                    {allowed ? "מימוש" : reason}
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
