@@ -414,14 +414,14 @@
 
   input, textarea, select {
     @apply font-normal text-sm;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Assistant', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     direction: rtl;
     text-align: right;
   }
 
   label {
     @apply font-medium text-sm;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Assistant', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   html {
