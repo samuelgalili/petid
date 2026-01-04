@@ -120,24 +120,31 @@ export const SignupForm = () => {
   };
 
   const validateForm = (): boolean => {
-    try {
-      if (signupMethod === "email") {
-        emailSignupSchema.parse({ fullName: formData.fullName, email: formData.email });
-      } else {
-        phoneSignupSchema.parse({ fullName: formData.fullName, phone: formData.phone });
-      }
+    const schema = signupMethod === "email"
+      ? emailSignupSchema
+      : phoneSignupSchema;
+    
+    const data = signupMethod === "email"
+      ? { fullName: formData.fullName, email: formData.email }
+      : { fullName: formData.fullName, phone: formData.phone };
+    
+    const result = schema.safeParse(data);
+    
+    if (result.success) {
       setFieldErrors({});
       setGeneralError("");
       return true;
-    } catch (error: any) {
-      const errors: FieldError = {};
-      error.errors.forEach((err: any) => {
-        const field = err.path[0] as keyof FieldError;
-        errors[field] = err.message;
-      });
-      setFieldErrors(errors);
-      return false;
     }
+    
+    const errors: FieldError = {};
+    result.error.issues.forEach((issue) => {
+      const field = issue.path[0] as keyof FieldError;
+      if (field) {
+        errors[field] = issue.message;
+      }
+    });
+    setFieldErrors(errors);
+    return false;
   };
 
   const sendOTP = async () => {

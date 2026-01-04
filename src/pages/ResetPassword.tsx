@@ -50,13 +50,14 @@ const ResetPassword = () => {
     setErrors({});
 
     // Validate passwords
-    try {
-      passwordSchema.parse({ password, confirmPassword });
-    } catch (err: any) {
+    const result = passwordSchema.safeParse({ password, confirmPassword });
+    if (!result.success) {
       const newErrors: { password?: string; confirmPassword?: string } = {};
-      err.errors.forEach((error: any) => {
-        const field = error.path[0] as "password" | "confirmPassword";
-        newErrors[field] = error.message;
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as "password" | "confirmPassword";
+        if (field) {
+          newErrors[field] = issue.message;
+        }
       });
       setErrors(newErrors);
       return;
