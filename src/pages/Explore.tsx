@@ -778,45 +778,40 @@ const Explore = () => {
         )}
       </AnimatePresence>
 
-      {/* AI Insights - Only Cards */}
-      {!isSearchFocused && aiInsights?.insights && aiInsights.insights.length > 0 && (
+      {/* Points Missions Section */}
+      {!isSearchFocused && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="px-4 py-4"
         >
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {aiInsights.insights.slice(0, 4).map((insight, idx) => (
-              <motion.div 
-                key={idx} 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.1 }}
-                className="flex-shrink-0 w-40 bg-card rounded-2xl p-4 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                    insight.type === "trend" 
-                      ? "bg-orange-100 dark:bg-orange-900/30" 
-                      : insight.type === "recommendation" 
-                        ? "bg-yellow-100 dark:bg-yellow-900/30" 
-                        : "bg-primary/10"
-                  }`}>
-                    {insight.type === "trend" ? (
-                      <Flame className="w-4 h-4 text-orange-500" />
-                    ) : insight.type === "recommendation" ? (
-                      <Lightbulb className="w-4 h-4 text-yellow-500" />
-                    ) : (
-                      <Star className="w-4 h-4 text-primary" />
-                    )}
+            {[
+              { id: "share-post", icon: Heart, title: "שתף פוסט", points: 10, color: "bg-pink-100 dark:bg-pink-900/30", iconColor: "text-pink-500" },
+              { id: "add-pet-photo", icon: PawPrint, title: "העלה תמונה", points: 15, color: "bg-primary/10", iconColor: "text-primary" },
+              { id: "visit-park", icon: Trees, title: "בקר בגינה", points: 20, color: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-500" },
+              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, color: "bg-yellow-100 dark:bg-yellow-900/30", iconColor: "text-yellow-500" },
+            ].map((mission, idx) => {
+              const Icon = mission.icon;
+              return (
+                <motion.div 
+                  key={mission.id} 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.1 }}
+                  onClick={() => navigate("/tasks")}
+                  className="flex-shrink-0 w-36 bg-card rounded-2xl p-4 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${mission.color}`}>
+                      <Icon className={`w-4 h-4 ${mission.iconColor}`} />
+                    </div>
+                    <span className="text-[10px] text-primary font-bold">+{mission.points} נק׳</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                    {insight.type === "trend" ? "טרנד" : insight.type === "recommendation" ? "המלצה" : "מומלץ"}
-                  </span>
-                </div>
-                <p className="text-sm font-medium text-foreground line-clamp-2">{insight.title}</p>
-              </motion.div>
-            ))}
+                  <p className="text-sm font-medium text-foreground line-clamp-2">{mission.title}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       )}
