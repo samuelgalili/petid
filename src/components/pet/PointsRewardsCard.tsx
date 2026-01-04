@@ -98,6 +98,41 @@ export const PointsRewardsCard = ({ petName }: PointsRewardsCardProps) => {
       transition={{ delay: 0.4 }}
       className="space-y-4"
     >
+      {/* קאשבק - משופר בגווני צהוב */}
+      <Card className="p-5 bg-gradient-to-br from-amber-500/15 via-yellow-500/10 to-orange-500/5 border-amber-500/30 shadow-lg relative overflow-hidden">
+        {/* אפקט ברקע */}
+        <div className="absolute top-0 left-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl" />
+        
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-4">
+            <motion.div 
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center shadow-lg"
+              whileHover={{ scale: 1.05, rotate: 5 }}
+            >
+              <Coins className="w-7 h-7 text-white" />
+            </motion.div>
+            <div>
+              <p className="text-sm font-semibold text-foreground/80">קאשבק זמין</p>
+              <motion.p 
+                className="text-3xl font-black bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+              >
+                ₪{cashback}
+              </motion.p>
+            </div>
+          </div>
+          <Button 
+            size="sm" 
+            className="rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600 shadow-md px-5"
+            onClick={() => navigate('/shop')}
+          >
+            <Sparkles className="w-4 h-4 ml-1" />
+            מימוש
+          </Button>
+        </div>
+      </Card>
+
       {/* כרטיס ראשי - נקודות */}
       <Card className={`p-5 relative overflow-hidden bg-gradient-to-br ${currentTier.color} shadow-xl`}>
         {/* דפוס ברקע משופר */}
@@ -179,42 +214,6 @@ export const PointsRewardsCard = ({ petName }: PointsRewardsCardProps) => {
           )}
         </div>
       </Card>
-
-      {/* קאשבק - משופר */}
-      <Card className="p-5 bg-gradient-to-br from-emerald-500/15 via-green-500/10 to-teal-500/5 border-emerald-500/30 shadow-lg relative overflow-hidden">
-        {/* אפקט ברקע */}
-        <div className="absolute top-0 left-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl" />
-        
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
-            <motion.div 
-              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg"
-              whileHover={{ scale: 1.05, rotate: 5 }}
-            >
-              <Coins className="w-7 h-7 text-white" />
-            </motion.div>
-            <div>
-              <p className="text-sm font-semibold text-foreground/80">קאשבק זמין</p>
-              <motion.p 
-                className="text-3xl font-black bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent"
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-              >
-                ₪{cashback}
-              </motion.p>
-            </div>
-          </div>
-          <Button 
-            size="sm" 
-            className="rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 shadow-md px-5"
-            onClick={() => navigate('/shop')}
-          >
-            <Sparkles className="w-4 h-4 ml-1" />
-            מימוש
-          </Button>
-        </div>
-      </Card>
-
       {/* הטבות זמינות */}
       <Card className="p-4">
         <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
