@@ -9,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import BottomNav from "@/components/BottomNav";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -667,6 +668,8 @@ const PostDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BottomNav />
     </div>
   );
 };
