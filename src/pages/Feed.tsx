@@ -1101,42 +1101,7 @@ const Feed = () => {
         transition={{ duration: 0.3 }}
       >
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Right side - Hamburger Menu */}
-          <motion.button 
-            onClick={() => setIsMenuOpen(true)}
-            className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Menu className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-          </motion.button>
-          
-          {/* Center - Logo with animation */}
-          <motion.div 
-            className="flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <motion.div
-              whileHover={{ rotate: [0, -10, 10, 0] }}
-              transition={{ duration: 0.5 }}
-            >
-              <img src={petidIcon} alt="Petid" className="w-12 h-12 object-contain" />
-            </motion.div>
-            <h1 
-              className="text-xl font-fredoka font-semibold cursor-pointer text-foreground tracking-wide"
-              onClick={() => {
-                setPage(0);
-                setHasMore(true);
-                fetchPosts(0, false);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              PetID
-            </h1>
-          </motion.div>
-          
-          {/* Left icons - Refined style */}
+          {/* Right side - Icons */}
           <div className="flex items-center -space-x-1">
             <motion.button 
               onClick={() => navigate('/explore')}
@@ -1163,6 +1128,41 @@ const Feed = () => {
               <Send className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </motion.button>
           </div>
+          
+          {/* Center - Logo with animation */}
+          <motion.div 
+            className="flex items-center gap-2"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <motion.div
+              whileHover={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 0.5 }}
+            >
+              <img src={petidIcon} alt="Petid" className="w-12 h-12 object-contain" />
+            </motion.div>
+            <h1 
+              className="text-xl font-fredoka font-semibold cursor-pointer text-foreground tracking-wide"
+              onClick={() => {
+                setPage(0);
+                setHasMore(true);
+                fetchPosts(0, false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              PetID
+            </h1>
+          </motion.div>
+          
+          {/* Left side - Hamburger Menu */}
+          <motion.button 
+            onClick={() => setIsMenuOpen(true)}
+            className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Menu className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+          </motion.button>
         </div>
       </motion.div>
 
