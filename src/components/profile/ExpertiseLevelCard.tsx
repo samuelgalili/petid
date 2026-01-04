@@ -52,44 +52,44 @@ export const ExpertiseLevelCard = ({ points, className = "" }: ExpertiseLevelCar
       />
 
       <div className="relative p-4">
-        {/* Header Row */}
-        <div className="flex items-center justify-between mb-3">
+        {/* Main Row - Icon, Level, Points */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            {/* Star Icon */}
             <motion.div 
-              className={`w-12 h-12 rounded-xl bg-gradient-to-br ${currentLevel.color} flex items-center justify-center shadow-lg`}
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 4, repeat: Infinity }}
+              className={`w-10 h-10 rounded-full bg-gradient-to-br ${currentLevel.color} flex items-center justify-center shadow-md`}
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
             >
-              <LevelIcon className="w-6 h-6 text-white drop-shadow" />
+              <Star className="w-5 h-5 text-white fill-white drop-shadow" />
             </motion.div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-foreground">{currentLevel.name}</span>
-                <span className="text-xs text-muted-foreground">({currentLevel.nameEn})</span>
-              </div>
-              <p className="text-sm text-muted-foreground">רמת מומחיות</p>
+            
+            {/* Level Name */}
+            <div className="flex flex-col">
+              <span className="text-base font-bold text-foreground">{currentLevel.name}</span>
+              <span className="text-xs text-muted-foreground">{currentLevel.nameEn}</span>
             </div>
           </div>
-          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-        </div>
 
-        {/* Points Display */}
-        <div className="flex items-baseline gap-2 mb-3">
-          <motion.span 
-            className="text-3xl font-bold text-foreground"
-            key={points}
-            initial={{ scale: 1.2, color: 'hsl(var(--primary))' }}
-            animate={{ scale: 1, color: 'hsl(var(--foreground))' }}
-          >
-            {points.toLocaleString()}
-          </motion.span>
-          <span className="text-sm text-muted-foreground">נקודות</span>
+          {/* Points Display */}
+          <div className="flex items-center gap-2">
+            <motion.span 
+              className="text-2xl font-bold text-foreground"
+              key={points}
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+            >
+              {points.toLocaleString()}
+            </motion.span>
+            <span className="text-xs text-muted-foreground">נקודות</span>
+            <ChevronLeft className="w-4 h-4 text-muted-foreground mr-1" />
+          </div>
         </div>
 
         {/* Progress Bar */}
         {nextLevel && (
-          <div className="space-y-2">
-            <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+          <div className="mt-3 space-y-1.5">
+            <div className="relative h-1.5 rounded-full bg-muted overflow-hidden">
               <motion.div
                 className={`absolute inset-y-0 right-0 rounded-full bg-gradient-to-l ${currentLevel.color}`}
                 initial={{ width: 0 }}
@@ -97,10 +97,10 @@ export const ExpertiseLevelCard = ({ points, className = "" }: ExpertiseLevelCar
                 transition={{ duration: 1, delay: 0.3 }}
               />
             </div>
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>עוד {pointsToNextLevel} נקודות לרמה הבאה</span>
+            <div className="flex justify-between items-center text-[10px] text-muted-foreground">
+              <span>עוד {pointsToNextLevel} לרמה הבאה</span>
               <span className="flex items-center gap-1">
-                <nextLevel.icon className="w-3 h-3" />
+                <nextLevel.icon className="w-2.5 h-2.5" />
                 {nextLevel.name}
               </span>
             </div>
@@ -109,12 +109,12 @@ export const ExpertiseLevelCard = ({ points, className = "" }: ExpertiseLevelCar
 
         {/* Max level indicator */}
         {!nextLevel && (
-          <div className="flex items-center justify-center gap-2 py-2 text-sm">
-            <Sparkles className="w-4 h-4 text-yellow-500" />
+          <div className="flex items-center justify-center gap-2 mt-3 text-xs">
+            <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
             <span className="font-medium bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
               הגעת לרמה הגבוהה ביותר!
             </span>
-            <Sparkles className="w-4 h-4 text-yellow-500" />
+            <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
           </div>
         )}
       </div>
