@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Users, Trophy, ChevronLeft, Flame, Star, Gift } from "lucide-react";
+import { Users, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -84,7 +84,7 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
 
         setIsJoined(true);
         setParticipantCount(prev => prev + 1);
-        toast.success("הצטרפת לאתגר! 🎉 צברת 10 נקודות");
+        toast.success("הצטרפת לאתגר! 🎉");
       }
       
       onJoinChange?.();
@@ -137,20 +137,8 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
         </div>
       </div>
 
-      {/* Bottom section with rewards explanation and join button */}
+      {/* Bottom section with join button */}
       <div className="p-3 bg-card">
-        {/* Rewards explanation */}
-        <div className="flex items-center gap-4 mb-3 p-2 bg-muted/50 rounded-lg">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Star className="w-3.5 h-3.5 text-amber-500" />
-            <span>+10 נקודות להצטרפות</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Gift className="w-3.5 h-3.5 text-primary" />
-            <span>+50 נקודות לפרסום</span>
-          </div>
-        </div>
-
         {/* Join section */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
