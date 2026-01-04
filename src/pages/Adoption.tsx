@@ -17,7 +17,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, Search, Calendar, Ruler, Syringe, Scissors, Info, X, Share2, Copy, Check, MessageCircle, Bookmark, MoreHorizontal, Send } from "lucide-react";
+import { Heart, Search, Calendar, Ruler, Syringe, Scissors, Info, X, Share2, Copy, Check, MessageCircle, Bookmark, MoreHorizontal, Send, MapPin, Phone, Mail, Globe, Building2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +38,13 @@ interface AdoptionPet {
   is_neutered: boolean;
   image_url: string | null;
   status: string;
+  organization_name: string | null;
+  organization_phone: string | null;
+  organization_email: string | null;
+  organization_address: string | null;
+  organization_city: string | null;
+  organization_logo_url: string | null;
+  organization_website: string | null;
 }
 
 const Adoption = () => {
@@ -369,21 +376,24 @@ const Adoption = () => {
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="bg-card"
                 >
-                  {/* Post Header */}
+                  {/* Post Header - with organization info */}
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full p-[2px] bg-gradient-to-br from-primary via-accent to-secondary">
+                      <div className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-br from-primary via-accent to-secondary">
                         <div className="w-full h-full rounded-full bg-card p-[1px]">
                           <img
-                            src={pet.image_url || "/placeholder.svg"}
-                            alt={pet.name}
+                            src={pet.organization_logo_url || pet.image_url || "/placeholder.svg"}
+                            alt={pet.organization_name || pet.name}
                             className="w-full h-full rounded-full object-cover"
                           />
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{pet.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{pet.breed || pet.type}</p>
+                        <p className="text-sm font-semibold text-foreground">{pet.organization_name || "עמותת אימוץ"}</p>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-muted-foreground" />
+                          <p className="text-[11px] text-muted-foreground">{pet.organization_city || "ישראל"}</p>
+                        </div>
                       </div>
                     </div>
                     <button 
@@ -477,27 +487,57 @@ const Adoption = () => {
                       <p className="text-sm font-semibold text-foreground mb-1">אהבת את זה</p>
                     )}
 
-                    {/* Caption */}
-                    <div className="mb-2">
-                      <span className="text-sm font-semibold text-foreground ml-2">{pet.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {pet.description || `${pet.type} ${pet.gender || ""} בגיל ${getAgeString(pet.age_years, pet.age_months)}, גודל ${pet.size}. מחפש בית חם ואוהב! 🏠💕`}
-                      </span>
+                    {/* Pet Name & Info Card */}
+                    <div className="bg-gradient-to-l from-primary/5 to-accent/5 rounded-xl p-3 mb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{pet.type === 'כלב' ? '🐕' : '🐱'}</span>
+                          <span className="text-base font-bold text-foreground">{pet.name}</span>
+                          {pet.breed && (
+                            <span className="text-xs text-muted-foreground">• {pet.breed}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                          {getAgeString(pet.age_years, pet.age_months)}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                          {pet.size}
+                        </span>
+                        {pet.gender && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-secondary text-secondary-foreground">
+                            {pet.gender}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Caption */}
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      {pet.description || `מחפש בית חם ואוהב! 🏠💕`}
+                    </p>
+
+                    {/* Organization Contact Quick Info */}
+                    {pet.organization_phone && (
+                      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                        <Phone className="w-3 h-3" />
+                        <span>{pet.organization_phone}</span>
+                      </div>
+                    )}
 
                     {/* View Details Link */}
                     <button 
                       onClick={() => handlePetClick(pet)}
-                      className="text-sm text-gray-500 mb-2"
+                      className="text-sm text-primary font-medium mb-3"
                     >
-                      לצפייה בפרטים נוספים...
+                      לצפייה בפרטים מלאים ←
                     </button>
 
                     {/* Adopt Button */}
                     <Button
                       onClick={() => handlePetClick(pet)}
-                      className="w-full h-10 text-white rounded-xl text-sm font-bold mt-2 shadow-lg"
-                      style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
+                      className="w-full h-11 text-white rounded-xl text-sm font-bold shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
                     >
                       <Heart className="w-4 h-4 ml-2" fill="white" />
                       רוצה לאמץ את {pet.name}
@@ -511,15 +551,22 @@ const Adoption = () => {
           {/* Empty State */}
           {filteredPets.length === 0 && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16 px-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-20 px-6"
             >
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-10 h-10 text-gray-300" />
+              <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Heart className="w-12 h-12 text-primary/40" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">לא נמצאו חיות מחמד</h3>
-              <p className="text-gray-500 text-sm">נסה לשנות את הפילטרים</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">לא נמצאו חיות מחמד</h3>
+              <p className="text-muted-foreground text-sm mb-6">נסה לשנות את הפילטרים או לחפש משהו אחר</p>
+              <Button
+                onClick={() => { setTypeFilter("all"); setSizeFilter("all"); setSearchQuery(""); }}
+                variant="outline"
+                className="rounded-xl"
+              >
+                נקה חיפוש
+              </Button>
             </motion.div>
           )}
         </div>
@@ -527,7 +574,7 @@ const Adoption = () => {
 
       {/* Pet Details Dialog - Instagram Style */}
       <Dialog open={showPetDetails} onOpenChange={setShowPetDetails}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 border-0 rounded-2xl bg-white">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 border-0 rounded-2xl bg-card">
           {selectedPet && (
             <>
               {/* Pet Image */}
@@ -619,25 +666,98 @@ const Adoption = () => {
                   </div>
                 )}
 
+                {/* Organization Info Card */}
+                {selectedPet.organization_name && (
+                  <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl p-4 border border-primary/10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        {selectedPet.organization_logo_url ? (
+                          <img 
+                            src={selectedPet.organization_logo_url} 
+                            alt={selectedPet.organization_name}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <Building2 className="w-6 h-6 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">{selectedPet.organization_name}</h3>
+                        {selectedPet.organization_city && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {selectedPet.organization_city}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {selectedPet.organization_phone && (
+                        <a 
+                          href={`tel:${selectedPet.organization_phone}`}
+                          className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
+                        >
+                          <Phone className="w-4 h-4 text-primary" />
+                          <span>{selectedPet.organization_phone}</span>
+                        </a>
+                      )}
+                      {selectedPet.organization_email && (
+                        <a 
+                          href={`mailto:${selectedPet.organization_email}`}
+                          className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
+                        >
+                          <Mail className="w-4 h-4 text-primary" />
+                          <span>{selectedPet.organization_email}</span>
+                        </a>
+                      )}
+                      {selectedPet.organization_address && (
+                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="w-4 h-4 text-primary" />
+                          <span>{selectedPet.organization_address}</span>
+                        </p>
+                      )}
+                      {selectedPet.organization_website && (
+                        <a 
+                          href={selectedPet.organization_website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <Globe className="w-4 h-4" />
+                          <span>אתר העמותה</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-2">
                   <Button
                     onClick={handleProceedToAdopt}
-                    className="flex-1 h-11 text-white rounded-xl text-sm font-bold shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}
+                    className="flex-1 h-12 text-white rounded-xl text-sm font-bold shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
                   >
                     <Heart className="w-4 h-4 ml-2" fill="white" />
                     אמץ את {selectedPet.name}
                   </Button>
+                  {selectedPet.organization_phone && (
+                    <a
+                      href={`tel:${selectedPet.organization_phone}`}
+                      className="h-12 w-12 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 flex items-center justify-center flex-shrink-0 transition-colors"
+                    >
+                      <Phone className="w-5 h-5 text-primary" />
+                    </a>
+                  )}
                   <Button
                     onClick={() => handleSharePet(selectedPet)}
                     variant="outline"
-                    className="h-11 w-11 rounded-xl border-gray-200 hover:bg-gray-50 flex-shrink-0"
+                    className="h-12 w-12 rounded-xl border-border hover:bg-secondary flex-shrink-0"
                   >
                     {copied ? (
                       <Check className="w-5 h-5 text-green-500" />
                     ) : (
-                      <Share2 className="w-5 h-5 text-gray-600" />
+                      <Share2 className="w-5 h-5 text-muted-foreground" />
                     )}
                   </Button>
                 </div>

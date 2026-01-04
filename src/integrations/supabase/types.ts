@@ -140,6 +140,13 @@ export type Database = {
           is_neutered: boolean | null
           is_vaccinated: boolean | null
           name: string
+          organization_address: string | null
+          organization_city: string | null
+          organization_email: string | null
+          organization_logo_url: string | null
+          organization_name: string | null
+          organization_phone: string | null
+          organization_website: string | null
           size: string
           special_needs: string | null
           status: string | null
@@ -158,6 +165,13 @@ export type Database = {
           is_neutered?: boolean | null
           is_vaccinated?: boolean | null
           name: string
+          organization_address?: string | null
+          organization_city?: string | null
+          organization_email?: string | null
+          organization_logo_url?: string | null
+          organization_name?: string | null
+          organization_phone?: string | null
+          organization_website?: string | null
           size: string
           special_needs?: string | null
           status?: string | null
@@ -176,6 +190,13 @@ export type Database = {
           is_neutered?: boolean | null
           is_vaccinated?: boolean | null
           name?: string
+          organization_address?: string | null
+          organization_city?: string | null
+          organization_email?: string | null
+          organization_logo_url?: string | null
+          organization_name?: string | null
+          organization_phone?: string | null
+          organization_website?: string | null
           size?: string
           special_needs?: string | null
           status?: string | null
