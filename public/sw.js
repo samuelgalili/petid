@@ -1,5 +1,5 @@
 // Service Worker for Push Notifications
-const CACHE_VERSION = 'petid-v3';
+const CACHE_VERSION = 'petid-v5';
 
 // Install event - force update by clearing old caches
 self.addEventListener('install', (event) => {
