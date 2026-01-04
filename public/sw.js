@@ -1,16 +1,78 @@
 // Service Worker for Push Notifications
-const CACHE_VERSION = 'petid-v1';
+const CACHE_VERSION = 'petid-v3';
 
-// Install event
+// Install event - force update by clearing old caches
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_VERSION) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
   self.skipWaiting();
 });
 
-// Activate event
+// Activate event - claim clients immediately
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    Promise.all([
+      // Clear all old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.filter((cacheName) => cacheName !== CACHE_VERSION)
+            .map((cacheName) => caches.delete(cacheName))
+        );
+      }),
+      // Claim all clients
+      self.clients.claim()
+    ])
+  );
+});
+
+// Fetch event - Network First strategy for HTML/JS/CSS
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+  
+  // Skip chrome-extension and other non-http requests
+  if (!event.request.url.startsWith('http')) return;
+  
+  // For navigation requests (HTML pages), always go to network first
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+  
+  // For JS/CSS files, use network first
+  if (event.request.url.match(/\.(js|css)$/)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Clone and cache the response
+          const responseClone = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
 });
 
 // Push notification event
