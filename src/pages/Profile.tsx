@@ -39,6 +39,7 @@ import { PostGrid } from "@/components/profile/PostGrid";
 import { AnimatedCounter } from "@/components/profile/AnimatedCounter";
 import { MutualFollowers } from "@/components/profile/MutualFollowers";
 import { ActivityStatus } from "@/components/profile/ActivityStatus";
+import { ExpertiseLevelCard } from "@/components/profile/ExpertiseLevelCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Profile = () => {
@@ -418,34 +419,24 @@ const Profile = () => {
               <p className="text-foreground/90 text-sm leading-relaxed">{profile.bio}</p>
             )}
             
-            {/* Points & Cashback Display - Enhanced */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              {profile?.points > 0 && (
-                <motion.button 
-                  className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 to-primary/5 px-3 py-1.5 rounded-full border border-primary/20"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/rewards')}
-                >
-                  <Award className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-xs font-semibold text-primary">{profile.points} נקודות</span>
-                </motion.button>
-              )}
-              {(cashbackData || 0) > 0 && (
-                <motion.div 
-                  className="flex items-center gap-1.5 bg-gradient-to-r from-success/15 to-success/5 px-3 py-1.5 rounded-full border border-success/20"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <span className="text-xs font-semibold text-success">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
-                </motion.div>
-              )}
-            </div>
+            {/* Cashback Badge */}
+            {(cashbackData || 0) > 0 && (
+              <motion.div 
+                className="flex items-center gap-1.5 bg-gradient-to-r from-success/15 to-success/5 px-3 py-1.5 rounded-full border border-success/20 w-fit"
+                whileHover={{ scale: 1.05 }}
+              >
+                <span className="text-xs font-semibold text-success">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
+              </motion.div>
+            )}
 
             {/* Mutual Followers */}
             <div className="pt-1">
               <MutualFollowers userId={profile?.id} currentUserId={profile?.id} />
             </div>
           </motion.div>
+
+          {/* Expertise Level Card */}
+          <ExpertiseLevelCard points={profile?.points || 0} className="mb-5" />
 
           {/* Action Buttons - Enhanced with Tooltips */}
           <motion.div 
