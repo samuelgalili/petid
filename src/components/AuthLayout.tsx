@@ -121,7 +121,7 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
               transition={{ delay: 0.5, duration: 0.6 }}
               className="text-4xl font-black text-white tracking-tight font-jakarta mb-2"
             >
-              Petish
+              Petid
             </motion.h1>
 
             {/* Tagline */}
