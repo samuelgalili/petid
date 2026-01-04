@@ -1035,26 +1035,44 @@ const Feed = () => {
       
       case "foryou":
       default:
-        // Merge all items and sort by date
-        const merged = [...postItems, ...adoptionItems, ...productItems, ...adItems, ...suggestedItems, ...challengeItems].sort((a, b) => 
+        // Start with posts sorted by date
+        const sortedPosts = [...postItems].sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 
-        // Apply role-based sorting if available
-        const sorted = sortByPriority ? sortByPriority(merged) : merged;
-
-        // Apply non-organic spacing rule: no two non-organic items in sequence
-        const result: FeedItem[] = [];
-        let lastWasNonOrganic = false;
-        for (const item of sorted) {
-          const isNonOrganic = item.type !== 'post';
-          if (isNonOrganic && lastWasNonOrganic) {
-            continue;
-          }
-          result.push(item);
-          lastWasNonOrganic = isNonOrganic;
-        }
+        // Distribute non-organic content (challenges, products, ads, adoption, suggested) evenly
+        const nonOrganicItems = [
+          ...challengeItems,
+          ...adoptionItems,
+          ...productItems.slice(0, 3), // Limit products
+          ...adItems.slice(0, 2), // Limit ads
+          ...suggestedItems.slice(0, 2) // Limit suggested
+        ];
         
+        // Shuffle non-organic items for variety
+        const shuffledNonOrganic = nonOrganicItems.sort(() => Math.random() - 0.5);
+
+        // Insert one non-organic item every 4-6 posts
+        const result: FeedItem[] = [];
+        let nonOrganicIndex = 0;
+        const insertInterval = 5; // Insert after every 5 posts
+        
+        sortedPosts.forEach((post, index) => {
+          result.push(post);
+          
+          // After every N posts, insert a non-organic item if available
+          if ((index + 1) % insertInterval === 0 && nonOrganicIndex < shuffledNonOrganic.length) {
+            result.push(shuffledNonOrganic[nonOrganicIndex]);
+            nonOrganicIndex++;
+          }
+        });
+        
+        // Add remaining non-organic items at the end (spaced out)
+        while (nonOrganicIndex < shuffledNonOrganic.length) {
+          result.push(shuffledNonOrganic[nonOrganicIndex]);
+          nonOrganicIndex++;
+        }
+
         return applyFeedRules ? applyFeedRules(result) : result;
     }
   }, [posts, adoptionPets, suggestedPosts, challenges, shopProducts, activeTab, followingIds, sortByPriority, applyFeedRules]);
