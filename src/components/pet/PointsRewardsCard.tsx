@@ -99,27 +99,38 @@ export const PointsRewardsCard = ({ petName }: PointsRewardsCardProps) => {
       className="space-y-4"
     >
       {/* כרטיס ראשי - נקודות */}
-      <Card className={`p-5 relative overflow-hidden bg-gradient-to-br ${currentTier.color}`}>
-        {/* דפוס ברקע */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-1/2 -translate-x-1/2" />
+      <Card className={`p-5 relative overflow-hidden bg-gradient-to-br ${currentTier.color} shadow-xl`}>
+        {/* דפוס ברקע משופר */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -translate-y-1/2 translate-x-1/2 blur-xl" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-white rounded-full translate-y-1/2 -translate-x-1/2 blur-lg" />
+          <motion.div 
+            className="absolute top-1/2 left-1/2 w-20 h-20 bg-white/30 rounded-full"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
         </div>
 
         <div className="relative z-10">
           {/* שורה עליונה */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{currentTier.icon}</span>
+            <div className="flex items-center gap-3">
+              <motion.div 
+                className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
+                <span className="text-2xl">{currentTier.icon}</span>
+              </motion.div>
               <div>
-                <p className="text-white/80 text-xs">דרגת {currentTier.name}</p>
-                <p className="text-white font-bold text-sm">הנקודות שלי</p>
+                <p className="text-white/90 text-xs font-medium">דרגת {currentTier.name}</p>
+                <p className="text-white font-bold text-base">הנקודות שלי</p>
               </div>
             </div>
             <Button 
               variant="secondary" 
               size="sm" 
-              className="bg-white/20 text-white border-0 hover:bg-white/30 rounded-full gap-1"
+              className="bg-white/25 text-white border-0 hover:bg-white/35 rounded-full gap-1 backdrop-blur-sm shadow-md"
               onClick={() => navigate('/rewards')}
             >
               פרטים
@@ -127,50 +138,78 @@ export const PointsRewardsCard = ({ petName }: PointsRewardsCardProps) => {
             </Button>
           </div>
 
-          {/* נקודות */}
-          <div className="flex items-end gap-2 mb-4">
-            <motion.span 
-              className="text-4xl font-black text-white"
-              initial={{ scale: 0.5 }}
-              animate={{ scale: 1 }}
+          {/* נקודות - משופר */}
+          <div className="flex items-end gap-3 mb-4">
+            <motion.div 
+              className="flex items-baseline gap-2"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
             >
-              {points.toLocaleString()}
-            </motion.span>
-            <span className="text-white/70 text-sm mb-1">נקודות</span>
+              <span className="text-5xl font-black text-white drop-shadow-lg">
+                {points.toLocaleString()}
+              </span>
+              <span className="text-white/80 text-sm font-medium mb-2">נקודות</span>
+            </motion.div>
+            <motion.div
+              className="mr-auto"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Star className="w-6 h-6 text-white/60 fill-white/40" />
+            </motion.div>
           </div>
 
-          {/* התקדמות לדרגה הבאה */}
+          {/* התקדמות לדרגה הבאה - משופר */}
           {nextTier && (
-            <div className="space-y-1.5">
+            <div className="space-y-2 bg-white/10 backdrop-blur-sm rounded-xl p-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-white/80">עד דרגת {nextTier.name}</span>
-                <span className="text-white font-medium">{nextTier.points - points} נקודות</span>
+                <span className="text-white/90 font-medium">עד דרגת {nextTier.name}</span>
+                <span className="text-white font-bold bg-white/20 px-2 py-0.5 rounded-full">{nextTier.points - points} נקודות</span>
               </div>
-              <Progress value={tierProgress} className="h-2 bg-white/20" />
+              <div className="relative h-2.5 bg-white/20 rounded-full overflow-hidden">
+                <motion.div
+                  className="absolute inset-y-0 right-0 bg-white rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${tierProgress}%` }}
+                  transition={{ duration: 1, delay: 0.3 }}
+                />
+              </div>
             </div>
           )}
         </div>
       </Card>
 
-      {/* קאשבק */}
-      <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-green-500/20 flex items-center justify-center">
-              <Coins className="w-6 h-6 text-green-600" />
-            </div>
+      {/* קאשבק - משופר */}
+      <Card className="p-5 bg-gradient-to-br from-emerald-500/15 via-green-500/10 to-teal-500/5 border-emerald-500/30 shadow-lg relative overflow-hidden">
+        {/* אפקט ברקע */}
+        <div className="absolute top-0 left-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl" />
+        
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-4">
+            <motion.div 
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg"
+              whileHover={{ scale: 1.05, rotate: 5 }}
+            >
+              <Coins className="w-7 h-7 text-white" />
+            </motion.div>
             <div>
-              <p className="text-sm font-medium">קאשבק זמין</p>
-              <p className="text-2xl font-black text-green-600">₪{cashback}</p>
+              <p className="text-sm font-semibold text-foreground/80">קאשבק זמין</p>
+              <motion.p 
+                className="text-3xl font-black bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+              >
+                ₪{cashback}
+              </motion.p>
             </div>
           </div>
           <Button 
             size="sm" 
-            variant="outline" 
-            className="rounded-full border-green-500/30 text-green-600 hover:bg-green-500/10"
+            className="rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-emerald-600 hover:to-green-700 shadow-md px-5"
             onClick={() => navigate('/shop')}
           >
+            <Sparkles className="w-4 h-4 ml-1" />
             מימוש
           </Button>
         </div>
