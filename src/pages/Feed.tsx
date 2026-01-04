@@ -1101,7 +1101,17 @@ const Feed = () => {
         transition={{ duration: 0.3 }}
       >
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Left side - Logo with animation */}
+          {/* Right side - Hamburger Menu */}
+          <motion.button 
+            onClick={() => setIsMenuOpen(true)}
+            className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Menu className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+          </motion.button>
+          
+          {/* Center - Logo with animation */}
           <motion.div 
             className="flex items-center gap-2"
             whileHover={{ scale: 1.02 }}
@@ -1126,7 +1136,7 @@ const Feed = () => {
             </h1>
           </motion.div>
           
-          {/* Right icons - Refined style */}
+          {/* Left icons - Refined style */}
           <div className="flex items-center -space-x-1">
             <motion.button 
               onClick={() => navigate('/explore')}
