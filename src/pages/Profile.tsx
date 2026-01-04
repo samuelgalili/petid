@@ -419,15 +419,36 @@ const Profile = () => {
               <p className="text-foreground/90 text-sm leading-relaxed">{profile.bio}</p>
             )}
             
-            {/* Cashback Badge */}
-            {(cashbackData || 0) > 0 && (
+            {/* Cashback & Level Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {(cashbackData || 0) > 0 && (
+                <motion.div 
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-success/15 to-success/5 px-3 py-1.5 rounded-full border border-success/20"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <span className="text-xs font-semibold text-success">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
+                </motion.div>
+              )}
+              
+              {/* Star Rating Badge */}
               <motion.div 
-                className="flex items-center gap-1.5 bg-gradient-to-r from-success/15 to-success/5 px-3 py-1.5 rounded-full border border-success/20 w-fit"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/15 to-yellow-500/5 px-3 py-1.5 rounded-full border border-amber-500/20"
                 whileHover={{ scale: 1.05 }}
+                onClick={() => navigate('/rewards')}
               >
-                <span className="text-xs font-semibold text-success">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span className="text-xs font-semibold text-amber-600">
+                  {(() => {
+                    const points = profile?.points || 0;
+                    if (points >= 1000) return 'אגדה';
+                    if (points >= 600) return 'אלוף';
+                    if (points >= 300) return 'מומחה';
+                    if (points >= 100) return 'חובב';
+                    return 'מתחיל';
+                  })()}
+                </span>
               </motion.div>
-            )}
+            </div>
 
             {/* Mutual Followers */}
             <div className="pt-1">
