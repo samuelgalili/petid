@@ -289,8 +289,8 @@ const Rewards = () => {
         <div className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
           <div className="flex items-center justify-between px-4 py-3">
             <button 
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+              onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/profile')}
+              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors active:scale-95"
             >
               <ChevronLeft className="w-5 h-5 text-foreground" />
             </button>
