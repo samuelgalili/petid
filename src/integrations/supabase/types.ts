@@ -3106,6 +3106,8 @@ export type Database = {
       }
       redemptions: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           expires_at: string
           id: string
           redeemed_at: string
@@ -3115,6 +3117,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           expires_at: string
           id?: string
           redeemed_at?: string
@@ -3124,6 +3128,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           expires_at?: string
           id?: string
           redeemed_at?: string
@@ -3387,7 +3393,11 @@ export type Database = {
           icon: string
           id: string
           is_active: boolean
+          min_membership_days: number | null
+          min_order_amount: number | null
+          monthly_limit: number | null
           points_cost: number
+          requires_approval: boolean | null
           title: string
           type: string
           value: string
@@ -3399,7 +3409,11 @@ export type Database = {
           icon: string
           id?: string
           is_active?: boolean
+          min_membership_days?: number | null
+          min_order_amount?: number | null
+          monthly_limit?: number | null
           points_cost: number
+          requires_approval?: boolean | null
           title: string
           type: string
           value: string
@@ -3411,7 +3425,11 @@ export type Database = {
           icon?: string
           id?: string
           is_active?: boolean
+          min_membership_days?: number | null
+          min_order_amount?: number | null
+          monthly_limit?: number | null
           points_cost?: number
+          requires_approval?: boolean | null
           title?: string
           type?: string
           value?: string
@@ -4747,6 +4765,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_user_redeem: { Args: { p_user_id: string }; Returns: boolean }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
@@ -4757,6 +4776,7 @@ export type Database = {
         Returns: boolean
       }
       is_moderator_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_reward_available: { Args: { p_reward_id: string }; Returns: boolean }
       send_post_notification: {
         Args: {
           p_body: string
