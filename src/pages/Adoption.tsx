@@ -308,10 +308,59 @@ const Adoption = () => {
               className="relative flex justify-center"
             >
               <div className="relative">
+                {/* Floating Hearts Animation */}
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+                  <motion.span
+                    animate={{ 
+                      y: [0, -8, 0],
+                      rotate: [-5, 5, -5]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="text-lg"
+                  >
+                    💛
+                  </motion.span>
+                  <motion.span
+                    animate={{ 
+                      y: [0, -10, 0],
+                      rotate: [5, -5, 5]
+                    }}
+                    transition={{ 
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 0.3
+                    }}
+                    className="text-xl"
+                  >
+                    💛
+                  </motion.span>
+                  <motion.span
+                    animate={{ 
+                      y: [0, -6, 0],
+                      rotate: [-3, 3, -3]
+                    }}
+                    transition={{ 
+                      duration: 1.8,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 0.6
+                    }}
+                    className="text-base"
+                  >
+                    💛
+                  </motion.span>
+                </div>
+
                 <img 
                   src={catDogSilhouette} 
                   alt="בחר כלב או חתול" 
-                  className="h-24 object-contain"
+                  className="h-24 object-contain [&_*]:fill-transparent"
+                  style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
                 />
                 
                 {/* Clickable areas for dog and cat */}
