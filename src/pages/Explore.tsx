@@ -803,13 +803,15 @@ const Explore = () => {
                   onClick={() => navigate(mission.link)}
                   className="flex-shrink-0 w-44 bg-card rounded-xl px-3 py-2.5 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${mission.color}`}>
-                      <Icon className={`w-3.5 h-3.5 ${mission.iconColor}`} />
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${mission.color}`}>
+                        <Icon className={`w-3.5 h-3.5 ${mission.iconColor}`} />
+                      </div>
+                      <p className="text-xs font-semibold text-foreground truncate">{mission.title}</p>
                     </div>
-                    <p className="text-xs font-semibold text-foreground truncate">{mission.title}</p>
                   </div>
-                  <p className="text-[11px] text-primary font-bold">+{mission.points} נקודות</p>
+                  <p className="text-[11px] text-primary font-bold text-left">+{mission.points} נקודות</p>
                 </motion.div>
               );
             })}
