@@ -114,11 +114,15 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-background via-background to-muted/30 z-50 flex flex-col" dir="rtl">
+    <div className="fixed inset-0 bg-background z-[100] flex flex-col overflow-hidden" dir="rtl">
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/10" />
+      
       {/* Decorative background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-40 left-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-40 left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       {/* Header with skip and progress */}
@@ -189,7 +193,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
 
             {/* Title */}
             <motion.h1
-              className="text-2xl font-bold text-foreground mb-2 leading-tight"
+              className="text-2xl font-bold text-gray-900 dark:text-white mb-2 leading-tight"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
@@ -199,7 +203,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
 
             {/* Subtitle */}
             <motion.p
-              className="text-muted-foreground mb-8 text-base leading-relaxed"
+              className="text-gray-600 dark:text-gray-300 mb-8 text-base leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -217,14 +221,14 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
               {step.features.map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center gap-4 bg-card rounded-2xl p-4 border border-border/50 shadow-sm"
+                  className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + index * 0.08 }}
                   whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
                 >
                   <span className="text-2xl">{feature.emoji}</span>
-                  <span className="text-sm text-foreground font-medium text-right flex-1">{feature.text}</span>
+                  <span className="text-sm text-gray-900 dark:text-white font-medium text-right flex-1">{feature.text}</span>
                 </motion.div>
               ))}
             </motion.div>
