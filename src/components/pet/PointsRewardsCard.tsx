@@ -61,7 +61,7 @@ export const PointsRewardsCard = ({ petName }: PointsRewardsCardProps) => {
     if (points >= 2000) return { name: 'פלטינום', icon: '💎', color: 'from-purple-500 to-pink-500' };
     if (points >= 1000) return { name: 'זהב', icon: '👑', color: 'from-amber-400 to-yellow-500' };
     if (points >= 500) return { name: 'כסף', icon: '🥈', color: 'from-gray-300 to-gray-400' };
-    return { name: 'ברונזה', icon: '🥉', color: 'from-amber-600 to-amber-700' };
+    return { name: 'ברונזה', icon: '🥉', color: 'from-teal-500 to-cyan-600' };
   };
 
   const getNextTier = () => {
