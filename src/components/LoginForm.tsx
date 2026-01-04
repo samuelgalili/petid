@@ -107,11 +107,11 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, email: undefined });
           }}
           disabled={loading}
-          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
+          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 text-right ${
             fieldErrors.email ? "border-red-400" : ""
           }`}
           autoComplete="email"
-          dir="ltr"
+          dir="rtl"
         />
         {fieldErrors.email && (
           <p className="text-xs text-red-500 mt-1 text-right">{fieldErrors.email}</p>
@@ -129,11 +129,11 @@ export const LoginForm = () => {
             setFieldErrors({ ...fieldErrors, password: undefined });
           }}
           disabled={loading}
-          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 pr-10 ${
+          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 pl-10 text-right ${
             fieldErrors.password ? "border-red-400" : ""
           }`}
           autoComplete="current-password"
-          dir="ltr"
+          dir="rtl"
         />
         <button
           type="button"
