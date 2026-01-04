@@ -459,8 +459,11 @@ const Rewards = () => {
                                 {reward.value}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground font-jakarta mb-3 line-clamp-2">
+                            <p className="text-sm text-muted-foreground font-jakarta mb-1 line-clamp-2">
                               {reward.description}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground/60 font-jakarta mb-2">
+                              * להטבה בחנות PetID בלבד
                             </p>
 
                             <div className="flex items-center justify-between">
