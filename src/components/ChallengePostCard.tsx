@@ -98,25 +98,20 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-3">
           <motion.div 
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <Avatar className="w-8 h-8 ring-2 ring-transparent hover:ring-border transition-all duration-200">
-              <AvatarImage src={undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-orange-400 to-pink-500 text-white text-xs font-medium">
-                <Flame className="w-4 h-4" />
+            <Avatar className="w-8 h-8 ring-2 ring-border/50">
+              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/40 text-primary text-xs font-medium">
+                <Trophy className="w-4 h-4" />
               </AvatarFallback>
             </Avatar>
           </motion.div>
-          <motion.div 
-            className="flex flex-col"
-            whileHover={{ x: 2 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            <p className="font-semibold text-[#262626] text-[13px] leading-tight">#{challenge.hashtag}</p>
-            <p className="text-[11px] text-[#8E8E8E]">{getTimeAgo()}</p>
-          </motion.div>
+          <div className="flex flex-col">
+            <p className="font-semibold text-foreground text-[13px] leading-tight">#{challenge.hashtag}</p>
+            <p className="text-[11px] text-muted-foreground">{getTimeAgo()}</p>
+          </div>
         </div>
         
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -125,66 +120,60 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
         </div>
       </div>
 
-      {/* Post Image - Same aspect ratio as PostCard */}
+      {/* Post Image - Softer gradient background */}
       <div className="relative select-none">
         {challenge.cover_image_url ? (
           <OptimizedImage
             src={challenge.cover_image_url}
             alt={challenge.title_he}
-            className="w-full aspect-[3/4]"
+            className="w-full aspect-[4/3]"
             objectFit="cover"
             sizes="(max-width: 768px) 100vw, 672px"
           />
         ) : (
-          <div className="w-full aspect-[3/4] bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 flex items-center justify-center">
+          <div className="w-full aspect-[4/3] bg-gradient-to-br from-muted via-muted/80 to-muted/60 flex items-center justify-center">
             <motion.div
               animate={{ 
-                scale: [1, 1.1, 1],
-                opacity: [0.3, 0.5, 0.3]
+                scale: [1, 1.05, 1],
+                opacity: [0.15, 0.25, 0.15]
               }}
-              transition={{ repeat: Infinity, duration: 3 }}
-              className="text-white/30"
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              className="text-foreground/20"
             >
-              <Trophy className="w-32 h-32" />
+              <Trophy className="w-20 h-20" />
             </motion.div>
           </div>
         )}
         
-        {/* CTA Overlay at bottom - Instagram style */}
-        <div className="absolute bottom-0 left-0 right-0 bg-[#0095F6] px-3 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Flame className="w-4 h-4 text-white flex-shrink-0" />
-            <span className="text-white font-semibold text-[13px] truncate">
-              {challenge.title_he}
-            </span>
-            <span className="text-white/80 text-[11px] flex-shrink-0">
-              • {participantCount} משתתפים
-            </span>
+        {/* Soft overlay with content */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/95 via-background/80 to-transparent pt-12 pb-4 px-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex flex-col min-w-0">
+                <span className="text-foreground font-medium text-sm truncate">
+                  {challenge.title_he}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {participantCount} משתתפים
+                </span>
+              </div>
+            </div>
+            
+            <motion.button
+              onClick={handleJoinChallenge}
+              disabled={isJoining}
+              className={cn(
+                "font-medium text-xs px-4 py-2 rounded-full transition-all border",
+                isJoined 
+                  ? "bg-primary/10 text-primary border-primary/20" 
+                  : "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+              )}
+              whileTap={{ scale: 0.97 }}
+            >
+              {isJoining ? "..." : isJoined ? "✓ משתתף/ת" : "הצטרפו"}
+            </motion.button>
           </div>
-          
-          <motion.button
-            onClick={handleJoinChallenge}
-            disabled={isJoining}
-            className={cn(
-              "font-semibold text-[11px] px-3 py-1 rounded transition-all",
-              isJoined 
-                ? "bg-white/20 text-white" 
-                : "bg-white text-[#0095F6]"
-            )}
-            whileTap={{ scale: 0.95 }}
-          >
-            {isJoining ? "..." : isJoined ? "✓ משתתף/ת" : "הצטרפו עכשיו"}
-          </motion.button>
         </div>
-      </div>
-
-      {/* Caption area - minimal, like PostCard */}
-      <div className="px-3 py-2">
-        <p className="text-[13px] text-foreground">
-          <span className="font-semibold">אתגר #{challenge.hashtag}</span>
-          {" "}
-          <span className="text-muted-foreground">{participantCount} משתתפים</span>
-        </p>
       </div>
     </motion.div>
   );
