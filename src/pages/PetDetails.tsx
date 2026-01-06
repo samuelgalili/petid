@@ -680,23 +680,6 @@ const PetDetails = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
-        <TabsList className="w-full justify-start">
-          <AnimatedTabsTrigger value="overview" icon={<Sparkles className="w-4 h-4" />} layoutId="petDetailsTabs">
-            סקירה
-          </AnimatedTabsTrigger>
-          <AnimatedTabsTrigger value="breed" icon={<Info className="w-4 h-4" />} layoutId="petDetailsTabs">
-            הגזע
-          </AnimatedTabsTrigger>
-          <AnimatedTabsTrigger value="documents" icon={<FileText className="w-4 h-4" />} layoutId="petDetailsTabs">
-            מסמכים
-          </AnimatedTabsTrigger>
-          <AnimatedTabsTrigger value="training" icon={<GraduationCap className="w-4 h-4" />} layoutId="petDetailsTabs">
-            אילוף
-          </AnimatedTabsTrigger>
-          <AnimatedTabsTrigger value="photos" icon={<Image className="w-4 h-4" />} layoutId="petDetailsTabs">
-            תמונות
-          </AnimatedTabsTrigger>
-        </TabsList>
 
         {/* Overview Tab - NEW */}
         <TabsContent value="overview" className="px-4 pt-4 space-y-6" dir="rtl">
