@@ -68,7 +68,47 @@ const PetDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteAnimation, setShowDeleteAnimation] = useState(false);
-  const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
+const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
+  const [showAdoptionDialog, setShowAdoptionDialog] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+
+  const handleCreateAdoptionPost = async () => {
+    if (!pet) return;
+    
+    setIsCreatingPost(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        sonnerToast.error("יש להתחבר כדי לפרסם");
+        navigate('/auth');
+        return;
+      }
+
+      // Create a post with adoption tag
+      const { error } = await supabase
+        .from('posts')
+        .insert({
+          user_id: user.id,
+          caption: `🏠 מחפשים בית חם ואוהב ל${pet.name}!\n\n${pet.breed ? `גזע: ${pet.breed}\n` : ''}${pet.type === 'dog' ? '🐕' : '🐱'} ${pet.gender === 'male' ? 'זכר' : pet.gender === 'female' ? 'נקבה' : ''}\n\n#למסירה #אימוץ #בית_חם`,
+          image_url: pet.avatar_url || '',
+          hashtags: ['למסירה', 'אימוץ', 'בית_חם'],
+          pet_id: pet.id,
+        });
+
+      if (error) throw error;
+
+      sonnerToast.success("הפוסט פורסם בהצלחה! 🎉", {
+        description: `${pet.name} מחכה לבית חם`
+      });
+      setShowAdoptionDialog(false);
+      navigate('/feed');
+    } catch (error: any) {
+      console.error("Error creating adoption post:", error);
+      sonnerToast.error("שגיאה בפרסום הפוסט");
+    } finally {
+      setIsCreatingPost(false);
+    }
+  };
 
   const handleDeletePet = async () => {
     if (!petId) return;
@@ -628,13 +668,39 @@ const PetDetails = () => {
 
           {/* Adoption Button */}
           <motion.button
-            onClick={() => navigate('/adoption', { state: { petId: pet.id, petBreed: pet.breed, petType: pet.type, petName: pet.name } })}
+            onClick={() => setShowAdoptionDialog(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border hover:border-red-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             whileTap={{ scale: 0.95 }}
           >
             <Heart className="w-4 h-4 text-red-500" />
             <span className="text-xs font-medium text-foreground">למסירה</span>
           </motion.button>
+
+          {/* Adoption Confirmation Dialog */}
+          <AlertDialog open={showAdoptionDialog} onOpenChange={setShowAdoptionDialog}>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-right">
+                  מחפשים בית חם ל{pet.name}? 🏠
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-right">
+                  פוסט יפורסם בפיד עם תמונת {pet.name} ותיוג "למסירה".
+                  <br />
+                  משתמשים מעוניינים יוכלו ליצור איתך קשר.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-row-reverse gap-2">
+                <AlertDialogAction 
+                  onClick={handleCreateAdoptionPost}
+                  disabled={isCreatingPost}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {isCreatingPost ? "מפרסם..." : "כן, פרסם פוסט"}
+                </AlertDialogAction>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Grooming Button */}
           <motion.button
