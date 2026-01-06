@@ -1,7 +1,7 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, Menu, ShoppingCart, Coins, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, Menu, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
 import petidIcon from "@/assets/petid-icon.png";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
-import { usePoints } from "@/contexts/PointsContext";
+import { useLoyalty } from "@/hooks/useLoyalty";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -254,9 +254,8 @@ const Feed = () => {
   const {
     setCartIconPosition
   } = useFlyingCart();
-  const {
-    totalPoints
-  } = usePoints();
+  const { stats } = useLoyalty();
+  const totalPoints = stats?.totalPoints || 0;
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
