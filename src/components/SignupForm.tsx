@@ -3,30 +3,55 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, CalendarIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import { format, differenceInYears, parse, isValid } from "date-fns";
+import { he } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+
+// Calculate age from birthdate
+const calculateAge = (birthdate: Date): number => {
+  return differenceInYears(new Date(), birthdate);
+};
+
+// Validate age is at least 13
+const validateAge = (birthdate: Date): boolean => {
+  return calculateAge(birthdate) >= 13;
+};
 
 const emailSignupSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters").max(100).trim(),
-  email: z.string().min(1, "Email is required").email("Invalid email"),
+  fullName: z.string().min(2, "השם חייב להכיל לפחות 2 תווים").max(100).trim(),
+  email: z.string().min(1, "אימייל נדרש").email("אימייל לא תקין"),
+  birthdate: z.date({ message: "תאריך לידה נדרש" }).refine(
+    (date) => validateAge(date),
+    { message: "חובה להיות מעל גיל 13 לשימוש באפליקציה" }
+  ),
 });
 
 const phoneSignupSchema = z.object({
-  fullName: z.string().min(2, "Name must be at least 2 characters").max(100).trim(),
-  phone: z.string().min(1, "Phone is required").regex(/^0?[0-9]{9,10}$/, "מספר טלפון לא תקין"),
+  fullName: z.string().min(2, "השם חייב להכיל לפחות 2 תווים").max(100).trim(),
+  phone: z.string().min(1, "טלפון נדרש").regex(/^0?[0-9]{9,10}$/, "מספר טלפון לא תקין"),
+  birthdate: z.date({ message: "תאריך לידה נדרש" }).refine(
+    (date) => validateAge(date),
+    { message: "חובה להיות מעל גיל 13 לשימוש באפליקציה" }
+  ),
 });
 
 interface FieldError {
   fullName?: string;
   email?: string;
   phone?: string;
+  birthdate?: string;
 }
 
 export const SignupForm = () => {
   const [signupMethod, setSignupMethod] = useState<"whatsapp" | "phone" | "email">("whatsapp");
   const [formData, setFormData] = useState({ fullName: "", email: "", phone: "" });
+  const [birthdate, setBirthdate] = useState<Date | undefined>(undefined);
   const [showOTPInput, setShowOTPInput] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
@@ -64,7 +89,8 @@ export const SignupForm = () => {
               body: { 
                 phone: formData.phone, 
                 otp: otpCode,
-                fullName: formData.fullName 
+                fullName: formData.fullName,
+                birthdate: birthdate?.toISOString().split('T')[0]
               }
             });
 
@@ -75,6 +101,14 @@ export const SignupForm = () => {
               otpInputRefs.current[0]?.focus();
               setLoading(false);
               return;
+            }
+
+            // If new user was created, save birthdate to profile
+            if (data.isNewUser && data.userId && birthdate) {
+              await supabase
+                .from('profiles')
+                .update({ birthdate: birthdate.toISOString().split('T')[0] })
+                .eq('id', data.userId);
             }
 
             // If new user was created, we need to sign them in
@@ -95,7 +129,7 @@ export const SignupForm = () => {
             }
           } else {
             // Regular SMS/Email OTP via Supabase
-            const { error } = signupMethod === "email"
+            const { data: authData, error } = signupMethod === "email"
               ? await supabase.auth.verifyOtp({ email: formData.email, token: otpCode, type: 'email' })
               : await supabase.auth.verifyOtp({ phone: formData.phone, token: otpCode, type: 'sms' });
 
@@ -106,6 +140,14 @@ export const SignupForm = () => {
               otpInputRefs.current[0]?.focus();
               setLoading(false);
               return;
+            }
+
+            // Save birthdate to profile
+            if (authData?.user && birthdate) {
+              await supabase
+                .from('profiles')
+                .update({ birthdate: birthdate.toISOString().split('T')[0] })
+                .eq('id', authData.user.id);
             }
 
             toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
@@ -120,7 +162,7 @@ export const SignupForm = () => {
       }
     };
     verifyOtp();
-  }, [otp, showOTPInput, loading]);
+  }, [otp, showOTPInput, loading, birthdate]);
 
   const handleOtpChange = (index: number, value: string) => {
     const digit = value.replace(/\D/g, '').slice(-1);
@@ -164,8 +206,8 @@ export const SignupForm = () => {
       : phoneSignupSchema;
     
     const data = signupMethod === "email"
-      ? { fullName: formData.fullName, email: formData.email }
-      : { fullName: formData.fullName, phone: formData.phone };
+      ? { fullName: formData.fullName, email: formData.email, birthdate }
+      : { fullName: formData.fullName, phone: formData.phone, birthdate };
     
     const result = schema.safeParse(data);
     
@@ -238,7 +280,7 @@ export const SignupForm = () => {
     if (!showOTPInput) await sendOTP();
   };
 
-  const isFormValid = formData.fullName && (signupMethod === "email" ? formData.email : formData.phone);
+  const isFormValid = formData.fullName && birthdate && (signupMethod === "email" ? formData.email : formData.phone);
 
   const getMethodLabel = () => {
     switch (signupMethod) {
@@ -313,6 +355,47 @@ export const SignupForm = () => {
             {fieldErrors.fullName && (
               <p className="text-xs text-red-500 mt-1">{fieldErrors.fullName}</p>
             )}
+          </div>
+
+          {/* Birthdate Picker */}
+          <div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={loading}
+                  className={cn(
+                    "w-full h-10 justify-start text-right bg-gray-50 border border-gray-300 rounded-lg text-sm hover:bg-gray-100",
+                    !birthdate && "text-gray-400",
+                    fieldErrors.birthdate && "border-red-400"
+                  )}
+                >
+                  <CalendarIcon className="ml-2 h-4 w-4" />
+                  {birthdate ? format(birthdate, "dd/MM/yyyy") : "תאריך לידה"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={birthdate}
+                  onSelect={(date) => {
+                    setBirthdate(date);
+                    setFieldErrors({ ...fieldErrors, birthdate: undefined });
+                  }}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                  captionLayout="dropdown-buttons"
+                  fromYear={1920}
+                  toYear={new Date().getFullYear()}
+                  locale={he}
+                />
+              </PopoverContent>
+            </Popover>
+            {fieldErrors.birthdate && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.birthdate}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">חובה להיות מעל גיל 13</p>
           </div>
 
           {/* Email/Phone Input */}

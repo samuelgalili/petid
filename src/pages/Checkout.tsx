@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, Shield, Bell } from "lucide-react";
+import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, Shield, Bell, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
 import { CHECKOUT, SUCCESS } from "@/lib/brandVoice";
+import { differenceInYears } from "date-fns";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "שם מלא חייב להכיל לפחות 2 תווים").max(100, "שם מלא חייב להכיל פחות מ-100 תווים"),
@@ -54,6 +55,43 @@ const Checkout = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isUnder18, setIsUnder18] = useState<boolean | null>(null);
+  const [ageCheckLoading, setAgeCheckLoading] = useState(true);
+
+  // Check user age on component mount
+  useEffect(() => {
+    const checkUserAge = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('birthdate')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.birthdate) {
+          const birthdate = new Date(profile.birthdate);
+          const age = differenceInYears(new Date(), birthdate);
+          setIsUnder18(age < 18);
+        } else {
+          // If no birthdate, assume they can't purchase (legacy users should update profile)
+          setIsUnder18(true);
+        }
+      } catch (error) {
+        console.error("Error checking age:", error);
+        setIsUnder18(true);
+      } finally {
+        setAgeCheckLoading(false);
+      }
+    };
+
+    checkUserAge();
+  }, [navigate]);
 
   const subtotal = getSubtotal();
   const shipping = subtotal >= 199 ? 0 : 25;
@@ -137,6 +175,40 @@ const Checkout = () => {
       duration: 1500,
     });
   };
+
+  if (ageCheckLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (isUnder18) {
+    return (
+      <div className="min-h-screen pb-20 bg-background" dir="rtl">
+        <AppHeader title="תשלום" showBackButton={true} />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">
+            <AlertTriangle className="w-10 h-10 text-amber-600" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-3">
+            רכישה מותרת מגיל 18 ומעלה
+          </h2>
+          <p className="text-muted-foreground mb-6 max-w-sm">
+            על פי תנאי השימוש, רכישות באפליקציה מותרות רק למשתמשים בני 18 ומעלה.
+          </p>
+          <Button
+            onClick={() => navigate("/cart")}
+            variant="outline"
+            className="rounded-full"
+          >
+            חזרה לעגלה
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     navigate("/cart");
