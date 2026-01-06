@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { usePoints } from "@/contexts/PointsContext";
+import { useLoyalty } from "@/hooks/useLoyalty";
 import confetti from "canvas-confetti";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -25,7 +25,8 @@ interface Task {
 
 const Tasks = () => {
   const { toast } = useToast();
-  const { totalPoints, addPoints } = usePoints();
+  const { stats, awardPoints } = useLoyalty();
+  const totalPoints = stats?.totalPoints || 0;
   const [streak, setStreak] = useState(7);
 
   const [tasks, setTasks] = useState<Task[]>([
@@ -117,7 +118,9 @@ const Tasks = () => {
     if (!task || task.completed) return;
 
     try {
-      await addPoints(task.points);
+      // Award points based on task category
+      const actionType = task.category === 'feeding' ? 'use_bag_reminder' : 'rate_product';
+      await awardPoints(actionType);
       
       setTasks((prevTasks) =>
         prevTasks.map((t) => 
