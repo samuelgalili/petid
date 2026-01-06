@@ -1,4 +1,4 @@
-import { Search, MapPin, Star } from "lucide-react";
+import { Search, MapPin, Star, Dog, Clock, Phone, Truck, Bath, Footprints } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -6,101 +6,164 @@ import BottomNav from "@/components/BottomNav";
 import { AppHeader } from "@/components/AppHeader";
 
 const Experiences = () => {
-  const experiences = [
-    {
-      name: "שם החוויה",
-      location: "שדרות הרצשטיין 1, תל אביב",
-      phone: "קריאה 3456-1234",
-      rating: 4.5,
-      freeSpots: 0,
-      allergens: ["אכיל לכלבות", "אכיל להכלים", "אכיל לכלב דוס", "מנגנס"],
-      image: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400&h=300&fit=crop",
-    },
-    {
-      name: "שם החוויה",
-      location: "שדרות הרצשטיין 1, תל אביב",
-      phone: "קריאה 3456-1234",
-      rating: 4.5,
-      freeSpots: 9,
-      allergens: ["אכיל לכלבות", "אכיל להכלים", "אכיל לכלב דוס", "מנגנס"],
-      image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=300&fit=crop",
-    },
+  const pricingOneDog = [
+    { label: "יומי", price: "110 ₪" },
+    { label: "מעל 10 ימים", price: "105 ₪ ליום" },
+    { label: "מעל 21 ימים", price: "95 ₪ ליום" },
+  ];
+
+  const pricingSpecial = [
+    { label: "כלב שלא אוהב זרים", price: "150 ₪" },
+    { label: "כלב שלא מסתדר", price: "130 ₪" },
+  ];
+
+  const pricingTwoDogs = [
+    { label: "יומי", price: "190 ₪" },
+  ];
+
+  const extras = [
+    { icon: Footprints, label: "טיול לכלב", price: "40 ₪" },
+    { icon: Bath, label: "מקלחת וטיפוח", price: "100 ₪" },
+    { icon: Truck, label: "שירותי הסעות", price: "לפי מיקום" },
+  ];
+
+  const openingHours = [
+    { days: "א', ב', ג', ד', ה', ש'", hours: "08:00-13:00 ~ 16:00-18:30" },
+    { days: "יום ו'", hours: "08:00-13:00 ~ 16:00-18:00" },
+    { days: "ערבי חג", hours: "08:00-13:00 ~ 16:00-18:00" },
   ];
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
-      <AppHeader title="חניות חיות" showBackButton={true} />
+      <AppHeader title="פנסיון לכלבים" showBackButton={true} />
       
-      {/* Search and filters */}
+      {/* Hero Section */}
       <div className="px-4 py-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              placeholder="חיפוש"
-              className="pr-10 rounded-full bg-muted/50"
-            />
+        <div className="relative rounded-2xl overflow-hidden mb-4">
+          <img 
+            src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&h=300&fit=crop" 
+            alt="פנסיון לכלבים"
+            className="w-full h-40 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute bottom-4 right-4 text-white">
+            <h1 className="text-2xl font-bold">פנסיון הכלבים שלנו</h1>
+            <p className="text-sm opacity-90">טיפול אוהב ומקצועי לחבר הכי טוב שלך</p>
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground mb-4">חניות חיות</h1>
-
-        <div className="mb-2">
-          <p className="text-sm font-medium text-muted-foreground mb-2">כל החניות במקום אחד</p>
-        </div>
-
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          <Badge variant="outline" className="rounded-full bg-primary/10 text-primary border-primary/30 whitespace-nowrap">
-            מתחים ענגים
-          </Badge>
-          <Badge variant="outline" className="rounded-full bg-accent/10 text-accent border-accent/30 whitespace-nowrap">
-            קרוב אלי
-          </Badge>
-          <Badge variant="outline" className="rounded-full bg-success/10 text-success border-success/30 whitespace-nowrap">
-            מומלצים
-          </Badge>
-        </div>
-      </div>
-
-      {/* Experiences List */}
-      <div className="px-6 space-y-4">
-        {experiences.map((exp, index) => (
-          <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border-border">
-            <div className="flex gap-4 p-4">
-              <div className="flex-1">
-                <h3 className="font-bold text-lg text-foreground mb-2">{exp.name}</h3>
-                <div className="flex items-start gap-2 text-sm text-muted-foreground mb-2">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
-                  <span>{exp.location}</span>
-                </div>
-                <div className="flex items-center gap-4 text-sm mb-3">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-accent text-accent" />
-                    <span className="font-medium text-foreground">{exp.rating}</span>
-                  </div>
-                  <span className={exp.freeSpots > 0 ? "text-success font-medium" : "text-destructive font-medium"}>
-                    {exp.freeSpots > 0 ? `נגיש למקום ⚫ ${exp.freeSpots}` : "נגיש למקום ⚫ 0"}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {exp.allergens.map((allergen, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs bg-muted text-muted-foreground">
-                      {allergen}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground">{exp.phone}</p>
-              </div>
-              <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border border-border">
-                <img
-                  src={exp.image}
-                  alt={exp.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+        {/* Contact */}
+        <Card className="p-4 mb-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <Phone className="w-5 h-5 text-primary" />
             </div>
-          </Card>
-        ))}
+            <div>
+              <p className="font-medium text-foreground">להזמנות ופרטים</p>
+              <p className="text-sm text-muted-foreground">צרו קשר עכשיו</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Pricing - One Dog */}
+        <Card className="p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Dog className="w-5 h-5 text-primary" />
+            <h2 className="font-bold text-foreground">מחירון יומי - כלב אחד</h2>
+          </div>
+          <div className="space-y-2">
+            {pricingOneDog.map((item, index) => (
+              <div key={index} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                <span className="text-foreground">{item.label}</span>
+                <span className="font-bold text-primary">{item.price}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Pricing - Two Dogs */}
+        <Card className="p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex -space-x-1">
+              <Dog className="w-5 h-5 text-primary" />
+              <Dog className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="font-bold text-foreground">מחירון יומי - שני כלבים</h2>
+          </div>
+          <div className="space-y-2">
+            {pricingTwoDogs.map((item, index) => (
+              <div key={index} className="flex justify-between items-center py-2">
+                <span className="text-foreground">{item.label}</span>
+                <span className="font-bold text-primary">{item.price}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">* יותר כלבים? ניתן לקבל הצעת מחיר מותאמת</p>
+        </Card>
+
+        {/* Special Pricing */}
+        <Card className="p-4 mb-4 bg-orange-500/5 border-orange-500/20">
+          <h2 className="font-bold text-foreground mb-3">מחירון לפי חריגים</h2>
+          <div className="space-y-2">
+            {pricingSpecial.map((item, index) => (
+              <div key={index} className="flex justify-between items-center py-2 border-b border-orange-500/10 last:border-0">
+                <span className="text-foreground">{item.label}</span>
+                <span className="font-bold text-orange-500">{item.price}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Extras */}
+        <Card className="p-4 mb-4">
+          <h2 className="font-bold text-foreground mb-3">שירותים נוספים</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {extras.map((item, index) => (
+              <div key={index} className="text-center p-3 rounded-xl bg-muted/50">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-primary/10 flex items-center justify-center">
+                  <item.icon className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-xs font-medium text-foreground mb-1">{item.label}</p>
+                <p className="text-xs font-bold text-primary">{item.price}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Opening Hours */}
+        <Card className="p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="w-5 h-5 text-primary" />
+            <h2 className="font-bold text-foreground">שעות פתיחה</h2>
+          </div>
+          <div className="space-y-2">
+            {openingHours.map((item, index) => (
+              <div key={index} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                <span className="text-foreground text-sm">{item.days}</span>
+                <span className="text-sm text-muted-foreground">{item.hours}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Important Notes */}
+        <Card className="p-4 bg-muted/50">
+          <h2 className="font-bold text-foreground mb-3">שימו לב</h2>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>היום הראשון לקליטה נחשב כיום מלא</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>יום איסוף עד 13:00 - לא יחשב כיום</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>איסוף אחרי 13:00 - יחשב כיום נוסף</span>
+            </li>
+          </ul>
+        </Card>
       </div>
 
       <BottomNav />
