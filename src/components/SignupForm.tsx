@@ -272,7 +272,7 @@ export const SignupForm = () => {
               }`}
             >
               <MessageCircle className="w-4 h-4" />
-              WhatsApp
+              וואטסאפ
             </button>
             <button
               type="button"
@@ -281,7 +281,7 @@ export const SignupForm = () => {
                 signupMethod === "phone" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
               }`}
             >
-              SMS
+              סמס
             </button>
             <button
               type="button"
@@ -290,7 +290,7 @@ export const SignupForm = () => {
                 signupMethod === "email" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
               }`}
             >
-              Email
+              אימייל
             </button>
           </div>
 

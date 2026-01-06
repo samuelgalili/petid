@@ -131,23 +131,23 @@ const ResetPassword = () => {
               {!success ? (
                 <>
                   <div className="mb-8 text-center">
-                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">Set New Password</h2>
+                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">הגדרת סיסמה חדשה</h2>
                     <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
-                      Enter your new password below
+                      הזן את הסיסמה החדשה שלך למטה
                     </p>
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="space-y-2">
                       <Label htmlFor="password" className="text-sm font-medium font-jakarta text-gray-700">
-                        New Password
+                        סיסמה חדשה
                       </Label>
                       <div className="relative">
                         <Input
                           id="password"
                           name="password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="At least 6 characters"
+                          placeholder="לפחות 6 תווים"
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value);
