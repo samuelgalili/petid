@@ -23,15 +23,15 @@ export const SocialAuthButtons = ({ redirectTo = "/" }: SocialAuthButtonsProps) 
 
       if (error) {
         toast({
-          title: "Error",
+          title: "שגיאה",
           description: error.message,
           variant: "destructive",
         });
       }
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to sign in with Google",
+        title: "שגיאה",
+        description: "ההתחברות עם Google נכשלה",
         variant: "destructive",
       });
     } finally {
@@ -51,15 +51,15 @@ export const SocialAuthButtons = ({ redirectTo = "/" }: SocialAuthButtonsProps) 
 
       if (error) {
         toast({
-          title: "Error",
+          title: "שגיאה",
           description: error.message,
           variant: "destructive",
         });
       }
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to sign in with Facebook",
+        title: "שגיאה",
+        description: "ההתחברות עם Facebook נכשלה",
         variant: "destructive",
       });
     } finally {
@@ -77,10 +77,10 @@ export const SocialAuthButtons = ({ redirectTo = "/" }: SocialAuthButtonsProps) 
         },
       });
       if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
+        toast({ title: "שגיאה", description: error.message, variant: "destructive" });
       }
     } catch {
-      toast({ title: "Error", description: "Failed to sign in with Apple", variant: "destructive" });
+      toast({ title: "שגיאה", description: "ההתחברות עם Apple נכשלה", variant: "destructive" });
     } finally {
       setLoading(false);
     }
