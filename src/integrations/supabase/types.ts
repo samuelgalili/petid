@@ -2917,6 +2917,7 @@ export type Database = {
           allow_messages_from: string | null
           avatar_url: string | null
           bio: string | null
+          birthdate: string | null
           blocked_at: string | null
           blocked_by: string | null
           blocked_reason: string | null
@@ -2943,6 +2944,7 @@ export type Database = {
           allow_messages_from?: string | null
           avatar_url?: string | null
           bio?: string | null
+          birthdate?: string | null
           blocked_at?: string | null
           blocked_by?: string | null
           blocked_reason?: string | null
@@ -2969,6 +2971,7 @@ export type Database = {
           allow_messages_from?: string | null
           avatar_url?: string | null
           bio?: string | null
+          birthdate?: string | null
           blocked_at?: string | null
           blocked_by?: string | null
           blocked_reason?: string | null
