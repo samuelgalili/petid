@@ -569,21 +569,21 @@ const PetDetails = () => {
       </div>
 
       {/* Quick Action Buttons */}
-      <div className="px-4 mt-4" dir="rtl">
+      <div className="px-4 mt-3" dir="rtl">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="grid grid-cols-4 gap-2"
+          className="flex gap-2 justify-center"
         >
           {/* Grooming Button */}
           <motion.button
             onClick={() => navigate('/grooming', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type } })}
-            className="flex flex-col items-center gap-1 p-1.5 rounded-xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:from-pink-500/30 hover:to-purple-500/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:from-pink-500/30 hover:to-purple-500/30 transition-all hover:scale-105 active:scale-95"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow">
-              <Scissors className="w-3 h-3 text-white" />
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center">
+              <Scissors className="w-2.5 h-2.5 text-white" />
             </div>
             <span className="text-[10px] font-medium text-foreground">טיפוח</span>
           </motion.button>
@@ -591,11 +591,11 @@ const PetDetails = () => {
           {/* Pension/Boarding Button */}
           <motion.button
             onClick={() => navigate('/experiences', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
-            className="flex flex-col items-center gap-1 p-1.5 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 hover:from-blue-500/30 hover:to-cyan-500/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 hover:from-blue-500/30 hover:to-cyan-500/30 transition-all hover:scale-105 active:scale-95"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow">
-              <MapPin className="w-3 h-3 text-white" />
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+              <MapPin className="w-2.5 h-2.5 text-white" />
             </div>
             <span className="text-[10px] font-medium text-foreground">פנסיון</span>
           </motion.button>
@@ -603,11 +603,11 @@ const PetDetails = () => {
           {/* Insurance Button */}
           <motion.button
             onClick={() => navigate('/insurance', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex flex-col items-center gap-1 p-1.5 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30 transition-all hover:scale-105 active:scale-95"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow">
-              <Shield className="w-3 h-3 text-white" />
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+              <Shield className="w-2.5 h-2.5 text-white" />
             </div>
             <span className="text-[10px] font-medium text-foreground">ביטוח</span>
           </motion.button>
@@ -615,11 +615,11 @@ const PetDetails = () => {
           {/* Shop Button */}
           <motion.button
             onClick={() => navigate('/shop', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex flex-col items-center gap-1 p-1.5 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 hover:from-primary/30 hover:to-accent/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 hover:from-primary/30 hover:to-accent/30 transition-all hover:scale-105 active:scale-95"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow">
-              <Package className="w-3 h-3 text-white" />
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <Package className="w-2.5 h-2.5 text-white" />
             </div>
             <span className="text-[10px] font-medium text-foreground">חנות</span>
           </motion.button>
