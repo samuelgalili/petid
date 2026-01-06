@@ -1,9 +1,23 @@
-import { Search, MapPin, Star, Dog, Clock, Phone, Truck, Bath, Footprints } from "lucide-react";
+import { Star, Dog, Clock, Phone, Truck, Bath, Footprints, MessageCircle, Image } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import BottomNav from "@/components/BottomNav";
 import { AppHeader } from "@/components/AppHeader";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+
+// Customer reviews images
+import review1 from "@/assets/pension/review-1.jpeg";
+import review2 from "@/assets/pension/review-2.jpeg";
+import review3 from "@/assets/pension/review-3.jpeg";
+import review4 from "@/assets/pension/review-4.jpeg";
+
+// Gallery images
+import gallery1 from "@/assets/pension/gallery-1.jpeg";
 
 const Experiences = () => {
   const pricingOneDog = [
@@ -32,6 +46,9 @@ const Experiences = () => {
     { days: "יום ו'", hours: "08:00-13:00 ~ 16:00-18:00" },
     { days: "ערבי חג", hours: "08:00-13:00 ~ 16:00-18:00" },
   ];
+
+  const customerReviews = [review1, review2, review3, review4];
+  const galleryImages = [gallery1];
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
@@ -147,7 +164,7 @@ const Experiences = () => {
         </Card>
 
         {/* Important Notes */}
-        <Card className="p-4 bg-muted/50">
+        <Card className="p-4 bg-muted/50 mb-4">
           <h2 className="font-bold text-foreground mb-3">שימו לב</h2>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
@@ -163,6 +180,62 @@ const Experiences = () => {
               <span>איסוף אחרי 13:00 - יחשב כיום נוסף</span>
             </li>
           </ul>
+        </Card>
+
+        {/* Gallery Carousel */}
+        <Card className="p-4 mb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Image className="w-5 h-5 text-primary" />
+            <h2 className="font-bold text-foreground">גלריה</h2>
+          </div>
+          <Carousel className="w-full" dir="ltr">
+            <CarouselContent>
+              {galleryImages.map((image, index) => (
+                <CarouselItem key={index}>
+                  <img
+                    src={image}
+                    alt={`גלריית פנסיון ${index + 1}`}
+                    className="w-full h-48 object-cover rounded-xl"
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {galleryImages.length > 1 && (
+              <>
+                <CarouselPrevious className="left-2" />
+                <CarouselNext className="right-2" />
+              </>
+            )}
+          </Carousel>
+        </Card>
+
+        {/* Customer Reviews Carousel */}
+        <Card className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageCircle className="w-5 h-5 text-primary" />
+            <h2 className="font-bold text-foreground">מה הלקוחות אומרים</h2>
+            <div className="flex items-center gap-1 mr-auto">
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+              <span className="text-sm font-medium">5.0</span>
+            </div>
+          </div>
+          <Carousel className="w-full" dir="ltr">
+            <CarouselContent>
+              {customerReviews.map((review, index) => (
+                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1">
+                    <img
+                      src={review}
+                      alt={`ביקורת לקוח ${index + 1}`}
+                      className="w-full h-64 object-cover rounded-xl shadow-sm"
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-2" />
+            <CarouselNext className="right-2" />
+          </Carousel>
         </Card>
       </div>
 
