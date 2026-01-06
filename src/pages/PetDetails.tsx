@@ -569,58 +569,110 @@ const PetDetails = () => {
       </div>
 
       {/* Quick Action Buttons */}
-      <div className="px-4 mt-3" dir="rtl">
+      <div className="px-4 mt-3 overflow-x-auto scrollbar-hide" dir="rtl">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="flex gap-2 justify-center"
+          className="flex gap-2 pb-2"
         >
+          {/* Overview Button */}
+          <motion.button
+            onClick={() => setActiveTab('overview')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'overview' ? 'bg-primary/20 border-primary/50' : 'bg-muted/50 border-border/50 hover:bg-muted'}`}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Sparkles className="w-3 h-3 text-primary" />
+            <span className="text-[10px] font-medium text-foreground">סקירה</span>
+          </motion.button>
+
+          {/* Breed Button */}
+          <motion.button
+            onClick={() => setActiveTab('breed')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'breed' ? 'bg-primary/20 border-primary/50' : 'bg-muted/50 border-border/50 hover:bg-muted'}`}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Info className="w-3 h-3 text-orange-500" />
+            <span className="text-[10px] font-medium text-foreground">הגזע</span>
+          </motion.button>
+
+          {/* Documents Button */}
+          <motion.button
+            onClick={() => setActiveTab('documents')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'documents' ? 'bg-primary/20 border-primary/50' : 'bg-muted/50 border-border/50 hover:bg-muted'}`}
+            whileTap={{ scale: 0.95 }}
+          >
+            <FileText className="w-3 h-3 text-blue-500" />
+            <span className="text-[10px] font-medium text-foreground">מסמכים</span>
+          </motion.button>
+
+          {/* Training Button */}
+          <motion.button
+            onClick={() => setActiveTab('training')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'training' ? 'bg-primary/20 border-primary/50' : 'bg-muted/50 border-border/50 hover:bg-muted'}`}
+            whileTap={{ scale: 0.95 }}
+          >
+            <GraduationCap className="w-3 h-3 text-purple-500" />
+            <span className="text-[10px] font-medium text-foreground">אילוף</span>
+          </motion.button>
+
+          {/* Photos Button */}
+          <motion.button
+            onClick={() => setActiveTab('photos')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'photos' ? 'bg-primary/20 border-primary/50' : 'bg-muted/50 border-border/50 hover:bg-muted'}`}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Image className="w-3 h-3 text-pink-500" />
+            <span className="text-[10px] font-medium text-foreground">תמונות</span>
+          </motion.button>
+
+          {/* Adoption Button */}
+          <motion.button
+            onClick={() => navigate('/adoption', { state: { petId: pet.id, petBreed: pet.breed, petType: pet.type, petName: pet.name } })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-500/30 hover:from-red-500/30 hover:to-pink-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+            whileTap={{ scale: 0.95 }}
+          >
+            <Heart className="w-3 h-3 text-red-500" />
+            <span className="text-[10px] font-medium text-foreground">למסירה</span>
+          </motion.button>
+
           {/* Grooming Button */}
           <motion.button
             onClick={() => navigate('/grooming', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type } })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:from-pink-500/30 hover:to-purple-500/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:from-pink-500/30 hover:to-purple-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center">
-              <Scissors className="w-2.5 h-2.5 text-white" />
-            </div>
+            <Scissors className="w-3 h-3 text-pink-500" />
             <span className="text-[10px] font-medium text-foreground">טיפוח</span>
           </motion.button>
 
           {/* Pension/Boarding Button */}
           <motion.button
             onClick={() => navigate('/experiences', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 hover:from-blue-500/30 hover:to-cyan-500/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 hover:from-blue-500/30 hover:to-cyan-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-              <MapPin className="w-2.5 h-2.5 text-white" />
-            </div>
+            <MapPin className="w-3 h-3 text-blue-500" />
             <span className="text-[10px] font-medium text-foreground">פנסיון</span>
           </motion.button>
 
           {/* Insurance Button */}
           <motion.button
             onClick={() => navigate('/insurance', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
-              <Shield className="w-2.5 h-2.5 text-white" />
-            </div>
+            <Shield className="w-3 h-3 text-green-500" />
             <span className="text-[10px] font-medium text-foreground">ביטוח</span>
           </motion.button>
 
           {/* Shop Button */}
           <motion.button
             onClick={() => navigate('/shop', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 hover:from-primary/30 hover:to-accent/30 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 hover:from-primary/30 hover:to-accent/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             whileTap={{ scale: 0.95 }}
           >
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Package className="w-2.5 h-2.5 text-white" />
-            </div>
+            <Package className="w-3 h-3 text-primary" />
             <span className="text-[10px] font-medium text-foreground">חנות</span>
           </motion.button>
         </motion.div>
