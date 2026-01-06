@@ -568,6 +568,64 @@ const PetDetails = () => {
         </motion.div>
       </div>
 
+      {/* Quick Action Buttons */}
+      <div className="px-4 mt-4" dir="rtl">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="grid grid-cols-4 gap-3"
+        >
+          {/* Grooming Button */}
+          <motion.button
+            onClick={() => navigate('/grooming', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type } })}
+            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:from-pink-500/30 hover:to-purple-500/30 transition-all hover:scale-105 active:scale-95"
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center shadow-lg">
+              <Scissors className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">טיפוח</span>
+          </motion.button>
+
+          {/* Pension/Boarding Button */}
+          <motion.button
+            onClick={() => navigate('/experiences', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
+            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 hover:from-blue-500/30 hover:to-cyan-500/30 transition-all hover:scale-105 active:scale-95"
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <MapPin className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">פנסיון</span>
+          </motion.button>
+
+          {/* Insurance Button */}
+          <motion.button
+            onClick={() => navigate('/insurance', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
+            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30 transition-all hover:scale-105 active:scale-95"
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">ביטוח</span>
+          </motion.button>
+
+          {/* Shop Button */}
+          <motion.button
+            onClick={() => navigate('/shop', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
+            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 hover:from-primary/30 hover:to-accent/30 transition-all hover:scale-105 active:scale-95"
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+              <Package className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xs font-medium text-foreground">חנות</span>
+          </motion.button>
+        </motion.div>
+      </div>
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
         <TabsList className="w-full justify-start">
