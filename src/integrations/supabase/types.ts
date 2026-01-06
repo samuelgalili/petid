@@ -4728,6 +4728,36 @@ export type Database = {
           },
         ]
       }
+      whatsapp_otps: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          otp_code: string
+          phone: string
+          type: string
+          used: boolean
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          otp_code: string
+          phone: string
+          type?: string
+          used?: boolean
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          phone?: string
+          type?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       wishlists: {
         Row: {
           created_at: string
@@ -4766,6 +4796,7 @@ export type Database = {
     }
     Functions: {
       can_user_redeem: { Args: { p_user_id: string }; Returns: boolean }
+      cleanup_expired_whatsapp_otps: { Args: never; Returns: undefined }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
