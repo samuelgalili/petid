@@ -1771,6 +1771,78 @@ export type Database = {
         }
         Relationships: []
       }
+      loyalty_events: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          points_earned: number
+          reference_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          points_earned?: number
+          reference_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          points_earned?: number
+          reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loyalty_point_rules: {
+        Row: {
+          action_name_he: string
+          action_type: string
+          cooldown_hours: number | null
+          created_at: string
+          daily_limit: number | null
+          id: string
+          is_active: boolean | null
+          points: number
+          requires_tenure_days: number | null
+          updated_at: string
+          weekly_limit: number | null
+        }
+        Insert: {
+          action_name_he: string
+          action_type: string
+          cooldown_hours?: number | null
+          created_at?: string
+          daily_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          points?: number
+          requires_tenure_days?: number | null
+          updated_at?: string
+          weekly_limit?: number | null
+        }
+        Update: {
+          action_name_he?: string
+          action_type?: string
+          cooldown_hours?: number | null
+          created_at?: string
+          daily_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          points?: number
+          requires_tenure_days?: number | null
+          updated_at?: string
+          weekly_limit?: number | null
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -4581,6 +4653,63 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weight?: number | null
+        }
+        Relationships: []
+      }
+      user_loyalty_stats: {
+        Row: {
+          consecutive_months_active: number | null
+          created_at: string
+          current_rank: string
+          current_streak_days: number | null
+          first_activity_at: string | null
+          id: string
+          last_activity_at: string | null
+          longest_streak_days: number | null
+          rank_level: number
+          total_photos: number | null
+          total_points: number
+          total_purchases: number | null
+          total_referrals: number | null
+          total_reviews: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consecutive_months_active?: number | null
+          created_at?: string
+          current_rank?: string
+          current_streak_days?: number | null
+          first_activity_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          longest_streak_days?: number | null
+          rank_level?: number
+          total_photos?: number | null
+          total_points?: number
+          total_purchases?: number | null
+          total_referrals?: number | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consecutive_months_active?: number | null
+          created_at?: string
+          current_rank?: string
+          current_streak_days?: number | null
+          first_activity_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          longest_streak_days?: number | null
+          rank_level?: number
+          total_photos?: number | null
+          total_points?: number
+          total_purchases?: number | null
+          total_referrals?: number | null
+          total_reviews?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
