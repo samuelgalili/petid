@@ -6,7 +6,16 @@ const Tabs = TabsPrimitive.Root;
 const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>>(({
   className,
   ...props
-}, ref) => {});
+}, ref) => (
+  <TabsPrimitive.List
+    ref={ref}
+    className={cn(
+      "inline-flex h-auto items-center justify-start gap-2 rounded-xl bg-transparent p-1",
+      className
+    )}
+    {...props}
+  />
+));
 TabsList.displayName = TabsPrimitive.List.displayName;
 interface TabsTriggerProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
   icon?: React.ReactNode;
