@@ -17,12 +17,12 @@ import { AppHeader } from "@/components/AppHeader";
 import { CHECKOUT, SUCCESS } from "@/lib/brandVoice";
 
 const shippingSchema = z.object({
-  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(100, "Full name must be less than 100 characters"),
-  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
-  phone: z.string().trim().regex(/^[0-9]{9,15}$/, "Phone number must be 9-15 digits"),
-  address: z.string().trim().min(5, "Address must be at least 5 characters").max(200, "Address must be less than 200 characters"),
-  city: z.string().trim().min(2, "City must be at least 2 characters").max(50, "City must be less than 50 characters"),
-  zipCode: z.string().trim().regex(/^[0-9]{5,7}$/, "Zip code must be 5-7 digits"),
+  fullName: z.string().trim().min(2, "שם מלא חייב להכיל לפחות 2 תווים").max(100, "שם מלא חייב להכיל פחות מ-100 תווים"),
+  email: z.string().trim().email("כתובת אימייל לא תקינה").max(255, "אימייל חייב להכיל פחות מ-255 תווים"),
+  phone: z.string().trim().regex(/^[0-9]{9,15}$/, "מספר טלפון חייב להכיל 9-15 ספרות"),
+  address: z.string().trim().min(5, "כתובת חייבת להכיל לפחות 5 תווים").max(200, "כתובת חייבת להכיל פחות מ-200 תווים"),
+  city: z.string().trim().min(2, "עיר חייבת להכיל לפחות 2 תווים").max(50, "עיר חייבת להכיל פחות מ-50 תווים"),
+  zipCode: z.string().trim().regex(/^[0-9]{5,7}$/, "מיקוד חייב להכיל 5-7 ספרות"),
 });
 
 interface Coupon {

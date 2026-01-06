@@ -166,7 +166,7 @@ const Reels = () => {
     <div className="h-screen bg-black relative">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-center">
-        <h1 className="text-white text-xl font-bold">Reels</h1>
+        <h1 className="text-white text-xl font-bold">סרטונים</h1>
         <Button
           variant="ghost"
           size="icon"
@@ -186,12 +186,12 @@ const Reels = () => {
         {reels.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-white">
             <Music2 className="w-16 h-16 mb-4 opacity-50" />
-            <p className="text-lg">אין Reels עדיין</p>
+            <p className="text-lg">אין סרטונים עדיין</p>
             <Button
               className="mt-4"
               onClick={() => setShowCreateDialog(true)}
             >
-              צור את ה-Reel הראשון שלך
+              צור את הסרטון הראשון שלך
             </Button>
           </div>
         ) : (
