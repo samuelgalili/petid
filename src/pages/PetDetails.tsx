@@ -70,9 +70,24 @@ const PetDetails = () => {
   const [showDeleteAnimation, setShowDeleteAnimation] = useState(false);
 const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
   const [showAdoptionDialog, setShowAdoptionDialog] = useState(false);
+  const [showAdoptionPreview, setShowAdoptionPreview] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [adoptionCaption, setAdoptionCaption] = useState('');
 
-  const handleCreateAdoptionPost = async () => {
+  const generateAdoptionCaption = useCallback(() => {
+    if (!pet) return '';
+    const genderText = pet.gender === 'male' ? 'זכר' : pet.gender === 'female' ? 'נקבה' : '';
+    const petEmoji = pet.type === 'dog' ? '🐕' : '🐱';
+    return `🏠 מחפשים בית חם ואוהב ל${pet.name}!\n\n${pet.breed ? `גזע: ${pet.breed}\n` : ''}${petEmoji} ${genderText}\n\n#למסירה #אימוץ #בית_חם`;
+  }, [pet]);
+
+  const handleConfirmAdoption = () => {
+    setAdoptionCaption(generateAdoptionCaption());
+    setShowAdoptionDialog(false);
+    setShowAdoptionPreview(true);
+  };
+
+  const handlePublishAdoptionPost = async () => {
     if (!pet) return;
     
     setIsCreatingPost(true);
@@ -89,9 +104,8 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
         .from('posts')
         .insert({
           user_id: user.id,
-          caption: `🏠 מחפשים בית חם ואוהב ל${pet.name}!\n\n${pet.breed ? `גזע: ${pet.breed}\n` : ''}${pet.type === 'dog' ? '🐕' : '🐱'} ${pet.gender === 'male' ? 'זכר' : pet.gender === 'female' ? 'נקבה' : ''}\n\n#למסירה #אימוץ #בית_חם`,
+          caption: adoptionCaption,
           image_url: pet.avatar_url || '',
-          hashtags: ['למסירה', 'אימוץ', 'בית_חם'],
           pet_id: pet.id,
         });
 
@@ -100,7 +114,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
       sonnerToast.success("הפוסט פורסם בהצלחה! 🎉", {
         description: `${pet.name} מחכה לבית חם`
       });
-      setShowAdoptionDialog(false);
+      setShowAdoptionPreview(false);
       navigate('/feed');
     } catch (error: any) {
       console.error("Error creating adoption post:", error);
@@ -691,11 +705,61 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-row-reverse gap-2">
                 <AlertDialogAction 
-                  onClick={handleCreateAdoptionPost}
-                  disabled={isCreatingPost}
+                  onClick={handleConfirmAdoption}
                   className="bg-red-500 hover:bg-red-600"
                 >
-                  {isCreatingPost ? "מפרסם..." : "כן, פרסם פוסט"}
+                  המשך לעריכת הפוסט
+                </AlertDialogAction>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Adoption Post Preview & Edit Dialog */}
+          <AlertDialog open={showAdoptionPreview} onOpenChange={setShowAdoptionPreview}>
+            <AlertDialogContent dir="rtl" className="max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-right flex items-center gap-2">
+                  <Pencil className="w-4 h-4" />
+                  עריכת פוסט למסירה
+                </AlertDialogTitle>
+              </AlertDialogHeader>
+              
+              <div className="space-y-4">
+                {/* Preview Image */}
+                {pet.avatar_url && (
+                  <div className="relative rounded-xl overflow-hidden aspect-square">
+                    <img 
+                      src={pet.avatar_url} 
+                      alt={pet.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      #למסירה
+                    </div>
+                  </div>
+                )}
+                
+                {/* Editable Caption */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-right block">תיאור הפוסט</label>
+                  <textarea
+                    value={adoptionCaption}
+                    onChange={(e) => setAdoptionCaption(e.target.value)}
+                    className="w-full min-h-[120px] p-3 rounded-xl border border-border bg-background text-foreground text-right resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="כתוב תיאור לפוסט..."
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+
+              <AlertDialogFooter className="flex-row-reverse gap-2 mt-4">
+                <AlertDialogAction 
+                  onClick={handlePublishAdoptionPost}
+                  disabled={isCreatingPost || !adoptionCaption.trim()}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isCreatingPost ? "מפרסם..." : "פרסם פוסט 🎉"}
                 </AlertDialogAction>
                 <AlertDialogCancel>ביטול</AlertDialogCancel>
               </AlertDialogFooter>
