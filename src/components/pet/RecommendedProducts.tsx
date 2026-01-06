@@ -1,14 +1,15 @@
 /**
- * Recommended Products - מוצרים מותאמים אישית
+ * Recommended Products - מוצרים מותאמים אישית (קרוסלה)
  */
 
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Star, Sparkles, TrendingUp } from "lucide-react";
+import { ShoppingCart, Star, Sparkles, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { useRef } from "react";
 
 interface Product {
   id: string;
@@ -24,23 +25,26 @@ interface Product {
 interface RecommendedProductsProps {
   petType: string;
   petBreed: string | null;
+  petAge?: number | null;
   petName: string;
   products: Product[];
 }
 
 export const RecommendedProducts = ({ 
   petType, 
-  petBreed, 
+  petBreed,
+  petAge,
   petName, 
   products 
 }: RecommendedProductsProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // סינון מוצרים לפי סוג חיה והגבלה ל-3
+  // סינון מוצרים לפי סוג חיה - מציג עד 8 מוצרים בקרוסלה
   const filteredProducts = products
     .filter(p => !p.petType || p.petType === petType || p.petType === null)
-    .slice(0, 3);
+    .slice(0, 8);
 
   const handleAddToCart = (product: Product) => {
     addToCart({
@@ -53,7 +57,29 @@ export const RecommendedProducts = ({
     toast.success(`${product.name} נוסף לסל! 🛒`);
   };
 
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 200;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   if (filteredProducts.length === 0) return null;
+
+  // תיאור מותאם לגזע ולגיל
+  const getPersonalizedText = () => {
+    const parts = [];
+    if (petBreed) parts.push(petBreed);
+    if (petAge) {
+      if (petAge < 1) parts.push('גור');
+      else if (petAge < 7) parts.push('בוגר');
+      else parts.push('מבוגר');
+    }
+    return parts.length > 0 ? `מותאם ל${parts.join(', ')}` : 'מותאם לגזע ולגיל';
+  };
 
   return (
     <motion.div
@@ -72,7 +98,7 @@ export const RecommendedProducts = ({
             <h3 className="font-bold text-base">מומלץ עבור {petName}</h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
-              מותאם לגזע ולגיל
+              {getPersonalizedText()}
             </p>
           </div>
         </div>
@@ -86,80 +112,101 @@ export const RecommendedProducts = ({
         </Button>
       </div>
 
-      {/* מוצרים */}
-      <div className="space-y-3">
-        {filteredProducts.map((product, index) => (
-          <motion.div
-            key={product.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 * index }}
-          >
-            <Card className="p-3 flex gap-3 hover:shadow-lg transition-all duration-300 border-border/50 group">
-              {/* תמונה */}
-              <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <div className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                    -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                  </div>
-                )}
-              </div>
+      {/* קרוסלת מוצרים */}
+      <div className="relative group">
+        {/* כפתורי ניווט */}
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity -mr-2"
+        >
+          <ChevronRight className="w-5 h-5 text-foreground" />
+        </button>
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity -ml-2"
+        >
+          <ChevronLeft className="w-5 h-5 text-foreground" />
+        </button>
 
-              {/* מידע */}
-              <div className="flex-1 min-w-0 flex flex-col justify-between">
-                <div>
-                  <h4 className="font-medium text-sm line-clamp-2 mb-1">{product.name}</h4>
-                  {product.rating && (
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span className="text-xs text-muted-foreground">{product.rating}</span>
+        {/* קרוסלה */}
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 -mx-1 px-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {filteredProducts.map((product, index) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.05 * index }}
+              className="flex-shrink-0 w-36"
+            >
+              <Card className="p-2 hover:shadow-lg transition-all duration-300 border-border/50 group/card h-full flex flex-col">
+                {/* תמונה */}
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-2">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <div className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+                      -{Math.round((1 - product.price / product.originalPrice) * 100)}%
                     </div>
                   )}
                 </div>
-                
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-base font-bold text-primary">₪{product.price}</span>
-                    {product.originalPrice && product.originalPrice > product.price && (
-                      <span className="text-xs text-muted-foreground line-through">
-                        ₪{product.originalPrice}
-                      </span>
-                    )}
+
+                {/* מידע */}
+                <div className="flex-1 flex flex-col justify-between min-h-0">
+                  <h4 className="font-medium text-xs line-clamp-2 mb-1 leading-tight">{product.name}</h4>
+                  
+                  {product.rating && (
+                    <div className="flex items-center gap-0.5 mb-1">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      <span className="text-[10px] text-muted-foreground">{product.rating}</span>
+                    </div>
+                  )}
+                  
+                  <div className="mt-auto">
+                    <div className="flex items-baseline gap-1 mb-1.5">
+                      <span className="text-sm font-bold text-primary">₪{product.price}</span>
+                      {product.originalPrice && product.originalPrice > product.price && (
+                        <span className="text-[10px] text-muted-foreground line-through">
+                          ₪{product.originalPrice}
+                        </span>
+                      )}
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full h-7 rounded-full gap-1 text-[10px] shadow-md"
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      <ShoppingCart className="w-3 h-3" />
+                      הוסף לסל
+                    </Button>
                   </div>
-                  <Button 
-                    size="sm" 
-                    className="h-8 px-3 rounded-full gap-1.5 text-xs shadow-md"
-                    onClick={() => handleAddToCart(product)}
-                  >
-                    <ShoppingCart className="w-3 h-3" />
-                    הוסף
-                  </Button>
                 </div>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       {/* קריאה לפעולה */}
-      <Card className="p-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/20">
+      <Card className="p-3 bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/20">
         <div className="flex items-center gap-3">
-          <div className="text-3xl">🎁</div>
+          <div className="text-2xl">🎁</div>
           <div className="flex-1">
-            <p className="text-sm font-medium">משלוח חינם להזמנות מעל ₪199</p>
-            <p className="text-xs text-muted-foreground">+ 10% הנחה לחברי מועדון</p>
+            <p className="text-xs font-medium">משלוח חינם להזמנות מעל ₪199</p>
+            <p className="text-[10px] text-muted-foreground">+ 10% הנחה לחברי מועדון</p>
           </div>
           <Button 
             size="sm" 
-            className="rounded-full"
+            className="rounded-full h-8 text-xs"
             onClick={() => navigate('/shop')}
           >
             לחנות
