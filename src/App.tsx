@@ -10,7 +10,7 @@ import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
-import { PointsProvider } from "@/contexts/PointsContext";
+// PointsProvider removed - using useLoyalty hook instead
 import { CartProvider } from "@/contexts/CartContext";
 import { FlyingCartProvider } from "@/components/FlyingCartAnimation";
 import { GameProvider } from "@/contexts/GameContext";
@@ -214,21 +214,19 @@ const App = () => (
           <LanguageProvider>
             <PetPreferenceProvider>
               <GuestProvider>
-                <PointsProvider>
-                  <GameProvider>
-                    <CartProvider>
-                      <FlyingCartProvider>
-                        <TooltipProvider>
-                          <Toaster />
-                          <Sonner />
-                          <BrowserRouter>
-                            <AnimatedRoutes />
-                          </BrowserRouter>
-                        </TooltipProvider>
-                      </FlyingCartProvider>
-                    </CartProvider>
-                  </GameProvider>
-                </PointsProvider>
+                <GameProvider>
+                  <CartProvider>
+                    <FlyingCartProvider>
+                      <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <BrowserRouter>
+                          <AnimatedRoutes />
+                        </BrowserRouter>
+                      </TooltipProvider>
+                    </FlyingCartProvider>
+                  </CartProvider>
+                </GameProvider>
               </GuestProvider>
             </PetPreferenceProvider>
           </LanguageProvider>

@@ -6,7 +6,7 @@ import { Gift, Sparkles, Star, Clock, Tag, Trophy, Crown, Zap, ChevronLeft, Copy
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { usePoints } from "@/contexts/PointsContext";
+import { useLoyalty } from "@/hooks/useLoyalty";
 import confetti from "canvas-confetti";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -47,7 +47,8 @@ interface RedeemedReward extends Reward {
 const Rewards = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { totalPoints, deductPoints } = usePoints();
+  const { stats } = useLoyalty();
+  const totalPoints = stats?.totalPoints || 0;
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [showRedeemDialog, setShowRedeemDialog] = useState(false);
   const [availableRewards, setAvailableRewards] = useState<Reward[]>([]);
@@ -250,7 +251,13 @@ const Rewards = () => {
         return;
       }
 
-      await deductPoints(selectedReward.points);
+      // Deduct points via direct DB update (new system tracks in loyalty_events)
+      const { error: pointsError } = await supabase
+        .from('user_loyalty_stats')
+        .update({ total_points: totalPoints - selectedReward.points })
+        .eq('user_id', user.id);
+      
+      if (pointsError) throw pointsError;
 
       const typeMap: Record<string, string> = {
         discount: 'הנחה',

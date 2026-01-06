@@ -39,7 +39,7 @@ import { PostGrid } from "@/components/profile/PostGrid";
 import { AnimatedCounter } from "@/components/profile/AnimatedCounter";
 import { MutualFollowers } from "@/components/profile/MutualFollowers";
 import { ActivityStatus } from "@/components/profile/ActivityStatus";
-import { ExpertiseLevelCard } from "@/components/profile/ExpertiseLevelCard";
+import { LoyaltyRankCard } from "@/components/loyalty";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Profile = () => {
@@ -79,21 +79,7 @@ const Profile = () => {
     enabled: !!profile?.id
   });
 
-  // Fetch cashback from orders
-  const { data: cashbackData, refetch: refetchCashback } = useQuery({
-    queryKey: ['user-cashback', profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return 0;
-      const { data } = await supabase
-        .from('orders')
-        .select('total')
-        .eq('user_id', profile.id);
-      
-      const totalSpent = data?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
-      return totalSpent * 0.05;
-    },
-    enabled: !!profile?.id
-  });
+  // Removed cashback query - using new loyalty system instead
 
   // Fetch user posts with likes/comments counts
   const { data: posts, refetch: refetchPosts } = useQuery({
@@ -217,15 +203,14 @@ const Profile = () => {
       await Promise.all([
         fetchAllData(),
         refetchStats(),
-        refetchPosts(),
-        refetchCashback()
+        refetchPosts()
       ]);
       toast({ description: "הפרופיל עודכן" });
       setIsRefreshing(false);
     }
     setPullDistance(0);
     setStartY(0);
-  }, [pullDistance, refetchStats, refetchPosts, refetchCashback, toast]);
+  }, [pullDistance, refetchStats, refetchPosts, toast]);
 
   if (loading) {
     return (
@@ -419,45 +404,14 @@ const Profile = () => {
               <p className="text-foreground/90 text-sm leading-relaxed">{profile.bio}</p>
             )}
             
-            {/* Cashback & Level Badges */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {(cashbackData || 0) > 0 && (
-                <motion.div 
-                  className="flex items-center gap-1.5 bg-gradient-to-r from-success/15 to-success/5 px-3 py-1.5 rounded-full border border-success/20"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <span className="text-xs font-semibold text-success">₪{(cashbackData || 0).toFixed(2)} קאשבק</span>
-                </motion.div>
-              )}
-              
-              {/* Star Rating Badge */}
-              <motion.div 
-                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/15 to-yellow-500/5 px-3 py-1.5 rounded-full border border-amber-500/20"
-                whileHover={{ scale: 1.05 }}
-                onClick={() => navigate('/rewards')}
-              >
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                <span className="text-xs font-semibold text-amber-600">
-                  {(() => {
-                    const points = profile?.points || 0;
-                    if (points >= 1000) return 'אגדה';
-                    if (points >= 600) return 'אלוף';
-                    if (points >= 300) return 'מומחה';
-                    if (points >= 100) return 'חובב';
-                    return 'מתחיל';
-                  })()}
-                </span>
-              </motion.div>
-            </div>
-
             {/* Mutual Followers */}
             <div className="pt-1">
               <MutualFollowers userId={profile?.id} currentUserId={profile?.id} />
             </div>
           </motion.div>
 
-          {/* Expertise Level Card */}
-          <ExpertiseLevelCard points={profile?.points || 0} className="mb-5" />
+          {/* Loyalty Rank Card - New System */}
+          <LoyaltyRankCard className="mb-5" />
 
           {/* Action Buttons - Enhanced with Tooltips */}
           <motion.div 
