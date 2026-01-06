@@ -133,8 +133,8 @@ const campaigns: AdCampaign[] = [
     color: '#EF4444',
     image: petShopCat,
     headline: {
-      he: 'מוצרים נבחרים לכלבים וחתולים — משלוח מהיר + קאשבק 5%',
-      en: 'Selected products for dogs & cats — Fast delivery + 5% cashback'
+      he: 'מוצרים נבחרים לכלבים וחתולים — משלוח מהיר + נקודות נאמנות',
+      en: 'Selected products for dogs & cats — Fast delivery + loyalty points'
     },
     subHeadline: {
       he: 'חנות פרימיום עם מוצרים אמינים בלבד.',
@@ -145,24 +145,24 @@ const campaigns: AdCampaign[] = [
       en: 'Shop Now'
     },
     storyText: {
-      he: 'מבצעים חדשים + משלוח מהיר\nקבלו גם 5% קאשבק לארנק.',
-      en: 'New deals + Fast delivery\nGet 5% cashback too.'
+      he: 'מבצעים חדשים + משלוח מהיר\nצברו נקודות על כל רכישה.',
+      en: 'New deals + Fast delivery\nEarn points on every purchase.'
     },
     feedCaption: {
       he: 'PetID Shop — החנות הרשמית למוצרים איכותיים לכלבים וחתולים.\nרק מוצרים מומלצים באמת.\nלחצו לרכישה.',
-      en: 'Premium pet shop.\nFast delivery + 5% cashback on every order.'
+      en: 'Premium pet shop.\nFast delivery + earn loyalty points on every order.'
     },
     imagePrompt: 'Cute British shorthair cat with premium pet accessories on pure white background, elegant pose, soft studio lighting'
   },
   {
     id: 'loyalty',
     name: 'Loyalty Club',
-    nameHe: 'מועדון לקוחות + קאשבק + קופונים',
+    nameHe: 'מועדון לקוחות + נקודות + קופונים',
     color: '#EAB308',
     image: loyaltyClub,
     headline: {
-      he: 'מועדון הלקוחות של PetID — צוברים קאשבק בכל קנייה',
-      en: 'PetID Loyalty Club — Earn cashback on every purchase'
+      he: 'מועדון הלקוחות של PetID — צוברים נקודות בכל קנייה',
+      en: 'PetID Loyalty Club — Earn points on every purchase'
     },
     subHeadline: {
       he: 'הנחות, קופונים, הטבות ומבצעים בלעדיים.',
@@ -173,12 +173,12 @@ const campaigns: AdCampaign[] = [
       en: 'Join Now'
     },
     storyText: {
-      he: 'מועדון PetID\n5% קאשבק בכל קנייה.\nהצטרפו עכשיו.',
-      en: 'PetID Club\n5% cashback every purchase.\nJoin now.'
+      he: 'מועדון PetID\nצברו נקודות בכל קנייה.\nהצטרפו עכשיו.',
+      en: 'PetID Club\nEarn points every purchase.\nJoin now.'
     },
     feedCaption: {
-      he: 'מועדון הלקוחות הרשמי של PetID:\nקאשבק בכל קנייה, קופונים ייחודיים והפתעות חודשיות.\nהצטרפו עכשיו בלחיצה.',
-      en: 'Join the PetID Loyalty Club.\nEarn cashback on every purchase + exclusive rewards.'
+      he: 'מועדון הלקוחות הרשמי של PetID:\nצברו נקודות בכל קנייה, קופונים ייחודיים והפתעות חודשיות.\nהצטרפו עכשיו בלחיצה.',
+      en: 'Join the PetID Loyalty Club.\nEarn points on every purchase + exclusive rewards.'
     },
     imagePrompt: 'Happy corgi dog with joyful expression on pure white background, celebrating pose, soft studio lighting'
   }
