@@ -115,7 +115,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
         description: `${pet.name} מחכה לבית חם`
       });
       setShowAdoptionPreview(false);
-      navigate('/feed');
+      navigate('/');
     } catch (error: any) {
       console.error("Error creating adoption post:", error);
       sonnerToast.error("שגיאה בפרסום הפוסט");
