@@ -200,7 +200,7 @@ const OrderHistory = () => {
                         </span>
                       </div>
                       <p className="text-xs text-gray-600 font-jakarta">
-                        {new Date(order.order_date).toLocaleDateString("en-US", {
+                        {new Date(order.order_date).toLocaleDateString("he-IL", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
@@ -210,10 +210,10 @@ const OrderHistory = () => {
                     <Badge
                       className={`${getStatusColor(
                         order.status
-                      )} border font-jakarta text-xs capitalize flex items-center gap-1`}
+                      )} border font-jakarta text-xs flex items-center gap-1`}
                     >
                       {getStatusIcon(order.status)}
-                      {order.status}
+                      {order.status === 'pending' ? 'ממתין' : order.status === 'processing' ? 'בטיפול' : order.status === 'shipped' ? 'נשלח' : order.status === 'delivered' ? 'נמסר' : 'בוטל'}
                     </Badge>
                   </div>
 
@@ -235,7 +235,7 @@ const OrderHistory = () => {
                             {item.product_name}
                           </p>
                           <p className="text-xs text-gray-600 font-jakarta">
-                            Qty: {item.quantity}
+                            כמות: {item.quantity}
                             {item.variant && ` • ${item.variant}`}
                           </p>
                         </div>
@@ -246,7 +246,7 @@ const OrderHistory = () => {
                     ))}
                     {order.items.length > 2 && (
                       <p className="text-xs text-gray-600 font-jakarta">
-                        +{order.items.length - 2} more items
+                        +{order.items.length - 2} פריטים נוספים
                       </p>
                     )}
                   </div>
@@ -256,7 +256,7 @@ const OrderHistory = () => {
                   {/* Order Total & Actions */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-gray-600 font-jakarta">Total</p>
+                      <p className="text-xs text-gray-600 font-jakarta">סה"כ</p>
                       <p className="text-lg font-bold text-gray-900 font-jakarta">
                         ₪{order.total.toFixed(2)}
                       </p>
@@ -268,14 +268,14 @@ const OrderHistory = () => {
                         className="border-2 border-gray-300 text-gray-900 hover:bg-gray-100 rounded-lg font-jakarta text-xs"
                         onClick={() => setSelectedOrder(order)}
                       >
-                        View Details
+                        פרטים
                       </Button>
                       <Button
                         size="sm"
                         className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-lg font-jakarta text-xs"
                         onClick={() => handleReorder(order)}
                       >
-                        Reorder
+                        הזמן שוב
                       </Button>
                     </div>
                   </div>
@@ -307,7 +307,7 @@ const OrderHistory = () => {
               <div className="p-4 space-y-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900 font-jakarta">Order Details</h2>
+                  <h2 className="text-lg font-bold text-gray-900 font-jakarta">פרטי הזמנה</h2>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -322,25 +322,25 @@ const OrderHistory = () => {
                 <Card className="p-4 bg-gray-50 border-none">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">Order Number</span>
+                      <span className="text-gray-600 font-jakarta">מספר הזמנה</span>
                       <span className="font-semibold text-gray-900 font-jakarta">
                         {selectedOrder.order_number}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">Order Date</span>
+                      <span className="text-gray-600 font-jakarta">תאריך הזמנה</span>
                       <span className="font-semibold text-gray-900 font-jakarta">
-                        {new Date(selectedOrder.order_date).toLocaleDateString()}
+                        {new Date(selectedOrder.order_date).toLocaleDateString("he-IL")}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">Status</span>
+                      <span className="text-gray-600 font-jakarta">סטטוס</span>
                       <Badge
                         className={`${getStatusColor(
                           selectedOrder.status
-                        )} border font-jakarta text-xs capitalize`}
+                        )} border font-jakarta text-xs`}
                       >
-                        {selectedOrder.status}
+                        {selectedOrder.status === 'pending' ? 'ממתין' : selectedOrder.status === 'processing' ? 'בטיפול' : selectedOrder.status === 'shipped' ? 'נשלח' : selectedOrder.status === 'delivered' ? 'נמסר' : 'בוטל'}
                       </Badge>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -411,30 +411,30 @@ const OrderHistory = () => {
                 <Card className="p-4 bg-white border border-gray-200">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">Subtotal</span>
+                      <span className="text-gray-600 font-jakarta">סכום ביניים</span>
                       <span className="font-semibold text-gray-900 font-jakarta">
                         ₪{selectedOrder.subtotal.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">Shipping</span>
+                      <span className="text-gray-600 font-jakarta">משלוח</span>
                       <span className="font-semibold text-gray-900 font-jakarta">
                         {selectedOrder.shipping === 0 ? (
-                          <span className="text-[#7DD3C0]">FREE</span>
+                          <span className="text-[#7DD3C0]">חינם</span>
                         ) : (
                           `₪${selectedOrder.shipping.toFixed(2)}`
                         )}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">Tax</span>
+                      <span className="text-gray-600 font-jakarta">מע"מ</span>
                       <span className="font-semibold text-gray-900 font-jakarta">
                         ₪{selectedOrder.tax.toFixed(2)}
                       </span>
                     </div>
                     <Separator />
                     <div className="flex justify-between pt-2">
-                      <span className="font-bold text-gray-900 font-jakarta">Total</span>
+                      <span className="font-bold text-gray-900 font-jakarta">סה"כ</span>
                       <span className="text-xl font-bold text-gray-900 font-jakarta">
                         ₪{selectedOrder.total.toFixed(2)}
                       </span>
@@ -451,7 +451,7 @@ const OrderHistory = () => {
                     setSelectedOrder(null);
                   }}
                 >
-                  Reorder Items
+                  הזמן שוב
                 </Button>
               </div>
             </motion.div>
