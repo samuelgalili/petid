@@ -1,4 +1,4 @@
-import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, Trash2, Package, Heart, Sparkles, Activity, Star, MapPin, Clock, Info, TrendingUp, Award } from "lucide-react";
+import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, Trash2, Package, Heart, Sparkles, Activity, Star, MapPin, Clock, Info, TrendingUp, Award, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
@@ -406,6 +406,17 @@ const PetDetails = () => {
           </Button>
           
           <div className="flex items-center gap-2">
+            {/* Edit Profile Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(`/edit-pet/${petId}`)}
+              className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40"
+            >
+              <Pencil className="w-5 h-5" />
+            </Button>
+            
+            {/* Camera Button */}
             <label className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center cursor-pointer hover:bg-black/40 transition-all">
               <Camera className="w-5 h-5" />
               <input

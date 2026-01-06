@@ -41,6 +41,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderHistory from "./pages/OrderHistory";
 import ArchivedPets from "./pages/ArchivedPets";
 import PetDetails from "./pages/PetDetails";
+import EditPet from "./pages/EditPet";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCustomers from "./pages/admin/AdminCustomers";
@@ -132,6 +133,7 @@ const AnimatedRoutes = () => {
         <Route path="/add-pet" element={<ProtectedRoute><PageTransition><AddPet /></PageTransition></ProtectedRoute>} />
         <Route path="/archived-pets" element={<ProtectedRoute><PageTransition><ArchivedPets /></PageTransition></ProtectedRoute>} />
         <Route path="/pet/:petId" element={<ProtectedRoute><PageTransition><PetDetails /></PageTransition></ProtectedRoute>} />
+        <Route path="/edit-pet/:petId" element={<ProtectedRoute><PageTransition><EditPet /></PageTransition></ProtectedRoute>} />
         <Route path="/breed-history/:petId" element={<ProtectedRoute><PageTransition><BreedHistory /></PageTransition></ProtectedRoute>} />
         <Route path="/user/:userId" element={<PageTransition><UserProfile /></PageTransition>} />
         <Route path="/post/:postId" element={<PageTransition><PostDetail /></PageTransition>} />
