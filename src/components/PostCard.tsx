@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Send } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Send, Heart, Home, Mail } from "lucide-react";
 import pawHeartIcon from "@/assets/paw-heart-icon.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -90,6 +90,9 @@ export const PostCard = ({
     participant_count: number;
   } | null>(null);
   const [showChallengeCTA, setShowChallengeCTA] = useState(false);
+
+  // Check if this is an adoption post (contains #למסירה hashtag)
+  const isAdoptionPost = post.caption?.includes('#למסירה') || post.caption?.includes('#אימוץ');
 
   // Get all images (support both single and multi-image posts)
   const allImages = post.media_urls?.length 
@@ -440,6 +443,22 @@ export const PostCard = ({
         <p className="text-[#8E8E8E] text-[10px] uppercase mt-1.5 mb-2">
           {getTimeAgo(post.created_at)}
         </p>
+
+        {/* Adoption CTA - Show for adoption posts */}
+        {isAdoptionPost && currentUserId !== post.user_id && (
+          <motion.button
+            onClick={() => navigate(`/messages/thread/${post.user_id}`)}
+            className="w-full bg-gradient-to-l from-petid-blue to-petid-gold text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 mb-3 shadow-lg"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Mail className="w-5 h-5" />
+            <span>שלח הודעה למוסר</span>
+            <Home className="w-4 h-4" />
+          </motion.button>
+        )}
       </div>
 
       {/* Add comment section */}
