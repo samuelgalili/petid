@@ -1856,7 +1856,7 @@ const AdminCRM = () => {
                     <span>חיוב ידני חדש</span>
                     {selectedCustomer && (
                       <p className="text-sm font-normal text-muted-foreground mt-0.5">
-                        עבור: {selectedCustomer.first_name} {selectedCustomer.last_name}
+                        עבור: {selectedCustomer.first_name} {selectedCustomer.last_name} {selectedCustomer.phone && `• ${selectedCustomer.phone}`} {selectedCustomer.email && `• ${selectedCustomer.email}`}
                       </p>
                     )}
                   </div>
