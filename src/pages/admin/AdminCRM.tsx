@@ -29,7 +29,7 @@ import {
   Tag, Bell, CheckCircle, AlertTriangle, Target, TrendingUp,
   ShoppingBag, MessageSquare, History, Activity, Crown,
   UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart,
-  CreditCard, Receipt, DollarSign, Banknote
+  CreditCard, Receipt, DollarSign, Banknote, Package, Percent, Trash2, Minus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
@@ -113,7 +113,10 @@ const AdminCRM = () => {
     charge_type: "manual", 
     payment_method: "credit_card", 
     notes: "", 
-    due_date: "" 
+    due_date: "",
+    selectedProducts: [] as { id: string; name: string; price: number; quantity: number; customPrice: number; }[],
+    discountType: "none" as "none" | "percentage" | "fixed",
+    discountValue: ""
   });
   const [newTagName, setNewTagName] = useState("");
   const [selectedTagColor, setSelectedTagColor] = useState("#3B82F6");
@@ -202,6 +205,20 @@ const AdminCRM = () => {
       return data || [];
     },
     enabled: !!selectedCustomer
+  });
+
+  // Fetch business products for the charge dialog
+  const { data: shopProducts } = useQuery({
+    queryKey: ['shop-products-for-charge'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_products')
+        .select('id, name, price, sale_price, image_url, category')
+        .eq('in_stock', true)
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    }
   });
 
   // Mutations
@@ -302,7 +319,17 @@ const AdminCRM = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer-charges'] });
-      setNewCharge({ amount: "", description: "", charge_type: "manual", payment_method: "credit_card", notes: "", due_date: "" });
+      setNewCharge({ 
+        amount: "", 
+        description: "", 
+        charge_type: "manual", 
+        payment_method: "credit_card", 
+        notes: "", 
+        due_date: "",
+        selectedProducts: [],
+        discountType: "none",
+        discountValue: ""
+      });
       setShowChargeDialog(false);
       toast({ title: "✅ חיוב נוסף בהצלחה" });
     },
@@ -1210,7 +1237,7 @@ const AdminCRM = () => {
 
         {/* Add Charge Dialog */}
         <Dialog open={showChargeDialog} onOpenChange={setShowChargeDialog}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
@@ -1218,21 +1245,241 @@ const AdminCRM = () => {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
+              {/* Product Selection */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  הוסף מוצרים מהחנות
+                </Label>
+                <Select 
+                  onValueChange={(productId) => {
+                    const product = shopProducts?.find((p: any) => p.id === productId);
+                    if (product) {
+                      const existingProduct = newCharge.selectedProducts.find(p => p.id === product.id);
+                      if (existingProduct) {
+                        setNewCharge({
+                          ...newCharge,
+                          selectedProducts: newCharge.selectedProducts.map(p => 
+                            p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+                          )
+                        });
+                      } else {
+                        setNewCharge({
+                          ...newCharge,
+                          selectedProducts: [...newCharge.selectedProducts, {
+                            id: product.id,
+                            name: product.name,
+                            price: product.sale_price || product.price,
+                            quantity: 1,
+                            customPrice: product.sale_price || product.price
+                          }]
+                        });
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר מוצר להוספה..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shopProducts?.map((product: any) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{product.name}</span>
+                          <span className="text-muted-foreground">- ₪{(product.sale_price || product.price).toLocaleString()}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Selected Products List */}
+                {newCharge.selectedProducts.length > 0 && (
+                  <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+                    <Label className="text-xs text-muted-foreground">מוצרים שנבחרו:</Label>
+                    {newCharge.selectedProducts.map((product, index) => (
+                      <div key={product.id} className="flex items-center gap-2 p-2 bg-background rounded-md border">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">מחיר מקורי: ₪{product.price.toLocaleString()}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              type="button"
+                              variant="outline" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              onClick={() => {
+                                if (product.quantity > 1) {
+                                  setNewCharge({
+                                    ...newCharge,
+                                    selectedProducts: newCharge.selectedProducts.map(p => 
+                                      p.id === product.id ? { ...p, quantity: p.quantity - 1 } : p
+                                    )
+                                  });
+                                } else {
+                                  setNewCharge({
+                                    ...newCharge,
+                                    selectedProducts: newCharge.selectedProducts.filter(p => p.id !== product.id)
+                                  });
+                                }
+                              }}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-6 text-center text-sm font-medium">{product.quantity}</span>
+                            <Button 
+                              type="button"
+                              variant="outline" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              onClick={() => {
+                                setNewCharge({
+                                  ...newCharge,
+                                  selectedProducts: newCharge.selectedProducts.map(p => 
+                                    p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+                                  )
+                                });
+                              }}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="w-24">
+                            <Input 
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={product.customPrice}
+                              onChange={(e) => {
+                                setNewCharge({
+                                  ...newCharge,
+                                  selectedProducts: newCharge.selectedProducts.map(p => 
+                                    p.id === product.id ? { ...p, customPrice: parseFloat(e.target.value) || 0 } : p
+                                  )
+                                });
+                              }}
+                              className="h-7 text-sm"
+                            />
+                          </div>
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setNewCharge({
+                                ...newCharge,
+                                selectedProducts: newCharge.selectedProducts.filter(p => p.id !== product.id)
+                              });
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-sm font-medium">סה״כ מוצרים:</span>
+                      <span className="font-bold">
+                        ₪{newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Discount Section */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  הנחה
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Select 
+                    value={newCharge.discountType} 
+                    onValueChange={(v: "none" | "percentage" | "fixed") => setNewCharge({...newCharge, discountType: v, discountValue: ""})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">ללא הנחה</SelectItem>
+                      <SelectItem value="percentage">אחוז הנחה (%)</SelectItem>
+                      <SelectItem value="fixed">סכום קבוע (₪)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {newCharge.discountType !== "none" && (
+                    <div className="relative">
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={newCharge.discountType === "percentage" ? "100" : undefined}
+                        value={newCharge.discountValue}
+                        onChange={(e) => setNewCharge({...newCharge, discountValue: e.target.value})}
+                        placeholder={newCharge.discountType === "percentage" ? "לדוגמה: 10" : "לדוגמה: 50"}
+                        className="pr-8"
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                        {newCharge.discountType === "percentage" ? "%" : "₪"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Manual Amount / Final Price */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>סכום *</Label>
+                  <Label>סכום סופי *</Label>
                   <div className="relative">
                     <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
                       type="number"
                       step="0.01"
                       min="0"
-                      value={newCharge.amount} 
+                      value={newCharge.amount || (() => {
+                        const productsTotal = newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0);
+                        if (productsTotal === 0) return "";
+                        let discount = 0;
+                        if (newCharge.discountType === "percentage" && newCharge.discountValue) {
+                          discount = productsTotal * (parseFloat(newCharge.discountValue) / 100);
+                        } else if (newCharge.discountType === "fixed" && newCharge.discountValue) {
+                          discount = parseFloat(newCharge.discountValue);
+                        }
+                        return Math.max(0, productsTotal - discount).toFixed(2);
+                      })()} 
                       onChange={(e) => setNewCharge({...newCharge, amount: e.target.value})} 
                       placeholder="0.00"
                       className="pr-10"
                     />
                   </div>
+                  {newCharge.selectedProducts.length > 0 && (
+                    <Button 
+                      type="button"
+                      variant="link" 
+                      size="sm" 
+                      className="mt-1 h-auto p-0 text-xs"
+                      onClick={() => {
+                        const productsTotal = newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0);
+                        let discount = 0;
+                        if (newCharge.discountType === "percentage" && newCharge.discountValue) {
+                          discount = productsTotal * (parseFloat(newCharge.discountValue) / 100);
+                        } else if (newCharge.discountType === "fixed" && newCharge.discountValue) {
+                          discount = parseFloat(newCharge.discountValue);
+                        }
+                        setNewCharge({...newCharge, amount: Math.max(0, productsTotal - discount).toFixed(2)});
+                      }}
+                    >
+                      חשב אוטומטית מהמוצרים
+                    </Button>
+                  )}
                 </div>
                 <div>
                   <Label>אמצעי תשלום</Label>
@@ -1256,7 +1503,10 @@ const AdminCRM = () => {
               <div>
                 <Label>תיאור החיוב *</Label>
                 <Input 
-                  value={newCharge.description} 
+                  value={newCharge.description || (newCharge.selectedProducts.length > 0 
+                    ? newCharge.selectedProducts.map(p => `${p.name} x${p.quantity}`).join(', ')
+                    : ""
+                  )} 
                   onChange={(e) => setNewCharge({...newCharge, description: e.target.value})} 
                   placeholder="לדוגמה: שירות ייעוץ, מוצר נוסף..."
                 />
@@ -1298,6 +1548,36 @@ const AdminCRM = () => {
                   rows={2}
                 />
               </div>
+
+              {/* Summary */}
+              {(newCharge.selectedProducts.length > 0 || newCharge.amount) && (
+                <Card className="p-3 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <div className="space-y-1 text-sm">
+                    {newCharge.selectedProducts.length > 0 && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">סה״כ מוצרים:</span>
+                          <span>₪{newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0).toLocaleString()}</span>
+                        </div>
+                        {newCharge.discountType !== "none" && newCharge.discountValue && (
+                          <div className="flex justify-between text-emerald-600">
+                            <span>הנחה ({newCharge.discountType === "percentage" ? `${newCharge.discountValue}%` : `₪${newCharge.discountValue}`}):</span>
+                            <span>-₪{(newCharge.discountType === "percentage" 
+                              ? newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0) * (parseFloat(newCharge.discountValue) / 100)
+                              : parseFloat(newCharge.discountValue)
+                            ).toLocaleString()}</span>
+                          </div>
+                        )}
+                        <Separator className="my-2" />
+                      </>
+                    )}
+                    <div className="flex justify-between font-bold text-base">
+                      <span>סה״כ לחיוב:</span>
+                      <span className="text-primary">₪{parseFloat(newCharge.amount || "0").toLocaleString()}</span>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowChargeDialog(false)}>ביטול</Button>
