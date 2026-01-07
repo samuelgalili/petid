@@ -124,7 +124,7 @@ const BottomNav = () => {
             } else {
               navigate("/");
             }
-          }} icon={<Home className={`w-6 h-6 ${isActive("/") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/") ? 2.5 : 1.5} fill={isActive("/") ? "currentColor" : "none"} />} isActive={isActive("/")} label="בית" />
+          }} icon={<Home className={`w-6 h-6 ${isActive("/") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/") ? 2.5 : 1.5} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
           <NavItem onClick={() => handleNavClick("/explore")} icon={<Search className={`w-6 h-6 ${isActive("/explore") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/explore") ? 2.5 : 1.5} />} isActive={isActive("/explore")} label="חיפוש" />
@@ -138,7 +138,7 @@ const BottomNav = () => {
           } isActive={false} label="גילוי" />
 
           {/* Shop */}
-          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`w-6 h-6 ${isActive("/shop") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/shop") ? 2.5 : 1.5} fill={isActive("/shop") ? "currentColor" : "none"} />} isActive={isActive("/shop")} label="חנות" />
+          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`w-6 h-6 ${isActive("/shop") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/shop") ? 2.5 : 1.5} />} isActive={isActive("/shop")} label="חנות" />
 
           {/* Profile with Avatar */}
           <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
