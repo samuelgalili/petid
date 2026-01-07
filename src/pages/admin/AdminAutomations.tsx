@@ -49,11 +49,13 @@ interface Automation {
   description: string | null;
   trigger_type: string;
   trigger_conditions: any;
-  actions: any[];
-  is_active: boolean;
-  execution_count: number;
+  actions: any;
+  is_active: boolean | null;
+  execution_count: number | null;
   last_executed_at: string | null;
   created_at: string;
+  updated_at?: string;
+  created_by?: string | null;
 }
 
 const triggerTypes = [
