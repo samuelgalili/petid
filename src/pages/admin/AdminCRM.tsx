@@ -1109,29 +1109,30 @@ const AdminCRM = () => {
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => {
-                                      // Auto-fill postal code based on city (7-digit Israeli postal codes)
-                                      const cityToPostalCode: Record<string, string> = {
-                                        'תל אביב': '6100000', 'רמת גן': '5200000', 'גבעתיים': '5300000', 'בני ברק': '5100000',
-                                        'חולון': '5800000', 'בת ים': '5900000', 'ראשון לציון': '7500000', 'פתח תקווה': '4900000',
-                                        'רחובות': '7610000', 'נס ציונה': '7400000', 'לוד': '7100000', 'רמלה': '7200000',
-                                        'ירושלים': '9100000', 'בית שמש': '9900000', 'מעלה אדומים': '9800000',
-                                        'חיפה': '3100000', 'נהריה': '2200000', 'עכו': '2400000', 'כרמיאל': '2100000',
-                                        'צפת': '1300000', 'טבריה': '1400000', 'עפולה': '1800000', 'נצרת': '1600000',
-                                        'קריית שמונה': '1100000', 'קריית ביאליק': '2700000', 'קריית מוצקין': '2600000',
-                                        'באר שבע': '8400000', 'אשדוד': '7700000', 'אשקלון': '7800000', 'דימונה': '8600000',
-                                        'אילת': '8800000', 'ערד': '8900000', 'קריית גת': '8200000', 'שדרות': '8700000',
-                                        'נתניה': '4200000', 'הרצליה': '4600000', 'רעננה': '4300000', 'כפר סבא': '4400000',
-                                        'הוד השרון': '4500000', 'רמת השרון': '4700000', 'חדרה': '3800000',
-                                        'מודיעין': '7170000', 'יבנה': '8100000', 'גדרה': '7070000'
-                                      };
+                                    onClick={async () => {
                                       const city = editedCustomer?.city || '';
-                                      const postalCode = cityToPostalCode[city];
-                                      if (postalCode) {
-                                        setEditedCustomer({...editedCustomer, postal_code: postalCode});
-                                        toast({ title: `מיקוד ${postalCode} הוזן עבור ${city}` });
-                                      } else {
-                                        toast({ title: "לא נמצא מיקוד לעיר זו", variant: "destructive" });
+                                      const address = editedCustomer?.address || '';
+                                      
+                                      toast({ title: "מחפש מיקוד..." });
+                                      
+                                      try {
+                                        const response = await supabase.functions.invoke('find-postal-code', {
+                                          body: { city, address }
+                                        });
+                                        
+                                        if (response.error) {
+                                          throw new Error(response.error.message);
+                                        }
+                                        
+                                        if (response.data?.postal_code) {
+                                          setEditedCustomer({...editedCustomer, postal_code: response.data.postal_code});
+                                          toast({ title: `מיקוד ${response.data.postal_code} נמצא עבור ${city}` });
+                                        } else {
+                                          toast({ title: "לא נמצא מיקוד", description: "נסה להזין כתובת מדויקת יותר", variant: "destructive" });
+                                        }
+                                      } catch (error) {
+                                        console.error('Error finding postal code:', error);
+                                        toast({ title: "שגיאה בחיפוש מיקוד", variant: "destructive" });
                                       }
                                     }}
                                     disabled={!editedCustomer?.city}
