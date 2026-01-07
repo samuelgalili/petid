@@ -75,6 +75,16 @@ const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminIntegrations = lazy(() => import("./pages/admin/AdminIntegrations"));
 const AdminBackup = lazy(() => import("./pages/admin/AdminBackup"));
+const AdminCRM = lazy(() => import("./pages/admin/AdminCRM"));
+const AdminSalesChannels = lazy(() => import("./pages/admin/AdminSalesChannels"));
+const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
+const AdminCalendar = lazy(() => import("./pages/admin/AdminCalendar"));
+const AdminHelpDesk = lazy(() => import("./pages/admin/AdminHelpDesk"));
+const AdminBranches = lazy(() => import("./pages/admin/AdminBranches"));
+const AdminPricing = lazy(() => import("./pages/admin/AdminPricing"));
+const AdminWebhooks = lazy(() => import("./pages/admin/AdminWebhooks"));
+const AdminAlerts = lazy(() => import("./pages/admin/AdminAlerts"));
+const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
 import Tasks from "./pages/Tasks";
@@ -205,6 +215,16 @@ const AnimatedRoutes = () => {
         <Route path="/admin/analytics" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminAnalytics /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/integrations" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminIntegrations /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/backup" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminBackup /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/crm" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminCRM /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/sales-channels" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminSalesChannels /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/categories" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminCategories /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/calendar" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminCalendar /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/helpdesk" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminHelpDesk /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/branches" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminBranches /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/pricing" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminPricing /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/webhooks" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminWebhooks /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/alerts" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminAlerts /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/blog" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminBlog /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
         <Route path="/experiences" element={<PageTransition><Experiences /></PageTransition>} />
         <Route path="/parks" element={<PageTransition><Parks /></PageTransition>} />
