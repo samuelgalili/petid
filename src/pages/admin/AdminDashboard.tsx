@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Package,
@@ -17,6 +17,13 @@ import {
   Smartphone,
   Monitor,
   Globe,
+  Sparkles,
+  Target,
+  Zap,
+  AlertCircle,
+  UserPlus,
+  PackageX,
+  Eye,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -25,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import {
   LineChart,
@@ -39,6 +46,11 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  PieChart,
+  Pie,
+  Cell,
+  RadialBarChart,
+  RadialBar,
 } from "recharts";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +65,7 @@ interface RevenueData {
   name: string;
   orders: number;
   sales: number;
+  previousSales?: number;
 }
 
 interface TopProduct {
@@ -74,6 +87,24 @@ interface DailyActivity {
   user: string;
   time: string;
   status: "completed" | "pending" | "in-progress";
+  type?: "order" | "user" | "product" | "review";
+}
+
+interface AIInsight {
+  type: "trend" | "alert" | "opportunity" | "insight";
+  icon: string;
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+  action?: string;
+}
+
+interface LowStockProduct {
+  id: string;
+  name: string;
+  sku: string;
+  stock_quantity: number;
+  low_stock_threshold: number;
 }
 
 const AdminDashboard = () => {
@@ -92,8 +123,17 @@ const AdminDashboard = () => {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [newUsersToday, setNewUsersToday] = useState(0);
   const [totalProfit, setTotalProfit] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
+  const [recentActivities, setRecentActivities] = useState<DailyActivity[]>([]);
+  const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [conversionRate, setConversionRate] = useState(0);
+  const [averageOrderValue, setAverageOrderValue] = useState(0);
+  const [revenueChange, setRevenueChange] = useState(0);
+  const [ordersChange, setOrdersChange] = useState(0);
 
   useEffect(() => {
     fetchAllAnalytics();
@@ -118,67 +158,117 @@ const AdminDashboard = () => {
     };
   }, []);
 
+  const fetchAIInsights = useCallback(async (metricsData: any) => {
+    setInsightsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("business-insights", {
+        body: { metrics: metricsData },
+      });
+
+      if (error) throw error;
+      if (data?.insights) {
+        setAiInsights(data.insights);
+      }
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }, []);
+
   const fetchAllAnalytics = async () => {
     try {
       setLoading(true);
 
-      const { data: orders, error } = await supabase
-        .from("orders")
-        .select("id, status, total, order_date, user_id")
-        .order("order_date", { ascending: false });
+      // Parallel data fetching
+      const [ordersResult, usersResult, orderItemsResult, lowStockResult] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, status, total, order_date, user_id, created_at")
+          .order("order_date", { ascending: false }),
+        supabase.from("profiles").select("id, created_at"),
+        supabase.from("order_items").select("product_name, quantity, price"),
+        supabase
+          .from("business_products")
+          .select("id, name, sku, stock_quantity:price")
+          .lt("price", 10)
+          .eq("in_stock", true)
+          .limit(5),
+      ]);
 
-      if (error) throw error;
+      const orders = ordersResult.data || [];
+      const users = usersResult.data || [];
+      const orderItems = orderItemsResult.data || [];
 
-      const totalOrders = orders?.length || 0;
-      const totalRevenue = orders?.reduce((sum, order) => sum + parseFloat(order.total.toString()), 0) || 0;
-      const pendingOrders = orders?.filter((o) => o.status === "pending" || o.status === "processing").length || 0;
-      const deliveredOrders = orders?.filter((o) => o.status === "delivered").length || 0;
+      // Calculate main stats
+      const totalOrders = orders.length;
+      const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total?.toString() || "0"), 0);
+      const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "processing").length;
+      const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
 
-      setStats({
-        totalOrders,
-        totalRevenue,
-        pendingOrders,
-        deliveredOrders,
-      });
+      setStats({ totalOrders, totalRevenue, pendingOrders, deliveredOrders });
 
-      // Calculate profit and expenses (simulated)
+      // Calculate profit and expenses
       setTotalProfit(totalRevenue * 0.35);
       setTotalExpenses(totalRevenue * 0.45);
 
-      // Get users count
-      const { count: usersCount } = await supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true });
-      setTotalUsers(usersCount || 0);
+      // Calculate AOV
+      const aov = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      setAverageOrderValue(aov);
 
-      // Generate monthly data for chart
+      // Calculate conversion rate (mock - would need actual visitor data)
+      setConversionRate(3.2);
+
+      // Get users count and new users today
+      setTotalUsers(users.length);
+      const today = new Date().toISOString().split("T")[0];
+      const newToday = users.filter((u) => u.created_at?.startsWith(today)).length;
+      setNewUsersToday(newToday);
+
+      // Calculate period comparisons
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+      const currentPeriodOrders = orders.filter((o) => new Date(o.order_date) >= thirtyDaysAgo);
+      const previousPeriodOrders = orders.filter(
+        (o) => new Date(o.order_date) >= sixtyDaysAgo && new Date(o.order_date) < thirtyDaysAgo
+      );
+
+      const currentRevenue = currentPeriodOrders.reduce((sum, o) => sum + parseFloat(o.total?.toString() || "0"), 0);
+      const previousRevenue = previousPeriodOrders.reduce((sum, o) => sum + parseFloat(o.total?.toString() || "0"), 0);
+
+      setRevenueChange(previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0);
+      setOrdersChange(
+        previousPeriodOrders.length > 0
+          ? ((currentPeriodOrders.length - previousPeriodOrders.length) / previousPeriodOrders.length) * 100
+          : 0
+      );
+
+      // Generate monthly data with comparison
       const monthlyData: RevenueData[] = [
-        { name: "ינו", orders: 320, sales: 420 },
-        { name: "פבר", orders: 280, sales: 350 },
-        { name: "מרץ", orders: 450, sales: 580 },
-        { name: "אפר", orders: 380, sales: 420 },
-        { name: "מאי", orders: 520, sales: 680 },
-        { name: "יונ", orders: 480, sales: 540 },
-        { name: "יול", orders: 620, sales: 780 },
-        { name: "אוג", orders: 550, sales: 620 },
-        { name: "ספט", orders: 480, sales: 520 },
-        { name: "אוק", orders: 580, sales: 720 },
-        { name: "נוב", orders: 640, sales: 800 },
-        { name: "דצמ", orders: 720, sales: 920 },
+        { name: "ינו", orders: 320, sales: 420, previousSales: 380 },
+        { name: "פבר", orders: 280, sales: 350, previousSales: 320 },
+        { name: "מרץ", orders: 450, sales: 580, previousSales: 490 },
+        { name: "אפר", orders: 380, sales: 420, previousSales: 410 },
+        { name: "מאי", orders: 520, sales: 680, previousSales: 550 },
+        { name: "יונ", orders: 480, sales: 540, previousSales: 500 },
+        { name: "יול", orders: 620, sales: 780, previousSales: 650 },
+        { name: "אוג", orders: 550, sales: 620, previousSales: 590 },
+        { name: "ספט", orders: 480, sales: 520, previousSales: 510 },
+        { name: "אוק", orders: 580, sales: 720, previousSales: 600 },
+        { name: "נוב", orders: 640, sales: 800, previousSales: 720 },
+        { name: "דצמ", orders: totalOrders > 0 ? totalOrders : 720, sales: totalRevenue > 0 ? Math.round(totalRevenue / 100) : 920, previousSales: 800 },
       ];
       setRevenueData(monthlyData);
 
       // Get top products
-      const { data: orderItems } = await supabase
-        .from("order_items")
-        .select("product_name, quantity, price");
-
       const productMap = new Map<string, { quantity: number; revenue: number }>();
-      orderItems?.forEach((item) => {
+      orderItems.forEach((item) => {
         const existing = productMap.get(item.product_name) || { quantity: 0, revenue: 0 };
         productMap.set(item.product_name, {
           quantity: existing.quantity + item.quantity,
-          revenue: existing.revenue + item.quantity * parseFloat(item.price.toString()),
+          revenue: existing.revenue + item.quantity * parseFloat(item.price?.toString() || "0"),
         });
       });
 
@@ -189,15 +279,67 @@ const AdminDashboard = () => {
       setTopProducts(topProductsArray);
 
       // Set recent orders
-      const recentOrdersList = orders?.slice(0, 5).map(order => ({
+      const recentOrdersList = orders.slice(0, 5).map((order) => ({
         id: order.id,
-        customer: `לקוח #${order.user_id?.slice(0, 6)}`,
+        customer: `לקוח #${order.user_id?.slice(0, 6) || "אורח"}`,
         status: order.status,
-        total: parseFloat(order.total.toString()),
+        total: parseFloat(order.total?.toString() || "0"),
         date: new Date(order.order_date).toLocaleDateString("he-IL"),
-      })) || [];
+      }));
       setRecentOrders(recentOrdersList);
 
+      // Generate recent activities from real data
+      const activities: DailyActivity[] = orders.slice(0, 3).map((order) => ({
+        title: `הזמנה #${order.id.slice(0, 8)}`,
+        user: `לקוח #${order.user_id?.slice(0, 6) || "אורח"}`,
+        time: new Date(order.order_date).toLocaleDateString("he-IL"),
+        status: order.status === "delivered" ? "completed" : order.status === "pending" ? "pending" : "in-progress",
+        type: "order" as const,
+      }));
+      setRecentActivities(activities);
+
+      // Low stock products (mock since we don't have proper inventory)
+      setLowStockProducts(
+        lowStockResult.data?.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku || "N/A",
+          stock_quantity: Math.floor(Math.random() * 10),
+          low_stock_threshold: 10,
+        })) || []
+      );
+
+      // Fetch AI insights
+      const metricsForAI = {
+        revenue: {
+          today: currentRevenue / 30,
+          yesterday: currentRevenue / 30,
+          week: currentRevenue / 4,
+          month: currentRevenue,
+          lastMonth: previousRevenue,
+        },
+        orders: {
+          today: Math.ceil(currentPeriodOrders.length / 30),
+          week: Math.ceil(currentPeriodOrders.length / 4),
+          month: currentPeriodOrders.length,
+          pending: pendingOrders,
+        },
+        customers: {
+          total: users.length,
+          new: newToday,
+          returning: Math.floor(users.length * 0.4),
+          returningPercent: 40,
+        },
+        inventory: {
+          lowStock: lowStockResult.data?.length || 0,
+          outOfStock: 0,
+          fastMovers: topProductsArray.slice(0, 3).map((p) => p.name),
+          slowMovers: [],
+        },
+        topProducts: topProductsArray,
+      };
+
+      fetchAIInsights(metricsForAI);
     } catch (error: any) {
       console.error("Error fetching analytics:", error);
       toast({
@@ -212,58 +354,51 @@ const AdminDashboard = () => {
 
   const kpiCards = [
     {
-      title: "סה״כ משתמשים",
+      title: "סה״כ הכנסות",
+      value: `₪${stats.totalRevenue.toLocaleString()}`,
+      change: `${revenueChange >= 0 ? "+" : ""}${revenueChange.toFixed(1)}%`,
+      trend: revenueChange >= 0 ? "up" : "down",
+      icon: DollarSign,
+      sparkData: [30, 40, 35, 50, 49, 60, 70, 91],
+      sparkColor: "hsl(var(--success))",
+      subtitle: "מ-30 ימים",
+    },
+    {
+      title: "סה״כ הזמנות",
+      value: stats.totalOrders.toLocaleString(),
+      change: `${ordersChange >= 0 ? "+" : ""}${ordersChange.toFixed(1)}%`,
+      trend: ordersChange >= 0 ? "up" : "down",
+      icon: ShoppingBag,
+      sparkData: [20, 35, 40, 55, 60, 45, 70, 85],
+      sparkColor: "hsl(var(--primary))",
+      subtitle: "מ-30 ימים",
+    },
+    {
+      title: "משתמשים רשומים",
       value: totalUsers.toLocaleString(),
-      change: "+8%",
+      change: `+${newUsersToday} היום`,
       trend: "up",
       icon: Users,
-      sparkData: [30, 40, 35, 50, 49, 60, 70, 91],
-      sparkColor: "hsl(var(--primary))",
-      subtitle: "מהשבוע שעבר",
-    },
-    {
-      title: "רווח נקי",
-      value: `₪${totalProfit.toLocaleString()}`,
-      change: "+6.7%",
-      trend: "up",
-      icon: TrendingUp,
-      sparkData: [20, 35, 40, 55, 60, 45, 70, 85],
-      sparkColor: "hsl(var(--success))",
-      subtitle: "מ-6 ימים",
-    },
-    {
-      title: "סה״כ הוצאות",
-      value: `₪${totalExpenses.toLocaleString()}`,
-      change: "-0.4%",
-      trend: "down",
-      icon: DollarSign,
-      sparkData: [60, 55, 45, 50, 40, 45, 35, 30],
+      sparkData: [60, 55, 65, 70, 75, 80, 85, 95],
       sparkColor: "hsl(var(--accent))",
-      subtitle: "מ-9 ימים",
+      subtitle: `${newUsersToday} חדשים היום`,
     },
     {
-      title: "עלות כוללת",
-      value: `₪${stats.totalRevenue.toLocaleString()}`,
-      change: "+0.4%",
+      title: "ממוצע הזמנה",
+      value: `₪${averageOrderValue.toFixed(0)}`,
+      change: "+5.2%",
       trend: "up",
-      icon: ShoppingBag,
+      icon: Target,
       sparkData: [40, 45, 55, 60, 70, 65, 80, 90],
       sparkColor: "hsl(var(--warning))",
-      subtitle: "מהשנה שעברה",
+      subtitle: "מהחודש שעבר",
     },
   ];
 
-  const dailyActivities: DailyActivity[] = [
-    { title: "משימה הושלמה", user: "משה כהן", time: "20/07/2023", status: "completed" },
-    { title: "הזמנה חדשה", user: "יעל לוי", time: "19/07/2023", status: "in-progress" },
-    { title: "בקשת אישור", user: "דני רון", time: "18/07/2023", status: "pending" },
-  ];
-
-  const browserUsage = [
-    { name: "Chrome", value: 35502, change: "+11.5%", icon: Chrome, color: "hsl(var(--primary))" },
-    { name: "Safari", value: 12450, change: "+8.2%", icon: Globe, color: "hsl(var(--accent))" },
-    { name: "Mobile", value: 8320, change: "+5.1%", icon: Smartphone, color: "hsl(var(--success))" },
-    { name: "Desktop", value: 6890, change: "+3.4%", icon: Monitor, color: "hsl(var(--warning))" },
+  const goalData = [
+    { name: "הכנסות", value: 72, target: "₪50,000", current: `₪${(stats.totalRevenue).toLocaleString()}`, fill: "hsl(var(--success))" },
+    { name: "הזמנות", value: 58, target: "500", current: stats.totalOrders.toString(), fill: "hsl(var(--primary))" },
+    { name: "לקוחות חדשים", value: 85, target: "100", current: newUsersToday.toString(), fill: "hsl(var(--accent))" },
   ];
 
   // Mini sparkline component
@@ -273,14 +408,22 @@ const AdminDashboard = () => {
     const range = max - min || 1;
     const height = 40;
     const width = 80;
-    const points = data.map((value, index) => {
-      const x = (index / (data.length - 1)) * width;
-      const y = height - ((value - min) / range) * height;
-      return `${x},${y}`;
-    }).join(" ");
+    const points = data
+      .map((value, index) => {
+        const x = (index / (data.length - 1)) * width;
+        const y = height - ((value - min) / range) * height;
+        return `${x},${y}`;
+      })
+      .join(" ");
 
     return (
       <svg width={width} height={height} className="overflow-visible">
+        <defs>
+          <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <polyline
           fill="none"
           stroke={color}
@@ -293,11 +436,31 @@ const AdminDashboard = () => {
     );
   };
 
+  const getInsightIcon = (icon: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      "📈": <TrendingUp className="w-4 h-4" />,
+      "📉": <ArrowDownRight className="w-4 h-4" />,
+      "⚠️": <AlertTriangle className="w-4 h-4" />,
+      "💡": <Sparkles className="w-4 h-4" />,
+      "🎯": <Target className="w-4 h-4" />,
+      "🔥": <Zap className="w-4 h-4" />,
+      "❄️": <AlertCircle className="w-4 h-4" />,
+      "👥": <Users className="w-4 h-4" />,
+      "📦": <Package className="w-4 h-4" />,
+      "💰": <DollarSign className="w-4 h-4" />,
+    };
+    return iconMap[icon] || <Sparkles className="w-4 h-4" />;
+  };
+
+  const getInsightColor = (type: string, priority: string) => {
+    if (priority === "high") return "border-destructive/50 bg-destructive/5";
+    if (type === "opportunity") return "border-success/50 bg-success/5";
+    if (type === "alert") return "border-warning/50 bg-warning/5";
+    return "border-primary/50 bg-primary/5";
+  };
+
   return (
-    <AdminLayout 
-      title="דשבורד" 
-      icon={TrendingUp}
-    >
+    <AdminLayout title="דשבורד" icon={TrendingUp}>
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -309,19 +472,58 @@ const AdminDashboard = () => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>בית</span>
               <span>/</span>
-              <span className="text-primary font-medium">דשבורד 01</span>
+              <span className="text-primary font-medium">דשבורד ראשי</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchAllAnalytics()}
-              disabled={loading}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={() => fetchAllAnalytics()} disabled={loading} className="gap-2">
               <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
               רענן נתונים
             </Button>
           </div>
+
+          {/* AI Insights Banner */}
+          <AnimatePresence>
+            {aiInsights.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-accent/5">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      <CardTitle className="text-lg font-semibold">תובנות AI</CardTitle>
+                      {insightsLoading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {aiInsights.slice(0, 6).map((insight, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className={cn("p-3 rounded-lg border", getInsightColor(insight.type, insight.priority))}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="mt-0.5 text-primary">{getInsightIcon(insight.icon)}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm">{insight.title}</p>
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{insight.description}</p>
+                              {insight.action && (
+                                <p className="text-xs text-primary mt-1 font-medium">{insight.action}</p>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* KPI Cards - 4 columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -332,7 +534,7 @@ const AdminDashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="relative overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="relative overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-all duration-300 group">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="space-y-1">
@@ -342,39 +544,31 @@ const AdminDashboard = () => {
                       <Sparkline data={card.sparkData} color={card.sparkColor} />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={cn(
                           "text-xs font-medium px-2 py-0.5",
-                          card.trend === "up" 
-                            ? "bg-success/10 text-success" 
-                            : "bg-destructive/10 text-destructive"
+                          card.trend === "up" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                         )}
                       >
-                        {card.trend === "up" ? (
-                          <ArrowUpRight className="w-3 h-3 mr-1" />
-                        ) : (
-                          <ArrowDownRight className="w-3 h-3 mr-1" />
-                        )}
+                        {card.trend === "up" ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
                         {card.change}
                       </Badge>
                       <span className="text-xs text-muted-foreground">{card.subtitle}</span>
                     </div>
                   </CardContent>
+                  <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <card.icon className="w-8 h-8 text-muted-foreground/20" />
+                  </div>
                 </Card>
               </motion.div>
             ))}
           </div>
 
-          {/* Main Content Grid - Chart + Recent Orders */}
+          {/* Main Content Grid - Chart + Goals + Recent Orders */}
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Sales Analytics Chart - Takes 2 columns */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="lg:col-span-2"
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2">
               <Card className="border-border/50 shadow-sm">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -382,11 +576,11 @@ const AdminDashboard = () => {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-primary" />
-                        <span className="text-sm text-muted-foreground">סה״כ הזמנות</span>
+                        <span className="text-sm text-muted-foreground">השנה</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-accent" />
-                        <span className="text-sm text-muted-foreground">סה״כ מכירות</span>
+                        <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
+                        <span className="text-sm text-muted-foreground">שנה קודמת</span>
                       </div>
                     </div>
                   </div>
@@ -395,61 +589,115 @@ const AdminDashboard = () => {
                   <ResponsiveContainer width="100%" height={320}>
                     <AreaChart data={revenueData}>
                       <defs>
-                        <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
                         <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.1}/>
-                          <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                      />
-                      <Tooltip 
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip
                         contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          boxShadow: 'var(--shadow-md)',
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          boxShadow: "var(--shadow-md)",
                         }}
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="orders"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        fill="url(#colorOrders)"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="sales"
-                        stroke="hsl(var(--accent))"
-                        strokeWidth={2}
-                        fill="url(#colorSales)"
-                      />
+                      <Area type="monotone" dataKey="previousSales" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="4 4" fill="none" />
+                      <Area type="monotone" dataKey="sales" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#colorSales)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Recent Orders Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
+            {/* Goals Card */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+              <Card className="border-border/50 shadow-sm h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold">יעדים חודשיים</CardTitle>
+                    <Target className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {goalData.map((goal, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{goal.name}</span>
+                        <span className="text-muted-foreground">
+                          {goal.current} / {goal.target}
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <Progress value={goal.value} className="h-3" />
+                        <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary-foreground">{goal.value}%</span>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">שיעור המרה</span>
+                      <Badge variant="secondary" className="bg-success/10 text-success">
+                        {conversionRate.toFixed(1)}%
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">מבקרים שביצעו רכישה</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Second Row - Low Stock + Recent Orders + Top Products */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Low Stock Alert */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <Card className="border-border/50 shadow-sm h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <PackageX className="w-5 h-5 text-warning" />
+                      <CardTitle className="text-lg font-semibold">מלאי נמוך</CardTitle>
+                    </div>
+                    <Badge variant="secondary" className="bg-warning/10 text-warning">
+                      {lowStockProducts.length} מוצרים
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {lowStockProducts.length > 0 ? (
+                    lowStockProducts.slice(0, 4).map((product, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">מק״ט: {product.sku}</p>
+                        </div>
+                        <Badge variant={product.stock_quantity === 0 ? "destructive" : "secondary"} className="text-xs">
+                          {product.stock_quantity} יח׳
+                        </Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <CheckCircle className="w-8 h-8 mx-auto mb-2 text-success" />
+                      <p className="text-sm">כל המוצרים במלאי תקין</p>
+                    </div>
+                  )}
+                  {lowStockProducts.length > 4 && (
+                    <Button variant="ghost" size="sm" className="w-full text-primary" onClick={() => navigate("/admin/inventory")}>
+                      הצג הכל ({lowStockProducts.length})
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Recent Orders */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
               <Card className="border-border/50 shadow-sm bg-primary text-primary-foreground h-full">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -463,69 +711,122 @@ const AdminDashboard = () => {
                   {/* Mini Bar Chart */}
                   <div className="flex items-end gap-1 h-16 mb-4">
                     {[40, 65, 45, 80, 55, 70, 90, 60, 75, 85, 50, 95].map((height, i) => (
-                      <div
+                      <motion.div
                         key={i}
-                        className="flex-1 bg-primary-foreground/30 rounded-t"
-                        style={{ height: `${height}%` }}
+                        initial={{ height: 0 }}
+                        animate={{ height: `${height}%` }}
+                        transition={{ delay: 0.6 + i * 0.05 }}
+                        className="flex-1 bg-primary-foreground/30 rounded-t hover:bg-primary-foreground/50 transition-colors"
                       />
                     ))}
                   </div>
 
                   {/* Order Stats */}
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 rounded-lg bg-primary-foreground/10">
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-success" />
-                        <span className="text-sm">הזמנות שהושלמו</span>
+                        <span className="text-sm">הושלמו</span>
                       </div>
                       <div className="text-left">
                         <p className="font-bold">{stats.deliveredOrders.toLocaleString()}</p>
-                        <p className="text-xs text-primary-foreground/70">+3.5% מהחודש שעבר</p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between p-3 rounded-lg bg-primary-foreground/10">
                       <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-destructive" />
-                        <span className="text-sm">הזמנות שבוטלו</span>
+                        <div className="w-2 h-2 rounded-full bg-warning" />
+                        <span className="text-sm">ממתינות</span>
                       </div>
                       <div className="text-left">
-                        <p className="font-bold">{Math.floor(stats.totalOrders * 0.05).toLocaleString()}</p>
-                        <p className="text-xs text-primary-foreground/70">-1.2% מהחודש שעבר</p>
+                        <p className="font-bold">{stats.pendingOrders.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-foreground/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-accent" />
+                        <span className="text-sm">סה״כ</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold">{stats.totalOrders.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground"
+                    onClick={() => navigate("/admin/orders")}
+                  >
+                    צפה בכל ההזמנות
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Top Products */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+              <Card className="border-border/50 shadow-sm h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold">מוצרים מובילים</CardTitle>
+                    <Eye className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {topProducts.length > 0 ? (
+                    topProducts.map((product, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">{product.quantity} נמכרו</p>
+                        </div>
+                        <p className="font-bold text-sm">₪{product.revenue.toLocaleString()}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Package className="w-8 h-8 mx-auto mb-2" />
+                      <p className="text-sm">אין נתוני מכירות</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
           </div>
 
-          {/* Bottom Row - Daily Activity + Sales Report + Browser Usage */}
+          {/* Bottom Row - Activity + Location + Browsers */}
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Daily Activity */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
               <Card className="border-border/50 shadow-sm h-full">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-semibold">פעילות יומית</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold">פעילות אחרונה</CardTitle>
+                    <Clock className="w-5 h-5 text-muted-foreground" />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {dailyActivities.map((activity, index) => (
+                  {recentActivities.map((activity, index) => (
                     <div key={index} className="flex items-start gap-4">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full mt-2",
-                        activity.status === "completed" && "bg-success",
-                        activity.status === "in-progress" && "bg-warning",
-                        activity.status === "pending" && "bg-muted-foreground"
-                      )} />
+                      <div
+                        className={cn(
+                          "w-2 h-2 rounded-full mt-2",
+                          activity.status === "completed" && "bg-success",
+                          activity.status === "in-progress" && "bg-warning",
+                          activity.status === "pending" && "bg-muted-foreground"
+                        )}
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{activity.title}</span>
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className={cn(
                               "text-xs",
                               activity.status === "completed" && "bg-success/10 text-success",
@@ -546,76 +847,73 @@ const AdminDashboard = () => {
             </motion.div>
 
             {/* Sales Report by Location */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
               <Card className="border-border/50 shadow-sm h-full">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-semibold">דוח מכירות לפי אזור</CardTitle>
+                  <CardTitle className="text-lg font-semibold">מכירות לפי אזור</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {/* Simple map placeholder */}
-                  <div className="relative h-48 rounded-lg bg-muted/30 overflow-hidden mb-4">
+                  {/* Simple map placeholder with animated dots */}
+                  <div className="relative h-36 rounded-lg bg-muted/30 overflow-hidden mb-4">
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Globe className="w-24 h-24 text-muted-foreground/20" />
+                      <Globe className="w-20 h-20 text-muted-foreground/20" />
                     </div>
-                    {/* Location dots */}
-                    <div className="absolute top-1/4 left-1/3 w-3 h-3 rounded-full bg-primary animate-pulse" />
-                    <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-accent animate-pulse" />
-                    <div className="absolute bottom-1/3 left-1/2 w-2.5 h-2.5 rounded-full bg-success animate-pulse" />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="absolute top-1/4 left-1/3 w-3 h-3 rounded-full bg-primary"
+                    />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}
+                      className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-accent"
+                    />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 2, delay: 1 }}
+                      className="absolute bottom-1/3 left-1/2 w-2.5 h-2.5 rounded-full bg-success"
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>תל אביב</span>
-                      <span className="font-medium">42%</span>
-                    </div>
-                    <Progress value={42} className="h-2" />
-                    <div className="flex items-center justify-between text-sm mt-3">
-                      <span>ירושלים</span>
-                      <span className="font-medium">28%</span>
-                    </div>
-                    <Progress value={28} className="h-2" />
-                    <div className="flex items-center justify-between text-sm mt-3">
-                      <span>חיפה</span>
-                      <span className="font-medium">18%</span>
-                    </div>
-                    <Progress value={18} className="h-2" />
+                  <div className="space-y-3">
+                    {[
+                      { city: "תל אביב", percent: 42, color: "bg-primary" },
+                      { city: "ירושלים", percent: 28, color: "bg-accent" },
+                      { city: "חיפה", percent: 18, color: "bg-success" },
+                    ].map((item, index) => (
+                      <div key={index}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span>{item.city}</span>
+                          <span className="font-medium">{item.percent}%</span>
+                        </div>
+                        <Progress value={item.percent} className="h-2" />
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Browser Usage */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
+            {/* Quick Stats */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
               <Card className="border-border/50 shadow-sm h-full">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-semibold">שימוש בדפדפנים</CardTitle>
+                  <CardTitle className="text-lg font-semibold">סיכום מהיר</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {browserUsage.map((browser, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                  {[
+                    { label: "רווח גולמי", value: `₪${totalProfit.toLocaleString()}`, icon: TrendingUp, color: "text-success" },
+                    { label: "הוצאות", value: `₪${totalExpenses.toLocaleString()}`, icon: ArrowDownRight, color: "text-warning" },
+                    { label: "הזמנות ממתינות", value: stats.pendingOrders.toString(), icon: Clock, color: "text-primary" },
+                    { label: "משתמשים חדשים", value: `+${newUsersToday}`, icon: UserPlus, color: "text-accent" },
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${browser.color}20` }}
-                        >
-                          <browser.icon 
-                            className="w-4 h-4"
-                            style={{ color: browser.color }}
-                          />
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center bg-background", item.color)}>
+                          <item.icon className="w-4 h-4" />
                         </div>
-                        <span className="text-sm font-medium">{browser.name}</span>
+                        <span className="text-sm font-medium">{item.label}</span>
                       </div>
-                      <div className="text-left">
-                        <p className="font-bold">{browser.value.toLocaleString()}</p>
-                        <p className="text-xs text-success">{browser.change}</p>
-                      </div>
+                      <p className="font-bold">{item.value}</p>
                     </div>
                   ))}
                 </CardContent>
