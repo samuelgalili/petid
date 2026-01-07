@@ -589,12 +589,27 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
             ].map((q) => (
               <button
                 key={q.label}
-                onClick={() => {
-                  setMessageText(q.text);
-                  setTimeout(() => sendMessage(), 100);
+                onClick={async () => {
+                  if (sending) return;
+                  setSending(true);
+                  const userMessage: AIMessage = { role: "user", content: q.text };
+                  setAiMessages((prev) => [...prev, userMessage]);
+                  try {
+                    await streamAIChat([...aiMessages, userMessage]);
+                  } catch (error) {
+                    console.error("Error:", error);
+                    showToast({
+                      title: "שגיאה",
+                      description: error instanceof Error ? error.message : "משהו השתבש",
+                      variant: "destructive",
+                    });
+                    setAiMessages((prev) => prev.slice(0, -1));
+                  } finally {
+                    setSending(false);
+                  }
                 }}
                 disabled={sending}
-                className="px-3 py-2 bg-muted text-foreground text-sm rounded-full hover:bg-primary/10 hover:text-primary transition-colors border border-border"
+                className="px-3 py-2 bg-muted text-foreground text-sm rounded-full hover:bg-primary/10 hover:text-primary transition-colors border border-border disabled:opacity-50"
               >
                 {q.label}
               </button>
@@ -637,10 +652,10 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.02 }}
-                  className={`flex items-end gap-2 mb-2 ${isUser ? "flex-row-reverse" : ""}`}
+                  className={`flex ${message.products && message.products.length > 0 ? 'items-start' : 'items-end'} gap-2 mb-2 ${isUser ? "flex-row-reverse" : ""}`}
                 >
                   {!isUser && (
-                    <div className="w-7 flex-shrink-0">
+                    <div className="w-7 flex-shrink-0 self-end">
                       {showAvatar && (
                         <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent p-[1.5px]">
                           <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
@@ -651,9 +666,9 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 max-w-[85%]">
                     <div
-                      className={`max-w-[75%] px-4 py-2.5 ${
+                      className={`px-4 py-2.5 ${
                         isUser
                           ? "bg-primary text-primary-foreground rounded-[22px] rounded-br-md"
                           : "bg-muted text-foreground rounded-[22px] rounded-bl-md"
@@ -666,36 +681,34 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                     
                     {/* Product Cards */}
                     {message.products && message.products.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto pb-2 pr-9">
+                      <div className="flex gap-2 overflow-x-auto pb-2 mr-0">
                         {message.products.map((product) => (
                           <motion.div
                             key={product.id}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden shadow-sm"
+                            className="flex-shrink-0 w-32 bg-card rounded-xl border border-border overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => navigate(`/product/${product.id}`)}
                           >
-                            <div className="h-24 bg-muted flex items-center justify-center p-2 relative">
+                            <div className="h-20 bg-muted/50 flex items-center justify-center p-2 relative">
                               <OptimizedImage 
                                 src={product.image_url} 
                                 alt={product.name}
                                 className="w-full h-full object-contain"
                               />
-                              <button
-                                onClick={() => navigate(`/product/${product.id}`)}
-                                className="absolute top-1 left-1 w-6 h-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
-                              >
-                                <ExternalLink className="w-3 h-3 text-foreground" />
-                              </button>
+                              <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                                <ExternalLink className="w-2.5 h-2.5 text-muted-foreground" />
+                              </div>
                             </div>
                             <div className="p-2">
-                              <h4 className="text-xs font-medium text-foreground truncate">{product.name}</h4>
-                              <div className="flex items-center justify-between mt-1">
+                              <h4 className="text-[11px] font-medium text-foreground truncate mb-1">{product.name}</h4>
+                              <div className="flex items-center justify-between">
                                 <div className="flex items-baseline gap-1">
-                                  <span className="text-sm font-bold text-primary">
+                                  <span className="text-xs font-bold text-primary">
                                     ₪{product.sale_price || product.price}
                                   </span>
                                   {product.sale_price && (
-                                    <span className="text-[10px] text-muted-foreground line-through">
+                                    <span className="text-[9px] text-muted-foreground line-through">
                                       ₪{product.price}
                                     </span>
                                   )}
@@ -711,9 +724,9 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                                     });
                                     toast.success("נוסף לסל");
                                   }}
-                                  className="w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+                                  className="w-5 h-5 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
                                 >
-                                  <Plus className="w-3 h-3 text-primary-foreground" />
+                                  <Plus className="w-2.5 h-2.5 text-primary-foreground" />
                                 </button>
                               </div>
                             </div>
