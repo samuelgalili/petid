@@ -50,6 +50,21 @@ export default function MessageThread() {
   // Check if this is an AI chat
   const isAIChat = userId === AI_SUPPORT_ID;
 
+  // Initial AI greeting message
+  const getInitialAIGreeting = (): AIMessage => ({
+    role: "assistant",
+    content: `היי! 👋 אני נציג השירות של PetID.
+
+איך אני יכול לעזור לך היום?
+
+🐕 בריאות ותזונה של חיית המחמד
+🎓 טיפים לאילוף והתנהגות  
+🛒 עזרה עם הזמנות ומוצרים
+📱 שימוש באפליקציה
+
+בחר/י נושא או ספר/י לי במה אני יכול לעזור 😊`
+  });
+
   useEffect(() => {
     if (!user || !userId) return;
 
@@ -61,10 +76,14 @@ export default function MessageThread() {
         avatar_url: null,
       });
       
-      // Load AI messages from localStorage
+      // Load AI messages from localStorage or start with greeting
       const savedMessages = localStorage.getItem(`ai-chat-${user.id}`);
       if (savedMessages) {
-        setAiMessages(JSON.parse(savedMessages));
+        const parsed = JSON.parse(savedMessages);
+        setAiMessages(parsed.length > 0 ? parsed : [getInitialAIGreeting()]);
+      } else {
+        // Start with AI greeting
+        setAiMessages([getInitialAIGreeting()]);
       }
       setLoading(false);
     } else {
@@ -409,29 +428,27 @@ export default function MessageThread() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {/* AI Welcome Card */}
-        {isAIChat && aiMessages.length === 0 && (
-          <div className="flex flex-col items-center py-8 mb-4">
-            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary via-accent to-primary p-[3px] mb-3">
-              <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                <Bot className="h-12 w-12 text-primary" />
-              </div>
-            </div>
-            <h3 className="text-lg font-bold text-foreground">נציג שירות AI</h3>
-            <p className="text-sm text-muted-foreground mt-1 text-center max-w-[260px]">
-              היי! 👋 אני כאן לעזור לך עם כל שאלה על חיות מחמד
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              {["בריאות הכלב שלי", "מה לתת לחתול?", "איך לאלף גור?"].map((q) => (
-                <button
-                  key={q}
-                  onClick={() => setMessageText(q)}
-                  className="px-3 py-1.5 bg-muted text-foreground text-sm rounded-full hover:bg-muted/80 transition-colors"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+        {/* Quick Action Buttons for AI Chat */}
+        {isAIChat && aiMessages.length <= 1 && (
+          <div className="flex flex-wrap gap-2 justify-center mb-4">
+            {[
+              { label: "🐕 בריאות הכלב", text: "יש לי שאלה לגבי בריאות הכלב שלי" },
+              { label: "🐱 תזונת חתול", text: "מה כדאי להאכיל את החתול שלי?" },
+              { label: "🎓 אילוף", text: "אני צריך עזרה עם אילוף" },
+              { label: "📦 הזמנה", text: "יש לי שאלה לגבי הזמנה" },
+            ].map((q) => (
+              <button
+                key={q.label}
+                onClick={() => {
+                  setMessageText(q.text);
+                  setTimeout(() => sendMessage(), 100);
+                }}
+                disabled={sending}
+                className="px-3 py-2 bg-muted text-foreground text-sm rounded-full hover:bg-primary/10 hover:text-primary transition-colors border border-border"
+              >
+                {q.label}
+              </button>
+            ))}
           </div>
         )}
 
