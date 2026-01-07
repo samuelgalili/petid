@@ -417,7 +417,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   );
 
   return (
-    <div className="min-h-screen bg-muted/30" dir="rtl">
+    <div className="min-h-screen bg-background" dir="rtl">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">

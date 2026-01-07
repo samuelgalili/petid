@@ -91,11 +91,11 @@ const AdminShipping = () => {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      pending: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-      processing: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      shipped: "bg-violet-500/20 text-violet-400 border-violet-500/30",
-      delivered: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-      completed: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+      pending: "bg-amber-100 text-amber-700 border-amber-200",
+      processing: "bg-blue-100 text-blue-700 border-blue-200",
+      shipped: "bg-violet-100 text-violet-700 border-violet-200",
+      delivered: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
     };
     const labels: Record<string, string> = {
       pending: "ממתין",
@@ -120,13 +120,13 @@ const AdminShipping = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+            <Card key={index} className="relative overflow-hidden">
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-10`} />
               <CardContent className="p-4 relative">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
                   </div>
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
                     <stat.icon className="w-5 h-5 text-white" />
@@ -138,22 +138,22 @@ const AdminShipping = () => {
         </div>
 
         {/* Tabs */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+        <Card>
           <CardContent className="p-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="bg-slate-800/50 mb-4">
+              <TabsList className="mb-4">
                 <TabsTrigger value="orders">הזמנות</TabsTrigger>
                 <TabsTrigger value="providers">ספקי משלוחים</TabsTrigger>
               </TabsList>
 
               <TabsContent value="orders" className="mt-0">
                 <div className="relative mb-4">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="חיפוש לפי מספר הזמנה, שם או כתובת..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    className="pr-10"
                   />
                 </div>
               </TabsContent>
@@ -161,14 +161,14 @@ const AdminShipping = () => {
               <TabsContent value="providers" className="mt-0">
                 <div className="grid gap-4 md:grid-cols-2">
                   {providers.map((provider) => (
-                    <Card key={provider.id} className="border-0 bg-slate-800/50">
+                    <Card key={provider.id}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="text-3xl">{provider.logo}</div>
                             <div>
-                              <h3 className="font-medium text-white">{provider.name}</h3>
-                              <p className="text-sm text-slate-400">
+                              <h3 className="font-medium">{provider.name}</h3>
+                              <p className="text-sm text-muted-foreground">
                                 ₪{provider.defaultPrice} • {provider.estimatedDays} ימים
                               </p>
                             </div>
@@ -182,7 +182,7 @@ const AdminShipping = () => {
                                 ));
                               }}
                             />
-                            <Button size="icon" variant="ghost" className="text-slate-400">
+                            <Button size="icon" variant="ghost">
                               <Settings className="w-4 h-4" />
                             </Button>
                           </div>
@@ -198,48 +198,48 @@ const AdminShipping = () => {
 
         {/* Orders List */}
         {activeTab === "orders" && (
-          <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-            <CardHeader className="border-b border-slate-700/50">
-              <CardTitle className="text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-violet-400" />
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
                 הזמנות ({filteredOrders?.length || 0})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="p-8 text-center text-slate-400">טוען...</div>
+                <div className="p-8 text-center text-muted-foreground">טוען...</div>
               ) : filteredOrders?.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">אין הזמנות</div>
+                <div className="p-8 text-center text-muted-foreground">אין הזמנות</div>
               ) : (
-                <div className="divide-y divide-slate-700/50">
+                <div className="divide-y">
                   {filteredOrders?.map((order) => (
-                    <div key={order.id} className="p-4 hover:bg-slate-800/50 transition-colors">
+                    <div key={order.id} className="p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-white">#{order.order_number || order.id.slice(0, 8).toUpperCase()}</h3>
+                          <h3 className="font-medium">#{order.order_number || order.id.slice(0, 8).toUpperCase()}</h3>
                           {getStatusBadge(order.status)}
                         </div>
-                        <p className="text-sm text-slate-400">{order.order_number}</p>
+                        <p className="text-sm text-muted-foreground">{order.order_number}</p>
                         <div className="flex items-center gap-1 mt-1">
-                          <MapPin className="w-3 h-3 text-slate-500" />
-                          <p className="text-xs text-slate-500 truncate">{typeof order.shipping_address === 'string' ? order.shipping_address : 'לא צוין'}</p>
+                          <MapPin className="w-3 h-3 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground truncate">{typeof order.shipping_address === 'string' ? order.shipping_address : 'לא צוין'}</p>
                         </div>
                       </div>
                         <div className="text-left">
-                          <p className="text-sm text-slate-400">
+                          <p className="text-sm text-muted-foreground">
                             {format(new Date(order.created_at), "dd/MM/yyyy", { locale: he })}
                           </p>
                         </div>
                         <div className="flex gap-2">
                           {(order.status === "pending" || order.status === "processing") && (
-                            <Button size="sm" className="bg-gradient-to-r from-violet-500 to-purple-600">
+                            <Button size="sm">
                               <Truck className="w-4 h-4 ml-1" />
                               שלח
                             </Button>
                           )}
                           {order.status === "shipped" && (
-                            <Button size="sm" variant="outline" className="border-slate-700 text-slate-300">
+                            <Button size="sm" variant="outline">
                               <ExternalLink className="w-4 h-4 ml-1" />
                               מעקב
                             </Button>

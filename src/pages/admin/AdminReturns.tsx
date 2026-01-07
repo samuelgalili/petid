@@ -74,10 +74,10 @@ const AdminReturns = () => {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      pending: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-      approved: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-      rejected: "bg-red-500/20 text-red-400 border-red-500/30",
-      refunded: "bg-violet-500/20 text-violet-400 border-violet-500/30",
+      pending: "bg-amber-100 text-amber-700 border-amber-200",
+      approved: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      rejected: "bg-red-100 text-red-700 border-red-200",
+      refunded: "bg-violet-100 text-violet-700 border-violet-200",
     };
     const labels: Record<string, string> = {
       pending: "ממתין",
@@ -108,13 +108,13 @@ const AdminReturns = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+            <Card key={index} className="relative overflow-hidden">
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-10`} />
               <CardContent className="p-4 relative">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
                   </div>
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
                     <stat.icon className="w-5 h-5 text-white" />
@@ -126,20 +126,20 @@ const AdminReturns = () => {
         </div>
 
         {/* Controls */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="חיפוש לפי מספר הזמנה, שם לקוח או מוצר..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                  className="pr-10"
                 />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+                <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -155,48 +155,47 @@ const AdminReturns = () => {
         </Card>
 
         {/* Returns List */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-          <CardHeader className="border-b border-slate-700/50">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Package className="w-5 h-5 text-violet-400" />
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
               בקשות החזרה ({filteredReturns.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {filteredReturns.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">אין בקשות החזרה</div>
+              <div className="p-8 text-center text-muted-foreground">אין בקשות החזרה</div>
             ) : (
-              <div className="divide-y divide-slate-700/50">
+              <div className="divide-y">
                 {filteredReturns.map((returnReq) => (
-                  <div key={returnReq.id} className="p-4 hover:bg-slate-800/50 transition-colors">
+                  <div key={returnReq.id} className="p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-white">{returnReq.productName}</h3>
+                          <h3 className="font-medium">{returnReq.productName}</h3>
                           {getStatusBadge(returnReq.status)}
                         </div>
-                        <p className="text-sm text-slate-400">{returnReq.customerName} • הזמנה #{returnReq.orderId}</p>
+                        <p className="text-sm text-muted-foreground">{returnReq.customerName} • הזמנה #{returnReq.orderId}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <AlertTriangle className="w-3 h-3 text-amber-400" />
-                          <p className="text-xs text-amber-400">{returnReq.reason}</p>
+                          <AlertTriangle className="w-3 h-3 text-amber-500" />
+                          <p className="text-xs text-amber-600">{returnReq.reason}</p>
                         </div>
                         {returnReq.notes && (
                           <div className="flex items-center gap-2 mt-1">
-                            <MessageSquare className="w-3 h-3 text-slate-500" />
-                            <p className="text-xs text-slate-500">{returnReq.notes}</p>
+                            <MessageSquare className="w-3 h-3 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground">{returnReq.notes}</p>
                           </div>
                         )}
                       </div>
                       <div className="text-left">
-                        <p className="text-lg font-bold text-violet-400">₪{returnReq.amount}</p>
-                        <p className="text-xs text-slate-500">{returnReq.createdAt}</p>
+                        <p className="text-lg font-bold text-primary">₪{returnReq.amount}</p>
+                        <p className="text-xs text-muted-foreground">{returnReq.createdAt}</p>
                       </div>
                       <div className="flex gap-2">
                         {returnReq.status === "pending" && (
                           <>
                             <Button
                               size="sm"
-                              className="bg-gradient-to-r from-emerald-500 to-green-600"
                               onClick={() => updateStatus(returnReq.id, "approved")}
                             >
                               <CheckCircle className="w-4 h-4" />
@@ -204,7 +203,7 @@ const AdminReturns = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-red-500/30 text-red-400"
+                              className="text-red-600"
                               onClick={() => updateStatus(returnReq.id, "rejected")}
                             >
                               <XCircle className="w-4 h-4" />
@@ -214,7 +213,6 @@ const AdminReturns = () => {
                         {returnReq.status === "approved" && (
                           <Button
                             size="sm"
-                            className="bg-gradient-to-r from-violet-500 to-purple-600"
                             onClick={() => updateStatus(returnReq.id, "refunded")}
                           >
                             <DollarSign className="w-4 h-4 ml-1" />

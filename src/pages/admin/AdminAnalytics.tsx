@@ -117,11 +117,11 @@ const AdminAnalytics = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">דשבורד אנליטי</h1>
-            <p className="text-slate-400">מעקב ביצועים ותובנות עסקיות</p>
+            <h1 className="text-2xl font-bold">דשבורד אנליטי</h1>
+            <p className="text-muted-foreground">מעקב ביצועים ותובנות עסקיות</p>
           </div>
           <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -136,20 +136,20 @@ const AdminAnalytics = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+            <Card key={index} className="relative overflow-hidden">
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-10`} />
               <CardContent className="p-4 relative">
                 <div className="flex items-center justify-between mb-2">
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
                     <stat.icon className="w-5 h-5 text-white" />
                   </div>
-                  <div className={`flex items-center gap-1 text-sm ${stat.isPositive ? "text-emerald-400" : "text-red-400"}`}>
+                  <div className={`flex items-center gap-1 text-sm ${stat.isPositive ? "text-emerald-600" : "text-red-600"}`}>
                     {stat.isPositive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                     {stat.change}
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mb-1">{stat.title}</p>
-                <p className="text-2xl font-bold text-white">{stat.value}</p>
+                <p className="text-xs text-muted-foreground mb-1">{stat.title}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
               </CardContent>
             </Card>
           ))}
@@ -158,10 +158,10 @@ const AdminAnalytics = () => {
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Revenue Chart */}
-          <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
                 הכנסות לפי חודש
               </CardTitle>
             </CardHeader>
@@ -170,28 +170,27 @@ const AdminAnalytics = () => {
                 <AreaChart data={revenueData}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="name" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-muted-foreground" />
+                  <YAxis className="text-muted-foreground" />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: "#1F2937", border: "none", borderRadius: "8px" }}
-                    labelStyle={{ color: "#fff" }}
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
                   />
-                  <Area type="monotone" dataKey="revenue" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorRevenue)" />
+                  <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRevenue)" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           {/* Categories Pie Chart */}
-          <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-violet-400" />
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
                 מכירות לפי קטגוריה
               </CardTitle>
             </CardHeader>
@@ -212,7 +211,7 @@ const AdminAnalytics = () => {
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: "#1F2937", border: "none", borderRadius: "8px" }}
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -220,7 +219,7 @@ const AdminAnalytics = () => {
                 {categoryData.map((item, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-sm text-slate-400">{item.name} ({item.value}%)</span>
+                    <span className="text-sm text-muted-foreground">{item.name} ({item.value}%)</span>
                   </div>
                 ))}
               </div>
@@ -228,22 +227,21 @@ const AdminAnalytics = () => {
           </Card>
 
           {/* Traffic Chart */}
-          <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800 lg:col-span-2">
+          <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Eye className="w-5 h-5 text-blue-400" />
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5 text-blue-500" />
                 תנועה והמרות
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={trafficData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="name" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-muted-foreground" />
+                  <YAxis className="text-muted-foreground" />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: "#1F2937", border: "none", borderRadius: "8px" }}
-                    labelStyle={{ color: "#fff" }}
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
                   />
                   <Bar dataKey="visits" fill="#3B82F6" radius={[4, 4, 0, 0]} name="ביקורים" />
                   <Bar dataKey="conversions" fill="#10B981" radius={[4, 4, 0, 0]} name="המרות" />

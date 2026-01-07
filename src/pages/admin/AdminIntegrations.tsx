@@ -84,13 +84,13 @@ const AdminIntegrations = () => {
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-600 opacity-10" />
             <CardContent className="p-4 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">סה״כ אינטגרציות</p>
-                  <p className="text-2xl font-bold text-white">{integrations.length}</p>
+                  <p className="text-xs text-muted-foreground mb-1">סה״כ אינטגרציות</p>
+                  <p className="text-2xl font-bold">{integrations.length}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
                   <Plug className="w-5 h-5 text-white" />
@@ -98,13 +98,13 @@ const AdminIntegrations = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-600 opacity-10" />
             <CardContent className="p-4 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">מחוברות</p>
-                  <p className="text-2xl font-bold text-white">{connectedCount}</p>
+                  <p className="text-xs text-muted-foreground mb-1">מחוברות</p>
+                  <p className="text-2xl font-bold">{connectedCount}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-white" />
@@ -112,13 +112,13 @@ const AdminIntegrations = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-10" />
             <CardContent className="p-4 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">פעילות</p>
-                  <p className="text-2xl font-bold text-white">{activeCount}</p>
+                  <p className="text-xs text-muted-foreground mb-1">פעילות</p>
+                  <p className="text-2xl font-bold">{activeCount}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
                   <Settings className="w-5 h-5 text-white" />
@@ -126,13 +126,13 @@ const AdminIntegrations = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 opacity-10" />
             <CardContent className="p-4 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">דורשות הגדרה</p>
-                  <p className="text-2xl font-bold text-white">{integrations.filter(i => !i.isConnected).length}</p>
+                  <p className="text-xs text-muted-foreground mb-1">דורשות הגדרה</p>
+                  <p className="text-2xl font-bold">{integrations.filter(i => !i.isConnected).length}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-white" />
@@ -143,7 +143,7 @@ const AdminIntegrations = () => {
         </div>
 
         {/* Category Filter */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => (
@@ -152,10 +152,6 @@ const AdminIntegrations = () => {
                   variant={selectedCategory === cat.id ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={selectedCategory === cat.id 
-                    ? "bg-gradient-to-r from-violet-500 to-purple-600" 
-                    : "border-slate-700 text-slate-300"
-                  }
                 >
                   <cat.icon className="w-4 h-4 ml-2" />
                   {cat.label}
@@ -168,30 +164,30 @@ const AdminIntegrations = () => {
         {/* Integrations Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredIntegrations.map((integration) => (
-            <Card key={integration.id} className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+            <Card key={integration.id}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="text-3xl">{integration.icon}</div>
                     <div>
-                      <h3 className="font-bold text-white">{integration.name}</h3>
-                      <p className="text-sm text-slate-400">{integration.description}</p>
+                      <h3 className="font-bold">{integration.name}</h3>
+                      <p className="text-sm text-muted-foreground">{integration.description}</p>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {integration.isConnected ? (
-                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                         מחובר
                       </Badge>
                     ) : (
-                      <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30">
+                      <Badge variant="secondary">
                         לא מחובר
                       </Badge>
                     )}
                     {integration.isActive && (
-                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                      <Badge className="bg-blue-100 text-blue-700 border-blue-200">
                         פעיל
                       </Badge>
                     )}
@@ -202,40 +198,40 @@ const AdminIntegrations = () => {
                         checked={integration.isActive}
                         onCheckedChange={() => toggleActive(integration.id)}
                       />
-                      <Button size="icon" variant="ghost" className="text-slate-400">
+                      <Button size="icon" variant="ghost">
                         <Settings className="w-4 h-4" />
                       </Button>
                     </div>
                   ) : (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button size="sm" className="bg-gradient-to-r from-violet-500 to-purple-600">
+                        <Button size="sm">
                           חבר
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="bg-slate-900 border-slate-700">
+                      <DialogContent dir="rtl">
                         <DialogHeader>
-                          <DialogTitle className="text-white flex items-center gap-2">
+                          <DialogTitle className="flex items-center gap-2">
                             <span className="text-2xl">{integration.icon}</span>
                             חיבור {integration.name}
                           </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 mt-4">
                           <div>
-                            <Label className="text-slate-300">API Key</Label>
-                            <Input className="bg-slate-800 border-slate-700 text-white" placeholder="הזן API Key..." />
+                            <Label>API Key</Label>
+                            <Input placeholder="הזן API Key..." />
                           </div>
                           <div>
-                            <Label className="text-slate-300">Secret Key</Label>
-                            <Input type="password" className="bg-slate-800 border-slate-700 text-white" placeholder="הזן Secret Key..." />
+                            <Label>Secret Key</Label>
+                            <Input type="password" placeholder="הזן Secret Key..." />
                           </div>
                           <Button 
-                            className="w-full bg-gradient-to-r from-violet-500 to-purple-600"
+                            className="w-full"
                             onClick={() => connectIntegration(integration.id)}
                           >
                             חבר ואמת
                           </Button>
-                          <Button variant="link" className="w-full text-slate-400">
+                          <Button variant="link" className="w-full">
                             <ExternalLink className="w-4 h-4 ml-2" />
                             למדריך ההתקנה
                           </Button>
