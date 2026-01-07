@@ -85,6 +85,12 @@ const AdminPricing = lazy(() => import("./pages/admin/AdminPricing"));
 const AdminWebhooks = lazy(() => import("./pages/admin/AdminWebhooks"));
 const AdminAlerts = lazy(() => import("./pages/admin/AdminAlerts"));
 const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
+const AdminStories = lazy(() => import("./pages/admin/AdminStories"));
+const AdminPets = lazy(() => import("./pages/admin/AdminPets"));
+const AdminLoyalty = lazy(() => import("./pages/admin/AdminLoyalty"));
+const AdminNotificationRules = lazy(() => import("./pages/admin/AdminNotificationRules"));
+const AdminAutomations = lazy(() => import("./pages/admin/AdminAutomations"));
+const AdminTimeTracking = lazy(() => import("./pages/admin/AdminTimeTracking"));
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
 import Tasks from "./pages/Tasks";
@@ -225,6 +231,12 @@ const AnimatedRoutes = () => {
         <Route path="/admin/webhooks" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminWebhooks /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/alerts" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminAlerts /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/blog" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminBlog /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/stories" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminStories /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/pets" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminPets /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/loyalty" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminLoyalty /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/notification-rules" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminNotificationRules /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/automations" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminAutomations /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/time-tracking" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminTimeTracking /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
         <Route path="/experiences" element={<PageTransition><Experiences /></PageTransition>} />
         <Route path="/parks" element={<PageTransition><Parks /></PageTransition>} />
