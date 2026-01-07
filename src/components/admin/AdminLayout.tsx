@@ -58,8 +58,7 @@ interface AdminLayoutProps {
 }
 
 import { Download } from "lucide-react";
-
-import { Heart, PlaySquare, Trophy, Zap, Clock } from "lucide-react";
+import { PlaySquare, Trophy, Zap, Clock } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "דשבורד", href: "/admin/dashboard" },
