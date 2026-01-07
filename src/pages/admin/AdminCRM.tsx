@@ -28,7 +28,8 @@ import {
   Users, Phone, Mail, Calendar, Clock, Plus, Search, Star,
   Tag, Bell, CheckCircle, AlertTriangle, Target, TrendingUp,
   ShoppingBag, MessageSquare, History, Activity, Crown,
-  UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart
+  UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart,
+  CreditCard, Receipt, DollarSign, Banknote
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
@@ -103,8 +104,17 @@ const AdminCRM = () => {
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [showReminderDialog, setShowReminderDialog] = useState(false);
   const [showTagDialog, setShowTagDialog] = useState(false);
+  const [showChargeDialog, setShowChargeDialog] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [newReminder, setNewReminder] = useState({ title: "", description: "", due_date: "", priority: "medium" });
+  const [newCharge, setNewCharge] = useState({ 
+    amount: "", 
+    description: "", 
+    charge_type: "manual", 
+    payment_method: "credit_card", 
+    notes: "", 
+    due_date: "" 
+  });
   const [newTagName, setNewTagName] = useState("");
   const [selectedTagColor, setSelectedTagColor] = useState("#3B82F6");
 
@@ -172,6 +182,22 @@ const AdminCRM = () => {
     queryFn: async () => {
       if (!selectedCustomer) return [];
       const { data, error } = await supabase.from('orders').select('*').eq('user_id', selectedCustomer.id).order('created_at', { ascending: false }).limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch customer charges
+  const { data: customerCharges } = useQuery({
+    queryKey: ['customer-charges', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('customer_charges')
+        .select('*')
+        .eq('customer_id', selectedCustomer.id)
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -256,6 +282,62 @@ const AdminCRM = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer-reminders'] });
       toast({ title: "✅ תזכורת הושלמה" });
+    }
+  });
+
+  // Add charge mutation
+  const addChargeMutation = useMutation({
+    mutationFn: async (charge: typeof newCharge) => {
+      const { error } = await supabase.from('customer_charges').insert({
+        customer_id: selectedCustomer.id,
+        amount: parseFloat(charge.amount),
+        description: charge.description,
+        charge_type: charge.charge_type,
+        payment_method: charge.payment_method,
+        notes: charge.notes || null,
+        due_date: charge.due_date || null,
+        status: 'pending'
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-charges'] });
+      setNewCharge({ amount: "", description: "", charge_type: "manual", payment_method: "credit_card", notes: "", due_date: "" });
+      setShowChargeDialog(false);
+      toast({ title: "✅ חיוב נוסף בהצלחה" });
+    },
+    onError: () => {
+      toast({ title: "❌ שגיאה בהוספת חיוב", variant: "destructive" });
+    }
+  });
+
+  // Mark charge as paid
+  const markChargePaidMutation = useMutation({
+    mutationFn: async (chargeId: string) => {
+      const { error } = await supabase
+        .from('customer_charges')
+        .update({ status: 'paid', paid_at: new Date().toISOString() })
+        .eq('id', chargeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-charges'] });
+      toast({ title: "✅ חיוב סומן כשולם" });
+    }
+  });
+
+  // Cancel charge
+  const cancelChargeMutation = useMutation({
+    mutationFn: async (chargeId: string) => {
+      const { error } = await supabase
+        .from('customer_charges')
+        .update({ status: 'cancelled' })
+        .eq('id', chargeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer-charges'] });
+      toast({ title: "✅ חיוב בוטל" });
     }
   });
 
@@ -560,10 +642,14 @@ const AdminCRM = () => {
 
                   {/* Tabs */}
                   <Tabs defaultValue="overview" className="p-6">
-                    <TabsList className="w-full mb-6 grid grid-cols-4">
+                    <TabsList className="w-full mb-6 grid grid-cols-5">
                       <TabsTrigger value="overview" className="gap-2">
                         <Activity className="h-4 w-4" />
                         סקירה
+                      </TabsTrigger>
+                      <TabsTrigger value="billing" className="gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        חיובים
                       </TabsTrigger>
                       <TabsTrigger value="history" className="gap-2">
                         <History className="h-4 w-4" />
@@ -678,6 +764,130 @@ const AdminCRM = () => {
                           <Plus className="h-4 w-4" />
                           הערה
                         </Button>
+                      </div>
+                    </TabsContent>
+
+                    {/* Billing Tab */}
+                    <TabsContent value="billing">
+                      <div className="space-y-4">
+                        <Button className="w-full gap-2" onClick={() => setShowChargeDialog(true)}>
+                          <Plus className="h-4 w-4" />
+                          הוסף חיוב ידני
+                        </Button>
+
+                        {/* Billing Summary */}
+                        <div className="grid grid-cols-3 gap-3">
+                          <Card className="p-3 bg-gradient-to-br from-emerald-500/5 to-emerald-600/10 border-emerald-500/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <CheckCircle className="h-4 w-4 text-emerald-600" />
+                              <span className="text-xs text-muted-foreground">שולם</span>
+                            </div>
+                            <p className="text-lg font-bold text-emerald-600">
+                              ₪{(customerCharges?.filter((c: any) => c.status === 'paid').reduce((sum: number, c: any) => sum + parseFloat(c.amount), 0) || 0).toLocaleString()}
+                            </p>
+                          </Card>
+                          <Card className="p-3 bg-gradient-to-br from-amber-500/5 to-amber-600/10 border-amber-500/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Clock className="h-4 w-4 text-amber-600" />
+                              <span className="text-xs text-muted-foreground">ממתין</span>
+                            </div>
+                            <p className="text-lg font-bold text-amber-600">
+                              ₪{(customerCharges?.filter((c: any) => c.status === 'pending').reduce((sum: number, c: any) => sum + parseFloat(c.amount), 0) || 0).toLocaleString()}
+                            </p>
+                          </Card>
+                          <Card className="p-3 bg-gradient-to-br from-rose-500/5 to-rose-600/10 border-rose-500/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <AlertTriangle className="h-4 w-4 text-rose-600" />
+                              <span className="text-xs text-muted-foreground">בוטל</span>
+                            </div>
+                            <p className="text-lg font-bold text-rose-600">
+                              ₪{(customerCharges?.filter((c: any) => c.status === 'cancelled').reduce((sum: number, c: any) => sum + parseFloat(c.amount), 0) || 0).toLocaleString()}
+                            </p>
+                          </Card>
+                        </div>
+
+                        <ScrollArea className="h-[280px]">
+                          {customerCharges?.length ? (
+                            <div className="space-y-3">
+                              {customerCharges.map((charge: any) => (
+                                <Card key={charge.id} className="p-4 hover:shadow-sm transition-shadow">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div className={cn(
+                                        "p-2 rounded-lg",
+                                        charge.status === 'paid' && "bg-emerald-500/10",
+                                        charge.status === 'pending' && "bg-amber-500/10",
+                                        charge.status === 'cancelled' && "bg-rose-500/10"
+                                      )}>
+                                        <Receipt className={cn(
+                                          "h-4 w-4",
+                                          charge.status === 'paid' && "text-emerald-600",
+                                          charge.status === 'pending' && "text-amber-600",
+                                          charge.status === 'cancelled' && "text-rose-600"
+                                        )} />
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">{charge.description}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {format(new Date(charge.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                                          {charge.payment_method && ` • ${
+                                            charge.payment_method === 'credit_card' ? 'כרטיס אשראי' :
+                                            charge.payment_method === 'cash' ? 'מזומן' :
+                                            charge.payment_method === 'bank_transfer' ? 'העברה בנקאית' :
+                                            charge.payment_method === 'check' ? 'צ׳ק' : charge.payment_method
+                                          }`}
+                                        </p>
+                                        {charge.notes && (
+                                          <p className="text-xs text-muted-foreground mt-1">{charge.notes}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <div className="text-left">
+                                        <p className="font-bold text-lg">₪{parseFloat(charge.amount).toLocaleString()}</p>
+                                        <Badge variant="outline" className={cn(
+                                          "text-xs",
+                                          charge.status === 'paid' && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+                                          charge.status === 'pending' && "bg-amber-500/10 text-amber-700 border-amber-500/30",
+                                          charge.status === 'cancelled' && "bg-rose-500/10 text-rose-700 border-rose-500/30"
+                                        )}>
+                                          {charge.status === 'paid' ? 'שולם' : charge.status === 'pending' ? 'ממתין' : 'בוטל'}
+                                        </Badge>
+                                      </div>
+                                      {charge.status === 'pending' && (
+                                        <div className="flex gap-1">
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                                            onClick={() => markChargePaidMutation.mutate(charge.id)}
+                                          >
+                                            <CheckCircle className="h-4 w-4" />
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            className="h-8 w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-500/10"
+                                            onClick={() => cancelChargeMutation.mutate(charge.id)}
+                                          >
+                                            <AlertTriangle className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          ) : (
+                            <AdminEmptyState 
+                              icon={CreditCard}
+                              title="אין חיובים"
+                              description="הוסף חיוב ידני ללקוח"
+                              action={{ label: "הוסף חיוב", onClick: () => setShowChargeDialog(true) }}
+                            />
+                          )}
+                        </ScrollArea>
                       </div>
                     </TabsContent>
 
@@ -993,6 +1203,109 @@ const AdminCRM = () => {
                 disabled={!newTagName.trim()}
               >
                 צור תגית
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Charge Dialog */}
+        <Dialog open={showChargeDialog} onOpenChange={setShowChargeDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                חיוב ידני חדש
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>סכום *</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={newCharge.amount} 
+                      onChange={(e) => setNewCharge({...newCharge, amount: e.target.value})} 
+                      placeholder="0.00"
+                      className="pr-10"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>אמצעי תשלום</Label>
+                  <Select 
+                    value={newCharge.payment_method} 
+                    onValueChange={(v) => setNewCharge({...newCharge, payment_method: v})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="credit_card">כרטיס אשראי</SelectItem>
+                      <SelectItem value="cash">מזומן</SelectItem>
+                      <SelectItem value="bank_transfer">העברה בנקאית</SelectItem>
+                      <SelectItem value="check">צ׳ק</SelectItem>
+                      <SelectItem value="other">אחר</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>תיאור החיוב *</Label>
+                <Input 
+                  value={newCharge.description} 
+                  onChange={(e) => setNewCharge({...newCharge, description: e.target.value})} 
+                  placeholder="לדוגמה: שירות ייעוץ, מוצר נוסף..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>סוג חיוב</Label>
+                  <Select 
+                    value={newCharge.charge_type} 
+                    onValueChange={(v) => setNewCharge({...newCharge, charge_type: v})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">ידני</SelectItem>
+                      <SelectItem value="service">שירות</SelectItem>
+                      <SelectItem value="product">מוצר</SelectItem>
+                      <SelectItem value="subscription">מנוי</SelectItem>
+                      <SelectItem value="fee">עמלה</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>תאריך יעד לתשלום</Label>
+                  <Input 
+                    type="date"
+                    value={newCharge.due_date} 
+                    onChange={(e) => setNewCharge({...newCharge, due_date: e.target.value})} 
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>הערות (אופציונלי)</Label>
+                <Textarea 
+                  value={newCharge.notes} 
+                  onChange={(e) => setNewCharge({...newCharge, notes: e.target.value})} 
+                  placeholder="הערות נוספות..."
+                  rows={2}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowChargeDialog(false)}>ביטול</Button>
+              <Button 
+                onClick={() => addChargeMutation.mutate(newCharge)} 
+                disabled={!newCharge.amount || !newCharge.description.trim() || addChargeMutation.isPending}
+              >
+                {addChargeMutation.isPending ? "מוסיף..." : "הוסף חיוב"}
               </Button>
             </DialogFooter>
           </DialogContent>

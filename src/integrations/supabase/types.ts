@@ -1829,6 +1829,54 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_charges: {
+        Row: {
+          amount: number
+          charge_type: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          description: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          charge_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          description: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          charge_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_debts: {
         Row: {
           amount: number
