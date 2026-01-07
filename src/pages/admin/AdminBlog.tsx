@@ -7,6 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   FileText, 
   Eye, 
@@ -41,6 +56,74 @@ const AdminBlog = () => {
     }
   });
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    title_he: "",
+    content: "",
+    excerpt: "",
+    status: "draft",
+    tags: "",
+    slug: ""
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const slug = data.slug || data.title_he?.toLowerCase().replace(/\s+/g, '-') || `post-${Date.now()}`;
+      const { error } = await supabase
+        .from('blog_posts')
+        .insert({
+          title: data.title || data.title_he,
+          title_he: data.title_he,
+          content: data.content,
+          excerpt: data.excerpt,
+          status: data.status,
+          slug,
+          tags: data.tags ? data.tags.split(',').map((t: string) => t.trim()) : [],
+          published_at: data.status === 'published' ? new Date().toISOString() : null
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+      toast.success('המאמר נוצר בהצלחה');
+      setIsDialogOpen(false);
+      resetForm();
+    },
+    onError: () => {
+      toast.error('שגיאה ביצירת המאמר');
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { error } = await supabase
+        .from('blog_posts')
+        .update({
+          title: data.title || data.title_he,
+          title_he: data.title_he,
+          content: data.content,
+          excerpt: data.excerpt,
+          status: data.status,
+          tags: data.tags ? data.tags.split(',').map((t: string) => t.trim()) : [],
+          published_at: data.status === 'published' ? new Date().toISOString() : null
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+      toast.success('המאמר עודכן בהצלחה');
+      setIsDialogOpen(false);
+      setEditingPost(null);
+      resetForm();
+    },
+    onError: () => {
+      toast.error('שגיאה בעדכון המאמר');
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -57,6 +140,55 @@ const AdminBlog = () => {
       toast.error('שגיאה במחיקת המאמר');
     }
   });
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      title_he: "",
+      content: "",
+      excerpt: "",
+      status: "draft",
+      tags: "",
+      slug: ""
+    });
+  };
+
+  const handleOpenCreate = () => {
+    setEditingPost(null);
+    resetForm();
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenEdit = (post: any) => {
+    setEditingPost(post);
+    setFormData({
+      title: post.title || "",
+      title_he: post.title_he || "",
+      content: post.content || "",
+      excerpt: post.excerpt || "",
+      status: post.status || "draft",
+      tags: post.tags?.join(', ') || "",
+      slug: post.slug || ""
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!formData.title_he && !formData.title) {
+      toast.error('נא למלא כותרת');
+      return;
+    }
+    if (!formData.content) {
+      toast.error('נא למלא תוכן');
+      return;
+    }
+    
+    if (editingPost) {
+      updateMutation.mutate({ id: editingPost.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -88,11 +220,89 @@ const AdminBlog = () => {
             <h1 className="text-3xl font-bold">בלוג ותוכן</h1>
             <p className="text-muted-foreground">ניהול מאמרים ותוכן SEO</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleOpenCreate}>
             <Plus className="h-4 w-4" />
             מאמר חדש
           </Button>
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent dir="rtl" className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingPost ? "עריכת מאמר" : "מאמר חדש"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>כותרת (עברית) *</Label>
+                  <Input
+                    value={formData.title_he}
+                    onChange={(e) => setFormData({ ...formData, title_he: e.target.value })}
+                    placeholder="כותרת המאמר"
+                  />
+                </div>
+                <div>
+                  <Label>כותרת (אנגלית)</Label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Article Title"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>תקציר</Label>
+                <Textarea
+                  value={formData.excerpt}
+                  onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                  placeholder="תקציר קצר של המאמר..."
+                  rows={2}
+                />
+              </div>
+              <div>
+                <Label>תוכן *</Label>
+                <Textarea
+                  value={formData.content}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  placeholder="תוכן המאמר..."
+                  rows={8}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>סטטוס</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">טיוטה</SelectItem>
+                      <SelectItem value="published">פורסם</SelectItem>
+                      <SelectItem value="scheduled">מתוזמן</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>תגיות (מופרדות בפסיק)</Label>
+                  <Input
+                    value={formData.tags}
+                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                    placeholder="כלבים, טיפול, בריאות"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>ביטול</Button>
+                <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? "שומר..." : editingPost ? "עדכן" : "צור מאמר"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -245,7 +455,7 @@ const AdminBlog = () => {
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(post)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
