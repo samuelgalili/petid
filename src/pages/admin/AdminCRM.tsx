@@ -758,17 +758,17 @@ const AdminCRM = () => {
                         </Card>
                         
                         <Card className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-cyan-500/10">
-                              <Calendar className="h-5 w-5 text-cyan-600" />
-                            </div>
-                            <div>
+                          <div className="flex items-center justify-end gap-3">
+                            <div className="text-left">
                               <p className="text-sm text-muted-foreground">לקוח מאז</p>
                               <p className="text-xl font-bold">
                                 {selectedCustomer.created_at 
                                   ? format(new Date(selectedCustomer.created_at), 'dd/MM/yyyy', { locale: he })
                                   : 'לא ידוע'}
                               </p>
+                            </div>
+                            <div className="p-2 rounded-lg bg-cyan-500/10">
+                              <Calendar className="h-5 w-5 text-cyan-600" />
                             </div>
                           </div>
                         </Card>
