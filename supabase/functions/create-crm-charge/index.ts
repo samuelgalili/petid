@@ -126,21 +126,46 @@ serve(async (req) => {
     const webhookUrl = `${supabaseUrl}/functions/v1/cardcom-webhook`;
     const origin = req.headers.get('origin') || 'https://petid.co.il';
 
+    // Build invoice lines
+    const invoiceLines = [];
+    if (products && products.length > 0) {
+      for (const product of products) {
+        invoiceLines.push({
+          Description: product.name,
+          Quantity: product.quantity,
+          UnitCost: product.price,
+          IsPriceIncludeVAT: true
+        });
+      }
+    } else {
+      // Single item charge
+      invoiceLines.push({
+        Description: description,
+        Quantity: 1,
+        UnitCost: amount,
+        IsPriceIncludeVAT: true
+      });
+    }
+
     // Create CardCom payment link
     const cardcomRequest = {
       TerminalNumber: CARDCOM_TERMINAL || '',
       ApiName: CARDCOM_API_NAME || '',
       ApiPassword: CARDCOM_API_PASSWORD || '',
-      Amount: amount,
-      Currency: '1', // ILS
+      SumToBill: amount,
+      CoinID: 1, // ILS
       SuccessRedirectUrl: `${origin}/payment-success?charge_id=${charge.id}`,
       FailedRedirectUrl: `${origin}/payment-failed?charge_id=${charge.id}`,
       WebHookUrl: webhookUrl,
       ReturnValue: JSON.stringify({ charge_id: charge.id, customer_id }),
-      Document: {
-        Type: '1' // Invoice
+      Language: 'he',
+      ShowInvoiceHead: true,
+      InvoiceHead: {
+        CustName: customer_name || 'לקוח',
+        PhoneNumber: customer_phone || '',
+        InvoiceLanguage: 'he'
       },
-      ProductName: description
+      InvoiceLines: invoiceLines
     };
 
     console.log('Calling CardCom API...');
