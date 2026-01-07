@@ -32,6 +32,7 @@ const AdminInvoices = () => {
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -336,20 +337,53 @@ const AdminInvoices = () => {
               />
 
               {!scannedData ? (
-                <div 
-                  className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center cursor-pointer hover:border-violet-500/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <div className="space-y-4">
+                  {/* Camera capture input */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    ref={cameraInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+
                   {scanning ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="w-10 h-10 text-violet-400 animate-spin" />
-                      <p className="text-slate-400">סורק את החשבונית...</p>
+                    <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="w-10 h-10 text-violet-400 animate-spin" />
+                        <p className="text-slate-400">סורק את החשבונית...</p>
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      <Upload className="w-10 h-10 text-slate-500" />
-                      <p className="text-slate-400">לחץ להעלאת תמונת חשבונית</p>
-                      <p className="text-xs text-slate-500">תומך ב-JPG, PNG, PDF</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Camera button */}
+                      <div 
+                        className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition-all"
+                        onClick={() => cameraInputRef.current?.click()}
+                      >
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center">
+                            <Camera className="w-6 h-6 text-violet-400" />
+                          </div>
+                          <p className="text-slate-300 font-medium">צלם עם המצלמה</p>
+                          <p className="text-xs text-slate-500">פתח את המצלמה וצלם</p>
+                        </div>
+                      </div>
+
+                      {/* Upload button */}
+                      <div 
+                        className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition-all"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-slate-700/50 flex items-center justify-center">
+                            <Upload className="w-6 h-6 text-slate-400" />
+                          </div>
+                          <p className="text-slate-300 font-medium">העלה מהמכשיר</p>
+                          <p className="text-xs text-slate-500">JPG, PNG, PDF</p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
