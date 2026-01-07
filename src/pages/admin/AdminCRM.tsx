@@ -782,21 +782,21 @@ const AdminCRM = () => {
 
                       {/* Action Buttons */}
                       <div className="flex gap-3">
-                        <Button className="flex-1 gap-2">
-                          <Phone className="h-4 w-4" />
+                        <Button className="flex-1 flex-row-reverse gap-2">
                           התקשר
+                          <Phone className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" className="flex-1 gap-2">
-                          <Mail className="h-4 w-4" />
+                        <Button variant="outline" className="flex-1 flex-row-reverse gap-2">
                           שלח מייל
+                          <Mail className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" className="gap-2" onClick={() => setShowReminderDialog(true)}>
-                          <Bell className="h-4 w-4" />
+                        <Button variant="outline" className="flex-row-reverse gap-2" onClick={() => setShowReminderDialog(true)}>
                           תזכורת
+                          <Bell className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" className="gap-2" onClick={() => setShowNoteDialog(true)}>
-                          <Plus className="h-4 w-4" />
+                        <Button variant="outline" className="flex-row-reverse gap-2" onClick={() => setShowNoteDialog(true)}>
                           הערה
+                          <Plus className="h-4 w-4" />
                         </Button>
                       </div>
                     </TabsContent>
