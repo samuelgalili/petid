@@ -20,7 +20,12 @@ import {
   LogOut,
   MapPin,
   Ticket,
-  Bot
+  Bot,
+  Wallet,
+  ListTodo,
+  Truck,
+  UserPlus,
+  CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +45,11 @@ import { Download } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "דשבורד", href: "/admin/dashboard" },
+  { icon: Wallet, label: "כספים", href: "/admin/financial" },
+  { icon: ListTodo, label: "משימות", href: "/admin/tasks" },
+  { icon: Truck, label: "ספקים", href: "/admin/suppliers" },
+  { icon: UserPlus, label: "לידים", href: "/admin/leads" },
+  { icon: CreditCard, label: "חובות לקוחות", href: "/admin/debts" },
   { icon: Users, label: "משתמשים", href: "/admin/users" },
   { icon: Shield, label: "תפקידים והרשאות", href: "/admin/roles" },
   { icon: FileText, label: "תוכן ומודרציה", href: "/admin/content" },
