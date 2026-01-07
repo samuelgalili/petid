@@ -22,7 +22,7 @@ interface Message {
 }
 
 interface AIMessage {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -30,6 +30,16 @@ interface Profile {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+}
+
+interface Pet {
+  id: string;
+  name: string;
+  type: string;
+  breed: string | null;
+  age: number | null;
+  gender: string | null;
+  health_notes: string | null;
 }
 
 export default function MessageThread() {
@@ -44,26 +54,84 @@ export default function MessageThread() {
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [userPets, setUserPets] = useState<Pet[]>([]);
+  const [userProfile, setUserProfile] = useState<{ full_name: string | null } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
   // Check if this is an AI chat
   const isAIChat = userId === AI_SUPPORT_ID;
 
-  // Initial AI greeting message
-  const getInitialAIGreeting = (): AIMessage => ({
-    role: "assistant",
-    content: `היי! 👋 אני נציג השירות של PetID.
+  // Build personalized greeting based on user's pets
+  const getPersonalizedGreeting = (pets: Pet[], userName: string | null): AIMessage => {
+    const firstName = userName?.split(" ")[0] || "";
+    
+    if (pets.length === 0) {
+      return {
+        role: "assistant",
+        content: `היי${firstName ? ` ${firstName}` : ""}! 👋 אני נציג השירות של PetID.
 
-איך אני יכול לעזור לך היום?
+ראיתי שעדיין לא הוספת חיית מחמד לאפליקציה. רוצה שאעזור לך להוסיף? 🐾
 
-🐕 בריאות ותזונה של חיית המחמד
-🎓 טיפים לאילוף והתנהגות  
-🛒 עזרה עם הזמנות ומוצרים
-📱 שימוש באפליקציה
+או שאני יכול לעזור לך עם:
+📱 הכרת האפליקציה
+🛒 עזרה עם הזמנות
+❓ שאלות כלליות`
+      };
+    }
 
-בחר/י נושא או ספר/י לי במה אני יכול לעזור 😊`
-  });
+    const petNames = pets.map(p => p.name).join(", ");
+    const mainPet = pets[0];
+    const petType = mainPet.type === "dog" ? "🐕" : mainPet.type === "cat" ? "🐱" : "🐾";
+    
+    return {
+      role: "assistant",
+      content: `היי${firstName ? ` ${firstName}` : ""}! 👋 אני נציג השירות של PetID.
+
+${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet.breed})` : ""} - נשמע מקסים!
+
+איך אני יכול לעזור היום?
+
+🏥 שאלות על ${mainPet.name}
+🍽️ המלצות תזונה מותאמות
+🎓 טיפים לאילוף
+🛒 מוצרים מומלצים
+
+ספר/י לי במה לעזור 😊`
+    };
+  };
+
+  // Fetch user's pets and profile for AI context
+  const fetchUserContext = async () => {
+    if (!user) return;
+    
+    try {
+      const [petsResult, profileResult] = await Promise.all([
+        supabase
+          .from("pets")
+          .select("id, name, type, breed, age, gender, health_notes")
+          .eq("user_id", user.id)
+          .eq("archived", false),
+        supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .single()
+      ]);
+
+      if (petsResult.data) {
+        setUserPets(petsResult.data);
+      }
+      if (profileResult.data) {
+        setUserProfile(profileResult.data);
+      }
+
+      return { pets: petsResult.data || [], profile: profileResult.data };
+    } catch (error) {
+      console.error("Error fetching user context:", error);
+      return { pets: [], profile: null };
+    }
+  };
 
   useEffect(() => {
     if (!user || !userId) return;
@@ -76,16 +144,28 @@ export default function MessageThread() {
         avatar_url: null,
       });
       
-      // Load AI messages from localStorage or start with greeting
-      const savedMessages = localStorage.getItem(`ai-chat-${user.id}`);
-      if (savedMessages) {
-        const parsed = JSON.parse(savedMessages);
-        setAiMessages(parsed.length > 0 ? parsed : [getInitialAIGreeting()]);
-      } else {
-        // Start with AI greeting
-        setAiMessages([getInitialAIGreeting()]);
-      }
-      setLoading(false);
+      // Fetch user context and load/create personalized greeting
+      const initAIChat = async () => {
+        const context = await fetchUserContext();
+        const savedMessages = localStorage.getItem(`ai-chat-${user.id}`);
+        
+        if (savedMessages) {
+          const parsed = JSON.parse(savedMessages);
+          if (parsed.length > 0) {
+            setAiMessages(parsed);
+          } else {
+            const greeting = getPersonalizedGreeting(context?.pets || [], context?.profile?.full_name || null);
+            setAiMessages([greeting]);
+          }
+        } else {
+          // Start with personalized greeting
+          const greeting = getPersonalizedGreeting(context?.pets || [], context?.profile?.full_name || null);
+          setAiMessages([greeting]);
+        }
+        setLoading(false);
+      };
+      
+      initAIChat();
     } else {
       fetchMessages();
       fetchOtherUser();
@@ -189,13 +269,26 @@ export default function MessageThread() {
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
     setIsTyping(true);
     
+    // Build user context for personalized responses
+    const userContext = {
+      userName: userProfile?.full_name || null,
+      pets: userPets.map(p => ({
+        name: p.name,
+        type: p.type,
+        breed: p.breed,
+        age: p.age,
+        gender: p.gender,
+        health_notes: p.health_notes
+      }))
+    };
+    
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, userContext }),
     });
 
     if (!resp.ok || !resp.body) {
@@ -412,10 +505,12 @@ export default function MessageThread() {
 
           {isAIChat ? (
             <button 
-              onClick={() => {
+              onClick={async () => {
                 if (user) {
                   localStorage.removeItem(`ai-chat-${user.id}`);
-                  setAiMessages([getInitialAIGreeting()]);
+                  const context = await fetchUserContext();
+                  const greeting = getPersonalizedGreeting(context?.pets || [], context?.profile?.full_name || null);
+                  setAiMessages([greeting]);
                   toast({
                     title: "השיחה אופסה",
                     description: "ניתן להתחיל שיחה חדשה",
