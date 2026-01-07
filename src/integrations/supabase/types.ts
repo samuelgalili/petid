@@ -315,6 +315,45 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          permissions: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          permissions?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          permissions?: string[] | null
+        }
+        Relationships: []
+      }
       auto_replies: {
         Row: {
           away_enabled: boolean | null
@@ -354,6 +393,51 @@ export type Database = {
         }
         Relationships: []
       }
+      automations: {
+        Row: {
+          actions: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_triggered_at: string | null
+          name: string
+          trigger_config: Json | null
+          trigger_count: number | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name: string
+          trigger_config?: Json | null
+          trigger_count?: number | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name?: string
+          trigger_config?: Json | null
+          trigger_count?: number | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           condition_type: string
@@ -390,6 +474,111 @@ export type Database = {
           name_he?: string
           points_reward?: number
           rarity?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          content: string
+          content_he: string | null
+          created_at: string
+          excerpt: string | null
+          featured_image: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          slug: string
+          status: string | null
+          tags: string[] | null
+          title: string
+          title_he: string | null
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          content_he?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          slug: string
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          title_he?: string | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          content_he?: string | null
+          created_at?: string
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          slug?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          title_he?: string | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      branches: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          manager_id: string | null
+          name: string
+          phone: string | null
+          updated_at: string
+          working_hours: Json | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string
+          working_hours?: Json | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          working_hours?: Json | null
         }
         Relationships: []
       }
@@ -787,6 +976,63 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          all_day: boolean | null
+          attendees: string[] | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_time: string | null
+          event_type: string | null
+          id: string
+          location: string | null
+          recurrence_rule: string | null
+          reminder_minutes: number | null
+          start_time: string
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean | null
+          attendees?: string[] | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          recurrence_rule?: string | null
+          reminder_minutes?: number | null
+          start_time: string
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean | null
+          attendees?: string[] | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          recurrence_rule?: string | null
+          reminder_minutes?: number | null
+          start_time?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cardcom_customers: {
         Row: {
           company: string | null
@@ -1145,6 +1391,69 @@ export type Database = {
         }
         Relationships: []
       }
+      contracts: {
+        Row: {
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          document_url: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          party_email: string | null
+          party_name: string
+          party_phone: string | null
+          signed_at: string | null
+          signed_by: string | null
+          start_date: string
+          status: string | null
+          title: string
+          updated_at: string
+          value: number | null
+        }
+        Insert: {
+          contract_type: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          document_url?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          party_email?: string | null
+          party_name: string
+          party_phone?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          start_date: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          value?: number | null
+        }
+        Update: {
+          contract_type?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          document_url?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          party_email?: string | null
+          party_name?: string
+          party_phone?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          start_date?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          value?: number | null
+        }
+        Relationships: []
+      }
       coupon_uses: {
         Row: {
           coupon_id: string
@@ -1226,6 +1535,83 @@ export type Database = {
           used_count?: number | null
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      custom_field_values: {
+        Row: {
+          created_at: string
+          entity_id: string
+          field_id: string
+          id: string
+          updated_at: string
+          value: Json | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          field_id: string
+          id?: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          field_id?: string
+          id?: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_field_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "custom_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_fields: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          entity_type: string
+          field_label: string
+          field_label_he: string | null
+          field_name: string
+          field_type: string
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          options: Json | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          entity_type: string
+          field_label: string
+          field_label_he?: string | null
+          field_name: string
+          field_type: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          options?: Json | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          entity_type?: string
+          field_label?: string
+          field_label_he?: string | null
+          field_name?: string
+          field_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          options?: Json | null
         }
         Relationships: []
       }
@@ -1441,6 +1827,90 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_shifts: {
+        Row: {
+          approved_by: string | null
+          break_minutes: number | null
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_by?: string | null
+          break_minutes?: number | null
+          clock_in: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_by?: string | null
+          break_minutes?: number | null
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          category: string
+          created_at: string
+          currency: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          receipt_url: string | null
+          status: string | null
+          submitted_by: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          category: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          expense_date: string
+          id?: string
+          receipt_url?: string | null
+          status?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          receipt_url?: string | null
+          status?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       financial_records: {
         Row: {
           amount: number
@@ -1477,6 +1947,51 @@ export type Database = {
           type?: string
           updated_at?: string
           year?: number
+        }
+        Relationships: []
+      }
+      gift_cards: {
+        Row: {
+          code: string
+          created_at: string
+          currency: string | null
+          current_balance: number
+          expires_at: string | null
+          id: string
+          initial_balance: number
+          purchased_by: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency?: string | null
+          current_balance: number
+          expires_at?: string | null
+          id?: string
+          initial_balance: number
+          purchased_by?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency?: string | null
+          current_balance?: number
+          expires_at?: string | null
+          id?: string
+          initial_balance?: number
+          purchased_by?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          status?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1698,6 +2213,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      knowledge_base: {
+        Row: {
+          category: string
+          content: string
+          content_he: string
+          created_at: string
+          display_order: number | null
+          helpful_count: number | null
+          id: string
+          is_published: boolean | null
+          tags: string[] | null
+          title: string
+          title_he: string
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          category: string
+          content: string
+          content_he: string
+          created_at?: string
+          display_order?: number | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          tags?: string[] | null
+          title: string
+          title_he: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          content_he?: string
+          created_at?: string
+          display_order?: number | null
+          helpful_count?: number | null
+          id?: string
+          is_published?: boolean | null
+          tags?: string[] | null
+          title?: string
+          title_he?: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: []
       }
       lead_forms: {
         Row: {
@@ -2045,6 +2608,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      message_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          subject: string | null
+          type: string
+          updated_at: string
+          variables: string[] | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject?: string | null
+          type: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject?: string | null
+          type?: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -2980,6 +3579,57 @@ export type Database = {
           },
         ]
       }
+      price_rules: {
+        Row: {
+          conditions: Json | null
+          created_at: string
+          discount_type: string
+          discount_value: number
+          ends_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          priority: number | null
+          rule_type: string
+          starts_at: string | null
+          updated_at: string
+          usage_count: number | null
+          usage_limit: number | null
+        }
+        Insert: {
+          conditions?: Json | null
+          created_at?: string
+          discount_type: string
+          discount_value: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          priority?: number | null
+          rule_type: string
+          starts_at?: string | null
+          updated_at?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+        }
+        Update: {
+          conditions?: Json | null
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          priority?: number | null
+          rule_type?: string
+          starts_at?: string | null
+          updated_at?: string
+          usage_count?: number | null
+          usage_limit?: number | null
+        }
+        Relationships: []
+      }
       product_collections: {
         Row: {
           business_id: string
@@ -3727,6 +4377,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_channels: {
+        Row: {
+          config: Json | null
+          created_at: string
+          external_id: string | null
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          name: string
+          sync_enabled: boolean | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          name: string
+          sync_enabled?: boolean | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          name?: string
+          sync_enabled?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       saved_posts: {
         Row: {
           created_at: string | null
@@ -4390,6 +5079,108 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          priority: string | null
+          related_order_id: string | null
+          resolved_at: string | null
+          status: string | null
+          subject: string
+          tags: string[] | null
+          ticket_number: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          related_order_id?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject: string
+          tags?: string[] | null
+          ticket_number: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: string | null
+          related_order_id?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject?: string
+          tags?: string[] | null
+          ticket_number?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_alerts: {
+        Row: {
+          action_required: boolean | null
+          action_taken: boolean | null
+          alert_type: string
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          read_at: string | null
+          read_by: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          severity: string | null
+          title: string
+        }
+        Insert: {
+          action_required?: boolean | null
+          action_taken?: boolean | null
+          alert_type: string
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          read_at?: string | null
+          read_by?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          severity?: string | null
+          title: string
+        }
+        Update: {
+          action_required?: boolean | null
+          action_taken?: boolean | null
+          alert_type?: string
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          read_at?: string | null
+          read_by?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          severity?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           id: string
@@ -4469,6 +5260,44 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_messages: {
+        Row: {
+          attachments: string[] | null
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          message: string
+          sender_id: string | null
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message: string
+          sender_id?: string | null
+          ticket_id: string
+        }
+        Update: {
+          attachments?: string[] | null
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message?: string
+          sender_id?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -5170,6 +5999,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      warranties: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string | null
+          product_id: string | null
+          purchase_date: string
+          serial_number: string | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+          warranty_end_date: string
+          warranty_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          purchase_date: string
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          warranty_end_date: string
+          warranty_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          purchase_date?: string
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          warranty_end_date?: string
+          warranty_type?: string | null
+        }
+        Relationships: []
+      }
+      webhooks: {
+        Row: {
+          created_at: string
+          events: string[]
+          failure_count: number | null
+          id: string
+          is_active: boolean | null
+          last_status_code: number | null
+          last_triggered_at: string | null
+          name: string
+          retry_count: number | null
+          secret: string | null
+          success_count: number | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          events: string[]
+          failure_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_status_code?: number | null
+          last_triggered_at?: string | null
+          name: string
+          retry_count?: number | null
+          secret?: string | null
+          success_count?: number | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          events?: string[]
+          failure_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_status_code?: number | null
+          last_triggered_at?: string | null
+          name?: string
+          retry_count?: number | null
+          secret?: string | null
+          success_count?: number | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
       }
       whatsapp_otps: {
         Row: {
