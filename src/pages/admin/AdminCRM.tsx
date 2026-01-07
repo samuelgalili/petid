@@ -118,7 +118,7 @@ const AdminCRM = () => {
     payment_method: "credit_card", 
     notes: "", 
     due_date: "",
-    selectedProducts: [] as { id: string; name: string; price: number; quantity: number; customPrice: number; }[],
+    selectedProducts: [] as { id: string; name: string; price: number; quantity: number; customPrice: number; petId?: string; }[],
     discountType: "none" as "none" | "percentage" | "fixed",
     discountValue: ""
   });
@@ -1966,6 +1966,55 @@ const AdminCRM = () => {
                                   מחיר יחידה: ₪{product.price.toLocaleString()}
                                 </p>
                               </div>
+                              
+                              {/* Pet Selection - Show pet avatars */}
+                              {customerPets && customerPets.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-muted-foreground ml-2">עבור:</span>
+                                  <div className="flex items-center gap-1">
+                                    {customerPets.map((pet: any) => (
+                                      <button
+                                        key={pet.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setNewCharge({
+                                            ...newCharge,
+                                            selectedProducts: newCharge.selectedProducts.map(p => 
+                                              p.id === product.id 
+                                                ? { ...p, petId: p.petId === pet.id ? undefined : pet.id }
+                                                : p
+                                            )
+                                          });
+                                        }}
+                                        className={cn(
+                                          "relative rounded-full transition-all duration-200",
+                                          product.petId === pet.id 
+                                            ? "ring-2 ring-primary ring-offset-2 scale-110" 
+                                            : "opacity-60 hover:opacity-100 hover:scale-105"
+                                        )}
+                                        title={pet.name}
+                                      >
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarImage src={pet.avatar_url} alt={pet.name} />
+                                          <AvatarFallback className="bg-primary/10 text-xs">
+                                            <PawPrint className="h-3 w-3" />
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        {product.petId === pet.id && (
+                                          <div className="absolute -bottom-0.5 -right-0.5 bg-primary rounded-full p-0.5">
+                                            <CheckCircle className="h-3 w-3 text-primary-foreground" />
+                                          </div>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  {product.petId && (
+                                    <span className="text-xs font-medium text-primary mr-2">
+                                      {customerPets.find((p: any) => p.id === product.petId)?.name}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                               
                               {/* Quantity Controls */}
                               <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1" dir="ltr">
