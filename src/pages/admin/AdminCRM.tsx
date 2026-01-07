@@ -413,7 +413,7 @@ const AdminCRM = () => {
   // Update customer profile mutation
   const updateCustomerMutation = useMutation({
     mutationFn: async (customerData: any) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           first_name: customerData.first_name,
@@ -428,11 +428,22 @@ const AdminCRM = () => {
           building_code: customerData.building_code,
           postal_code: customerData.postal_code
         })
-        .eq('id', customerData.id);
+        .eq('id', customerData.id)
+        .select()
+        .single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['crm-customers'] });
+      // Update selectedCustomer with the new data
+      if (selectedCustomer && selectedCustomer.id === variables.id) {
+        setSelectedCustomer((prev: any) => ({
+          ...prev,
+          ...variables,
+          full_name: `${variables.first_name || ''} ${variables.last_name || ''}`.trim() || prev.full_name
+        }));
+      }
       setIsEditingCustomer(false);
       setEditedCustomer(null);
       toast({ title: "✅ פרטי לקוח עודכנו בהצלחה" });
