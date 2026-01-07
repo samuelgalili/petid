@@ -30,7 +30,7 @@ import {
   ShoppingBag, MessageSquare, History, Activity, Crown,
   UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart,
   CreditCard, Receipt, DollarSign, Banknote, Package, Percent, Trash2, Minus,
-  RefreshCw, Building2, Send, ExternalLink
+  RefreshCw, Building2, Send, ExternalLink, MapPin, Home, Edit, Save
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
@@ -124,6 +124,8 @@ const AdminCRM = () => {
   const [newTagName, setNewTagName] = useState("");
   const [selectedTagColor, setSelectedTagColor] = useState("#3B82F6");
   const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [editedCustomer, setEditedCustomer] = useState<any>(null);
 
   // Data fetching
   const { data: customers, isLoading } = useQuery({
@@ -405,6 +407,38 @@ const AdminCRM = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer-charges'] });
       toast({ title: "✅ חיוב בוטל" });
+    }
+  });
+
+  // Update customer profile mutation
+  const updateCustomerMutation = useMutation({
+    mutationFn: async (customerData: any) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: customerData.first_name,
+          last_name: customerData.last_name,
+          phone: customerData.phone,
+          email: customerData.email,
+          street: customerData.street,
+          city: customerData.city,
+          region: customerData.region,
+          house_number: customerData.house_number,
+          apartment_number: customerData.apartment_number,
+          building_code: customerData.building_code,
+          postal_code: customerData.postal_code
+        })
+        .eq('id', customerData.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-customers'] });
+      setIsEditingCustomer(false);
+      setEditedCustomer(null);
+      toast({ title: "✅ פרטי לקוח עודכנו בהצלחה" });
+    },
+    onError: () => {
+      toast({ title: "❌ שגיאה בעדכון פרטי לקוח", variant: "destructive" });
     }
   });
 
@@ -708,8 +742,12 @@ const AdminCRM = () => {
                   </div>
 
                   {/* Tabs */}
-                  <Tabs defaultValue="overview" className="p-6">
-                    <TabsList className="w-full mb-6 grid grid-cols-5">
+                  <Tabs defaultValue="details" className="p-6">
+                    <TabsList className="w-full mb-6 grid grid-cols-6">
+                      <TabsTrigger value="details" className="gap-2">
+                        <Users className="h-4 w-4" />
+                        פרטים
+                      </TabsTrigger>
                       <TabsTrigger value="overview" className="gap-2">
                         <Activity className="h-4 w-4" />
                         סקירה
@@ -731,6 +769,235 @@ const AdminCRM = () => {
                         תזכורות
                       </TabsTrigger>
                     </TabsList>
+
+                    {/* Customer Details Tab */}
+                    <TabsContent value="details" className="space-y-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          פרטי לקוח
+                        </h3>
+                        {!isEditingCustomer ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-2"
+                            onClick={() => {
+                              setIsEditingCustomer(true);
+                              setEditedCustomer({
+                                id: selectedCustomer.id,
+                                first_name: selectedCustomer.first_name || '',
+                                last_name: selectedCustomer.last_name || '',
+                                phone: selectedCustomer.phone || '',
+                                email: selectedCustomer.email || '',
+                                street: selectedCustomer.street || '',
+                                city: selectedCustomer.city || '',
+                                region: selectedCustomer.region || '',
+                                house_number: selectedCustomer.house_number || '',
+                                apartment_number: selectedCustomer.apartment_number || '',
+                                building_code: selectedCustomer.building_code || '',
+                                postal_code: selectedCustomer.postal_code || ''
+                              });
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                            ערוך
+                          </Button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setIsEditingCustomer(false);
+                                setEditedCustomer(null);
+                              }}
+                            >
+                              ביטול
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="gap-2"
+                              onClick={() => updateCustomerMutation.mutate(editedCustomer)}
+                              disabled={updateCustomerMutation.isPending}
+                            >
+                              <Save className="h-4 w-4" />
+                              שמור
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Personal Info */}
+                        <Card className="p-4">
+                          <h4 className="font-medium mb-4 flex items-center gap-2 text-primary">
+                            <Users className="h-4 w-4" />
+                            פרטים אישיים
+                          </h4>
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">שם פרטי</Label>
+                                {isEditingCustomer ? (
+                                  <Input 
+                                    value={editedCustomer?.first_name || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, first_name: e.target.value})}
+                                    className="mt-1"
+                                  />
+                                ) : (
+                                  <p className="font-medium">{selectedCustomer.first_name || '-'}</p>
+                                )}
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">שם משפחה</Label>
+                                {isEditingCustomer ? (
+                                  <Input 
+                                    value={editedCustomer?.last_name || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, last_name: e.target.value})}
+                                    className="mt-1"
+                                  />
+                                ) : (
+                                  <p className="font-medium">{selectedCustomer.last_name || '-'}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">טלפון</Label>
+                              {isEditingCustomer ? (
+                                <Input 
+                                  value={editedCustomer?.phone || ''} 
+                                  onChange={(e) => setEditedCustomer({...editedCustomer, phone: e.target.value})}
+                                  className="mt-1"
+                                  dir="ltr"
+                                />
+                              ) : (
+                                <p className="font-medium flex items-center gap-2">
+                                  <Phone className="h-4 w-4 text-muted-foreground" />
+                                  {selectedCustomer.phone || '-'}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">אימייל</Label>
+                              {isEditingCustomer ? (
+                                <Input 
+                                  value={editedCustomer?.email || ''} 
+                                  onChange={(e) => setEditedCustomer({...editedCustomer, email: e.target.value})}
+                                  className="mt-1"
+                                  dir="ltr"
+                                  type="email"
+                                />
+                              ) : (
+                                <p className="font-medium flex items-center gap-2">
+                                  <Mail className="h-4 w-4 text-muted-foreground" />
+                                  {selectedCustomer.email || '-'}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+
+                        {/* Address Info */}
+                        <Card className="p-4">
+                          <h4 className="font-medium mb-4 flex items-center gap-2 text-primary">
+                            <MapPin className="h-4 w-4" />
+                            כתובת
+                          </h4>
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">עיר</Label>
+                                {isEditingCustomer ? (
+                                  <Input 
+                                    value={editedCustomer?.city || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, city: e.target.value})}
+                                    className="mt-1"
+                                  />
+                                ) : (
+                                  <p className="font-medium">{selectedCustomer.city || '-'}</p>
+                                )}
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">מחוז</Label>
+                                {isEditingCustomer ? (
+                                  <Input 
+                                    value={editedCustomer?.region || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, region: e.target.value})}
+                                    className="mt-1"
+                                  />
+                                ) : (
+                                  <p className="font-medium">{selectedCustomer.region || '-'}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">רחוב</Label>
+                              {isEditingCustomer ? (
+                                <Input 
+                                  value={editedCustomer?.street || ''} 
+                                  onChange={(e) => setEditedCustomer({...editedCustomer, street: e.target.value})}
+                                  className="mt-1"
+                                />
+                              ) : (
+                                <p className="font-medium">{selectedCustomer.street || '-'}</p>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <Label className="text-xs text-muted-foreground">מס׳ בית</Label>
+                                {isEditingCustomer ? (
+                                  <Input 
+                                    value={editedCustomer?.house_number || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, house_number: e.target.value})}
+                                    className="mt-1"
+                                  />
+                                ) : (
+                                  <p className="font-medium">{selectedCustomer.house_number || '-'}</p>
+                                )}
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">מס׳ דירה</Label>
+                                {isEditingCustomer ? (
+                                  <Input 
+                                    value={editedCustomer?.apartment_number || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, apartment_number: e.target.value})}
+                                    className="mt-1"
+                                  />
+                                ) : (
+                                  <p className="font-medium">{selectedCustomer.apartment_number || '-'}</p>
+                                )}
+                              </div>
+                              <div>
+                                <Label className="text-xs text-muted-foreground">קוד כניסה</Label>
+                                {isEditingCustomer ? (
+                                  <Input 
+                                    value={editedCustomer?.building_code || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, building_code: e.target.value})}
+                                    className="mt-1"
+                                  />
+                                ) : (
+                                  <p className="font-medium">{selectedCustomer.building_code || '-'}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">מיקוד</Label>
+                              {isEditingCustomer ? (
+                                <Input 
+                                  value={editedCustomer?.postal_code || ''} 
+                                  onChange={(e) => setEditedCustomer({...editedCustomer, postal_code: e.target.value})}
+                                  className="mt-1"
+                                  dir="ltr"
+                                />
+                              ) : (
+                                <p className="font-medium">{selectedCustomer.postal_code || '-'}</p>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+                    </TabsContent>
 
                     <TabsContent value="overview" className="space-y-6">
                       {/* RFM Breakdown */}

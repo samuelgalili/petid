@@ -4683,82 +4683,112 @@ export type Database = {
       profiles: {
         Row: {
           allow_messages_from: string | null
+          apartment_number: string | null
           avatar_url: string | null
           bio: string | null
           birthdate: string | null
           blocked_at: string | null
           blocked_by: string | null
           blocked_reason: string | null
+          building_code: string | null
+          city: string | null
           created_at: string | null
           email: string | null
           favorite_breeds: string[] | null
+          first_name: string | null
           full_name: string | null
+          house_number: string | null
           id: string
           interests: string[] | null
           is_online: boolean | null
           last_active_at: string | null
+          last_name: string | null
           last_seen_at: string | null
           location_blur_enabled: boolean | null
+          phone: string | null
           points: number
+          postal_code: string | null
           profile_visibility: string | null
           quiet_mode_until: string | null
+          region: string | null
           show_activity_status: boolean | null
           show_email: boolean | null
           show_location: boolean | null
+          street: string | null
           updated_at: string | null
           whatsapp_number: string | null
         }
         Insert: {
           allow_messages_from?: string | null
+          apartment_number?: string | null
           avatar_url?: string | null
           bio?: string | null
           birthdate?: string | null
           blocked_at?: string | null
           blocked_by?: string | null
           blocked_reason?: string | null
+          building_code?: string | null
+          city?: string | null
           created_at?: string | null
           email?: string | null
           favorite_breeds?: string[] | null
+          first_name?: string | null
           full_name?: string | null
+          house_number?: string | null
           id: string
           interests?: string[] | null
           is_online?: boolean | null
           last_active_at?: string | null
+          last_name?: string | null
           last_seen_at?: string | null
           location_blur_enabled?: boolean | null
+          phone?: string | null
           points?: number
+          postal_code?: string | null
           profile_visibility?: string | null
           quiet_mode_until?: string | null
+          region?: string | null
           show_activity_status?: boolean | null
           show_email?: boolean | null
           show_location?: boolean | null
+          street?: string | null
           updated_at?: string | null
           whatsapp_number?: string | null
         }
         Update: {
           allow_messages_from?: string | null
+          apartment_number?: string | null
           avatar_url?: string | null
           bio?: string | null
           birthdate?: string | null
           blocked_at?: string | null
           blocked_by?: string | null
           blocked_reason?: string | null
+          building_code?: string | null
+          city?: string | null
           created_at?: string | null
           email?: string | null
           favorite_breeds?: string[] | null
+          first_name?: string | null
           full_name?: string | null
+          house_number?: string | null
           id?: string
           interests?: string[] | null
           is_online?: boolean | null
           last_active_at?: string | null
+          last_name?: string | null
           last_seen_at?: string | null
           location_blur_enabled?: boolean | null
+          phone?: string | null
           points?: number
+          postal_code?: string | null
           profile_visibility?: string | null
           quiet_mode_until?: string | null
+          region?: string | null
           show_activity_status?: boolean | null
           show_email?: boolean | null
           show_location?: boolean | null
+          street?: string | null
           updated_at?: string | null
           whatsapp_number?: string | null
         }
