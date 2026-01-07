@@ -1646,17 +1646,30 @@ const AdminCRM = () => {
                                         // Send receipt via WhatsApp
                                         const phone = selectedCustomer?.phone;
                                         if (phone) {
-                                          const items = order.items ? JSON.parse(order.items) : [];
-                                          const itemsList = items.map((item: any) => `• ${item.name} x${item.quantity} - ₪${item.price}`).join('\n');
-                                          const message = `🧾 *קבלה - PetID*\n\n` +
-                                            `📋 הזמנה #${order.id.slice(0, 8)}\n` +
-                                            `📅 ${format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}\n\n` +
-                                            `*פריטים:*\n${itemsList || 'לא זמין'}\n\n` +
-                                            `💰 *סה"כ: ₪${parseFloat(String(order.total)).toLocaleString()}*\n\n` +
-                                            `תודה שקניתם ב-PetID! 🐾`;
-                                          const whatsappUrl = `https://wa.me/972${phone.replace(/^0/, '')}?text=${encodeURIComponent(message)}`;
-                                          window.open(whatsappUrl, '_blank');
-                                          toast({ title: "נפתח WhatsApp לשליחת קבלה" });
+                                          try {
+                                            const items = order.items ? JSON.parse(order.items) : [];
+                                            const itemsList = items.map((item: any) => `• ${item.name} x${item.quantity || 1} - ₪${item.price}`).join('\n');
+                                            const message = `🧾 *קבלה - PetID*\n\n` +
+                                              `📋 הזמנה #${order.id.slice(0, 8)}\n` +
+                                              `📅 ${format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}\n\n` +
+                                              `*פריטים:*\n${itemsList || 'לא זמין'}\n\n` +
+                                              `💰 *סה"כ: ₪${parseFloat(String(order.total)).toLocaleString()}*\n\n` +
+                                              `תודה שקניתם ב-PetID! 🐾`;
+                                            const cleanPhone = phone.replace(/\D/g, '').replace(/^0/, '');
+                                            const whatsappUrl = `https://api.whatsapp.com/send?phone=972${cleanPhone}&text=${encodeURIComponent(message)}`;
+                                            // Create a temporary link and click it
+                                            const link = document.createElement('a');
+                                            link.href = whatsappUrl;
+                                            link.target = '_blank';
+                                            link.rel = 'noopener noreferrer';
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                            toast({ title: "נפתח WhatsApp לשליחת קבלה" });
+                                          } catch (err) {
+                                            console.error('Error opening WhatsApp:', err);
+                                            toast({ title: "שגיאה בפתיחת WhatsApp", variant: "destructive" });
+                                          }
                                         } else {
                                           toast({ title: "לא נמצא מספר טלפון", variant: "destructive" });
                                         }
@@ -1814,17 +1827,29 @@ const AdminCRM = () => {
                                   onClick={() => {
                                     const phone = selectedCustomer?.phone;
                                     if (phone) {
-                                      const items = selectedOrder.items ? JSON.parse(selectedOrder.items) : [];
-                                      const itemsList = items.map((item: any) => `• ${item.name} x${item.quantity || 1} - ₪${item.price}`).join('\n');
-                                      const message = `🧾 *קבלה - PetID*\n\n` +
-                                        `📋 הזמנה #${selectedOrder.id.slice(0, 8)}\n` +
-                                        `📅 ${format(new Date(selectedOrder.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}\n\n` +
-                                        `*פריטים:*\n${itemsList || 'לא זמין'}\n\n` +
-                                        `💰 *סה"כ: ₪${parseFloat(String(selectedOrder.total)).toLocaleString()}*\n\n` +
-                                        `תודה שקניתם ב-PetID! 🐾`;
-                                      const whatsappUrl = `https://wa.me/972${phone.replace(/^0/, '')}?text=${encodeURIComponent(message)}`;
-                                      window.open(whatsappUrl, '_blank');
-                                      toast({ title: "נפתח WhatsApp לשליחת קבלה" });
+                                      try {
+                                        const items = selectedOrder.items ? JSON.parse(selectedOrder.items) : [];
+                                        const itemsList = items.map((item: any) => `• ${item.name} x${item.quantity || 1} - ₪${item.price}`).join('\n');
+                                        const message = `🧾 *קבלה - PetID*\n\n` +
+                                          `📋 הזמנה #${selectedOrder.id.slice(0, 8)}\n` +
+                                          `📅 ${format(new Date(selectedOrder.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}\n\n` +
+                                          `*פריטים:*\n${itemsList || 'לא זמין'}\n\n` +
+                                          `💰 *סה"כ: ₪${parseFloat(String(selectedOrder.total)).toLocaleString()}*\n\n` +
+                                          `תודה שקניתם ב-PetID! 🐾`;
+                                        const cleanPhone = phone.replace(/\D/g, '').replace(/^0/, '');
+                                        const whatsappUrl = `https://api.whatsapp.com/send?phone=972${cleanPhone}&text=${encodeURIComponent(message)}`;
+                                        const link = document.createElement('a');
+                                        link.href = whatsappUrl;
+                                        link.target = '_blank';
+                                        link.rel = 'noopener noreferrer';
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        toast({ title: "נפתח WhatsApp לשליחת קבלה" });
+                                      } catch (err) {
+                                        console.error('Error opening WhatsApp:', err);
+                                        toast({ title: "שגיאה בפתיחת WhatsApp", variant: "destructive" });
+                                      }
                                     } else {
                                       toast({ title: "לא נמצא מספר טלפון", variant: "destructive" });
                                     }
