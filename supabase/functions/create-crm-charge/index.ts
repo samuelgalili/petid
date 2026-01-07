@@ -203,12 +203,18 @@ serve(async (req) => {
         console.error('WhatsApp credentials not configured');
       } else {
         const formattedPhone = formatPhoneNumber(customer_phone);
-        const messageText = `שלום ${customer_name || ''},\n\n` +
-          `נוצר חיוב חדש עבורך:\n` +
-          `📋 ${description}\n` +
-          `💰 סכום: ₪${amount.toLocaleString()}\n\n` +
-          `לתשלום לחץ על הקישור:\n${paymentUrl}\n\n` +
-          `תודה, PetID 🐾`;
+        const messageText = `🐾 *PetID - בקשת תשלום*\n\n` +
+          `שלום ${customer_name || 'לקוח יקר'} 👋\n\n` +
+          `📋 *פרטי החיוב:*\n` +
+          `${description}\n\n` +
+          `💰 *סכום לתשלום:* ₪${amount.toLocaleString()}\n\n` +
+          `━━━━━━━━━━━━━━━\n` +
+          `🔗 *לתשלום מאובטח:*\n` +
+          `${paymentUrl}\n` +
+          `━━━━━━━━━━━━━━━\n\n` +
+          `✅ התשלום מאובטח ומוצפן\n` +
+          `📞 לשאלות: צרו קשר\n\n` +
+          `תודה שבחרתם ב-PetID! 🐕🐈`;
 
         try {
           const whatsappResponse = await fetch(
