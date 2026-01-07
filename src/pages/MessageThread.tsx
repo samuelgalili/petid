@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus } from "lucide-react";
+import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus, ExternalLink } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -673,14 +673,19 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             className="flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden shadow-sm"
-                            onClick={() => navigate(`/product/${product.id}`)}
                           >
-                            <div className="h-24 bg-muted flex items-center justify-center p-2">
+                            <div className="h-24 bg-muted flex items-center justify-center p-2 relative">
                               <OptimizedImage 
                                 src={product.image_url} 
                                 alt={product.name}
                                 className="w-full h-full object-contain"
                               />
+                              <button
+                                onClick={() => navigate(`/product/${product.id}`)}
+                                className="absolute top-1 left-1 w-6 h-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                              >
+                                <ExternalLink className="w-3 h-3 text-foreground" />
+                              </button>
                             </div>
                             <div className="p-2">
                               <h4 className="text-xs font-medium text-foreground truncate">{product.name}</h4>
