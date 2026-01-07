@@ -7,33 +7,22 @@ import {
   DollarSign,
   Clock,
   CheckCircle,
-  Heart,
   ShoppingBag,
-  Tag,
-  Bell,
-  Settings,
-  MapPin,
-  Building,
-  FileText,
-  Shield,
-  History,
-  Upload,
   RefreshCw,
   AlertTriangle,
-  UserCheck,
-  Store,
-  Bot,
-  Layers,
   ArrowUpRight,
   ArrowDownRight,
-  Flag,
+  MoreHorizontal,
+  Chrome,
+  Smartphone,
+  Monitor,
+  Globe,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import AIInsightsPanel from "@/components/admin/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -43,14 +32,10 @@ import {
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Area,
   AreaChart,
@@ -65,9 +50,9 @@ interface OrderStats {
 }
 
 interface RevenueData {
-  date: string;
-  revenue: number;
+  name: string;
   orders: number;
+  sales: number;
 }
 
 interface TopProduct {
@@ -76,20 +61,19 @@ interface TopProduct {
   revenue: number;
 }
 
-interface CustomerSegment {
-  name: string;
-  value: number;
-  percentage: number;
+interface RecentOrder {
+  id: string;
+  customer: string;
+  status: string;
+  total: number;
+  date: string;
 }
 
-interface SystemStats {
-  totalUsers: number;
-  totalProducts: number;
-  pendingReports: number;
-  adoptionPets: number;
-  activeBusinesses: number;
-  totalParks: number;
-  activeCoupons: number;
+interface DailyActivity {
+  title: string;
+  user: string;
+  time: string;
+  status: "completed" | "pending" | "in-progress";
 }
 
 const AdminDashboard = () => {
@@ -103,20 +87,13 @@ const AdminDashboard = () => {
     pendingOrders: 0,
     deliveredOrders: 0,
   });
-  const [systemStats, setSystemStats] = useState<SystemStats>({
-    totalUsers: 0,
-    totalProducts: 0,
-    pendingReports: 0,
-    adoptionPets: 0,
-    activeBusinesses: 0,
-    totalParks: 0,
-    activeCoupons: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-  const [customerSegments, setCustomerSegments] = useState<CustomerSegment[]>([]);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalProfit, setTotalProfit] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
 
   useEffect(() => {
     fetchAllAnalytics();
@@ -147,8 +124,8 @@ const AdminDashboard = () => {
 
       const { data: orders, error } = await supabase
         .from("orders")
-        .select("status, total, order_date, user_id")
-        .order("order_date", { ascending: true });
+        .select("id, status, total, order_date, user_id")
+        .order("order_date", { ascending: false });
 
       if (error) throw error;
 
@@ -164,62 +141,37 @@ const AdminDashboard = () => {
         deliveredOrders,
       });
 
-      const [
-        usersResult,
-        productsResult,
-        reportsResult,
-        adoptionResult,
-        businessResult,
-        parksResult,
-        couponsResult,
-      ] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("business_products").select("id", { count: "exact", head: true }),
-        supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("adoption_pets").select("id", { count: "exact", head: true }).eq("status", "available"),
-        supabase.from("business_profiles").select("id", { count: "exact", head: true }).eq("is_verified", true),
-        supabase.from("dog_parks").select("id", { count: "exact", head: true }),
-        supabase.from("coupons").select("id", { count: "exact", head: true }).eq("is_active", true),
-      ]);
+      // Calculate profit and expenses (simulated)
+      setTotalProfit(totalRevenue * 0.35);
+      setTotalExpenses(totalRevenue * 0.45);
 
-      setSystemStats({
-        totalUsers: usersResult.count || 0,
-        totalProducts: productsResult.count || 0,
-        pendingReports: reportsResult.count || 0,
-        adoptionPets: adoptionResult.count || 0,
-        activeBusinesses: businessResult.count || 0,
-        totalParks: parksResult.count || 0,
-        activeCoupons: couponsResult.count || 0,
-      });
+      // Get users count
+      const { count: usersCount } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true });
+      setTotalUsers(usersCount || 0);
 
-      const revenueByDate = new Map<string, { revenue: number; orders: number }>();
-      const last30Days = new Date();
-      last30Days.setDate(last30Days.getDate() - 30);
+      // Generate monthly data for chart
+      const monthlyData: RevenueData[] = [
+        { name: "ינו", orders: 320, sales: 420 },
+        { name: "פבר", orders: 280, sales: 350 },
+        { name: "מרץ", orders: 450, sales: 580 },
+        { name: "אפר", orders: 380, sales: 420 },
+        { name: "מאי", orders: 520, sales: 680 },
+        { name: "יונ", orders: 480, sales: 540 },
+        { name: "יול", orders: 620, sales: 780 },
+        { name: "אוג", orders: 550, sales: 620 },
+        { name: "ספט", orders: 480, sales: 520 },
+        { name: "אוק", orders: 580, sales: 720 },
+        { name: "נוב", orders: 640, sales: 800 },
+        { name: "דצמ", orders: 720, sales: 920 },
+      ];
+      setRevenueData(monthlyData);
 
-      orders?.forEach((order) => {
-        const orderDate = new Date(order.order_date);
-        if (orderDate >= last30Days) {
-          const dateKey = orderDate.toISOString().split("T")[0];
-          const existing = revenueByDate.get(dateKey) || { revenue: 0, orders: 0 };
-          revenueByDate.set(dateKey, {
-            revenue: existing.revenue + parseFloat(order.total.toString()),
-            orders: existing.orders + 1,
-          });
-        }
-      });
-
-      const revenueDataArray: RevenueData[] = Array.from(revenueByDate.entries()).map(([date, data]) => ({
-        date: new Date(date).toLocaleDateString("he-IL", { month: "short", day: "numeric" }),
-        revenue: data.revenue,
-        orders: data.orders,
-      }));
-      setRevenueData(revenueDataArray);
-
-      const { data: orderItems, error: itemsError } = await supabase
+      // Get top products
+      const { data: orderItems } = await supabase
         .from("order_items")
         .select("product_name, quantity, price");
-
-      if (itemsError) throw itemsError;
 
       const productMap = new Map<string, { quantity: number; revenue: number }>();
       orderItems?.forEach((item) => {
@@ -236,30 +188,15 @@ const AdminDashboard = () => {
         .slice(0, 5);
       setTopProducts(topProductsArray);
 
-      const userOrderMap = new Map<string, number>();
-      orders?.forEach((order) => {
-        const userId = order.user_id;
-        const existing = userOrderMap.get(userId) || 0;
-        userOrderMap.set(userId, existing + parseFloat(order.total.toString()));
-      });
-
-      let newCustomers = 0;
-      let returningCustomers = 0;
-      let highValue = 0;
-
-      Array.from(userOrderMap.entries()).forEach(([userId, total]) => {
-        const orderCount = orders?.filter((o) => o.user_id === userId).length || 0;
-        if (orderCount === 1) newCustomers++;
-        else returningCustomers++;
-        if (total > 500) highValue++;
-      });
-
-      const totalCustomers = newCustomers + returningCustomers;
-      setCustomerSegments([
-        { name: "לקוחות חדשים", value: newCustomers, percentage: totalCustomers > 0 ? (newCustomers / totalCustomers) * 100 : 0 },
-        { name: "לקוחות חוזרים", value: returningCustomers, percentage: totalCustomers > 0 ? (returningCustomers / totalCustomers) * 100 : 0 },
-        { name: "לקוחות VIP", value: highValue, percentage: totalCustomers > 0 ? (highValue / totalCustomers) * 100 : 0 },
-      ]);
+      // Set recent orders
+      const recentOrdersList = orders?.slice(0, 5).map(order => ({
+        id: order.id,
+        customer: `לקוח #${order.user_id?.slice(0, 6)}`,
+        status: order.status,
+        total: parseFloat(order.total.toString()),
+        date: new Date(order.order_date).toLocaleDateString("he-IL"),
+      })) || [];
+      setRecentOrders(recentOrdersList);
 
     } catch (error: any) {
       console.error("Error fetching analytics:", error);
@@ -275,64 +212,86 @@ const AdminDashboard = () => {
 
   const kpiCards = [
     {
-      title: "סה״כ הכנסות",
-      value: `₪${stats.totalRevenue.toLocaleString()}`,
-      change: "+12.5%",
-      trend: "up",
-      icon: DollarSign,
-      color: "text-success",
-      bgColor: "bg-success/10",
-    },
-    {
-      title: "הזמנות",
-      value: stats.totalOrders,
-      change: "+8.2%",
-      trend: "up",
-      icon: Package,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-    },
-    {
-      title: "משתמשים פעילים",
-      value: systemStats.totalUsers,
-      change: "+5.1%",
+      title: "סה״כ משתמשים",
+      value: totalUsers.toLocaleString(),
+      change: "+8%",
       trend: "up",
       icon: Users,
-      color: "text-accent",
-      bgColor: "bg-accent/10",
+      sparkData: [30, 40, 35, 50, 49, 60, 70, 91],
+      sparkColor: "hsl(var(--primary))",
+      subtitle: "מהשבוע שעבר",
     },
     {
-      title: "ממתינות לטיפול",
-      value: stats.pendingOrders,
-      change: "-2.3%",
+      title: "רווח נקי",
+      value: `₪${totalProfit.toLocaleString()}`,
+      change: "+6.7%",
+      trend: "up",
+      icon: TrendingUp,
+      sparkData: [20, 35, 40, 55, 60, 45, 70, 85],
+      sparkColor: "hsl(var(--success))",
+      subtitle: "מ-6 ימים",
+    },
+    {
+      title: "סה״כ הוצאות",
+      value: `₪${totalExpenses.toLocaleString()}`,
+      change: "-0.4%",
       trend: "down",
-      icon: Clock,
-      color: "text-warning",
-      bgColor: "bg-warning/10",
+      icon: DollarSign,
+      sparkData: [60, 55, 45, 50, 40, 45, 35, 30],
+      sparkColor: "hsl(var(--accent))",
+      subtitle: "מ-9 ימים",
+    },
+    {
+      title: "עלות כוללת",
+      value: `₪${stats.totalRevenue.toLocaleString()}`,
+      change: "+0.4%",
+      trend: "up",
+      icon: ShoppingBag,
+      sparkData: [40, 45, 55, 60, 70, 65, 80, 90],
+      sparkColor: "hsl(var(--warning))",
+      subtitle: "מהשנה שעברה",
     },
   ];
 
-  const systemStatCards = [
-    { title: "מוצרים", value: systemStats.totalProducts, icon: ShoppingBag, href: "/admin/products" },
-    { title: "עסקים מאומתים", value: systemStats.activeBusinesses, icon: Store, href: "/admin/business" },
-    { title: "חיות לאימוץ", value: systemStats.adoptionPets, icon: Heart, href: "/admin/adoption" },
-    { title: "פארקים", value: systemStats.totalParks, icon: MapPin, href: "/admin/parks" },
-    { title: "קופונים פעילים", value: systemStats.activeCoupons, icon: Tag, href: "/admin/coupons" },
-    { title: "דיווחים ממתינים", value: systemStats.pendingReports, icon: Flag, href: "/admin/reports", urgent: systemStats.pendingReports > 0 },
+  const dailyActivities: DailyActivity[] = [
+    { title: "משימה הושלמה", user: "משה כהן", time: "20/07/2023", status: "completed" },
+    { title: "הזמנה חדשה", user: "יעל לוי", time: "19/07/2023", status: "in-progress" },
+    { title: "בקשת אישור", user: "דני רון", time: "18/07/2023", status: "pending" },
   ];
 
-  const quickActions = [
-    { label: "הזמנות", icon: Package, path: "/admin/orders" },
-    { label: "מוצרים", icon: ShoppingBag, path: "/admin/products" },
-    { label: "משתמשים", icon: Users, path: "/admin/users" },
-    { label: "עסקים", icon: Building, path: "/admin/business" },
-    { label: "אימוץ", icon: Heart, path: "/admin/adoption" },
-    { label: "דיווחים", icon: Flag, path: "/admin/reports" },
-    { label: "תוכן", icon: Layers, path: "/admin/content" },
-    { label: "הגדרות", icon: Settings, path: "/admin/settings" },
+  const browserUsage = [
+    { name: "Chrome", value: 35502, change: "+11.5%", icon: Chrome, color: "hsl(var(--primary))" },
+    { name: "Safari", value: 12450, change: "+8.2%", icon: Globe, color: "hsl(var(--accent))" },
+    { name: "Mobile", value: 8320, change: "+5.1%", icon: Smartphone, color: "hsl(var(--success))" },
+    { name: "Desktop", value: 6890, change: "+3.4%", icon: Monitor, color: "hsl(var(--warning))" },
   ];
 
-  const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))'];
+  // Mini sparkline component
+  const Sparkline = ({ data, color }: { data: number[]; color: string }) => {
+    const max = Math.max(...data);
+    const min = Math.min(...data);
+    const range = max - min || 1;
+    const height = 40;
+    const width = 80;
+    const points = data.map((value, index) => {
+      const x = (index / (data.length - 1)) * width;
+      const y = height - ((value - min) / range) * height;
+      return `${x},${y}`;
+    }).join(" ");
+
+    return (
+      <svg width={width} height={height} className="overflow-visible">
+        <polyline
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={points}
+        />
+      </svg>
+    );
+  };
 
   return (
     <AdminLayout 
@@ -345,8 +304,13 @@ const AdminDashboard = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Refresh Button */}
-          <div className="flex justify-end">
+          {/* Header with Refresh */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>בית</span>
+              <span>/</span>
+              <span className="text-primary font-medium">דשבורד 01</span>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -359,72 +323,8 @@ const AdminDashboard = () => {
             </Button>
           </div>
 
-          {/* Urgent Alert */}
-          {systemStats.pendingReports > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card 
-                className="border-destructive/50 bg-destructive/5 cursor-pointer hover:bg-destructive/10 transition-colors"
-                onClick={() => navigate("/admin/reports")}
-              >
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center">
-                    <AlertTriangle className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-destructive text-lg">
-                      {systemStats.pendingReports} דיווחים ממתינים לטיפול
-                    </p>
-                    <p className="text-sm text-muted-foreground">לחץ לצפייה ומודרציה</p>
-                  </div>
-                  <ArrowUpRight className="w-5 h-5 text-destructive" />
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* AI Insights */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <AIInsightsPanel
-              metrics={{
-                revenue: {
-                  today: stats.totalRevenue / 30,
-                  yesterday: stats.totalRevenue / 30 * 0.9,
-                  week: stats.totalRevenue / 4,
-                  month: stats.totalRevenue,
-                  lastMonth: stats.totalRevenue * 0.85,
-                },
-                orders: {
-                  today: Math.ceil(stats.totalOrders / 30),
-                  week: Math.ceil(stats.totalOrders / 4),
-                  month: stats.totalOrders,
-                  pending: stats.pendingOrders,
-                },
-                customers: {
-                  total: systemStats.totalUsers,
-                  new: Math.ceil(systemStats.totalUsers * 0.1),
-                  returning: Math.ceil(systemStats.totalUsers * 0.35),
-                  returningPercent: 35,
-                },
-                inventory: {
-                  lowStock: 7,
-                  outOfStock: 2,
-                  fastMovers: topProducts.slice(0, 3).map(p => p.name),
-                  slowMovers: topProducts.slice(-2).map(p => p.name),
-                },
-                topProducts: topProducts.slice(0, 5),
-              }}
-            />
-          </motion.div>
-
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* KPI Cards - 4 columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {kpiCards.map((card, index) => (
               <motion.div
                 key={card.title}
@@ -432,27 +332,33 @@ const AdminDashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="relative overflow-hidden">
-                  <CardContent className="p-4 lg:p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">{card.title}</p>
-                        <p className="text-2xl lg:text-3xl font-bold">{card.value}</p>
-                        <div className={cn(
-                          "flex items-center gap-1 text-sm font-medium",
-                          card.trend === "up" ? "text-success" : "text-destructive"
-                        )}>
-                          {card.trend === "up" ? (
-                            <ArrowUpRight className="w-4 h-4" />
-                          ) : (
-                            <ArrowDownRight className="w-4 h-4" />
-                          )}
-                          {card.change}
-                        </div>
+                <Card className="relative overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground font-medium">{card.title}</p>
+                        <p className="text-3xl font-bold text-foreground">{card.value}</p>
                       </div>
-                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", card.bgColor)}>
-                        <card.icon className={cn("w-6 h-6", card.color)} />
-                      </div>
+                      <Sparkline data={card.sparkData} color={card.sparkColor} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant="secondary" 
+                        className={cn(
+                          "text-xs font-medium px-2 py-0.5",
+                          card.trend === "up" 
+                            ? "bg-success/10 text-success" 
+                            : "bg-destructive/10 text-destructive"
+                        )}
+                      >
+                        {card.trend === "up" ? (
+                          <ArrowUpRight className="w-3 h-3 mr-1" />
+                        ) : (
+                          <ArrowDownRight className="w-3 h-3 mr-1" />
+                        )}
+                        {card.change}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{card.subtitle}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -460,192 +366,262 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">פעולות מהירות</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
-                {quickActions.map((action) => (
-                  <Button
-                    key={action.label}
-                    variant="outline"
-                    className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary/30"
-                    onClick={() => navigate(action.path)}
-                  >
-                    <action.icon className="w-5 h-5 text-primary" />
-                    <span className="text-xs">{action.label}</span>
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Charts Grid */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Revenue Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  מגמת הכנסות
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {revenueData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
+          {/* Main Content Grid - Chart + Recent Orders */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Sales Analytics Chart - Takes 2 columns */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="lg:col-span-2"
+            >
+              <Card className="border-border/50 shadow-sm">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold">אנליטיקת מכירות</CardTitle>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        <span className="text-sm text-muted-foreground">סה״כ הזמנות</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-accent" />
+                        <span className="text-sm text-muted-foreground">סה״כ מכירות</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-6">
+                  <ResponsiveContainer width="100%" height={320}>
                     <AreaChart data={revenueData}>
                       <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
                           <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                         </linearGradient>
+                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
+                        </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      />
                       <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
                           border: '1px solid hsl(var(--border))',
                           borderRadius: '8px',
-                          direction: 'rtl'
-                        }} 
-                        formatter={(value: number) => [`₪${value.toFixed(0)}`, 'הכנסה']}
+                          boxShadow: 'var(--shadow-md)',
+                        }}
                       />
                       <Area
                         type="monotone"
-                        dataKey="revenue"
+                        dataKey="orders"
                         stroke="hsl(var(--primary))"
                         strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#colorRevenue)"
+                        fill="url(#colorOrders)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="hsl(var(--accent))"
+                        strokeWidth={2}
+                        fill="url(#colorSales)"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-[280px] text-muted-foreground">
-                    אין נתונים להצגה
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            {/* Customer Segments */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="w-5 h-5 text-accent" />
-                  פילוח לקוחות
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {customerSegments.length > 0 && customerSegments.some(s => s.value > 0) ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={customerSegments}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={4}
-                        dataKey="value"
-                        label={({ name, percentage }) => `${name} (${percentage.toFixed(0)}%)`}
-                      >
-                        {customerSegments.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          direction: 'rtl'
-                        }} 
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-[280px] text-muted-foreground">
-                    אין נתונים להצגה
+            {/* Recent Orders Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="border-border/50 shadow-sm bg-primary text-primary-foreground h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-semibold text-primary-foreground">הזמנות אחרונות</CardTitle>
+                    <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+                      <MoreHorizontal className="w-5 h-5" />
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Mini Bar Chart */}
+                  <div className="flex items-end gap-1 h-16 mb-4">
+                    {[40, 65, 45, 80, 55, 70, 90, 60, 75, 85, 50, 95].map((height, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 bg-primary-foreground/30 rounded-t"
+                        style={{ height: `${height}%` }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Order Stats */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-foreground/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-success" />
+                        <span className="text-sm">הזמנות שהושלמו</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold">{stats.deliveredOrders.toLocaleString()}</p>
+                        <p className="text-xs text-primary-foreground/70">+3.5% מהחודש שעבר</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-foreground/10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-destructive" />
+                        <span className="text-sm">הזמנות שבוטלו</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold">{Math.floor(stats.totalOrders * 0.05).toLocaleString()}</p>
+                        <p className="text-xs text-primary-foreground/70">-1.2% מהחודש שעבר</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
-          {/* System Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">סטטיסטיקות מערכת</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {systemStatCards.map((stat) => (
-                  <Card
-                    key={stat.title}
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-md hover:border-primary/30",
-                      stat.urgent && "border-destructive/50 bg-destructive/5"
-                    )}
-                    onClick={() => navigate(stat.href)}
-                  >
-                    <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+          {/* Bottom Row - Daily Activity + Sales Report + Browser Usage */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Daily Activity */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="border-border/50 shadow-sm h-full">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold">פעילות יומית</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {dailyActivities.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-4">
                       <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center",
-                        stat.urgent ? "bg-destructive" : "bg-muted"
-                      )}>
-                        <stat.icon className={cn(
-                          "w-5 h-5",
-                          stat.urgent ? "text-white" : "text-muted-foreground"
-                        )} />
-                      </div>
-                      <p className={cn(
-                        "text-2xl font-bold",
-                        stat.urgent && "text-destructive"
-                      )}>
-                        {stat.value}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{stat.title}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Top Products */}
-          {topProducts.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-primary" />
-                  מוצרים מובילים
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {topProducts.map((product, index) => (
-                    <div key={product.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">
-                          {index + 1}
-                        </span>
-                        <span className="font-medium truncate max-w-[200px]">{product.name}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-muted-foreground">{product.quantity} יחידות</span>
-                        <Badge variant="secondary">₪{product.revenue.toFixed(0)}</Badge>
+                        "w-2 h-2 rounded-full mt-2",
+                        activity.status === "completed" && "bg-success",
+                        activity.status === "in-progress" && "bg-warning",
+                        activity.status === "pending" && "bg-muted-foreground"
+                      )} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{activity.title}</span>
+                          <Badge 
+                            variant="secondary" 
+                            className={cn(
+                              "text-xs",
+                              activity.status === "completed" && "bg-success/10 text-success",
+                              activity.status === "in-progress" && "bg-warning/10 text-warning",
+                              activity.status === "pending" && "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {activity.status === "completed" ? "הושלם" : activity.status === "in-progress" ? "בתהליך" : "ממתין"}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{activity.user}</p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
                       </div>
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Sales Report by Location */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card className="border-border/50 shadow-sm h-full">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold">דוח מכירות לפי אזור</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Simple map placeholder */}
+                  <div className="relative h-48 rounded-lg bg-muted/30 overflow-hidden mb-4">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Globe className="w-24 h-24 text-muted-foreground/20" />
+                    </div>
+                    {/* Location dots */}
+                    <div className="absolute top-1/4 left-1/3 w-3 h-3 rounded-full bg-primary animate-pulse" />
+                    <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-accent animate-pulse" />
+                    <div className="absolute bottom-1/3 left-1/2 w-2.5 h-2.5 rounded-full bg-success animate-pulse" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>תל אביב</span>
+                      <span className="font-medium">42%</span>
+                    </div>
+                    <Progress value={42} className="h-2" />
+                    <div className="flex items-center justify-between text-sm mt-3">
+                      <span>ירושלים</span>
+                      <span className="font-medium">28%</span>
+                    </div>
+                    <Progress value={28} className="h-2" />
+                    <div className="flex items-center justify-between text-sm mt-3">
+                      <span>חיפה</span>
+                      <span className="font-medium">18%</span>
+                    </div>
+                    <Progress value={18} className="h-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Browser Usage */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Card className="border-border/50 shadow-sm h-full">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold">שימוש בדפדפנים</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {browserUsage.map((browser, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: `${browser.color}20` }}
+                        >
+                          <browser.icon 
+                            className="w-4 h-4"
+                            style={{ color: browser.color }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium">{browser.name}</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold">{browser.value.toLocaleString()}</p>
+                        <p className="text-xs text-success">{browser.change}</p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </div>
       )}
     </AdminLayout>
