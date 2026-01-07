@@ -1004,7 +1004,26 @@ const AdminCRM = () => {
                                 {isEditingCustomer ? (
                                   <Input 
                                     value={editedCustomer?.city || ''} 
-                                    onChange={(e) => setEditedCustomer({...editedCustomer, city: e.target.value})}
+                                    onChange={(e) => {
+                                      const city = e.target.value;
+                                      // Auto-fill region based on city
+                                      const cityToRegion: Record<string, string> = {
+                                        'תל אביב': 'מרכז', 'רמת גן': 'מרכז', 'גבעתיים': 'מרכז', 'בני ברק': 'מרכז',
+                                        'חולון': 'מרכז', 'בת ים': 'מרכז', 'ראשון לציון': 'מרכז', 'פתח תקווה': 'מרכז',
+                                        'רחובות': 'מרכז', 'נס ציונה': 'מרכז', 'לוד': 'מרכז', 'רמלה': 'מרכז',
+                                        'ירושלים': 'ירושלים', 'בית שמש': 'ירושלים', 'מעלה אדומים': 'ירושלים',
+                                        'חיפה': 'צפון', 'נהריה': 'צפון', 'עכו': 'צפון', 'כרמיאל': 'צפון',
+                                        'צפת': 'צפון', 'טבריה': 'צפון', 'עפולה': 'צפון', 'נצרת': 'צפון',
+                                        'קריית שמונה': 'צפון', 'קריית ביאליק': 'צפון', 'קריית מוצקין': 'צפון',
+                                        'באר שבע': 'דרום', 'אשדוד': 'דרום', 'אשקלון': 'דרום', 'דימונה': 'דרום',
+                                        'אילת': 'דרום', 'ערד': 'דרום', 'קריית גת': 'דרום', 'שדרות': 'דרום',
+                                        'נתניה': 'שרון', 'הרצליה': 'שרון', 'רעננה': 'שרון', 'כפר סבא': 'שרון',
+                                        'הוד השרון': 'שרון', 'רמת השרון': 'שרון', 'חדרה': 'שרון',
+                                        'מודיעין': 'שפלה', 'יבנה': 'שפלה', 'גדרה': 'שפלה'
+                                      };
+                                      const region = cityToRegion[city] || editedCustomer?.region || '';
+                                      setEditedCustomer({...editedCustomer, city, region});
+                                    }}
                                     className="mt-1"
                                   />
                                 ) : (
@@ -1018,6 +1037,7 @@ const AdminCRM = () => {
                                     value={editedCustomer?.region || ''} 
                                     onChange={(e) => setEditedCustomer({...editedCustomer, region: e.target.value})}
                                     className="mt-1"
+                                    placeholder="ימולא אוטומטית לפי העיר"
                                   />
                                 ) : (
                                   <p className="font-medium">{selectedCustomer.region || '-'}</p>
