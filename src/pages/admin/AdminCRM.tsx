@@ -1097,12 +1097,48 @@ const AdminCRM = () => {
                             <div>
                               <Label className="text-xs text-muted-foreground">מיקוד</Label>
                               {isEditingCustomer ? (
-                                <Input 
-                                  value={editedCustomer?.postal_code || ''} 
-                                  onChange={(e) => setEditedCustomer({...editedCustomer, postal_code: e.target.value})}
-                                  className="mt-1"
-                                  dir="ltr"
-                                />
+                                <div className="flex gap-2 mt-1">
+                                  <Input 
+                                    value={editedCustomer?.postal_code || ''} 
+                                    onChange={(e) => setEditedCustomer({...editedCustomer, postal_code: e.target.value})}
+                                    dir="ltr"
+                                    placeholder="ימולא אוטומטית"
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      // Auto-fill postal code based on city
+                                      const cityToPostalCode: Record<string, string> = {
+                                        'תל אביב': '61000', 'רמת גן': '52000', 'גבעתיים': '53000', 'בני ברק': '51000',
+                                        'חולון': '58000', 'בת ים': '59000', 'ראשון לציון': '75000', 'פתח תקווה': '49000',
+                                        'רחובות': '76100', 'נס ציונה': '74000', 'לוד': '71000', 'רמלה': '72000',
+                                        'ירושלים': '91000', 'בית שמש': '99000', 'מעלה אדומים': '98000',
+                                        'חיפה': '31000', 'נהריה': '22000', 'עכו': '24000', 'כרמיאל': '21000',
+                                        'צפת': '13000', 'טבריה': '14000', 'עפולה': '18000', 'נצרת': '16000',
+                                        'קריית שמונה': '11000', 'קריית ביאליק': '27000', 'קריית מוצקין': '26000',
+                                        'באר שבע': '84000', 'אשדוד': '77000', 'אשקלון': '78000', 'דימונה': '86000',
+                                        'אילת': '88000', 'ערד': '89000', 'קריית גת': '82000', 'שדרות': '87000',
+                                        'נתניה': '42000', 'הרצליה': '46000', 'רעננה': '43000', 'כפר סבא': '44000',
+                                        'הוד השרון': '45000', 'רמת השרון': '47000', 'חדרה': '38000',
+                                        'מודיעין': '71700', 'יבנה': '81000', 'גדרה': '70700'
+                                      };
+                                      const city = editedCustomer?.city || '';
+                                      const postalCode = cityToPostalCode[city];
+                                      if (postalCode) {
+                                        setEditedCustomer({...editedCustomer, postal_code: postalCode});
+                                        toast({ title: `מיקוד ${postalCode} הוזן עבור ${city}` });
+                                      } else {
+                                        toast({ title: "לא נמצא מיקוד לעיר זו", variant: "destructive" });
+                                      }
+                                    }}
+                                    disabled={!editedCustomer?.city}
+                                  >
+                                    מצא מיקוד
+                                  </Button>
+                                </div>
                               ) : (
                                 <p className="font-medium">{selectedCustomer.postal_code || '-'}</p>
                               )}
