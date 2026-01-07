@@ -40,8 +40,8 @@ const AdminPurchaseOrders = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("suppliers")
-        .select("*")
-        .eq("status", "active");
+        .select("id, name, is_active")
+        .eq("is_active", true);
       if (error) throw error;
       return data || [];
     },
@@ -52,13 +52,23 @@ const AdminPurchaseOrders = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("supplier_invoices")
-        .select(`
-          *,
-          suppliers (name)
-        `)
+        .select("id, supplier_id, amount, invoice_number, invoice_date, due_date, status, notes, created_at, updated_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data || [];
+      
+      // Fetch supplier names separately
+      const supplierIds = [...new Set((data || []).map(inv => inv.supplier_id))];
+      const { data: suppliersData } = await supabase
+        .from("suppliers")
+        .select("id, name")
+        .in("id", supplierIds);
+      
+      const supplierMap = new Map(suppliersData?.map(s => [s.id, s.name]) || []);
+      
+      return (data || []).map(inv => ({
+        ...inv,
+        supplier_name: supplierMap.get(inv.supplier_id) || "לא ידוע"
+      }));
     },
   });
 
@@ -67,7 +77,7 @@ const AdminPurchaseOrders = () => {
       const { error } = await supabase.from("supplier_invoices").insert({
         supplier_id: newOrder.supplier_id,
         amount: parseFloat(newOrder.total_amount),
-        description: newOrder.items,
+        invoice_number: `INV-${Date.now()}`,
         notes: newOrder.notes,
         status: "pending",
       });
@@ -97,7 +107,7 @@ const AdminPurchaseOrders = () => {
 
   const filteredInvoices = invoices?.filter(inv =>
     inv.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.suppliers?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    inv.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const stats = [
@@ -265,7 +275,7 @@ const AdminPurchaseOrders = () => {
                   <div key={invoice.id} className="p-4 hover:bg-slate-800/50 transition-colors">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-white">{invoice.suppliers?.name}</h3>
+                        <h3 className="font-medium text-white">{invoice.supplier_name}</h3>
                         <p className="text-sm text-slate-400 truncate">{invoice.notes || invoice.invoice_number}</p>
                         <p className="text-xs text-slate-500 mt-1">
                           {format(new Date(invoice.created_at), "dd/MM/yyyy HH:mm", { locale: he })}
