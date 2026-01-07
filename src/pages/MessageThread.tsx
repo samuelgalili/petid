@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot } from "lucide-react";
+import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isYesterday } from "date-fns";
 import { he } from "date-fns/locale";
@@ -410,7 +410,24 @@ export default function MessageThread() {
             </div>
           </div>
 
-          {!isAIChat && (
+          {isAIChat ? (
+            <button 
+              onClick={() => {
+                if (user) {
+                  localStorage.removeItem(`ai-chat-${user.id}`);
+                  setAiMessages([getInitialAIGreeting()]);
+                  toast({
+                    title: "השיחה אופסה",
+                    description: "ניתן להתחיל שיחה חדשה",
+                  });
+                }
+              }}
+              className="p-2 rounded-full hover:bg-muted transition-colors"
+              title="התחל שיחה חדשה"
+            >
+              <RotateCcw className="h-5 w-5 text-muted-foreground" />
+            </button>
+          ) : (
             <div className="flex items-center gap-1">
               <button className="p-2 rounded-full hover:bg-muted transition-colors">
                 <Phone className="h-6 w-6 text-foreground" />
