@@ -3,7 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw } from "lucide-react";
+import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isYesterday } from "date-fns";
 import { he } from "date-fns/locale";
@@ -24,6 +27,16 @@ interface Message {
 interface AIMessage {
   role: "user" | "assistant" | "system";
   content: string;
+  products?: ChatProduct[];
+}
+
+interface ChatProduct {
+  id: string;
+  name: string;
+  price: number;
+  sale_price?: number;
+  image_url: string;
+  category?: string;
 }
 
 interface Profile {
@@ -46,7 +59,8 @@ export default function MessageThread() {
   const { userId } = useParams<{ userId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: showToast } = useToast();
+  const { addToCart } = useCart();
   const [messages, setMessages] = useState<Message[]>([]);
   const [aiMessages, setAiMessages] = useState<AIMessage[]>([]);
   const [otherUser, setOtherUser] = useState<Profile | null>(null);
@@ -302,6 +316,17 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
       throw new Error("שגיאה בתקשורת עם השרת");
     }
 
+    // Get products data from header if available
+    const productsHeader = resp.headers.get("X-Products-Data");
+    let availableProducts: ChatProduct[] = [];
+    if (productsHeader) {
+      try {
+        availableProducts = JSON.parse(decodeURIComponent(productsHeader));
+      } catch {
+        console.error("Failed to parse products header");
+      }
+    }
+
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let textBuffer = "";
@@ -330,14 +355,27 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
           if (content) {
             setIsTyping(false);
             assistantContent += content;
+            
+            // Parse product IDs from content
+            const productMatch = assistantContent.match(/\[PRODUCTS:([^\]]+)\]/);
+            let recommendedProducts: ChatProduct[] = [];
+            let displayContent = assistantContent;
+            
+            if (productMatch && availableProducts.length > 0) {
+              const productIds = productMatch[1].split(",").map(id => id.trim());
+              recommendedProducts = availableProducts.filter(p => productIds.includes(p.id));
+              // Remove the product tag from display content
+              displayContent = assistantContent.replace(/\[PRODUCTS:[^\]]+\]/, "").trim();
+            }
+            
             setAiMessages((prev) => {
               const last = prev[prev.length - 1];
               if (last?.role === "assistant") {
                 return prev.map((m, i) =>
-                  i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                  i === prev.length - 1 ? { ...m, content: displayContent, products: recommendedProducts.length > 0 ? recommendedProducts : undefined } : m
                 );
               }
-              return [...prev, { role: "assistant", content: assistantContent }];
+              return [...prev, { role: "assistant", content: displayContent, products: recommendedProducts.length > 0 ? recommendedProducts : undefined }];
             });
           }
         } catch {
@@ -364,7 +402,7 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
         await streamAIChat([...aiMessages, userMessage]);
       } catch (error) {
         console.error("Error:", error);
-        toast({
+        showToast({
           title: "שגיאה",
           description: error instanceof Error ? error.message : "משהו השתבש",
           variant: "destructive",
@@ -393,7 +431,7 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
         scrollToBottom();
       } catch (error) {
         console.error("Error sending message:", error);
-        toast({
+        showToast({
           title: "שגיאה",
           description: "לא הצלחנו לשלוח את ההודעה. נסה שוב.",
           variant: "destructive",
@@ -511,7 +549,7 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                   const context = await fetchUserContext();
                   const greeting = getPersonalizedGreeting(context?.pets || [], context?.profile?.full_name || null);
                   setAiMessages([greeting]);
-                  toast({
+                  showToast({
                     title: "השיחה אופסה",
                     description: "ניתן להתחיל שיחה חדשה",
                   });
@@ -613,16 +651,71 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                     </div>
                   )}
 
-                  <div
-                    className={`max-w-[75%] px-4 py-2.5 ${
-                      isUser
-                        ? "bg-primary text-primary-foreground rounded-[22px] rounded-br-md"
-                        : "bg-muted text-foreground rounded-[22px] rounded-bl-md"
-                    }`}
-                  >
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-                      {message.content}
-                    </p>
+                  <div className="flex flex-col gap-2">
+                    <div
+                      className={`max-w-[75%] px-4 py-2.5 ${
+                        isUser
+                          ? "bg-primary text-primary-foreground rounded-[22px] rounded-br-md"
+                          : "bg-muted text-foreground rounded-[22px] rounded-bl-md"
+                      }`}
+                    >
+                      <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                        {message.content}
+                      </p>
+                    </div>
+                    
+                    {/* Product Cards */}
+                    {message.products && message.products.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-2 pr-9">
+                        {message.products.map((product) => (
+                          <motion.div
+                            key={product.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden shadow-sm"
+                            onClick={() => navigate(`/product/${product.id}`)}
+                          >
+                            <div className="h-24 bg-muted flex items-center justify-center p-2">
+                              <OptimizedImage 
+                                src={product.image_url} 
+                                alt={product.name}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div className="p-2">
+                              <h4 className="text-xs font-medium text-foreground truncate">{product.name}</h4>
+                              <div className="flex items-center justify-between mt-1">
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-sm font-bold text-primary">
+                                    ₪{product.sale_price || product.price}
+                                  </span>
+                                  {product.sale_price && (
+                                    <span className="text-[10px] text-muted-foreground line-through">
+                                      ₪{product.price}
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    addToCart({
+                                      id: product.id,
+                                      name: product.name,
+                                      price: product.sale_price || product.price,
+                                      image: product.image_url,
+                                    });
+                                    toast.success("נוסף לסל");
+                                  }}
+                                  className="w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+                                >
+                                  <Plus className="w-3 h-3 text-primary-foreground" />
+                                </button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               );
