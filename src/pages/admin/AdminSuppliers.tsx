@@ -372,6 +372,9 @@ const AdminSuppliers = () => {
         <AdminPageHeader
           title="ניהול ספקים"
           description="ניהול ספקים, הוצאות קבועות ומשתנות"
+          icon={Building2}
+          onRefresh={fetchSuppliers}
+          isRefreshing={loading}
           actions={
             <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4" />

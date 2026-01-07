@@ -46,6 +46,7 @@ import {
   AdminToolbar,
   AdminEmptyState,
   AdminStatusBadge,
+  AdminPageHeader,
 } from "@/components/admin/AdminStyles";
 
 interface UserData {
@@ -178,6 +179,15 @@ const AdminUsers = () => {
   return (
     <AdminLayout title="ניהול משתמשים" icon={Users}>
       <div className="space-y-6">
+        {/* Page Header */}
+        <AdminPageHeader
+          title="ניהול משתמשים"
+          description="צפייה וניהול משתמשים רשומים"
+          icon={Users}
+          onRefresh={() => refetch()}
+          isRefreshing={isLoading}
+        />
+
         {/* Stats */}
         <AdminStatsGrid>
           <AdminStatCard

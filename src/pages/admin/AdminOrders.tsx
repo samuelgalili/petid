@@ -39,6 +39,7 @@ import {
   AdminToolbar,
   AdminEmptyState,
   AdminStatusBadge,
+  AdminPageHeader,
 } from "@/components/admin/AdminStyles";
 
 interface Order {
@@ -207,6 +208,15 @@ const AdminOrders = () => {
   return (
     <AdminLayout title="ניהול הזמנות" icon={ShoppingCart}>
       <div className="space-y-6">
+        {/* Page Header */}
+        <AdminPageHeader
+          title="ניהול הזמנות"
+          description="צפייה וניהול הזמנות לקוחות"
+          icon={ShoppingCart}
+          onRefresh={fetchOrders}
+          isRefreshing={loading}
+        />
+
         {/* Stats */}
         <AdminStatsGrid>
           <AdminStatCard

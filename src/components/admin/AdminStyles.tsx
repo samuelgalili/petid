@@ -216,13 +216,20 @@ export const AdminStatCard = ({
 interface AdminPageHeaderProps {
   title: string;
   description?: string;
+  icon?: LucideIcon;
   actions?: ReactNode;
   breadcrumbs?: { label: string; href?: string }[];
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export const AdminPageHeader = ({ title, description, actions, breadcrumbs }: AdminPageHeaderProps) => {
+export const AdminPageHeader = ({ title, description, icon: Icon, actions, breadcrumbs, onRefresh, isRefreshing }: AdminPageHeaderProps) => {
   return (
-    <div className="mb-6 space-y-3">
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-6 space-y-3"
+    >
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
           {breadcrumbs.map((item, idx) => (
@@ -239,16 +246,37 @@ export const AdminPageHeader = ({ title, description, actions, breadcrumbs }: Ad
           ))}
         </nav>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          {description && (
-            <p className="text-muted-foreground text-sm mt-1">{description}</p>
+      <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-l from-card/80 to-transparent border border-border/50 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          {Icon && (
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25">
+              <Icon className="w-5 h-5 text-primary-foreground" />
+            </div>
           )}
+          <div>
+            <h2 className="font-bold text-lg">{title}</h2>
+            {description && (
+              <p className="text-xs text-muted-foreground">{description}</p>
+            )}
+          </div>
         </div>
-        {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
+        <div className="flex items-center gap-2 flex-wrap">
+          {onRefresh && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="gap-2 bg-background/50"
+            >
+              <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+              רענן
+            </Button>
+          )}
+          {actions}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
