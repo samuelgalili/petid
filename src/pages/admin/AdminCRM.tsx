@@ -1245,8 +1245,8 @@ const AdminCRM = () => {
 
         {/* Add Charge Dialog - Enhanced */}
         <Dialog open={showChargeDialog} onOpenChange={setShowChargeDialog}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0" dir="rtl">
-            <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-6 border-b">
+          <DialogContent className="max-w-3xl h-[95vh] flex flex-col overflow-hidden p-0" dir="rtl">
+            <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-6 border-b shrink-0">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3 text-xl">
                   <div className="p-2.5 bg-primary/10 rounded-xl">
@@ -1264,7 +1264,7 @@ const AdminCRM = () => {
               </DialogHeader>
             </div>
             
-            <ScrollArea className="max-h-[calc(90vh-220px)] px-6 py-4">
+            <ScrollArea className="flex-1 px-6 py-4">
               <div className="space-y-6">
                 {/* Product Selection Section */}
                 <div className="space-y-4">
