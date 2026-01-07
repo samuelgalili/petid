@@ -99,6 +99,7 @@ const navGroups: NavGroup[] = [
   {
     label: "לקוחות",
     items: [
+      { icon: Bot, label: "שירות AI", href: "/admin/ai-service" },
       { icon: Contact, label: "CRM", href: "/admin/crm" },
       { icon: Trophy, label: "מועדון נאמנות", href: "/admin/loyalty" },
       { icon: Headphones, label: "תמיכה", href: "/admin/helpdesk" },
