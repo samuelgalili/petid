@@ -393,6 +393,51 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_rules: {
+        Row: {
+          actions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          execution_count: number | null
+          id: string
+          is_active: boolean | null
+          last_executed_at: string | null
+          name: string
+          trigger_conditions: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          name: string
+          trigger_conditions?: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_executed_at?: string | null
+          name?: string
+          trigger_conditions?: Json
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       automations: {
         Row: {
           actions: Json | null
@@ -1535,6 +1580,175 @@ export type Database = {
           used_count?: number | null
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      crm_activities: {
+        Row: {
+          activity_type: string
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          deal_id: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          outcome: string | null
+          scheduled_at: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          activity_type: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          deal_id?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          outcome?: string | null
+          scheduled_at?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          deal_id?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          outcome?: string | null
+          scheduled_at?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_deals: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          custom_fields: Json | null
+          customer_id: string | null
+          description: string | null
+          expected_close_date: string | null
+          id: string
+          lost_at: string | null
+          lost_reason: string | null
+          pipeline_id: string | null
+          probability: number | null
+          stage: string
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          value: number | null
+          won_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          custom_fields?: Json | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lost_at?: string | null
+          lost_reason?: string | null
+          pipeline_id?: string | null
+          probability?: number | null
+          stage?: string
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          value?: number | null
+          won_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          custom_fields?: Json | null
+          customer_id?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lost_at?: string | null
+          lost_reason?: string | null
+          pipeline_id?: string | null
+          probability?: number | null
+          stage?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          value?: number | null
+          won_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_deals_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_pipelines: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          stages: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          stages?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          stages?: Json
+          updated_at?: string
         }
         Relationships: []
       }
@@ -5204,6 +5418,219 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      task_comments: {
+        Row: {
+          comment_type: string | null
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_type?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_type?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_dependencies: {
+        Row: {
+          created_at: string
+          dependency_type: string | null
+          depends_on_task_id: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          dependency_type?: string | null
+          depends_on_task_id: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          dependency_type?: string | null
+          depends_on_task_id?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_dependencies_depends_on_task_id_fkey"
+            columns: ["depends_on_task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_subtasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          display_order: number | null
+          due_date: string | null
+          id: string
+          is_completed: boolean | null
+          task_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          display_order?: number | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          task_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          display_order?: number | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          task_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_subtasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_templates: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          default_priority: string | null
+          default_tags: string[] | null
+          description: string | null
+          estimated_hours: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subtasks: Json | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_priority?: string | null
+          default_tags?: string[] | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subtasks?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_priority?: string | null
+          default_tags?: string[] | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subtasks?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      task_time_entries: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          end_time: string | null
+          id: string
+          is_billable: boolean | null
+          start_time: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          is_billable?: boolean | null
+          start_time: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          is_billable?: boolean | null
+          start_time?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
