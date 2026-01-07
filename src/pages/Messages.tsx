@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronDown, Edit, Camera, Ghost } from "lucide-react";
+import { Loader2, ChevronDown, Edit, Camera, Ghost, Bot, Sparkles } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -11,6 +11,9 @@ import { he } from "date-fns/locale";
 import { ActivityStatus } from "@/components/ActivityStatus";
 import { VanishModeToggle } from "@/components/VanishModeToggle";
 import petidIcon from "@/assets/petid-icon.png";
+
+// AI Support ID - special identifier for AI chat
+const AI_SUPPORT_ID = "ai-support";
 
 interface Conversation {
   userId: string;
@@ -20,6 +23,7 @@ interface Conversation {
   lastMessageTime: string;
   unreadCount: number;
   isOnline?: boolean;
+  isAI?: boolean;
 }
 
 export default function Messages() {
@@ -169,8 +173,43 @@ export default function Messages() {
 
         {/* Conversations List */}
         <div>
+          {/* AI Support Chat - Always at top */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => navigate(`/messages/${AI_SUPPORT_ID}`)}
+            className="hover:bg-muted transition-colors cursor-pointer border-b border-border"
+          >
+            <div className="px-4 py-3 flex items-center gap-3">
+              <div className="relative">
+                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary via-accent to-primary p-[2px]">
+                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                    <Bot className="h-7 w-7 text-primary" />
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-background" />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[15px] font-bold text-foreground truncate">
+                    נציג שירות AI
+                  </h3>
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <p className="text-sm text-muted-foreground truncate">
+                  שאל אותי כל שאלה על חיות מחמד 🐾
+                </p>
+              </div>
+
+              <div className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                AI
+              </div>
+            </div>
+          </motion.div>
+
           {conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="w-20 h-20 rounded-full border border-foreground flex items-center justify-center mb-4">
                 <Camera className="h-10 w-10 text-foreground" strokeWidth={1} />
               </div>
