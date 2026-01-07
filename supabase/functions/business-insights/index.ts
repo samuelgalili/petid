@@ -72,35 +72,46 @@ serve(async (req) => {
 
 ספק 4-6 תובנות מגוונות על בסיס הנתונים.`;
 
+    // Safe array access with fallbacks
+    const fastMovers = Array.isArray(metrics.inventory?.fastMovers) 
+      ? metrics.inventory.fastMovers.join(", ") 
+      : "אין נתונים";
+    const slowMovers = Array.isArray(metrics.inventory?.slowMovers) 
+      ? metrics.inventory.slowMovers.join(", ") 
+      : "אין נתונים";
+    const topProductsList = Array.isArray(metrics.topProducts) 
+      ? metrics.topProducts.map((p, i) => `${i + 1}. ${p.name} - ₪${(p.revenue || 0).toLocaleString()} (${p.quantity || 0} יח')`).join("\n")
+      : "אין נתונים";
+
     const userPrompt = `נתוני העסק:
 
 **הכנסות:**
-- היום: ₪${metrics.revenue.today.toLocaleString()}
-- אתמול: ₪${metrics.revenue.yesterday.toLocaleString()}
-- השבוע: ₪${metrics.revenue.week.toLocaleString()}
-- החודש: ₪${metrics.revenue.month.toLocaleString()}
-- חודש קודם: ₪${metrics.revenue.lastMonth.toLocaleString()}
+- היום: ₪${(metrics.revenue?.today || 0).toLocaleString()}
+- אתמול: ₪${(metrics.revenue?.yesterday || 0).toLocaleString()}
+- השבוע: ₪${(metrics.revenue?.week || 0).toLocaleString()}
+- החודש: ₪${(metrics.revenue?.month || 0).toLocaleString()}
+- חודש קודם: ₪${(metrics.revenue?.lastMonth || 0).toLocaleString()}
 
 **הזמנות:**
-- היום: ${metrics.orders.today}
-- השבוע: ${metrics.orders.week}
-- החודש: ${metrics.orders.month}
-- ממתינות לטיפול: ${metrics.orders.pending}
+- היום: ${metrics.orders?.today || 0}
+- השבוע: ${metrics.orders?.week || 0}
+- החודש: ${metrics.orders?.month || 0}
+- ממתינות לטיפול: ${metrics.orders?.pending || 0}
 
 **לקוחות:**
-- סה"כ: ${metrics.customers.total}
-- חדשים החודש: ${metrics.customers.new}
-- חוזרים: ${metrics.customers.returning}
-- אחוז לקוחות חוזרים: ${metrics.customers.returningPercent}%
+- סה"כ: ${metrics.customers?.total || 0}
+- חדשים החודש: ${metrics.customers?.new || 0}
+- חוזרים: ${metrics.customers?.returning || 0}
+- אחוז לקוחות חוזרים: ${metrics.customers?.returningPercent || 0}%
 
 **מלאי:**
-- מוצרים במלאי נמוך: ${metrics.inventory.lowStock}
-- מוצרים אזלו: ${metrics.inventory.outOfStock}
-- נמכרים מהר: ${metrics.inventory.fastMovers.join(", ") || "אין נתונים"}
-- נמכרים לאט: ${metrics.inventory.slowMovers.join(", ") || "אין נתונים"}
+- מוצרים במלאי נמוך: ${metrics.inventory?.lowStock || 0}
+- מוצרים אזלו: ${metrics.inventory?.outOfStock || 0}
+- נמכרים מהר: ${fastMovers}
+- נמכרים לאט: ${slowMovers}
 
 **מוצרים מובילים (לפי הכנסה):**
-${metrics.topProducts.map((p, i) => `${i + 1}. ${p.name} - ₪${p.revenue.toLocaleString()} (${p.quantity} יח')`).join("\n")}
+${topProductsList}
 
 נתח את הנתונים וספק תובנות עסקיות.`;
 

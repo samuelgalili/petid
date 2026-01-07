@@ -181,7 +181,7 @@ serve(async (req) => {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   } catch (error) {
     console.error("Webhook error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
       status: 200, // Return 200 to prevent WhatsApp retries
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
