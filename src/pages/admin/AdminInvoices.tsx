@@ -22,11 +22,16 @@ import {
   Loader2,
   Sparkles,
   UserPlus,
-  Building2
+  Building2,
+  RefreshCw,
+  TrendingUp,
+  ArrowUpRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const AdminInvoices = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -244,28 +249,52 @@ const AdminInvoices = () => {
     }
   };
 
+  const thisMonthOrders = orders?.filter(o => {
+    const orderDate = new Date(o.created_at);
+    const now = new Date();
+    return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+  }) || [];
+
+  const lastMonthOrders = orders?.filter(o => {
+    const orderDate = new Date(o.created_at);
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+    return orderDate.getMonth() === lastMonth.getMonth() && orderDate.getFullYear() === lastMonth.getFullYear();
+  }) || [];
+
+  const totalRevenue = orders?.reduce((acc, o) => acc + (o.total || 0), 0) || 0;
+  const thisMonthRevenue = thisMonthOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+  const lastMonthRevenue = lastMonthOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+  const revenueChange = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100).toFixed(1) : 0;
+
   const stats = [
     {
       title: "סה״כ חשבוניות",
       value: orders?.length || 0,
       icon: FileText,
-      gradient: "from-violet-500 to-purple-600",
+      gradient: "from-primary to-primary/80",
+      change: null,
     },
     {
       title: "סכום כולל",
-      value: `₪${(orders?.reduce((acc, o) => acc + (o.total || 0), 0) || 0).toLocaleString()}`,
+      value: `₪${totalRevenue.toLocaleString()}`,
       icon: Receipt,
       gradient: "from-emerald-500 to-green-600",
+      change: revenueChange,
     },
     {
       title: "החודש",
-      value: orders?.filter(o => {
-        const orderDate = new Date(o.created_at);
-        const now = new Date();
-        return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
-      }).length || 0,
+      value: thisMonthOrders.length,
       icon: Calendar,
       gradient: "from-amber-500 to-orange-600",
+      change: null,
+    },
+    {
+      title: "הכנסות החודש",
+      value: `₪${thisMonthRevenue.toLocaleString()}`,
+      icon: TrendingUp,
+      gradient: "from-violet-500 to-purple-600",
+      change: revenueChange,
     },
   ];
 
@@ -294,52 +323,89 @@ const AdminInvoices = () => {
   return (
     <AdminLayout title="חשבוניות וקבלות" icon={Receipt}>
       <div className="space-y-6">
-        {/* Scan Button */}
-        <div className="flex justify-end">
-          <Button 
-            onClick={() => setScanDialogOpen(true)}
-            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
-          >
-            <Camera className="w-4 h-4 ml-2" />
-            סריקת חשבונית
-          </Button>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-l from-card/80 to-transparent border border-border/50 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25">
+              <Receipt className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="font-bold text-lg">ניהול חשבוניות</h2>
+              <p className="text-xs text-muted-foreground">צפייה, סריקה והפקת חשבוניות</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["orders-for-invoices"] })}
+              className="gap-2 bg-background/50"
+            >
+              <RefreshCw className="w-4 h-4" />
+              רענן
+            </Button>
+            <Button 
+              onClick={() => setScanDialogOpen(true)}
+              size="sm"
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 gap-2"
+            >
+              <Camera className="w-4 h-4" />
+              סריקת חשבונית
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-10`} />
-              <CardContent className="p-4 relative">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-slate-400 mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="relative overflow-hidden border border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all">
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5`} />
+                <CardContent className="p-4 relative">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">{stat.title}</p>
+                      <p className="text-2xl font-bold">{stat.value}</p>
+                      {stat.change !== null && Number(stat.change) !== 0 && (
+                        <div className={cn(
+                          "flex items-center gap-1 text-xs mt-1",
+                          Number(stat.change) > 0 ? "text-emerald-500" : "text-red-500"
+                        )}>
+                          <ArrowUpRight className={cn("w-3 h-3", Number(stat.change) < 0 && "rotate-180")} />
+                          <span>{Math.abs(Number(stat.change))}%</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
+                      <stat.icon className="w-5 h-5 text-white" />
+                    </div>
                   </div>
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
-                    <stat.icon className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
 
         {/* Controls */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+        <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="חיפוש לפי מספר הזמנה או שם לקוח..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                  className="pr-10"
                 />
               </div>
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+                <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -353,67 +419,85 @@ const AdminInvoices = () => {
         </Card>
 
         {/* Invoices List */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-          <CardHeader className="border-b border-slate-700/50">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-violet-400" />
-              חשבוניות ({filteredOrders?.length || 0})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-8 text-center text-slate-400">טוען...</div>
-            ) : filteredOrders?.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">אין חשבוניות</div>
-            ) : (
-              <div className="divide-y divide-slate-700/50">
-                {filteredOrders?.map((order) => (
-                  <div key={order.id} className="p-4 hover:bg-slate-800/50 transition-colors">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-white">#{order.order_number || order.id.slice(0, 8).toUpperCase()}</h3>
-                          <Badge className={
-                            order.status === "delivered" 
-                              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                              : "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                          }>
-                            {order.status === "delivered" ? "הושלם" : "ממתין"}
-                          </Badge>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="border border-border/50 bg-card/50 backdrop-blur-sm">
+            <CardHeader className="border-b border-border/50">
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-primary" />
+                חשבוניות ({filteredOrders?.length || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <div className="p-8 text-center text-muted-foreground flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span>טוען חשבוניות...</span>
+                </div>
+              ) : filteredOrders?.length === 0 ? (
+                <div className="p-12 text-center">
+                  <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                  <p className="text-muted-foreground">אין חשבוניות</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {filteredOrders?.map((order, index) => (
+                    <motion.div 
+                      key={order.id} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="p-4 hover:bg-accent/5 transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">#{order.order_number || order.id.slice(0, 8).toUpperCase()}</h3>
+                            <Badge variant="outline" className={
+                              order.status === "delivered" 
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                : "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                            }>
+                              {order.status === "delivered" ? "הושלם" : "ממתין"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{order.order_number || "הזמנה"}</p>
+                          <p className="text-xs text-muted-foreground/70 mt-1">
+                            {format(new Date(order.created_at), "dd/MM/yyyy HH:mm", { locale: he })}
+                          </p>
                         </div>
-                        <p className="text-sm text-slate-400">{order.order_number || "הזמנה"}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {format(new Date(order.created_at), "dd/MM/yyyy HH:mm", { locale: he })}
-                        </p>
+                        <div className="text-left">
+                          <p className="text-lg font-bold text-primary">₪{order.total?.toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => generateInvoice(order)}
+                            title="הורדה"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.print()}
+                            title="הדפסה"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <p className="text-lg font-bold text-violet-400">₪{order.total?.toLocaleString()}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-slate-700 text-slate-300"
-                          onClick={() => generateInvoice(order)}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-slate-700 text-slate-300"
-                          onClick={() => window.print()}
-                        >
-                          <Printer className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Scan Invoice Dialog */}
         <Dialog open={scanDialogOpen} onOpenChange={setScanDialogOpen}>
