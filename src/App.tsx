@@ -68,6 +68,7 @@ const AdminCustomerSegments = lazy(() => import("./pages/admin/AdminCustomerSegm
 const AdminShipping = lazy(() => import("./pages/admin/AdminShipping"));
 const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminGrowo = lazy(() => import("./pages/admin/AdminGrowo"));
 const AdminIntegrations = lazy(() => import("./pages/admin/AdminIntegrations"));
 const AdminBackup = lazy(() => import("./pages/admin/AdminBackup"));
 const AdminCRM = lazy(() => import("./pages/admin/AdminCRM"));
@@ -182,6 +183,7 @@ const AnimatedRoutes = () => {
         <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
         <Route path="/edit-profile" element={<ProtectedRoute><PageTransition><EditProfile /></PageTransition></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedRoute><AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/growo" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminGrowo /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/orders" element={<ProtectedRoute><AdminRoute><PageTransition><AdminOrders /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/parks" element={<ProtectedRoute><AdminRoute><PageTransition><AdminParks /></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/adoption" element={<ProtectedRoute><AdminRoute><PageTransition><AdminAdoption /></PageTransition></AdminRoute></ProtectedRoute>} />
