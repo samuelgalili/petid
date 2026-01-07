@@ -82,6 +82,7 @@ const navGroups: NavGroup[] = [
     label: "ראשי",
     items: [
       { icon: LayoutDashboard, label: "דשבורד", href: "/admin/dashboard" },
+      { icon: Zap, label: "Growo", href: "/admin/growo" },
       { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics" },
       { icon: Wallet, label: "כספים", href: "/admin/financial" },
     ]
