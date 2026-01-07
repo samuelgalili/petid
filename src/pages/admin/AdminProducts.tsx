@@ -412,11 +412,33 @@ const AdminProducts = () => {
             <Plus className="w-4 h-4 ml-2" />
             הוסף מוצר
           </Button>
-          <Button variant="outline" onClick={() => navigate('/admin/products/import')}>
+          <Button variant="outline" onClick={() => navigate('/admin/data-import')}>
             <Upload className="w-4 h-4 ml-2" />
             ייבוא CSV
           </Button>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              const csvContent = [
+                ['שם', 'קטגוריה', 'מחיר', 'מחיר מקורי', 'במלאי', 'מקודם'].join(','),
+                ...displayProducts.map(p => [
+                  `"${p.name}"`,
+                  `"${p.category || ''}"`,
+                  p.price,
+                  p.original_price || '',
+                  p.in_stock ? 'כן' : 'לא',
+                  p.is_featured ? 'כן' : 'לא'
+                ].join(','))
+              ].join('\n');
+              
+              const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `products-${new Date().toISOString().split('T')[0]}.csv`;
+              link.click();
+              toast({ title: "הקובץ יורד" });
+            }}
+          >
             <Download className="w-4 h-4 ml-2" />
             ייצוא
           </Button>

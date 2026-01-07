@@ -174,14 +174,39 @@ const AdminUsers = () => {
         {/* Actions Bar */}
         <div className="px-4 pb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white gap-2">
+            <Button 
+              className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white gap-2"
+              onClick={() => navigate("/auth?signup=true")}
+            >
               <Plus className="w-4 h-4" />
               משתמש חדש
             </Button>
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 gap-2">
-              <Filter className="w-4 h-4" />
-              פילטר
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 gap-2">
+                  <Filter className="w-4 h-4" />
+                  פילטר
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-slate-800 border-slate-700">
+                <DropdownMenuItem onClick={() => setSearchQuery("")} className="text-white hover:bg-slate-700">
+                  הכל
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-700" />
+                <DropdownMenuItem onClick={() => setSearchQuery("admin")} className="text-white hover:bg-slate-700">
+                  <Shield className="w-4 h-4 ml-2" />
+                  מנהלים
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSearchQuery("business")} className="text-white hover:bg-slate-700">
+                  <Store className="w-4 h-4 ml-2" />
+                  עסקים
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSearchQuery("org")} className="text-white hover:bg-slate-700">
+                  <Heart className="w-4 h-4 ml-2" />
+                  עמותות
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -361,14 +386,30 @@ const AdminUsers = () => {
 
                   {/* Mail Button */}
                   <div>
-                    <Button size="icon" variant="ghost" className="w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-300">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="w-8 h-8 bg-slate-700 hover:bg-slate-600 text-slate-300"
+                      onClick={() => {
+                        if (user.email) {
+                          window.location.href = `mailto:${user.email}`;
+                        } else {
+                          toast({ title: "אין כתובת מייל למשתמש זה", variant: "destructive" });
+                        }
+                      }}
+                    >
                       <Mail className="w-4 h-4" />
                     </Button>
                   </div>
 
                   {/* Message Button */}
                   <div>
-                    <Button size="icon" variant="ghost" className="w-8 h-8 bg-purple-600 hover:bg-purple-500 text-white">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="w-8 h-8 bg-purple-600 hover:bg-purple-500 text-white"
+                      onClick={() => navigate(`/messages/${user.id}`)}
+                    >
                       <MessageSquare className="w-4 h-4" />
                     </Button>
                   </div>
