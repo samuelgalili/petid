@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { ChevronLeft, Star, Trophy, Calendar, Sparkles, Zap } from "lucide-react";
+import { ChevronLeft, Star, Trophy, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useLoyalty, LOYALTY_RANKS } from "@/hooks/useLoyalty";
+import { useLoyalty } from "@/hooks/useLoyalty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -12,14 +12,12 @@ interface LoyaltyRankCardProps {
 
 export const LoyaltyRankCard = ({ className, compact = false }: LoyaltyRankCardProps) => {
   const navigate = useNavigate();
-  const { stats, currentRank, tenureDays, progress, loading } = useLoyalty();
+  const { stats, currentRank, progress, loading } = useLoyalty();
 
   if (loading) {
     return (
-      <div className={cn("p-4 rounded-2xl bg-card", className)}>
-        <Skeleton className="h-8 w-32 mb-2" />
-        <Skeleton className="h-4 w-full mb-4" />
-        <Skeleton className="h-2 w-full" />
+      <div className={cn("p-3 rounded-xl bg-muted/50", className)}>
+        <Skeleton className="h-10 w-full" />
       </div>
     );
   }
@@ -29,19 +27,18 @@ export const LoyaltyRankCard = ({ className, compact = false }: LoyaltyRankCardP
       <motion.div
         onClick={() => navigate('/rewards')}
         className={cn(
-          "flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r cursor-pointer shadow-lg",
-          currentRank.color,
+          "flex items-center gap-2.5 p-2.5 rounded-xl bg-card border border-border cursor-pointer",
           className
         )}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
       >
-        <span className="text-2xl">{currentRank.icon}</span>
-        <div className="flex-1 text-white">
-          <p className="font-bold text-sm">{currentRank.name}</p>
-          <p className="text-xs opacity-90">{stats?.totalPoints || 0} נקודות</p>
+        <span className="text-lg">{currentRank.icon}</span>
+        <div className="flex-1">
+          <p className="font-semibold text-sm text-foreground">{currentRank.name}</p>
+          <p className="text-xs text-muted-foreground">{stats?.totalPoints || 0} נקודות</p>
         </div>
-        <ChevronLeft className="w-5 h-5 text-white/70" />
+        <ChevronLeft className="w-4 h-4 text-muted-foreground" />
       </motion.div>
     );
   }
@@ -50,58 +47,58 @@ export const LoyaltyRankCard = ({ className, compact = false }: LoyaltyRankCardP
     <motion.div
       onClick={() => navigate('/rewards')}
       className={cn(
-        "relative overflow-hidden rounded-2xl cursor-pointer",
+        "relative rounded-xl border border-border bg-card overflow-hidden cursor-pointer",
         className
       )}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
+      whileHover={{ scale: 1.005 }}
+      whileTap={{ scale: 0.995 }}
     >
-      {/* Background gradient */}
-      <div className={cn(
-        "absolute inset-0 bg-gradient-to-br opacity-90",
-        currentRank.color
-      )} />
+      {/* Subtle gradient accent */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
       
-      <div className="relative p-4 text-white">
-        {/* Main content row */}
+      <div className="p-3.5">
+        {/* Main row */}
         <div className="flex items-center gap-3">
-          {/* Icon */}
-          <div className="bg-white/20 backdrop-blur-sm rounded-xl p-2 border border-white/10">
-            <span className="text-xl block">{currentRank.icon}</span>
+          {/* Icon with subtle background */}
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <span className="text-lg">{currentRank.icon}</span>
           </div>
           
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-base font-bold">{currentRank.name}</h3>
-              <Zap className="w-3.5 h-3.5 text-yellow-300" />
+              <h3 className="text-sm font-bold text-foreground">{currentRank.name}</h3>
+              <Gift className="w-3.5 h-3.5 text-primary" />
             </div>
-            <p className="text-xs text-white/80 truncate">{currentRank.description}</p>
+            <p className="text-xs text-muted-foreground truncate">{currentRank.description}</p>
           </div>
           
-          {/* Stats */}
-          <div className="flex items-center gap-3 text-center">
-            <div className="text-right">
-              <p className="text-lg font-bold">{stats?.totalPoints || 0}</p>
-              <p className="text-[10px] text-white/70">נקודות</p>
+          {/* Points */}
+          <div className="flex items-center gap-2">
+            <div className="text-left">
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                <p className="text-base font-bold text-foreground">{stats?.totalPoints || 0}</p>
+              </div>
+              <p className="text-[10px] text-muted-foreground">נקודות</p>
             </div>
-            <ChevronLeft className="w-4 h-4 text-white/60" />
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           </div>
         </div>
         
         {/* Progress bar */}
         {progress.nextRank && (
-          <div className="mt-3">
+          <div className="mt-3 pt-3 border-t border-border/50">
             <div className="flex items-center justify-between text-[10px] mb-1.5">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 text-muted-foreground">
                 <span>{progress.nextRank.icon}</span>
-                <span className="text-white/80">לדרגת {progress.nextRank.name}</span>
+                <span>לדרגת {progress.nextRank.name}</span>
               </div>
-              <span className="font-medium">{Math.round(progress.progress)}%</span>
+              <span className="font-semibold text-primary">{Math.round(progress.progress)}%</span>
             </div>
-            <div className="h-1.5 bg-black/20 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-white/90 rounded-full"
+                className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress.progress}%` }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
@@ -110,11 +107,11 @@ export const LoyaltyRankCard = ({ className, compact = false }: LoyaltyRankCardP
           </div>
         )}
 
-        {/* Max rank indicator */}
+        {/* Max rank */}
         {!progress.nextRank && (
-          <div className="mt-3 flex items-center justify-center gap-1.5 py-1.5 bg-white/10 rounded-lg text-xs">
-            <Trophy className="w-3.5 h-3.5 text-yellow-300" />
-            <span className="font-medium">דרגה מקסימלית!</span>
+          <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+            <Trophy className="w-3.5 h-3.5 text-amber-500" />
+            <span>דרגה מקסימלית!</span>
           </div>
         )}
       </div>
