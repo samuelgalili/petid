@@ -4062,6 +4062,121 @@ export type Database = {
           },
         ]
       }
+      pet_vaccinations: {
+        Row: {
+          administered_by: string | null
+          batch_number: string | null
+          created_at: string
+          document_url: string | null
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          pet_id: string
+          updated_at: string
+          user_id: string
+          vaccination_date: string
+          vaccine_name: string
+        }
+        Insert: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          pet_id: string
+          updated_at?: string
+          user_id: string
+          vaccination_date: string
+          vaccine_name: string
+        }
+        Update: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string
+          document_url?: string | null
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          pet_id?: string
+          updated_at?: string
+          user_id?: string
+          vaccination_date?: string
+          vaccine_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_vaccinations_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_vet_visits: {
+        Row: {
+          clinic_name: string | null
+          cost: number | null
+          created_at: string
+          diagnosis: string | null
+          document_url: string | null
+          id: string
+          next_visit_date: string | null
+          notes: string | null
+          pet_id: string
+          treatment: string | null
+          updated_at: string
+          user_id: string
+          vet_name: string | null
+          visit_date: string
+          visit_type: string | null
+        }
+        Insert: {
+          clinic_name?: string | null
+          cost?: number | null
+          created_at?: string
+          diagnosis?: string | null
+          document_url?: string | null
+          id?: string
+          next_visit_date?: string | null
+          notes?: string | null
+          pet_id: string
+          treatment?: string | null
+          updated_at?: string
+          user_id: string
+          vet_name?: string | null
+          visit_date: string
+          visit_type?: string | null
+        }
+        Update: {
+          clinic_name?: string | null
+          cost?: number | null
+          created_at?: string
+          diagnosis?: string | null
+          document_url?: string | null
+          id?: string
+          next_visit_date?: string | null
+          notes?: string | null
+          pet_id?: string
+          treatment?: string | null
+          updated_at?: string
+          user_id?: string
+          vet_name?: string | null
+          visit_date?: string
+          visit_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_vet_visits_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pets: {
         Row: {
           age: number | null
@@ -4074,15 +4189,26 @@ export type Database = {
           created_at: string | null
           favorite_activities: string[] | null
           gender: string | null
+          has_insurance: boolean | null
           health_notes: string | null
           id: string
+          insurance_company: string | null
+          insurance_expiry_date: string | null
+          insurance_policy_number: string | null
           is_neutered: boolean | null
+          last_vet_visit: string | null
           mood_score: number | null
           name: string
+          next_vet_visit: string | null
           personality_tags: string[] | null
           type: string
           updated_at: string | null
           user_id: string
+          vet_clinic: string | null
+          vet_name: string | null
+          vet_phone: string | null
+          weight: number | null
+          weight_unit: string | null
         }
         Insert: {
           age?: number | null
@@ -4095,15 +4221,26 @@ export type Database = {
           created_at?: string | null
           favorite_activities?: string[] | null
           gender?: string | null
+          has_insurance?: boolean | null
           health_notes?: string | null
           id?: string
+          insurance_company?: string | null
+          insurance_expiry_date?: string | null
+          insurance_policy_number?: string | null
           is_neutered?: boolean | null
+          last_vet_visit?: string | null
           mood_score?: number | null
           name: string
+          next_vet_visit?: string | null
           personality_tags?: string[] | null
           type: string
           updated_at?: string | null
           user_id: string
+          vet_clinic?: string | null
+          vet_name?: string | null
+          vet_phone?: string | null
+          weight?: number | null
+          weight_unit?: string | null
         }
         Update: {
           age?: number | null
@@ -4116,15 +4253,26 @@ export type Database = {
           created_at?: string | null
           favorite_activities?: string[] | null
           gender?: string | null
+          has_insurance?: boolean | null
           health_notes?: string | null
           id?: string
+          insurance_company?: string | null
+          insurance_expiry_date?: string | null
+          insurance_policy_number?: string | null
           is_neutered?: boolean | null
+          last_vet_visit?: string | null
           mood_score?: number | null
           name?: string
+          next_vet_visit?: string | null
           personality_tags?: string[] | null
           type?: string
           updated_at?: string | null
           user_id?: string
+          vet_clinic?: string | null
+          vet_name?: string | null
+          vet_phone?: string | null
+          weight?: number | null
+          weight_unit?: string | null
         }
         Relationships: []
       }
