@@ -96,13 +96,13 @@ const AdminInventory = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+            <Card key={index} className="relative overflow-hidden">
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-10`} />
               <CardContent className="p-4 relative">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
                   </div>
                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
                     <stat.icon className="w-5 h-5 text-white" />
@@ -114,29 +114,27 @@ const AdminInventory = () => {
         </div>
 
         {/* Controls */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="חיפוש מוצר..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                  className="pr-10"
                 />
               </div>
               <Button
                 variant={filterLowStock ? "default" : "outline"}
                 onClick={() => setFilterLowStock(!filterLowStock)}
-                className={filterLowStock ? "bg-gradient-to-r from-amber-500 to-orange-600" : "border-slate-700 text-slate-300"}
               >
                 <AlertTriangle className="w-4 h-4 ml-2" />
                 מלאי נמוך בלבד
               </Button>
               <Button 
-                variant="outline" 
-                className="border-slate-700 text-slate-300"
+                variant="outline"
                 onClick={() => {
                   const csvContent = [
                     ['שם מוצר', 'קטגוריה', 'מחיר', 'במלאי'].join(','),
@@ -164,24 +162,24 @@ const AdminInventory = () => {
         </Card>
 
         {/* Products List */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-          <CardHeader className="border-b border-slate-700/50">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Package className="w-5 h-5 text-violet-400" />
+        <Card>
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
               רשימת מוצרים ({filteredProducts?.length || 0})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
-              <div className="p-8 text-center text-slate-400">טוען...</div>
+              <div className="p-8 text-center text-muted-foreground">טוען...</div>
             ) : filteredProducts?.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">לא נמצאו מוצרים</div>
+              <div className="p-8 text-center text-muted-foreground">לא נמצאו מוצרים</div>
             ) : (
-              <div className="divide-y divide-slate-700/50">
+              <div className="divide-y">
                 {filteredProducts?.map((product) => (
-                  <div key={product.id} className="p-4 hover:bg-slate-800/50 transition-colors">
+                  <div key={product.id} className="p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-lg bg-slate-800 overflow-hidden shrink-0">
+                      <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0">
                         <img
                           src={product.image_url}
                           alt={product.name}
@@ -189,15 +187,15 @@ const AdminInventory = () => {
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-white truncate">{product.name}</h3>
-                        <p className="text-sm text-slate-400">{product.category || "ללא קטגוריה"}</p>
-                        <p className="text-sm text-violet-400">₪{product.price}</p>
+                        <h3 className="font-medium truncate">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground">{product.category || "ללא קטגוריה"}</p>
+                        <p className="text-sm text-primary">₪{product.price}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <Badge
                           className={product.in_stock 
-                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" 
-                            : "bg-red-500/20 text-red-400 border-red-500/30"
+                            ? "bg-emerald-100 text-emerald-700 border-emerald-200" 
+                            : "bg-red-100 text-red-700 border-red-200"
                           }
                         >
                           {product.in_stock ? "במלאי" : "אזל"}
@@ -205,7 +203,6 @@ const AdminInventory = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-slate-700 text-slate-300 hover:bg-slate-700"
                           onClick={() => toggleStock.mutate({ id: product.id, inStock: !product.in_stock })}
                         >
                           <RefreshCw className="w-4 h-4" />
