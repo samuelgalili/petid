@@ -2922,6 +2922,69 @@ export type Database = {
           },
         ]
       }
+      metrics_daily: {
+        Row: {
+          average_order_value: number | null
+          created_at: string
+          expense_breakdown: Json | null
+          gross_profit: number | null
+          id: string
+          items_sold: number | null
+          metric_date: string
+          net_revenue: number | null
+          new_customers: number | null
+          orders_change_percent: number | null
+          returning_customers: number | null
+          revenue_change_percent: number | null
+          top_products: Json | null
+          total_customers: number | null
+          total_expenses: number | null
+          total_orders: number | null
+          total_revenue: number | null
+          updated_at: string
+        }
+        Insert: {
+          average_order_value?: number | null
+          created_at?: string
+          expense_breakdown?: Json | null
+          gross_profit?: number | null
+          id?: string
+          items_sold?: number | null
+          metric_date: string
+          net_revenue?: number | null
+          new_customers?: number | null
+          orders_change_percent?: number | null
+          returning_customers?: number | null
+          revenue_change_percent?: number | null
+          top_products?: Json | null
+          total_customers?: number | null
+          total_expenses?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Update: {
+          average_order_value?: number | null
+          created_at?: string
+          expense_breakdown?: Json | null
+          gross_profit?: number | null
+          id?: string
+          items_sold?: number | null
+          metric_date?: string
+          net_revenue?: number | null
+          new_customers?: number | null
+          orders_change_percent?: number | null
+          returning_customers?: number | null
+          revenue_change_percent?: number | null
+          top_products?: Json | null
+          total_customers?: number | null
+          total_expenses?: number | null
+          total_orders?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       monthly_balance: {
         Row: {
           balance: number | null
@@ -2966,6 +3029,386 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      normalized_customers: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          average_order_value: number | null
+          city: string | null
+          company: string | null
+          country: string | null
+          created_at: string
+          customer_segment: string | null
+          email: string | null
+          external_id: string | null
+          first_name: string | null
+          first_order_date: string | null
+          full_name: string | null
+          id: string
+          last_name: string | null
+          last_order_date: string | null
+          lifetime_value: number | null
+          metadata: Json | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          source_type: string | null
+          state: string | null
+          tags: string[] | null
+          total_orders: number | null
+          total_spent: number | null
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          average_order_value?: number | null
+          city?: string | null
+          company?: string | null
+          country?: string | null
+          created_at?: string
+          customer_segment?: string | null
+          email?: string | null
+          external_id?: string | null
+          first_name?: string | null
+          first_order_date?: string | null
+          full_name?: string | null
+          id?: string
+          last_name?: string | null
+          last_order_date?: string | null
+          lifetime_value?: number | null
+          metadata?: Json | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          source_type?: string | null
+          state?: string | null
+          tags?: string[] | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          average_order_value?: number | null
+          city?: string | null
+          company?: string | null
+          country?: string | null
+          created_at?: string
+          customer_segment?: string | null
+          email?: string | null
+          external_id?: string | null
+          first_name?: string | null
+          first_order_date?: string | null
+          full_name?: string | null
+          id?: string
+          last_name?: string | null
+          last_order_date?: string | null
+          lifetime_value?: number | null
+          metadata?: Json | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          source_type?: string | null
+          state?: string | null
+          tags?: string[] | null
+          total_orders?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      normalized_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          is_recurring: boolean | null
+          metadata: Json | null
+          receipt_url: string | null
+          recurrence_period: string | null
+          source_import_id: string | null
+          subcategory: string | null
+          vendor: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          expense_date: string
+          id?: string
+          is_recurring?: boolean | null
+          metadata?: Json | null
+          receipt_url?: string | null
+          recurrence_period?: string | null
+          source_import_id?: string | null
+          subcategory?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean | null
+          metadata?: Json | null
+          receipt_url?: string | null
+          recurrence_period?: string | null
+          source_import_id?: string | null
+          subcategory?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "normalized_expenses_source_import_id_fkey"
+            columns: ["source_import_id"]
+            isOneToOne: false
+            referencedRelation: "raw_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      normalized_products: {
+        Row: {
+          category: string | null
+          cost_price: number | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          external_id: string | null
+          id: string
+          image_url: string | null
+          last_sold_date: string | null
+          low_stock_threshold: number | null
+          metadata: Json | null
+          name: string
+          price: number
+          sale_price: number | null
+          sku: string | null
+          source_type: string | null
+          status: string | null
+          stock_quantity: number | null
+          subcategory: string | null
+          tags: string[] | null
+          total_revenue: number | null
+          total_sold: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          image_url?: string | null
+          last_sold_date?: string | null
+          low_stock_threshold?: number | null
+          metadata?: Json | null
+          name: string
+          price: number
+          sale_price?: number | null
+          sku?: string | null
+          source_type?: string | null
+          status?: string | null
+          stock_quantity?: number | null
+          subcategory?: string | null
+          tags?: string[] | null
+          total_revenue?: number | null
+          total_sold?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          cost_price?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          external_id?: string | null
+          id?: string
+          image_url?: string | null
+          last_sold_date?: string | null
+          low_stock_threshold?: number | null
+          metadata?: Json | null
+          name?: string
+          price?: number
+          sale_price?: number | null
+          sku?: string | null
+          source_type?: string | null
+          status?: string | null
+          stock_quantity?: number | null
+          subcategory?: string | null
+          tags?: string[] | null
+          total_revenue?: number | null
+          total_sold?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      normalized_transaction_items: {
+        Row: {
+          cost_price: number | null
+          created_at: string
+          discount_amount: number | null
+          external_product_id: string | null
+          id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sku: string | null
+          total_price: number
+          transaction_id: string
+          unit_price: number
+        }
+        Insert: {
+          cost_price?: number | null
+          created_at?: string
+          discount_amount?: number | null
+          external_product_id?: string | null
+          id?: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          sku?: string | null
+          total_price: number
+          transaction_id: string
+          unit_price: number
+        }
+        Update: {
+          cost_price?: number | null
+          created_at?: string
+          discount_amount?: number | null
+          external_product_id?: string | null
+          id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sku?: string | null
+          total_price?: number
+          transaction_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "normalized_transaction_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "normalized_transaction_items_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      normalized_transactions: {
+        Row: {
+          created_at: string
+          currency: string | null
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          discount_amount: number | null
+          external_id: string | null
+          fulfillment_status: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          payment_status: string | null
+          shipping_amount: number | null
+          source_import_id: string | null
+          source_type: string
+          status: string | null
+          subtotal: number
+          tax_amount: number | null
+          total: number
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          discount_amount?: number | null
+          external_id?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_status?: string | null
+          shipping_amount?: number | null
+          source_import_id?: string | null
+          source_type: string
+          status?: string | null
+          subtotal?: number
+          tax_amount?: number | null
+          total: number
+          transaction_date: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          discount_amount?: number | null
+          external_id?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_status?: string | null
+          shipping_amount?: number | null
+          source_import_id?: string | null
+          source_type?: string
+          status?: string | null
+          subtotal?: number
+          tax_amount?: number | null
+          total?: number
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "normalized_transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "normalized_transactions_source_import_id_fkey"
+            columns: ["source_import_id"]
+            isOneToOne: false
+            referencedRelation: "raw_imports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_templates: {
         Row: {
@@ -4256,6 +4699,48 @@ export type Database = {
           updated_at?: string
           use_count?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      raw_imports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_type: string
+          error_message: string | null
+          id: string
+          processed_at: string | null
+          raw_data: Json
+          row_index: number | null
+          source_name: string | null
+          source_type: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_type: string
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          raw_data: Json
+          row_index?: number | null
+          source_name?: string | null
+          source_type: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_type?: string
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          raw_data?: Json
+          row_index?: number | null
+          source_name?: string | null
+          source_type?: string
+          status?: string | null
         }
         Relationships: []
       }
