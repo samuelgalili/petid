@@ -468,13 +468,17 @@ const AdminDashboard = () => {
       ) : (
         <div className="space-y-6">
           {/* Header with Refresh */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>בית</span>
-              <span>/</span>
-              <span className="text-primary font-medium">דשבורד ראשי</span>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-l from-card/80 to-transparent border border-border/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25">
+                <TrendingUp className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="font-bold text-lg">דשבורד ראשי</h2>
+                <p className="text-xs text-muted-foreground">סקירה כללית של הפעילות העסקית</p>
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => fetchAllAnalytics()} disabled={loading} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => fetchAllAnalytics()} disabled={loading} className="gap-2 bg-background/50">
               <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
               רענן נתונים
             </Button>
@@ -488,15 +492,19 @@ const AdminDashboard = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-accent/5">
-                  <CardHeader className="pb-3">
+                <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 overflow-hidden relative">
+                  <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+                  <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-accent/10 rounded-full blur-3xl" />
+                  <CardHeader className="pb-3 relative">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-primary" />
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      </div>
                       <CardTitle className="text-lg font-semibold">תובנות AI</CardTitle>
                       {insightsLoading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="relative">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {aiInsights.slice(0, 6).map((insight, index) => (
                         <motion.div
@@ -504,7 +512,8 @@ const AdminDashboard = () => {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className={cn("p-3 rounded-lg border", getInsightColor(insight.type, insight.priority))}
+                          whileHover={{ scale: 1.02 }}
+                          className={cn("p-3 rounded-xl border backdrop-blur-sm cursor-pointer transition-all", getInsightColor(insight.type, insight.priority))}
                         >
                           <div className="flex items-start gap-2">
                             <div className="mt-0.5 text-primary">{getInsightIcon(insight.icon)}</div>
@@ -526,40 +535,76 @@ const AdminDashboard = () => {
           </AnimatePresence>
 
           {/* KPI Cards - 4 columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {kpiCards.map((card, index) => (
               <motion.div
                 key={card.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="group"
               >
-                <Card className="relative overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-all duration-300 group">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
+                <Card className="relative overflow-hidden border-border/50 shadow-sm hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card via-card to-muted/20">
+                  {/* Decorative glow */}
+                  <div className={cn(
+                    "absolute -top-10 -left-10 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+                    index === 0 && "bg-emerald-500/20",
+                    index === 1 && "bg-primary/20",
+                    index === 2 && "bg-violet-500/20",
+                    index === 3 && "bg-amber-500/20"
+                  )} />
+                  <CardContent className="p-5 relative">
+                    <div className="flex items-start justify-between mb-3">
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground font-medium">{card.title}</p>
-                        <p className="text-3xl font-bold text-foreground">{card.value}</p>
+                        <p className="text-3xl font-bold tracking-tight">{card.value}</p>
                       </div>
-                      <Sparkline data={card.sparkData} color={card.sparkColor} />
+                      <div className={cn(
+                        "p-2.5 rounded-xl transition-transform group-hover:scale-110",
+                        index === 0 && "bg-emerald-500/10 text-emerald-500",
+                        index === 1 && "bg-primary/10 text-primary",
+                        index === 2 && "bg-violet-500/10 text-violet-500",
+                        index === 3 && "bg-amber-500/10 text-amber-500"
+                      )}>
+                        <card.icon className="w-5 h-5" />
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge
-                        variant="secondary"
+                      <span
                         className={cn(
-                          "text-xs font-medium px-2 py-0.5",
-                          card.trend === "up" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                          "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md",
+                          card.trend === "up" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
                         )}
                       >
-                        {card.trend === "up" ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
+                        {card.trend === "up" ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                         {card.change}
-                      </Badge>
+                      </span>
                       <span className="text-xs text-muted-foreground">{card.subtitle}</span>
                     </div>
+                    {/* Mini sparkline */}
+                    <div className="mt-3 flex items-end gap-0.5 h-8">
+                      {card.sparkData.map((value, i) => {
+                        const max = Math.max(...card.sparkData);
+                        const height = (value / max) * 100;
+                        return (
+                          <motion.div
+                            key={i}
+                            initial={{ height: 0 }}
+                            animate={{ height: `${height}%` }}
+                            transition={{ delay: index * 0.05 + i * 0.02 }}
+                            className={cn(
+                              "flex-1 rounded-sm",
+                              index === 0 && "bg-emerald-500/30",
+                              index === 1 && "bg-primary/30",
+                              index === 2 && "bg-violet-500/30",
+                              index === 3 && "bg-amber-500/30"
+                            )}
+                          />
+                        );
+                      })}
+                    </div>
                   </CardContent>
-                  <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <card.icon className="w-8 h-8 text-muted-foreground/20" />
-                  </div>
                 </Card>
               </motion.div>
             ))}
