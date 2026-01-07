@@ -696,46 +696,52 @@ const AdminCRM = () => {
                     <TabsContent value="overview" className="space-y-6">
                       {/* RFM Breakdown */}
                       <div className="grid grid-cols-3 gap-4">
-                        <Card className="p-4 bg-gradient-to-br from-blue-500/5 to-blue-600/10 border-blue-500/20">
+                        <Card className="p-4 bg-gradient-to-br from-blue-500/5 to-blue-600/10 border-blue-500/20 hover:shadow-md transition-shadow">
                           <div className="flex items-center justify-between mb-3">
+                            <span className="text-2xl font-bold text-blue-600">{selectedCustomer.rfm.recency}/5</span>
                             <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-blue-600" />
-                              <span className="font-medium">עדכניות</span>
+                              <span className="font-medium text-sm">עדכניות</span>
+                              <div className="p-2 rounded-lg bg-blue-500/10">
+                                <Clock className="h-5 w-5 text-blue-600" />
+                              </div>
                             </div>
-                            <span className="text-xl font-bold text-blue-600">{selectedCustomer.rfm.recency}/5</span>
                           </div>
                           <Progress value={selectedCustomer.rfm.recency * 20} className="h-2 mb-2" />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground text-left">
                             {selectedCustomer.rfm.daysSinceLastOrder !== null 
                               ? `${selectedCustomer.rfm.daysSinceLastOrder} ימים מהזמנה אחרונה`
                               : 'אין הזמנות'}
                           </p>
                         </Card>
                         
-                        <Card className="p-4 bg-gradient-to-br from-emerald-500/5 to-emerald-600/10 border-emerald-500/20">
+                        <Card className="p-4 bg-gradient-to-br from-emerald-500/5 to-emerald-600/10 border-emerald-500/20 hover:shadow-md transition-shadow">
                           <div className="flex items-center justify-between mb-3">
+                            <span className="text-2xl font-bold text-emerald-600">{selectedCustomer.rfm.frequency}/5</span>
                             <div className="flex items-center gap-2">
-                              <ShoppingBag className="h-4 w-4 text-emerald-600" />
-                              <span className="font-medium">תדירות</span>
+                              <span className="font-medium text-sm">תדירות</span>
+                              <div className="p-2 rounded-lg bg-emerald-500/10">
+                                <ShoppingBag className="h-5 w-5 text-emerald-600" />
+                              </div>
                             </div>
-                            <span className="text-xl font-bold text-emerald-600">{selectedCustomer.rfm.frequency}/5</span>
                           </div>
                           <Progress value={selectedCustomer.rfm.frequency * 20} className="h-2 mb-2" />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground text-left">
                             {selectedCustomer.rfm.orderCount} הזמנות סה״כ
                           </p>
                         </Card>
                         
-                        <Card className="p-4 bg-gradient-to-br from-amber-500/5 to-amber-600/10 border-amber-500/20">
+                        <Card className="p-4 bg-gradient-to-br from-amber-500/5 to-amber-600/10 border-amber-500/20 hover:shadow-md transition-shadow">
                           <div className="flex items-center justify-between mb-3">
+                            <span className="text-2xl font-bold text-amber-600">{selectedCustomer.rfm.monetary}/5</span>
                             <div className="flex items-center gap-2">
-                              <TrendingUp className="h-4 w-4 text-amber-600" />
-                              <span className="font-medium">סכום</span>
+                              <span className="font-medium text-sm">סכום</span>
+                              <div className="p-2 rounded-lg bg-amber-500/10">
+                                <TrendingUp className="h-5 w-5 text-amber-600" />
+                              </div>
                             </div>
-                            <span className="text-xl font-bold text-amber-600">{selectedCustomer.rfm.monetary}/5</span>
                           </div>
                           <Progress value={selectedCustomer.rfm.monetary * 20} className="h-2 mb-2" />
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground text-left">
                             ₪{selectedCustomer.rfm.totalSpent.toLocaleString()} סה״כ
                           </p>
                         </Card>
@@ -745,30 +751,30 @@ const AdminCRM = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <Card className="p-4 bg-gradient-to-br from-violet-500/5 to-violet-600/10 border-violet-500/20 hover:shadow-md transition-shadow">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">ממוצע להזמנה</p>
-                              <p className="text-2xl font-bold text-violet-600">
-                                ₪{selectedCustomer.rfm.avgOrderValue?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || 0}
-                              </p>
-                            </div>
-                            <div className="p-3 rounded-xl bg-violet-500/10">
-                              <Gift className="h-6 w-6 text-violet-600" />
+                            <p className="text-2xl font-bold text-violet-600">
+                              ₪{selectedCustomer.rfm.avgOrderValue?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || 0}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-muted-foreground">ממוצע להזמנה</p>
+                              <div className="p-3 rounded-xl bg-violet-500/10">
+                                <Gift className="h-6 w-6 text-violet-600" />
+                              </div>
                             </div>
                           </div>
                         </Card>
                         
                         <Card className="p-4 bg-gradient-to-br from-cyan-500/5 to-cyan-600/10 border-cyan-500/20 hover:shadow-md transition-shadow">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">לקוח מאז</p>
-                              <p className="text-2xl font-bold text-cyan-600">
-                                {selectedCustomer.created_at 
-                                  ? format(new Date(selectedCustomer.created_at), 'dd/MM/yyyy', { locale: he })
-                                  : 'לא ידוע'}
-                              </p>
-                            </div>
-                            <div className="p-3 rounded-xl bg-cyan-500/10">
-                              <Calendar className="h-6 w-6 text-cyan-600" />
+                            <p className="text-2xl font-bold text-cyan-600">
+                              {selectedCustomer.created_at 
+                                ? format(new Date(selectedCustomer.created_at), 'dd/MM/yyyy', { locale: he })
+                                : 'לא ידוע'}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-muted-foreground">לקוח מאז</p>
+                              <div className="p-3 rounded-xl bg-cyan-500/10">
+                                <Calendar className="h-6 w-6 text-cyan-600" />
+                              </div>
                             </div>
                           </div>
                         </Card>
