@@ -127,6 +127,54 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_tasks: {
+        Row: {
+          assigned_to: string | null
+          attachments: string[] | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          rating: number | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachments?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          rating?: number | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          attachments?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          rating?: number | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       adoption_pets: {
         Row: {
           age_months: number | null
@@ -1181,6 +1229,51 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_debts: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_email: string | null
+          customer_id: string
+          customer_name: string
+          customer_phone: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          original_amount: number
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_email?: string | null
+          customer_id: string
+          customer_name: string
+          customer_phone?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          original_amount: number
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_id?: string
+          customer_name?: string
+          customer_phone?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          original_amount?: number
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_training_sessions: {
         Row: {
           created_at: string
@@ -1345,6 +1438,45 @@ export type Database = {
           pet_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      financial_records: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          month: number
+          record_date: string
+          type: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          month: number
+          record_date?: string
+          type: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          month?: number
+          record_date?: string
+          type?: string
+          updated_at?: string
+          year?: number
         }
         Relationships: []
       }
@@ -1643,6 +1775,45 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       live_shopping_products: {
         Row: {
           display_order: number | null
@@ -1937,6 +2108,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_balance: {
+        Row: {
+          balance: number | null
+          created_at: string
+          fixed_expenses: number | null
+          id: string
+          merchandise_expenses: number | null
+          month: number
+          salary_expenses: number | null
+          total_expenses: number | null
+          total_income: number | null
+          updated_at: string
+          variable_expenses: number | null
+          year: number
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          fixed_expenses?: number | null
+          id?: string
+          merchandise_expenses?: number | null
+          month: number
+          salary_expenses?: number | null
+          total_expenses?: number | null
+          total_income?: number | null
+          updated_at?: string
+          variable_expenses?: number | null
+          year: number
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          fixed_expenses?: number | null
+          id?: string
+          merchandise_expenses?: number | null
+          month?: number
+          salary_expenses?: number | null
+          total_expenses?: number | null
+          total_income?: number | null
+          updated_at?: string
+          variable_expenses?: number | null
+          year?: number
+        }
+        Relationships: []
       }
       notification_templates: {
         Row: {
@@ -4076,6 +4292,101 @@ export type Database = {
           streak_level?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      supplier_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string | null
+          notes: string | null
+          status: string | null
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string | null
+          notes?: string | null
+          status?: string | null
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string | null
+          notes?: string | null
+          status?: string | null
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          city: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          monthly_amount: number | null
+          name: string
+          notes: string | null
+          phone: string | null
+          supplier_type: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_amount?: number | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          supplier_type?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_amount?: number | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          supplier_type?: string
+          updated_at?: string
         }
         Relationships: []
       }
