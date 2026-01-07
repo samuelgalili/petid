@@ -118,15 +118,13 @@ const navGroups: NavGroup[] = [
   {
     label: "משתמשים וצוות",
     items: [
-      { icon: Users, label: "משתמשים", href: "/admin/users" },
-      { icon: Users, label: "ניהול צוות", href: "/admin/staff" },
+      { icon: Users, label: "משתמשים וצוות", href: "/admin/users" },
       { icon: Shield, label: "תפקידים והרשאות", href: "/admin/roles" },
     ]
   },
   {
     label: "תוכן",
     items: [
-      { icon: FileText, label: "תוכן ומודרציה", href: "/admin/content" },
       { icon: PlaySquare, label: "סטוריז", href: "/admin/stories" },
       { icon: FileText, label: "בלוג", href: "/admin/blog" },
       { icon: Flag, label: "דיווחים", href: "/admin/reports" },
@@ -135,7 +133,6 @@ const navGroups: NavGroup[] = [
   {
     label: "חיות ואימוץ",
     items: [
-      { icon: Heart, label: "מאגר חיות", href: "/admin/pets" },
       { icon: Heart, label: "אימוץ", href: "/admin/adoption" },
       { icon: MapPin, label: "פארקים", href: "/admin/parks" },
     ]
@@ -145,7 +142,6 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Store, label: "עסקים", href: "/admin/business" },
       { icon: Building2, label: "סניפים", href: "/admin/branches" },
-      { icon: Store, label: "ערוצי מכירה", href: "/admin/sales-channels" },
     ]
   },
   {
@@ -174,8 +170,6 @@ const navGroups: NavGroup[] = [
     label: "מערכת",
     items: [
       { icon: Bell, label: "כללי התראות", href: "/admin/notification-rules" },
-      { icon: Bell, label: "התראות", href: "/admin/notifications" },
-      { icon: AlertTriangle, label: "התראות מערכת", href: "/admin/alerts" },
       { icon: History, label: "לוג פעילות", href: "/admin/audit" },
       { icon: HardDrive, label: "גיבוי וייצוא", href: "/admin/backup" },
       { icon: Settings, label: "הגדרות", href: "/admin/settings" },
