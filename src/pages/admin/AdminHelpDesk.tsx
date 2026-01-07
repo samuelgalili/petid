@@ -16,8 +16,13 @@ import {
   User,
   Search,
   Plus,
-  Send
+  Send,
+  Ticket
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -28,6 +33,8 @@ const AdminHelpDesk = () => {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
+  const [newTicket, setNewTicket] = useState({ subject: "", description: "", priority: "medium" });
   const queryClient = useQueryClient();
 
   const { data: tickets, isLoading } = useQuery({
@@ -89,6 +96,28 @@ const AdminHelpDesk = () => {
     }
   });
 
+  const createTicketMutation = useMutation({
+    mutationFn: async () => {
+      const ticketNumber = `TK-${Date.now().toString().slice(-6)}`;
+      const { error } = await supabase
+        .from('support_tickets')
+        .insert({
+          ticket_number: ticketNumber,
+          subject: newTicket.subject,
+          description: newTicket.description,
+          priority: newTicket.priority,
+          status: 'open'
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+      setIsNewTicketOpen(false);
+      setNewTicket({ subject: "", description: "", priority: "medium" });
+      toast.success('הפנייה נוצרה בהצלחה');
+    }
+  });
+
   const getStatusBadge = (status: string) => {
     const styles: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; text: string }> = {
       open: { variant: 'destructive', text: 'פתוח' },
@@ -137,11 +166,61 @@ const AdminHelpDesk = () => {
             <h1 className="text-3xl font-bold">מרכז תמיכה</h1>
             <p className="text-muted-foreground">ניהול פניות ותמיכת לקוחות</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setIsNewTicketOpen(true)}>
             <Plus className="h-4 w-4" />
             פנייה חדשה
           </Button>
         </div>
+
+        {/* New Ticket Dialog */}
+        <Dialog open={isNewTicketOpen} onOpenChange={setIsNewTicketOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Ticket className="h-5 w-5" />
+                פנייה חדשה
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label>נושא</Label>
+                <Input 
+                  value={newTicket.subject} 
+                  onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })} 
+                  placeholder="נושא הפנייה..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>תיאור</Label>
+                <Textarea 
+                  value={newTicket.description} 
+                  onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })} 
+                  placeholder="תאר את הבעיה..."
+                  rows={4}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>עדיפות</Label>
+                <Select value={newTicket.priority} onValueChange={(v) => setNewTicket({ ...newTicket, priority: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">נמוכה</SelectItem>
+                    <SelectItem value="medium">בינונית</SelectItem>
+                    <SelectItem value="high">גבוהה</SelectItem>
+                    <SelectItem value="urgent">דחוף</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={() => createTicketMutation.mutate()}
+                disabled={!newTicket.subject}
+              >
+                צור פנייה
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>

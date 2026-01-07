@@ -18,6 +18,7 @@ import {
   Clock,
   AlertTriangle,
   ListTodo,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +27,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -86,6 +94,9 @@ const AdminTasks = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -194,10 +205,13 @@ const AdminTasks = () => {
     );
   };
 
-  const filteredTasks = tasks.filter(task =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.assignee_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.assignee_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || task.status === statusFilter;
+    const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
 
   const getProgressByStatus = (task: Task) => {
     switch (task.status) {
@@ -272,11 +286,104 @@ const AdminTasks = () => {
                 </div>
               </DialogContent>
             </Dialog>
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 gap-2">
-              <Filter className="w-4 h-4" />
-              פילטר
-            </Button>
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">אפשרויות</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 gap-2">
+                  <Filter className="w-4 h-4" />
+                  פילטר
+                  {(statusFilter !== "all" || priorityFilter !== "all") && (
+                    <Badge className="bg-cyan-500 text-white text-xs">!</Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-slate-800 border-slate-700 min-w-[200px]">
+                <div className="p-2">
+                  <p className="text-xs text-slate-400 mb-2">סטטוס</p>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">הכל</SelectItem>
+                      <SelectItem value="todo">בהתחלה</SelectItem>
+                      <SelectItem value="in_progress">בתהליך</SelectItem>
+                      <SelectItem value="review">בבדיקה</SelectItem>
+                      <SelectItem value="done">הסתיים</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DropdownMenuSeparator className="bg-slate-700" />
+                <div className="p-2">
+                  <p className="text-xs text-slate-400 mb-2">עדיפות</p>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">הכל</SelectItem>
+                      <SelectItem value="low">לא דחוף</SelectItem>
+                      <SelectItem value="medium">בינוני</SelectItem>
+                      <SelectItem value="high">דחוף</SelectItem>
+                      <SelectItem value="urgent">דחוף מאוד</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <DropdownMenuSeparator className="bg-slate-700" />
+                <DropdownMenuItem 
+                  onClick={() => { setStatusFilter("all"); setPriorityFilter("all"); }}
+                  className="text-cyan-400 hover:bg-slate-700"
+                >
+                  נקה פילטרים
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu open={isOptionsOpen} onOpenChange={setIsOptionsOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">אפשרויות</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-slate-800 border-slate-700">
+                <DropdownMenuItem 
+                  onClick={() => {
+                    const csvContent = [
+                      ['כותרת', 'סטטוס', 'עדיפות', 'תאריך יעד', 'משויך ל'].join(','),
+                      ...filteredTasks.map(t => [
+                        `"${t.title}"`,
+                        statusConfig[t.status]?.label || t.status,
+                        priorityConfig[t.priority]?.label || t.priority,
+                        t.due_date || '',
+                        `"${t.assignee_name || 'לא משויך'}"`
+                      ].join(','))
+                    ].join('\n');
+                    
+                    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `tasks-${new Date().toISOString().split('T')[0]}.csv`;
+                    link.click();
+                    toast({ title: "הקובץ יורד" });
+                  }}
+                  className="text-white hover:bg-slate-700"
+                >
+                  <Download className="w-4 h-4 ml-2" />
+                  ייצוא ל-CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={fetchTasks}
+                  className="text-white hover:bg-slate-700"
+                >
+                  <RefreshCw className="w-4 h-4 ml-2" />
+                  רענן
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-700" />
+                <DropdownMenuItem 
+                  onClick={() => {
+                    const doneTasks = tasks.filter(t => t.status === 'done');
+                    doneTasks.forEach(t => handleDeleteTask(t.id));
+                    toast({ title: `${doneTasks.length} משימות שהסתיימו נמחקו` });
+                  }}
+                  className="text-red-400 hover:bg-slate-700"
+                >
+                  <Trash2 className="w-4 h-4 ml-2" />
+                  מחק משימות שהסתיימו
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="relative flex-1 max-w-xs">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

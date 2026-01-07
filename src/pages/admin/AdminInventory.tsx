@@ -134,7 +134,28 @@ const AdminInventory = () => {
                 <AlertTriangle className="w-4 h-4 ml-2" />
                 מלאי נמוך בלבד
               </Button>
-              <Button variant="outline" className="border-slate-700 text-slate-300">
+              <Button 
+                variant="outline" 
+                className="border-slate-700 text-slate-300"
+                onClick={() => {
+                  const csvContent = [
+                    ['שם מוצר', 'קטגוריה', 'מחיר', 'במלאי'].join(','),
+                    ...(filteredProducts || []).map(p => [
+                      `"${p.name}"`,
+                      `"${p.category || 'ללא'}"`,
+                      p.price,
+                      p.in_stock ? 'כן' : 'לא'
+                    ].join(','))
+                  ].join('\n');
+                  
+                  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const link = document.createElement('a');
+                  link.href = URL.createObjectURL(blob);
+                  link.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
+                  link.click();
+                  toast.success('הקובץ יורד');
+                }}
+              >
                 <Download className="w-4 h-4 ml-2" />
                 ייצוא
               </Button>

@@ -6,6 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   CalendarDays, 
   Clock, 
@@ -15,14 +20,28 @@ import {
   Phone,
   MapPin,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Edit
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { he } from "date-fns/locale";
+import { toast } from "sonner";
 
 const AdminCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    description: "",
+    event_type: "meeting",
+    start_time: "",
+    end_time: "",
+    location: "",
+    color: "bg-blue-500"
+  });
   const queryClient = useQueryClient();
 
   const { data: events, isLoading } = useQuery({
@@ -37,8 +56,38 @@ const AdminCalendar = () => {
     }
   });
 
+  const createEventMutation = useMutation({
+    mutationFn: async (eventData: any) => {
+      const { error } = await supabase
+        .from('calendar_events')
+        .insert(eventData);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      setIsEventDialogOpen(false);
+      setNewEvent({ title: "", description: "", event_type: "meeting", start_time: "", end_time: "", location: "", color: "bg-blue-500" });
+    }
+  });
+
+  const updateEventMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { error } = await supabase
+        .from('calendar_events')
+        .update(data)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      setEditingEvent(null);
+    }
+  });
+
+  const baseWeekStart = startOfWeek(selectedDate, { locale: he });
+  const adjustedWeekStart = addDays(baseWeekStart, weekOffset * 7);
   const weekDays = Array.from({ length: 7 }, (_, i) => 
-    addDays(startOfWeek(selectedDate, { locale: he }), i)
+    addDays(adjustedWeekStart, i)
   );
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 8);
@@ -80,11 +129,162 @@ const AdminCalendar = () => {
             <h1 className="text-3xl font-bold">יומן ותזמון</h1>
             <p className="text-muted-foreground">ניהול פגישות, משימות ותזכורות</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setIsEventDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             אירוע חדש
           </Button>
         </div>
+
+        {/* New Event Dialog */}
+        <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>אירוע חדש</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label>כותרת</Label>
+                <Input 
+                  value={newEvent.title} 
+                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>תיאור</Label>
+                <Textarea 
+                  value={newEvent.description} 
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })} 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>סוג</Label>
+                  <Select value={newEvent.event_type} onValueChange={(v) => setNewEvent({ ...newEvent, event_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="meeting">פגישה</SelectItem>
+                      <SelectItem value="call">שיחה</SelectItem>
+                      <SelectItem value="video">וידאו</SelectItem>
+                      <SelectItem value="reminder">תזכורת</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>מיקום</Label>
+                  <Input 
+                    value={newEvent.location} 
+                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })} 
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>התחלה</Label>
+                  <Input 
+                    type="datetime-local" 
+                    value={newEvent.start_time} 
+                    onChange={(e) => setNewEvent({ ...newEvent, start_time: e.target.value })} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>סיום</Label>
+                  <Input 
+                    type="datetime-local" 
+                    value={newEvent.end_time} 
+                    onChange={(e) => setNewEvent({ ...newEvent, end_time: e.target.value })} 
+                  />
+                </div>
+              </div>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  if (!newEvent.title || !newEvent.start_time) {
+                    toast.error('נא למלא כותרת ותאריך התחלה');
+                    return;
+                  }
+                  createEventMutation.mutate({
+                    title: newEvent.title,
+                    description: newEvent.description,
+                    event_type: newEvent.event_type,
+                    start_time: newEvent.start_time,
+                    end_time: newEvent.end_time || null,
+                    location: newEvent.location || null,
+                    color: newEvent.color
+                  });
+                  toast.success('האירוע נוצר בהצלחה');
+                }}
+                disabled={!newEvent.title || !newEvent.start_time}
+              >
+                צור אירוע
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Event Dialog */}
+        <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>עריכת אירוע</DialogTitle>
+            </DialogHeader>
+            {editingEvent && (
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label>כותרת</Label>
+                  <Input 
+                    value={editingEvent.title} 
+                    onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>תיאור</Label>
+                  <Textarea 
+                    value={editingEvent.description || ""} 
+                    onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })} 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>סוג</Label>
+                    <Select value={editingEvent.event_type || "meeting"} onValueChange={(v) => setEditingEvent({ ...editingEvent, event_type: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="meeting">פגישה</SelectItem>
+                        <SelectItem value="call">שיחה</SelectItem>
+                        <SelectItem value="video">וידאו</SelectItem>
+                        <SelectItem value="reminder">תזכורת</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>מיקום</Label>
+                    <Input 
+                      value={editingEvent.location || ""} 
+                      onChange={(e) => setEditingEvent({ ...editingEvent, location: e.target.value })} 
+                    />
+                  </div>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={() => {
+                    updateEventMutation.mutate({
+                      id: editingEvent.id,
+                      data: {
+                        title: editingEvent.title,
+                        description: editingEvent.description,
+                        event_type: editingEvent.event_type,
+                        location: editingEvent.location
+                      }
+                    });
+                    toast.success('האירוע עודכן');
+                  }}
+                >
+                  שמור שינויים
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -175,13 +375,13 @@ const AdminCalendar = () => {
               <div className="flex justify-between items-center">
                 <CardTitle>תצוגת שבוע</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" onClick={() => setWeekOffset(prev => prev - 1)}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   <span className="font-medium min-w-[150px] text-center">
                     {format(weekDays[0], 'dd/MM', { locale: he })} - {format(weekDays[6], 'dd/MM', { locale: he })}
                   </span>
-                  <Button variant="outline" size="icon">
+                  <Button variant="outline" size="icon" onClick={() => setWeekOffset(prev => prev + 1)}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                 </div>
@@ -278,8 +478,19 @@ const AdminCalendar = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">עריכה</Button>
-                      <Button size="sm">הצטרף</Button>
+                      <Button variant="outline" size="sm" onClick={() => setEditingEvent(event)}>
+                        <Edit className="h-4 w-4 ml-1" />
+                        עריכה
+                      </Button>
+                      <Button size="sm" onClick={() => {
+                        if (event.location) {
+                          window.open(`https://maps.google.com/?q=${encodeURIComponent(event.location)}`, '_blank');
+                        } else {
+                          toast.info('לא הוגדר מיקום לאירוע זה');
+                        }
+                      }}>
+                        הצטרף
+                      </Button>
                     </div>
                   </motion.div>
                 ))
