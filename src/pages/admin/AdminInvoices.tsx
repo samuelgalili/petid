@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -19,7 +20,9 @@ import {
   Camera,
   Upload,
   Loader2,
-  Sparkles
+  Sparkles,
+  UserPlus,
+  Building2
 } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -31,10 +34,26 @@ const AdminInvoices = () => {
   const [scanDialogOpen, setScanDialogOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
+  const [newSupplierDialogOpen, setNewSupplierDialogOpen] = useState(false);
+  const [pendingSupplierData, setPendingSupplierData] = useState<any>(null);
+  const [existingSupplier, setExistingSupplier] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch suppliers for matching
+  const { data: suppliers } = useQuery({
+    queryKey: ["suppliers-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("suppliers")
+        .select("*")
+        .eq("is_active", true);
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders-for-invoices"],
@@ -88,11 +107,39 @@ const AdminInvoices = () => {
 
       if (error) throw error;
 
-      setScannedData(data);
-      toast({
-        title: "החשבונית נסרקה בהצלחה",
-        description: "הנתונים חולצו מהתמונה",
-      });
+      // Check if supplier exists
+      const vendorName = data.vendor?.trim().toLowerCase();
+      if (vendorName) {
+        const matchedSupplier = suppliers?.find(
+          s => s.name.toLowerCase().includes(vendorName) || vendorName.includes(s.name.toLowerCase())
+        );
+
+        if (matchedSupplier) {
+          // Supplier exists - attach supplier_id to scanned data
+          setScannedData({ ...data, supplierId: matchedSupplier.id, supplierName: matchedSupplier.name });
+          setExistingSupplier(matchedSupplier);
+          toast({
+            title: "החשבונית נסרקה בהצלחה",
+            description: `הספק "${matchedSupplier.name}" זוהה במערכת`,
+          });
+        } else {
+          // New supplier - ask for confirmation
+          setScannedData(data);
+          setPendingSupplierData({
+            name: data.vendor || 'ספק לא ידוע',
+            phone: data.vendorPhone || null,
+            email: data.vendorEmail || null,
+            address: data.vendorAddress || null,
+          });
+          setNewSupplierDialogOpen(true);
+        }
+      } else {
+        setScannedData(data);
+        toast({
+          title: "החשבונית נסרקה בהצלחה",
+          description: "לא זוהה שם ספק בחשבונית",
+        });
+      }
     } catch (error) {
       console.error('Scan error:', error);
       toast({
@@ -103,6 +150,57 @@ const AdminInvoices = () => {
     } finally {
       setScanning(false);
     }
+  };
+
+  const handleConfirmNewSupplier = async () => {
+    if (!pendingSupplierData) return;
+
+    try {
+      const { data: newSupplier, error } = await supabase
+        .from("suppliers")
+        .insert({
+          name: pendingSupplierData.name,
+          phone: pendingSupplierData.phone,
+          email: pendingSupplierData.email,
+          address: pendingSupplierData.address,
+          supplier_type: "general",
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update scanned data with new supplier ID
+      setScannedData(prev => ({ ...prev, supplierId: newSupplier.id, supplierName: newSupplier.name }));
+      setExistingSupplier(newSupplier);
+      
+      queryClient.invalidateQueries({ queryKey: ["suppliers-list"] });
+      
+      toast({
+        title: "ספק חדש נוסף",
+        description: `הספק "${newSupplier.name}" נוסף למערכת`,
+      });
+    } catch (error) {
+      console.error('Error creating supplier:', error);
+      toast({
+        title: "שגיאה ביצירת ספק",
+        description: "לא ניתן היה ליצור את הספק",
+        variant: "destructive",
+      });
+    } finally {
+      setNewSupplierDialogOpen(false);
+      setPendingSupplierData(null);
+    }
+  };
+
+  const handleSkipNewSupplier = () => {
+    setNewSupplierDialogOpen(false);
+    setPendingSupplierData(null);
+    toast({
+      title: "החשבונית נסרקה",
+      description: "החשבונית נסרקה ללא שיוך לספק",
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -389,10 +487,23 @@ const AdminInvoices = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Supplier status badge */}
+                  {existingSupplier ? (
+                    <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                      <Building2 className="w-5 h-5 text-emerald-400" />
+                      <span className="text-emerald-300 text-sm">ספק קיים: {existingSupplier.name}</span>
+                    </div>
+                  ) : scannedData.supplierId ? (
+                    <div className="flex items-center gap-2 p-3 bg-violet-500/10 border border-violet-500/30 rounded-lg">
+                      <UserPlus className="w-5 h-5 text-violet-400" />
+                      <span className="text-violet-300 text-sm">ספק חדש נוסף: {scannedData.supplierName}</span>
+                    </div>
+                  ) : null}
+
                   <div className="bg-slate-800/50 rounded-xl p-4 space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400 text-sm">ספק:</span>
-                      <span className="text-white font-medium">{scannedData.vendor || 'לא זוהה'}</span>
+                      <span className="text-white font-medium">{scannedData.supplierName || scannedData.vendor || 'לא זוהה'}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400 text-sm">מספר חשבונית:</span>
@@ -444,6 +555,62 @@ const AdminInvoices = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* New Supplier Confirmation Dialog */}
+        <AlertDialog open={newSupplierDialogOpen} onOpenChange={setNewSupplierDialogOpen}>
+          <AlertDialogContent className="bg-slate-900 border-slate-800">
+            <AlertDialogHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center">
+                  <UserPlus className="w-6 h-6 text-violet-400" />
+                </div>
+                <AlertDialogTitle className="text-xl">ספק חדש זוהה</AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className="text-slate-400">
+                הספק <span className="text-white font-semibold">"{pendingSupplierData?.name}"</span> לא נמצא במערכת.
+                <br />
+                האם ברצונך להוסיף אותו כספק חדש?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            {pendingSupplierData && (
+              <div className="bg-slate-800/50 rounded-lg p-4 space-y-2 my-4">
+                <div className="flex justify-between">
+                  <span className="text-slate-400 text-sm">שם הספק:</span>
+                  <span className="text-white">{pendingSupplierData.name}</span>
+                </div>
+                {pendingSupplierData.phone && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 text-sm">טלפון:</span>
+                    <span className="text-white">{pendingSupplierData.phone}</span>
+                  </div>
+                )}
+                {pendingSupplierData.email && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 text-sm">אימייל:</span>
+                    <span className="text-white">{pendingSupplierData.email}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel 
+                onClick={handleSkipNewSupplier}
+                className="border-slate-700 bg-transparent hover:bg-slate-800"
+              >
+                דלג
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleConfirmNewSupplier}
+                className="bg-violet-600 hover:bg-violet-700"
+              >
+                <UserPlus className="w-4 h-4 ml-2" />
+                הוסף ספק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );

@@ -42,6 +42,10 @@ serve(async (req) => {
 {
   "invoiceNumber": "invoice number if visible",
   "vendor": "vendor/supplier name",
+  "vendorPhone": "vendor phone number if visible",
+  "vendorEmail": "vendor email if visible",
+  "vendorAddress": "vendor address if visible",
+  "vendorTaxId": "vendor tax ID / business number if visible",
   "date": "invoice date in YYYY-MM-DD format",
   "total": numeric total amount,
   "currency": "currency code (ILS, USD, etc)",
