@@ -30,7 +30,7 @@ import {
   ShoppingBag, MessageSquare, History, Activity, Crown,
   UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart,
   CreditCard, Receipt, DollarSign, Banknote, Package, Percent, Trash2, Minus,
-  RefreshCw, Building2
+  RefreshCw, Building2, Send, ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
@@ -106,6 +106,8 @@ const AdminCRM = () => {
   const [showReminderDialog, setShowReminderDialog] = useState(false);
   const [showTagDialog, setShowTagDialog] = useState(false);
   const [showChargeDialog, setShowChargeDialog] = useState(false);
+  const [showPaymentMethodDialog, setShowPaymentMethodDialog] = useState(false);
+  const [pendingChargeData, setPendingChargeData] = useState<any>(null);
   const [newNote, setNewNote] = useState("");
   const [newReminder, setNewReminder] = useState({ title: "", description: "", due_date: "", priority: "medium" });
   const [newCharge, setNewCharge] = useState({ 
@@ -304,22 +306,34 @@ const AdminCRM = () => {
     }
   });
 
-  // Add charge mutation
+  // Add charge mutation - now calls edge function for payment link
   const addChargeMutation = useMutation({
-    mutationFn: async (charge: typeof newCharge) => {
-      const { error } = await supabase.from('customer_charges').insert({
-        customer_id: selectedCustomer.id,
-        amount: parseFloat(charge.amount),
-        description: charge.description,
-        charge_type: charge.charge_type,
-        payment_method: charge.payment_method,
-        notes: charge.notes || null,
-        due_date: charge.due_date || null,
-        status: 'pending'
+    mutationFn: async (params: { charge: typeof newCharge; sendWhatsapp: boolean }) => {
+      const { charge, sendWhatsapp } = params;
+      const { data, error } = await supabase.functions.invoke('create-crm-charge', {
+        body: {
+          customer_id: selectedCustomer.id,
+          customer_phone: selectedCustomer.phone,
+          customer_name: `${selectedCustomer.first_name || ''} ${selectedCustomer.last_name || ''}`.trim(),
+          amount: parseFloat(charge.amount),
+          description: charge.description || charge.selectedProducts.map(p => `${p.name} x${p.quantity}`).join(', '),
+          charge_type: charge.charge_type,
+          payment_method: charge.payment_method,
+          notes: charge.notes || null,
+          due_date: charge.due_date || null,
+          products: charge.selectedProducts.map(p => ({
+            id: p.id,
+            name: p.name,
+            quantity: p.quantity,
+            price: p.customPrice
+          })),
+          send_whatsapp: sendWhatsapp
+        }
       });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['customer-charges'] });
       setNewCharge({ 
         amount: "", 
@@ -333,10 +347,34 @@ const AdminCRM = () => {
         discountValue: ""
       });
       setShowChargeDialog(false);
-      toast({ title: "✅ חיוב נוסף בהצלחה" });
+      setShowPaymentMethodDialog(false);
+      setPendingChargeData(null);
+      
+      if (variables.sendWhatsapp) {
+        if (data?.whatsapp_sent) {
+          toast({ title: "✅ לינק תשלום נשלח בהצלחה בווטסאפ" });
+        } else {
+          toast({ 
+            title: "⚠️ החיוב נוצר אך שליחת ווטסאפ נכשלה", 
+            description: "ניתן לשלוח ידנית את הלינק",
+            variant: "destructive" 
+          });
+          // Open payment link in new tab as fallback
+          if (data?.payment_url) {
+            window.open(data.payment_url, '_blank');
+          }
+        }
+      } else {
+        toast({ title: "✅ לינק תשלום נוצר בהצלחה" });
+        // Open payment link for direct payment
+        if (data?.payment_url) {
+          window.open(data.payment_url, '_blank');
+        }
+      }
     },
-    onError: () => {
-      toast({ title: "❌ שגיאה בהוספת חיוב", variant: "destructive" });
+    onError: (error: any) => {
+      console.error('Charge error:', error);
+      toast({ title: "❌ שגיאה ביצירת חיוב", description: error.message, variant: "destructive" });
     }
   });
 
@@ -1701,32 +1739,57 @@ const AdminCRM = () => {
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowChargeDialog(false)}
-                  className="flex-1 h-11"
-                >
-                  ביטול
-                </Button>
-                <Button 
-                  onClick={() => addChargeMutation.mutate(newCharge)} 
-                  disabled={!newCharge.amount || !newCharge.description.trim() || addChargeMutation.isPending}
-                  className="flex-[2] h-11 text-base font-semibold gap-2"
-                >
-                  {addChargeMutation.isPending ? (
-                    <>
+              {/* Action Buttons - Choose payment method */}
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowChargeDialog(false)}
+                    className="flex-1 h-11"
+                  >
+                    ביטול
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Send WhatsApp Link */}
+                  <Button 
+                    onClick={() => addChargeMutation.mutate({ charge: newCharge, sendWhatsapp: true })} 
+                    disabled={!newCharge.amount || (!newCharge.description.trim() && newCharge.selectedProducts.length === 0) || addChargeMutation.isPending || !selectedCustomer?.phone}
+                    className="h-12 text-base font-semibold gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {addChargeMutation.isPending ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      מוסיף חיוב...
-                    </>
-                  ) : (
-                    <>
-                      <Receipt className="h-4 w-4" />
-                      הוסף חיוב
-                    </>
-                  )}
-                </Button>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        שלח לינק בווטסאפ
+                      </>
+                    )}
+                  </Button>
+                  
+                  {/* Open Payment Link Directly */}
+                  <Button 
+                    onClick={() => addChargeMutation.mutate({ charge: newCharge, sendWhatsapp: false })} 
+                    disabled={!newCharge.amount || (!newCharge.description.trim() && newCharge.selectedProducts.length === 0) || addChargeMutation.isPending}
+                    className="h-12 text-base font-semibold gap-2"
+                  >
+                    {addChargeMutation.isPending ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <ExternalLink className="h-4 w-4" />
+                        פתח דף תשלום
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {!selectedCustomer?.phone && (
+                  <p className="text-xs text-amber-600 text-center">
+                    ⚠️ ללקוח אין מספר טלפון - לא ניתן לשלוח בווטסאפ
+                  </p>
+                )}
               </div>
             </div>
           </DialogContent>
