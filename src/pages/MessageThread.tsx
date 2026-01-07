@@ -372,6 +372,23 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                 .replace(/\[?PRODUCTS:[^\]]+\]?/gi, "")
                 .replace(/\s+/g, " ")
                 .trim();
+            } else if (availableProducts.length > 0 && !productMatch) {
+              // If AI didn't include product tag but we have products available,
+              // check if this looks like a product recommendation response
+              const lowerContent = assistantContent.toLowerCase();
+              const isProductRecommendation = 
+                lowerContent.includes("ממליץ") || 
+                lowerContent.includes("המלצה") ||
+                lowerContent.includes("מזון") ||
+                lowerContent.includes("מומלץ") ||
+                lowerContent.includes("מוצר") ||
+                lowerContent.includes("רויאל") ||
+                lowerContent.includes("אוכל");
+              
+              if (isProductRecommendation) {
+                // Show first 3 available products automatically
+                recommendedProducts = availableProducts.slice(0, 3);
+              }
             }
             
             setAiMessages((prev) => {
