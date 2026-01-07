@@ -30,7 +30,8 @@ import {
   ShoppingBag, MessageSquare, History, Activity, Crown,
   UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart,
   CreditCard, Receipt, DollarSign, Banknote, Package, Percent, Trash2, Minus,
-  RefreshCw, Building2, Send, ExternalLink, MapPin, Home, Edit, Save, PawPrint
+  RefreshCw, Building2, Send, ExternalLink, MapPin, Home, Edit, Save, PawPrint,
+  Syringe, Stethoscope, FileText, GraduationCap, Scale, Shield, ShieldCheck, ShieldX
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
@@ -197,17 +198,81 @@ const AdminCRM = () => {
     enabled: !!selectedCustomer
   });
 
-  // Fetch customer pets
+  // Fetch customer pets with all details
   const { data: customerPets } = useQuery({
     queryKey: ['customer-pets', selectedCustomer?.id],
     queryFn: async () => {
       if (!selectedCustomer) return [];
       const { data, error } = await supabase
         .from('pets')
-        .select('id, name, type, breed, gender, birth_date, avatar_url, is_neutered, archived')
+        .select('*')
         .eq('user_id', selectedCustomer.id)
         .eq('archived', false)
         .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch pet documents
+  const { data: petDocuments } = useQuery({
+    queryKey: ['pet-documents', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('pet_documents')
+        .select('*')
+        .eq('user_id', selectedCustomer.id)
+        .order('uploaded_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch pet vaccinations
+  const { data: petVaccinations } = useQuery({
+    queryKey: ['pet-vaccinations', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('pet_vaccinations')
+        .select('*')
+        .eq('user_id', selectedCustomer.id)
+        .order('vaccination_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch pet vet visits
+  const { data: petVetVisits } = useQuery({
+    queryKey: ['pet-vet-visits', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('pet_vet_visits')
+        .select('*')
+        .eq('user_id', selectedCustomer.id)
+        .order('visit_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch training progress
+  const { data: trainingProgress } = useQuery({
+    queryKey: ['training-progress', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('user_training_progress')
+        .select('*, training_lessons(title, module_id, training_modules(title))')
+        .eq('user_id', selectedCustomer.id)
+        .order('updated_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -1026,52 +1091,203 @@ const AdminCRM = () => {
                         </Card>
                       </div>
 
-                      {/* Pets Section */}
+                      {/* Pets Section - Full Width with Detailed Info */}
                       <Card className="p-4 col-span-2">
                         <h4 className="font-medium mb-4 flex items-center gap-2 text-primary">
                           <PawPrint className="h-4 w-4" />
-                          חיות מחמד
+                          חיות מחמד ({customerPets?.length || 0})
                         </h4>
                         {customerPets && customerPets.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-3">
-                            {customerPets.map((pet: any) => (
-                              <div key={pet.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
-                                <Avatar className="h-12 w-12">
-                                  <AvatarImage src={pet.avatar_url} alt={pet.name} />
-                                  <AvatarFallback className="bg-primary/10">
-                                    <PawPrint className="h-5 w-5 text-primary" />
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">{pet.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {pet.type === 'dog' ? 'כלב' : pet.type === 'cat' ? 'חתול' : pet.type}
-                                    {pet.breed && ` • ${pet.breed}`}
-                                  </p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    {pet.gender && (
-                                      <Badge variant="outline" className="text-xs">
-                                        {pet.gender === 'male' ? 'זכר' : pet.gender === 'female' ? 'נקבה' : pet.gender}
-                                      </Badge>
-                                    )}
-                                    {pet.is_neutered && (
-                                      <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
-                                        מעוקר/מסורס
-                                      </Badge>
-                                    )}
-                                    {pet.birth_date && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {Math.floor((new Date().getTime() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365))} שנים
-                                      </span>
-                                    )}
+                          <div className="space-y-4">
+                            {customerPets.map((pet: any) => {
+                              const petDocs = petDocuments?.filter((d: any) => d.pet_id === pet.id) || [];
+                              const petVax = petVaccinations?.filter((v: any) => v.pet_id === pet.id) || [];
+                              const petVisits = petVetVisits?.filter((v: any) => v.pet_id === pet.id) || [];
+                              const petTraining = trainingProgress?.filter((t: any) => t.pet_id === pet.id) || [];
+                              const completedLessons = petTraining.filter((t: any) => t.status === 'completed').length;
+                              const totalLessons = petTraining.length;
+                              const age = pet.birth_date 
+                                ? Math.floor((new Date().getTime() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365))
+                                : pet.age;
+
+                              return (
+                                <Card key={pet.id} className="p-4 bg-muted/30 border">
+                                  {/* Pet Header */}
+                                  <div className="flex items-start gap-4 mb-4">
+                                    <Avatar className="h-16 w-16">
+                                      <AvatarImage src={pet.avatar_url} alt={pet.name} />
+                                      <AvatarFallback className="bg-primary/10 text-lg">
+                                        <PawPrint className="h-6 w-6 text-primary" />
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <h5 className="font-bold text-lg">{pet.name}</h5>
+                                        {pet.has_insurance ? (
+                                          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-500/30 gap-1">
+                                            <ShieldCheck className="h-3 w-3" />
+                                            מבוטח
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-muted-foreground gap-1">
+                                            <ShieldX className="h-3 w-3" />
+                                            ללא ביטוח
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-muted-foreground">
+                                        {pet.type === 'dog' ? 'כלב' : pet.type === 'cat' ? 'חתול' : pet.type}
+                                        {pet.breed && ` • ${pet.breed}`}
+                                        {pet.gender && ` • ${pet.gender === 'male' ? 'זכר' : pet.gender === 'female' ? 'נקבה' : pet.gender}`}
+                                      </p>
+                                      <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                        {age !== null && age !== undefined && (
+                                          <Badge variant="outline" className="text-xs gap-1">
+                                            <Calendar className="h-3 w-3" />
+                                            {age} שנים
+                                          </Badge>
+                                        )}
+                                        {pet.weight && (
+                                          <Badge variant="outline" className="text-xs gap-1">
+                                            <Scale className="h-3 w-3" />
+                                            {pet.weight} {pet.weight_unit || 'kg'}
+                                          </Badge>
+                                        )}
+                                        {pet.is_neutered && (
+                                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-700 border-blue-500/30">
+                                            מעוקר/מסורס
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                            ))}
+
+                                  {/* Pet Details Grid */}
+                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                    {/* Insurance Info */}
+                                    <div className="p-3 rounded-lg bg-background border">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Shield className="h-4 w-4 text-primary" />
+                                        <span className="text-xs font-medium">ביטוח</span>
+                                      </div>
+                                      {pet.has_insurance ? (
+                                        <div className="space-y-1">
+                                          <p className="text-sm font-medium text-emerald-600">פעיל</p>
+                                          {pet.insurance_company && (
+                                            <p className="text-xs text-muted-foreground">{pet.insurance_company}</p>
+                                          )}
+                                          {pet.insurance_expiry_date && (
+                                            <p className="text-xs text-muted-foreground">
+                                              תוקף: {format(new Date(pet.insurance_expiry_date), 'dd/MM/yyyy')}
+                                            </p>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground">לא קיים</p>
+                                      )}
+                                    </div>
+
+                                    {/* Last Vet Visit */}
+                                    <div className="p-3 rounded-lg bg-background border">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Stethoscope className="h-4 w-4 text-primary" />
+                                        <span className="text-xs font-medium">ביקור וטרינר אחרון</span>
+                                      </div>
+                                      {petVisits.length > 0 ? (
+                                        <div className="space-y-1">
+                                          <p className="text-sm font-medium">
+                                            {format(new Date(petVisits[0].visit_date), 'dd/MM/yyyy')}
+                                          </p>
+                                          {petVisits[0].visit_type && (
+                                            <p className="text-xs text-muted-foreground">{petVisits[0].visit_type}</p>
+                                          )}
+                                          {petVisits[0].clinic_name && (
+                                            <p className="text-xs text-muted-foreground">{petVisits[0].clinic_name}</p>
+                                          )}
+                                        </div>
+                                      ) : pet.last_vet_visit ? (
+                                        <p className="text-sm">{format(new Date(pet.last_vet_visit), 'dd/MM/yyyy')}</p>
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground">לא תועד</p>
+                                      )}
+                                    </div>
+
+                                    {/* Vaccinations */}
+                                    <div className="p-3 rounded-lg bg-background border">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Syringe className="h-4 w-4 text-primary" />
+                                        <span className="text-xs font-medium">חיסונים</span>
+                                      </div>
+                                      {petVax.length > 0 ? (
+                                        <div className="space-y-1">
+                                          <p className="text-sm font-medium">{petVax.length} חיסונים</p>
+                                          <p className="text-xs text-muted-foreground">
+                                            אחרון: {petVax[0].vaccine_name}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {format(new Date(petVax[0].vaccination_date), 'dd/MM/yyyy')}
+                                          </p>
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground">אין חיסונים</p>
+                                      )}
+                                    </div>
+
+                                    {/* Training Progress */}
+                                    <div className="p-3 rounded-lg bg-background border">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <GraduationCap className="h-4 w-4 text-primary" />
+                                        <span className="text-xs font-medium">אילוף</span>
+                                      </div>
+                                      {totalLessons > 0 ? (
+                                        <div className="space-y-1">
+                                          <p className="text-sm font-medium">{completedLessons}/{totalLessons} שיעורים</p>
+                                          <Progress value={(completedLessons / totalLessons) * 100} className="h-1.5" />
+                                          <p className="text-xs text-muted-foreground">
+                                            {Math.round((completedLessons / totalLessons) * 100)}% הושלם
+                                          </p>
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm text-muted-foreground">לא התחיל</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Documents */}
+                                  {petDocs.length > 0 && (
+                                    <div className="mt-3 pt-3 border-t">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <FileText className="h-4 w-4 text-primary" />
+                                        <span className="text-xs font-medium">מסמכים ({petDocs.length})</span>
+                                      </div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {petDocs.slice(0, 5).map((doc: any) => (
+                                          <a 
+                                            key={doc.id} 
+                                            href={doc.file_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-background rounded border hover:bg-muted transition-colors"
+                                          >
+                                            <FileText className="h-3 w-3" />
+                                            {doc.title || doc.file_name}
+                                          </a>
+                                        ))}
+                                        {petDocs.length > 5 && (
+                                          <span className="text-xs text-muted-foreground px-2 py-1">
+                                            +{petDocs.length - 5} נוספים
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </Card>
+                              );
+                            })}
                           </div>
                         ) : (
-                          <div className="text-center py-6 text-muted-foreground">
-                            <PawPrint className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <div className="text-center py-8 text-muted-foreground">
+                            <PawPrint className="h-10 w-10 mx-auto mb-2 opacity-50" />
                             <p className="text-sm">אין חיות מחמד רשומות</p>
                           </div>
                         )}
