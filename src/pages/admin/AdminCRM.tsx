@@ -30,7 +30,7 @@ import {
   ShoppingBag, MessageSquare, History, Activity, Crown,
   UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart,
   CreditCard, Receipt, DollarSign, Banknote, Package, Percent, Trash2, Minus,
-  RefreshCw, Building2, Send, ExternalLink, MapPin, Home, Edit, Save
+  RefreshCw, Building2, Send, ExternalLink, MapPin, Home, Edit, Save, PawPrint
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
@@ -191,6 +191,23 @@ const AdminCRM = () => {
     queryFn: async () => {
       if (!selectedCustomer) return [];
       const { data, error } = await supabase.from('orders').select('*').eq('user_id', selectedCustomer.id).order('created_at', { ascending: false }).limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch customer pets
+  const { data: customerPets } = useQuery({
+    queryKey: ['customer-pets', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('pets')
+        .select('id, name, type, breed, gender, birth_date, avatar_url, is_neutered, archived')
+        .eq('user_id', selectedCustomer.id)
+        .eq('archived', false)
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -1008,6 +1025,57 @@ const AdminCRM = () => {
                           </div>
                         </Card>
                       </div>
+
+                      {/* Pets Section */}
+                      <Card className="p-4 col-span-2">
+                        <h4 className="font-medium mb-4 flex items-center gap-2 text-primary">
+                          <PawPrint className="h-4 w-4" />
+                          חיות מחמד
+                        </h4>
+                        {customerPets && customerPets.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-3">
+                            {customerPets.map((pet: any) => (
+                              <div key={pet.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                                <Avatar className="h-12 w-12">
+                                  <AvatarImage src={pet.avatar_url} alt={pet.name} />
+                                  <AvatarFallback className="bg-primary/10">
+                                    <PawPrint className="h-5 w-5 text-primary" />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{pet.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {pet.type === 'dog' ? 'כלב' : pet.type === 'cat' ? 'חתול' : pet.type}
+                                    {pet.breed && ` • ${pet.breed}`}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {pet.gender && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {pet.gender === 'male' ? 'זכר' : pet.gender === 'female' ? 'נקבה' : pet.gender}
+                                      </Badge>
+                                    )}
+                                    {pet.is_neutered && (
+                                      <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
+                                        מעוקר/מסורס
+                                      </Badge>
+                                    )}
+                                    {pet.birth_date && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {Math.floor((new Date().getTime() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365))} שנים
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 text-muted-foreground">
+                            <PawPrint className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">אין חיות מחמד רשומות</p>
+                          </div>
+                        )}
+                      </Card>
                     </TabsContent>
 
                     <TabsContent value="overview" className="space-y-6">
