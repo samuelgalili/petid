@@ -743,32 +743,32 @@ const AdminCRM = () => {
 
                       {/* Quick Stats */}
                       <div className="grid grid-cols-2 gap-4">
-                        <Card className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-violet-500/10">
-                              <Gift className="h-5 w-5 text-violet-600" />
-                            </div>
+                        <Card className="p-4 bg-gradient-to-br from-violet-500/5 to-violet-600/10 border-violet-500/20 hover:shadow-md transition-shadow">
+                          <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm text-muted-foreground">ממוצע להזמנה</p>
-                              <p className="text-xl font-bold">
+                              <p className="text-xs text-muted-foreground mb-1">ממוצע להזמנה</p>
+                              <p className="text-2xl font-bold text-violet-600">
                                 ₪{selectedCustomer.rfm.avgOrderValue?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || 0}
                               </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-violet-500/10">
+                              <Gift className="h-6 w-6 text-violet-600" />
                             </div>
                           </div>
                         </Card>
                         
-                        <Card className="p-4">
-                          <div className="flex items-center justify-end gap-3">
-                            <div className="text-left">
-                              <p className="text-sm text-muted-foreground">לקוח מאז</p>
-                              <p className="text-xl font-bold">
+                        <Card className="p-4 bg-gradient-to-br from-cyan-500/5 to-cyan-600/10 border-cyan-500/20 hover:shadow-md transition-shadow">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">לקוח מאז</p>
+                              <p className="text-2xl font-bold text-cyan-600">
                                 {selectedCustomer.created_at 
                                   ? format(new Date(selectedCustomer.created_at), 'dd/MM/yyyy', { locale: he })
                                   : 'לא ידוע'}
                               </p>
                             </div>
-                            <div className="p-2 rounded-lg bg-cyan-500/10">
-                              <Calendar className="h-5 w-5 text-cyan-600" />
+                            <div className="p-3 rounded-xl bg-cyan-500/10">
+                              <Calendar className="h-6 w-6 text-cyan-600" />
                             </div>
                           </div>
                         </Card>
