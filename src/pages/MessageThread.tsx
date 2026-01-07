@@ -3,11 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile } from "lucide-react";
+import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isYesterday } from "date-fns";
 import { he } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+
+// AI Support ID - special identifier for AI chat
+const AI_SUPPORT_ID = "ai-support";
 
 interface Message {
   id: string;
@@ -16,6 +19,11 @@ interface Message {
   message_text: string;
   is_read: boolean;
   created_at: string;
+}
+
+interface AIMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 interface Profile {
@@ -30,6 +38,7 @@ export default function MessageThread() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [aiMessages, setAiMessages] = useState<AIMessage[]>([]);
   const [otherUser, setOtherUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [messageText, setMessageText] = useState("");
@@ -37,48 +46,74 @@ export default function MessageThread() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Check if this is an AI chat
+  const isAIChat = userId === AI_SUPPORT_ID;
 
   useEffect(() => {
     if (!user || !userId) return;
 
-    fetchMessages();
-    fetchOtherUser();
-    markMessagesAsRead();
+    if (isAIChat) {
+      // For AI chat, set up virtual profile and load from localStorage
+      setOtherUser({
+        id: AI_SUPPORT_ID,
+        full_name: "נציג שירות AI",
+        avatar_url: null,
+      });
+      
+      // Load AI messages from localStorage
+      const savedMessages = localStorage.getItem(`ai-chat-${user.id}`);
+      if (savedMessages) {
+        setAiMessages(JSON.parse(savedMessages));
+      }
+      setLoading(false);
+    } else {
+      fetchMessages();
+      fetchOtherUser();
+      markMessagesAsRead();
 
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`messages-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `sender_id=eq.${userId}`,
-        },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
-          scrollToBottom();
-          markMessagesAsRead();
-        }
-      )
-      .subscribe();
+      // Subscribe to new messages
+      const channel = supabase
+        .channel(`messages-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `sender_id=eq.${userId}`,
+          },
+          (payload) => {
+            setMessages((prev) => [...prev, payload.new as Message]);
+            scrollToBottom();
+            markMessagesAsRead();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, userId]);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, userId, isAIChat]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, aiMessages]);
+
+  // Save AI messages to localStorage
+  useEffect(() => {
+    if (isAIChat && user && aiMessages.length > 0) {
+      localStorage.setItem(`ai-chat-${user.id}`, JSON.stringify(aiMessages));
+    }
+  }, [aiMessages, isAIChat, user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const fetchOtherUser = async () => {
-    if (!userId) return;
+    if (!userId || isAIChat) return;
 
     try {
       const { data, error } = await supabase
@@ -130,35 +165,130 @@ export default function MessageThread() {
     }
   };
 
+  // Stream AI response
+  const streamAIChat = async (messages: AIMessage[]) => {
+    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+    setIsTyping(true);
+    
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ messages }),
+    });
+
+    if (!resp.ok || !resp.body) {
+      setIsTyping(false);
+      if (resp.status === 429) {
+        throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
+      }
+      if (resp.status === 402) {
+        throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
+      }
+      throw new Error("שגיאה בתקשורת עם השרת");
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let assistantContent = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") break;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            setIsTyping(false);
+            assistantContent += content;
+            setAiMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant") {
+                return prev.map((m, i) =>
+                  i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                );
+              }
+              return [...prev, { role: "assistant", content: assistantContent }];
+            });
+          }
+        } catch {
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+    setIsTyping(false);
+  };
+
   const sendMessage = async () => {
     if (!user || !userId || !messageText.trim()) return;
 
     setSending(true);
-    try {
-      const { data, error } = await supabase
-        .from("messages")
-        .insert({
-          sender_id: user.id,
-          receiver_id: userId,
-          message_text: messageText.trim(),
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setMessages((prev) => [...prev, data]);
+    
+    if (isAIChat) {
+      // AI Chat flow
+      const userMessage: AIMessage = { role: "user", content: messageText.trim() };
+      setAiMessages((prev) => [...prev, userMessage]);
       setMessageText("");
-      scrollToBottom();
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast({
-        title: "שגיאה",
-        description: "לא הצלחנו לשלוח את ההודעה. נסה שוב.",
-        variant: "destructive",
-      });
-    } finally {
-      setSending(false);
+      
+      try {
+        await streamAIChat([...aiMessages, userMessage]);
+      } catch (error) {
+        console.error("Error:", error);
+        toast({
+          title: "שגיאה",
+          description: error instanceof Error ? error.message : "משהו השתבש",
+          variant: "destructive",
+        });
+        setAiMessages((prev) => prev.slice(0, -1));
+      } finally {
+        setSending(false);
+      }
+    } else {
+      // Regular message flow
+      try {
+        const { data, error } = await supabase
+          .from("messages")
+          .insert({
+            sender_id: user.id,
+            receiver_id: userId,
+            message_text: messageText.trim(),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setMessages((prev) => [...prev, data]);
+        setMessageText("");
+        scrollToBottom();
+      } catch (error) {
+        console.error("Error sending message:", error);
+        toast({
+          title: "שגיאה",
+          description: "לא הצלחנו לשלוח את ההודעה. נסה שוב.",
+          variant: "destructive",
+        });
+      } finally {
+        setSending(false);
+      }
     }
   };
 
@@ -215,57 +345,98 @@ export default function MessageThread() {
   const messageGroups = groupMessagesByDate(messages);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-background flex flex-col" dir="rtl">
       {/* Instagram-style Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <div className="bg-background border-b border-border sticky top-0 z-10">
         <div className="px-2 py-2 flex items-center gap-2">
           <button
             onClick={() => navigate("/messages")}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full hover:bg-muted transition-colors"
           >
-            <ChevronRight className="h-6 w-6 text-[#262626]" />
+            <ChevronRight className="h-6 w-6 text-foreground" />
           </button>
 
           <div 
             className="flex items-center gap-3 flex-1 cursor-pointer"
-            onClick={() => navigate(`/profile/${userId}`)}
+            onClick={() => !isAIChat && navigate(`/profile/${userId}`)}
           >
             <div className="relative">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={otherUser?.avatar_url || undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-                  {otherUser?.full_name?.charAt(0) || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute bottom-0 left-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
+              {isAIChat ? (
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary via-accent to-primary p-[2px]">
+                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-primary" />
+                  </div>
+                </div>
+              ) : (
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={otherUser?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+                    {otherUser?.full_name?.charAt(0) || "?"}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+              <div className="absolute bottom-0 left-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
             </div>
 
             <div className="flex-1">
-              <h2 className="text-base font-semibold text-[#262626] leading-tight">
-                {otherUser?.full_name || "משתמש"}
-              </h2>
-              <p className="text-xs text-gray-500">פעיל/ה עכשיו</p>
+              <div className="flex items-center gap-1">
+                <h2 className="text-base font-semibold text-foreground leading-tight">
+                  {otherUser?.full_name || "משתמש"}
+                </h2>
+                {isAIChat && <Sparkles className="h-4 w-4 text-primary" />}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isAIChat ? "מוכן לעזור לך" : "פעיל/ה עכשיו"}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Phone className="h-6 w-6 text-[#262626]" />
-            </button>
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Video className="h-6 w-6 text-[#262626]" />
-            </button>
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Info className="h-6 w-6 text-[#262626]" />
-            </button>
-          </div>
+          {!isAIChat && (
+            <div className="flex items-center gap-1">
+              <button className="p-2 rounded-full hover:bg-muted transition-colors">
+                <Phone className="h-6 w-6 text-foreground" />
+              </button>
+              <button className="p-2 rounded-full hover:bg-muted transition-colors">
+                <Video className="h-6 w-6 text-foreground" />
+              </button>
+              <button className="p-2 rounded-full hover:bg-muted transition-colors">
+                <Info className="h-6 w-6 text-foreground" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {/* Profile Card at top */}
-        {otherUser && messages.length === 0 && (
+        {/* AI Welcome Card */}
+        {isAIChat && aiMessages.length === 0 && (
+          <div className="flex flex-col items-center py-8 mb-4">
+            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary via-accent to-primary p-[3px] mb-3">
+              <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                <Bot className="h-12 w-12 text-primary" />
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-foreground">נציג שירות AI</h3>
+            <p className="text-sm text-muted-foreground mt-1 text-center max-w-[260px]">
+              היי! 👋 אני כאן לעזור לך עם כל שאלה על חיות מחמד
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              {["בריאות הכלב שלי", "מה לתת לחתול?", "איך לאלף גור?"].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => setMessageText(q)}
+                  className="px-3 py-1.5 bg-muted text-foreground text-sm rounded-full hover:bg-muted/80 transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Regular Profile Card at top */}
+        {!isAIChat && otherUser && messages.length === 0 && (
           <div className="flex flex-col items-center py-8 mb-4">
             <Avatar className="h-24 w-24 mb-3">
               <AvatarImage src={otherUser.avatar_url || undefined} />
@@ -273,22 +444,69 @@ export default function MessageThread() {
                 {otherUser.full_name?.charAt(0) || "?"}
               </AvatarFallback>
             </Avatar>
-            <h3 className="text-lg font-bold text-[#262626]">{otherUser.full_name}</h3>
-            <p className="text-sm text-gray-500 mt-1">Petid</p>
+            <h3 className="text-lg font-bold text-foreground">{otherUser.full_name}</h3>
+            <p className="text-sm text-muted-foreground mt-1">Petid</p>
             <button 
               onClick={() => navigate(`/profile/${userId}`)}
-              className="mt-3 text-sm font-medium text-gray-500 hover:text-[#262626]"
+              className="mt-3 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               צפה בפרופיל
             </button>
           </div>
         )}
 
-        {messageGroups.map((group, groupIndex) => (
+        {/* AI Messages */}
+        {isAIChat && (
+          <AnimatePresence>
+            {aiMessages.map((message, index) => {
+              const isUser = message.role === "user";
+              const showAvatar = !isUser && 
+                (index === aiMessages.length - 1 || 
+                 aiMessages[index + 1]?.role !== "assistant");
+
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.02 }}
+                  className={`flex items-end gap-2 mb-2 ${isUser ? "flex-row-reverse" : ""}`}
+                >
+                  {!isUser && (
+                    <div className="w-7 flex-shrink-0">
+                      {showAvatar && (
+                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent p-[1.5px]">
+                          <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                            <Bot className="h-4 w-4 text-primary" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div
+                    className={`max-w-[75%] px-4 py-2.5 ${
+                      isUser
+                        ? "bg-primary text-primary-foreground rounded-[22px] rounded-br-md"
+                        : "bg-muted text-foreground rounded-[22px] rounded-bl-md"
+                    }`}
+                  >
+                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                      {message.content}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        )}
+
+        {/* Regular Messages */}
+        {!isAIChat && messageGroups.map((group, groupIndex) => (
           <div key={group.date}>
             {/* Date Separator */}
             <div className="flex justify-center my-4">
-              <span className="text-xs text-gray-500 bg-white px-2">
+              <span className="text-xs text-muted-foreground bg-background px-2">
                 {group.date}
               </span>
             </div>
@@ -334,7 +552,7 @@ export default function MessageThread() {
                     </div>
 
                     {isSender && (
-                      <span className="text-[10px] text-gray-400 self-end mb-1">
+                      <span className="text-[10px] text-muted-foreground self-end mb-1">
                         {message.is_read ? "נקראה" : ""}
                       </span>
                     )}
@@ -352,17 +570,25 @@ export default function MessageThread() {
             animate={{ opacity: 1 }}
             className="flex items-end gap-2 mb-1"
           >
-            <Avatar className="h-7 w-7">
-              <AvatarImage src={otherUser?.avatar_url || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-xs">
-                {otherUser?.full_name?.charAt(0) || "?"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="bg-gray-100 rounded-full px-4 py-3">
+            {isAIChat ? (
+              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent p-[1.5px]">
+                <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-primary" />
+                </div>
+              </div>
+            ) : (
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={otherUser?.avatar_url || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-xs">
+                  {otherUser?.full_name?.charAt(0) || "?"}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <div className="bg-muted rounded-full px-4 py-3">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </motion.div>
@@ -372,30 +598,32 @@ export default function MessageThread() {
       </div>
 
       {/* Instagram-style Input */}
-      <div className="bg-white border-t border-gray-100 px-3 py-2 safe-area-inset-bottom">
+      <div className="bg-background border-t border-border px-3 py-2 safe-area-inset-bottom">
         <div className="flex items-center gap-2">
-          <button className="p-2 rounded-full hover:bg-gray-100">
-            <Image className="h-6 w-6 text-[#262626]" />
-          </button>
+          {!isAIChat && (
+            <button className="p-2 rounded-full hover:bg-muted">
+              <Image className="h-6 w-6 text-foreground" />
+            </button>
+          )}
           
-          <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2 gap-2">
+          <div className="flex-1 flex items-center bg-muted rounded-full px-4 py-2 gap-2">
             <input
               ref={inputRef}
               type="text"
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="הודעה..."
-              className="flex-1 bg-transparent outline-none text-[15px] text-[#262626] placeholder:text-gray-500"
+              placeholder={isAIChat ? "שאל אותי משהו..." : "הודעה..."}
+              className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground"
               disabled={sending}
             />
-            {!messageText.trim() && (
+            {!messageText.trim() && !isAIChat && (
               <>
                 <button className="p-1">
-                  <Mic className="h-5 w-5 text-[#262626]" />
+                  <Mic className="h-5 w-5 text-foreground" />
                 </button>
                 <button className="p-1">
-                  <Smile className="h-5 w-5 text-[#262626]" />
+                  <Smile className="h-5 w-5 text-foreground" />
                 </button>
               </>
             )}
@@ -405,7 +633,7 @@ export default function MessageThread() {
             <button
               onClick={sendMessage}
               disabled={sending}
-              className="text-[#0095F6] font-semibold text-sm px-2"
+              className="text-primary font-semibold text-sm px-2"
             >
               {sending ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -415,7 +643,7 @@ export default function MessageThread() {
             </button>
           ) : (
             <button className="p-2">
-              <Heart className="h-6 w-6 text-[#262626]" />
+              <Heart className="h-6 w-6 text-foreground" />
             </button>
           )}
         </div>
