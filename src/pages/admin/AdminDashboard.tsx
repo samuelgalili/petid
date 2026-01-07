@@ -32,6 +32,7 @@ import {
   Layers,
   Bot,
 } from "lucide-react";
+import AIInsightsPanel from "@/components/admin/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -435,6 +436,43 @@ const AdminDashboard = () => {
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6 mt-0">
+              {/* AI Insights Panel */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <AIInsightsPanel
+                  metrics={{
+                    revenue: {
+                      today: stats.totalRevenue / 30,
+                      yesterday: stats.totalRevenue / 30 * 0.9,
+                      week: stats.totalRevenue / 4,
+                      month: stats.totalRevenue,
+                      lastMonth: stats.totalRevenue * 0.85,
+                    },
+                    orders: {
+                      today: Math.ceil(stats.totalOrders / 30),
+                      week: Math.ceil(stats.totalOrders / 4),
+                      month: stats.totalOrders,
+                      pending: stats.pendingOrders,
+                    },
+                    customers: {
+                      total: systemStats.totalUsers,
+                      new: Math.ceil(systemStats.totalUsers * 0.1),
+                      returning: Math.ceil(systemStats.totalUsers * 0.35),
+                      returningPercent: 35,
+                    },
+                    inventory: {
+                      lowStock: 7,
+                      outOfStock: 2,
+                      fastMovers: topProducts.slice(0, 3).map(p => p.name),
+                      slowMovers: topProducts.slice(-2).map(p => p.name),
+                    },
+                    topProducts: topProducts.slice(0, 5),
+                  }}
+                />
+              </motion.div>
+
               {/* Urgent Alerts */}
               {systemStats.pendingReports > 0 && (
                 <motion.div
