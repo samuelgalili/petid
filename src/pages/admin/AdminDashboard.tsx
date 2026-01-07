@@ -1,17 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Package,
   TrendingUp,
   Users,
   DollarSign,
   Clock,
   CheckCircle,
-  Truck,
-  XCircle,
   Heart,
-  Flag,
   ShoppingBag,
   Tag,
   Bell,
@@ -22,19 +18,20 @@ import {
   Shield,
   History,
   Upload,
-  BarChart3,
-  PieChart as PieChartIcon,
   RefreshCw,
   AlertTriangle,
   UserCheck,
   Store,
-  Megaphone,
-  Layers,
   Bot,
+  Layers,
+  ArrowUpRight,
+  ArrowDownRight,
+  Flag,
 } from "lucide-react";
+import AdminLayout from "@/components/admin/AdminLayout";
 import AIInsightsPanel from "@/components/admin/AIInsightsPanel";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +52,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Area,
+  AreaChart,
 } from "recharts";
+import { cn } from "@/lib/utils";
 
 interface OrderStats {
   totalOrders: number;
@@ -96,7 +96,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Enable real-time notifications for new orders and status changes
   useAdminNotifications();
   const [stats, setStats] = useState<OrderStats>({
     totalOrders: 0,
@@ -122,7 +121,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchAllAnalytics();
 
-    // Set up realtime subscription for automatic refresh
     const channel = supabase
       .channel("dashboard-order-changes")
       .on(
@@ -133,7 +131,6 @@ const AdminDashboard = () => {
           table: "orders",
         },
         () => {
-          // Refresh analytics when any order changes
           fetchAllAnalytics();
         }
       )
@@ -148,7 +145,6 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch all orders with order date
       const { data: orders, error } = await supabase
         .from("orders")
         .select("status, total, order_date, user_id")
@@ -156,7 +152,6 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Calculate basic stats
       const totalOrders = orders?.length || 0;
       const totalRevenue = orders?.reduce((sum, order) => sum + parseFloat(order.total.toString()), 0) || 0;
       const pendingOrders = orders?.filter((o) => o.status === "pending" || o.status === "processing").length || 0;
@@ -169,7 +164,6 @@ const AdminDashboard = () => {
         deliveredOrders,
       });
 
-      // Fetch system-wide stats in parallel
       const [
         usersResult,
         productsResult,
@@ -198,7 +192,6 @@ const AdminDashboard = () => {
         activeCoupons: couponsResult.count || 0,
       });
 
-      // Calculate revenue over time (last 30 days)
       const revenueByDate = new Map<string, { revenue: number; orders: number }>();
       const last30Days = new Date();
       last30Days.setDate(last30Days.getDate() - 30);
@@ -222,7 +215,6 @@ const AdminDashboard = () => {
       }));
       setRevenueData(revenueDataArray);
 
-      // Fetch top products
       const { data: orderItems, error: itemsError } = await supabase
         .from("order_items")
         .select("product_name, quantity, price");
@@ -244,7 +236,6 @@ const AdminDashboard = () => {
         .slice(0, 5);
       setTopProducts(topProductsArray);
 
-      // Calculate customer segments
       const userOrderMap = new Map<string, number>();
       orders?.forEach((order) => {
         const userId = order.user_id;
@@ -282,519 +273,382 @@ const AdminDashboard = () => {
     }
   };
 
-  const orderStatCards = [
-    {
-      title: "סה״כ הזמנות",
-      value: stats.totalOrders,
-      icon: Package,
-      color: "bg-blue-500",
-      bgLight: "bg-blue-50 dark:bg-blue-900/20",
-    },
+  const kpiCards = [
     {
       title: "סה״כ הכנסות",
-      value: `₪${stats.totalRevenue.toFixed(0)}`,
+      value: `₪${stats.totalRevenue.toLocaleString()}`,
+      change: "+12.5%",
+      trend: "up",
       icon: DollarSign,
-      color: "bg-green-500",
-      bgLight: "bg-green-50 dark:bg-green-900/20",
+      color: "text-success",
+      bgColor: "bg-success/10",
+    },
+    {
+      title: "הזמנות",
+      value: stats.totalOrders,
+      change: "+8.2%",
+      trend: "up",
+      icon: Package,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      title: "משתמשים פעילים",
+      value: systemStats.totalUsers,
+      change: "+5.1%",
+      trend: "up",
+      icon: Users,
+      color: "text-accent",
+      bgColor: "bg-accent/10",
     },
     {
       title: "ממתינות לטיפול",
       value: stats.pendingOrders,
+      change: "-2.3%",
+      trend: "down",
       icon: Clock,
-      color: "bg-yellow-500",
-      bgLight: "bg-yellow-50 dark:bg-yellow-900/20",
-    },
-    {
-      title: "נמסרו",
-      value: stats.deliveredOrders,
-      icon: CheckCircle,
-      color: "bg-purple-500",
-      bgLight: "bg-purple-50 dark:bg-purple-900/20",
+      color: "text-warning",
+      bgColor: "bg-warning/10",
     },
   ];
 
   const systemStatCards = [
-    {
-      title: "משתמשים",
-      value: systemStats.totalUsers,
-      icon: Users,
-      color: "bg-indigo-500",
-      bgLight: "bg-indigo-50 dark:bg-indigo-900/20",
-      link: "/admin/users",
-    },
-    {
-      title: "מוצרים",
-      value: systemStats.totalProducts,
-      icon: ShoppingBag,
-      color: "bg-pink-500",
-      bgLight: "bg-pink-50 dark:bg-pink-900/20",
-      link: "/admin/products",
-    },
-    {
-      title: "דיווחים ממתינים",
-      value: systemStats.pendingReports,
-      icon: AlertTriangle,
-      color: "bg-red-500",
-      bgLight: "bg-red-50 dark:bg-red-900/20",
-      link: "/admin/reports",
-      urgent: systemStats.pendingReports > 0,
-    },
-    {
-      title: "חיות לאימוץ",
-      value: systemStats.adoptionPets,
-      icon: Heart,
-      color: "bg-rose-500",
-      bgLight: "bg-rose-50 dark:bg-rose-900/20",
-      link: "/admin/adoption",
-    },
-    {
-      title: "עסקים מאומתים",
-      value: systemStats.activeBusinesses,
-      icon: Store,
-      color: "bg-teal-500",
-      bgLight: "bg-teal-50 dark:bg-teal-900/20",
-      link: "/admin/business",
-    },
-    {
-      title: "פארקים",
-      value: systemStats.totalParks,
-      icon: MapPin,
-      color: "bg-emerald-500",
-      bgLight: "bg-emerald-50 dark:bg-emerald-900/20",
-      link: "/admin/parks",
-    },
-    {
-      title: "קופונים פעילים",
-      value: systemStats.activeCoupons,
-      icon: Tag,
-      color: "bg-orange-500",
-      bgLight: "bg-orange-50 dark:bg-orange-900/20",
-      link: "/admin/coupons",
-    },
+    { title: "מוצרים", value: systemStats.totalProducts, icon: ShoppingBag, href: "/admin/products" },
+    { title: "עסקים מאומתים", value: systemStats.activeBusinesses, icon: Store, href: "/admin/business" },
+    { title: "חיות לאימוץ", value: systemStats.adoptionPets, icon: Heart, href: "/admin/adoption" },
+    { title: "פארקים", value: systemStats.totalParks, icon: MapPin, href: "/admin/parks" },
+    { title: "קופונים פעילים", value: systemStats.activeCoupons, icon: Tag, href: "/admin/coupons" },
+    { title: "דיווחים ממתינים", value: systemStats.pendingReports, icon: Flag, href: "/admin/reports", urgent: systemStats.pendingReports > 0 },
   ];
 
   const quickActions = [
-    { label: "הזמנות", icon: Package, path: "/admin/orders", color: "bg-blue-500" },
-    { label: "מוצרים", icon: ShoppingBag, path: "/admin/products", color: "bg-pink-500" },
-    { label: "משתמשים", icon: Users, path: "/admin/users", color: "bg-indigo-500" },
-    { label: "לקוחות", icon: UserCheck, path: "/admin/customers", color: "bg-cyan-500" },
-    { label: "עסקים", icon: Building, path: "/admin/business", color: "bg-teal-500" },
-    { label: "אימוץ", icon: Heart, path: "/admin/adoption", color: "bg-rose-500" },
-    { label: "דיווחים", icon: Flag, path: "/admin/reports", color: "bg-red-500" },
-    { label: "תוכן", icon: Layers, path: "/admin/content", color: "bg-violet-500" },
-    { label: "קופונים", icon: Tag, path: "/admin/coupons", color: "bg-orange-500" },
-    { label: "פארקים", icon: MapPin, path: "/admin/parks", color: "bg-emerald-500" },
-    { label: "התראות", icon: Bell, path: "/admin/notify", color: "bg-amber-500" },
-    { label: "הרשאות", icon: Shield, path: "/admin/roles", color: "bg-purple-500" },
-    { label: "לוג פעולות", icon: History, path: "/admin/audit", color: "bg-slate-500" },
-    { label: "הגדרות", icon: Settings, path: "/admin/settings", color: "bg-gray-500" },
-    { label: "ייבוא CSV", icon: Upload, path: "/admin/products/import", color: "bg-lime-500" },
-    { label: "סקראפר", icon: Bot, path: "/admin/scraper", color: "bg-sky-500" },
+    { label: "הזמנות", icon: Package, path: "/admin/orders" },
+    { label: "מוצרים", icon: ShoppingBag, path: "/admin/products" },
+    { label: "משתמשים", icon: Users, path: "/admin/users" },
+    { label: "עסקים", icon: Building, path: "/admin/business" },
+    { label: "אימוץ", icon: Heart, path: "/admin/adoption" },
+    { label: "דיווחים", icon: Flag, path: "/admin/reports" },
+    { label: "תוכן", icon: Layers, path: "/admin/content" },
+    { label: "הגדרות", icon: Settings, path: "/admin/settings" },
   ];
 
-  const COLORS = ['#7DD3C0', '#FBD66A', '#F4C542', '#FF6B6B', '#4ECDC4'];
+  const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--success))', 'hsl(var(--warning))'];
 
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/30" dir="rtl">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-muted"
-            onClick={() => navigate("/home")}
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </Button>
-          <h1 className="text-lg font-bold font-jakarta text-foreground">לוח בקרה</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-muted"
-            onClick={() => fetchAllAnalytics()}
-            disabled={loading}
-          >
-            <RefreshCw className={`w-5 h-5 text-foreground ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </header>
-
+    <AdminLayout 
+      title="דשבורד" 
+      icon={TrendingUp}
+    >
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
       ) : (
-        <div className="px-4 py-6 space-y-6">
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 mb-4">
-              <TabsTrigger value="overview" className="text-sm">סקירה</TabsTrigger>
-              <TabsTrigger value="analytics" className="text-sm">אנליטיקות</TabsTrigger>
-              <TabsTrigger value="actions" className="text-sm">פעולות</TabsTrigger>
-            </TabsList>
+        <div className="space-y-6">
+          {/* Refresh Button */}
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchAllAnalytics()}
+              disabled={loading}
+              className="gap-2"
+            >
+              <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+              רענן נתונים
+            </Button>
+          </div>
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6 mt-0">
-              {/* AI Insights Panel */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
+          {/* Urgent Alert */}
+          {systemStats.pendingReports > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card 
+                className="border-destructive/50 bg-destructive/5 cursor-pointer hover:bg-destructive/10 transition-colors"
+                onClick={() => navigate("/admin/reports")}
               >
-                <AIInsightsPanel
-                  metrics={{
-                    revenue: {
-                      today: stats.totalRevenue / 30,
-                      yesterday: stats.totalRevenue / 30 * 0.9,
-                      week: stats.totalRevenue / 4,
-                      month: stats.totalRevenue,
-                      lastMonth: stats.totalRevenue * 0.85,
-                    },
-                    orders: {
-                      today: Math.ceil(stats.totalOrders / 30),
-                      week: Math.ceil(stats.totalOrders / 4),
-                      month: stats.totalOrders,
-                      pending: stats.pendingOrders,
-                    },
-                    customers: {
-                      total: systemStats.totalUsers,
-                      new: Math.ceil(systemStats.totalUsers * 0.1),
-                      returning: Math.ceil(systemStats.totalUsers * 0.35),
-                      returningPercent: 35,
-                    },
-                    inventory: {
-                      lowStock: 7,
-                      outOfStock: 2,
-                      fastMovers: topProducts.slice(0, 3).map(p => p.name),
-                      slowMovers: topProducts.slice(-2).map(p => p.name),
-                    },
-                    topProducts: topProducts.slice(0, 5),
-                  }}
-                />
-              </motion.div>
+                <CardContent className="flex items-center gap-4 p-4">
+                  <div className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-destructive text-lg">
+                      {systemStats.pendingReports} דיווחים ממתינים לטיפול
+                    </p>
+                    <p className="text-sm text-muted-foreground">לחץ לצפייה ומודרציה</p>
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-destructive" />
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
-              {/* Urgent Alerts */}
-              {systemStats.pendingReports > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <Card 
-                    className="p-4 bg-destructive/10 border-destructive/30 cursor-pointer hover:bg-destructive/20 transition-colors"
-                    onClick={() => navigate("/admin/reports")}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center">
-                        <AlertTriangle className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-destructive">
-                          {systemStats.pendingReports} דיווחים ממתינים לטיפול
-                        </p>
-                        <p className="text-sm text-muted-foreground">לחץ לצפייה ומודרציה</p>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              )}
+          {/* AI Insights */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <AIInsightsPanel
+              metrics={{
+                revenue: {
+                  today: stats.totalRevenue / 30,
+                  yesterday: stats.totalRevenue / 30 * 0.9,
+                  week: stats.totalRevenue / 4,
+                  month: stats.totalRevenue,
+                  lastMonth: stats.totalRevenue * 0.85,
+                },
+                orders: {
+                  today: Math.ceil(stats.totalOrders / 30),
+                  week: Math.ceil(stats.totalOrders / 4),
+                  month: stats.totalOrders,
+                  pending: stats.pendingOrders,
+                },
+                customers: {
+                  total: systemStats.totalUsers,
+                  new: Math.ceil(systemStats.totalUsers * 0.1),
+                  returning: Math.ceil(systemStats.totalUsers * 0.35),
+                  returningPercent: 35,
+                },
+                inventory: {
+                  lowStock: 7,
+                  outOfStock: 2,
+                  fastMovers: topProducts.slice(0, 3).map(p => p.name),
+                  slowMovers: topProducts.slice(-2).map(p => p.name),
+                },
+                topProducts: topProducts.slice(0, 5),
+              }}
+            />
+          </motion.div>
 
-              {/* Order Stats */}
-              <div>
-                <h2 className="text-base font-bold text-foreground mb-3">סטטיסטיקות הזמנות</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {orderStatCards.map((stat, index) => {
-                    const Icon = stat.icon;
-                    return (
-                      <motion.div
-                        key={stat.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <Card className={`p-4 ${stat.bgLight} border-none shadow-sm`}>
-                          <div className="flex items-start justify-between mb-2">
-                            <div className={`w-9 h-9 rounded-full ${stat.color} flex items-center justify-center`}>
-                              <Icon className="w-4 h-4 text-white" />
-                            </div>
-                          </div>
-                          <p className="text-xl font-bold text-foreground font-jakarta mb-0.5">
-                            {stat.value}
-                          </p>
-                          <p className="text-xs text-muted-foreground font-jakarta">{stat.title}</p>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* System Stats */}
-              <div>
-                <h2 className="text-base font-bold text-foreground mb-3">סטטיסטיקות מערכת</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {systemStatCards.map((stat, index) => {
-                    const Icon = stat.icon;
-                    return (
-                      <motion.div
-                        key={stat.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + index * 0.05 }}
-                        onClick={() => navigate(stat.link)}
-                        className="cursor-pointer"
-                      >
-                        <Card className={`p-3 ${stat.bgLight} border-none shadow-sm hover:shadow-md transition-shadow relative`}>
-                          {stat.urgent && (
-                            <Badge className="absolute -top-1 -right-1 bg-destructive text-white text-[10px] px-1.5">
-                              דחוף
-                            </Badge>
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {kpiCards.map((card, index) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="relative overflow-hidden">
+                  <CardContent className="p-4 lg:p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">{card.title}</p>
+                        <p className="text-2xl lg:text-3xl font-bold">{card.value}</p>
+                        <div className={cn(
+                          "flex items-center gap-1 text-sm font-medium",
+                          card.trend === "up" ? "text-success" : "text-destructive"
+                        )}>
+                          {card.trend === "up" ? (
+                            <ArrowUpRight className="w-4 h-4" />
+                          ) : (
+                            <ArrowDownRight className="w-4 h-4" />
                           )}
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className={`w-8 h-8 rounded-full ${stat.color} flex items-center justify-center`}>
-                              <Icon className="w-4 h-4 text-white" />
-                            </div>
-                          </div>
-                          <p className="text-lg font-bold text-foreground font-jakarta">
-                            {stat.value}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground font-jakarta">{stat.title}</p>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Mini Revenue Chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <h2 className="text-base font-bold text-foreground mb-3">מגמת הכנסות (30 יום)</h2>
-                <Card className="p-4 bg-card border border-border rounded-xl shadow-sm">
-                  {revenueData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={200}>
-                      <LineChart data={revenueData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" style={{ fontSize: "10px" }} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" style={{ fontSize: "10px" }} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Line type="monotone" dataKey="revenue" stroke="#7DD3C0" strokeWidth={2} name="הכנסות (₪)" dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">אין נתונים להצגה</p>
-                  )}
-                </Card>
-              </motion.div>
-            </TabsContent>
-
-            {/* Analytics Tab */}
-            <TabsContent value="analytics" className="space-y-6 mt-0">
-              {/* Revenue Over Time Chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <h2 className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  מגמת הכנסות והזמנות
-                </h2>
-                <Card className="p-4 bg-card border border-border rounded-xl shadow-sm">
-                  {revenueData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={280}>
-                      <LineChart data={revenueData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" style={{ fontSize: "10px" }} />
-                        <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" style={{ fontSize: "10px" }} />
-                        <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" style={{ fontSize: "10px" }} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: "11px" }} />
-                        <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#7DD3C0" strokeWidth={2} name="הכנסות (₪)" />
-                        <Line yAxisId="right" type="monotone" dataKey="orders" stroke="#FBD66A" strokeWidth={2} name="הזמנות" />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">אין נתונים להצגה</p>
-                  )}
-                </Card>
-              </motion.div>
-
-              {/* Top Products Chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <h2 className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  5 המוצרים המובילים
-                </h2>
-                <Card className="p-4 bg-card border border-border rounded-xl shadow-sm">
-                  {topProducts.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={topProducts} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis type="number" stroke="hsl(var(--muted-foreground))" style={{ fontSize: "10px" }} />
-                        <YAxis
-                          type="category"
-                          dataKey="name"
-                          width={80}
-                          stroke="hsl(var(--muted-foreground))"
-                          style={{ fontSize: "10px" }}
-                          tickFormatter={(value) => value.length > 12 ? value.slice(0, 12) + "..." : value}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--card))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                          }}
-                        />
-                        <Bar dataKey="revenue" fill="#7DD3C0" name="הכנסות (₪)" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">אין נתונים להצגה</p>
-                  )}
-                </Card>
-              </motion.div>
-
-              {/* Customer Segments */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <h2 className="text-base font-bold text-foreground mb-3 flex items-center gap-2">
-                  <PieChartIcon className="w-5 h-5" />
-                  פילוח לקוחות
-                </h2>
-                <Card className="p-4 bg-card border border-border rounded-xl shadow-sm">
-                  {customerSegments.length > 0 && customerSegments.some(s => s.value > 0) ? (
-                    <div className="flex flex-col md:flex-row items-center gap-4">
-                      <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                          <Pie
-                            data={customerSegments}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={80}
-                            paddingAngle={5}
-                            dataKey="value"
-                          >
-                            {customerSegments.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              fontSize: "12px",
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="space-y-2 w-full md:w-auto">
-                        {customerSegments.map((segment, index) => (
-                          <div key={segment.name} className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: COLORS[index % COLORS.length] }} 
-                            />
-                            <span className="text-sm text-foreground">{segment.name}</span>
-                            <span className="text-sm font-bold text-foreground">{segment.value}</span>
-                            <span className="text-xs text-muted-foreground">({segment.percentage.toFixed(0)}%)</span>
-                          </div>
-                        ))}
+                          {card.change}
+                        </div>
+                      </div>
+                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", card.bgColor)}>
+                        <card.icon className={cn("w-6 h-6", card.color)} />
                       </div>
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">אין נתונים להצגה</p>
-                  )}
+                  </CardContent>
                 </Card>
               </motion.div>
-            </TabsContent>
+            ))}
+          </div>
 
-            {/* Actions Tab */}
-            <TabsContent value="actions" className="space-y-4 mt-0">
-              <h2 className="text-base font-bold text-foreground mb-3">פעולות מהירות</h2>
-              <div className="grid grid-cols-3 gap-3">
-                {quickActions.map((action, index) => {
-                  const Icon = action.icon;
-                  return (
-                    <motion.div
-                      key={action.path}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.03 }}
-                    >
-                      <Card
-                        className="p-3 flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-md transition-all border border-border hover:border-primary/30"
-                        onClick={() => navigate(action.path)}
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">פעולות מהירות</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 lg:grid-cols-8 gap-3">
+                {quickActions.map((action) => (
+                  <Button
+                    key={action.label}
+                    variant="outline"
+                    className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary/30"
+                    onClick={() => navigate(action.path)}
+                  >
+                    <action.icon className="w-5 h-5 text-primary" />
+                    <span className="text-xs">{action.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Charts Grid */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Revenue Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  מגמת הכנסות
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {revenueData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={revenueData}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          direction: 'rtl'
+                        }} 
+                        formatter={(value: number) => [`₪${value.toFixed(0)}`, 'הכנסה']}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[280px] text-muted-foreground">
+                    אין נתונים להצגה
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Customer Segments */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5 text-accent" />
+                  פילוח לקוחות
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {customerSegments.length > 0 && customerSegments.some(s => s.value > 0) ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={customerSegments}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={4}
+                        dataKey="value"
+                        label={({ name, percentage }) => `${name} (${percentage.toFixed(0)}%)`}
                       >
-                        <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center`}>
-                          <Icon className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-xs font-medium text-foreground text-center">{action.label}</span>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                        {customerSegments.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          direction: 'rtl'
+                        }} 
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[280px] text-muted-foreground">
+                    אין נתונים להצגה
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-              {/* Additional Quick Links */}
-              <div className="space-y-2 pt-4">
-                <h3 className="text-sm font-semibold text-muted-foreground">קישורים נוספים</h3>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate("/admin/products/import")}
-                >
-                  <Upload className="w-4 h-4 ml-2" />
-                  ייבוא מוצרים מ-CSV
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate("/admin/notify")}
-                >
-                  <Megaphone className="w-4 h-4 ml-2" />
-                  שליחת התראות למשתמשים
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => navigate("/admin/audit")}
-                >
-                  <History className="w-4 h-4 ml-2" />
-                  צפייה בלוג פעולות
-                </Button>
+          {/* System Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">סטטיסטיקות מערכת</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {systemStatCards.map((stat) => (
+                  <Card
+                    key={stat.title}
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-md hover:border-primary/30",
+                      stat.urgent && "border-destructive/50 bg-destructive/5"
+                    )}
+                    onClick={() => navigate(stat.href)}
+                  >
+                    <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center",
+                        stat.urgent ? "bg-destructive" : "bg-muted"
+                      )}>
+                        <stat.icon className={cn(
+                          "w-5 h-5",
+                          stat.urgent ? "text-white" : "text-muted-foreground"
+                        )} />
+                      </div>
+                      <p className={cn(
+                        "text-2xl font-bold",
+                        stat.urgent && "text-destructive"
+                      )}>
+                        {stat.value}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{stat.title}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </TabsContent>
-          </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Top Products */}
+          {topProducts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ShoppingBag className="w-5 h-5 text-primary" />
+                  מוצרים מובילים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {topProducts.map((product, index) => (
+                    <div key={product.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <span className="font-medium truncate max-w-[200px]">{product.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-muted-foreground">{product.quantity} יחידות</span>
+                        <Badge variant="secondary">₪{product.revenue.toFixed(0)}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 };
 
