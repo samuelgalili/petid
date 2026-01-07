@@ -121,6 +121,7 @@ const AdminCRM = () => {
   });
   const [newTagName, setNewTagName] = useState("");
   const [selectedTagColor, setSelectedTagColor] = useState("#3B82F6");
+  const [productSearchTerm, setProductSearchTerm] = useState("");
 
   // Data fetching
   const { data: customers, isLoading } = useQuery({
@@ -1277,50 +1278,79 @@ const AdminCRM = () => {
                     )}
                   </div>
                   
-                  <Select 
-                    onValueChange={(productId) => {
-                      const product = shopProducts?.find((p: any) => p.id === productId);
-                      if (product) {
-                        const existingProduct = newCharge.selectedProducts.find(p => p.id === product.id);
-                        if (existingProduct) {
-                          setNewCharge({
-                            ...newCharge,
-                            selectedProducts: newCharge.selectedProducts.map(p => 
-                              p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
-                            )
-                          });
-                        } else {
-                          setNewCharge({
-                            ...newCharge,
-                            selectedProducts: [...newCharge.selectedProducts, {
-                              id: product.id,
-                              name: product.name,
-                              price: product.sale_price || product.price,
-                              quantity: 1,
-                              customPrice: product.sale_price || product.price
-                            }]
-                          });
-                        }
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="bg-muted/30 border-dashed">
-                      <div className="flex items-center gap-2">
-                        <Plus className="h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="הוסף מוצר מהחנות..." />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shopProducts?.map((product: any) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          <div className="flex items-center justify-between gap-4 w-full">
-                            <span className="font-medium">{product.name}</span>
-                            <span className="text-primary font-semibold">₪{(product.sale_price || product.price).toLocaleString()}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="חפש מוצר..."
+                      value={productSearchTerm}
+                      onChange={(e) => setProductSearchTerm(e.target.value)}
+                      className="pr-10 bg-muted/30"
+                      dir="rtl"
+                    />
+                  </div>
+                  
+                  {/* Search Results */}
+                  {productSearchTerm && (
+                    <div className="rounded-xl border bg-card overflow-hidden max-h-48 overflow-y-auto">
+                      {shopProducts?.filter((product: any) => 
+                        product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                        product.category?.toLowerCase().includes(productSearchTerm.toLowerCase())
+                      ).length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground text-sm">
+                          לא נמצאו מוצרים
+                        </div>
+                      ) : (
+                        <div className="divide-y">
+                          {shopProducts?.filter((product: any) => 
+                            product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                            product.category?.toLowerCase().includes(productSearchTerm.toLowerCase())
+                          ).map((product: any) => (
+                            <button
+                              key={product.id}
+                              onClick={() => {
+                                const existingProduct = newCharge.selectedProducts.find(p => p.id === product.id);
+                                if (existingProduct) {
+                                  setNewCharge({
+                                    ...newCharge,
+                                    selectedProducts: newCharge.selectedProducts.map(p => 
+                                      p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+                                    )
+                                  });
+                                } else {
+                                  setNewCharge({
+                                    ...newCharge,
+                                    selectedProducts: [...newCharge.selectedProducts, {
+                                      id: product.id,
+                                      name: product.name,
+                                      price: product.sale_price || product.price,
+                                      quantity: 1,
+                                      customPrice: product.sale_price || product.price
+                                    }]
+                                  });
+                                }
+                                setProductSearchTerm("");
+                              }}
+                              className="w-full p-3 flex items-center justify-between hover:bg-muted/50 transition-colors text-right"
+                            >
+                              <div className="flex items-center gap-3">
+                                {product.image_url && (
+                                  <img src={product.image_url} alt={product.name} className="h-10 w-10 rounded-lg object-cover" />
+                                )}
+                                <div>
+                                  <p className="font-medium">{product.name}</p>
+                                  {product.category && (
+                                    <p className="text-xs text-muted-foreground">{product.category}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-primary font-semibold">₪{(product.sale_price || product.price).toLocaleString()}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Selected Products List - Enhanced RTL */}
                   {newCharge.selectedProducts.length > 0 && (
