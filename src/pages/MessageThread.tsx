@@ -685,59 +685,85 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
                       </p>
                     </div>
                     
-                    {/* Product Cards */}
+                    {/* Product Carousel - Up to 3 products */}
                     {message.products && message.products.length > 0 && (
-                      <div className="flex gap-2 overflow-x-auto pb-2 mr-0">
-                        {message.products.map((product) => (
-                          <motion.div
-                            key={product.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex-shrink-0 w-32 bg-card rounded-xl border border-border overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => navigate(`/product/${product.id}`)}
-                          >
-                            <div className="h-20 bg-muted/50 flex items-center justify-center p-2 relative">
-                              <OptimizedImage 
-                                src={product.image_url} 
-                                alt={product.name}
-                                className="w-full h-full object-contain"
-                              />
-                              <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                                <ExternalLink className="w-2.5 h-2.5 text-muted-foreground" />
-                              </div>
-                            </div>
-                            <div className="p-2">
-                              <h4 className="text-[11px] font-medium text-foreground truncate mb-1">{product.name}</h4>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-baseline gap-1">
-                                  <span className="text-xs font-bold text-primary">
-                                    ₪{product.sale_price || product.price}
-                                  </span>
-                                  {product.sale_price && (
-                                    <span className="text-[9px] text-muted-foreground line-through">
-                                      ₪{product.price}
-                                    </span>
-                                  )}
-                                </div>
+                      <div className="w-full mt-2">
+                        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                          {message.products.slice(0, 3).map((product, pIndex) => (
+                            <motion.div
+                              key={product.id}
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: pIndex * 0.1 }}
+                              className="flex-shrink-0 w-40 bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 snap-start"
+                            >
+                              {/* Product Image */}
+                              <div 
+                                className="h-28 bg-gradient-to-b from-muted/30 to-muted/60 flex items-center justify-center p-3 relative cursor-pointer"
+                                onClick={() => navigate(`/product/${product.id}`)}
+                              >
+                                <OptimizedImage 
+                                  src={product.image_url} 
+                                  alt={product.name}
+                                  className="w-full h-full object-contain"
+                                />
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    addToCart({
-                                      id: product.id,
-                                      name: product.name,
-                                      price: product.sale_price || product.price,
-                                      image: product.image_url,
-                                    });
-                                    toast.success("נוסף לסל");
+                                    navigate(`/product/${product.id}`);
                                   }}
-                                  className="w-5 h-5 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
+                                  className="absolute top-2 left-2 w-7 h-7 rounded-full bg-background/90 shadow-sm flex items-center justify-center hover:bg-background transition-colors"
                                 >
-                                  <Plus className="w-2.5 h-2.5 text-primary-foreground" />
+                                  <ExternalLink className="w-3.5 h-3.5 text-foreground" />
                                 </button>
                               </div>
-                            </div>
-                          </motion.div>
-                        ))}
+                              
+                              {/* Product Info */}
+                              <div className="p-3">
+                                <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-2 min-h-[2.5rem]">
+                                  {product.name}
+                                </h4>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex flex-col">
+                                    <span className="text-base font-bold text-primary">
+                                      ₪{product.sale_price || product.price}
+                                    </span>
+                                    {product.sale_price && (
+                                      <span className="text-xs text-muted-foreground line-through">
+                                        ₪{product.price}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      addToCart({
+                                        id: product.id,
+                                        name: product.name,
+                                        price: product.sale_price || product.price,
+                                        image: product.image_url,
+                                      });
+                                      toast.success("נוסף לסל 🛒");
+                                    }}
+                                    className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors shadow-md"
+                                  >
+                                    <Plus className="w-4 h-4 text-primary-foreground" />
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                        {message.products.length > 1 && (
+                          <div className="flex justify-center gap-1.5 mt-2">
+                            {message.products.slice(0, 3).map((_, i) => (
+                              <div 
+                                key={i} 
+                                className="w-1.5 h-1.5 rounded-full bg-primary/40"
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
