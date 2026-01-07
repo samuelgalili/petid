@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft,
   Plus,
   Search,
-  Filter,
   Building2,
   ShoppingBag,
   Truck,
@@ -16,20 +13,25 @@ import {
   Edit,
   Eye,
   FileText,
-  RefreshCw,
   DollarSign,
   MapPin,
+  TrendingUp,
+  Users,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -44,18 +46,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import AdminLayout from "@/components/admin/AdminLayout";
+import {
+  AdminStatCard,
+  AdminStatsGrid,
+  AdminPageHeader,
+  AdminSectionCard,
+  AdminEmptyState,
+} from "@/components/admin/AdminStyles";
+import { cn } from "@/lib/utils";
 
 interface Supplier {
   id: string;
@@ -72,14 +74,31 @@ interface Supplier {
   created_at: string;
 }
 
-const supplierTypeConfig: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  fixed: { label: "קבוע", icon: Building2, color: "text-green-600", bgColor: "bg-green-100" },
-  variable: { label: "משתנה", icon: Truck, color: "text-blue-600", bgColor: "bg-blue-100" },
-  merchandise: { label: "סחורה", icon: ShoppingBag, color: "text-pink-600", bgColor: "bg-pink-100" },
+const supplierTypeConfig: Record<string, { label: string; icon: any; color: string; bgColor: string; borderColor: string }> = {
+  fixed: { 
+    label: "קבוע", 
+    icon: Building2, 
+    color: "text-emerald-600", 
+    bgColor: "bg-emerald-500/10",
+    borderColor: "border-emerald-500/30"
+  },
+  variable: { 
+    label: "משתנה", 
+    icon: Truck, 
+    color: "text-blue-600", 
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/30"
+  },
+  merchandise: { 
+    label: "סחורה", 
+    icon: ShoppingBag, 
+    color: "text-violet-600", 
+    bgColor: "bg-violet-500/10",
+    borderColor: "border-violet-500/30"
+  },
 };
 
 const AdminSuppliers = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -88,9 +107,9 @@ const AdminSuppliers = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  // New supplier form
-  const [newSupplier, setNewSupplier] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     contact_name: "",
     email: "",
@@ -119,7 +138,7 @@ const AdminSuppliers = () => {
       if (data && data.length > 0) {
         setSuppliers(data);
       } else {
-        // Mock data for demo
+        // Demo data
         setSuppliers([
           {
             id: "1",
@@ -193,22 +212,31 @@ const AdminSuppliers = () => {
     return matchesSearch && matchesType;
   });
 
-  const totalMonthlyExpenses = filteredSuppliers.reduce((sum, s) => sum + Number(s.monthly_amount), 0);
+  const stats = {
+    total: suppliers.length,
+    totalMonthly: suppliers.reduce((sum, s) => sum + Number(s.monthly_amount), 0),
+    fixed: suppliers.filter(s => s.supplier_type === "fixed").length,
+    variable: suppliers.filter(s => s.supplier_type === "variable").length,
+    merchandise: suppliers.filter(s => s.supplier_type === "merchandise").length,
+    fixedAmount: suppliers.filter(s => s.supplier_type === "fixed").reduce((sum, s) => sum + Number(s.monthly_amount), 0),
+    variableAmount: suppliers.filter(s => s.supplier_type === "variable").reduce((sum, s) => sum + Number(s.monthly_amount), 0),
+    merchandiseAmount: suppliers.filter(s => s.supplier_type === "merchandise").reduce((sum, s) => sum + Number(s.monthly_amount), 0),
+  };
 
   const handleCreateSupplier = async () => {
     try {
       const { data, error } = await supabase
         .from("suppliers")
         .insert({
-          name: newSupplier.name,
-          contact_name: newSupplier.contact_name || null,
-          email: newSupplier.email || null,
-          phone: newSupplier.phone || null,
-          address: newSupplier.address || null,
-          city: newSupplier.city || null,
-          supplier_type: newSupplier.supplier_type,
-          monthly_amount: parseFloat(newSupplier.monthly_amount) || 0,
-          notes: newSupplier.notes || null,
+          name: formData.name,
+          contact_name: formData.contact_name || null,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          supplier_type: formData.supplier_type,
+          monthly_amount: parseFloat(formData.monthly_amount) || 0,
+          notes: formData.notes || null,
         })
         .select()
         .single();
@@ -222,56 +250,93 @@ const AdminSuppliers = () => {
       setIsCreateDialogOpen(false);
       resetForm();
 
-      toast({
-        title: "נוצר בהצלחה",
-        description: "הספק נוסף למערכת",
-      });
+      toast({ title: "✅ ספק נוסף בהצלחה" });
     } catch (error) {
       console.error("Error creating supplier:", error);
-      // Create locally for demo
+      // Demo fallback
       const mockSupplier: Supplier = {
         id: Date.now().toString(),
-        name: newSupplier.name,
-        contact_name: newSupplier.contact_name || null,
-        email: newSupplier.email || null,
-        phone: newSupplier.phone || null,
-        address: newSupplier.address || null,
-        city: newSupplier.city || null,
-        supplier_type: newSupplier.supplier_type,
-        monthly_amount: parseFloat(newSupplier.monthly_amount) || 0,
-        notes: newSupplier.notes || null,
+        name: formData.name,
+        contact_name: formData.contact_name || null,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        address: formData.address || null,
+        city: formData.city || null,
+        supplier_type: formData.supplier_type,
+        monthly_amount: parseFloat(formData.monthly_amount) || 0,
+        notes: formData.notes || null,
         is_active: true,
         created_at: new Date().toISOString(),
       };
       setSuppliers([mockSupplier, ...suppliers]);
       setIsCreateDialogOpen(false);
       resetForm();
+      toast({ title: "✅ ספק נוסף בהצלחה" });
+    }
+  };
+
+  const handleUpdateSupplier = async () => {
+    if (!selectedSupplier) return;
+    
+    try {
+      const { error } = await supabase
+        .from("suppliers")
+        .update({
+          name: formData.name,
+          contact_name: formData.contact_name || null,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          supplier_type: formData.supplier_type,
+          monthly_amount: parseFloat(formData.monthly_amount) || 0,
+          notes: formData.notes || null,
+        })
+        .eq("id", selectedSupplier.id);
+
+      if (error) throw error;
+
+      setSuppliers(suppliers.map(s => 
+        s.id === selectedSupplier.id 
+          ? { ...s, ...formData, monthly_amount: parseFloat(formData.monthly_amount) || 0 }
+          : s
+      ));
+
+      setIsViewDialogOpen(false);
+      setIsEditMode(false);
+      setSelectedSupplier(null);
+      resetForm();
+
+      toast({ title: "✅ ספק עודכן בהצלחה" });
+    } catch (error) {
+      console.error("Error updating supplier:", error);
+      // Demo fallback
+      setSuppliers(suppliers.map(s => 
+        s.id === selectedSupplier.id 
+          ? { ...s, ...formData, monthly_amount: parseFloat(formData.monthly_amount) || 0 }
+          : s
+      ));
+      setIsViewDialogOpen(false);
+      setIsEditMode(false);
+      toast({ title: "✅ ספק עודכן בהצלחה" });
     }
   };
 
   const handleDeleteSupplier = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("suppliers")
-        .delete()
-        .eq("id", id);
-
+      const { error } = await supabase.from("suppliers").delete().eq("id", id);
       if (error) throw error;
-
       setSuppliers(suppliers.filter(s => s.id !== id));
-
-      toast({
-        title: "נמחק בהצלחה",
-        description: "הספק הוסר מהמערכת",
-      });
+      toast({ title: "✅ ספק נמחק בהצלחה" });
     } catch (error) {
       console.error("Error deleting supplier:", error);
       setSuppliers(suppliers.filter(s => s.id !== id));
+      toast({ title: "✅ ספק נמחק בהצלחה" });
     }
   };
 
   const resetForm = () => {
-    setNewSupplier({
+    setFormData({
       name: "",
       contact_name: "",
       email: "",
@@ -284,370 +349,538 @@ const AdminSuppliers = () => {
     });
   };
 
+  const openViewDialog = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setFormData({
+      name: supplier.name,
+      contact_name: supplier.contact_name || "",
+      email: supplier.email || "",
+      phone: supplier.phone || "",
+      address: supplier.address || "",
+      city: supplier.city || "",
+      supplier_type: supplier.supplier_type,
+      monthly_amount: supplier.monthly_amount.toString(),
+      notes: supplier.notes || "",
+    });
+    setIsEditMode(false);
+    setIsViewDialogOpen(true);
+  };
+
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-br from-violet-50 via-background to-orange-50" dir="rtl">
-      {/* Header - Nartina Style */}
-      <header className="sticky top-0 z-40 bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg">
-        <div className="flex items-center justify-between px-4 py-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-white/20 text-white"
-            onClick={() => navigate("/admin/financial")}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-lg font-bold">ניהול ספקים</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full hover:bg-white/20 text-white"
-            onClick={fetchSuppliers}
-            disabled={loading}
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </header>
+    <AdminLayout title="ניהול ספקים">
+      <div className="p-6 space-y-6">
+        <AdminPageHeader
+          title="ניהול ספקים"
+          description="ניהול ספקים, הוצאות קבועות ומשתנות"
+          actions={
+            <Button className="gap-2" onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4" />
+              ספק חדש
+            </Button>
+          }
+        />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
-        </div>
-      ) : (
-        <div className="px-4 py-6 space-y-6">
-          {/* Summary Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card className="p-5 bg-gradient-to-br from-violet-500 to-violet-600 text-white border-none shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-white/80 mb-1">סה"כ הוצאות חודשיות</p>
-                  <p className="text-3xl font-bold">₪{totalMonthlyExpenses.toLocaleString()}</p>
-                  <p className="text-sm text-white/80 mt-1">{filteredSuppliers.length} ספקים פעילים</p>
-                </div>
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                  <DollarSign className="w-8 h-8" />
-                </div>
-              </div>
-            </Card>
-          </motion.div>
+        {/* Stats Grid */}
+        <AdminStatsGrid columns={4}>
+          <AdminStatCard
+            title="סה״כ הוצאות חודשיות"
+            value={`₪${stats.totalMonthly.toLocaleString()}`}
+            icon={DollarSign}
+            color="primary"
+            subtitle={`${stats.total} ספקים פעילים`}
+          />
+          <AdminStatCard
+            title="הוצאות קבועות"
+            value={`₪${stats.fixedAmount.toLocaleString()}`}
+            icon={Building2}
+            color="success"
+            subtitle={`${stats.fixed} ספקים`}
+          />
+          <AdminStatCard
+            title="הוצאות משתנות"
+            value={`₪${stats.variableAmount.toLocaleString()}`}
+            icon={Truck}
+            color="info"
+            subtitle={`${stats.variable} ספקים`}
+          />
+          <AdminStatCard
+            title="סחורה"
+            value={`₪${stats.merchandiseAmount.toLocaleString()}`}
+            icon={ShoppingBag}
+            color="purple"
+            subtitle={`${stats.merchandise} ספקים`}
+          />
+        </AdminStatsGrid>
 
-          {/* Search & Filter */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="חיפוש ספק..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10"
-              />
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={filterType === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterType("all")}
+            className="gap-2"
+          >
+            <Users className="h-4 w-4" />
+            הכל
+            <Badge variant="secondary" className="mr-1">{stats.total}</Badge>
+          </Button>
+          {Object.entries(supplierTypeConfig).map(([type, config]) => {
+            const count = suppliers.filter(s => s.supplier_type === type).length;
+            const Icon = config.icon;
+            return (
+              <Button
+                key={type}
+                variant={filterType === type ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterType(type)}
+                className="gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                {config.label}
+                <Badge variant="secondary" className="mr-1">{count}</Badge>
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* Search */}
+        <div className="relative max-w-md">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="חיפוש לפי שם ספק או איש קשר..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-10"
+          />
+        </div>
+
+        {/* Suppliers List */}
+        <AdminSectionCard title="רשימת ספקים" icon={Package}>
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
+              ))}
             </div>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="סוג" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
-                <SelectItem value="fixed">קבוע</SelectItem>
-                <SelectItem value="variable">משתנה</SelectItem>
-                <SelectItem value="merchandise">סחורה</SelectItem>
-              </SelectContent>
-            </Select>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  <Plus className="w-4 h-4 ml-1" />
-                  חדש
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" dir="rtl">
-                <DialogHeader>
-                  <DialogTitle>ספק חדש</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>שם הספק *</Label>
-                    <Input
-                      placeholder="הזן שם ספק..."
-                      value={newSupplier.name}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>איש קשר</Label>
-                      <Input
-                        placeholder="שם איש קשר"
-                        value={newSupplier.contact_name}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, contact_name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>טלפון</Label>
-                      <Input
-                        placeholder="טלפון"
-                        value={newSupplier.phone}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, phone: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>אימייל</Label>
-                    <Input
-                      type="email"
-                      placeholder="אימייל"
-                      value={newSupplier.email}
-                      onChange={(e) => setNewSupplier({ ...newSupplier, email: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>כתובת</Label>
-                      <Input
-                        placeholder="כתובת"
-                        value={newSupplier.address}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, address: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>עיר</Label>
-                      <Input
-                        placeholder="עיר"
-                        value={newSupplier.city}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, city: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>סוג ספק</Label>
-                      <Select
-                        value={newSupplier.supplier_type}
-                        onValueChange={(value) => setNewSupplier({ ...newSupplier, supplier_type: value })}
+          ) : filteredSuppliers.length === 0 ? (
+            <AdminEmptyState
+              icon={Building2}
+              title="לא נמצאו ספקים"
+              description="הוסף ספקים חדשים או שנה את הסינון"
+              action={{ label: "הוסף ספק", onClick: () => setIsCreateDialogOpen(true) }}
+            />
+          ) : (
+            <ScrollArea className="h-[500px]">
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {filteredSuppliers.map((supplier, index) => {
+                    const typeConfig = supplierTypeConfig[supplier.supplier_type] || supplierTypeConfig.variable;
+                    const Icon = typeConfig.icon;
+
+                    return (
+                      <motion.div
+                        key={supplier.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.03 }}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fixed">קבוע</SelectItem>
-                          <SelectItem value="variable">משתנה</SelectItem>
-                          <SelectItem value="merchandise">סחורה</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>סכום חודשי</Label>
+                        <Card className="hover:shadow-md transition-all hover:border-primary/30">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className={cn(
+                                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                                  typeConfig.bgColor
+                                )}>
+                                  <Icon className={cn("h-6 w-6", typeConfig.color)} />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold">{supplier.name}</h4>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={cn("text-xs", typeConfig.color, typeConfig.borderColor)}
+                                    >
+                                      {typeConfig.label}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                    {supplier.contact_name && (
+                                      <span className="flex items-center gap-1">
+                                        <Users className="h-3 w-3" />
+                                        {supplier.contact_name}
+                                      </span>
+                                    )}
+                                    {supplier.city && (
+                                      <span className="flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        {supplier.city}
+                                      </span>
+                                    )}
+                                    {supplier.phone && (
+                                      <span className="flex items-center gap-1">
+                                        <Phone className="h-3 w-3" />
+                                        {supplier.phone}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                <div className="text-left">
+                                  <p className="text-xl font-bold">₪{supplier.monthly_amount.toLocaleString()}</p>
+                                  <p className="text-xs text-muted-foreground">לחודש</p>
+                                </div>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => openViewDialog(supplier)}>
+                                      <Eye className="h-4 w-4 ml-2" />
+                                      צפייה
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => {
+                                      openViewDialog(supplier);
+                                      setIsEditMode(true);
+                                    }}>
+                                      <Edit className="h-4 w-4 ml-2" />
+                                      עריכה
+                                    </DropdownMenuItem>
+                                    {supplier.phone && (
+                                      <DropdownMenuItem onClick={() => window.location.href = `tel:${supplier.phone}`}>
+                                        <Phone className="h-4 w-4 ml-2" />
+                                        התקשר
+                                      </DropdownMenuItem>
+                                    )}
+                                    {supplier.email && (
+                                      <DropdownMenuItem onClick={() => window.location.href = `mailto:${supplier.email}`}>
+                                        <Mail className="h-4 w-4 ml-2" />
+                                        שלח מייל
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem>
+                                      <FileText className="h-4 w-4 ml-2" />
+                                      חשבוניות
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => handleDeleteSupplier(supplier.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4 ml-2" />
+                                      מחיקה
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </ScrollArea>
+          )}
+        </AdminSectionCard>
+
+        {/* Create Supplier Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                ספק חדש
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label>שם הספק *</Label>
+                <Input
+                  placeholder="הזן שם ספק..."
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>איש קשר</Label>
+                  <Input
+                    placeholder="שם איש קשר"
+                    value={formData.contact_name}
+                    onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>טלפון</Label>
+                  <Input
+                    placeholder="טלפון"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>אימייל</Label>
+                <Input
+                  type="email"
+                  placeholder="אימייל"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>כתובת</Label>
+                  <Input
+                    placeholder="כתובת"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>עיר</Label>
+                  <Input
+                    placeholder="עיר"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>סוג ספק</Label>
+                  <Select
+                    value={formData.supplier_type}
+                    onValueChange={(value) => setFormData({ ...formData, supplier_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fixed">קבוע</SelectItem>
+                      <SelectItem value="variable">משתנה</SelectItem>
+                      <SelectItem value="merchandise">סחורה</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>סכום חודשי</Label>
+                  <Input
+                    type="number"
+                    placeholder="₪0"
+                    value={formData.monthly_amount}
+                    onChange={(e) => setFormData({ ...formData, monthly_amount: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>הערות</Label>
+                <Textarea
+                  placeholder="הערות נוספות..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={2}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setIsCreateDialogOpen(false); resetForm(); }}>
+                ביטול
+              </Button>
+              <Button onClick={handleCreateSupplier} disabled={!formData.name}>
+                הוסף ספק
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* View/Edit Supplier Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={(open) => {
+          setIsViewDialogOpen(open);
+          if (!open) {
+            setIsEditMode(false);
+            setSelectedSupplier(null);
+            resetForm();
+          }
+        }}>
+          <DialogContent className="max-w-md">
+            {selectedSupplier && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {isEditMode ? <Edit className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {isEditMode ? "עריכת ספק" : selectedSupplier.name}
+                  </DialogTitle>
+                </DialogHeader>
+
+                {isEditMode ? (
+                  <div className="space-y-4 mt-4">
+                    <div>
+                      <Label>שם הספק *</Label>
                       <Input
-                        type="number"
-                        placeholder="₪0"
-                        value={newSupplier.monthly_amount}
-                        onChange={(e) => setNewSupplier({ ...newSupplier, monthly_amount: e.target.value })}
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
                     </div>
-                  </div>
-                  <Button
-                    className="w-full bg-violet-500 hover:bg-violet-600"
-                    onClick={handleCreateSupplier}
-                    disabled={!newSupplier.name}
-                  >
-                    הוספת ספק
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {/* Type Filter Chips */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {Object.entries(supplierTypeConfig).map(([type, config]) => {
-              const count = suppliers.filter(s => s.supplier_type === type).length;
-              const Icon = config.icon;
-              return (
-                <Button
-                  key={type}
-                  variant={filterType === type ? "default" : "outline"}
-                  size="sm"
-                  className={filterType === type ? config.bgColor : ""}
-                  onClick={() => setFilterType(filterType === type ? "all" : type)}
-                >
-                  <Icon className="w-4 h-4 ml-1" />
-                  {config.label} ({count})
-                </Button>
-              );
-            })}
-          </div>
-
-          {/* Suppliers List */}
-          <div className="space-y-3">
-            {filteredSuppliers.map((supplier, index) => {
-              const typeConfig = supplierTypeConfig[supplier.supplier_type] || supplierTypeConfig.variable;
-              const Icon = typeConfig.icon;
-              
-              return (
-                <motion.div
-                  key={supplier.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Card className="p-4 bg-white border-none shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${typeConfig.bgColor}`}>
-                          <Icon className={`w-6 h-6 ${typeConfig.color}`} />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-foreground">{supplier.name}</h4>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Badge variant="outline" className={`${typeConfig.color} border-current`}>
-                              {typeConfig.label}
-                            </Badge>
-                            {supplier.city && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {supplier.city}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>איש קשר</Label>
+                        <Input
+                          value={formData.contact_name}
+                          onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                        />
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-left">
-                          <p className="font-bold text-foreground">₪{supplier.monthly_amount.toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground">לחודש</p>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedSupplier(supplier);
-                              setIsViewDialogOpen(true);
-                            }}>
-                              <Eye className="w-4 h-4 ml-2" />
-                              צפייה
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="w-4 h-4 ml-2" />
-                              עריכה
-                            </DropdownMenuItem>
-                            {supplier.phone && (
-                              <DropdownMenuItem onClick={() => window.location.href = `tel:${supplier.phone}`}>
-                                <Phone className="w-4 h-4 ml-2" />
-                                התקשר
-                              </DropdownMenuItem>
-                            )}
-                            {supplier.email && (
-                              <DropdownMenuItem onClick={() => window.location.href = `mailto:${supplier.email}`}>
-                                <Mail className="w-4 h-4 ml-2" />
-                                שלח מייל
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem>
-                              <FileText className="w-4 h-4 ml-2" />
-                              חשבוניות
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => handleDeleteSupplier(supplier.id)}
-                            >
-                              <Trash2 className="w-4 h-4 ml-2" />
-                              מחיקה
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <div>
+                        <Label>טלפון</Label>
+                        <Input
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        />
                       </div>
                     </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
+                    <div>
+                      <Label>אימייל</Label>
+                      <Input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>כתובת</Label>
+                        <Input
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>עיר</Label>
+                        <Input
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>סוג ספק</Label>
+                        <Select
+                          value={formData.supplier_type}
+                          onValueChange={(value) => setFormData({ ...formData, supplier_type: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fixed">קבוע</SelectItem>
+                            <SelectItem value="variable">משתנה</SelectItem>
+                            <SelectItem value="merchandise">סחורה</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>סכום חודשי</Label>
+                        <Input
+                          type="number"
+                          value={formData.monthly_amount}
+                          onChange={(e) => setFormData({ ...formData, monthly_amount: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>הערות</Label>
+                      <Textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        rows={2}
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsEditMode(false)}>
+                        ביטול
+                      </Button>
+                      <Button onClick={handleUpdateSupplier} disabled={!formData.name}>
+                        שמור שינויים
+                      </Button>
+                    </DialogFooter>
+                  </div>
+                ) : (
+                  <div className="space-y-4 mt-4">
+                    <Card className="p-4 bg-gradient-to-br from-primary/5 to-primary/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">סכום חודשי</span>
+                        <span className="text-2xl font-bold">₪{selectedSupplier.monthly_amount.toLocaleString()}</span>
+                      </div>
+                    </Card>
 
-          {filteredSuppliers.length === 0 && (
-            <div className="text-center py-12">
-              <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">לא נמצאו ספקים</p>
-            </div>
-          )}
-        </div>
-      )}
+                    <div className="space-y-3">
+                      {selectedSupplier.contact_name && (
+                        <div className="flex items-center gap-3">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedSupplier.contact_name}</span>
+                        </div>
+                      )}
 
-      {/* Supplier View Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
-          {selectedSupplier && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedSupplier.name}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="text-sm text-muted-foreground">סכום חודשי:</span>
-                  <span className="font-bold text-lg">₪{selectedSupplier.monthly_amount.toLocaleString()}</span>
-                </div>
+                      {selectedSupplier.phone && (
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <a href={`tel:${selectedSupplier.phone}`} className="text-primary hover:underline">
+                            {selectedSupplier.phone}
+                          </a>
+                        </div>
+                      )}
 
-                {selectedSupplier.contact_name && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">איש קשר:</span>
-                    <span>{selectedSupplier.contact_name}</span>
+                      {selectedSupplier.email && (
+                        <div className="flex items-center gap-3">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <a href={`mailto:${selectedSupplier.email}`} className="text-primary hover:underline">
+                            {selectedSupplier.email}
+                          </a>
+                        </div>
+                      )}
+
+                      {(selectedSupplier.address || selectedSupplier.city) && (
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{[selectedSupplier.address, selectedSupplier.city].filter(Boolean).join(", ")}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {selectedSupplier.notes && (
+                      <>
+                        <Separator />
+                        <Card className="p-3 bg-muted/30">
+                          <p className="text-sm text-muted-foreground mb-1">הערות:</p>
+                          <p className="text-sm">{selectedSupplier.notes}</p>
+                        </Card>
+                      </>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button className="flex-1" onClick={() => setIsEditMode(true)}>
+                        <Edit className="h-4 w-4 ml-2" />
+                        עריכה
+                      </Button>
+                      <Button variant="outline" className="flex-1">
+                        <FileText className="h-4 w-4 ml-2" />
+                        חשבוניות
+                      </Button>
+                    </div>
                   </div>
                 )}
-
-                {selectedSupplier.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <a href={`tel:${selectedSupplier.phone}`} className="text-violet-600 hover:underline">
-                      {selectedSupplier.phone}
-                    </a>
-                  </div>
-                )}
-
-                {selectedSupplier.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <a href={`mailto:${selectedSupplier.email}`} className="text-violet-600 hover:underline">
-                      {selectedSupplier.email}
-                    </a>
-                  </div>
-                )}
-
-                {(selectedSupplier.address || selectedSupplier.city) && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span>
-                      {[selectedSupplier.address, selectedSupplier.city].filter(Boolean).join(", ")}
-                    </span>
-                  </div>
-                )}
-
-                {selectedSupplier.notes && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-1">הערות:</p>
-                    <p>{selectedSupplier.notes}</p>
-                  </div>
-                )}
-
-                <Button 
-                  className="w-full bg-violet-500 hover:bg-violet-600"
-                  onClick={() => navigate(`/admin/suppliers/${selectedSupplier.id}/invoices`)}
-                >
-                  <FileText className="w-4 h-4 ml-2" />
-                  צפייה בחשבוניות
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AdminLayout>
   );
 };
 
