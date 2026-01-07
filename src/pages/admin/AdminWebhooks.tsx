@@ -6,7 +6,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Webhook, 
   Key, 
@@ -83,6 +99,101 @@ const AdminWebhooks = () => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('הועתק ללוח');
+  };
+
+  const [webhookDialogOpen, setWebhookDialogOpen] = useState(false);
+  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [webhookForm, setWebhookForm] = useState({
+    name: "",
+    url: "",
+    events: [] as string[]
+  });
+  const [apiKeyForm, setApiKeyForm] = useState({
+    name: "",
+    permissions: [] as string[]
+  });
+
+  const availableEvents = [
+    { value: "order.created", label: "הזמנה נוצרה" },
+    { value: "order.updated", label: "הזמנה עודכנה" },
+    { value: "order.completed", label: "הזמנה הושלמה" },
+    { value: "customer.created", label: "לקוח נוצר" },
+    { value: "product.updated", label: "מוצר עודכן" }
+  ];
+
+  const availablePermissions = [
+    { value: "read:products", label: "קריאת מוצרים" },
+    { value: "write:products", label: "כתיבת מוצרים" },
+    { value: "read:orders", label: "קריאת הזמנות" },
+    { value: "write:orders", label: "כתיבת הזמנות" },
+    { value: "read:customers", label: "קריאת לקוחות" }
+  ];
+
+  const createWebhookMutation = useMutation({
+    mutationFn: async (data: typeof webhookForm) => {
+      const { error } = await supabase
+        .from('webhooks')
+        .insert({
+          name: data.name,
+          url: data.url,
+          events: data.events,
+          is_active: true
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast.success('Webhook נוסף בהצלחה');
+      setWebhookDialogOpen(false);
+      setWebhookForm({ name: "", url: "", events: [] });
+    },
+    onError: () => {
+      toast.error('שגיאה בהוספת Webhook');
+    }
+  });
+
+  const createApiKeyMutation = useMutation({
+    mutationFn: async (data: typeof apiKeyForm) => {
+      const keyPrefix = `pk_${Math.random().toString(36).substring(2, 10)}`;
+      const keyHash = `hash_${Date.now()}`;
+      const { error } = await supabase
+        .from('api_keys')
+        .insert({
+          name: data.name,
+          key_prefix: keyPrefix,
+          key_hash: keyHash,
+          permissions: data.permissions,
+          is_active: true
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
+      toast.success('מפתח API נוצר בהצלחה');
+      setApiKeyDialogOpen(false);
+      setApiKeyForm({ name: "", permissions: [] });
+    },
+    onError: () => {
+      toast.error('שגיאה ביצירת מפתח');
+    }
+  });
+
+  const toggleEventSelection = (event: string) => {
+    setWebhookForm(prev => ({
+      ...prev,
+      events: prev.events.includes(event)
+        ? prev.events.filter(e => e !== event)
+        : [...prev.events, event]
+    }));
+  };
+
+  const togglePermissionSelection = (perm: string) => {
+    setApiKeyForm(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(perm)
+        ? prev.permissions.filter(p => p !== perm)
+        : [...prev.permissions, perm]
+    }));
   };
 
   const activeWebhooks = webhooks?.filter(w => w.is_active).length || 0;
@@ -171,12 +282,68 @@ const AdminWebhooks = () => {
                     <Webhook className="h-5 w-5" />
                     הגדרות Webhooks
                   </CardTitle>
-                  <Button className="gap-2">
+                  <Button className="gap-2" onClick={() => setWebhookDialogOpen(true)}>
                     <Plus className="h-4 w-4" />
                     הוסף Webhook
                   </Button>
                 </div>
               </CardHeader>
+
+              <Dialog open={webhookDialogOpen} onOpenChange={setWebhookDialogOpen}>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle>הוספת Webhook חדש</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>שם *</Label>
+                      <Input
+                        value={webhookForm.name}
+                        onChange={(e) => setWebhookForm({ ...webhookForm, name: e.target.value })}
+                        placeholder="שם ה-Webhook"
+                      />
+                    </div>
+                    <div>
+                      <Label>URL *</Label>
+                      <Input
+                        value={webhookForm.url}
+                        onChange={(e) => setWebhookForm({ ...webhookForm, url: e.target.value })}
+                        placeholder="https://your-server.com/webhook"
+                      />
+                    </div>
+                    <div>
+                      <Label>אירועים</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {availableEvents.map((event) => (
+                          <div key={event.value} className="flex items-center gap-2">
+                            <Checkbox
+                              id={event.value}
+                              checked={webhookForm.events.includes(event.value)}
+                              onCheckedChange={() => toggleEventSelection(event.value)}
+                            />
+                            <Label htmlFor={event.value} className="text-sm">{event.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" onClick={() => setWebhookDialogOpen(false)}>ביטול</Button>
+                      <Button 
+                        onClick={() => {
+                          if (!webhookForm.name || !webhookForm.url) {
+                            toast.error('נא למלא שם ו-URL');
+                            return;
+                          }
+                          createWebhookMutation.mutate(webhookForm);
+                        }}
+                        disabled={createWebhookMutation.isPending}
+                      >
+                        {createWebhookMutation.isPending ? "שומר..." : "הוסף"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <CardContent>
                 {webhooksLoading ? (
                   <div className="space-y-4">
@@ -264,12 +431,60 @@ const AdminWebhooks = () => {
                     <Key className="h-5 w-5" />
                     מפתחות API
                   </CardTitle>
-                  <Button className="gap-2">
+                  <Button className="gap-2" onClick={() => setApiKeyDialogOpen(true)}>
                     <Plus className="h-4 w-4" />
                     צור מפתח חדש
                   </Button>
                 </div>
               </CardHeader>
+
+              <Dialog open={apiKeyDialogOpen} onOpenChange={setApiKeyDialogOpen}>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle>יצירת מפתח API חדש</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>שם *</Label>
+                      <Input
+                        value={apiKeyForm.name}
+                        onChange={(e) => setApiKeyForm({ ...apiKeyForm, name: e.target.value })}
+                        placeholder="שם המפתח"
+                      />
+                    </div>
+                    <div>
+                      <Label>הרשאות</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {availablePermissions.map((perm) => (
+                          <div key={perm.value} className="flex items-center gap-2">
+                            <Checkbox
+                              id={perm.value}
+                              checked={apiKeyForm.permissions.includes(perm.value)}
+                              onCheckedChange={() => togglePermissionSelection(perm.value)}
+                            />
+                            <Label htmlFor={perm.value} className="text-sm">{perm.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" onClick={() => setApiKeyDialogOpen(false)}>ביטול</Button>
+                      <Button 
+                        onClick={() => {
+                          if (!apiKeyForm.name) {
+                            toast.error('נא למלא שם');
+                            return;
+                          }
+                          createApiKeyMutation.mutate(apiKeyForm);
+                        }}
+                        disabled={createApiKeyMutation.isPending}
+                      >
+                        {createApiKeyMutation.isPending ? "יוצר..." : "צור מפתח"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <CardContent>
                 {keysLoading ? (
                   <div className="space-y-4">

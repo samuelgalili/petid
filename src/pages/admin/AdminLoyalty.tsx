@@ -89,6 +89,11 @@ const AdminLoyalty = () => {
   const [actions, setActions] = useState<PointAction[]>(defaultActions);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("members");
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [actionForm, setActionForm] = useState({
+    action_he: "",
+    points: 0
+  });
 
   useEffect(() => {
     fetchMembers();
@@ -366,11 +371,62 @@ const AdminLoyalty = () => {
         <TabsContent value="actions" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-bold">פעולות לצבירת נקודות</h3>
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2" onClick={() => setActionDialogOpen(true)}>
               <Plus className="w-4 h-4" />
               הוסף פעולה
             </Button>
           </div>
+
+          <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+            <DialogContent dir="rtl">
+              <DialogHeader>
+                <DialogTitle>הוספת פעולה חדשה</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>שם הפעולה *</Label>
+                  <Input
+                    value={actionForm.action_he}
+                    onChange={(e) => setActionForm({ ...actionForm, action_he: e.target.value })}
+                    placeholder="לדוגמה: הרשמה לניוזלטר"
+                  />
+                </div>
+                <div>
+                  <Label>נקודות</Label>
+                  <Input
+                    type="number"
+                    value={actionForm.points}
+                    onChange={(e) => setActionForm({ ...actionForm, points: Number(e.target.value) })}
+                    placeholder="50"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setActionDialogOpen(false)}>ביטול</Button>
+                  <Button 
+                    onClick={() => {
+                      if (!actionForm.action_he) {
+                        toast({ title: "נא למלא שם פעולה", variant: "destructive" });
+                        return;
+                      }
+                      const newAction: PointAction = {
+                        id: Date.now().toString(),
+                        action: actionForm.action_he.toLowerCase().replace(/\s+/g, '_'),
+                        action_he: actionForm.action_he,
+                        points: actionForm.points || 0,
+                        is_active: true
+                      };
+                      setActions([...actions, newAction]);
+                      setActionDialogOpen(false);
+                      setActionForm({ action_he: "", points: 0 });
+                      toast({ title: "הפעולה נוספה בהצלחה" });
+                    }}
+                  >
+                    הוסף פעולה
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <div className="grid gap-3">
             {actions.map((action, index) => (

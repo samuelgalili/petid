@@ -6,6 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Building2, 
   MapPin, 
@@ -50,6 +58,48 @@ const AdminBranches = () => {
     }
   });
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    address: "",
+    city: "",
+    phone: "",
+    email: ""
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const { error } = await supabase
+        .from('branches')
+        .insert({
+          name: data.name,
+          address: data.address,
+          city: data.city,
+          phone: data.phone,
+          email: data.email,
+          is_active: true
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      toast.success('הסניף נוסף בהצלחה');
+      setIsDialogOpen(false);
+      setFormData({ name: "", address: "", city: "", phone: "", email: "" });
+    },
+    onError: () => {
+      toast.error('שגיאה בהוספת הסניף');
+    }
+  });
+
+  const handleSubmit = () => {
+    if (!formData.name) {
+      toast.error('נא למלא שם סניף');
+      return;
+    }
+    createMutation.mutate(formData);
+  };
+
   const activeBranches = branches?.filter(b => b.is_active).length || 0;
 
   return (
@@ -60,11 +110,70 @@ const AdminBranches = () => {
             <h1 className="text-3xl font-bold">ניהול סניפים</h1>
             <p className="text-muted-foreground">צפייה וניהול כל הסניפים</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             הוסף סניף
           </Button>
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent dir="rtl">
+            <DialogHeader>
+              <DialogTitle>הוספת סניף חדש</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>שם סניף *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="סניף מרכזי"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>עיר</Label>
+                  <Input
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="תל אביב"
+                  />
+                </div>
+                <div>
+                  <Label>טלפון</Label>
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="03-1234567"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>כתובת</Label>
+                <Input
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="רחוב הראשי 1"
+                />
+              </div>
+              <div>
+                <Label>אימייל</Label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="branch@example.com"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>ביטול</Button>
+                <Button onClick={handleSubmit} disabled={createMutation.isPending}>
+                  {createMutation.isPending ? "שומר..." : "הוסף סניף"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
