@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AIContentGenerator from "@/components/admin/AIContentGenerator";
 import { 
   Megaphone, 
   Plus, 
@@ -20,7 +21,8 @@ import {
   CheckCircle,
   BarChart3,
   Target,
-  Zap
+  Zap,
+  Sparkles
 } from "lucide-react";
 
 interface Campaign {
@@ -45,7 +47,8 @@ const mockCampaigns: Campaign[] = [
 const AdminMarketing = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("campaigns");
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState("all");
 
   const stats = [
     {
@@ -100,13 +103,31 @@ const AdminMarketing = () => {
   };
 
   const filteredCampaigns = campaigns.filter(c => {
-    if (activeTab === "all") return true;
-    return c.type === activeTab;
+    if (campaignTypeFilter === "all") return true;
+    return c.type === campaignTypeFilter;
   });
 
   return (
-    <AdminLayout title="קמפיינים שיווקיים" icon={Megaphone}>
+    <AdminLayout title="שיווק ותוכן" icon={Megaphone}>
       <div className="space-y-6">
+        {/* Main Tabs - Campaigns vs AI Content */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-slate-800/50">
+            <TabsTrigger value="campaigns" className="gap-2">
+              <Target className="w-4 h-4" />
+              קמפיינים
+            </TabsTrigger>
+            <TabsTrigger value="ai-content" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              יצירת תוכן AI
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="ai-content" className="mt-6">
+            <AIContentGenerator />
+          </TabsContent>
+
+          <TabsContent value="campaigns" className="mt-6 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
@@ -127,11 +148,11 @@ const AdminMarketing = () => {
           ))}
         </div>
 
-        {/* Tabs & Actions */}
+        {/* Campaign Type Filter & Actions */}
         <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+              <Tabs value={campaignTypeFilter} onValueChange={setCampaignTypeFilter} className="w-full sm:w-auto">
                 <TabsList className="bg-slate-800/50">
                   <TabsTrigger value="all">הכל</TabsTrigger>
                   <TabsTrigger value="email">אימייל</TabsTrigger>
@@ -256,6 +277,8 @@ const AdminMarketing = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
