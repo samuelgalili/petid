@@ -25,7 +25,15 @@ import {
   ListTodo,
   Truck,
   UserPlus,
-  CreditCard
+  CreditCard,
+  Boxes,
+  Receipt,
+  Megaphone,
+  Users2,
+  RotateCcw,
+  BarChart3,
+  Plug,
+  HardDrive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -45,12 +53,18 @@ import { Download } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "דשבורד", href: "/admin/dashboard" },
+  { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics" },
   { icon: Wallet, label: "כספים", href: "/admin/financial" },
   { icon: ListTodo, label: "משימות", href: "/admin/tasks" },
   { icon: Truck, label: "ספקים", href: "/admin/suppliers" },
+  { icon: ShoppingCart, label: "הזמנות רכש", href: "/admin/purchase-orders" },
+  { icon: Boxes, label: "מלאי", href: "/admin/inventory" },
+  { icon: Receipt, label: "חשבוניות", href: "/admin/invoices" },
   { icon: UserPlus, label: "לידים", href: "/admin/leads" },
   { icon: CreditCard, label: "חובות לקוחות", href: "/admin/debts" },
   { icon: Users, label: "משתמשים", href: "/admin/users" },
+  { icon: Users2, label: "פילוח לקוחות", href: "/admin/segments" },
+  { icon: Users, label: "ניהול צוות", href: "/admin/staff" },
   { icon: Shield, label: "תפקידים והרשאות", href: "/admin/roles" },
   { icon: FileText, label: "תוכן ומודרציה", href: "/admin/content" },
   { icon: Flag, label: "דיווחים", href: "/admin/reports" },
@@ -59,10 +73,15 @@ const navItems = [
   { icon: Package, label: "מוצרים", href: "/admin/products" },
   { icon: Ticket, label: "קופונים", href: "/admin/coupons" },
   { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders" },
+  { icon: Truck, label: "משלוחים", href: "/admin/shipping" },
+  { icon: RotateCcw, label: "החזרות", href: "/admin/returns" },
+  { icon: Megaphone, label: "שיווק", href: "/admin/marketing" },
   { icon: MapPin, label: "פארקים", href: "/admin/parks" },
   { icon: Bot, label: "סקראפר מוצרים", href: "/admin/scraper" },
+  { icon: Plug, label: "אינטגרציות", href: "/admin/integrations" },
   { icon: Bell, label: "התראות", href: "/admin/notifications" },
   { icon: History, label: "לוג פעילות", href: "/admin/audit" },
+  { icon: HardDrive, label: "גיבוי וייצוא", href: "/admin/backup" },
   { icon: Settings, label: "הגדרות", href: "/admin/settings" },
 ];
 

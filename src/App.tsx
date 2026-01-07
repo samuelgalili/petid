@@ -64,6 +64,17 @@ const AdminTasks = lazy(() => import("./pages/admin/AdminTasks"));
 const AdminSuppliers = lazy(() => import("./pages/admin/AdminSuppliers"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminDebts = lazy(() => import("./pages/admin/AdminDebts"));
+const AdminInventory = lazy(() => import("./pages/admin/AdminInventory"));
+const AdminPurchaseOrders = lazy(() => import("./pages/admin/AdminPurchaseOrders"));
+const AdminInvoices = lazy(() => import("./pages/admin/AdminInvoices"));
+const AdminMarketing = lazy(() => import("./pages/admin/AdminMarketing"));
+const AdminCustomerSegments = lazy(() => import("./pages/admin/AdminCustomerSegments"));
+const AdminShipping = lazy(() => import("./pages/admin/AdminShipping"));
+const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
+const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminIntegrations = lazy(() => import("./pages/admin/AdminIntegrations"));
+const AdminBackup = lazy(() => import("./pages/admin/AdminBackup"));
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
 import Tasks from "./pages/Tasks";
@@ -183,6 +194,17 @@ const AnimatedRoutes = () => {
         <Route path="/admin/suppliers" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminSuppliers /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/leads" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminLeads /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/admin/debts" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminDebts /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/inventory" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminInventory /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/purchase-orders" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminPurchaseOrders /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/invoices" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminInvoices /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/marketing" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminMarketing /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/segments" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminCustomerSegments /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/shipping" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminShipping /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/returns" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminReturns /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/staff" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminStaff /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/analytics" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminAnalytics /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/integrations" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminIntegrations /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
+        <Route path="/admin/backup" element={<ProtectedRoute><AdminRoute><PageTransition><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><AdminBackup /></Suspense></PageTransition></AdminRoute></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><PageTransition><Chat /></PageTransition></ProtectedRoute>} />
         <Route path="/experiences" element={<PageTransition><Experiences /></PageTransition>} />
         <Route path="/parks" element={<PageTransition><Parks /></PageTransition>} />
