@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,101 +24,69 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-interface WebhookConfig {
-  id: string;
-  name: string;
-  url: string;
-  events: string[];
-  isActive: boolean;
-  lastTriggered?: string;
-  successRate: number;
-}
-
-interface ApiKey {
-  id: string;
-  name: string;
-  key: string;
-  permissions: string[];
-  isActive: boolean;
-  lastUsed?: string;
-  expiresAt?: string;
-}
-
 const AdminWebhooks = () => {
   const [showKey, setShowKey] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([
-    {
-      id: '1',
-      name: 'הזמנה חדשה',
-      url: 'https://api.example.com/webhooks/new-order',
-      events: ['order.created'],
-      isActive: true,
-      lastTriggered: '2024-01-15T10:30:00',
-      successRate: 98
-    },
-    {
-      id: '2',
-      name: 'עדכון מלאי',
-      url: 'https://inventory.example.com/webhook',
-      events: ['inventory.updated', 'inventory.low'],
-      isActive: true,
-      lastTriggered: '2024-01-15T09:15:00',
-      successRate: 100
-    },
-    {
-      id: '3',
-      name: 'לקוח חדש',
-      url: 'https://crm.example.com/new-customer',
-      events: ['customer.created'],
-      isActive: false,
-      successRate: 0
+  const { data: webhooks, isLoading: webhooksLoading } = useQuery({
+    queryKey: ['webhooks'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('webhooks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
     }
-  ]);
+  });
 
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    {
-      id: '1',
-      name: 'Production API',
-      key: 'pk_live_xxxxxxxxxxxxxxxxxxxxx',
-      permissions: ['read', 'write'],
-      isActive: true,
-      lastUsed: '2024-01-15T10:45:00'
-    },
-    {
-      id: '2',
-      name: 'Mobile App',
-      key: 'pk_live_yyyyyyyyyyyyyyyyyyyyy',
-      permissions: ['read'],
-      isActive: true,
-      lastUsed: '2024-01-15T08:20:00'
-    },
-    {
-      id: '3',
-      name: 'Test Key',
-      key: 'pk_test_zzzzzzzzzzzzzzzzzzzzz',
-      permissions: ['read', 'write', 'delete'],
-      isActive: false,
-      expiresAt: '2024-02-01'
+  const { data: apiKeys, isLoading: keysLoading } = useQuery({
+    queryKey: ['api-keys'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
     }
-  ]);
+  });
+
+  const toggleWebhookMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const { error } = await supabase
+        .from('webhooks')
+        .update({ is_active: isActive })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast.success('הסטטוס עודכן');
+    }
+  });
+
+  const toggleApiKeyMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const { error } = await supabase
+        .from('api_keys')
+        .update({ is_active: isActive })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
+      toast.success('הסטטוס עודכן');
+    }
+  });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('הועתק ללוח');
   };
 
-  const toggleWebhook = (id: string) => {
-    setWebhooks(webhooks.map(w => 
-      w.id === id ? { ...w, isActive: !w.isActive } : w
-    ));
-  };
-
-  const toggleApiKey = (id: string) => {
-    setApiKeys(apiKeys.map(k => 
-      k.id === id ? { ...k, isActive: !k.isActive } : k
-    ));
-  };
+  const activeWebhooks = webhooks?.filter(w => w.is_active).length || 0;
+  const activeKeys = apiKeys?.filter(k => k.is_active).length || 0;
 
   return (
     <AdminLayout title="Webhooks & API">
@@ -136,7 +105,7 @@ const AdminWebhooks = () => {
                 <Webhook className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{webhooks.filter(w => w.isActive).length}</p>
+                <p className="text-2xl font-bold">{activeWebhooks}</p>
                 <p className="text-sm text-muted-foreground">Webhooks פעילים</p>
               </div>
             </CardContent>
@@ -147,7 +116,7 @@ const AdminWebhooks = () => {
                 <Key className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{apiKeys.filter(k => k.isActive).length}</p>
+                <p className="text-2xl font-bold">{activeKeys}</p>
                 <p className="text-sm text-muted-foreground">מפתחות פעילים</p>
               </div>
             </CardContent>
@@ -158,8 +127,10 @@ const AdminWebhooks = () => {
                 <CheckCircle className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">99%</p>
-                <p className="text-sm text-muted-foreground">הצלחה ממוצעת</p>
+                <p className="text-2xl font-bold">
+                  {webhooks?.reduce((sum, w) => sum + (w.success_count || 0), 0) || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">קריאות מוצלחות</p>
               </div>
             </CardContent>
           </Card>
@@ -169,8 +140,8 @@ const AdminWebhooks = () => {
                 <Code className="h-6 w-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">1,250</p>
-                <p className="text-sm text-muted-foreground">קריאות היום</p>
+                <p className="text-2xl font-bold">{(webhooks?.length || 0) + (apiKeys?.length || 0)}</p>
+                <p className="text-sm text-muted-foreground">סה"כ אינטגרציות</p>
               </div>
             </CardContent>
           </Card>
@@ -207,67 +178,80 @@ const AdminWebhooks = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {webhooks.map((webhook) => (
-                    <motion.div
-                      key={webhook.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className={`p-4 rounded-lg border ${!webhook.isActive && 'opacity-60'}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Switch 
-                            checked={webhook.isActive}
-                            onCheckedChange={() => toggleWebhook(webhook.id)}
-                          />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{webhook.name}</p>
-                              {webhook.isActive ? (
-                                <Badge className="bg-green-100 text-green-700">פעיל</Badge>
-                              ) : (
-                                <Badge variant="secondary">לא פעיל</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground font-mono">{webhook.url}</p>
-                            <div className="flex gap-1 mt-1">
-                              {webhook.events.map(event => (
-                                <Badge key={event} variant="outline" className="text-xs">{event}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          {webhook.isActive && (
-                            <div className="text-left">
-                              <div className="flex items-center gap-1">
-                                {webhook.successRate >= 95 ? (
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                {webhooksLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2].map(i => (
+                      <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
+                    ))}
+                  </div>
+                ) : webhooks?.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Webhook className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>אין Webhooks מוגדרים</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {webhooks?.map((webhook) => (
+                      <motion.div
+                        key={webhook.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={`p-4 rounded-lg border ${!webhook.is_active && 'opacity-60'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Switch 
+                              checked={webhook.is_active}
+                              onCheckedChange={(checked) => toggleWebhookMutation.mutate({ id: webhook.id, isActive: checked })}
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{webhook.name}</p>
+                                {webhook.is_active ? (
+                                  <Badge className="bg-green-100 text-green-700">פעיל</Badge>
                                 ) : (
-                                  <XCircle className="h-4 w-4 text-red-500" />
+                                  <Badge variant="secondary">לא פעיל</Badge>
                                 )}
-                                <span className="font-medium">{webhook.successRate}%</span>
                               </div>
-                              <p className="text-xs text-muted-foreground">הצלחה</p>
+                              <p className="text-sm text-muted-foreground font-mono">{webhook.url}</p>
+                              <div className="flex gap-1 mt-1">
+                                {webhook.events?.map((event: string) => (
+                                  <Badge key={event} variant="outline" className="text-xs">{event}</Badge>
+                                ))}
+                              </div>
                             </div>
-                          )}
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="icon">
-                              <RefreshCw className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            {webhook.is_active && (
+                              <div className="text-left">
+                                <div className="flex items-center gap-1">
+                                  {(webhook.success_count || 0) > (webhook.failure_count || 0) ? (
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-red-500" />
+                                  )}
+                                  <span className="font-medium">{webhook.success_count || 0}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">הצלחות</p>
+                              </div>
+                            )}
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon">
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -287,87 +271,100 @@ const AdminWebhooks = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {apiKeys.map((apiKey) => (
-                    <motion.div
-                      key={apiKey.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className={`p-4 rounded-lg border ${!apiKey.isActive && 'opacity-60'}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Switch 
-                            checked={apiKey.isActive}
-                            onCheckedChange={() => toggleApiKey(apiKey.id)}
-                          />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{apiKey.name}</p>
-                              {apiKey.isActive ? (
-                                <Badge className="bg-green-100 text-green-700">פעיל</Badge>
-                              ) : (
-                                <Badge variant="secondary">לא פעיל</Badge>
+                {keysLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2].map(i => (
+                      <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
+                    ))}
+                  </div>
+                ) : apiKeys?.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Key className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>אין מפתחות API</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {apiKeys?.map((apiKey) => (
+                      <motion.div
+                        key={apiKey.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={`p-4 rounded-lg border ${!apiKey.is_active && 'opacity-60'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Switch 
+                              checked={apiKey.is_active}
+                              onCheckedChange={(checked) => toggleApiKeyMutation.mutate({ id: apiKey.id, isActive: checked })}
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{apiKey.name}</p>
+                                {apiKey.is_active ? (
+                                  <Badge className="bg-green-100 text-green-700">פעיל</Badge>
+                                ) : (
+                                  <Badge variant="secondary">לא פעיל</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+                                  {showKey === apiKey.id 
+                                    ? `${apiKey.key_prefix}...` 
+                                    : `${apiKey.key_prefix}••••••••••••••••`}
+                                </code>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => setShowKey(showKey === apiKey.id ? null : apiKey.id)}
+                                >
+                                  {showKey === apiKey.id ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => copyToClipboard(apiKey.key_prefix)}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="flex gap-1 mt-1">
+                                {apiKey.permissions?.map((perm: string) => (
+                                  <Badge key={perm} variant="outline" className="text-xs">{perm}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-left text-sm">
+                              {apiKey.last_used_at && (
+                                <p className="text-muted-foreground">
+                                  שימוש אחרון: {new Date(apiKey.last_used_at).toLocaleDateString('he-IL')}
+                                </p>
+                              )}
+                              {apiKey.expires_at && (
+                                <p className="text-orange-500">
+                                  תוקף עד: {new Date(apiKey.expires_at).toLocaleDateString('he-IL')}
+                                </p>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                                {showKey === apiKey.id 
-                                  ? apiKey.key 
-                                  : apiKey.key.slice(0, 10) + '••••••••••••••••'}
-                              </code>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => setShowKey(showKey === apiKey.id ? null : apiKey.id)}
-                              >
-                                {showKey === apiKey.id ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon">
+                                <Edit className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => copyToClipboard(apiKey.key)}
-                              >
-                                <Copy className="h-4 w-4" />
+                              <Button variant="ghost" size="icon" className="text-destructive">
+                                <Trash2 className="h-4 w-4" />
                               </Button>
-                            </div>
-                            <div className="flex gap-1 mt-1">
-                              {apiKey.permissions.map(perm => (
-                                <Badge key={perm} variant="outline" className="text-xs">{perm}</Badge>
-                              ))}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-left text-sm">
-                            {apiKey.lastUsed && (
-                              <p className="text-muted-foreground">
-                                שימוש אחרון: {new Date(apiKey.lastUsed).toLocaleDateString('he-IL')}
-                              </p>
-                            )}
-                            {apiKey.expiresAt && (
-                              <p className="text-orange-500">
-                                תוקף עד: {new Date(apiKey.expiresAt).toLocaleDateString('he-IL')}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="icon">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

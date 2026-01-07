@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,80 +15,86 @@ import {
   AlertCircle,
   User,
   Search,
-  Filter,
   Plus,
   Send
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
-
-interface Ticket {
-  id: string;
-  subject: string;
-  description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  customer: {
-    name: string;
-    email: string;
-  };
-  assignedTo?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  messages: number;
-}
+import { toast } from "sonner";
 
 const AdminHelpDesk = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [newMessage, setNewMessage] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const queryClient = useQueryClient();
 
-  // Mock tickets data
-  const tickets: Ticket[] = [
-    {
-      id: '1',
-      subject: 'בעיה במשלוח הזמנה #12345',
-      description: 'ההזמנה לא הגיעה למרות שכתוב שנמסרה',
-      status: 'open',
-      priority: 'high',
-      customer: { name: 'יוסי כהן', email: 'yossi@example.com' },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      messages: 3
-    },
-    {
-      id: '2',
-      subject: 'שאלה לגבי מוצר',
-      description: 'האם המזון מתאים לכלב עם אלרגיות?',
-      status: 'in_progress',
-      priority: 'medium',
-      customer: { name: 'שרה לוי', email: 'sara@example.com' },
-      assignedTo: 'נציג 1',
-      createdAt: new Date(Date.now() - 86400000),
-      updatedAt: new Date(),
-      messages: 5
-    },
-    {
-      id: '3',
-      subject: 'בקשת החזר כספי',
-      description: 'המוצר לא תואם את התיאור',
-      status: 'resolved',
-      priority: 'low',
-      customer: { name: 'דני אברהם', email: 'dani@example.com' },
-      assignedTo: 'נציג 2',
-      createdAt: new Date(Date.now() - 172800000),
-      updatedAt: new Date(Date.now() - 86400000),
-      messages: 8
+  const { data: tickets, isLoading } = useQuery({
+    queryKey: ['support-tickets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
     }
-  ];
+  });
+
+  const { data: ticketMessages } = useQuery({
+    queryKey: ['ticket-messages', selectedTicket?.id],
+    queryFn: async () => {
+      if (!selectedTicket) return [];
+      const { data, error } = await supabase
+        .from('ticket_messages')
+        .select('*')
+        .eq('ticket_id', selectedTicket.id)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedTicket
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('ticket_messages')
+        .insert({
+          ticket_id: selectedTicket.id,
+          message: newMessage,
+          is_internal: false
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ticket-messages', selectedTicket?.id] });
+      setNewMessage("");
+      toast.success('ההודעה נשלחה');
+    }
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from('support_tickets')
+        .update({ status, resolved_at: status === 'resolved' ? new Date().toISOString() : null })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['support-tickets'] });
+      toast.success('הסטטוס עודכן');
+    }
+  });
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; text: string }> = {
       open: { variant: 'destructive', text: 'פתוח' },
       in_progress: { variant: 'default', text: 'בטיפול' },
-      resolved: { variant: 'secondary', text: 'נפתר' },
+      waiting: { variant: 'secondary', text: 'ממתין' },
+      resolved: { variant: 'outline', text: 'נפתר' },
       closed: { variant: 'outline', text: 'סגור' }
     };
     const style = styles[status] || styles.open;
@@ -111,17 +117,16 @@ const AdminHelpDesk = () => {
     return <Badge className={colors[priority]}>{labels[priority]}</Badge>;
   };
 
-  const filteredTickets = tickets.filter(t => {
+  const filteredTickets = tickets?.filter(t => {
     if (statusFilter !== 'all' && t.status !== statusFilter) return false;
-    if (searchTerm && !t.subject.includes(searchTerm) && !t.customer.name.includes(searchTerm)) return false;
+    if (searchTerm && !t.subject?.includes(searchTerm) && !t.ticket_number?.includes(searchTerm)) return false;
     return true;
-  });
+  }) || [];
 
   const stats = {
-    open: tickets.filter(t => t.status === 'open').length,
-    inProgress: tickets.filter(t => t.status === 'in_progress').length,
-    resolved: tickets.filter(t => t.status === 'resolved').length,
-    avgResponseTime: '2.5 שעות'
+    open: tickets?.filter(t => t.status === 'open').length || 0,
+    inProgress: tickets?.filter(t => t.status === 'in_progress').length || 0,
+    resolved: tickets?.filter(t => t.status === 'resolved').length || 0
   };
 
   return (
@@ -168,7 +173,7 @@ const AdminHelpDesk = () => {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.resolved}</p>
-                <p className="text-sm text-muted-foreground">נפתרו היום</p>
+                <p className="text-sm text-muted-foreground">נפתרו</p>
               </div>
             </CardContent>
           </Card>
@@ -178,15 +183,14 @@ const AdminHelpDesk = () => {
                 <Headphones className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.avgResponseTime}</p>
-                <p className="text-sm text-muted-foreground">זמן תגובה ממוצע</p>
+                <p className="text-2xl font-bold">{tickets?.length || 0}</p>
+                <p className="text-sm text-muted-foreground">סה"כ פניות</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Tickets List */}
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -213,42 +217,49 @@ const AdminHelpDesk = () => {
               </Tabs>
             </CardHeader>
             <CardContent className="max-h-[500px] overflow-y-auto">
-              <div className="space-y-2">
-                {filteredTickets.map((ticket) => (
-                  <motion.div
-                    key={ticket.id}
-                    whileHover={{ scale: 1.02 }}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedTicket?.id === ticket.id 
-                        ? 'bg-primary/10 border-primary' 
-                        : 'hover:bg-muted'
-                    }`}
-                    onClick={() => setSelectedTicket(ticket)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="font-medium text-sm line-clamp-1">{ticket.subject}</p>
-                      {getPriorityBadge(ticket.priority)}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <User className="h-3 w-3" />
-                      <span>{ticket.customer.name}</span>
-                      <span>•</span>
-                      {getStatusBadge(ticket.status)}
-                    </div>
-                    <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-                      <span>{format(ticket.createdAt, 'dd/MM HH:mm', { locale: he })}</span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="h-3 w-3" />
-                        {ticket.messages}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
+                  ))}
+                </div>
+              ) : filteredTickets.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Headphones className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p>אין פניות</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredTickets.map((ticket) => (
+                    <motion.div
+                      key={ticket.id}
+                      whileHover={{ scale: 1.02 }}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedTicket?.id === ticket.id 
+                          ? 'bg-primary/10 border-primary' 
+                          : 'hover:bg-muted'
+                      }`}
+                      onClick={() => setSelectedTicket(ticket)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="font-medium text-sm line-clamp-1">{ticket.subject}</p>
+                        {getPriorityBadge(ticket.priority || 'medium')}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>#{ticket.ticket_number}</span>
+                        <span>•</span>
+                        {getStatusBadge(ticket.status || 'open')}
+                      </div>
+                      <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+                        <span>{format(new Date(ticket.created_at), 'dd/MM HH:mm', { locale: he })}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Ticket Detail */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>פרטי פנייה</CardTitle>
@@ -256,77 +267,62 @@ const AdminHelpDesk = () => {
             <CardContent>
               {selectedTicket ? (
                 <div className="space-y-6">
-                  {/* Ticket Header */}
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-xl font-bold">{selectedTicket.subject}</h3>
+                      <p className="text-sm text-muted-foreground">#{selectedTicket.ticket_number}</p>
                       <div className="flex items-center gap-2 mt-2">
-                        {getStatusBadge(selectedTicket.status)}
-                        {getPriorityBadge(selectedTicket.priority)}
+                        {getStatusBadge(selectedTicket.status || 'open')}
+                        {getPriorityBadge(selectedTicket.priority || 'medium')}
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">הקצה לנציג</Button>
-                      <Button size="sm">סמן כנפתר</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => updateStatusMutation.mutate({ id: selectedTicket.id, status: 'in_progress' })}
+                      >
+                        התחל טיפול
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => updateStatusMutation.mutate({ id: selectedTicket.id, status: 'resolved' })}
+                      >
+                        סמן כנפתר
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Customer Info */}
-                  <div className="p-4 rounded-lg bg-muted/50">
-                    <h4 className="font-medium mb-2">פרטי לקוח</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">שם: </span>
-                        <span>{selectedTicket.customer.name}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">אימייל: </span>
-                        <span>{selectedTicket.customer.email}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Description */}
                   <div>
                     <h4 className="font-medium mb-2">תיאור הבעיה</h4>
-                    <p className="text-muted-foreground">{selectedTicket.description}</p>
+                    <p className="text-muted-foreground">{selectedTicket.description || 'אין תיאור'}</p>
                   </div>
 
-                  {/* Messages */}
                   <div className="border-t pt-4">
                     <h4 className="font-medium mb-4">היסטוריית שיחה</h4>
                     <div className="space-y-4 max-h-[300px] overflow-y-auto">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                          {selectedTicket.customer.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 p-3 rounded-lg bg-muted">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="font-medium text-sm">{selectedTicket.customer.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {format(selectedTicket.createdAt, 'HH:mm')}
-                            </span>
+                      {ticketMessages?.map((msg: any) => (
+                        <div key={msg.id} className={`flex gap-3 ${msg.is_internal ? 'flex-row-reverse' : ''}`}>
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="h-4 w-4" />
                           </div>
-                          <p className="text-sm">{selectedTicket.description}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-3 flex-row-reverse">
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                          T
-                        </div>
-                        <div className="flex-1 p-3 rounded-lg bg-primary/10">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="font-medium text-sm">תמיכה</span>
-                            <span className="text-xs text-muted-foreground">12:30</span>
+                          <div className={`flex-1 p-3 rounded-lg ${msg.is_internal ? 'bg-primary/10' : 'bg-muted'}`}>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-medium text-sm">{msg.is_internal ? 'תמיכה' : 'לקוח'}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(msg.created_at), 'HH:mm', { locale: he })}
+                              </span>
+                            </div>
+                            <p className="text-sm">{msg.message}</p>
                           </div>
-                          <p className="text-sm">שלום, תודה על פנייתך. אנחנו בודקים את הנושא ונחזור אליך בהקדם.</p>
                         </div>
-                      </div>
+                      ))}
+                      {(!ticketMessages || ticketMessages.length === 0) && (
+                        <p className="text-center text-muted-foreground">אין הודעות</p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Reply */}
                   <div className="flex gap-2">
                     <Input
                       placeholder="הקלד תשובה..."
@@ -334,7 +330,11 @@ const AdminHelpDesk = () => {
                       onChange={(e) => setNewMessage(e.target.value)}
                       className="flex-1"
                     />
-                    <Button className="gap-2">
+                    <Button 
+                      className="gap-2"
+                      onClick={() => sendMessageMutation.mutate()}
+                      disabled={!newMessage.trim()}
+                    >
                       <Send className="h-4 w-4" />
                       שלח
                     </Button>

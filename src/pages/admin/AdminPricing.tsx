@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,77 +19,44 @@ import {
   Package
 } from "lucide-react";
 import { motion } from "framer-motion";
-
-interface PriceRule {
-  id: string;
-  name: string;
-  type: 'customer_group' | 'quantity' | 'time_based' | 'bundle';
-  discount: number;
-  discountType: 'percentage' | 'fixed';
-  conditions: string;
-  isActive: boolean;
-}
-
-interface Currency {
-  code: string;
-  name: string;
-  symbol: string;
-  rate: number;
-  isDefault: boolean;
-}
+import { toast } from "sonner";
 
 const AdminPricing = () => {
-  const [priceRules, setPriceRules] = useState<PriceRule[]>([
-    {
-      id: '1',
-      name: 'הנחת VIP',
-      type: 'customer_group',
-      discount: 15,
-      discountType: 'percentage',
-      conditions: 'לקוחות VIP בלבד',
-      isActive: true
-    },
-    {
-      id: '2',
-      name: 'הנחת כמות 10+',
-      type: 'quantity',
-      discount: 10,
-      discountType: 'percentage',
-      conditions: 'רכישה של 10 יחידות ומעלה',
-      isActive: true
-    },
-    {
-      id: '3',
-      name: 'מבצע סוף שבוע',
-      type: 'time_based',
-      discount: 20,
-      discountType: 'percentage',
-      conditions: 'שישי-שבת',
-      isActive: false
-    },
-    {
-      id: '4',
-      name: 'חבילת התחלה',
-      type: 'bundle',
-      discount: 50,
-      discountType: 'fixed',
-      conditions: 'מזון + קערה + צעצוע',
-      isActive: true
-    }
-  ]);
+  const queryClient = useQueryClient();
 
-  const [currencies, setCurrencies] = useState<Currency[]>([
-    { code: 'ILS', name: 'שקל ישראלי', symbol: '₪', rate: 1, isDefault: true },
-    { code: 'USD', name: 'דולר אמריקאי', symbol: '$', rate: 0.27, isDefault: false },
-    { code: 'EUR', name: 'יורו', symbol: '€', rate: 0.25, isDefault: false }
-  ]);
+  const { data: priceRules, isLoading } = useQuery({
+    queryKey: ['price-rules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('price_rules')
+        .select('*')
+        .order('priority', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('price_rules')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['price-rules'] });
+      toast.success('הכלל נמחק');
+    }
+  });
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       customer_group: 'קבוצת לקוחות',
       quantity: 'כמות',
       time_based: 'זמן',
-      bundle: 'חבילה'
+      bundle: 'חבילה',
+      coupon: 'קופון'
     };
     return labels[type] || type;
   };
@@ -104,6 +73,14 @@ const AdminPricing = () => {
         return <Percent className="h-4 w-4" />;
     }
   };
+
+  const activeRules = priceRules?.filter(r => r.is_active).length || 0;
+
+  const currencies = [
+    { code: 'ILS', name: 'שקל ישראלי', symbol: '₪', rate: 1, isDefault: true },
+    { code: 'USD', name: 'דולר אמריקאי', symbol: '$', rate: 0.27, isDefault: false },
+    { code: 'EUR', name: 'יורו', symbol: '€', rate: 0.25, isDefault: false }
+  ];
 
   return (
     <AdminLayout title="תמחור ומט״ח">
@@ -133,7 +110,7 @@ const AdminPricing = () => {
                 <Percent className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{priceRules.filter(r => r.isActive).length}</p>
+                <p className="text-2xl font-bold">{activeRules}</p>
                 <p className="text-sm text-muted-foreground">כללי תמחור פעילים</p>
               </div>
             </CardContent>
@@ -189,48 +166,68 @@ const AdminPricing = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {priceRules.map((rule) => (
-                    <motion.div
-                      key={rule.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className={`p-4 rounded-lg border ${!rule.isActive && 'opacity-60'}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            {getTypeIcon(rule.type)}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{rule.name}</p>
-                              <Badge variant="secondary">{getTypeLabel(rule.type)}</Badge>
-                              {!rule.isActive && <Badge variant="outline">לא פעיל</Badge>}
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2].map(i => (
+                      <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
+                    ))}
+                  </div>
+                ) : priceRules?.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Percent className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>אין כללי תמחור מוגדרים</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {priceRules?.map((rule) => (
+                      <motion.div
+                        key={rule.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className={`p-4 rounded-lg border ${!rule.is_active && 'opacity-60'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              {getTypeIcon(rule.rule_type)}
                             </div>
-                            <p className="text-sm text-muted-foreground">{rule.conditions}</p>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{rule.name}</p>
+                                <Badge variant="secondary">{getTypeLabel(rule.rule_type)}</Badge>
+                                {!rule.is_active && <Badge variant="outline">לא פעיל</Badge>}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                עדיפות: {rule.priority || 0}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-left">
+                              <p className="text-2xl font-bold text-green-600">
+                                {rule.discount_type === 'percentage' ? `${rule.discount_value}%` : `₪${rule.discount_value}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground">הנחה</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-destructive"
+                                onClick={() => deleteMutation.mutate(rule.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-left">
-                            <p className="text-2xl font-bold text-green-600">
-                              {rule.discountType === 'percentage' ? `${rule.discount}%` : `₪${rule.discount}`}
-                            </p>
-                            <p className="text-xs text-muted-foreground">הנחה</p>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="icon">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
