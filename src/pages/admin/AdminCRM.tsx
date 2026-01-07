@@ -127,6 +127,8 @@ const AdminCRM = () => {
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
   const [editedCustomer, setEditedCustomer] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
 
   // Data fetching
   const { data: customers, isLoading } = useQuery({
@@ -1584,35 +1586,107 @@ const AdminCRM = () => {
                     </TabsContent>
 
                     <TabsContent value="history">
-                      <ScrollArea className="h-[350px]">
+                      <ScrollArea className="h-[400px]">
                         {recentOrders?.length ? (
                           <div className="space-y-3">
                             {recentOrders.map((order: any) => (
-                              <Card key={order.id} className="p-4 hover:shadow-sm transition-shadow">
+                              <Card 
+                                key={order.id} 
+                                className={cn(
+                                  "p-4 hover:shadow-md transition-all cursor-pointer border-2",
+                                  selectedOrder?.id === order.id ? "border-primary bg-primary/5" : "hover:border-primary/30"
+                                )}
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setShowOrderDetail(true);
+                                }}
+                              >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-primary/10">
-                                      <ShoppingBag className="h-4 w-4 text-primary" />
+                                    <div className={cn(
+                                      "p-2.5 rounded-xl",
+                                      order.status === 'completed' ? "bg-emerald-500/10" : 
+                                      order.status === 'pending' ? "bg-amber-500/10" : "bg-rose-500/10"
+                                    )}>
+                                      <ShoppingBag className={cn(
+                                        "h-5 w-5",
+                                        order.status === 'completed' ? "text-emerald-600" : 
+                                        order.status === 'pending' ? "text-amber-600" : "text-rose-600"
+                                      )} />
                                     </div>
                                     <div>
-                                      <p className="font-medium">הזמנה #{order.id.slice(0, 8)}</p>
-                                      <p className="text-xs text-muted-foreground">
-                                        {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                                      <p className="font-semibold">הזמנה #{order.id.slice(0, 8)}</p>
+                                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" />
+                                        {format(new Date(order.created_at), 'dd/MM/yyyy', { locale: he })}
+                                        <span className="mx-1">•</span>
+                                        <Clock className="h-3 w-3" />
+                                        {format(new Date(order.created_at), 'HH:mm', { locale: he })}
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="text-left">
-                                    <p className="font-bold text-lg">₪{parseFloat(String(order.total)).toLocaleString()}</p>
-                                    <Badge variant="outline" className={cn(
-                                      "text-xs",
-                                      order.status === 'completed' && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
-                                      order.status === 'pending' && "bg-amber-500/10 text-amber-700 border-amber-500/30",
-                                      order.status === 'cancelled' && "bg-rose-500/10 text-rose-700 border-rose-500/30"
-                                    )}>
-                                      {order.status === 'completed' ? 'הושלם' : order.status === 'pending' ? 'ממתין' : order.status}
-                                    </Badge>
+                                  <div className="text-left flex items-center gap-3">
+                                    <div>
+                                      <p className="font-bold text-lg text-primary">₪{parseFloat(String(order.total)).toLocaleString()}</p>
+                                      <Badge variant="outline" className={cn(
+                                        "text-xs",
+                                        order.status === 'completed' && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+                                        order.status === 'pending' && "bg-amber-500/10 text-amber-700 border-amber-500/30",
+                                        order.status === 'cancelled' && "bg-rose-500/10 text-rose-700 border-rose-500/30"
+                                      )}>
+                                        {order.status === 'completed' ? 'הושלם' : order.status === 'pending' ? 'ממתין' : order.status === 'cancelled' ? 'בוטל' : order.status}
+                                      </Badge>
+                                    </div>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Send receipt via WhatsApp
+                                        const phone = selectedCustomer?.phone;
+                                        if (phone) {
+                                          const items = order.items ? JSON.parse(order.items) : [];
+                                          const itemsList = items.map((item: any) => `• ${item.name} x${item.quantity} - ₪${item.price}`).join('\n');
+                                          const message = `🧾 *קבלה - PetID*\n\n` +
+                                            `📋 הזמנה #${order.id.slice(0, 8)}\n` +
+                                            `📅 ${format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}\n\n` +
+                                            `*פריטים:*\n${itemsList || 'לא זמין'}\n\n` +
+                                            `💰 *סה"כ: ₪${parseFloat(String(order.total)).toLocaleString()}*\n\n` +
+                                            `תודה שקניתם ב-PetID! 🐾`;
+                                          const whatsappUrl = `https://wa.me/972${phone.replace(/^0/, '')}?text=${encodeURIComponent(message)}`;
+                                          window.open(whatsappUrl, '_blank');
+                                          toast({ title: "נפתח WhatsApp לשליחת קבלה" });
+                                        } else {
+                                          toast({ title: "לא נמצא מספר טלפון", variant: "destructive" });
+                                        }
+                                      }}
+                                      title="שלח קבלה ללקוח"
+                                    >
+                                      <Receipt className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 </div>
+                                
+                                {/* Quick preview of items */}
+                                {order.items && (
+                                  <div className="mt-3 pt-3 border-t border-dashed">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <Package className="h-3 w-3" />
+                                      <span>
+                                        {(() => {
+                                          try {
+                                            const items = JSON.parse(order.items);
+                                            const totalItems = items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+                                            return `${totalItems} פריטים`;
+                                          } catch {
+                                            return 'פריטים לא זמינים';
+                                          }
+                                        })()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
                               </Card>
                             ))}
                           </div>
@@ -1624,6 +1698,146 @@ const AdminCRM = () => {
                           />
                         )}
                       </ScrollArea>
+                      
+                      {/* Order Detail Dialog */}
+                      <Dialog open={showOrderDetail} onOpenChange={setShowOrderDetail}>
+                        <DialogContent className="max-w-lg" dir="rtl">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <Receipt className="h-5 w-5 text-primary" />
+                              פירוט הזמנה #{selectedOrder?.id?.slice(0, 8)}
+                            </DialogTitle>
+                          </DialogHeader>
+                          
+                          {selectedOrder && (
+                            <div className="space-y-4">
+                              {/* Order Status & Date */}
+                              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">
+                                    {format(new Date(selectedOrder.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                                  </span>
+                                </div>
+                                <Badge variant="outline" className={cn(
+                                  selectedOrder.status === 'completed' && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+                                  selectedOrder.status === 'pending' && "bg-amber-500/10 text-amber-700 border-amber-500/30",
+                                  selectedOrder.status === 'cancelled' && "bg-rose-500/10 text-rose-700 border-rose-500/30"
+                                )}>
+                                  {selectedOrder.status === 'completed' ? 'הושלם' : 
+                                   selectedOrder.status === 'pending' ? 'ממתין' : 
+                                   selectedOrder.status === 'cancelled' ? 'בוטל' : selectedOrder.status}
+                                </Badge>
+                              </div>
+                              
+                              {/* Order Items */}
+                              <div className="space-y-2">
+                                <h4 className="font-medium flex items-center gap-2">
+                                  <Package className="h-4 w-4" />
+                                  פריטים בהזמנה
+                                </h4>
+                                <div className="border rounded-lg divide-y">
+                                  {selectedOrder.items ? (
+                                    (() => {
+                                      try {
+                                        const items = JSON.parse(selectedOrder.items);
+                                        return items.map((item: any, idx: number) => (
+                                          <div key={idx} className="p-3 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                              {item.image_url && (
+                                                <img src={item.image_url} alt={item.name} className="w-10 h-10 rounded object-cover" />
+                                              )}
+                                              <div>
+                                                <p className="font-medium text-sm">{item.name}</p>
+                                                <p className="text-xs text-muted-foreground">כמות: {item.quantity || 1}</p>
+                                              </div>
+                                            </div>
+                                            <p className="font-semibold">₪{(item.price * (item.quantity || 1)).toLocaleString()}</p>
+                                          </div>
+                                        ));
+                                      } catch {
+                                        return (
+                                          <div className="p-3 text-center text-muted-foreground text-sm">
+                                            פרטי פריטים לא זמינים
+                                          </div>
+                                        );
+                                      }
+                                    })()
+                                  ) : (
+                                    <div className="p-3 text-center text-muted-foreground text-sm">
+                                      אין פרטי פריטים
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Shipping Address */}
+                              {selectedOrder.shipping_address && (
+                                <div className="space-y-2">
+                                  <h4 className="font-medium flex items-center gap-2">
+                                    <MapPin className="h-4 w-4" />
+                                    כתובת משלוח
+                                  </h4>
+                                  <div className="p-3 bg-muted/30 rounded-lg text-sm">
+                                    {selectedOrder.shipping_address}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Payment Info */}
+                              <div className="space-y-2">
+                                <h4 className="font-medium flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4" />
+                                  תשלום
+                                </h4>
+                                <div className="p-3 bg-muted/30 rounded-lg flex items-center justify-between">
+                                  <span className="text-sm text-muted-foreground">אמצעי תשלום</span>
+                                  <span className="font-medium">{selectedOrder.payment_method || 'כרטיס אשראי'}</span>
+                                </div>
+                              </div>
+                              
+                              {/* Total */}
+                              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-medium">סה"כ לתשלום</span>
+                                  <span className="text-2xl font-bold text-primary">
+                                    ₪{parseFloat(String(selectedOrder.total)).toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Actions */}
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  variant="outline"
+                                  className="flex-1 gap-2"
+                                  onClick={() => {
+                                    const phone = selectedCustomer?.phone;
+                                    if (phone) {
+                                      const items = selectedOrder.items ? JSON.parse(selectedOrder.items) : [];
+                                      const itemsList = items.map((item: any) => `• ${item.name} x${item.quantity || 1} - ₪${item.price}`).join('\n');
+                                      const message = `🧾 *קבלה - PetID*\n\n` +
+                                        `📋 הזמנה #${selectedOrder.id.slice(0, 8)}\n` +
+                                        `📅 ${format(new Date(selectedOrder.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}\n\n` +
+                                        `*פריטים:*\n${itemsList || 'לא זמין'}\n\n` +
+                                        `💰 *סה"כ: ₪${parseFloat(String(selectedOrder.total)).toLocaleString()}*\n\n` +
+                                        `תודה שקניתם ב-PetID! 🐾`;
+                                      const whatsappUrl = `https://wa.me/972${phone.replace(/^0/, '')}?text=${encodeURIComponent(message)}`;
+                                      window.open(whatsappUrl, '_blank');
+                                      toast({ title: "נפתח WhatsApp לשליחת קבלה" });
+                                    } else {
+                                      toast({ title: "לא נמצא מספר טלפון", variant: "destructive" });
+                                    }
+                                  }}
+                                >
+                                  <Send className="h-4 w-4" />
+                                  שלח קבלה בווטסאפ
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
                     </TabsContent>
 
                     <TabsContent value="notes">
