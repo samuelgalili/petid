@@ -24,6 +24,10 @@ import {
   UserPlus,
   PackageX,
   Eye,
+  Plus,
+  FileText,
+  Settings,
+  BarChart3,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -34,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 import {
   LineChart,
   Line,
@@ -967,6 +972,39 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Quick Actions FAB */}
+      <FloatingActionButton
+        icon={Plus}
+        label="פעולות מהירות"
+        actions={[
+          {
+            icon: Package,
+            label: "מוצר חדש",
+            onClick: () => navigate("/admin/products"),
+          },
+          {
+            icon: ShoppingBag,
+            label: "הזמנות",
+            onClick: () => navigate("/admin/orders"),
+          },
+          {
+            icon: Users,
+            label: "לקוחות",
+            onClick: () => navigate("/admin/users"),
+          },
+          {
+            icon: FileText,
+            label: "חשבוניות",
+            onClick: () => navigate("/admin/invoices"),
+          },
+          {
+            icon: BarChart3,
+            label: "דוחות",
+            onClick: () => navigate("/admin/reports"),
+          },
+        ]}
+      />
     </AdminLayout>
   );
 };
