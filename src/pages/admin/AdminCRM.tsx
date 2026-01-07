@@ -1238,8 +1238,8 @@ const AdminCRM = () => {
 
         {/* Add Charge Dialog - Enhanced */}
         <Dialog open={showChargeDialog} onOpenChange={setShowChargeDialog}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0">
-            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0" dir="rtl">
+            <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent p-6 border-b">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3 text-xl">
                   <div className="p-2.5 bg-primary/10 rounded-xl">
@@ -1257,7 +1257,7 @@ const AdminCRM = () => {
               </DialogHeader>
             </div>
             
-            <ScrollArea className="max-h-[calc(90vh-200px)] px-6 py-4">
+            <ScrollArea className="max-h-[calc(90vh-220px)] px-6 py-4">
               <div className="space-y-6">
                 {/* Product Selection Section */}
                 <div className="space-y-4">
@@ -1316,27 +1316,28 @@ const AdminCRM = () => {
                     </SelectContent>
                   </Select>
 
-                  {/* Selected Products List - Enhanced */}
+                  {/* Selected Products List - Enhanced RTL */}
                   {newCharge.selectedProducts.length > 0 && (
                     <div className="rounded-xl border bg-card overflow-hidden">
                       <div className="divide-y">
-                        {newCharge.selectedProducts.map((product, index) => (
-                          <div key={product.id} className="p-3 hover:bg-muted/30 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{product.name}</p>
+                        {newCharge.selectedProducts.map((product) => (
+                          <div key={product.id} className="p-4 hover:bg-muted/30 transition-colors">
+                            <div className="flex flex-wrap items-center gap-3">
+                              {/* Product Info */}
+                              <div className="flex-1 min-w-[140px]">
+                                <p className="font-medium text-sm">{product.name}</p>
                                 <p className="text-xs text-muted-foreground">
                                   מחיר יחידה: ₪{product.price.toLocaleString()}
                                 </p>
                               </div>
                               
                               {/* Quantity Controls */}
-                              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+                              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1" dir="ltr">
                                 <Button 
                                   type="button"
                                   variant="ghost" 
                                   size="icon" 
-                                  className="h-7 w-7 hover:bg-background"
+                                  className="h-8 w-8 hover:bg-background shrink-0"
                                   onClick={() => {
                                     if (product.quantity > 1) {
                                       setNewCharge({
@@ -1353,14 +1354,14 @@ const AdminCRM = () => {
                                     }
                                   }}
                                 >
-                                  <Minus className="h-3 w-3" />
+                                  <Minus className="h-4 w-4" />
                                 </Button>
-                                <span className="w-8 text-center text-sm font-bold">{product.quantity}</span>
+                                <span className="w-10 text-center text-base font-bold">{product.quantity}</span>
                                 <Button 
                                   type="button"
                                   variant="ghost" 
                                   size="icon" 
-                                  className="h-7 w-7 hover:bg-background"
+                                  className="h-8 w-8 hover:bg-background shrink-0"
                                   onClick={() => {
                                     setNewCharge({
                                       ...newCharge,
@@ -1370,13 +1371,15 @@ const AdminCRM = () => {
                                     });
                                   }}
                                 >
-                                  <Plus className="h-3 w-3" />
+                                  <Plus className="h-4 w-4" />
                                 </Button>
                               </div>
                               
                               {/* Custom Price */}
-                              <div className="w-28">
-                                <div className="relative">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">מחיר:</span>
+                                <div className="relative w-24" dir="ltr">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₪</span>
                                   <Input 
                                     type="number"
                                     step="0.01"
@@ -1390,14 +1393,14 @@ const AdminCRM = () => {
                                         )
                                       });
                                     }}
-                                    className="h-8 text-sm pr-7 text-left font-semibold"
+                                    className="h-9 text-sm pl-7 text-right font-semibold"
                                   />
-                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
                                 </div>
                               </div>
                               
                               {/* Line Total */}
-                              <div className="w-20 text-left">
+                              <div className="min-w-[80px] text-center bg-primary/5 rounded-lg px-3 py-1.5">
+                                <p className="text-xs text-muted-foreground">סה״כ</p>
                                 <p className="font-bold text-primary">
                                   ₪{(product.customPrice * product.quantity).toLocaleString()}
                                 </p>
@@ -1408,7 +1411,7 @@ const AdminCRM = () => {
                                 type="button"
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
                                 onClick={() => {
                                   setNewCharge({
                                     ...newCharge,
@@ -1416,7 +1419,7 @@ const AdminCRM = () => {
                                   });
                                 }}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
@@ -1424,9 +1427,9 @@ const AdminCRM = () => {
                       </div>
                       
                       {/* Products Subtotal */}
-                      <div className="bg-muted/30 px-3 py-2 flex justify-between items-center border-t">
-                        <span className="text-sm font-medium text-muted-foreground">סה״כ מוצרים</span>
-                        <span className="font-bold text-lg">
+                      <div className="bg-muted/50 px-4 py-3 flex justify-between items-center border-t">
+                        <span className="text-sm font-medium">סה״כ מוצרים</span>
+                        <span className="font-bold text-xl text-primary">
                           ₪{newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0).toLocaleString()}
                         </span>
                       </div>
@@ -1434,18 +1437,18 @@ const AdminCRM = () => {
                   )}
                 </div>
 
-                {/* Discount Section - Enhanced */}
+                {/* Discount Section - Enhanced RTL */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <Percent className="h-4 w-4 text-emerald-500" />
                     <span>הנחה</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Select 
                       value={newCharge.discountType} 
                       onValueChange={(v: "none" | "percentage" | "fixed") => setNewCharge({...newCharge, discountType: v, discountValue: ""})}
                     >
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="w-44">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1456,7 +1459,10 @@ const AdminCRM = () => {
                     </Select>
                     
                     {newCharge.discountType !== "none" && (
-                      <div className="relative flex-1 max-w-[150px]">
+                      <div className="relative w-32" dir="ltr">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
+                          {newCharge.discountType === "percentage" ? "%" : "₪"}
+                        </span>
                         <Input 
                           type="number"
                           step="0.01"
@@ -1465,16 +1471,13 @@ const AdminCRM = () => {
                           value={newCharge.discountValue}
                           onChange={(e) => setNewCharge({...newCharge, discountValue: e.target.value})}
                           placeholder="0"
-                          className="text-left pr-8"
+                          className="text-right pl-8"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-                          {newCharge.discountType === "percentage" ? "%" : "₪"}
-                        </span>
                       </div>
                     )}
                     
                     {newCharge.discountType !== "none" && newCharge.discountValue && (
-                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 px-3 py-1.5">
                         חיסכון: ₪{(newCharge.discountType === "percentage" 
                           ? newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0) * (parseFloat(newCharge.discountValue) / 100)
                           : parseFloat(newCharge.discountValue)
@@ -1484,7 +1487,7 @@ const AdminCRM = () => {
                   </div>
                 </div>
 
-                {/* Charge Details Grid - Enhanced */}
+                {/* Charge Details Grid - Enhanced RTL */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Final Amount */}
                   <div className="space-y-2">
@@ -1492,7 +1495,8 @@ const AdminCRM = () => {
                       <DollarSign className="h-4 w-4 text-primary" />
                       סכום סופי לחיוב *
                     </Label>
-                    <div className="relative">
+                    <div className="relative" dir="ltr">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
                       <Input 
                         type="number"
                         step="0.01"
@@ -1510,16 +1514,15 @@ const AdminCRM = () => {
                         })()} 
                         onChange={(e) => setNewCharge({...newCharge, amount: e.target.value})} 
                         placeholder="0.00"
-                        className="text-left pr-8 h-12 text-lg font-bold"
+                        className="text-right pl-8 h-12 text-lg font-bold"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
                     </div>
                     {newCharge.selectedProducts.length > 0 && (
                       <Button 
                         type="button"
                         variant="outline" 
                         size="sm" 
-                        className="w-full text-xs"
+                        className="w-full text-xs gap-1"
                         onClick={() => {
                           const productsTotal = newCharge.selectedProducts.reduce((sum, p) => sum + (p.customPrice * p.quantity), 0);
                           let discount = 0;
@@ -1531,7 +1534,7 @@ const AdminCRM = () => {
                           setNewCharge({...newCharge, amount: Math.max(0, productsTotal - discount).toFixed(2)});
                         }}
                       >
-                        <RefreshCw className="h-3 w-3 mr-1" />
+                        <RefreshCw className="h-3 w-3" />
                         חשב מהמוצרים
                       </Button>
                     )}
@@ -1638,9 +1641,9 @@ const AdminCRM = () => {
             <div className="border-t bg-muted/30 p-4 space-y-4">
               {/* Summary Card */}
               {(newCharge.selectedProducts.length > 0 || parseFloat(newCharge.amount || "0") > 0) && (
-                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-4 border border-primary/20">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
+                <div className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent rounded-xl p-4 border border-primary/20">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1 flex-1">
                       {newCharge.selectedProducts.length > 0 && (
                         <p className="text-sm text-muted-foreground">
                           {newCharge.selectedProducts.length} מוצרים • {newCharge.selectedProducts.reduce((sum, p) => sum + p.quantity, 0)} פריטים
@@ -1652,7 +1655,7 @@ const AdminCRM = () => {
                         </p>
                       )}
                     </div>
-                    <div className="text-left">
+                    <div className="text-center shrink-0">
                       <p className="text-xs text-muted-foreground mb-1">סה״כ לחיוב</p>
                       <p className="text-3xl font-bold text-primary">
                         ₪{parseFloat(newCharge.amount || "0").toLocaleString()}
@@ -1667,23 +1670,23 @@ const AdminCRM = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => setShowChargeDialog(false)}
-                  className="flex-1"
+                  className="flex-1 h-11"
                 >
                   ביטול
                 </Button>
                 <Button 
                   onClick={() => addChargeMutation.mutate(newCharge)} 
                   disabled={!newCharge.amount || !newCharge.description.trim() || addChargeMutation.isPending}
-                  className="flex-[2] h-11 text-base font-semibold"
+                  className="flex-[2] h-11 text-base font-semibold gap-2"
                 >
                   {addChargeMutation.isPending ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      <RefreshCw className="h-4 w-4 animate-spin" />
                       מוסיף חיוב...
                     </>
                   ) : (
                     <>
-                      <Receipt className="h-4 w-4 mr-2" />
+                      <Receipt className="h-4 w-4" />
                       הוסף חיוב
                     </>
                   )}
