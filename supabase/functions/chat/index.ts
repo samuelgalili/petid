@@ -56,7 +56,7 @@ ${userContext.pets.map((pet: any) =>
         .from('business_products')
         .select('id, name, description, price, sale_price, image_url, category, pet_type')
         .eq('in_stock', true)
-        .limit(6);
+        .limit(3);
       
       // Filter by pet type if we know what pets the user has
       if (petTypes.length === 1) {
