@@ -356,16 +356,22 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
             setIsTyping(false);
             assistantContent += content;
             
-            // Parse product IDs from content
-            const productMatch = assistantContent.match(/\[PRODUCTS:([^\]]+)\]/);
+            // Parse product IDs from content - support multiple formats
+            // Format 1: [PRODUCTS:id1,id2,id3]
+            // Format 2: PRODUCTS:id1,id2,id3]
+            // Format 3: [PRODUCTS:id1, id2, id3]
+            const productMatch = assistantContent.match(/\[?PRODUCTS:([^\]]+)\]?/i);
             let recommendedProducts: ChatProduct[] = [];
             let displayContent = assistantContent;
             
             if (productMatch && availableProducts.length > 0) {
-              const productIds = productMatch[1].split(",").map(id => id.trim());
+              const productIds = productMatch[1].split(",").map(id => id.trim().replace(/[\[\]]/g, ''));
               recommendedProducts = availableProducts.filter(p => productIds.includes(p.id));
-              // Remove the product tag from display content
-              displayContent = assistantContent.replace(/\[PRODUCTS:[^\]]+\]/, "").trim();
+              // Remove the product tag from display content - handle all variations
+              displayContent = assistantContent
+                .replace(/\[?PRODUCTS:[^\]]+\]?/gi, "")
+                .replace(/\s+/g, " ")
+                .trim();
             }
             
             setAiMessages((prev) => {
