@@ -50,7 +50,8 @@ import {
   Search,
   PanelLeftClose,
   PanelLeft,
-  Home
+  Home,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -164,6 +165,7 @@ const navGroups: NavGroup[] = [
     label: "כלים",
     items: [
       { icon: Bot, label: "סקראפר מוצרים", href: "/admin/scraper" },
+      { icon: Upload, label: "ייבוא נתונים", href: "/admin/data-import" },
       { icon: Plug, label: "אינטגרציות", href: "/admin/integrations" },
       { icon: Webhook, label: "Webhooks & API", href: "/admin/webhooks" },
     ]
