@@ -254,12 +254,12 @@ export const SignupForm = () => {
 
         if (error) {
           setGeneralError(error.message);
-          toast({ title: "Error", description: error.message, variant: "destructive" });
+          toast({ title: "שגיאה", description: error.message, variant: "destructive" });
           setLoading(false);
           return false;
         }
 
-        toast({ title: "Code sent!", description: `Check your ${signupMethod === "email" ? "email" : "phone"}.` });
+        toast({ title: "הקוד נשלח!", description: signupMethod === "email" ? "בדוק את האימייל שלך" : "בדוק את הטלפון שלך" });
       }
 
       setShowOTPInput(true);
@@ -267,7 +267,7 @@ export const SignupForm = () => {
       setLoading(false);
       return true;
     } catch {
-      setGeneralError("Failed to send code.");
+      setGeneralError("שליחת הקוד נכשלה.");
       setLoading(false);
       return false;
     }

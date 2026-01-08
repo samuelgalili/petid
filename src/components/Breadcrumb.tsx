@@ -76,7 +76,7 @@ export const Breadcrumb = ({ items, className }: BreadcrumbProps) => {
         className
       )}
       role="navigation"
-      aria-label="breadcrumb"
+      aria-label="ניווט"
     >
       <ol className="flex items-center gap-2 flex-wrap">
         {breadcrumbItems.map((item, index) => {

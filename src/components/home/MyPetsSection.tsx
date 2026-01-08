@@ -48,7 +48,7 @@ export const MyPetsSection = ({
             <motion.button
               onClick={() => navigate('/add-pet')}
               className="relative mb-4 cursor-pointer"
-              aria-label="Add your first pet"
+              aria-label="הוסף את החיית המחמד הראשונה שלך"
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.9 }}
             >
