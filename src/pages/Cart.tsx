@@ -76,11 +76,11 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       <AppHeader title="עגלת הקניות" showBackButton={true} />
       
       {/* Cart Items */}
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="px-4 py-4">
         <AnimatePresence mode="popLayout">
           {items.map((item) => (
             <motion.div
