@@ -1280,10 +1280,6 @@ const Feed = () => {
         )}
       </AnimatePresence>
 
-
-      {/* Business Feed Banner - for business owners */}
-      <BusinessFeedBanner />
-
       {/* Feed */}
       <div className="max-w-lg mx-auto">
         {loading ? <SkeletonFeed /> : 
