@@ -1206,31 +1206,6 @@ const Feed = () => {
       }} className="px-4 py-3 cursor-pointer bg-card border-b border-border/30" onClick={() => navigate('/rewards')}>
           {/* Header */}
           
-          
-        {/* Cashback Progress */}
-          <motion.div 
-            className="space-y-2 mb-3" 
-            dir="rtl"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-          >
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">💰 קאשבק 5%</span>
-              <span className="text-primary font-semibold">₪50</span>
-            </div>
-            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-light" initial={{
-              width: 0
-            }} animate={{
-              width: `${Math.min(totalPoints * 0.01 / 50 * 100, 100)}%`
-            }} transition={{
-              duration: 0.8,
-              ease: "easeOut"
-            }} />
-            </div>
-          </motion.div>
-          
           {/* Points Progress */}
           <motion.div 
             className="space-y-2" 
