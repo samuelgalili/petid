@@ -2964,6 +2964,51 @@ export type Database = {
         }
         Relationships: []
       }
+      message_events: {
+        Row: {
+          created_at: string
+          direction: string
+          error: string | null
+          id: string
+          latency_ms: number | null
+          message_id: string | null
+          message_text: string | null
+          metadata: Json | null
+          provider: string
+          recipient: string | null
+          sender: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          message_id?: string | null
+          message_text?: string | null
+          metadata?: Json | null
+          provider?: string
+          recipient?: string | null
+          sender?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          message_id?: string | null
+          message_text?: string | null
+          metadata?: Json | null
+          provider?: string
+          recipient?: string | null
+          sender?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
