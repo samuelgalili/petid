@@ -1166,15 +1166,6 @@ const Feed = () => {
       {/* Spacer for fixed header */}
       <div className="h-14" />
 
-      {/* Contextual Feed Tabs - Improved */}
-      <FeedTabs 
-        activeTab={activeTab} 
-        onTabChange={handleTabChange}
-        isAuthenticated={isAuthenticated}
-        onAuthRequired={checkAuth}
-      />
-
-
       {/* New Posts Banner */}
       <AnimatePresence>
         {newPostsAvailable && <motion.div initial={{
