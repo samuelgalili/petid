@@ -421,53 +421,21 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Hero Header - Premium WOW Design */}
-      <div className="relative h-[360px] overflow-hidden">
-        {/* Animated Background */}
+      {/* Hero Header - Clean Design */}
+      <div className="relative h-64 overflow-hidden bg-muted">
+        {/* Background Image */}
         <div className="absolute inset-0">
           {pet.avatar_url ? (
             <>
-              <motion.img 
+              <img 
                 src={pet.avatar_url} 
                 alt={pet.name}
                 className="w-full h-full object-cover"
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 1.2, ease: "easeOut" }}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-background" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-background" />
             </>
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary via-primary/80 to-accent relative overflow-hidden">
-              {/* Animated orbs */}
-              <motion.div 
-                className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl"
-                animate={{ 
-                  x: [0, 20, 0],
-                  y: [0, -20, 0],
-                  scale: [1, 1.2, 1]
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div 
-                className="absolute bottom-20 left-10 w-56 h-56 rounded-full bg-accent/30 blur-3xl"
-                animate={{ 
-                  x: [0, -30, 0],
-                  y: [0, 20, 0],
-                  scale: [1, 1.3, 1]
-                }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div 
-                className="absolute top-1/2 left-1/2 w-32 h-32 rounded-full bg-secondary/20 blur-2xl"
-                animate={{ 
-                  rotate: [0, 360],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-              />
-            </div>
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/10" />
           )}
         </div>
 
@@ -477,25 +445,23 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             variant="ghost"
             size="icon"
             onClick={() => navigate('/profile')}
-            className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40"
+            className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </Button>
           
           <div className="flex items-center gap-2">
-            {/* Edit Profile Button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate(`/edit-pet/${petId}`)}
-              className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40"
+              className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm"
             >
-              <Pencil className="w-5 h-5" />
+              <Pencil className="w-4 h-4" />
             </Button>
             
-            {/* Camera Button */}
-            <label className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center cursor-pointer hover:bg-black/40 transition-all">
-              <Camera className="w-5 h-5" />
+            <label className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:bg-background/90 transition-colors">
+              <Camera className="w-4 h-4" />
               <input
                 type="file"
                 accept="image/*"
@@ -510,9 +476,9 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive/80"
+                  className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent dir="rtl">
@@ -530,7 +496,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                   >
                     {isDeleting ? "מוחק..." : "מחק"}
                   </AlertDialogAction>
-                  <AlertDialogCancel className="rounded-full px-8 border-border">ביטול</AlertDialogCancel>
+                  <AlertDialogCancel className="rounded-full px-8">ביטול</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -544,177 +510,103 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-30 bg-black/60 backdrop-blur-sm flex items-center justify-center"
+              className="absolute inset-0 z-30 bg-background/80 backdrop-blur-sm flex items-center justify-center"
             >
-              <div className="text-center text-white">
-                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-sm">מעלה תמונה...</p>
+              <div className="text-center">
+                <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">מעלה תמונה...</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Pet Info Overlay - Premium Design */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="absolute bottom-0 left-0 right-0 p-6"
-          dir="rtl"
-        >
-          <div className="flex items-end gap-5">
-            {/* Avatar with Animated Ring */}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-              className="relative"
-            >
-              <motion.div 
-                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary via-accent to-secondary blur-lg opacity-60"
-                animate={{ 
-                  rotate: [0, 360],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-              />
-              <div className="relative w-28 h-28 rounded-3xl p-1 bg-gradient-to-br from-primary via-accent to-secondary shadow-2xl">
-                <Avatar className="w-full h-full rounded-2xl border-3 border-background">
-                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover rounded-2xl" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary/50 to-accent/50 text-white text-5xl font-bold rounded-2xl">
-                    {pet.type === 'dog' ? '🐕' : '🐈'}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              {/* Verified Badge with Pulse */}
-              <motion.div 
-                className="absolute -bottom-2 -left-2 w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center ring-3 ring-background shadow-xl"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <span className="text-white text-sm font-bold">✓</span>
-              </motion.div>
-            </motion.div>
+        {/* Pet Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-4" dir="rtl">
+          <div className="flex items-end gap-4">
+            {/* Avatar */}
+            <div className="relative">
+              <Avatar className="w-20 h-20 rounded-2xl border-4 border-background shadow-lg">
+                <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-3xl rounded-2xl">
+                  {pet.type === 'dog' ? '🐕' : '🐈'}
+                </AvatarFallback>
+              </Avatar>
+            </div>
 
-            {/* Name & Info - Enhanced */}
-            <div className="flex-1 mb-2">
-              <motion.h1 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-4xl font-black text-white drop-shadow-xl mb-2 tracking-tight"
-              >
+            {/* Name & Info */}
+            <div className="flex-1 mb-1">
+              <h1 className="text-2xl font-bold text-white drop-shadow-md mb-1">
                 {pet.name}
-              </motion.h1>
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center gap-2 flex-wrap"
-              >
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/25 backdrop-blur-md text-white rounded-xl text-sm font-semibold shadow-sm">
+              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-background/80 backdrop-blur-sm text-foreground rounded-full text-xs font-medium">
                   {pet.type === 'dog' ? '🐕 כלב' : '🐈 חתול'}
                 </span>
                 {pet.breed && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/40 backdrop-blur-md text-white rounded-xl text-sm font-semibold shadow-sm">
-                    ✨ {pet.breed}
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/80 backdrop-blur-sm text-primary-foreground rounded-full text-xs font-medium">
+                    {pet.breed}
                   </span>
                 )}
-              </motion.div>
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Stats Cards - Premium Glass Style */}
-      <div className="px-4 -mt-8 relative z-10" dir="rtl">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, staggerChildren: 0.1 }}
-          className="grid grid-cols-4 gap-3"
-        >
+      {/* Stats Cards - Clean Design */}
+      <div className="px-4 -mt-4 relative z-10" dir="rtl">
+        <div className="grid grid-cols-4 gap-2">
           {[
-            { emoji: '📅', value: calculateAge(pet.birth_date).split(' ')[0], label: 'גיל', gradient: 'from-blue-500/20 to-cyan-500/10', border: 'border-blue-500/30' },
-            { emoji: pet.gender === 'male' ? '♂️' : '♀️', value: pet.gender === 'male' ? 'זכר' : 'נקבה', label: 'מין', gradient: 'from-purple-500/20 to-pink-500/10', border: 'border-purple-500/30' },
-            { emoji: '💚', value: 'מעולה', label: 'בריאות', gradient: 'from-green-500/20 to-emerald-500/10', border: 'border-green-500/30', textColor: 'text-green-600' },
-            { emoji: '⭐', value: `${compatibilityScore}%`, label: 'התאמה', gradient: 'from-primary/20 to-accent/10', border: 'border-primary/30', textColor: 'text-primary' },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.5 + index * 0.1 }}
-              whileHover={{ y: -4, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Card className={`p-3 text-center bg-gradient-to-br ${stat.gradient} backdrop-blur-xl ${stat.border} shadow-lg cursor-pointer transition-all duration-300`}>
-                <motion.div 
-                  className="text-2xl mb-1"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
-                >
-                  {stat.emoji}
-                </motion.div>
-                <p className={`text-sm font-bold ${stat.textColor || 'text-foreground'}`}>{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
-              </Card>
-            </motion.div>
+            { emoji: '📅', value: calculateAge(pet.birth_date).split(' ')[0], label: 'גיל' },
+            { emoji: pet.gender === 'male' ? '♂️' : '♀️', value: pet.gender === 'male' ? 'זכר' : 'נקבה', label: 'מין' },
+            { emoji: '💚', value: 'מעולה', label: 'בריאות' },
+            { emoji: '⭐', value: `${compatibilityScore}%`, label: 'התאמה' },
+          ].map((stat) => (
+            <Card key={stat.label} className="p-3 text-center bg-card border border-border shadow-sm">
+              <div className="text-lg mb-0.5">{stat.emoji}</div>
+              <p className="text-xs font-semibold text-foreground">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+            </Card>
           ))}
-        </motion.div>
+        </div>
       </div>
 
-      {/* Quick Action Buttons - Premium Pill Style */}
-      <div className="px-4 mt-5 overflow-x-auto scrollbar-hide" dir="rtl">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="flex gap-2 pb-3"
-        >
+      {/* Quick Action Buttons - Clean Style */}
+      <div className="px-4 mt-4 overflow-x-auto scrollbar-hide" dir="rtl">
+        <div className="flex gap-2 pb-2">
           {[
-            { id: 'overview', label: 'סקירה', icon: Sparkles, color: 'from-primary to-primary-light', activeColor: 'bg-gradient-to-r from-primary to-primary-light text-white' },
-            { id: 'breed', label: 'הגזע', icon: Info, color: 'from-orange-500 to-amber-500', activeColor: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white' },
-            { id: 'documents', label: 'מסמכים', icon: FileText, color: 'from-blue-500 to-cyan-500', activeColor: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' },
-            { id: 'training', label: 'אילוף', icon: GraduationCap, color: 'from-purple-500 to-pink-500', activeColor: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' },
-            { id: 'photos', label: 'תמונות', icon: Image, color: 'from-pink-500 to-rose-500', activeColor: 'bg-gradient-to-r from-pink-500 to-rose-500 text-white' },
-          ].map((tab, index) => {
+            { id: 'overview', label: 'סקירה', icon: Sparkles },
+            { id: 'breed', label: 'הגזע', icon: Info },
+            { id: 'documents', label: 'מסמכים', icon: FileText },
+            { id: 'training', label: 'אילוף', icon: GraduationCap },
+            { id: 'photos', label: 'תמונות', icon: Image },
+          ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <motion.button
+              <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + index * 0.05 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all whitespace-nowrap shadow-sm ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition-colors whitespace-nowrap text-xs font-medium ${
                   isActive 
-                    ? `${tab.activeColor} shadow-lg` 
-                    : 'bg-card border border-border/50 text-foreground hover:border-primary/30'
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
-                <span className="text-xs font-semibold">{tab.label}</span>
-              </motion.button>
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
             );
           })}
           
-          {/* Adoption Button - Special */}
-          <motion.button
+          {/* Adoption Button */}
+          <button
             onClick={() => setShowAdoptionDialog(true)}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.85 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/30 text-foreground hover:from-red-500/20 hover:to-pink-500/20 transition-all whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors whitespace-nowrap text-xs font-medium"
           >
-            <Heart className="w-4 h-4 text-red-500" />
-            <span className="text-xs font-semibold">למסירה</span>
-          </motion.button>
+            <Heart className="w-3.5 h-3.5" />
+            <span>למסירה</span>
+          </button>
 
           {/* Adoption Confirmation Dialog */}
           <AlertDialog open={showAdoptionDialog} onOpenChange={setShowAdoptionDialog}>
@@ -725,14 +617,12 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-right">
                   פוסט יפורסם בפיד עם תמונת {pet.name} ותיוג "למסירה".
-                  <br />
-                  משתמשים מעוניינים יוכלו ליצור איתך קשר.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-row-reverse gap-2">
                 <AlertDialogAction 
                   onClick={handleConfirmAdoption}
-                  className="bg-red-500 hover:bg-red-600"
+                  className="bg-destructive hover:bg-destructive/90"
                 >
                   המשך לעריכת הפוסט
                 </AlertDialogAction>
@@ -752,7 +642,6 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
               </AlertDialogHeader>
               
               <div className="space-y-4">
-                {/* Preview Image */}
                 {pet.avatar_url && (
                   <div className="relative rounded-xl overflow-hidden aspect-square">
                     <img 
@@ -760,13 +649,12 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                       alt={pet.name}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                    <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground px-2 py-1 rounded-full text-xs font-medium">
                       #למסירה
                     </div>
                   </div>
                 )}
                 
-                {/* Editable Caption */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-right block">תיאור הפוסט</label>
                   <textarea
@@ -785,53 +673,46 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                   disabled={isCreatingPost || !adoptionCaption.trim()}
                   className="bg-primary hover:bg-primary/90"
                 >
-                  {isCreatingPost ? "מפרסם..." : "פרסם פוסט 🎉"}
+                  {isCreatingPost ? "מפרסם..." : "פרסם פוסט"}
                 </AlertDialogAction>
                 <AlertDialogCancel>ביטול</AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* Grooming Button */}
-          <motion.button
+          {/* Secondary Actions */}
+          <button
             onClick={() => navigate('/grooming', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type } })}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border hover:border-pink-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
           >
-            <Scissors className="w-4 h-4 text-pink-500" />
-            <span className="text-xs font-medium text-foreground">טיפוח</span>
-          </motion.button>
+            <Scissors className="w-3.5 h-3.5" />
+            <span>טיפוח</span>
+          </button>
 
-          {/* Pension/Boarding Button */}
-          <motion.button
+          <button
             onClick={() => navigate('/experiences', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border hover:border-blue-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
           >
-            <MapPin className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-medium text-foreground">פנסיון</span>
-          </motion.button>
+            <MapPin className="w-3.5 h-3.5" />
+            <span>פנסיון</span>
+          </button>
 
-          {/* Insurance Button */}
-          <motion.button
+          <button
             onClick={() => navigate('/insurance', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border hover:border-green-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
           >
-            <Shield className="w-4 h-4 text-green-500" />
-            <span className="text-xs font-medium text-foreground">ביטוח</span>
-          </motion.button>
+            <Shield className="w-3.5 h-3.5" />
+            <span>ביטוח</span>
+          </button>
 
-          {/* Shop Button */}
-          <motion.button
+          <button
             onClick={() => navigate('/shop', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border hover:border-primary/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
           >
-            <Package className="w-4 h-4 text-primary" />
-            <span className="text-xs font-medium text-foreground">חנות</span>
-          </motion.button>
-        </motion.div>
+            <Package className="w-3.5 h-3.5" />
+            <span>חנות</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
