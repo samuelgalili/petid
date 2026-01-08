@@ -237,7 +237,7 @@ export default function Photos() {
         }}
       />
       
-      <div className="min-h-screen bg-background pb-24" dir="rtl">
+      <div className="min-h-screen bg-background pb-20" dir="rtl">
         {/* Header Section with Gradient */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] opacity-90" />

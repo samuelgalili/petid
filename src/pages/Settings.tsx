@@ -293,7 +293,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir={direction}>
+    <div className="min-h-screen bg-background pb-20" dir={direction}>
       {/* Hero Header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-accent to-secondary opacity-90" />

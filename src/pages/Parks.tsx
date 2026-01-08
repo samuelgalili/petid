@@ -901,7 +901,7 @@ const Parks = () => {
     (selectedSize !== "all" ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       <AppHeader 
         title="גינות כלבים" 
         showBackButton={true}

@@ -78,7 +78,7 @@ const EditProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       {/* Header */}
       <div className="bg-background border-b border-border sticky top-0 z-10 px-4 py-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">

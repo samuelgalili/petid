@@ -113,7 +113,7 @@ const EditPet = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       <AppHeader title="עריכת פרופיל" showBackButton />
       
       <motion.form 

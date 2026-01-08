@@ -77,7 +77,7 @@ const BreedHistory = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 animate-fade-in" dir="rtl">
+    <div className="min-h-screen bg-background pb-20 animate-fade-in" dir="rtl">
       {/* Back Button */}
       <button
         onClick={() => navigate(-1)}

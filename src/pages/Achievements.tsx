@@ -37,7 +37,7 @@ const Achievements = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-20">
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
         <motion.div

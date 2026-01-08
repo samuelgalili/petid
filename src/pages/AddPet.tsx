@@ -387,7 +387,7 @@ const AddPet = () => {
   const progressSteps = isOnboarding ? actualSteps : TOTAL_STEPS;
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       {/* Gradient Header - New Cyan/Purple/Pink */}
       <div 
         className="sticky top-0 z-40 backdrop-blur-xl border-b border-white/10"

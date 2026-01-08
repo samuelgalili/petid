@@ -390,7 +390,7 @@ export default function Documents() {
         }}
       />
       
-      <div className="min-h-screen bg-background pb-28" dir="rtl">
+      <div className="min-h-screen bg-background pb-20" dir="rtl">
         <div className="container mx-auto px-4 pt-4 pb-6 max-w-lg">
           {/* Stats Cards */}
           <motion.div 

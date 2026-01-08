@@ -9,7 +9,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="w-full bg-muted/30 border-t border-border/30 py-6 pb-24 mt-auto" dir="rtl">
+    <footer className="w-full bg-muted/30 border-t border-border/30 py-6 pb-20 mt-auto" dir="rtl">
       <div className="max-w-md mx-auto px-4">
         <div className="flex justify-center items-center gap-3 flex-wrap text-xs">
           {footerLinks.map((link, index) => (
