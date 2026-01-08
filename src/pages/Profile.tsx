@@ -501,13 +501,13 @@ const Profile = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="w-[68px] h-[68px] rounded-full border-2 border-dashed border-primary/40 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 transition-colors">
+                <div className="w-[68px] h-[68px] rounded-2xl border-2 border-dashed border-primary/40 flex items-center justify-center bg-primary/5 hover:bg-primary/10 transition-colors">
                   <Plus className="w-6 h-6 text-primary" />
                 </div>
                 <span className="text-[11px] text-muted-foreground font-medium">הוסף חיה</span>
               </motion.button>
 
-              {/* Pet Highlights */}
+              {/* Pet Highlights - Rounded Square with Gradient */}
               {pets.map((pet, index) => (
                 <motion.button 
                   key={pet.id}
@@ -519,14 +519,12 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="relative w-[68px] h-[68px]">
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary to-accent opacity-70" />
-                    <div className="absolute inset-[2px] rounded-full bg-background" />
-                    <div className="absolute inset-[3px] rounded-full overflow-hidden">
+                  <div className="w-[68px] h-[68px] rounded-2xl p-[2px] bg-gradient-to-br from-primary via-accent to-secondary shadow-md">
+                    <div className="w-full h-full rounded-xl bg-background overflow-hidden">
                       {pet.avatar_url ? (
                         <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
                           {pet.type === 'dog' ? (
                             <img src={dogIcon} alt="dog" className="w-8 h-8" />
                           ) : (
