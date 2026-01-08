@@ -10,6 +10,9 @@ const corsHeaders = {
 const WHATSAPP_API_URL = "https://graph.facebook.com/v18.0";
 const VERIFY_TOKEN = "petid_whatsapp_verify_token_2024";
 
+// Default fallback template when reopening conversation outside 24h window
+const FALLBACK_TEMPLATE = "petid_followup";
+
 // System prompt for AI customer service
 const SYSTEM_PROMPT = `אתה נציג שירות לקוחות AI של PetID - אפליקציית ניהול חיות מחמד.
 
@@ -27,6 +30,278 @@ const SYSTEM_PROMPT = `אתה נציג שירות לקוחות AI של PetID - �
 - תמיכה טכנית באפליקציה
 
 אם זו שאלה רפואית דחופה - הפנה לוטרינר.`;
+
+// ===== Template Logic (imported from whatsapp-template-check) =====
+
+interface TemplateCheckResult {
+  requiresTemplate: boolean;
+  templateName?: string;
+  variables?: Record<string, string>;
+  reason?: string;
+}
+
+/**
+ * Check if the last user message was within 24 hours
+ */
+function isWithin24Hours(lastMessageAt: string | null): boolean {
+  if (!lastMessageAt) return false;
+  
+  const lastMessage = new Date(lastMessageAt);
+  const now = new Date();
+  const hoursDiff = (now.getTime() - lastMessage.getTime()) / (1000 * 60 * 60);
+  
+  return hoursDiff <= 24;
+}
+
+/**
+ * Determine which template to use based on message context
+ */
+function determineTemplate(messageType: string): string {
+  switch (messageType) {
+    case 'welcome':
+      return 'petid_welcome';
+    case 'followup':
+      return 'petid_followup';
+    case 'confirmation':
+      return 'petid_confirmation';
+    case 'update':
+      return 'petid_update';
+    case 'reminder':
+      return 'petid_reminder';
+    case 'handoff':
+      return 'petid_handoff';
+    default:
+      return FALLBACK_TEMPLATE;
+  }
+}
+
+/**
+ * Check if a template is required for the outgoing message
+ * For AI replies to user messages, we check the 24h window
+ */
+function checkTemplateRequirement(
+  lastUserMessageAt: string | null,
+  initiatedBy: 'platform' | 'ai' | 'user_reply' = 'user_reply',
+  messageType: string = 'conversation',
+  firstName?: string
+): TemplateCheckResult {
+  // User is replying within 24h - free text allowed
+  if (initiatedBy === 'user_reply' && isWithin24Hours(lastUserMessageAt)) {
+    return {
+      requiresTemplate: false,
+      reason: 'User-initiated conversation within 24-hour window'
+    };
+  }
+  
+  // Outside 24h window - template required
+  if (!isWithin24Hours(lastUserMessageAt)) {
+    const templateName = determineTemplate(messageType);
+    return {
+      requiresTemplate: true,
+      templateName,
+      variables: {
+        first_name: firstName || 'חבר/ה'
+      },
+      reason: 'More than 24 hours since last user message'
+    };
+  }
+  
+  // Platform/AI initiated messages outside window
+  if ((initiatedBy === 'platform' || initiatedBy === 'ai') && !isWithin24Hours(lastUserMessageAt)) {
+    const templateName = determineTemplate(messageType);
+    return {
+      requiresTemplate: true,
+      templateName,
+      variables: {
+        first_name: firstName || 'חבר/ה'
+      },
+      reason: 'Platform initiated message outside 24-hour window'
+    };
+  }
+  
+  // Default: within window, free text allowed
+  return {
+    requiresTemplate: false,
+    reason: 'Within active conversation window'
+  };
+}
+
+// ===== WhatsApp Message Sending Functions =====
+
+interface SendMessageOptions {
+  to: string;
+  text?: string;
+  templateName?: string;
+  templateVariables?: Record<string, string>;
+  languageCode?: string;
+}
+
+interface SendMessageResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+/**
+ * Send a text message via WhatsApp Cloud API
+ */
+async function sendTextMessage(to: string, text: string): Promise<SendMessageResult> {
+  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+
+  if (!accessToken || !phoneNumberId) {
+    return { success: false, error: "WhatsApp credentials not configured" };
+  }
+
+  try {
+    const response = await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: to,
+        type: "text",
+        text: { body: text },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("WhatsApp text message error:", response.status, errorData);
+      return { success: false, error: errorData };
+    }
+
+    const data = await response.json();
+    console.log("WhatsApp text message sent:", data);
+    return { success: true, messageId: data.messages?.[0]?.id };
+  } catch (error) {
+    console.error("WhatsApp text send error:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+/**
+ * Send a template message via WhatsApp Cloud API
+ */
+async function sendTemplateMessage(
+  to: string,
+  templateName: string,
+  variables?: Record<string, string>,
+  languageCode: string = "he"
+): Promise<SendMessageResult> {
+  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+
+  if (!accessToken || !phoneNumberId) {
+    return { success: false, error: "WhatsApp credentials not configured" };
+  }
+
+  // Build template components with variables if provided
+  const components: any[] = [];
+  if (variables && Object.keys(variables).length > 0) {
+    const parameters = Object.values(variables).map(value => ({
+      type: "text",
+      text: value
+    }));
+    
+    components.push({
+      type: "body",
+      parameters
+    });
+  }
+
+  const templatePayload: any = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: to,
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: languageCode }
+    }
+  };
+
+  // Only add components if we have variables
+  if (components.length > 0) {
+    templatePayload.template.components = components;
+  }
+
+  try {
+    const response = await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(templatePayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("WhatsApp template message error:", response.status, errorData);
+      return { success: false, error: errorData };
+    }
+
+    const data = await response.json();
+    console.log("WhatsApp template message sent:", data);
+    return { success: true, messageId: data.messages?.[0]?.id };
+  } catch (error) {
+    console.error("WhatsApp template send error:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+/**
+ * Smart message sender - decides between text and template based on 24h rule
+ * Includes fallback logic for failures
+ */
+async function sendWhatsAppMessage(options: SendMessageOptions): Promise<SendMessageResult> {
+  const { to, text, templateName, templateVariables, languageCode } = options;
+
+  // If explicitly requesting template
+  if (templateName) {
+    const result = await sendTemplateMessage(to, templateName, templateVariables, languageCode);
+    
+    // Fallback to default template if specific template fails
+    if (!result.success && templateName !== FALLBACK_TEMPLATE) {
+      console.log(`Template ${templateName} failed, trying fallback template`);
+      return await sendTemplateMessage(to, FALLBACK_TEMPLATE, templateVariables, languageCode);
+    }
+    
+    return result;
+  }
+
+  // Send as text message
+  if (text) {
+    return await sendTextMessage(to, text);
+  }
+
+  return { success: false, error: "No message content provided" };
+}
+
+/**
+ * Get the last user message timestamp for 24h window check
+ */
+async function getLastUserMessageTime(
+  supabase: any,
+  phoneNumber: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("whatsapp_messages")
+    .select("created_at")
+    .eq("phone_number", phoneNumber)
+    .eq("message_type", "incoming")
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  return data?.[0]?.created_at || null;
+}
+
+// ===== Main Webhook Handler =====
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -82,9 +357,17 @@ serve(async (req) => {
 
       console.log(`Message from ${from}, type: ${messageType}, id: ${messageId}`);
 
+      // Initialize Supabase client
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
       // Only process text messages
       if (messageType !== "text") {
-        await sendWhatsAppMessage(from, "מצטער, אני יכול לעבד רק הודעות טקסט כרגע. איך אוכל לעזור לך?");
+        await sendWhatsAppMessage({
+          to: from,
+          text: "מצטער, אני יכול לעבד רק הודעות טקסט כרגע. איך אוכל לעזור לך?"
+        });
         return new Response(JSON.stringify({ status: "ok" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -93,12 +376,7 @@ serve(async (req) => {
       const customerMessage = message.text?.body || "";
       console.log(`Customer message: ${customerMessage}`);
 
-      // Initialize Supabase client
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
-      // Store the incoming message
+      // Store the incoming message (this updates the 24h window)
       await supabase.from("whatsapp_messages").insert({
         phone_number: from,
         message_type: "incoming",
@@ -146,10 +424,30 @@ serve(async (req) => {
         const errorText = await aiResponse.text();
         console.error("AI API error:", aiResponse.status, errorText);
         
-        if (aiResponse.status === 429) {
-          await sendWhatsAppMessage(from, "המערכת עמוסה כרגע, אנא נסה שוב בעוד כמה דקות.");
+        // Get last user message time for template decision
+        const lastUserMessageAt = await getLastUserMessageTime(supabase, from);
+        const templateCheck = checkTemplateRequirement(lastUserMessageAt, 'user_reply', 'conversation');
+        
+        if (templateCheck.requiresTemplate) {
+          // Outside 24h - send template
+          await sendWhatsAppMessage({
+            to: from,
+            templateName: templateCheck.templateName || FALLBACK_TEMPLATE,
+            templateVariables: templateCheck.variables
+          });
         } else {
-          await sendWhatsAppMessage(from, "אירעה שגיאה, אנא נסה שוב מאוחר יותר או פנה לנציג.");
+          // Within 24h - send text
+          if (aiResponse.status === 429) {
+            await sendWhatsAppMessage({
+              to: from,
+              text: "המערכת עמוסה כרגע, אנא נסה שוב בעוד כמה דקות."
+            });
+          } else {
+            await sendWhatsAppMessage({
+              to: from,
+              text: "אירעה שגיאה, אנא נסה שוב מאוחר יותר או פנה לנציג."
+            });
+          }
         }
         
         return new Response(JSON.stringify({ status: "error" }), {
@@ -159,19 +457,103 @@ serve(async (req) => {
       }
 
       const aiData = await aiResponse.json();
-      const aiReply = aiData.choices?.[0]?.message?.content || "מצטער, לא הצלחתי לעבד את הבקשה.";
+      let aiReply = aiData.choices?.[0]?.message?.content || "מצטער, לא הצלחתי לעבד את הבקשה.";
 
       console.log(`AI reply: ${aiReply}`);
 
-      // Send AI response to WhatsApp
-      await sendWhatsAppMessage(from, aiReply);
+      // Check if AI returned a template instruction
+      const templateMatch = aiReply.match(/\[TEMPLATE:\s*(\w+)\s*\|?\s*variables:\s*({[^}]+})?\]/i);
+      
+      if (templateMatch) {
+        // AI explicitly requested a template
+        const templateName = templateMatch[1];
+        let variables: Record<string, string> = {};
+        
+        if (templateMatch[2]) {
+          try {
+            variables = JSON.parse(templateMatch[2].replace(/(\w+):/g, '"$1":'));
+          } catch {
+            console.log("Failed to parse template variables");
+          }
+        }
 
-      // Store the outgoing message
-      await supabase.from("whatsapp_messages").insert({
-        phone_number: from,
-        message_type: "outgoing",
-        message_text: aiReply,
-      });
+        console.log(`Sending template: ${templateName} with variables:`, variables);
+        
+        const result = await sendWhatsAppMessage({
+          to: from,
+          templateName,
+          templateVariables: variables
+        });
+
+        // Store the outgoing template message
+        await supabase.from("whatsapp_messages").insert({
+          phone_number: from,
+          message_type: "outgoing",
+          message_text: `[TEMPLATE: ${templateName}]`,
+        });
+
+        if (!result.success) {
+          console.error("Template send failed:", result.error);
+        }
+      } else {
+        // Regular text response - check 24h window
+        const lastUserMessageAt = await getLastUserMessageTime(supabase, from);
+        const templateCheck = checkTemplateRequirement(lastUserMessageAt, 'user_reply', 'conversation');
+
+        console.log(`24h check - lastMessage: ${lastUserMessageAt}, requiresTemplate: ${templateCheck.requiresTemplate}`);
+
+        let sendResult: SendMessageResult;
+
+        if (templateCheck.requiresTemplate) {
+          // Outside 24h window - must send template
+          console.log(`Outside 24h window, sending template: ${templateCheck.templateName}`);
+          
+          sendResult = await sendWhatsAppMessage({
+            to: from,
+            templateName: templateCheck.templateName || FALLBACK_TEMPLATE,
+            templateVariables: templateCheck.variables
+          });
+
+          // Store the outgoing template message
+          await supabase.from("whatsapp_messages").insert({
+            phone_number: from,
+            message_type: "outgoing",
+            message_text: `[TEMPLATE: ${templateCheck.templateName}] (Original: ${aiReply.substring(0, 100)}...)`,
+          });
+        } else {
+          // Within 24h window - send regular text
+          sendResult = await sendTextMessage(from, aiReply);
+
+          if (!sendResult.success) {
+            // Text failed - try fallback based on window
+            console.log("Text send failed, attempting fallback");
+            
+            sendResult = await sendWhatsAppMessage({
+              to: from,
+              templateName: FALLBACK_TEMPLATE,
+              templateVariables: { first_name: "חבר/ה" }
+            });
+
+            // Store fallback message
+            await supabase.from("whatsapp_messages").insert({
+              phone_number: from,
+              message_type: "outgoing",
+              message_text: `[TEMPLATE: ${FALLBACK_TEMPLATE}] (Fallback after text failure)`,
+            });
+          } else {
+            // Store the successful text message
+            await supabase.from("whatsapp_messages").insert({
+              phone_number: from,
+              message_type: "outgoing",
+              message_text: aiReply,
+            });
+          }
+        }
+
+        if (!sendResult.success) {
+          console.error("All send attempts failed:", sendResult.error);
+        }
+      }
 
       return new Response(JSON.stringify({ status: "ok" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -187,38 +569,3 @@ serve(async (req) => {
     });
   }
 });
-
-// Function to send WhatsApp message
-async function sendWhatsAppMessage(to: string, text: string) {
-  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
-  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
-
-  if (!accessToken || !phoneNumberId) {
-    throw new Error("WhatsApp credentials not configured");
-  }
-
-  const response = await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: to,
-      type: "text",
-      text: { body: text },
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error("WhatsApp API error:", response.status, errorData);
-    throw new Error(`Failed to send WhatsApp message: ${errorData}`);
-  }
-
-  const data = await response.json();
-  console.log("WhatsApp message sent:", data);
-  return data;
-}
