@@ -40,7 +40,8 @@ const TAB_LABELS: Record<FeedTab, string> = {
   following: "עוקבים",
   nearby: "בסביבה",
   marketplace: "חנויות",
-  adopt: "אימוץ"
+  adopt: "אימוץ",
+  parks: "גינות"
 };
 
 export const StoriesBar = ({ activeTab = "foryou", userCity, followingIds = [] }: StoriesBarProps) => {

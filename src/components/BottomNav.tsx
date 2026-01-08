@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, User, Compass, Grid3X3, Search } from "lucide-react";
+import { Home, ShoppingBag, User, Search } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -6,8 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { motion } from "framer-motion";
-import { FeatureHintWrapper } from "@/components/FeatureHintWrapper";
-import { SmartActionSearch } from "@/components/SmartActionSearch";
 
 // Gradient icon wrapper for active state
 const GradientIcon = ({ children, isActive, id }: { children: React.ReactNode; isActive: boolean; id: string }) => {
@@ -57,7 +55,6 @@ const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [createPostOpen, setCreatePostOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string>("");
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
@@ -129,14 +126,6 @@ const BottomNav = () => {
           {/* Explore */}
           <NavItem onClick={() => handleNavClick("/explore")} icon={<Search className={`w-6 h-6 ${isActive("/explore") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/explore") ? 2.5 : 1.5} />} isActive={isActive("/explore")} label="חיפוש" />
 
-          {/* Search Actions */}
-          <NavItem onClick={() => setSearchOpen(true)} icon={
-            <Compass 
-              className="w-6 h-6 text-muted-foreground" 
-              strokeWidth={1.5}
-            />
-          } isActive={false} label="גילוי" />
-
           {/* Shop */}
           <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`w-6 h-6 ${isActive("/shop") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/shop") ? 2.5 : 1.5} />} isActive={isActive("/shop")} label="חנות" />
 
@@ -157,12 +146,8 @@ const BottomNav = () => {
         <div className="h-[env(safe-area-inset-bottom)] bg-card" />
       </nav>
 
-
       {/* Create Post Dialog */}
       <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {}} />
-
-      {/* Smart Action Search */}
-      <SmartActionSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </>;
 };
 export default BottomNav;
