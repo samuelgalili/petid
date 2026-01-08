@@ -40,6 +40,7 @@ import { AnimatedCounter } from "@/components/profile/AnimatedCounter";
 import { MutualFollowers } from "@/components/profile/MutualFollowers";
 import { ActivityStatus } from "@/components/profile/ActivityStatus";
 import { LoyaltyRankCard } from "@/components/loyalty";
+import { BusinessInsightsBar } from "@/components/profile/BusinessInsightsBar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Profile = () => {
@@ -409,6 +410,9 @@ const Profile = () => {
               <MutualFollowers userId={profile?.id} currentUserId={profile?.id} />
             </div>
           </motion.div>
+
+          {/* Business Insights - Instagram style */}
+          <BusinessInsightsBar />
 
           {/* Loyalty Rank Card - New System */}
           <LoyaltyRankCard className="mb-5" />
