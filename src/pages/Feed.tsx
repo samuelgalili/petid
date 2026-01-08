@@ -1174,10 +1174,6 @@ const Feed = () => {
         onAuthRequired={checkAuth}
       />
 
-      {/* View Mode Switcher - More subtle */}
-      <div className="flex justify-end px-4 py-1.5 bg-background/80 backdrop-blur-sm sticky top-14 z-30">
-        <FeedViewSwitcher viewMode={viewMode} onViewModeChange={setViewMode} />
-      </div>
 
       {/* New Posts Banner */}
       <AnimatePresence>
@@ -1297,12 +1293,9 @@ const Feed = () => {
       {/* Business Feed Banner - for business owners */}
       <BusinessFeedBanner />
 
-      {/* Feed - with view mode switching */}
+      {/* Feed */}
       <div className="max-w-lg mx-auto">
         {loading ? <SkeletonFeed /> : 
-        viewMode === "grid" ? <FeedGridView items={mixedFeed} /> :
-        viewMode === "video" ? <FeedVideoView items={mixedFeed} currentUserId={user?.id} onLike={handleLike} onSave={handleSave} /> :
-        viewMode === "masonry" ? <FeedMasonryView items={mixedFeed} /> :
         mixedFeed.length === 0 ?
       // Enhanced Empty state - Beautiful and inviting
       <motion.div 
