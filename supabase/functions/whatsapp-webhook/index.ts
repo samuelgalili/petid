@@ -124,53 +124,52 @@ function determineTemplate(messageType: string): string {
 }
 
 /**
- * Check if a template is required for the outgoing message
- * For AI replies to user messages, we check the 24h window
+ * Check if a template is required for the outgoing message.
+ * Returns WhatsApp-ready variables map: { "1": ..., "2": ... } matching {{1}}, {{2}}...
  */
 function checkTemplateRequirement(
   lastUserMessageAt: string | null,
-  initiatedBy: 'platform' | 'ai' | 'user_reply' = 'user_reply',
-  messageType: string = 'conversation',
+  initiatedBy: "platform" | "ai" | "user_reply" = "user_reply",
+  messageType: string = "conversation",
   firstName?: string
 ): TemplateCheckResult {
-  // User is replying within 24h - free text allowed
-  if (initiatedBy === 'user_reply' && isWithin24Hours(lastUserMessageAt)) {
+  const within24h = isWithin24Hours(lastUserMessageAt);
+
+  // If user initiated and we are within the 24h customer care window -> free text allowed
+  if (initiatedBy === "user_reply" && within24h) {
     return {
       requiresTemplate: false,
-      reason: 'User-initiated conversation within 24-hour window'
+      reason: "User-initiated conversation within 24-hour window",
     };
   }
-  
-  // Outside 24h window - template required
-  if (!isWithin24Hours(lastUserMessageAt)) {
+
+  // Outside 24h -> template required (for any initiation)
+  if (!within24h) {
     const templateName = determineTemplate(messageType);
+
+    // WhatsApp template variables must match {{1}}, {{2}}, ...
+    // For your fallback petid_followup: {{1}} = first_name
+    const safeFirstName = firstName?.trim() ? firstName.trim() : "חבר";
+
     return {
       requiresTemplate: true,
       templateName,
       variables: {
-        first_name: firstName || 'חבר/ה'
+        "1": safeFirstName,
       },
-      reason: 'More than 24 hours since last user message'
+      reason:
+        initiatedBy === "platform"
+          ? "Platform initiated message outside 24-hour window"
+          : initiatedBy === "ai"
+            ? "AI initiated message outside 24-hour window"
+            : "More than 24 hours since last user message",
     };
   }
-  
-  // Platform/AI initiated messages outside window
-  if ((initiatedBy === 'platform' || initiatedBy === 'ai') && !isWithin24Hours(lastUserMessageAt)) {
-    const templateName = determineTemplate(messageType);
-    return {
-      requiresTemplate: true,
-      templateName,
-      variables: {
-        first_name: firstName || 'חבר/ה'
-      },
-      reason: 'Platform initiated message outside 24-hour window'
-    };
-  }
-  
+
   // Default: within window, free text allowed
   return {
     requiresTemplate: false,
-    reason: 'Within active conversation window'
+    reason: "Within active conversation window",
   };
 }
 
