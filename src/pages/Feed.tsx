@@ -1496,7 +1496,7 @@ const Feed = () => {
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Floating Action Button for Create */}
-      <FloatingActionButton icon={Plus} label="צור תוכן חדש" position="bottom-right" variant="primary" actions={[{
+      <FloatingActionButton icon={Plus} label="צור תוכן חדש" position="bottom-left" variant="primary" actions={[{
       icon: Camera,
       label: "פוסט חדש",
       onClick: handleCreatePost
