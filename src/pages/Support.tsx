@@ -131,7 +131,7 @@ const Support = () => {
             <Button
               variant="outline"
               className="h-auto py-4 flex flex-col gap-2 rounded-xl"
-              onClick={() => navigate("/privacy")}
+              onClick={() => navigate("/privacy-policy")}
             >
               <FileText className="w-5 h-5 text-icon-blue" />
               <span className="text-sm font-jakarta">מדיניות פרטיות</span>

@@ -4,7 +4,7 @@ const Footer = () => {
   const footerLinks = [
     { label: "הצהרת נגישות", path: "/accessibility" },
     { label: "תנאי המועדון", path: "/club-terms" },
-    { label: "מדיניות פרטיות", path: "/privacy" },
+    { label: "מדיניות פרטיות", path: "/privacy-policy" },
     { label: "תנאי שימוש", path: "/terms" },
   ];
 
