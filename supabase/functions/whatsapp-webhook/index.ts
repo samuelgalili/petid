@@ -40,17 +40,65 @@ interface TemplateCheckResult {
   reason?: string;
 }
 
+// Regex to detect template instruction at start of AI response
+// Matches: [TEMPLATE: template_name] at the beginning
+const TEMPLATE_REGEX = /^\[TEMPLATE:\s*([a-zA-Z0-9_]+)\s*\]/i;
+
 /**
  * Check if the last user message was within 24 hours
  */
-function isWithin24Hours(lastMessageAt: string | null): boolean {
-  if (!lastMessageAt) return false;
+function isWithin24Hours(lastInboundAt: string | null): boolean {
+  if (!lastInboundAt) return false;
   
-  const lastMessage = new Date(lastMessageAt);
+  const lastMessage = new Date(lastInboundAt);
   const now = new Date();
   const hoursDiff = (now.getTime() - lastMessage.getTime()) / (1000 * 60 * 60);
   
   return hoursDiff <= 24;
+}
+
+/**
+ * Get last_inbound_at from whatsapp_conversations table
+ */
+async function getLastInboundAt(
+  supabase: any,
+  waId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("whatsapp_conversations")
+    .select("last_inbound_at")
+    .eq("wa_id", waId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching last_inbound_at:", error);
+    return null;
+  }
+
+  return data?.last_inbound_at || null;
+}
+
+/**
+ * Update or insert last_inbound_at for a wa_id (upsert)
+ */
+async function updateLastInboundAt(
+  supabase: any,
+  waId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("whatsapp_conversations")
+    .upsert(
+      {
+        wa_id: waId,
+        last_inbound_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "wa_id" }
+    );
+
+  if (error) {
+    console.error("Error updating last_inbound_at:", error);
+  }
 }
 
 /**
@@ -186,6 +234,7 @@ async function sendTextMessage(to: string, text: string): Promise<SendMessageRes
 
 /**
  * Send a template message via WhatsApp Cloud API
+ * Only adds components if there are actual variables
  */
 async function sendTemplateMessage(
   to: string,
@@ -200,20 +249,7 @@ async function sendTemplateMessage(
     return { success: false, error: "WhatsApp credentials not configured" };
   }
 
-  // Build template components with variables if provided
-  const components: any[] = [];
-  if (variables && Object.keys(variables).length > 0) {
-    const parameters = Object.values(variables).map(value => ({
-      type: "text",
-      text: value
-    }));
-    
-    components.push({
-      type: "body",
-      parameters
-    });
-  }
-
+  // Build template payload
   const templatePayload: any = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
@@ -225,10 +261,22 @@ async function sendTemplateMessage(
     }
   };
 
-  // Only add components if we have variables
-  if (components.length > 0) {
-    templatePayload.template.components = components;
+  // Only add components if we have actual variables
+  // WhatsApp expects parameters in order: {{1}}, {{2}}, etc.
+  if (variables && Object.keys(variables).length > 0) {
+    const parameters = Object.values(variables).map(value => ({
+      type: "text",
+      text: String(value)
+    }));
+    
+    templatePayload.template.components = [
+      {
+        type: "body",
+        parameters
+      }
+    ];
   }
+  // If no variables, do NOT include components field at all
 
   try {
     const response = await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
@@ -283,23 +331,8 @@ async function sendWhatsAppMessage(options: SendMessageOptions): Promise<SendMes
   return { success: false, error: "No message content provided" };
 }
 
-/**
- * Get the last user message timestamp for 24h window check
- */
-async function getLastUserMessageTime(
-  supabase: any,
-  phoneNumber: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from("whatsapp_messages")
-    .select("created_at")
-    .eq("phone_number", phoneNumber)
-    .eq("message_type", "incoming")
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  return data?.[0]?.created_at || null;
-}
+// getLastUserMessageTime is now replaced by getLastInboundAt above
+// This function is kept for backwards compatibility but uses the new table
 
 // ===== Main Webhook Handler =====
 
@@ -376,7 +409,10 @@ serve(async (req) => {
       const customerMessage = message.text?.body || "";
       console.log(`Customer message: ${customerMessage}`);
 
-      // Store the incoming message (this updates the 24h window)
+      // Update last_inbound_at in whatsapp_conversations table (for 24h window)
+      await updateLastInboundAt(supabase, from);
+
+      // Store the incoming message
       await supabase.from("whatsapp_messages").insert({
         phone_number: from,
         message_type: "incoming",
@@ -424,9 +460,9 @@ serve(async (req) => {
         const errorText = await aiResponse.text();
         console.error("AI API error:", aiResponse.status, errorText);
         
-        // Get last user message time for template decision
-        const lastUserMessageAt = await getLastUserMessageTime(supabase, from);
-        const templateCheck = checkTemplateRequirement(lastUserMessageAt, 'user_reply', 'conversation');
+        // Get last_inbound_at from DB for template decision
+        const lastInboundAt = await getLastInboundAt(supabase, from);
+        const templateCheck = checkTemplateRequirement(lastInboundAt, 'user_reply', 'conversation');
         
         if (templateCheck.requiresTemplate) {
           // Outside 24h - send template
@@ -461,28 +497,24 @@ serve(async (req) => {
 
       console.log(`AI reply: ${aiReply}`);
 
-      // Check if AI returned a template instruction
-      const templateMatch = aiReply.match(/\[TEMPLATE:\s*(\w+)\s*\|?\s*variables:\s*({[^}]+})?\]/i);
+      // Check if AI returned a template instruction at the START of response
+      // Using strict regex: ^[TEMPLATE: template_name]
+      const templateMatch = aiReply.match(TEMPLATE_REGEX);
       
       if (templateMatch) {
-        // AI explicitly requested a template
+        // AI explicitly requested a template - extract template name from capture group
         const templateName = templateMatch[1];
-        let variables: Record<string, string> = {};
         
-        if (templateMatch[2]) {
-          try {
-            variables = JSON.parse(templateMatch[2].replace(/(\w+):/g, '"$1":'));
-          } catch {
-            console.log("Failed to parse template variables");
-          }
-        }
-
-        console.log(`Sending template: ${templateName} with variables:`, variables);
+        // Remove the [TEMPLATE:...] prefix from the response for logging
+        const cleanedReply = aiReply.replace(TEMPLATE_REGEX, '').trim();
         
+        console.log(`Template detected: ${templateName}, cleaned reply: ${cleanedReply.substring(0, 50)}...`);
+        
+        // Send template without variables (template defines its own content)
         const result = await sendWhatsAppMessage({
           to: from,
-          templateName,
-          templateVariables: variables
+          templateName
+          // No templateVariables - template content is pre-defined in WhatsApp
         });
 
         // Store the outgoing template message
@@ -496,11 +528,11 @@ serve(async (req) => {
           console.error("Template send failed:", result.error);
         }
       } else {
-        // Regular text response - check 24h window
-        const lastUserMessageAt = await getLastUserMessageTime(supabase, from);
-        const templateCheck = checkTemplateRequirement(lastUserMessageAt, 'user_reply', 'conversation');
+        // Regular text response - check 24h window from DB
+        const lastInboundAt = await getLastInboundAt(supabase, from);
+        const templateCheck = checkTemplateRequirement(lastInboundAt, 'user_reply', 'conversation');
 
-        console.log(`24h check - lastMessage: ${lastUserMessageAt}, requiresTemplate: ${templateCheck.requiresTemplate}`);
+        console.log(`24h check - lastInboundAt: ${lastInboundAt}, requiresTemplate: ${templateCheck.requiresTemplate}`);
 
         let sendResult: SendMessageResult;
 
