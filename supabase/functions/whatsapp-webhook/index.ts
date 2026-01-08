@@ -235,6 +235,7 @@ async function sendTextMessage(to: string, text: string): Promise<SendMessageRes
 /**
  * Send a template message via WhatsApp Cloud API
  * Only adds components if there are actual variables
+ * Ensures parameters order matches {{1}}, {{2}}, ...
  */
 async function sendTemplateMessage(
   to: string,
@@ -249,34 +250,47 @@ async function sendTemplateMessage(
     return { success: false, error: "WhatsApp credentials not configured" };
   }
 
-  // Build template payload
   const templatePayload: any = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
-    to: to,
+    to,
     type: "template",
     template: {
       name: templateName,
-      language: { code: languageCode }
-    }
+      language: { code: languageCode },
+    },
   };
 
-  // Only add components if we have actual variables
-  // WhatsApp expects parameters in order: {{1}}, {{2}}, etc.
-  if (variables && Object.keys(variables).length > 0) {
-    const parameters = Object.values(variables).map(value => ({
+  const hasVars = variables && Object.keys(variables).length > 0;
+
+  if (hasVars) {
+    // If keys are "1","2","3"... sort numerically to match {{1}}, {{2}}, ...
+    const keys = Object.keys(variables!);
+    const allNumeric = keys.every((k) => /^\d+$/.test(k));
+    const orderedKeys = allNumeric
+      ? keys.sort((a, b) => Number(a) - Number(b))
+      : keys.sort(); // deterministic fallback (alphabetical)
+
+    // Special fallback: for your petid_followup where {{1}} is first_name
+    // Ensure {{1}} is never empty (WhatsApp may reject empty parameters)
+    if (templateName === "petid_followup") {
+      const k = allNumeric ? "1" : (keys.includes("first_name") ? "first_name" : orderedKeys[0]);
+      const v = variables![k];
+      variables![k] = v && String(v).trim().length > 0 ? v : "חבר";
+    }
+
+    const parameters = orderedKeys.map((k) => ({
       type: "text",
-      text: String(value)
+      text: String(variables![k] ?? ""),
     }));
-    
+
     templatePayload.template.components = [
       {
         type: "body",
-        parameters
-      }
+        parameters,
+      },
     ];
   }
-  // If no variables, do NOT include components field at all
 
   try {
     const response = await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
@@ -299,7 +313,10 @@ async function sendTemplateMessage(
     return { success: true, messageId: data.messages?.[0]?.id };
   } catch (error) {
     console.error("WhatsApp template send error:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
