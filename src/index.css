@@ -1098,3 +1098,109 @@
   bottom: auto;
   animation-delay: 1.5s;
 }
+
+/* ===========================
+ * UNIFIED PAGE LAYOUT SYSTEM
+ * All pages MUST use these classes
+ * =========================== */
+
+/* Standard page wrapper */
+.page-wrapper {
+  @apply min-h-screen bg-background pb-20;
+  direction: rtl;
+}
+
+/* Page content container */
+.page-content {
+  @apply px-4 py-4;
+}
+
+/* Page sections with gaps */
+.page-sections {
+  @apply px-4 py-4 space-y-4;
+}
+
+/* Standard section */
+.section {
+  @apply space-y-4;
+}
+
+/* Section title */
+.section-title {
+  @apply text-lg font-semibold text-foreground;
+}
+
+/* Card list */
+.card-list {
+  @apply space-y-4;
+}
+
+/* Grid layouts */
+.grid-2 {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.grid-3 {
+  @apply grid grid-cols-3 gap-4;
+}
+
+.grid-4 {
+  @apply grid grid-cols-4 gap-2;
+}
+
+/* Horizontal scroll container */
+.scroll-horizontal {
+  @apply flex gap-2 overflow-x-auto pb-2;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-horizontal::-webkit-scrollbar {
+  display: none;
+}
+
+/* Empty state */
+.empty-state-container {
+  @apply flex flex-col items-center justify-center py-12 text-center px-4;
+}
+
+.empty-state-icon-wrapper {
+  @apply w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4;
+}
+
+.empty-state-title {
+  @apply text-xl font-semibold text-foreground mb-2;
+}
+
+.empty-state-description {
+  @apply text-sm text-muted-foreground mb-6;
+}
+
+/* Sticky bottom action */
+.sticky-bottom-action {
+  @apply fixed bottom-20 left-4 right-4 z-30;
+}
+
+/* Filter chips */
+.filter-chip {
+  @apply px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all;
+}
+
+.filter-chip-active {
+  @apply bg-primary text-primary-foreground;
+}
+
+.filter-chip-inactive {
+  @apply bg-muted text-muted-foreground hover:bg-muted/80;
+}
+
+/* RTL Icon positioning - Icons should be on the RIGHT of text */
+.icon-text {
+  @apply flex items-center gap-2 flex-row-reverse;
+}
+
+/* Standard icon sizes */
+.icon-xs { @apply w-4 h-4; }
+.icon-sm { @apply w-5 h-5; }
+.icon-md { @apply w-6 h-6; }
+.icon-lg { @apply w-8 h-8; }
+.icon-xl { @apply w-10 h-10; }

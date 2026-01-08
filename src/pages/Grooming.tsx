@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, Star, Phone, Calendar, Scissors, Heart, Sparkles, Clock, ChevronLeft } from "lucide-react";
+import { Search, MapPin, Star, Phone, Calendar, Heart, Clock, Scissors } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BottomNav from "@/components/BottomNav";
+import { AppHeader } from "@/components/AppHeader";
 import { useNavigate } from "react-router-dom";
 
 interface GroomingSalon {
@@ -219,31 +220,8 @@ const Grooming = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button 
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-foreground" />
-          </button>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-black bg-gradient-primary bg-clip-text text-transparent font-jakarta">
-              מספרות
-            </span>
-            <Sparkles className="w-5 h-5 text-accent" />
-          </div>
-          
-          <div className="w-10 h-10 rounded-full bg-gradient-primary p-[2px]">
-            <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-              <Scissors className="w-4 h-4 text-primary" />
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <AppHeader title="מספרות" showBackButton={true} />
 
       {/* City Filter */}
       <div className="px-4 py-3 overflow-x-auto scrollbar-hide">
