@@ -421,29 +421,52 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Hero Header - Immersive Design */}
-      <div className="relative h-[320px] overflow-hidden">
-        {/* Background Image/Gradient */}
+      {/* Hero Header - Premium WOW Design */}
+      <div className="relative h-[360px] overflow-hidden">
+        {/* Animated Background */}
         <div className="absolute inset-0">
           {pet.avatar_url ? (
             <>
-              <img 
+              <motion.img 
                 src={pet.avatar_url} 
                 alt={pet.name}
                 className="w-full h-full object-cover"
+                initial={{ scale: 1.1 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-background" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-background" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
             </>
           ) : (
-            <div className={`w-full h-full bg-gradient-to-br ${
-              pet.type === 'dog' 
-                ? 'from-primary via-primary/80 to-accent' 
-                : 'from-purple-500 via-pink-500 to-accent'
-            }`}>
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute top-10 right-10 w-32 h-32 rounded-full bg-white/20 blur-3xl" />
-                <div className="absolute bottom-20 left-10 w-40 h-40 rounded-full bg-white/20 blur-3xl" />
-              </div>
+            <div className="w-full h-full bg-gradient-to-br from-primary via-primary/80 to-accent relative overflow-hidden">
+              {/* Animated orbs */}
+              <motion.div 
+                className="absolute top-10 right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl"
+                animate={{ 
+                  x: [0, 20, 0],
+                  y: [0, -20, 0],
+                  scale: [1, 1.2, 1]
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div 
+                className="absolute bottom-20 left-10 w-56 h-56 rounded-full bg-accent/30 blur-3xl"
+                animate={{ 
+                  x: [0, -30, 0],
+                  y: [0, 20, 0],
+                  scale: [1, 1.3, 1]
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div 
+                className="absolute top-1/2 left-1/2 w-32 h-32 rounded-full bg-secondary/20 blur-2xl"
+                animate={{ 
+                  rotate: [0, 360],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+              />
             </div>
           )}
         </div>
@@ -531,43 +554,55 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
           )}
         </AnimatePresence>
 
-        {/* Pet Info Overlay */}
+        {/* Pet Info Overlay - Premium Design */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="absolute bottom-0 left-0 right-0 p-5"
+          className="absolute bottom-0 left-0 right-0 p-6"
           dir="rtl"
         >
-          <div className="flex items-end gap-4">
-            {/* Avatar with Ring */}
+          <div className="flex items-end gap-5">
+            {/* Avatar with Animated Ring */}
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
               className="relative"
             >
-              <div className="w-24 h-24 rounded-2xl p-1 bg-gradient-to-br from-primary via-accent to-secondary shadow-2xl">
-                <Avatar className="w-full h-full rounded-xl border-2 border-background">
-                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover rounded-xl" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary/50 to-accent/50 text-white text-4xl font-bold rounded-xl">
+              <motion.div 
+                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary via-accent to-secondary blur-lg opacity-60"
+                animate={{ 
+                  rotate: [0, 360],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              />
+              <div className="relative w-28 h-28 rounded-3xl p-1 bg-gradient-to-br from-primary via-accent to-secondary shadow-2xl">
+                <Avatar className="w-full h-full rounded-2xl border-3 border-background">
+                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover rounded-2xl" />
+                  <AvatarFallback className="bg-gradient-to-br from-primary/50 to-accent/50 text-white text-5xl font-bold rounded-2xl">
                     {pet.type === 'dog' ? '🐕' : '🐈'}
                   </AvatarFallback>
                 </Avatar>
               </div>
-              {/* Verified Badge */}
-              <div className="absolute -bottom-1 -left-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background shadow-lg">
-                <span className="text-sm">✓</span>
-              </div>
+              {/* Verified Badge with Pulse */}
+              <motion.div 
+                className="absolute -bottom-2 -left-2 w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center ring-3 ring-background shadow-xl"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="text-white text-sm font-bold">✓</span>
+              </motion.div>
             </motion.div>
 
-            {/* Name & Info */}
-            <div className="flex-1 mb-1">
+            {/* Name & Info - Enhanced */}
+            <div className="flex-1 mb-2">
               <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
-                className="text-3xl font-black text-white drop-shadow-lg mb-1"
+                className="text-4xl font-black text-white drop-shadow-xl mb-2 tracking-tight"
               >
                 {pet.name}
               </motion.h1>
@@ -577,12 +612,12 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                 transition={{ delay: 0.5 }}
                 className="flex items-center gap-2 flex-wrap"
               >
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 backdrop-blur-md text-white rounded-full text-xs font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/25 backdrop-blur-md text-white rounded-xl text-sm font-semibold shadow-sm">
                   {pet.type === 'dog' ? '🐕 כלב' : '🐈 חתול'}
                 </span>
                 {pet.breed && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 backdrop-blur-md text-white rounded-full text-xs font-medium">
-                    {pet.breed}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/40 backdrop-blur-md text-white rounded-xl text-sm font-semibold shadow-sm">
+                    ✨ {pet.breed}
                   </span>
                 )}
               </motion.div>
@@ -591,103 +626,94 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
         </motion.div>
       </div>
 
-      {/* Stats Cards - Floating Style */}
-      <div className="px-4 -mt-4 relative z-10" dir="rtl">
+      {/* Stats Cards - Premium Glass Style */}
+      <div className="px-4 -mt-8 relative z-10" dir="rtl">
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="grid grid-cols-4 gap-2"
+          transition={{ delay: 0.5, staggerChildren: 0.1 }}
+          className="grid grid-cols-4 gap-3"
         >
-          <Card className="p-3 text-center bg-card/95 backdrop-blur-md border-border/50 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
-            <div className="text-2xl mb-1">📅</div>
-            <p className="text-base font-bold text-foreground">{calculateAge(pet.birth_date).split(' ')[0]}</p>
-            <p className="text-[10px] text-muted-foreground">גיל</p>
-          </Card>
-          <Card className="p-3 text-center bg-card/95 backdrop-blur-md border-border/50 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
-            <div className="text-2xl mb-1">{pet.gender === 'male' ? '♂️' : '♀️'}</div>
-            <p className="text-base font-bold text-foreground">{pet.gender === 'male' ? 'זכר' : 'נקבה'}</p>
-            <p className="text-[10px] text-muted-foreground">מין</p>
-          </Card>
-          <Card className="p-3 text-center bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
-            <div className="text-2xl mb-1">💚</div>
-            <p className="text-base font-bold text-green-600">מעולה</p>
-            <p className="text-[10px] text-muted-foreground">בריאות</p>
-          </Card>
-          <Card className="p-3 text-center bg-gradient-to-br from-primary/20 to-primary/10 border-primary/30 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
-            <div className="text-2xl mb-1">⭐</div>
-            <p className="text-base font-bold text-primary">{compatibilityScore}%</p>
-            <p className="text-[10px] text-muted-foreground">התאמה</p>
-          </Card>
+          {[
+            { emoji: '📅', value: calculateAge(pet.birth_date).split(' ')[0], label: 'גיל', gradient: 'from-blue-500/20 to-cyan-500/10', border: 'border-blue-500/30' },
+            { emoji: pet.gender === 'male' ? '♂️' : '♀️', value: pet.gender === 'male' ? 'זכר' : 'נקבה', label: 'מין', gradient: 'from-purple-500/20 to-pink-500/10', border: 'border-purple-500/30' },
+            { emoji: '💚', value: 'מעולה', label: 'בריאות', gradient: 'from-green-500/20 to-emerald-500/10', border: 'border-green-500/30', textColor: 'text-green-600' },
+            { emoji: '⭐', value: `${compatibilityScore}%`, label: 'התאמה', gradient: 'from-primary/20 to-accent/10', border: 'border-primary/30', textColor: 'text-primary' },
+          ].map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.5 + index * 0.1 }}
+              whileHover={{ y: -4, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Card className={`p-3 text-center bg-gradient-to-br ${stat.gradient} backdrop-blur-xl ${stat.border} shadow-lg cursor-pointer transition-all duration-300`}>
+                <motion.div 
+                  className="text-2xl mb-1"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+                >
+                  {stat.emoji}
+                </motion.div>
+                <p className={`text-sm font-bold ${stat.textColor || 'text-foreground'}`}>{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
+              </Card>
+            </motion.div>
+          ))}
         </motion.div>
       </div>
 
-      {/* Quick Action Buttons */}
-      <div className="px-4 mt-3 overflow-x-auto scrollbar-hide" dir="rtl">
+      {/* Quick Action Buttons - Premium Pill Style */}
+      <div className="px-4 mt-5 overflow-x-auto scrollbar-hide" dir="rtl">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="flex gap-2 pb-2"
+          className="flex gap-2 pb-3"
         >
-          {/* Overview Button */}
-          <motion.button
-            onClick={() => setActiveTab('overview')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'overview' ? 'bg-card border-primary/50 shadow-sm' : 'bg-card border-border hover:border-primary/30'}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-xs font-medium text-foreground">סקירה</span>
-          </motion.button>
-
-          {/* Breed Button */}
-          <motion.button
-            onClick={() => setActiveTab('breed')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'breed' ? 'bg-card border-orange-500/50 shadow-sm' : 'bg-card border-border hover:border-orange-500/30'}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Info className="w-4 h-4 text-orange-500" />
-            <span className="text-xs font-medium text-foreground">הגזע</span>
-          </motion.button>
-
-          {/* Documents Button */}
-          <motion.button
-            onClick={() => setActiveTab('documents')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'documents' ? 'bg-card border-blue-500/50 shadow-sm' : 'bg-card border-border hover:border-blue-500/30'}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FileText className="w-4 h-4 text-blue-500" />
-            <span className="text-xs font-medium text-foreground">מסמכים</span>
-          </motion.button>
-
-          {/* Training Button */}
-          <motion.button
-            onClick={() => setActiveTab('training')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'training' ? 'bg-card border-purple-500/50 shadow-sm' : 'bg-card border-border hover:border-purple-500/30'}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            <GraduationCap className="w-4 h-4 text-purple-500" />
-            <span className="text-xs font-medium text-foreground">אילוף</span>
-          </motion.button>
-
-          {/* Photos Button */}
-          <motion.button
-            onClick={() => setActiveTab('photos')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all hover:scale-105 active:scale-95 whitespace-nowrap ${activeTab === 'photos' ? 'bg-card border-pink-500/50 shadow-sm' : 'bg-card border-border hover:border-pink-500/30'}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Image className="w-4 h-4 text-pink-500" />
-            <span className="text-xs font-medium text-foreground">תמונות</span>
-          </motion.button>
-
-          {/* Adoption Button */}
+          {[
+            { id: 'overview', label: 'סקירה', icon: Sparkles, color: 'from-primary to-primary-light', activeColor: 'bg-gradient-to-r from-primary to-primary-light text-white' },
+            { id: 'breed', label: 'הגזע', icon: Info, color: 'from-orange-500 to-amber-500', activeColor: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white' },
+            { id: 'documents', label: 'מסמכים', icon: FileText, color: 'from-blue-500 to-cyan-500', activeColor: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' },
+            { id: 'training', label: 'אילוף', icon: GraduationCap, color: 'from-purple-500 to-pink-500', activeColor: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' },
+            { id: 'photos', label: 'תמונות', icon: Image, color: 'from-pink-500 to-rose-500', activeColor: 'bg-gradient-to-r from-pink-500 to-rose-500 text-white' },
+          ].map((tab, index) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6 + index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all whitespace-nowrap shadow-sm ${
+                  isActive 
+                    ? `${tab.activeColor} shadow-lg` 
+                    : 'bg-card border border-border/50 text-foreground hover:border-primary/30'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
+                <span className="text-xs font-semibold">{tab.label}</span>
+              </motion.button>
+            );
+          })}
+          
+          {/* Adoption Button - Special */}
           <motion.button
             onClick={() => setShowAdoptionDialog(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border hover:border-red-500/30 transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.85 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/30 text-foreground hover:from-red-500/20 hover:to-pink-500/20 transition-all whitespace-nowrap"
           >
             <Heart className="w-4 h-4 text-red-500" />
-            <span className="text-xs font-medium text-foreground">למסירה</span>
+            <span className="text-xs font-semibold">למסירה</span>
           </motion.button>
 
           {/* Adoption Confirmation Dialog */}
