@@ -1087,7 +1087,7 @@ const Feed = () => {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
 
-  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24" dir="rtl">
+  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-20" dir="rtl">
       {/* PetID-style Header - Modern, Clean */}
       <motion.div 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${

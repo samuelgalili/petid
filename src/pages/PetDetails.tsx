@@ -345,7 +345,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
   return (
     <motion.div 
-      className="min-h-screen bg-background pb-24"
+      className="min-h-screen bg-background pb-20"
       animate={showDeleteAnimation ? {
         opacity: [1, 0],
         scale: [1, 0.8],

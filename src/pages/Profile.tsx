@@ -265,7 +265,7 @@ const Profile = () => {
             background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%)',
           }}
         >
-          <div className="flex items-center justify-between px-4 h-14">
+          <div className="flex items-center justify-between px-4 h-11">
             <div className="flex items-center gap-3">
               <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
               <motion.h1 

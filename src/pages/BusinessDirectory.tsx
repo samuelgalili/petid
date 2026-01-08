@@ -50,7 +50,7 @@ const BusinessDirectory = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-24" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-20" dir="rtl">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b">
         <div className="max-w-lg mx-auto px-4 py-4">

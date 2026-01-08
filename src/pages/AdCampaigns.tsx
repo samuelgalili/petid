@@ -242,7 +242,7 @@ const AdCampaigns = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir={language === 'he' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background pb-20" dir={language === 'he' ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-4">

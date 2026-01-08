@@ -111,7 +111,7 @@ const ConvertToBusiness = () => {
   // User already has a business
   if (existingBusiness) {
     return (
-      <div className="min-h-screen bg-background pb-24" dir="rtl">
+      <div className="min-h-screen bg-background pb-20" dir="rtl">
         <div className="sticky top-0 z-10 bg-background border-b px-4 py-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -145,7 +145,7 @@ const ConvertToBusiness = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b px-4 py-4">
         <div className="flex items-center gap-3">

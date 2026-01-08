@@ -264,7 +264,7 @@ const Insurance = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 bg-background" dir="rtl">
+    <div className="min-h-screen pb-20 bg-background" dir="rtl">
       <AppHeader 
         title="ביטוח חיות מחמד" 
         showBackButton={true}

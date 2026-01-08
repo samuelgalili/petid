@@ -373,14 +373,14 @@ const Rewards = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background pb-24" dir="rtl">
+      <div className="min-h-screen bg-background pb-20" dir="rtl">
         {/* Clean Header - like Feed */}
         <motion.div 
           className="sticky top-0 z-40 bg-card/98 backdrop-blur-xl border-b border-border/40"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="max-w-lg mx-auto px-4 h-11 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/profile')}

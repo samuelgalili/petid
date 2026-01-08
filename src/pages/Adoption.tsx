@@ -298,7 +298,7 @@ const Adoption = () => {
         showMenuButton={false}
       />
       
-      <div className="min-h-screen bg-background pb-28">
+      <div className="min-h-screen bg-background pb-20">
         <div className="max-w-lg mx-auto">
           {/* Pet Type Filter - Dog & Cat Image */}
           <div className="px-4 py-6 border-b border-border/50">

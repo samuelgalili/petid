@@ -133,7 +133,7 @@ export default function Messages() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       <div className="max-w-lg mx-auto">
         {/* Instagram-style Header */}
         <div className="bg-background border-b border-border sticky top-0 z-10">

@@ -31,13 +31,13 @@ export const LAYOUT = {
   pagePadding: "px-4",
   /** Standard page vertical padding */
   pageVerticalPadding: "py-4",
-  /** Header height (44px) */
+  /** Header height (44px) - UNIFIED across all pages */
   headerHeight: "h-11",
-  /** Header spacer */
+  /** Header spacer - matches header height */
   headerSpacer: "h-11",
   /** Bottom nav height (48px) */
   bottomNavHeight: "h-12",
-  /** Page bottom padding to account for bottom nav */
+  /** Page bottom padding to account for bottom nav - UNIFIED pb-20 */
   pageBottomPadding: "pb-20",
   /** Max content width */
   maxContentWidth: "max-w-lg",
@@ -50,7 +50,7 @@ export const LAYOUT = {
 } as const;
 
 // ===========================
-// BORDER RADIUS
+// BORDER RADIUS - UNIFIED organic style
 // ===========================
 export const RADIUS = {
   /** Small: 8px */
@@ -59,37 +59,37 @@ export const RADIUS = {
   md: "rounded-xl",
   /** Large: 16px */
   lg: "rounded-2xl",
-  /** Extra large: 22px (organic) */
+  /** Extra large: 22px (organic) - PRIMARY card style */
   xl: "rounded-organic",
   /** Full/pill */
   full: "rounded-full",
 } as const;
 
 // ===========================
-// TYPOGRAPHY
+// TYPOGRAPHY - UNIFIED font sizes
 // ===========================
 export const TYPOGRAPHY = {
-  /** Page title */
+  /** Page title - 20px semibold */
   pageTitle: "text-xl font-semibold",
-  /** Section title */
+  /** Section title - 18px semibold */
   sectionTitle: "text-lg font-semibold",
-  /** Card title */
+  /** Card title - 16px semibold */
   cardTitle: "text-base font-semibold",
-  /** Body text */
+  /** Body text - 14px regular */
   body: "text-sm",
-  /** Caption/small text */
+  /** Caption/small text - 12px muted */
   caption: "text-xs text-muted-foreground",
-  /** Label */
+  /** Label - 14px medium */
   label: "text-sm font-medium",
 } as const;
 
 // ===========================
-// SHADOWS
+// SHADOWS - UNIFIED shadow system
 // ===========================
 export const SHADOWS = {
-  /** Card shadow */
+  /** Card shadow - default for all cards */
   card: "shadow-card",
-  /** Elevated shadow */
+  /** Elevated shadow - for hover/active states */
   elevated: "shadow-elevated",
   /** Button shadow */
   button: "shadow-button",
@@ -98,12 +98,12 @@ export const SHADOWS = {
 } as const;
 
 // ===========================
-// COMPONENT STYLES
+// COMPONENT STYLES - UNIFIED components
 // ===========================
 export const COMPONENT_STYLES = {
-  /** Standard card */
+  /** Standard card - USE THIS for all cards */
   card: "rounded-organic border border-card-border bg-card shadow-card",
-  /** Interactive card */
+  /** Interactive card - for clickable cards */
   cardInteractive: "rounded-organic border border-card-border bg-card shadow-card hover:shadow-elevated transition-shadow cursor-pointer",
   /** Section container */
   section: "px-4 py-4",
@@ -111,6 +111,10 @@ export const COMPONENT_STYLES = {
   list: "space-y-4",
   /** Grid 2 columns */
   grid2: "grid grid-cols-2 gap-4",
+  /** Grid 3 columns */
+  grid3: "grid grid-cols-3 gap-4",
+  /** Grid 4 columns */
+  grid4: "grid grid-cols-4 gap-2",
   /** Button container (bottom sticky) */
   stickyButton: "fixed bottom-20 left-4 right-4 z-30",
   /** Empty state container */
@@ -119,13 +123,17 @@ export const COMPONENT_STYLES = {
   iconButton: "h-9 w-9 rounded-full",
   /** Badge */
   badge: "px-3 py-1 rounded-full text-xs font-medium",
+  /** Filter chip active */
+  filterChipActive: "px-4 py-2 rounded-full text-sm font-medium bg-primary text-primary-foreground",
+  /** Filter chip inactive */
+  filterChipInactive: "px-4 py-2 rounded-full text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80",
 } as const;
 
 // ===========================
-// PAGE WRAPPER STYLES
+// PAGE WRAPPER STYLES - USE THESE
 // ===========================
 export const PAGE_STYLES = {
-  /** Full page wrapper */
+  /** Full page wrapper - STANDARD for all pages */
   page: "min-h-screen bg-background pb-20",
   /** Page with RTL */
   pageRTL: "min-h-screen bg-background pb-20",
@@ -136,7 +144,21 @@ export const PAGE_STYLES = {
 } as const;
 
 // ===========================
-// ICON SIZES
+// HEADER STYLES - UNIFIED h-11
+// ===========================
+export const HEADER_STYLES = {
+  /** Fixed header wrapper */
+  wrapper: "fixed top-0 left-0 right-0 h-11 bg-background border-b border-border px-4 z-40",
+  /** Header content container */
+  content: "flex items-center justify-between h-full",
+  /** Header title */
+  title: "text-base font-semibold text-foreground",
+  /** Header spacer (add below fixed header) */
+  spacer: "h-11",
+} as const;
+
+// ===========================
+// ICON SIZES - UNIFIED
 // ===========================
 export const ICON_SIZES = {
   /** Extra small: 16px */
@@ -152,7 +174,7 @@ export const ICON_SIZES = {
 } as const;
 
 // ===========================
-// ANIMATION
+// ANIMATION - UNIFIED timing
 // ===========================
 export const ANIMATION = {
   /** Standard transition */
@@ -166,13 +188,26 @@ export const ANIMATION = {
 // ===========================
 // UTILITY CLASSES
 // ===========================
+
+/** Generate page wrapper classes */
 export const pageClasses = (options?: { noPadding?: boolean }) => {
   const base = "min-h-screen bg-background";
   const padding = options?.noPadding ? "" : "pb-20";
   return `${base} ${padding}`.trim();
 };
 
+/** Generate content classes */
 export const contentClasses = (options?: { noHorizontalPadding?: boolean }) => {
   const padding = options?.noHorizontalPadding ? "py-4" : "px-4 py-4";
   return padding;
 };
+
+/** Generate card classes */
+export const cardClasses = (options?: { interactive?: boolean }) => {
+  return options?.interactive 
+    ? COMPONENT_STYLES.cardInteractive 
+    : COMPONENT_STYLES.card;
+};
+
+/** RTL icon-text combo - icon on RIGHT */
+export const iconTextClasses = "flex items-center gap-2 flex-row-reverse";

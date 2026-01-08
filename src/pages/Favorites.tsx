@@ -117,7 +117,7 @@ const Favorites = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
