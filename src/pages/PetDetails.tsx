@@ -524,14 +524,16 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
         {/* Pet Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-4" dir="rtl">
           <div className="flex items-end gap-4">
-            {/* Avatar */}
+            {/* Avatar with Gradient Border */}
             <div className="relative">
-              <Avatar className="w-20 h-20 rounded-2xl border-4 border-background shadow-lg">
-                <AvatarImage src={pet.avatar_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-primary/10 text-3xl rounded-2xl">
-                  {pet.type === 'dog' ? '🐕' : '🐈'}
-                </AvatarFallback>
-              </Avatar>
+              <div className="w-[88px] h-[88px] rounded-2xl p-[3px] bg-gradient-to-br from-primary via-accent to-secondary shadow-lg">
+                <Avatar className="w-full h-full rounded-xl border-2 border-background">
+                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover rounded-xl" />
+                  <AvatarFallback className="bg-primary/10 text-3xl rounded-xl">
+                    {pet.type === 'dog' ? '🐕' : '🐈'}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             </div>
 
             {/* Name & Info */}
