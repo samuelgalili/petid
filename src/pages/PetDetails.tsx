@@ -16,6 +16,7 @@ import { PET_CARD, ACTIONS, REMINDERS } from "@/lib/brandVoice";
 import { BreedInfoCard } from "@/components/pet/BreedInfoCard";
 import { RecommendedProducts } from "@/components/pet/RecommendedProducts";
 import { PointsRewardsCard } from "@/components/pet/PointsRewardsCard";
+import { CategoryRecommendations } from "@/components/pet/CategoryRecommendations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -718,10 +719,19 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
 
-        {/* Overview Tab - NEW */}
+        {/* Overview Tab */}
         <TabsContent value="overview" className="px-4 pt-4 space-y-6" dir="rtl">
           {/* נקודות ותגמולים */}
           <PointsRewardsCard petName={pet.name} />
+          
+          {/* המלצות מותאמות לפי קטגוריה */}
+          <CategoryRecommendations 
+            petId={pet.id}
+            petName={pet.name}
+            petType={pet.type}
+            petBreed={pet.breed}
+            petAge={calculateAge(pet.birth_date)}
+          />
           
           {/* מוצרים מומלצים */}
           <RecommendedProducts 
