@@ -373,10 +373,14 @@ export const StoriesBar = ({ activeTab = "foryou", userCity, followingIds = [] }
                       </div>
                     </div>
                     
-                    {/* Story count indicator */}
-                    {storyUser.story_count > 1 && !storyUser.has_viewed && (
+                    {/* Story count indicator - always show when more than 1 story */}
+                    {storyUser.story_count > 1 && (
                       <motion.div 
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-card text-[10px] font-bold text-primary-foreground"
+                        className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-card text-[10px] font-bold ${
+                          storyUser.has_viewed 
+                            ? "bg-muted text-muted-foreground" 
+                            : "bg-primary text-primary-foreground"
+                        }`}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 500, damping: 25 }}
