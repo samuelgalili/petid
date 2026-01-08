@@ -315,6 +315,287 @@ export type Database = {
           },
         ]
       }
+      agent_action_logs: {
+        Row: {
+          action_type: string
+          actual_outcome: string | null
+          bot_id: string | null
+          created_at: string
+          description: string
+          expected_outcome: string | null
+          id: string
+          metadata: Json | null
+          reason: string | null
+          task_id: string | null
+        }
+        Insert: {
+          action_type: string
+          actual_outcome?: string | null
+          bot_id?: string | null
+          created_at?: string
+          description: string
+          expected_outcome?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          task_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          actual_outcome?: string | null
+          bot_id?: string | null
+          created_at?: string
+          description?: string
+          expected_outcome?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_action_logs_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "agent_bots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_action_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "agent_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_bots: {
+        Row: {
+          capabilities: Json | null
+          color: string
+          config: Json | null
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          capabilities?: Json | null
+          color?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          capabilities?: Json | null
+          color?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agent_conversations: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          is_active: boolean
+          title: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      agent_daily_briefs: {
+        Row: {
+          brief_date: string
+          created_at: string
+          id: string
+          kpis: Json | null
+          priorities: Json | null
+          recommendations: Json | null
+          summary: string
+          tasks_completed: number | null
+          tasks_planned: number | null
+        }
+        Insert: {
+          brief_date?: string
+          created_at?: string
+          id?: string
+          kpis?: Json | null
+          priorities?: Json | null
+          recommendations?: Json | null
+          summary: string
+          tasks_completed?: number | null
+          tasks_planned?: number | null
+        }
+        Update: {
+          brief_date?: string
+          created_at?: string
+          id?: string
+          kpis?: Json | null
+          priorities?: Json | null
+          recommendations?: Json | null
+          summary?: string
+          tasks_completed?: number | null
+          tasks_planned?: number | null
+        }
+        Relationships: []
+      }
+      agent_messages: {
+        Row: {
+          bot_id: string | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          bot_id?: string | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          bot_id?: string | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "agent_bots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_tasks: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          bot_id: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          expected_outcome: string | null
+          id: string
+          payload: Json | null
+          priority: string
+          reason: string | null
+          requires_approval: boolean
+          result: Json | null
+          scheduled_for: string | null
+          started_at: string | null
+          status: string
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bot_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          expected_outcome?: string | null
+          id?: string
+          payload?: Json | null
+          priority?: string
+          reason?: string | null
+          requires_approval?: boolean
+          result?: Json | null
+          scheduled_for?: string | null
+          started_at?: string | null
+          status?: string
+          task_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bot_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          expected_outcome?: string | null
+          id?: string
+          payload?: Json | null
+          priority?: string
+          reason?: string | null
+          requires_approval?: boolean
+          result?: Json | null
+          scheduled_for?: string | null
+          started_at?: string | null
+          status?: string
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_tasks_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "agent_bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
