@@ -1222,9 +1222,10 @@ const Feed = () => {
               <motion.div 
                 className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500" 
                 initial={{ width: 0 }}
-                animate={{ width: "100%" }}
+                animate={{ width: [`0%`, `100%`, `${Math.min(totalPoints / 1000 * 100, 100)}%`] }}
                 transition={{
-                  duration: 2.5,
+                  duration: 3,
+                  times: [0, 0.6, 1],
                   ease: "easeInOut"
                 }} 
               />
