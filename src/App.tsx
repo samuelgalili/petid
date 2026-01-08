@@ -83,6 +83,7 @@ const AdminStories = lazy(() => import("./pages/admin/AdminStories"));
 const AdminLoyalty = lazy(() => import("./pages/admin/AdminLoyalty"));
 const AdminNotificationRules = lazy(() => import("./pages/admin/AdminNotificationRules"));
 const AdminAutomations = lazy(() => import("./pages/admin/AdminAutomations"));
+const DataDeletion = lazy(() => import("./pages/DataDeletion"));
 const AdminTimeTracking = lazy(() => import("./pages/admin/AdminTimeTracking"));
 const AdminDataImport = lazy(() => import("./pages/admin/AdminDataImport"));
 const AdminAIService = lazy(() => import("./pages/admin/AdminAIService"));
@@ -241,6 +242,7 @@ const AnimatedRoutes = () => {
         <Route path="/messages/:userId" element={<ProtectedRoute><PageTransition><MessageThread /></PageTransition></ProtectedRoute>} />
         <Route path="/accessibility" element={<PageTransition><Accessibility /></PageTransition>} />
         <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
+        <Route path="/data-deletion" element={<PageTransition><DataDeletion /></PageTransition>} />
         <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
         <Route path="/club-terms" element={<PageTransition><ClubTerms /></PageTransition>} />
         <Route path="/ad-campaigns" element={<PageTransition><AdCampaigns /></PageTransition>} />
