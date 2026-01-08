@@ -328,31 +328,30 @@ const Profile = () => {
         >
           {/* Avatar and Stats Row - Enhanced */}
           <div className="flex items-center gap-5 mb-5">
-            {/* Profile Picture with Glow */}
+            {/* Profile Picture with Gradient Border - Rounded Square */}
             <div className="relative">
               <motion.div 
                 className="relative w-24 h-24"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
-                {/* Animated gradient ring */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary via-accent to-primary opacity-80 animate-[spin_8s_linear_infinite] blur-[2px]" />
-                <div className="absolute inset-[3px] rounded-full bg-background" />
-                <div className="absolute inset-[4px] rounded-full overflow-hidden">
-                  <Avatar className="w-full h-full">
-                    <AvatarImage src={profile?.avatar_url} className="object-cover" />
-                    <AvatarFallback className="bg-gradient-to-br from-muted to-muted/50 text-foreground font-bold text-3xl">
-                      {profile?.full_name?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                {/* Gradient border wrapper */}
+                <div className="w-full h-full rounded-2xl p-[3px] bg-gradient-to-br from-primary via-accent to-secondary shadow-lg">
+                  <div className="w-full h-full rounded-xl bg-background overflow-hidden">
+                    <Avatar className="w-full h-full rounded-xl">
+                      <AvatarImage src={profile?.avatar_url} className="object-cover rounded-xl" />
+                      <AvatarFallback className="bg-muted text-foreground font-bold text-3xl rounded-xl">
+                        {profile?.full_name?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
                 </div>
               </motion.div>
               <motion.button
                 onClick={() => setIsImageEditorOpen(true)}
-                className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center ring-3 ring-background shadow-xl"
-                whileHover={{ scale: 1.15, rotate: 90 }}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-xl flex items-center justify-center ring-3 ring-background shadow-lg"
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 400 }}
               >
                 <Camera className="w-4 h-4 text-primary-foreground" />
               </motion.button>
