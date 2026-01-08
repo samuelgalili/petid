@@ -32,7 +32,7 @@ export const FloatingActionButton = ({
   label = "פעולה מהירה",
   onClick,
   actions,
-  position = "bottom-right",
+  position = "bottom-left",
   size = "default",
   variant = "primary"
 }: FloatingActionButtonProps) => {
