@@ -199,13 +199,14 @@ const AIControlRoom = () => {
   }, [chatMessages]);
 
   // Send message to orchestrator
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || isStreaming) return;
+  const sendMessage = async (messageOverride?: string) => {
+    const messageToSend = typeof messageOverride === 'string' ? messageOverride : inputMessage;
+    if (!messageToSend.trim() || isStreaming) return;
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: inputMessage,
+      content: messageToSend,
       created_at: new Date().toISOString()
     };
 
@@ -387,21 +388,22 @@ const AIControlRoom = () => {
                 disabled={isStreaming}
               />
               <Button 
-                onClick={sendMessage} 
+                onClick={() => sendMessage()} 
                 disabled={isStreaming || !inputMessage.trim()}
                 className="px-4"
               >
                 <Send className="w-4 h-4" />
               </Button>
             </div>
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-3 flex-wrap">
               {["מה המצב היום?", "צור קמפיין חדש", "נתח מכירות"].map((suggestion) => (
                 <Button 
                   key={suggestion}
                   variant="outline" 
                   size="sm"
                   className="text-xs"
-                  onClick={() => setInputMessage(suggestion)}
+                  disabled={isStreaming}
+                  onClick={() => sendMessage(suggestion)}
                 >
                   {suggestion}
                 </Button>
