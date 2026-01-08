@@ -13,25 +13,42 @@ const VERIFY_TOKEN = "petid_whatsapp_verify_token_2024";
 // Default fallback template when reopening conversation outside 24h window
 const FALLBACK_TEMPLATE = "petid_followup";
 
-// System prompt for AI customer service
-const SYSTEM_PROMPT = `אתה נציג שירות לקוחות AI של PetID - אפליקציית ניהול חיות מחמד.
+// ===== Logging Helper =====
 
-כללי התנהגות:
-- ענה בעברית בצורה ידידותית ומקצועית
-- תן מענה קצר וממוקד
-- אם לא יודע - הפנה לנציג אנושי
-- שאל שאלות הבהרה לפני שאתה נותן המלצות
+async function logMessageEvent(
+  supabase: any,
+  data: {
+    provider?: string;
+    direction: "inbound" | "outbound";
+    sender?: string;
+    recipient?: string;
+    message_text?: string;
+    message_id?: string;
+    status: string;
+    error?: string;
+    latency_ms?: number;
+    metadata?: Record<string, any>;
+  }
+) {
+  try {
+    await supabase.from("message_events").insert({
+      provider: data.provider || "whatsapp",
+      direction: data.direction,
+      sender: data.sender,
+      recipient: data.recipient,
+      message_text: data.message_text?.substring(0, 1000), // Limit text length
+      message_id: data.message_id,
+      status: data.status,
+      error: data.error,
+      latency_ms: data.latency_ms,
+      metadata: data.metadata,
+    });
+  } catch (e) {
+    console.error("Failed to log message event:", e);
+  }
+}
 
-תחומי מומחיות:
-- מידע על המוצרים בחנות
-- שעות פעילות ומיקום
-- מעקב הזמנות
-- שאלות על חיות מחמד
-- תמיכה טכנית באפליקציה
-
-אם זו שאלה רפואית דחופה - הפנה לוטרינר.`;
-
-// ===== Template Logic (imported from whatsapp-template-check) =====
+// ===== Template Logic =====
 
 interface TemplateCheckResult {
   requiresTemplate: boolean;
@@ -40,30 +57,15 @@ interface TemplateCheckResult {
   reason?: string;
 }
 
-// Regex to detect template instruction at start of AI response
-// Matches: [TEMPLATE: template_name] at the beginning
-const TEMPLATE_REGEX = /^\[TEMPLATE:\s*([a-zA-Z0-9_]+)\s*\]/i;
-
-/**
- * Check if the last user message was within 24 hours
- */
 function isWithin24Hours(lastInboundAt: string | null): boolean {
   if (!lastInboundAt) return false;
-  
   const lastMessage = new Date(lastInboundAt);
   const now = new Date();
   const hoursDiff = (now.getTime() - lastMessage.getTime()) / (1000 * 60 * 60);
-  
   return hoursDiff <= 24;
 }
 
-/**
- * Get last_inbound_at from whatsapp_conversations table
- */
-async function getLastInboundAt(
-  supabase: any,
-  waId: string
-): Promise<string | null> {
+async function getLastInboundAt(supabase: any, waId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("whatsapp_conversations")
     .select("last_inbound_at")
@@ -74,24 +76,17 @@ async function getLastInboundAt(
     console.error("Error fetching last_inbound_at:", error);
     return null;
   }
-
   return data?.last_inbound_at || null;
 }
 
-/**
- * Update or insert last_inbound_at for a wa_id (upsert)
- */
-async function updateLastInboundAt(
-  supabase: any,
-  waId: string
-): Promise<void> {
+async function updateLastInboundAt(supabase: any, waId: string): Promise<void> {
   const { error } = await supabase
     .from("whatsapp_conversations")
     .upsert(
       {
         wa_id: waId,
         last_inbound_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       },
       { onConflict: "wa_id" }
     );
@@ -101,32 +96,25 @@ async function updateLastInboundAt(
   }
 }
 
-/**
- * Determine which template to use based on message context
- */
 function determineTemplate(messageType: string): string {
   switch (messageType) {
-    case 'welcome':
-      return 'petid_welcome';
-    case 'followup':
-      return 'petid_followup';
-    case 'confirmation':
-      return 'petid_confirmation';
-    case 'update':
-      return 'petid_update';
-    case 'reminder':
-      return 'petid_reminder';
-    case 'handoff':
-      return 'petid_handoff';
+    case "welcome":
+      return "petid_welcome";
+    case "followup":
+      return "petid_followup";
+    case "confirmation":
+      return "petid_confirmation";
+    case "update":
+      return "petid_update";
+    case "reminder":
+      return "petid_reminder";
+    case "handoff":
+      return "petid_handoff";
     default:
       return FALLBACK_TEMPLATE;
   }
 }
 
-/**
- * Check if a template is required for the outgoing message.
- * Returns WhatsApp-ready variables map: { "1": ..., "2": ... } matching {{1}}, {{2}}...
- */
 function checkTemplateRequirement(
   lastUserMessageAt: string | null,
   initiatedBy: "platform" | "ai" | "user_reply" = "user_reply",
@@ -135,7 +123,6 @@ function checkTemplateRequirement(
 ): TemplateCheckResult {
   const within24h = isWithin24Hours(lastUserMessageAt);
 
-  // If user initiated and we are within the 24h customer care window -> free text allowed
   if (initiatedBy === "user_reply" && within24h) {
     return {
       requiresTemplate: false,
@@ -143,20 +130,14 @@ function checkTemplateRequirement(
     };
   }
 
-  // Outside 24h -> template required (for any initiation)
   if (!within24h) {
     const templateName = determineTemplate(messageType);
-
-    // WhatsApp template variables must match {{1}}, {{2}}, ...
-    // For your fallback petid_followup: {{1}} = first_name
     const safeFirstName = firstName?.trim() ? firstName.trim() : "חבר";
 
     return {
       requiresTemplate: true,
       templateName,
-      variables: {
-        "1": safeFirstName,
-      },
+      variables: { "1": safeFirstName },
       reason:
         initiatedBy === "platform"
           ? "Platform initiated message outside 24-hour window"
@@ -166,7 +147,6 @@ function checkTemplateRequirement(
     };
   }
 
-  // Default: within window, free text allowed
   return {
     requiresTemplate: false,
     reason: "Within active conversation window",
@@ -175,23 +155,12 @@ function checkTemplateRequirement(
 
 // ===== WhatsApp Message Sending Functions =====
 
-interface SendMessageOptions {
-  to: string;
-  text?: string;
-  templateName?: string;
-  templateVariables?: Record<string, string>;
-  languageCode?: string;
-}
-
 interface SendMessageResult {
   success: boolean;
   messageId?: string;
   error?: string;
 }
 
-/**
- * Send a text message via WhatsApp Cloud API
- */
 async function sendTextMessage(to: string, text: string): Promise<SendMessageResult> {
   const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
   const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
@@ -231,11 +200,6 @@ async function sendTextMessage(to: string, text: string): Promise<SendMessageRes
   }
 }
 
-/**
- * Send a template message via WhatsApp Cloud API
- * Only adds components if there are actual variables
- * Ensures parameters order matches {{1}}, {{2}}, ...
- */
 async function sendTemplateMessage(
   to: string,
   templateName: string,
@@ -263,17 +227,12 @@ async function sendTemplateMessage(
   const hasVars = variables && Object.keys(variables).length > 0;
 
   if (hasVars) {
-    // If keys are "1","2","3"... sort numerically to match {{1}}, {{2}}, ...
     const keys = Object.keys(variables!);
     const allNumeric = keys.every((k) => /^\d+$/.test(k));
-    const orderedKeys = allNumeric
-      ? keys.sort((a, b) => Number(a) - Number(b))
-      : keys.sort(); // deterministic fallback (alphabetical)
+    const orderedKeys = allNumeric ? keys.sort((a, b) => Number(a) - Number(b)) : keys.sort();
 
-    // Special fallback: for your petid_followup where {{1}} is first_name
-    // Ensure {{1}} is never empty (WhatsApp may reject empty parameters)
     if (templateName === "petid_followup") {
-      const k = allNumeric ? "1" : (keys.includes("first_name") ? "first_name" : orderedKeys[0]);
+      const k = allNumeric ? "1" : keys.includes("first_name") ? "first_name" : orderedKeys[0];
       const v = variables![k];
       variables![k] = v && String(v).trim().length > 0 ? v : "חבר";
     }
@@ -283,12 +242,7 @@ async function sendTemplateMessage(
       text: String(variables![k] ?? ""),
     }));
 
-    templatePayload.template.components = [
-      {
-        type: "body",
-        parameters,
-      },
-    ];
+    templatePayload.template.components = [{ type: "body", parameters }];
   }
 
   try {
@@ -312,34 +266,28 @@ async function sendTemplateMessage(
     return { success: true, messageId: data.messages?.[0]?.id };
   } catch (error) {
     console.error("WhatsApp template send error:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
-/**
- * Smart message sender - decides between text and template based on 24h rule
- * Includes fallback logic for failures
- */
-async function sendWhatsAppMessage(options: SendMessageOptions): Promise<SendMessageResult> {
+async function sendWhatsAppMessage(options: {
+  to: string;
+  text?: string;
+  templateName?: string;
+  templateVariables?: Record<string, string>;
+  languageCode?: string;
+}): Promise<SendMessageResult> {
   const { to, text, templateName, templateVariables, languageCode } = options;
 
-  // If explicitly requesting template
   if (templateName) {
     const result = await sendTemplateMessage(to, templateName, templateVariables, languageCode);
-    
-    // Fallback to default template if specific template fails
     if (!result.success && templateName !== FALLBACK_TEMPLATE) {
       console.log(`Template ${templateName} failed, trying fallback template`);
       return await sendTemplateMessage(to, FALLBACK_TEMPLATE, templateVariables, languageCode);
     }
-    
     return result;
   }
 
-  // Send as text message
   if (text) {
     return await sendTextMessage(to, text);
   }
@@ -347,18 +295,110 @@ async function sendWhatsAppMessage(options: SendMessageOptions): Promise<SendMes
   return { success: false, error: "No message content provided" };
 }
 
-// getLastUserMessageTime is now replaced by getLastInboundAt above
-// This function is kept for backwards compatibility but uses the new table
+// ===== Call Chat Edge Function =====
+
+async function callChatFunction(
+  supabaseUrl: string,
+  messages: Array<{ role: string; content: string }>
+): Promise<{ success: boolean; reply?: string; error?: string; latency_ms: number }> {
+  const startTime = Date.now();
+  
+  try {
+    const chatUrl = `${supabaseUrl}/functions/v1/chat`;
+    console.log(`Calling chat function at: ${chatUrl}`);
+    
+    const response = await fetch(chatUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+      },
+      body: JSON.stringify({ messages }),
+    });
+
+    const latency_ms = Date.now() - startTime;
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Chat function error:", response.status, errorText);
+      return {
+        success: false,
+        error: `Chat function returned ${response.status}: ${errorText}`,
+        latency_ms,
+      };
+    }
+
+    // Handle streaming response - collect all chunks
+    const reader = response.body?.getReader();
+    if (!reader) {
+      return { success: false, error: "No response body", latency_ms };
+    }
+
+    const decoder = new TextDecoder();
+    let fullContent = "";
+    let textBuffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      textBuffer += decoder.decode(value, { stream: true });
+
+      // Process SSE lines
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") continue;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) fullContent += content;
+        } catch {
+          // Incomplete JSON, put it back
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+
+    const totalLatency = Date.now() - startTime;
+    console.log(`Chat function completed in ${totalLatency}ms, reply length: ${fullContent.length}`);
+
+    return {
+      success: true,
+      reply: fullContent || "מצטער, לא הצלחתי לעבד את הבקשה.",
+      latency_ms: totalLatency,
+    };
+  } catch (error) {
+    const latency_ms = Date.now() - startTime;
+    console.error("Chat function call error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      latency_ms,
+    };
+  }
+}
 
 // ===== Main Webhook Handler =====
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   const url = new URL(req.url);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     // WhatsApp webhook verification (GET request)
@@ -392,7 +432,6 @@ serve(async (req) => {
       const messages = value?.messages;
 
       if (!messages || messages.length === 0) {
-        // This might be a status update, not a message
         console.log("No messages in webhook, possibly a status update");
         return new Response(JSON.stringify({ status: "ok" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -400,23 +439,36 @@ serve(async (req) => {
       }
 
       const message = messages[0];
-      const from = message.from; // Customer phone number
+      const from = message.from;
       const messageType = message.type;
       const messageId = message.id;
+      const timestamp = message.timestamp;
 
       console.log(`Message from ${from}, type: ${messageType}, id: ${messageId}`);
 
-      // Initialize Supabase client
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      // Log inbound event immediately (even before validation)
+      await logMessageEvent(supabase, {
+        direction: "inbound",
+        sender: from,
+        message_text: message.text?.body || `[${messageType}]`,
+        message_id: messageId,
+        status: "received",
+        metadata: { messageType, timestamp, raw: body },
+      });
 
       // Only process text messages
       if (messageType !== "text") {
-        await sendWhatsAppMessage({
-          to: from,
-          text: "מצטער, אני יכול לעבד רק הודעות טקסט כרגע. איך אוכל לעזור לך?"
+        const nonTextReply = "מצטער, אני יכול לעבד רק הודעות טקסט כרגע. איך אוכל לעזור לך?";
+        const result = await sendWhatsAppMessage({ to: from, text: nonTextReply });
+        
+        await logMessageEvent(supabase, {
+          direction: "outbound",
+          recipient: from,
+          message_text: nonTextReply,
+          status: result.success ? "sent" : "failed",
+          error: result.error,
         });
+
         return new Response(JSON.stringify({ status: "ok" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -425,7 +477,7 @@ serve(async (req) => {
       const customerMessage = message.text?.body || "";
       console.log(`Customer message: ${customerMessage}`);
 
-      // Update last_inbound_at in whatsapp_conversations table (for 24h window)
+      // Update last_inbound_at for 24h window
       await updateLastInboundAt(supabase, from);
 
       // Store the incoming message
@@ -444,167 +496,137 @@ serve(async (req) => {
         .order("created_at", { ascending: true })
         .limit(10);
 
-      // Build messages array for AI
-      const aiMessages = [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...(history || []).map((msg) => ({
-          role: msg.message_type === "incoming" ? "user" : "assistant",
-          content: msg.message_text,
-        })),
-      ];
+      // Build messages array for chat function
+      const chatMessages = (history || []).map((msg) => ({
+        role: msg.message_type === "incoming" ? "user" : "assistant",
+        content: msg.message_text,
+      }));
 
-      // Call Lovable AI for response
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) {
-        throw new Error("LOVABLE_API_KEY is not configured");
-      }
+      // Call the chat edge function
+      const chatResult = await callChatFunction(supabaseUrl, chatMessages);
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: aiMessages,
-          max_tokens: 500,
-        }),
+      // Log the chat function call
+      await logMessageEvent(supabase, {
+        direction: "inbound",
+        sender: from,
+        message_text: customerMessage,
+        status: chatResult.success ? "chat_success" : "chat_failed",
+        error: chatResult.error,
+        latency_ms: chatResult.latency_ms,
+        metadata: { step: "chat_function_call" },
       });
 
-      if (!aiResponse.ok) {
-        const errorText = await aiResponse.text();
-        console.error("AI API error:", aiResponse.status, errorText);
+      if (!chatResult.success) {
+        console.error("Chat function failed:", chatResult.error);
         
-        // Get last_inbound_at from DB for template decision
         const lastInboundAt = await getLastInboundAt(supabase, from);
-        const templateCheck = checkTemplateRequirement(lastInboundAt, 'user_reply', 'conversation');
-        
+        const templateCheck = checkTemplateRequirement(lastInboundAt, "user_reply", "conversation");
+
+        let fallbackResult: SendMessageResult;
         if (templateCheck.requiresTemplate) {
-          // Outside 24h - send template
-          await sendWhatsAppMessage({
+          fallbackResult = await sendWhatsAppMessage({
             to: from,
             templateName: templateCheck.templateName || FALLBACK_TEMPLATE,
-            templateVariables: templateCheck.variables
+            templateVariables: templateCheck.variables,
           });
         } else {
-          // Within 24h - send text
-          if (aiResponse.status === 429) {
-            await sendWhatsAppMessage({
-              to: from,
-              text: "המערכת עמוסה כרגע, אנא נסה שוב בעוד כמה דקות."
-            });
-          } else {
-            await sendWhatsAppMessage({
-              to: from,
-              text: "אירעה שגיאה, אנא נסה שוב מאוחר יותר או פנה לנציג."
-            });
-          }
+          fallbackResult = await sendWhatsAppMessage({
+            to: from,
+            text: "אירעה שגיאה, אנא נסה שוב מאוחר יותר או פנה לנציג.",
+          });
         }
-        
+
+        await logMessageEvent(supabase, {
+          direction: "outbound",
+          recipient: from,
+          message_text: "[error_fallback]",
+          status: fallbackResult.success ? "sent" : "failed",
+          error: fallbackResult.error,
+        });
+
         return new Response(JSON.stringify({ status: "error" }), {
-          status: 200, // Return 200 to WhatsApp so it doesn't retry
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      const aiData = await aiResponse.json();
-      let aiReply = aiData.choices?.[0]?.message?.content || "מצטער, לא הצלחתי לעבד את הבקשה.";
+      const aiReply = chatResult.reply!;
+      console.log(`AI reply: ${aiReply.substring(0, 100)}...`);
 
-      console.log(`AI reply: ${aiReply}`);
+      // Check 24h window for template requirement
+      const lastInboundAt = await getLastInboundAt(supabase, from);
+      const templateCheck = checkTemplateRequirement(lastInboundAt, "user_reply", "conversation");
 
-      const templateMatch = aiReply.match(TEMPLATE_REGEX);
+      console.log(`24h check - lastInboundAt: ${lastInboundAt}, requiresTemplate: ${templateCheck.requiresTemplate}`);
 
-      const FALLBACK_FIRST_NAME = "חבר"; // אל תשלח ריק
-      const getFirstNameVar = () => ({ "1": FALLBACK_FIRST_NAME }); // {{1}}
+      const FALLBACK_FIRST_NAME = "חבר";
+      const getFirstNameVar = () => ({ "1": FALLBACK_FIRST_NAME });
 
-      if (templateMatch) {
-        const templateName = templateMatch[1];
-        const cleanedReply = aiReply.replace(TEMPLATE_REGEX, "").trim();
+      let sendResult: SendMessageResult;
 
-        console.log(`Template detected: ${templateName}, cleaned reply: ${cleanedReply.substring(0, 50)}...`);
-
-        // If this template requires variables (like petid_followup), provide them
+      if (templateCheck.requiresTemplate) {
+        const chosenTemplate = templateCheck.templateName || FALLBACK_TEMPLATE;
         const templateVariables =
-          templateName === "petid_followup" ? getFirstNameVar() : undefined;
+          chosenTemplate === "petid_followup"
+            ? templateCheck.variables?.["1"]
+              ? templateCheck.variables
+              : getFirstNameVar()
+            : templateCheck.variables;
 
-        const result = await sendWhatsAppMessage({
+        console.log(`Outside 24h window, sending template: ${chosenTemplate}`);
+
+        sendResult = await sendWhatsAppMessage({
           to: from,
-          templateName,
+          templateName: chosenTemplate,
           templateVariables,
         });
 
         await supabase.from("whatsapp_messages").insert({
           phone_number: from,
           message_type: "outgoing",
-          message_text: `[TEMPLATE: ${templateName}]`,
+          message_text: `[TEMPLATE: ${chosenTemplate}] (Original: ${aiReply.substring(0, 100)}...)`,
         });
-
-        if (!result.success) console.error("Template send failed:", result.error);
       } else {
-        const lastInboundAt = await getLastInboundAt(supabase, from);
-        const templateCheck = checkTemplateRequirement(lastInboundAt, "user_reply", "conversation");
+        sendResult = await sendTextMessage(from, aiReply);
 
-        console.log(
-          `24h check - lastInboundAt: ${lastInboundAt}, requiresTemplate: ${templateCheck.requiresTemplate}`
-        );
-
-        let sendResult: SendMessageResult;
-
-        if (templateCheck.requiresTemplate) {
-          const chosenTemplate = templateCheck.templateName || FALLBACK_TEMPLATE;
-
-          // Build variables safely (numeric keys). If chosenTemplate is petid_followup -> must pass {{1}}
-          const templateVariables =
-            chosenTemplate === "petid_followup"
-              ? (templateCheck.variables?.["1"]
-                  ? templateCheck.variables
-                  : getFirstNameVar())
-              : templateCheck.variables;
-
-          console.log(`Outside 24h window, sending template: ${chosenTemplate}`);
-
+        if (!sendResult.success) {
+          console.log("Text send failed, attempting fallback template");
           sendResult = await sendWhatsAppMessage({
             to: from,
-            templateName: chosenTemplate,
-            templateVariables,
+            templateName: FALLBACK_TEMPLATE,
+            templateVariables: getFirstNameVar(),
           });
 
           await supabase.from("whatsapp_messages").insert({
             phone_number: from,
             message_type: "outgoing",
-            message_text: `[TEMPLATE: ${chosenTemplate}] (Original: ${aiReply.substring(0, 100)}...)`,
+            message_text: `[TEMPLATE: ${FALLBACK_TEMPLATE}] (Fallback after text failure)`,
           });
-
-          if (!sendResult.success) console.error("Template send failed:", sendResult.error);
         } else {
-          sendResult = await sendTextMessage(from, aiReply);
-
-          if (!sendResult.success) {
-            console.log("Text send failed, attempting fallback template");
-
-            // Fallback template requires {{1}}
-            sendResult = await sendWhatsAppMessage({
-              to: from,
-              templateName: FALLBACK_TEMPLATE, // petid_followup
-              templateVariables: getFirstNameVar(), // {"1":"חבר"}
-            });
-
-            await supabase.from("whatsapp_messages").insert({
-              phone_number: from,
-              message_type: "outgoing",
-              message_text: `[TEMPLATE: ${FALLBACK_TEMPLATE}] (Fallback after text failure)`,
-            });
-
-            if (!sendResult.success) console.error("Fallback template send failed:", sendResult.error);
-          } else {
-            await supabase.from("whatsapp_messages").insert({
-              phone_number: from,
-              message_type: "outgoing",
-              message_text: aiReply,
-            });
-          }
+          await supabase.from("whatsapp_messages").insert({
+            phone_number: from,
+            message_type: "outgoing",
+            message_text: aiReply,
+          });
         }
+      }
+
+      // Log outbound event
+      await logMessageEvent(supabase, {
+        direction: "outbound",
+        recipient: from,
+        message_text: aiReply.substring(0, 500),
+        message_id: sendResult.messageId,
+        status: sendResult.success ? "sent" : "failed",
+        error: sendResult.error,
+        latency_ms: chatResult.latency_ms,
+        metadata: {
+          templateUsed: templateCheck.requiresTemplate ? templateCheck.templateName : null,
+        },
+      });
+
+      if (!sendResult.success) {
+        console.error("Message send failed:", sendResult.error);
       }
 
       return new Response(JSON.stringify({ status: "ok" }), {
@@ -615,9 +637,20 @@ serve(async (req) => {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   } catch (error) {
     console.error("Webhook error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
-      status: 200, // Return 200 to prevent WhatsApp retries
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+    await logMessageEvent(supabase, {
+      direction: "inbound",
+      status: "error",
+      error: error instanceof Error ? error.message : "Unknown error",
+      metadata: { step: "webhook_handler" },
     });
+
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
