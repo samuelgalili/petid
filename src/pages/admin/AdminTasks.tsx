@@ -133,7 +133,7 @@ const AdminTasks = () => {
           { id: "3", title: "gfgdg", description: "", status: "done", priority: "medium", assigned_to: "2", due_date: "2025-11-18", rating: null, tags: [], created_at: "2025-11-14", assignee_name: "לאה רובינסון" },
           { id: "4", title: "משימה חשובה", description: "תיאור משימה", status: "todo", priority: "urgent", assigned_to: "3", due_date: "2025-10-31", rating: null, tags: [], created_at: "2025-10-29", assignee_name: "לילך יצחק" },
           { id: "5", title: "משימה חשובה ביותר", description: "תיאור", status: "todo", priority: "low", assigned_to: "3", due_date: "2025-10-13", rating: null, tags: [], created_at: "2025-10-08", assignee_name: "לילך יצחק" },
-          { id: "6", title: "Dummy tasks", description: "Test", status: "done", priority: "medium", assigned_to: "4", due_date: "2025-09-12", rating: null, tags: [], created_at: "2025-09-07", assignee_name: "יצחק דויד" },
+          { id: "6", title: "משימות לדוגמה", description: "בדיקה", status: "done", priority: "medium", assigned_to: "4", due_date: "2025-09-12", rating: null, tags: [], created_at: "2025-09-07", assignee_name: "יצחק דויד" },
         ]);
       }
     } catch (error) {

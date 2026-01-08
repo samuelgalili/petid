@@ -145,7 +145,7 @@ const AdminUsers = () => {
       });
 
       if (response.error) {
-        throw new Error(response.error.message || "Failed to delete user");
+        throw new Error(response.error.message || "מחיקת המשתמש נכשלה");
       }
 
       return response.data;

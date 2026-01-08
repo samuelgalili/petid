@@ -341,7 +341,7 @@ const AIContentGenerator = () => {
                     {email.cta}
                   </Button>
                   {email.ps && (
-                    <p className="text-xs text-slate-400 italic">P.S. {email.ps}</p>
+                    <p className="text-xs text-slate-400 italic">נ.ב. {email.ps}</p>
                   )}
                 </CardContent>
               </Card>

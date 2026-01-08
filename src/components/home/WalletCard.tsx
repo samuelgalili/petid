@@ -37,7 +37,7 @@ export const WalletCard = ({ walletBalance, achievements, onNavigate }: WalletCa
           onClick={onNavigate}
           role="button"
           tabIndex={0}
-          aria-label="View loyalty card"
+          aria-label="צפייה בכרטיס נאמנות"
         >
           {/* Card Container with Shadow */}
           <motion.div

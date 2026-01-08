@@ -84,7 +84,7 @@ const ResetPassword = () => {
       }, 2000);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "שגיאה",
         description: error.message,
         variant: "destructive",
       });

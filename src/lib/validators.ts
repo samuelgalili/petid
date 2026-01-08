@@ -3,44 +3,44 @@ import { z } from "zod";
 export const loginSchema = z.object({
   email: z
     .string()
-    .min(1, "Email is required")
-    .email("Invalid email address")
-    .max(255, "Email must be less than 255 characters"),
+    .min(1, "יש להזין אימייל")
+    .email("כתובת אימייל לא תקינה")
+    .max(255, "האימייל חייב להיות פחות מ-255 תווים"),
   phone: z
     .string()
-    .min(1, "Phone number is required")
-    .regex(/^\+?[0-9]{10,15}$/, "Phone number must be 10-15 digits with optional + prefix"),
+    .min(1, "יש להזין מספר טלפון")
+    .regex(/^\+?[0-9]{10,15}$/, "מספר טלפון חייב להכיל 10-15 ספרות"),
   rememberMe: z.boolean().optional(),
 });
 
 export const signupSchema = z.object({
   fullName: z
     .string()
-    .min(2, "Full name must be at least 2 characters")
-    .max(100, "Full name must be less than 100 characters")
+    .min(2, "השם חייב להכיל לפחות 2 תווים")
+    .max(100, "השם חייב להיות פחות מ-100 תווים")
     .trim(),
   email: z
     .string()
-    .min(1, "Email is required")
-    .email("Invalid email address")
-    .max(255, "Email must be less than 255 characters"),
+    .min(1, "יש להזין אימייל")
+    .email("כתובת אימייל לא תקינה")
+    .max(255, "האימייל חייב להיות פחות מ-255 תווים"),
   phone: z
     .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .max(15, "Phone number must be less than 15 digits")
-    .regex(/^[0-9]+$/, "Phone number must contain only digits"),
+    .min(10, "מספר טלפון חייב להכיל לפחות 10 ספרות")
+    .max(15, "מספר טלפון חייב להיות פחות מ-15 ספרות")
+    .regex(/^[0-9]+$/, "מספר טלפון חייב להכיל ספרות בלבד"),
   password: z
     .string()
-    .min(6, "Password must be at least 6 characters")
-    .max(100, "Password must be less than 100 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
+    .min(6, "הסיסמה חייבת להכיל לפחות 6 תווים")
+    .max(100, "הסיסמה חייבת להיות פחות מ-100 תווים")
+    .regex(/[A-Z]/, "הסיסמה חייבת להכיל לפחות אות גדולה אחת")
+    .regex(/[a-z]/, "הסיסמה חייבת להכיל לפחות אות קטנה אחת")
+    .regex(/[0-9]/, "הסיסמה חייבת להכיל לפחות ספרה אחת"),
   confirmPassword: z
     .string()
-    .min(1, "Please confirm your password"),
+    .min(1, "יש לאשר את הסיסמה"),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "הסיסמאות אינן תואמות",
   path: ["confirmPassword"],
 });
 
@@ -55,10 +55,10 @@ export const validateEmail = (email: string): boolean => {
 // Image validation schemas
 export const imageFileSchema = z.object({
   file: z.instanceof(File)
-    .refine((file) => file.size <= 10 * 1024 * 1024, "Image must be less than 10MB")
+    .refine((file) => file.size <= 10 * 1024 * 1024, "התמונה חייבת להיות פחות מ-10MB")
     .refine(
       (file) => ["image/jpeg", "image/png", "image/webp", "image/jpg"].includes(file.type),
-      "Only JPEG, PNG, and WebP images are allowed"
+      "מותר רק תמונות JPEG, PNG ו-WebP"
     ),
 });
 
@@ -70,7 +70,7 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
     if (error instanceof z.ZodError) {
       return { valid: false, error: error.issues[0].message };
     }
-    return { valid: false, error: "Invalid image file" };
+    return { valid: false, error: "קובץ תמונה לא תקין" };
   }
 };
 
@@ -98,7 +98,7 @@ export const compressImage = async (file: File, maxWidth = 1920, quality = 0.8):
         
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          reject(new Error('Failed to get canvas context'));
+          reject(new Error('נכשלה קבלת הקשר קנבס'));
           return;
         }
         
@@ -109,7 +109,7 @@ export const compressImage = async (file: File, maxWidth = 1920, quality = 0.8):
             if (blob) {
               resolve(blob);
             } else {
-              reject(new Error('Failed to compress image'));
+              reject(new Error('דחיסת התמונה נכשלה'));
             }
           },
           file.type,
@@ -117,11 +117,11 @@ export const compressImage = async (file: File, maxWidth = 1920, quality = 0.8):
         );
       };
       
-      img.onerror = () => reject(new Error('Failed to load image'));
+      img.onerror = () => reject(new Error('טעינת התמונה נכשלה'));
       img.src = e.target?.result as string;
     };
     
-    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onerror = () => reject(new Error('קריאת הקובץ נכשלה'));
     reader.readAsDataURL(file);
   });
 };

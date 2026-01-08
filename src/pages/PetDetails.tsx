@@ -219,7 +219,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
       } catch (error: any) {
         toast({
-          title: "Error",
+          title: "שגיאה",
           description: error.message,
           variant: "destructive",
         });
