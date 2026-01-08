@@ -514,93 +514,97 @@ serve(async (req) => {
 
       console.log(`AI reply: ${aiReply}`);
 
-      // Check if AI returned a template instruction at the START of response
-      // Using strict regex: ^[TEMPLATE: template_name]
       const templateMatch = aiReply.match(TEMPLATE_REGEX);
-      
+
+      const FALLBACK_FIRST_NAME = "חבר"; // אל תשלח ריק
+      const getFirstNameVar = () => ({ "1": FALLBACK_FIRST_NAME }); // {{1}}
+
       if (templateMatch) {
-        // AI explicitly requested a template - extract template name from capture group
         const templateName = templateMatch[1];
-        
-        // Remove the [TEMPLATE:...] prefix from the response for logging
-        const cleanedReply = aiReply.replace(TEMPLATE_REGEX, '').trim();
-        
+        const cleanedReply = aiReply.replace(TEMPLATE_REGEX, "").trim();
+
         console.log(`Template detected: ${templateName}, cleaned reply: ${cleanedReply.substring(0, 50)}...`);
-        
-        // Send template without variables (template defines its own content)
+
+        // If this template requires variables (like petid_followup), provide them
+        const templateVariables =
+          templateName === "petid_followup" ? getFirstNameVar() : undefined;
+
         const result = await sendWhatsAppMessage({
           to: from,
-          templateName
-          // No templateVariables - template content is pre-defined in WhatsApp
+          templateName,
+          templateVariables,
         });
 
-        // Store the outgoing template message
         await supabase.from("whatsapp_messages").insert({
           phone_number: from,
           message_type: "outgoing",
           message_text: `[TEMPLATE: ${templateName}]`,
         });
 
-        if (!result.success) {
-          console.error("Template send failed:", result.error);
-        }
+        if (!result.success) console.error("Template send failed:", result.error);
       } else {
-        // Regular text response - check 24h window from DB
         const lastInboundAt = await getLastInboundAt(supabase, from);
-        const templateCheck = checkTemplateRequirement(lastInboundAt, 'user_reply', 'conversation');
+        const templateCheck = checkTemplateRequirement(lastInboundAt, "user_reply", "conversation");
 
-        console.log(`24h check - lastInboundAt: ${lastInboundAt}, requiresTemplate: ${templateCheck.requiresTemplate}`);
+        console.log(
+          `24h check - lastInboundAt: ${lastInboundAt}, requiresTemplate: ${templateCheck.requiresTemplate}`
+        );
 
         let sendResult: SendMessageResult;
 
         if (templateCheck.requiresTemplate) {
-          // Outside 24h window - must send template
-          console.log(`Outside 24h window, sending template: ${templateCheck.templateName}`);
-          
+          const chosenTemplate = templateCheck.templateName || FALLBACK_TEMPLATE;
+
+          // Build variables safely (numeric keys). If chosenTemplate is petid_followup -> must pass {{1}}
+          const templateVariables =
+            chosenTemplate === "petid_followup"
+              ? (templateCheck.variables?.["1"]
+                  ? templateCheck.variables
+                  : getFirstNameVar())
+              : templateCheck.variables;
+
+          console.log(`Outside 24h window, sending template: ${chosenTemplate}`);
+
           sendResult = await sendWhatsAppMessage({
             to: from,
-            templateName: templateCheck.templateName || FALLBACK_TEMPLATE,
-            templateVariables: templateCheck.variables
+            templateName: chosenTemplate,
+            templateVariables,
           });
 
-          // Store the outgoing template message
           await supabase.from("whatsapp_messages").insert({
             phone_number: from,
             message_type: "outgoing",
-            message_text: `[TEMPLATE: ${templateCheck.templateName}] (Original: ${aiReply.substring(0, 100)}...)`,
+            message_text: `[TEMPLATE: ${chosenTemplate}] (Original: ${aiReply.substring(0, 100)}...)`,
           });
+
+          if (!sendResult.success) console.error("Template send failed:", sendResult.error);
         } else {
-          // Within 24h window - send regular text
           sendResult = await sendTextMessage(from, aiReply);
 
           if (!sendResult.success) {
-            // Text failed - try fallback based on window
-            console.log("Text send failed, attempting fallback");
-            
+            console.log("Text send failed, attempting fallback template");
+
+            // Fallback template requires {{1}}
             sendResult = await sendWhatsAppMessage({
               to: from,
-              templateName: FALLBACK_TEMPLATE,
-              templateVariables: { first_name: "חבר/ה" }
+              templateName: FALLBACK_TEMPLATE, // petid_followup
+              templateVariables: getFirstNameVar(), // {"1":"חבר"}
             });
 
-            // Store fallback message
             await supabase.from("whatsapp_messages").insert({
               phone_number: from,
               message_type: "outgoing",
               message_text: `[TEMPLATE: ${FALLBACK_TEMPLATE}] (Fallback after text failure)`,
             });
+
+            if (!sendResult.success) console.error("Fallback template send failed:", sendResult.error);
           } else {
-            // Store the successful text message
             await supabase.from("whatsapp_messages").insert({
               phone_number: from,
               message_type: "outgoing",
               message_text: aiReply,
             });
           }
-        }
-
-        if (!sendResult.success) {
-          console.error("All send attempts failed:", sendResult.error);
         }
       }
 
