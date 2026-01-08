@@ -1219,14 +1219,15 @@ const Feed = () => {
               <span className="text-primary font-semibold">{totalPoints} נק׳</span>
             </div>
             <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-light" initial={{
-              width: 0
-            }} animate={{
-              width: `${Math.min(totalPoints / 1000 * 100, 100)}%`
-            }} transition={{
-              duration: 0.8,
-              ease: "easeOut"
-            }} />
+              <motion.div 
+                className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500" 
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{
+                  duration: 2.5,
+                  ease: "easeInOut"
+                }} 
+              />
             </div>
           </motion.div>
         </motion.div>
