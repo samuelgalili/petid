@@ -51,7 +51,8 @@ import {
   PanelLeftClose,
   PanelLeft,
   Home,
-  Upload
+  Upload,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -82,6 +83,7 @@ const navGroups: NavGroup[] = [
     label: "ראשי",
     items: [
       { icon: LayoutDashboard, label: "דשבורד", href: "/admin/dashboard" },
+      { icon: Crown, label: "AI Control Room", href: "/admin/control-room" },
       { icon: Zap, label: "Growo", href: "/admin/growo" },
       { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics" },
       { icon: Wallet, label: "כספים", href: "/admin/financial" },
