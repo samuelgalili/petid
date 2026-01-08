@@ -259,19 +259,25 @@ const AIControlRoom = () => {
 
         for (const line of lines) {
           const trimmedLine = line.trim();
-          if (trimmedLine.startsWith('data: ') && trimmedLine !== 'data: [DONE]') {
-            try {
-              const data = JSON.parse(trimmedLine.slice(6));
-              const content = data.choices?.[0]?.delta?.content;
-              if (content) {
-                fullContent += content;
-                setChatMessages(prev => prev.map(m => 
-                  m.id === assistantId ? { ...m, content: fullContent.replace(/<task>[\s\S]*?<\/task>/g, '').trim() } : m
-                ));
-              }
-            } catch {
-              // Ignore parse errors
+          // Skip empty lines and non-data lines (like ": OPENROUTER PROCESSING")
+          if (!trimmedLine || !trimmedLine.startsWith('data: ') || trimmedLine === 'data: [DONE]') {
+            continue;
+          }
+          try {
+            const jsonStr = trimmedLine.slice(6);
+            if (!jsonStr.startsWith('{')) continue;
+            const data = JSON.parse(jsonStr);
+            const content = data.choices?.[0]?.delta?.content;
+            if (content) {
+              fullContent += content;
+              // Remove task tags from displayed content
+              const displayContent = fullContent.replace(/<task>[\s\S]*?<\/task>/g, '').trim();
+              setChatMessages(prev => prev.map(m => 
+                m.id === assistantId ? { ...m, content: displayContent || 'מעבד...' } : m
+              ));
             }
+          } catch (e) {
+            console.log('Parse skip:', trimmedLine.substring(0, 50));
           }
         }
       }
