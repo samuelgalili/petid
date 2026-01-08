@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, FileText, Camera, Heart, Shield, Trees, GraduationCap, Scissors, CheckSquare, Gift, MessageCircle, ArrowLeft } from "lucide-react";
+import { Search, X, Shield, Trees, GraduationCap, Scissors, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 
@@ -14,30 +14,6 @@ interface QuickAction {
 }
 
 const quickActions: QuickAction[] = [
-  { 
-    id: "documents", 
-    label: "מסמכים", 
-    description: "צפה בתעודות, חיסונים ומסמכים",
-    icon: FileText, 
-    path: "/documents",
-    keywords: ["מסמכים", "תעודות", "חיסונים", "רישיון", "דרכון"]
-  },
-  { 
-    id: "photos", 
-    label: "אלבום תמונות", 
-    description: "גלריית התמונות של החיה שלך",
-    icon: Camera, 
-    path: "/photos",
-    keywords: ["תמונות", "אלבום", "גלריה", "צילומים"]
-  },
-  { 
-    id: "adoption", 
-    label: "אימוץ", 
-    description: "מצא חיה לאימוץ",
-    icon: Heart, 
-    path: "/adoption",
-    keywords: ["אימוץ", "כלב", "חתול", "לאמץ", "מקלט"]
-  },
   { 
     id: "insurance", 
     label: "ביטוח", 
@@ -69,30 +45,6 @@ const quickActions: QuickAction[] = [
     icon: Scissors, 
     path: "/grooming",
     keywords: ["מספרה", "טיפוח", "רחצה", "תספורת", "ציפורניים"]
-  },
-  { 
-    id: "tasks", 
-    label: "משימות", 
-    description: "תזכורות וניהול משימות",
-    icon: CheckSquare, 
-    path: "/tasks",
-    keywords: ["משימות", "תזכורת", "לעשות", "רשימה"]
-  },
-  { 
-    id: "rewards", 
-    label: "פרסים", 
-    description: "הנקודות וההטבות שלך",
-    icon: Gift, 
-    path: "/rewards",
-    keywords: ["פרסים", "נקודות", "הטבות", "מתנות", "בונוס"]
-  },
-  { 
-    id: "chat", 
-    label: "צ'אט AI", 
-    description: "שאל את הבינה המלאכותית",
-    icon: MessageCircle, 
-    path: "/chat",
-    keywords: ["צאט", "שאלה", "עזרה", "בינה", "AI"]
   },
 ];
 
