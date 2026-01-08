@@ -317,7 +317,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 open={isGroupOpen}
                 onOpenChange={() => toggleGroup(group.label)}
               >
-                <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-lg hover:bg-muted/50">
+                <CollapsibleTrigger className="flex flex-row-reverse items-center justify-between w-full px-3 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-lg hover:bg-muted/50">
                   <span>{group.label}</span>
                   <ChevronDown className={cn(
                     "w-4 h-4 transition-transform duration-200",
