@@ -241,7 +241,7 @@ const AnimatedRoutes = () => {
         <Route path="/messages" element={<ProtectedRoute><PageTransition><Messages /></PageTransition></ProtectedRoute>} />
         <Route path="/messages/:userId" element={<ProtectedRoute><PageTransition><MessageThread /></PageTransition></ProtectedRoute>} />
         <Route path="/accessibility" element={<PageTransition><Accessibility /></PageTransition>} />
-        <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
+        <Route path="/privacy-policy" element={<PageTransition><Privacy /></PageTransition>} />
         <Route path="/data-deletion" element={<PageTransition><DataDeletion /></PageTransition>} />
         <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
         <Route path="/club-terms" element={<PageTransition><ClubTerms /></PageTransition>} />

@@ -279,7 +279,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
             בלחיצה על "בואו נתחיל" אתה מסכים ל
             <a href="/terms" className="text-primary hover:underline mx-1">תנאי השימוש</a>
             ול
-            <a href="/privacy" className="text-primary hover:underline mx-1">מדיניות הפרטיות</a>
+            <a href="/privacy-policy" className="text-primary hover:underline mx-1">מדיניות הפרטיות</a>
           </motion.p>
         )}
       </div>

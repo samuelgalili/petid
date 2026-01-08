@@ -448,8 +448,8 @@ export const SignupForm = () => {
           <p className="text-xs text-muted-foreground text-center leading-relaxed">
             בהרשמה, אתה מסכים ל{" "}
             <a href="/terms" className="text-primary">תנאי שימוש</a>,{" "}
-            <a href="/privacy" className="text-primary">מדיניות פרטיות</a> ו{" "}
-            <a href="/privacy" className="text-primary">מדיניות עוגיות</a>.
+            <a href="/privacy-policy" className="text-primary">מדיניות פרטיות</a> ו{" "}
+            <a href="/privacy-policy" className="text-primary">מדיניות עוגיות</a>.
           </p>
         </>
       ) : (

@@ -146,7 +146,7 @@ const Signup = () => {
       >
         <Link to="/terms" className="hover:text-foreground transition-colors">תנאי שימוש</Link>
         <span className="text-border">•</span>
-        <Link to="/privacy" className="hover:text-foreground transition-colors">פרטיות</Link>
+        <Link to="/privacy-policy" className="hover:text-foreground transition-colors">פרטיות</Link>
         <span className="text-border">•</span>
         <Link to="/support" className="hover:text-foreground transition-colors">עזרה</Link>
         <span className="text-border">•</span>
