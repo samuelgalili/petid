@@ -297,31 +297,31 @@ export const StoriesBar = ({ activeTab = "foryou", userCity, followingIds = [] }
             transition={{ duration: 0.3 }}
           >
             <div className="relative">
-              {/* Animated gradient ring for unseen stories */}
+              {/* Gradient border - Rounded Square */}
               <div 
-                className={`w-[68px] h-[68px] rounded-full p-[2.5px] transition-all duration-300 ${
+                className={`w-[68px] h-[68px] rounded-2xl p-[2.5px] transition-all duration-300 ${
                   currentUserHasStory 
-                    ? STORY_GRADIENT
-                    : "bg-gradient-to-br from-muted to-muted-foreground/20"
+                    ? "bg-gradient-to-br from-primary via-accent to-secondary"
+                    : "bg-muted"
                 }`}
               >
-                <div className="w-full h-full rounded-full bg-card p-[2px]">
-                  <Avatar className="w-full h-full ring-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-full h-full rounded-xl bg-card overflow-hidden">
+                  <Avatar className="w-full h-full rounded-xl transition-transform duration-300 group-hover:scale-105">
                     <AvatarImage 
                       src={getDisplayImage(currentUserProfile?.pet_avatar_url, currentUserProfile?.avatar_url)} 
-                      className="object-cover" 
+                      className="object-cover rounded-xl" 
                     />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold">
+                    <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-xl">
                       {currentUserProfile?.pet_name?.charAt(0) || currentUserProfile?.full_name?.charAt(0) || "+"}
                     </AvatarFallback>
                   </Avatar>
                 </div>
               </div>
               
-              {/* Plus button with pulse animation */}
+              {/* Plus button */}
               {!currentUserHasStory && (
                 <motion.div 
-                  className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-[2.5px] border-card shadow-lg"
+                  className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-primary rounded-lg flex items-center justify-center border-[2.5px] border-card shadow-lg"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 500, damping: 25 }}
@@ -352,17 +352,21 @@ export const StoriesBar = ({ activeTab = "foryou", userCity, followingIds = [] }
                   transition={{ delay: index * 0.05, duration: 0.3 }}
                 >
                   <div className="relative">
-                    {/* Gradient ring - colored based on tab and view state */}
+                    {/* Gradient ring - Rounded Square */}
                     <div 
-                      className={`w-[68px] h-[68px] rounded-full p-[2.5px] transition-all duration-300 ${getStoryGradient(storyUser)}`}
+                      className={`w-[68px] h-[68px] rounded-2xl p-[2.5px] transition-all duration-300 ${
+                        storyUser.has_viewed 
+                          ? "bg-muted" 
+                          : "bg-gradient-to-br from-primary via-accent to-secondary"
+                      }`}
                     >
-                      <div className="w-full h-full rounded-full bg-card p-[2px]">
-                        <Avatar className="w-full h-full transition-transform duration-300 group-hover:scale-105">
+                      <div className="w-full h-full rounded-xl bg-card overflow-hidden">
+                        <Avatar className="w-full h-full rounded-xl transition-transform duration-300 group-hover:scale-105">
                           <AvatarImage 
                             src={getDisplayImage(storyUser.pet_avatar_url, storyUser.avatar_url)} 
-                            className="object-cover" 
+                            className="object-cover rounded-xl" 
                           />
-                          <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold">
+                          <AvatarFallback className="bg-muted text-muted-foreground text-lg font-semibold rounded-xl">
                             {storyUser.pet_name?.charAt(0) || storyUser.full_name?.charAt(0) || "U"}
                           </AvatarFallback>
                         </Avatar>

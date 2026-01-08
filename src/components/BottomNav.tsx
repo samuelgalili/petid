@@ -129,12 +129,17 @@ const BottomNav = () => {
           {/* Shop */}
           <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`w-6 h-6 ${isActive("/shop") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/shop") ? 2.5 : 1.5} />} isActive={isActive("/shop")} label="חנות" />
 
-          {/* Profile with Avatar */}
+          {/* Profile with Avatar - Rounded Square */}
           <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
-            <div className={cn("w-7 h-7 rounded-full overflow-hidden transition-all", isActive("/profile") ? "ring-[2px] ring-foreground" : "")}>
-              <Avatar className="w-full h-full">
-                <AvatarImage src={userAvatar} className="object-cover" />
-                <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+            <div className={cn(
+              "w-7 h-7 rounded-lg p-[2px] transition-all",
+              isActive("/profile") 
+                ? "bg-gradient-to-br from-primary via-accent to-secondary" 
+                : "bg-muted"
+            )}>
+              <Avatar className="w-full h-full rounded-md">
+                <AvatarImage src={userAvatar} className="object-cover rounded-md" />
+                <AvatarFallback className="bg-background text-muted-foreground text-[10px] rounded-md">
                   <User className="w-3.5 h-3.5" />
                 </AvatarFallback>
               </Avatar>
