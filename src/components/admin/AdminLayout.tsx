@@ -406,7 +406,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 variant="outline"
                 size="sm"
                 className="flex-1 justify-start gap-2 h-9 bg-background/50"
-                onClick={() => navigate("/home")}
+                onClick={() => navigate("/")}
               >
                 <Home className="w-4 h-4" />
                 לאפליקציה
@@ -445,7 +445,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
             {Icon && <Icon className="w-5 h-5 shrink-0 text-primary" />}
             <span className="truncate">{title}</span>
           </h1>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/home")} className="shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
             <X className="w-5 h-5" />
           </Button>
         </div>
