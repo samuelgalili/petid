@@ -162,8 +162,8 @@ interface SendMessageResult {
 }
 
 async function sendTextMessage(to: string, text: string): Promise<SendMessageResult> {
-  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
-  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN")?.trim();
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")?.trim();
 
   if (!accessToken || !phoneNumberId) {
     return { success: false, error: "WhatsApp credentials not configured" };
@@ -206,8 +206,8 @@ async function sendTemplateMessage(
   variables?: Record<string, string>,
   languageCode: string = "he"
 ): Promise<SendMessageResult> {
-  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
-  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  const accessToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN")?.trim();
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")?.trim();
 
   if (!accessToken || !phoneNumberId) {
     return { success: false, error: "WhatsApp credentials not configured" };
