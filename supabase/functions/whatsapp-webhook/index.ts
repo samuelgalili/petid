@@ -338,11 +338,14 @@ async function callChatFunction(
     let fullContent = "";
     let textBuffer = "";
 
+    let rawData = "";
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       
-      textBuffer += decoder.decode(value, { stream: true });
+      const chunk = decoder.decode(value, { stream: true });
+      rawData += chunk;
+      textBuffer += chunk;
 
       // Process SSE lines
       let newlineIndex: number;
@@ -368,6 +371,9 @@ async function callChatFunction(
         }
       }
     }
+    
+    // Log first 500 chars of raw data for debugging
+    console.log("Raw SSE data (first 500 chars):", rawData.substring(0, 500));
 
     const totalLatency = Date.now() - startTime;
     console.log(`Chat function completed in ${totalLatency}ms, reply length: ${fullContent.length}`);
