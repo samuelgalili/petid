@@ -10,7 +10,8 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { messages, userContext } = await req.json();
+    const { messages, userContext, channel } = await req.json();
+    const isWhatsApp = channel === "whatsapp";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -82,6 +83,32 @@ ${products.map((p: any) =>
       }
     }
 
+    // Build channel-specific instructions
+    let channelInstructions = "";
+    if (isWhatsApp) {
+      channelInstructions = `
+
+=== כללים קריטיים לערוץ WhatsApp ===
+❌ אסור להחזיר [PRODUCTS:...] או מזהי UUID
+❌ אסור לכלול קודים, טוקנים או placeholders
+✅ רק טקסט נקי, אנושי וידידותי
+✅ המלץ על עד 3 מוצרים בשמותיהם בלבד
+✅ בסוף כל המלצה הוסף CTA: "רוצה לינקים? כתוב 1/2/3"
+
+דוגמה לתשובה נכונה:
+"בשמחה! לכלב קטן הייתי ממליץ על:
+• חטיף דנטלי קטן
+• חטיפי אימון רכים
+• צעצוע קונג למילוי
+
+רוצה שאשלח לינקים? כתוב 1️⃣/2️⃣/3️⃣"`;
+    } else {
+      channelInstructions = `
+
+כשאתה ממליץ על מוצרים, הוסף בסוף ההודעה את ה-IDs בפורמט:
+[PRODUCTS:id1,id2,id3]`;
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -93,12 +120,11 @@ ${products.map((p: any) =>
         messages: [
           { 
             role: "system", 
-            content: `אתה נציג שירות לקוחות AI מקצועי וידידותי של PetID - אפליקציה לניהול חיות מחמד.${userName}${petsContext}${productsContext}
+            content: `אתה נציג שירות לקוחות AI מקצועי וידידותי של PetID - אפליקציה לניהול חיות מחמד.${userName}${petsContext}${productsContext}${channelInstructions}
 
 כללי התנהלות:
 - ענה בעברית בצורה ידידותית ומקצועית
 - תן תשובות קצרות וממוקדות
-- אם אין לך מידע על חיות המחמד של הלקוח, שאל אותו
 - עזור עם שאלות על מוצרים, טיפול בחיות, ומידע על PetID`
           },
           ...messages,
