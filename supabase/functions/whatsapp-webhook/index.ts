@@ -8,7 +8,7 @@ const corsHeaders = {
 
 // WhatsApp API configuration
 const WHATSAPP_API_URL = "https://graph.facebook.com/v18.0";
-const VERIFY_TOKEN = "petid_whatsapp_verify_token_2024";
+const VERIFY_TOKEN = "petid_verify_2026";
 
 // Default fallback template when reopening conversation outside 24h window
 const FALLBACK_TEMPLATE = "petid_followup";
