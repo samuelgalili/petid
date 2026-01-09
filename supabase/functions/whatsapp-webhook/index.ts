@@ -297,6 +297,14 @@ async function sendWhatsAppMessage(options: {
 
 // ===== Call Chat Edge Function =====
 
+// Sanitize text for WhatsApp - remove product tokens and clean up
+function sanitizeForWhatsApp(text: string): string {
+  return text
+    .replace(/\[PRODUCTS:[^\]]+\]/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 async function callChatFunction(
   supabaseUrl: string,
   messages: Array<{ role: string; content: string }>
@@ -313,7 +321,7 @@ async function callChatFunction(
         "Content-Type": "application/json",
         Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, channel: "whatsapp" }),
     });
 
     const latency_ms = Date.now() - startTime;
@@ -378,9 +386,12 @@ async function callChatFunction(
     const totalLatency = Date.now() - startTime;
     console.log(`Chat function completed in ${totalLatency}ms, reply length: ${fullContent.length}`);
 
+    // Sanitize reply for WhatsApp before returning
+    const sanitizedReply = sanitizeForWhatsApp(fullContent) || "מצטער, לא הצלחתי לעבד את הבקשה.";
+    
     return {
       success: true,
-      reply: fullContent || "מצטער, לא הצלחתי לעבד את הבקשה.",
+      reply: sanitizedReply,
       latency_ms: totalLatency,
     };
   } catch (error) {
