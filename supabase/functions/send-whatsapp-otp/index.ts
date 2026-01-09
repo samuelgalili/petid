@@ -87,6 +87,8 @@ const handler = async (req: Request): Promise<Response> => {
     const whatsappToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
     const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
 
+    console.log("Using Phone Number ID:", phoneNumberId);
+
     if (!whatsappToken || !phoneNumberId) {
       console.error("WhatsApp credentials not configured");
       return new Response(
