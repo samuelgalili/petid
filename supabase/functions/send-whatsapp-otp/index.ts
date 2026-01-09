@@ -84,10 +84,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send WhatsApp message via Meta Cloud API
-    const whatsappToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
-    const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+    const whatsappToken = Deno.env.get("WHATSAPP_ACCESS_TOKEN")?.trim();
+    const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")?.trim();
 
     console.log("Using Phone Number ID:", phoneNumberId);
+    console.log("Token length:", whatsappToken?.length);
 
     if (!whatsappToken || !phoneNumberId) {
       console.error("WhatsApp credentials not configured");
