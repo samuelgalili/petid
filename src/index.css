@@ -21,6 +21,12 @@
  */
 
 @layer base {
+  /* Smooth scrolling for better feed experience */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
   :root {
     /* ===========================
      * PETID BRAND COLORS - LIGHT BLUE (תכלת) PALETTE
