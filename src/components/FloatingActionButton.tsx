@@ -136,8 +136,8 @@ export const FloatingActionButton = ({
 
       {/* Main FAB */}
       <div className={cn("fixed z-50", positionClasses[position])}>
-        {/* Gradient border wrapper */}
-        <div className="p-[2px] rounded-full bg-gradient-to-br from-primary via-accent to-secondary">
+        {/* Outline ring wrapper */}
+        <div className="rounded-full ring-2 ring-primary/70">
           <motion.button
             variants={celebrate}
             initial="initial"
