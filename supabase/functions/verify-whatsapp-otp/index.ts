@@ -167,18 +167,36 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
     const existingUser = existingUsers?.users?.find(u => u.phone === formattedPhone);
 
-    if (existingUser) {
-      // User exists - sign them in
-      // Generate a magic link token for the user
-      const { data: signInData, error: signInError } = await supabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email: existingUser.email || `${formattedPhone}@phone.petid.app`,
-      });
+    const email = `${formattedPhone}@phone.petid.app`;
 
-      if (signInError) {
-        console.error("Error generating magic link:", signInError);
+    if (existingUser) {
+      // User exists - generate a session for them
+      // First, update their password to a known value so we can sign them in
+      const tempPassword = crypto.randomUUID();
+      
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        existingUser.id,
+        { password: tempPassword }
+      );
+
+      if (updateError) {
+        console.error("Error updating user password:", updateError);
         return new Response(
           JSON.stringify({ error: "Failed to authenticate user" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Now sign in with the new password to get a session
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: existingUser.email || email,
+        password: tempPassword,
+      });
+
+      if (signInError || !signInData.session) {
+        console.error("Error signing in user:", signInError);
+        return new Response(
+          JSON.stringify({ error: "Failed to create session" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -188,20 +206,24 @@ const handler = async (req: Request): Promise<Response> => {
           success: true,
           isNewUser: false,
           userId: existingUser.id,
-          accessToken: signInData.properties?.hashed_token,
+          session: {
+            access_token: signInData.session.access_token,
+            refresh_token: signInData.session.refresh_token,
+            expires_in: signInData.session.expires_in,
+            expires_at: signInData.session.expires_at,
+          },
           message: "User authenticated successfully"
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {
-      // New user - create account
-      const email = `${formattedPhone}@phone.petid.app`;
-      const password = crypto.randomUUID(); // Random password since they'll use OTP
+      // New user - create account with a known password
+      const tempPassword = crypto.randomUUID();
 
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email,
         phone: formattedPhone,
-        password,
+        password: tempPassword,
         email_confirm: true,
         phone_confirm: true,
         user_metadata: {
@@ -219,12 +241,38 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
+      // Sign in the new user to get a session
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: tempPassword,
+      });
+
+      if (signInError || !signInData.session) {
+        console.error("Error signing in new user:", signInError);
+        // User was created, but session failed - still return success for user creation
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            isNewUser: true,
+            userId: newUser.user?.id,
+            message: "User created successfully, please sign in"
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true,
           isNewUser: true,
           userId: newUser.user?.id,
-          message: "User created successfully"
+          session: {
+            access_token: signInData.session.access_token,
+            refresh_token: signInData.session.refresh_token,
+            expires_in: signInData.session.expires_in,
+            expires_at: signInData.session.expires_at,
+          },
+          message: "User created and authenticated successfully"
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

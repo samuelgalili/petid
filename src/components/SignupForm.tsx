@@ -49,7 +49,8 @@ interface FieldError {
 }
 
 export const SignupForm = () => {
-  const [signupMethod, setSignupMethod] = useState<"whatsapp" | "phone" | "email">("whatsapp");
+  // Only WhatsApp and Email are supported - SMS requires Twilio configuration
+  const [signupMethod, setSignupMethod] = useState<"whatsapp" | "email">("whatsapp");
   const [formData, setFormData] = useState({ fullName: "", email: "", phone: "" });
   const [birthdate, setBirthdate] = useState<Date | undefined>(undefined);
   const [showOTPInput, setShowOTPInput] = useState(false);
@@ -103,7 +104,22 @@ export const SignupForm = () => {
               return;
             }
 
-            // If new user was created, save birthdate to profile
+            // If session is returned, set it in Supabase client
+            if (data.session) {
+              const { error: sessionError } = await supabase.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+              });
+
+              if (sessionError) {
+                console.error("Error setting session:", sessionError);
+                setGeneralError("שגיאה בהתחברות. נסה שוב.");
+                setLoading(false);
+                return;
+              }
+            }
+
+            // Save birthdate to profile if new user
             if (data.isNewUser && data.userId && birthdate) {
               await supabase
                 .from('profiles')
@@ -111,16 +127,7 @@ export const SignupForm = () => {
                 .eq('id', data.userId);
             }
 
-            // If new user was created, we need to sign them in
             if (data.isNewUser) {
-              // Sign in with the created credentials
-              const email = `972${formData.phone.replace(/^0/, '')}@phone.petid.app`;
-              const { error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password: data.userId // Using userId as temp password won't work - need different approach
-              });
-              
-              // For new users, redirect to complete profile
               toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
               navigate("/add-pet");
             } else {
@@ -128,10 +135,12 @@ export const SignupForm = () => {
               navigate("/");
             }
           } else {
-            // Regular SMS/Email OTP via Supabase
-            const { data: authData, error } = signupMethod === "email"
-              ? await supabase.auth.verifyOtp({ email: formData.email, token: otpCode, type: 'email' })
-              : await supabase.auth.verifyOtp({ phone: formData.phone, token: otpCode, type: 'sms' });
+            // Email OTP via Supabase
+            const { data: authData, error } = await supabase.auth.verifyOtp({ 
+              email: formData.email, 
+              token: otpCode, 
+              type: 'email' 
+            });
 
             if (error) {
               setGeneralError(error.message);
@@ -248,9 +257,11 @@ export const SignupForm = () => {
 
         toast({ title: "קוד נשלח!", description: "בדוק את הווטסאפ שלך" });
       } else {
-        const { error } = signupMethod === "email"
-          ? await supabase.auth.signInWithOtp({ email: formData.email, options: { data: { full_name: formData.fullName } } })
-          : await supabase.auth.signInWithOtp({ phone: formData.phone, options: { data: { full_name: formData.fullName } } });
+        // Email OTP via Supabase
+        const { error } = await supabase.auth.signInWithOtp({ 
+          email: formData.email, 
+          options: { data: { full_name: formData.fullName } } 
+        });
 
         if (error) {
           setGeneralError(error.message);
@@ -259,7 +270,7 @@ export const SignupForm = () => {
           return false;
         }
 
-        toast({ title: "הקוד נשלח!", description: signupMethod === "email" ? "בדוק את האימייל שלך" : "בדוק את הטלפון שלך" });
+        toast({ title: "הקוד נשלח!", description: "בדוק את האימייל שלך" });
       }
 
       setShowOTPInput(true);
@@ -285,7 +296,6 @@ export const SignupForm = () => {
   const getMethodLabel = () => {
     switch (signupMethod) {
       case "whatsapp": return "וואטסאפ";
-      case "phone": return "SMS";
       case "email": return "אימייל";
     }
   };
@@ -304,7 +314,7 @@ export const SignupForm = () => {
 
       {!showOTPInput ? (
         <>
-          {/* Method Toggle */}
+          {/* Method Toggle - Only WhatsApp and Email (SMS requires Twilio) */}
           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
             <button
               type="button"
@@ -315,15 +325,6 @@ export const SignupForm = () => {
             >
               <MessageCircle className="w-4 h-4" />
               וואטסאפ
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSignupMethod("phone"); setFieldErrors({}); }}
-              className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-x border-gray-300 ${
-                signupMethod === "phone" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
-              }`}
-            >
-              סמס
             </button>
             <button
               type="button"
