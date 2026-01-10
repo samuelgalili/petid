@@ -1,6 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+
+// Input validation schema
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().max(10000, "Message content too long (max 10000 chars)")
+});
+
+const UserContextSchema = z.object({
+  pets: z.array(z.object({
+    name: z.string().max(100).optional(),
+    type: z.string().max(50).optional(),
+    breed: z.string().max(100).optional(),
+    age: z.union([z.string(), z.number()]).optional(),
+    gender: z.string().max(20).optional(),
+    health_notes: z.string().max(500).optional()
+  })).max(20).optional(),
+  userName: z.string().max(100).optional()
+}).optional();
+
+const ChatInputSchema = z.object({
+  messages: z.array(MessageSchema).min(1).max(50, "Too many messages (max 50)"),
+  userContext: UserContextSchema,
+  channel: z.enum(["web", "whatsapp"]).optional()
+});
+
+// Max payload size: 1MB
+const MAX_PAYLOAD_SIZE = 1024 * 1024;
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -10,7 +38,30 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { messages, userContext, channel } = await req.json();
+    // Check content length before parsing
+    const contentLength = req.headers.get("content-length");
+    if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
+      return new Response(JSON.stringify({ error: "Payload too large (max 1MB)" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Parse and validate input
+    const rawBody = await req.json();
+    const parseResult = ChatInputSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      return new Response(JSON.stringify({ 
+        error: "Invalid input", 
+        details: parseResult.error.errors.map(e => e.message).join(", ")
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { messages, userContext, channel } = parseResult.data;
     const isWhatsApp = channel === "whatsapp";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -24,10 +75,10 @@ serve(async (req) => {
     let petsContext = "";
     let petTypes: string[] = [];
     if (userContext?.pets && userContext.pets.length > 0) {
-      petTypes = [...new Set(userContext.pets.map((p: any) => p.type))] as string[];
+      petTypes = [...new Set(userContext.pets.map((p) => p.type).filter(Boolean))] as string[];
       petsContext = `\n\n=== מידע על חיות המחמד של הלקוח (כבר במערכת - אל תשאל על זה!) ===
-${userContext.pets.map((pet: any) => 
-  `- ${pet.name}: ${pet.type === 'dog' ? 'כלב' : pet.type === 'cat' ? 'חתול' : pet.type}${pet.breed ? `, גזע: ${pet.breed}` : ''}${pet.age ? `, גיל: ${pet.age}` : ''}${pet.gender ? `, ${pet.gender === 'male' ? 'זכר' : 'נקבה'}` : ''}${pet.health_notes ? `, הערות בריאות: ${pet.health_notes}` : ''}`
+${userContext.pets.map((pet) => 
+  `- ${pet.name || 'חיה'}: ${pet.type === 'dog' ? 'כלב' : pet.type === 'cat' ? 'חתול' : pet.type || 'לא ידוע'}${pet.breed ? `, גזע: ${pet.breed}` : ''}${pet.age ? `, גיל: ${pet.age}` : ''}${pet.gender ? `, ${pet.gender === 'male' ? 'זכר' : 'נקבה'}` : ''}${pet.health_notes ? `, הערות בריאות: ${pet.health_notes}` : ''}`
 ).join('\n')}
 === סוף מידע חיות מחמד ===`;
     }
@@ -35,7 +86,7 @@ ${userContext.pets.map((pet: any) =>
     const userName = userContext?.userName ? `\nשם הלקוח: ${userContext.userName}` : '';
 
     // Check if last message is asking for product recommendations
-    const lastUserMessage = messages.filter((m: any) => m.role === "user").slice(-1)[0]?.content?.toLowerCase() || "";
+    const lastUserMessage = messages.filter((m) => m.role === "user").slice(-1)[0]?.content?.toLowerCase() || "";
     const isProductRequest = 
       lastUserMessage.includes("מוצר") || 
       lastUserMessage.includes("המלצ") ||

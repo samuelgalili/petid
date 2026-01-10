@@ -1,10 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().max(10000, "Message content too long (max 10000 chars)")
+});
+
+const OrchestratorInputSchema = z.object({
+  messages: z.array(MessageSchema).min(1).max(50, "Too many messages (max 50)")
+});
+
+// Task JSON validation schema
+const TaskSchema = z.object({
+  bot: z.string().max(50),
+  title: z.string().max(200),
+  description: z.string().max(2000).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional().default("medium"),
+  requires_approval: z.boolean().optional().default(false),
+  reason: z.string().max(500).optional(),
+  expected_outcome: z.string().max(500).optional()
+});
+
+// Max payload size: 1MB
+const MAX_PAYLOAD_SIZE = 1024 * 1024;
 
 // Bot capabilities for the orchestrator to understand
 const BOT_CAPABILITIES = `
@@ -51,7 +76,30 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    // Check content length before parsing
+    const contentLength = req.headers.get("content-length");
+    if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
+      return new Response(JSON.stringify({ error: "Payload too large (max 1MB)" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Parse and validate input
+    const rawBody = await req.json();
+    const parseResult = OrchestratorInputSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      return new Response(JSON.stringify({ 
+        error: "Invalid input", 
+        details: parseResult.error.errors.map(e => e.message).join(", ")
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { messages } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -142,7 +190,16 @@ Current Context:
             for (const match of taskMatches) {
               try {
                 const jsonStr = match.replace(/<\/?task>/g, '').trim();
-                const taskData = JSON.parse(jsonStr);
+                const rawTaskData = JSON.parse(jsonStr);
+                
+                // Validate task data using zod schema
+                const taskParseResult = TaskSchema.safeParse(rawTaskData);
+                if (!taskParseResult.success) {
+                  console.error('Invalid task data:', taskParseResult.error.errors);
+                  continue;
+                }
+                
+                const taskData = taskParseResult.data;
                 
                 // Find bot ID
                 const bot = bots?.find(b => b.slug === taskData.bot);
@@ -151,9 +208,9 @@ Current Context:
                     bot_id: bot.id,
                     title: taskData.title,
                     description: taskData.description,
-                    priority: taskData.priority || 'medium',
+                    priority: taskData.priority,
                     task_type: taskData.bot,
-                    requires_approval: taskData.requires_approval || false,
+                    requires_approval: taskData.requires_approval,
                     reason: taskData.reason,
                     expected_outcome: taskData.expected_outcome,
                     status: taskData.requires_approval ? 'pending_approval' : 'draft'
@@ -163,7 +220,7 @@ Current Context:
                   await supabase.from('agent_action_logs').insert({
                     bot_id: bot.id,
                     action_type: 'task_created',
-                    description: `Created task: ${taskData.title}`,
+                    description: `Created task: ${taskData.title}`.substring(0, 500),
                     reason: taskData.reason,
                     expected_outcome: taskData.expected_outcome
                   });
