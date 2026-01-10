@@ -12,6 +12,31 @@ interface VerifyOtpRequest {
   fullName?: string;
 }
 
+// Rate limiting configuration
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MINUTES = 15;
+
+// In-memory rate limiting (resets on function cold start, but DB tracking persists)
+const attemptCache = new Map<string, { count: number; firstAttempt: number }>();
+const CACHE_WINDOW_MS = 60000; // 1 minute window for in-memory cache
+
+function checkInMemoryRateLimit(phone: string): boolean {
+  const now = Date.now();
+  const record = attemptCache.get(phone);
+  
+  if (!record || (now - record.firstAttempt > CACHE_WINDOW_MS)) {
+    attemptCache.set(phone, { count: 1, firstAttempt: now });
+    return false;
+  }
+  
+  if (record.count >= MAX_ATTEMPTS) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
 // Format phone number for WhatsApp (remove leading 0, add country code if needed)
 function formatPhoneNumber(phone: string): string {
   let cleaned = phone.replace(/\D/g, '');
@@ -42,12 +67,56 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Validate OTP format (must be 6 digits)
+    if (!/^\d{6}$/.test(otp)) {
+      return new Response(
+        JSON.stringify({ error: "OTP must be 6 digits" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const formattedPhone = formatPhoneNumber(phone);
+
+    // Check in-memory rate limit first (fast path)
+    if (checkInMemoryRateLimit(formattedPhone)) {
+      return new Response(
+        JSON.stringify({ error: "Too many attempts. Please wait before trying again." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Check for lockout in database (persistent across function restarts)
+    const lockoutThreshold = new Date(Date.now() - LOCKOUT_DURATION_MINUTES * 60 * 1000).toISOString();
+    const { data: recentAttempts, error: attemptsError } = await supabase
+      .from("whatsapp_otps")
+      .select("id, failed_attempts, last_failed_at")
+      .eq("phone", formattedPhone)
+      .gte("created_at", lockoutThreshold)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (!attemptsError && recentAttempts && recentAttempts.length > 0) {
+      const latestOtp = recentAttempts[0];
+      if (latestOtp.failed_attempts >= MAX_ATTEMPTS) {
+        const lockoutEnd = new Date(new Date(latestOtp.last_failed_at).getTime() + LOCKOUT_DURATION_MINUTES * 60 * 1000);
+        if (new Date() < lockoutEnd) {
+          const remainingMinutes = Math.ceil((lockoutEnd.getTime() - Date.now()) / 60000);
+          return new Response(
+            JSON.stringify({ 
+              error: `Too many failed attempts. Please try again in ${remainingMinutes} minutes.`,
+              locked: true,
+              remainingMinutes 
+            }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
 
     // Find valid OTP
     const { data: otpRecord, error: fetchError } = await supabase
@@ -60,17 +129,38 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (fetchError || !otpRecord) {
-      console.log("OTP not found or invalid:", fetchError);
+      console.log("OTP verification failed for phone:", formattedPhone);
+      
+      // Increment failed attempts counter
+      const { data: latestOtpRecord } = await supabase
+        .from("whatsapp_otps")
+        .select("id, failed_attempts")
+        .eq("phone", formattedPhone)
+        .eq("used", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (latestOtpRecord) {
+        await supabase
+          .from("whatsapp_otps")
+          .update({ 
+            failed_attempts: (latestOtpRecord.failed_attempts || 0) + 1,
+            last_failed_at: new Date().toISOString()
+          })
+          .eq("id", latestOtpRecord.id);
+      }
+
       return new Response(
         JSON.stringify({ error: "Invalid or expired OTP" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Mark OTP as used
+    // Mark OTP as used and reset failed attempts
     await supabase
       .from("whatsapp_otps")
-      .update({ used: true })
+      .update({ used: true, failed_attempts: 0 })
       .eq("id", otpRecord.id);
 
     // Check if user exists with this phone
