@@ -137,7 +137,7 @@ export const FloatingActionButton = ({
       {/* Main FAB */}
       <div className={cn("fixed z-50", positionClasses[position])}>
         {/* Gradient border wrapper */}
-        <div className="p-[2px] rounded-full bg-gradient-to-br from-primary via-accent to-secondary shadow-xl shadow-primary/30">
+        <div className="p-[2px] rounded-full bg-gradient-to-br from-primary via-accent to-secondary">
           <motion.button
             variants={celebrate}
             initial="initial"
@@ -145,7 +145,7 @@ export const FloatingActionButton = ({
             whileTap={{ scale: 0.9 }}
             onClick={handleMainClick}
             className={cn(
-              "rounded-full bg-card/95 backdrop-blur-md transition-all flex items-center justify-center focus:outline-none",
+              "rounded-full bg-transparent transition-all flex items-center justify-center focus:outline-none",
               sizeClasses[size]
             )}
             {...getAccessibleButtonProps(label, isExpanded)}
