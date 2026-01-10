@@ -1,15 +1,15 @@
-// Service Worker for Push Notifications
-const CACHE_VERSION = 'petid-v5';
+// PetID Service Worker - PWA + Push Notifications
+const CACHE_VERSION = 'petid-v6';
 
-// Install event - force update by clearing old caches
+// ===== INSTALL =====
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
+  console.log('[SW] Installing service worker...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_VERSION) {
-            console.log('Deleting old cache:', cacheName);
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -19,33 +19,28 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate event - claim clients immediately
+// ===== ACTIVATE =====
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating...');
+  console.log('[SW] Activating service worker...');
   event.waitUntil(
     Promise.all([
-      // Clear all old caches
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.filter((cacheName) => cacheName !== CACHE_VERSION)
             .map((cacheName) => caches.delete(cacheName))
         );
       }),
-      // Claim all clients
       self.clients.claim()
     ])
   );
 });
 
-// Fetch event - Network First strategy for HTML/JS/CSS
+// ===== FETCH =====
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
-  
-  // Skip chrome-extension and other non-http requests
   if (!event.request.url.startsWith('http')) return;
   
-  // For navigation requests (HTML pages), always go to network first
+  // Navigation requests - network first
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -55,12 +50,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // For JS/CSS files, use network first
+  // JS/CSS files - network first with cache fallback
   if (event.request.url.match(/\.(js|css)$/)) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Clone and cache the response
           const responseClone = response.clone();
           caches.open(CACHE_VERSION).then((cache) => {
             cache.put(event.request, responseClone);
@@ -75,76 +69,103 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Push notification event
+// ===== PUSH NOTIFICATIONS =====
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
+  console.log('[SW] Push event received:', {
+    hasData: !!event.data,
+    dataType: event.data ? typeof event.data : null,
+  });
 
-  if (!event.data) {
-    console.log('Push notification received but no data');
-    return;
-  }
+  let data = {
+    title: 'Petid',
+    body: 'יש לך התראה חדשה',
+    icon: '/pwa-192x192.png',
+    badge: '/pwa-192x192.png',
+    url: '/home',
+  };
 
   try {
-    const data = event.data.json();
-    console.log('Push notification data:', data);
-
-    const title = data.title || 'Petid';
-    const options = {
-      body: data.body || '',
-      icon: data.icon || '/pwa-192x192.png',
-      badge: data.badge || '/pwa-192x192.png',
-      image: data.image,
-      data: data.data || {},
-      tag: data.tag || 'petid-notification',
-      requireInteraction: data.requireInteraction || false,
-      actions: data.actions || [],
-      vibrate: [200, 100, 200],
-      dir: 'rtl',
-      lang: 'he',
-    };
-
-    event.waitUntil(
-      self.registration.showNotification(title, options)
-    );
-  } catch (error) {
-    console.error('Error processing push notification:', error);
+    if (event.data) {
+      const payload = event.data.json();
+      data = {
+        title: payload.title || data.title,
+        body: payload.body || data.body,
+        icon: payload.icon || data.icon,
+        badge: payload.badge || data.badge,
+        url: payload.url || data.url,
+      };
+    }
+  } catch (e) {
+    console.log('[SW] Error parsing push data:', e);
+    try {
+      if (event.data) data.body = event.data.text();
+    } catch (_) {
+      // ignore
+    }
   }
+
+  const options = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    tag: 'petid-notification',
+    renotify: true,
+    requireInteraction: false,
+    data: { url: data.url },
+    dir: 'rtl',
+    lang: 'he',
+    vibrate: [200, 100, 200],
+  };
+
+  event.waitUntil(
+    (async () => {
+      try {
+        await self.registration.showNotification(data.title, options);
+        
+        // Notify open windows (for debugging)
+        const windowClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        windowClients.forEach((client) => {
+          client.postMessage({ type: 'PUSH_RECEIVED', payload: data });
+        });
+      } catch (err) {
+        console.log('[SW] Failed to display notification:', err);
+      }
+    })()
+  );
 });
 
-// Notification click event
+// ===== NOTIFICATION CLICK =====
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
-  
+  console.log('[SW] Notification clicked:', event);
+
   event.notification.close();
 
   const urlToOpen = event.notification.data?.url || '/home';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Check if there's already a window open
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url.includes(urlToOpen) && 'focus' in client) {
-          return client.focus();
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windowClients) => {
+        for (const client of windowClients) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            client.navigate(urlToOpen);
+            return client.focus();
+          }
         }
-      }
-      
-      // If no window is open, open a new one
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
   );
 });
 
-// Notification close event
+// ===== NOTIFICATION CLOSE =====
 self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event);
+  console.log('[SW] Notification closed:', event);
 });
 
-// Background sync event (for future use)
+// ===== BACKGROUND SYNC =====
 self.addEventListener('sync', (event) => {
-  console.log('Background sync triggered:', event);
+  console.log('[SW] Background sync triggered:', event);
   
   if (event.tag === 'sync-notifications') {
     event.waitUntil(syncNotifications());
@@ -153,9 +174,8 @@ self.addEventListener('sync', (event) => {
 
 async function syncNotifications() {
   try {
-    console.log('Syncing notifications in background...');
-    // Add your sync logic here
+    console.log('[SW] Syncing notifications in background...');
   } catch (error) {
-    console.error('Error syncing notifications:', error);
+    console.error('[SW] Error syncing notifications:', error);
   }
 }
