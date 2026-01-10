@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, UserPlus, Sparkles } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +32,7 @@ export const SuggestedPostCard = ({ post, onFollow }: SuggestedPostCardProps) =>
   const { user } = useAuth();
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
 
   const handleFollow = async (e: React.MouseEvent) => {
@@ -74,50 +74,52 @@ export const SuggestedPostCard = ({ post, onFollow }: SuggestedPostCardProps) =>
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 mx-4 mb-4"
+    <motion.article
+      className="bg-white border-b border-[#DBDBDB]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Suggested Label */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-purple-50 to-pink-50">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-purple-500" />
-          <span className="text-xs text-purple-600 font-semibold">מומלץ עבורך</span>
-        </div>
-      </div>
-
-      {/* User Header */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <div 
-          className="flex items-center gap-3 cursor-pointer"
-          onClick={() => navigate(`/user/${post.user_id}`)}
-        >
-          <Avatar className="w-10 h-10 ring-2 ring-purple-100">
-            <AvatarImage src={post.user.avatar_url} alt={post.user.full_name} />
-            <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-              {post.user.full_name?.charAt(0) || "U"}
-            </AvatarFallback>
-          </Avatar>
+      {/* Header - Instagram style */}
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="cursor-pointer"
+            onClick={() => navigate(`/user/${post.user_id}`)}
+          >
+            <Avatar className="w-8 h-8 ring-2 ring-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 ring-offset-2">
+              <AvatarImage src={post.user.avatar_url} />
+              <AvatarFallback className="bg-gray-100 text-[#262626] text-xs">
+                {post.user.full_name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           <div>
-            <p className="font-semibold text-sm text-gray-900">{post.user.full_name}</p>
-            <p className="text-xs text-gray-500">משתמש חדש</p>
+            <div className="flex items-center gap-2">
+              <p 
+                className="font-semibold text-[#262626] text-sm cursor-pointer hover:underline"
+                onClick={() => navigate(`/user/${post.user_id}`)}
+              >
+                {post.user.full_name}
+              </p>
+              {!isFollowing && (
+                <button
+                  onClick={handleFollow}
+                  className="text-sm font-semibold text-[#0095F6]"
+                >
+                  • עקוב
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-[#8E8E8E]">מומלץ עבורך</p>
           </div>
         </div>
-        
-        {!isFollowing && (
-          <Button
-            onClick={handleFollow}
-            size="sm"
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs px-4 py-1.5 rounded-full"
-          >
-            <UserPlus className="w-3.5 h-3.5 ml-1" />
-            עקוב
-          </Button>
-        )}
+        <button className="text-[#262626]">
+          <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+        </button>
       </div>
 
-      {/* Image */}
+      {/* Image - Instagram style square */}
       <div 
         className="relative aspect-square cursor-pointer"
         onClick={() => navigate(`/post/${post.id}`)}
@@ -129,35 +131,63 @@ export const SuggestedPostCard = ({ post, onFollow }: SuggestedPostCardProps) =>
         />
       </div>
 
-      {/* Actions */}
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-4 mb-2">
+      {/* Actions - Instagram style */}
+      <div className="px-3 pt-2">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={handleLike}
+              whileTap={{ scale: 0.8 }}
+              className="p-1"
+            >
+              <Heart className={`w-6 h-6 ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-[#262626]'}`} strokeWidth={1.5} />
+            </motion.button>
+            <button className="p-1" onClick={() => navigate(`/post/${post.id}`)}>
+              <MessageCircle className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+            </button>
+            <button className="p-1">
+              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+            </button>
+          </div>
           <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={handleLike}
-            className="flex items-center gap-1.5"
+            onClick={() => setIsSaved(!isSaved)}
+            whileTap={{ scale: 0.8 }}
+            className="p-1"
           >
-            <Heart 
-              className={`w-6 h-6 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-700'}`} 
-            />
-            <span className="text-sm font-medium">{likesCount}</span>
+            <Bookmark className={`w-6 h-6 ${isSaved ? 'fill-[#262626]' : ''} text-[#262626]`} strokeWidth={1.5} />
           </motion.button>
-          <button 
-            className="flex items-center gap-1.5"
-            onClick={() => navigate(`/post/${post.id}`)}
-          >
-            <MessageCircle className="w-6 h-6 text-gray-700" />
-            <span className="text-sm font-medium">{post.comments_count}</span>
-          </button>
         </div>
-        
+
+        {/* Likes */}
+        {likesCount > 0 && (
+          <p className="text-sm text-[#262626] font-semibold mb-1">
+            {likesCount.toLocaleString()} לייקים
+          </p>
+        )}
+
+        {/* Caption */}
         {post.caption && (
-          <p className="text-sm text-gray-800 line-clamp-2">
-            <span className="font-semibold">{post.user.full_name}</span>{" "}
+          <p className="text-[#262626] text-sm mb-1">
+            <span 
+              className="font-semibold cursor-pointer hover:underline"
+              onClick={() => navigate(`/user/${post.user_id}`)}
+            >
+              {post.user.full_name}
+            </span>{" "}
             {post.caption}
           </p>
         )}
+
+        {/* Comments */}
+        {post.comments_count > 0 && (
+          <button 
+            className="text-[#8E8E8E] text-sm mb-1"
+            onClick={() => navigate(`/post/${post.id}`)}
+          >
+            הצג את כל {post.comments_count} התגובות
+          </button>
+        )}
       </div>
-    </motion.div>
+    </motion.article>
   );
 };

@@ -1311,88 +1311,34 @@ const Feed = () => {
           <Camera className="w-4 h-4" />
           שתף את התמונה הראשונה
         </motion.button>
-      </motion.div> : <div className="space-y-0">
+      </motion.div> : <div>
             {mixedFeed.map((item, index) => {
           if (item.type === 'post') {
-            return <motion.div key={`post-${item.data.id}`} initial={{
-              opacity: 0,
-              y: 20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: Math.min(index * 0.05, 0.3),
-              duration: 0.3
-            }}>
+            return <div key={`post-${item.data.id}`}>
                     <PostCardErrorBoundary>
                       <PostCard post={item.data} currentUserId={user?.id} currentUserAvatar={userAvatar} onLike={handleLike} onSave={handleSave} onDoubleTap={handleDoubleTap} onComment={handleComment} showDoubleTapAnimation={doubleTapLike === item.data.id} getTimeAgo={getTimeAgo} />
                     </PostCardErrorBoundary>
-                  </motion.div>;
+                  </div>;
           } else if (item.type === 'adoption') {
-            return <motion.div key={`adoption-${item.data.id}`} initial={{
-              opacity: 0,
-              y: 20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: Math.min(index * 0.05, 0.3),
-              duration: 0.3
-            }}>
+            return <div key={`adoption-${item.data.id}`}>
                     <AdoptionPostCard pet={item.data} getTimeAgo={getTimeAgo} />
-                  </motion.div>;
+                  </div>;
           } else if (item.type === 'product') {
-            return <motion.div key={`product-${item.data.id}`} initial={{
-              opacity: 0,
-              y: 20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: Math.min(index * 0.05, 0.3),
-              duration: 0.3
-            }}>
+            return <div key={`product-${item.data.id}`}>
                     <ProductPostCard product={item.data} />
-                  </motion.div>;
+                  </div>;
           } else if (item.type === 'ad') {
-            return <motion.div key={`ad-${item.data.id}`} initial={{
-              opacity: 0,
-              y: 20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: Math.min(index * 0.05, 0.3),
-              duration: 0.3
-            }}>
+            return <div key={`ad-${item.data.id}`}>
                     <AdPostCard ad={item.data} />
-                  </motion.div>;
+                  </div>;
           } else if (item.type === 'suggested') {
-            return <motion.div key={`suggested-${item.data.id}`} initial={{
-              opacity: 0,
-              y: 20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: Math.min(index * 0.05, 0.3),
-              duration: 0.3
-            }}>
+            return <div key={`suggested-${item.data.id}`}>
                     <SuggestedPostCard post={item.data} onFollow={handleSuggestedFollow} />
-                  </motion.div>;
+                  </div>;
           } else if (item.type === 'challenge') {
-            return <motion.div key={`challenge-${item.data.id}`} initial={{
-              opacity: 0,
-              y: 20
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }} transition={{
-              delay: Math.min(index * 0.05, 0.3),
-              duration: 0.3
-            }}>
+            return <div key={`challenge-${item.data.id}`}>
                     <ChallengePostCard challenge={item.data} gradientIndex={index} onJoinChange={fetchChallenges} />
-                  </motion.div>;
+                  </div>;
           }
           return null;
         })}
