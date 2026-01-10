@@ -102,6 +102,22 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         </div>
       </div>
 
+      {/* CTA Button - Between image and actions */}
+      <button
+        onClick={handleAddToCart}
+        className={`w-full transition-all flex items-center justify-center gap-2 px-4 py-3.5 ${
+          showAdded 
+            ? 'bg-[#00C853]' 
+            : 'bg-gradient-to-r from-[#0095F6] to-[#1877F2] hover:from-[#1877F2] hover:to-[#0095F6]'
+        }`}
+      >
+        <ShoppingBag className="w-5 h-5 text-white" />
+        <span className="text-white text-[15px] font-bold tracking-wide">
+          {showAdded ? "נוסף לסל ✓" : `קנה עכשיו • ${product.price}`}
+        </span>
+        <ChevronLeft className="w-5 h-5 text-white" />
+      </button>
+
       {/* Actions - Instagram style */}
       <div className="px-3 pt-2">
         <div className="flex items-center justify-between mb-2">
@@ -130,7 +146,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         </div>
 
         {/* Caption - Instagram style */}
-        <div className="space-y-1 pb-2">
+        <div className="space-y-1 pb-3">
           <p className="text-[#262626] text-sm">
             <span className="font-semibold">Petid חנות</span>{" "}
             🛍️ {product.description || product.title}
@@ -147,20 +163,6 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
           </p>
         </div>
       </div>
-
-      {/* CTA Button - Instagram style */}
-      <button
-        onClick={handleAddToCart}
-        className={`w-full transition-colors flex items-center justify-center gap-2 px-4 py-3 ${
-          showAdded ? 'bg-[#00C853]' : 'bg-[#0095F6] hover:bg-[#1877F2]'
-        }`}
-      >
-        <ShoppingBag className="w-5 h-5 text-white" />
-        <span className="text-white text-[15px] font-semibold">
-          {showAdded ? "נוסף לסל ✓" : `קנה עכשיו • ${product.price}`}
-        </span>
-        <ChevronLeft className="w-5 h-5 text-white" />
-      </button>
     </motion.article>
   );
 };
