@@ -202,15 +202,17 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
       <button
         onClick={handleJoinChallenge}
         disabled={isJoining}
-        className={`w-full transition-colors flex items-center justify-center gap-2 px-4 py-3 ${
+        className={`w-full transition-colors flex items-center justify-between px-4 py-3 ${
           isJoined ? 'bg-[#00C853]' : 'bg-[#0095F6] hover:bg-[#1877F2]'
         }`}
       >
         <Trophy className="w-5 h-5 text-white" />
-        <span className="text-white text-[15px] font-semibold">
-          {isJoining ? "..." : isJoined ? "משתתף/ת ✓" : "הצטרף לאתגר"}
-        </span>
-        <ChevronLeft className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-2">
+          <span className="text-white text-[15px] font-semibold">
+            {isJoining ? "..." : isJoined ? "משתתף/ת ✓" : "להצטרפות"}
+          </span>
+          <ChevronLeft className="w-5 h-5 text-white" />
+        </div>
       </button>
     </motion.article>
   );
