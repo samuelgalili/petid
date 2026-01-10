@@ -69,6 +69,10 @@ const PostDetail = () => {
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwner = user?.id === post?.user_id;
 
   useEffect(() => {
     if (!postId) return;
@@ -313,6 +317,32 @@ const PostDetail = () => {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!post || !user) return;
+    
+    setDeleting(true);
+    try {
+      // Delete related data first
+      await supabase.from("post_likes").delete().eq("post_id", post.id);
+      await supabase.from("post_comments").delete().eq("post_id", post.id);
+      await supabase.from("saved_posts").delete().eq("post_id", post.id);
+      
+      // Delete the post
+      const { error } = await supabase.from("posts").delete().eq("id", post.id);
+      
+      if (error) throw error;
+      
+      toast.success("הפוסט נמחק בהצלחה");
+      navigate(-1);
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("שגיאה במחיקת הפוסט");
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -390,9 +420,27 @@ const PostDetail = () => {
                 <p className="text-xs text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
               </div>
             </div>
-            <button className="text-gray-600 hover:text-gray-900 p-2 transition-colors">
-              <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-gray-600 hover:text-gray-900 p-2 transition-colors">
+                  <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-white">
+                {isOwner && (
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 ml-2" />
+                    מחק פוסט
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => navigate(`/user/${post.user.id}`)}>
+                  צפה בפרופיל
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Post Image */}
@@ -664,6 +712,28 @@ const PostDetail = () => {
               className="bg-red-500 hover:bg-red-600"
             >
               מחק
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Post Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="font-jakarta" dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת פוסט</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם אתה בטוח שברצונך למחוק את הפוסט? פעולה זו לא ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {deleting ? "מוחק..." : "מחק פוסט"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
