@@ -104,6 +104,30 @@ export default defineConfig(({ mode }) => ({
               },
             },
           },
+          {
+            urlPattern: /\/chat$/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "chat-page-cache",
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+              },
+            },
+          },
+          {
+            urlPattern: /\/messages\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "messages-page-cache",
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+              },
+            },
+          },
         ],
       },
       devOptions: {
