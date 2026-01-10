@@ -141,11 +141,13 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
       {/* CTA Button - Instagram style */}
       <button
         onClick={() => navigate('/adoption')}
-        className="w-full bg-[#0095F6] hover:bg-[#1877F2] transition-colors flex items-center justify-center gap-2 px-4 py-3"
+        className="w-full bg-[#0095F6] hover:bg-[#1877F2] transition-colors flex items-center justify-between px-4 py-3"
       >
         <PawPrint className="w-5 h-5 text-white" />
-        <span className="text-white text-[15px] font-semibold">אמץ עכשיו</span>
-        <ChevronLeft className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-2">
+          <span className="text-white text-[15px] font-semibold">לאימוץ</span>
+          <ChevronLeft className="w-5 h-5 text-white" />
+        </div>
       </button>
     </motion.article>
   );

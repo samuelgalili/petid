@@ -119,10 +119,13 @@ export const AdPostCard = ({ ad }: AdPostCardProps) => {
       {/* CTA Button - Instagram style */}
       <button
         onClick={() => navigate(ad.link)}
-        className="w-full bg-[#0095F6] hover:bg-[#1877F2] transition-colors flex items-center justify-center gap-2 px-4 py-3"
+        className="w-full bg-[#0095F6] hover:bg-[#1877F2] transition-colors flex items-center justify-between px-4 py-3"
       >
-        <span className="text-white text-[15px] font-semibold">{ad.cta}</span>
-        <ChevronLeft className="w-5 h-5 text-white" />
+        <Megaphone className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-2">
+          <span className="text-white text-[15px] font-semibold">{ad.cta}</span>
+          <ChevronLeft className="w-5 h-5 text-white" />
+        </div>
       </button>
     </motion.article>
   );
