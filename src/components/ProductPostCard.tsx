@@ -111,13 +111,13 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
             : 'bg-gradient-to-r from-[#0095F6] to-[#1877F2] hover:from-[#1877F2] hover:to-[#0095F6]'
         }`}
       >
+        <ShoppingBag className="w-5 h-5 text-white" />
         <div className="flex items-center gap-2">
-          <ChevronLeft className="w-5 h-5 text-white" />
           <span className="text-white text-[15px] font-bold tracking-wide">
             {showAdded ? "נוסף לסל ✓" : `קנה עכשיו • ${product.price}`}
           </span>
+          <ChevronLeft className="w-5 h-5 text-white" />
         </div>
-        <ShoppingBag className="w-5 h-5 text-white" />
       </button>
 
       {/* Actions - Instagram style */}
