@@ -104,12 +104,12 @@ const BottomNav = () => {
         </defs>
       </svg>
 
-      {/* Instagram-style bottom nav */}
+      {/* Instagram-style bottom nav - height: 50px like Instagram */}
       <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border" style={{
       position: 'fixed',
       bottom: 0
     }} role="navigation" aria-label="ניווט ראשי">
-        <div className="flex justify-around items-center h-12 w-full max-w-lg mx-auto">
+        <div className="flex justify-around items-center w-full max-w-lg mx-auto" style={{ height: '50px' }}>
           {/* Home */}
           <NavItem onClick={() => {
             if (location.pathname === "/") {
@@ -121,34 +121,34 @@ const BottomNav = () => {
             } else {
               navigate("/");
             }
-          }} icon={<Home className={`w-6 h-6 ${isActive("/") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/") ? 2.5 : 1.5} />} isActive={isActive("/")} label="בית" />
+          }} icon={<Home className={`${isActive("/") ? "text-primary" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/") ? 2.5 : 1.5} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
-          <NavItem onClick={() => handleNavClick("/explore")} icon={<Search className={`w-6 h-6 ${isActive("/explore") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/explore") ? 2.5 : 1.5} />} isActive={isActive("/explore")} label="חיפוש" />
+          <NavItem onClick={() => handleNavClick("/explore")} icon={<Search className={`${isActive("/explore") ? "text-primary" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/explore") ? 2.5 : 1.5} />} isActive={isActive("/explore")} label="חיפוש" />
 
           {/* Shop */}
-          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`w-6 h-6 ${isActive("/shop") ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive("/shop") ? 2.5 : 1.5} />} isActive={isActive("/shop")} label="חנות" />
+          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`${isActive("/shop") ? "text-primary" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/shop") ? 2.5 : 1.5} />} isActive={isActive("/shop")} label="חנות" />
 
-          {/* Profile with Avatar - Rounded Square */}
-          <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1 py-2" aria-label="פרופיל">
+          {/* Profile with Avatar - Rounded Square like Instagram */}
+          <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1" style={{ height: '50px' }} aria-label="פרופיל">
             <div className={cn(
-              "w-7 h-7 rounded-lg p-[2px] transition-all",
+              "rounded-lg p-[2px] transition-all",
               isActive("/profile") 
                 ? "bg-gradient-to-br from-primary via-accent to-secondary" 
-                : "bg-muted"
-            )}>
-              <Avatar className="w-full h-full rounded-md">
+                : "bg-transparent"
+            )} style={{ width: '28px', height: '28px' }}>
+              <Avatar className="w-full h-full rounded-md" style={{ width: '24px', height: '24px' }}>
                 <AvatarImage src={userAvatar} className="object-cover rounded-md" />
-                <AvatarFallback className="bg-background text-muted-foreground text-[10px] rounded-md">
-                  <User className="w-3.5 h-3.5" />
+                <AvatarFallback className="bg-muted text-muted-foreground text-[10px] rounded-md">
+                  <User style={{ width: '14px', height: '14px' }} />
                 </AvatarFallback>
               </Avatar>
             </div>
           </button>
         </div>
         
-        {/* Safe area for notched devices */}
-        <div className="h-[env(safe-area-inset-bottom)] bg-card" />
+        {/* Safe area for notched devices - iOS safe area */}
+        <div className="bg-background" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
       </nav>
 
       {/* Create Post Dialog */}
