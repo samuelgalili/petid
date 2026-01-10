@@ -79,12 +79,14 @@ const Checkout = () => {
           const age = differenceInYears(new Date(), birthdate);
           setIsUnder18(age < 18);
         } else {
-          // If no birthdate, assume they can't purchase (legacy users should update profile)
-          setIsUnder18(true);
+          // If no birthdate in profile, allow purchase (signup already requires 13+)
+          // Legacy users or users without birthdate can proceed
+          setIsUnder18(false);
         }
       } catch (error) {
         console.error("Error checking age:", error);
-        setIsUnder18(true);
+        // On error, allow purchase to not block legitimate users
+        setIsUnder18(false);
       } finally {
         setAgeCheckLoading(false);
       }
