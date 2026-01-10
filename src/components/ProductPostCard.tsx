@@ -105,17 +105,19 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
       {/* CTA Button - Between image and actions */}
       <button
         onClick={handleAddToCart}
-        className={`w-full transition-all flex items-center justify-center gap-2 px-4 py-3.5 ${
+        className={`w-full transition-all flex items-center justify-between px-4 py-3.5 ${
           showAdded 
             ? 'bg-[#00C853]' 
             : 'bg-gradient-to-r from-[#0095F6] to-[#1877F2] hover:from-[#1877F2] hover:to-[#0095F6]'
         }`}
       >
+        <div className="flex items-center gap-2">
+          <ChevronLeft className="w-5 h-5 text-white" />
+          <span className="text-white text-[15px] font-bold tracking-wide">
+            {showAdded ? "נוסף לסל ✓" : `קנה עכשיו • ${product.price}`}
+          </span>
+        </div>
         <ShoppingBag className="w-5 h-5 text-white" />
-        <span className="text-white text-[15px] font-bold tracking-wide">
-          {showAdded ? "נוסף לסל ✓" : `קנה עכשיו • ${product.price}`}
-        </span>
-        <ChevronLeft className="w-5 h-5 text-white" />
       </button>
 
       {/* Actions - Instagram style */}
