@@ -203,7 +203,9 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
         onClick={handleJoinChallenge}
         disabled={isJoining}
         className={`w-full transition-colors flex items-center justify-between px-4 py-3 ${
-          isJoined ? 'bg-[#00C853]' : 'bg-[#0095F6] hover:bg-[#1877F2]'
+          isJoined 
+            ? 'bg-[#00C853]' 
+            : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-500'
         }`}
       >
         <Trophy className="w-5 h-5 text-white" />
