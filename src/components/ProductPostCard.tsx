@@ -114,7 +114,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         <ShoppingBag className="w-5 h-5 text-white" />
         <div className="flex items-center gap-2">
           <span className="text-white text-[15px] font-bold tracking-wide">
-            {showAdded ? "נוסף לסל ✓" : `קנה עכשיו • ${product.price}`}
+            {showAdded ? "נוסף לסל ✓" : "לרכישה"}
           </span>
           <ChevronLeft className="w-5 h-5 text-white" />
         </div>
