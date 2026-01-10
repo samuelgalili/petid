@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Send, Heart, Home, Mail } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Send, Heart, Home, Mail, Trash2 } from "lucide-react";
 import pawHeartIcon from "@/assets/paw-heart-icon.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -17,8 +17,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface ProductTag {
@@ -60,6 +71,7 @@ interface PostCardProps {
   onSave: (postId: string) => void;
   onDoubleTap: (postId: string) => void;
   onComment?: (postId: string, comment: string) => void;
+  onDelete?: (postId: string) => void;
   showDoubleTapAnimation: boolean;
   getTimeAgo: (dateString: string) => string;
 }
@@ -72,6 +84,7 @@ export const PostCard = ({
   onSave,
   onDoubleTap,
   onComment,
+  onDelete,
   showDoubleTapAnimation,
   getTimeAgo,
 }: PostCardProps) => {
@@ -83,6 +96,8 @@ export const PostCard = ({
   const [commentText, setCommentText] = useState("");
   const [showProductTags, setShowProductTags] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [activeChallenge, setActiveChallenge] = useState<{
     id: string;
     title_he: string;
@@ -90,6 +105,8 @@ export const PostCard = ({
     participant_count: number;
   } | null>(null);
   const [showChallengeCTA, setShowChallengeCTA] = useState(false);
+  
+  const isOwner = currentUserId === post.user_id;
 
   // Check if this is an adoption post (contains #למסירה hashtag)
   const isAdoptionPost = post.caption?.includes('#למסירה') || post.caption?.includes('#אימוץ');
@@ -243,6 +260,38 @@ export const PostCard = ({
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!currentUserId || post.user_id !== currentUserId) return;
+    
+    setDeleting(true);
+    try {
+      // Delete related data first
+      await supabase.from("post_likes").delete().eq("post_id", post.id);
+      await supabase.from("post_comments").delete().eq("post_id", post.id);
+      await supabase.from("saved_posts").delete().eq("post_id", post.id);
+      
+      // Delete the post
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", post.id)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      toast.success("הפוסט נמחק בהצלחה");
+      if (onDelete) {
+        onDelete(post.id);
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("שגיאה במחיקת הפוסט");
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   return (
     <motion.div 
       className="bg-white border-b border-[#DBDBDB]"
@@ -305,26 +354,42 @@ export const PostCard = ({
                 <Link2 className="w-4 h-4 ml-2" />
                 העתק קישור
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  toast.success("הפוסט הוסתר");
-                }}
-                className="text-[#262626]"
-              >
-                <EyeOff className="w-4 h-4 ml-2" />
-                הסתר פוסט
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  if (checkAuth("כדי לדווח, יש להתחבר")) {
-                    setShowReportDialog(true);
-                  }
-                }}
-                className="text-[#ED4956] focus:text-[#ED4956]"
-              >
-                <Flag className="w-4 h-4 ml-2" />
-                דווח
-              </DropdownMenuItem>
+              {!isOwner && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    toast.success("הפוסט הוסתר");
+                  }}
+                  className="text-[#262626]"
+                >
+                  <EyeOff className="w-4 h-4 ml-2" />
+                  הסתר פוסט
+                </DropdownMenuItem>
+              )}
+              {!isOwner && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (checkAuth("כדי לדווח, יש להתחבר")) {
+                      setShowReportDialog(true);
+                    }
+                  }}
+                  className="text-[#ED4956] focus:text-[#ED4956]"
+                >
+                  <Flag className="w-4 h-4 ml-2" />
+                  דווח
+                </DropdownMenuItem>
+              )}
+              {isOwner && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-[#ED4956] focus:text-[#ED4956]"
+                  >
+                    <Trash2 className="w-4 h-4 ml-2" />
+                    מחק פוסט
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -501,6 +566,28 @@ export const PostCard = ({
         reportedUserId={post.user_id}
         reportedPostId={post.id}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent dir="rtl" className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>מחיקת פוסט</AlertDialogTitle>
+            <AlertDialogDescription>
+              האם אתה בטוח שברצונך למחוק את הפוסט? פעולה זו לא ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel disabled={deleting} className="rounded-xl">ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600 rounded-xl"
+            >
+              {deleting ? "מוחק..." : "מחק"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 };
