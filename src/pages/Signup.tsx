@@ -48,7 +48,7 @@ const Signup = () => {
   }, [isAuthenticated, authLoading, navigate, user]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setPageLoading(false), 500);
+    const timer = setTimeout(() => setPageLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
