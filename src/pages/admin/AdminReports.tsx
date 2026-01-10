@@ -73,8 +73,10 @@ interface Report {
 const statusConfig = {
   pending: { label: "ממתין", color: "bg-yellow-100 text-yellow-800", icon: Clock },
   reviewed: { label: "נבדק", color: "bg-blue-100 text-blue-800", icon: Eye },
+  approved: { label: "אושר", color: "bg-green-100 text-green-800", icon: CheckCircle },
   resolved: { label: "טופל", color: "bg-green-100 text-green-800", icon: CheckCircle },
   dismissed: { label: "נדחה", color: "bg-gray-100 text-gray-800", icon: XCircle },
+  deleted: { label: "נמחק", color: "bg-red-100 text-red-800", icon: Trash2 },
 };
 
 const typeConfig = {
@@ -99,7 +101,9 @@ const AdminReports = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -249,7 +253,7 @@ const AdminReports = () => {
     setFilteredReports(filtered);
   };
 
-  const updateReportStatus = async (reportId: string, newStatus: string, report?: Report) => {
+  const updateReportStatus = async (reportId: string, newStatus: string, report?: Report, reason?: string) => {
     try {
       setUpdating(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -257,21 +261,36 @@ const AdminReports = () => {
       const targetReport = report || selectedReport;
       const tableName = targetReport?.source === 'content_reports' ? 'content_reports' : 'reports';
 
+      const notesWithReason = reason 
+        ? `${adminNotes || ''}\n\nסיבת דחייה: ${reason}`.trim()
+        : adminNotes || null;
+
       const { error } = await supabase
         .from(tableName)
         .update({
           status: newStatus as any,
           ...(tableName === 'reports' ? { 
-            admin_notes: adminNotes || null,
+            admin_notes: notesWithReason,
             reviewed_by: user?.id,
             reviewed_at: new Date().toISOString(),
           } : {
             reviewed_by: user?.id,
+            description: notesWithReason,
           }),
         })
         .eq("id", reportId);
 
       if (error) throw error;
+
+      // If approving a product/post report, unflag the content
+      if (newStatus === 'approved') {
+        if (targetReport?.content_type === 'product' && targetReport?.content_id) {
+          await supabase
+            .from("business_products")
+            .update({ is_flagged: false, flagged_at: null, flagged_reason: null })
+            .eq("id", targetReport.content_id);
+        }
+      }
 
       // If resolving a product report, also unflag the product
       if (newStatus === 'resolved' && targetReport?.content_type === 'product' && targetReport?.content_id) {
@@ -283,12 +302,13 @@ const AdminReports = () => {
 
       setReports((prev) =>
         prev.map((r) =>
-          r.id === reportId ? { ...r, status: newStatus, admin_notes: adminNotes } : r
+          r.id === reportId ? { ...r, status: newStatus, admin_notes: notesWithReason || adminNotes } : r
         )
       );
 
       setSelectedReport(null);
       setAdminNotes("");
+      setRejectReason("");
 
       toast({
         title: "הסטטוס עודכן",
@@ -299,6 +319,56 @@ const AdminReports = () => {
       toast({
         title: "שגיאה",
         description: "נכשל בעדכון הדיווח",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDeleteContent = async () => {
+    if (!selectedReport) return;
+    
+    try {
+      setUpdating(true);
+      
+      // Delete the reported content
+      if (selectedReport.source === 'content_reports' && selectedReport.content_type === 'product' && selectedReport.content_id) {
+        // Delete product
+        const { error } = await supabase
+          .from("business_products")
+          .delete()
+          .eq("id", selectedReport.content_id);
+        
+        if (error) throw error;
+      } else if (selectedReport.reported_post_id) {
+        // Delete post and related data
+        await supabase.from("post_likes").delete().eq("post_id", selectedReport.reported_post_id);
+        await supabase.from("post_comments").delete().eq("post_id", selectedReport.reported_post_id);
+        await supabase.from("saved_posts").delete().eq("post_id", selectedReport.reported_post_id);
+        
+        const { error } = await supabase
+          .from("posts")
+          .delete()
+          .eq("id", selectedReport.reported_post_id);
+        
+        if (error) throw error;
+      }
+
+      // Update report status to deleted
+      await updateReportStatus(selectedReport.id, "deleted", selectedReport);
+      
+      setShowDeleteConfirm(false);
+      
+      toast({
+        title: "התוכן נמחק",
+        description: "התוכן המדווח נמחק בהצלחה",
+      });
+    } catch (error) {
+      console.error("Error deleting content:", error);
+      toast({
+        title: "שגיאה",
+        description: "נכשל במחיקת התוכן",
         variant: "destructive",
       });
     } finally {
@@ -349,8 +419,10 @@ const AdminReports = () => {
               <SelectItem value="all">הכל</SelectItem>
               <SelectItem value="pending">ממתין</SelectItem>
               <SelectItem value="reviewed">נבדק</SelectItem>
+              <SelectItem value="approved">אושר</SelectItem>
               <SelectItem value="resolved">טופל</SelectItem>
               <SelectItem value="dismissed">נדחה</SelectItem>
+              <SelectItem value="deleted">נמחק</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -483,6 +555,20 @@ const AdminReports = () => {
               </div>
 
               {/* Content Preview */}
+              {selectedReport.product && (
+                <div>
+                  <p className="text-sm font-medium mb-2">מוצר שדווח:</p>
+                  <div className="flex items-center gap-3 bg-muted p-3 rounded-lg">
+                    <img
+                      src={selectedReport.product.image_url}
+                      alt=""
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <span className="font-medium">{selectedReport.product.name}</span>
+                  </div>
+                </div>
+              )}
+
               {selectedReport.reported_post && (
                 <div>
                   <p className="text-sm font-medium mb-2">תוכן שדווח:</p>
@@ -507,7 +593,7 @@ const AdminReports = () => {
                     <AvatarImage src={selectedReport.reporter?.avatar_url} />
                     <AvatarFallback>{selectedReport.reporter?.full_name?.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <span className="text-sm">{selectedReport.reporter?.full_name}</span>
+                  <span className="text-sm">{selectedReport.reporter?.full_name || "משתמש אנונימי"}</span>
                 </div>
               </div>
 
@@ -526,28 +612,81 @@ const AdminReports = () => {
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   placeholder="הוסף הערות..."
-                  rows={3}
+                  rows={2}
                 />
               </div>
 
-              {/* Actions */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => updateReportStatus(selectedReport.id, "dismissed")}
-                  disabled={updating}
-                >
-                  <XCircle className="w-4 h-4 ml-2" />
-                  דחה
-                </Button>
-                <Button
-                  onClick={() => updateReportStatus(selectedReport.id, "resolved")}
-                  disabled={updating}
-                >
-                  <CheckCircle className="w-4 h-4 ml-2" />
-                  טופל
-                </Button>
-              </div>
+              {/* Reject Reason */}
+              {!showDeleteConfirm && (
+                <div>
+                  <p className="text-sm font-medium mb-2">סיבת דחייה (אופציונלי):</p>
+                  <Textarea
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="הזן סיבה לדחיית הדיווח..."
+                    rows={2}
+                  />
+                </div>
+              )}
+
+              {/* Delete Confirmation */}
+              {showDeleteConfirm ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-red-800 font-medium">
+                    האם אתה בטוח שברצונך למחוק את התוכן? פעולה זו לא ניתנת לביטול.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={updating}
+                    >
+                      ביטול
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteContent}
+                      disabled={updating}
+                    >
+                      {updating ? "מוחק..." : "אישור מחיקה"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                /* Actions */
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="border-green-500 text-green-700 hover:bg-green-50"
+                      onClick={() => updateReportStatus(selectedReport.id, "approved")}
+                      disabled={updating}
+                    >
+                      <CheckCircle className="w-4 h-4 ml-2" />
+                      אשר תוכן
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => updateReportStatus(selectedReport.id, "dismissed", undefined, rejectReason)}
+                      disabled={updating}
+                    >
+                      <XCircle className="w-4 h-4 ml-2" />
+                      דחה דיווח
+                    </Button>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={updating}
+                  >
+                    <Trash2 className="w-4 h-4 ml-2" />
+                    מחק תוכן
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
