@@ -7740,7 +7740,9 @@ export type Database = {
         Row: {
           created_at: string
           expires_at: string
+          failed_attempts: number | null
           id: string
+          last_failed_at: string | null
           otp_code: string
           phone: string
           type: string
@@ -7749,7 +7751,9 @@ export type Database = {
         Insert: {
           created_at?: string
           expires_at: string
+          failed_attempts?: number | null
           id?: string
+          last_failed_at?: string | null
           otp_code: string
           phone: string
           type?: string
@@ -7758,7 +7762,9 @@ export type Database = {
         Update: {
           created_at?: string
           expires_at?: string
+          failed_attempts?: number | null
           id?: string
+          last_failed_at?: string | null
           otp_code?: string
           phone?: string
           type?: string
