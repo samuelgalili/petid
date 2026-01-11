@@ -1,17 +1,15 @@
 // PetID Service Worker - PWA + Push Notifications
-const CACHE_VERSION = 'petid-v6';
+const CACHE_VERSION = 'petid-v7';
 
 // ===== INSTALL =====
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log('[SW] Installing service worker v7...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_VERSION) {
-            console.log('[SW] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
+          console.log('[SW] Deleting cache:', cacheName);
+          return caches.delete(cacheName);
         })
       );
     })
@@ -21,13 +19,12 @@ self.addEventListener('install', (event) => {
 
 // ===== ACTIVATE =====
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[SW] Activating service worker v7...');
   event.waitUntil(
     Promise.all([
       caches.keys().then((cacheNames) => {
         return Promise.all(
-          cacheNames.filter((cacheName) => cacheName !== CACHE_VERSION)
-            .map((cacheName) => caches.delete(cacheName))
+          cacheNames.map((cacheName) => caches.delete(cacheName))
         );
       }),
       self.clients.claim()
@@ -40,33 +37,16 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
   
-  // Navigation requests - network first
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => {
+  // Always use network-first for all requests
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        return response;
+      })
+      .catch(() => {
         return caches.match(event.request);
       })
-    );
-    return;
-  }
-  
-  // JS/CSS files - network first with cache fallback
-  if (event.request.url.match(/\.(js|css)$/)) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
-    );
-    return;
-  }
+  );
 });
 
 // ===== PUSH NOTIFICATIONS =====
