@@ -469,24 +469,20 @@ export const PostCard = ({
           </button>
         </div>
 
-        {/* Likes and comments count row - Instagram style */}
-        <div className="flex items-center gap-3 mb-1.5">
-          {post.likes_count > 0 && (
-            <div className="flex items-center gap-1">
-              <Heart className="w-4 h-4 text-neutral-900" strokeWidth={1.5} />
-              <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
-                {post.likes_count.toLocaleString('he-IL')}
-              </span>
-            </div>
-          )}
-          {post.comments_count > 0 && (
-            <div className="flex items-center gap-1">
-              <MessageCircle className="w-4 h-4 text-neutral-900" strokeWidth={1.5} />
-              <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
-                {post.comments_count.toLocaleString('he-IL')}
-              </span>
-            </div>
-          )}
+        {/* Likes and comments count row - Instagram style with icons */}
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex items-center gap-1">
+            <Heart className="w-4 h-4 fill-[#ED4956] text-[#ED4956]" strokeWidth={0} />
+            <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
+              {post.likes_count > 0 ? post.likes_count.toLocaleString('he-IL') : '0'}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <MessageCircle className="w-4 h-4 text-neutral-900" strokeWidth={1.5} />
+            <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
+              {post.comments_count > 0 ? post.comments_count.toLocaleString('he-IL') : '0'}
+            </span>
+          </div>
         </div>
 
         {/* Username + Caption - Instagram style */}
