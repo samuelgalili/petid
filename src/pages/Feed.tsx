@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Send, Menu, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Menu, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
 import petidIcon from "@/assets/petid-icon.png";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { useLoyalty } from "@/hooks/useLoyalty";
@@ -254,7 +254,9 @@ const Feed = () => {
   const {
     setCartIconPosition
   } = useFlyingCart();
-  const { stats } = useLoyalty();
+  const {
+    stats
+  } = useLoyalty();
   const totalPoints = stats?.totalPoints || 0;
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -271,13 +273,32 @@ const Feed = () => {
   const [feedFilter, setFeedFilter] = useState<"all" | "following">("all");
   const [followingIds, setFollowingIds] = useState<string[]>([]);
   const [page, setPage] = useState(0);
-  
+
   // New contextual feed state
   const [activeTab, setActiveTab] = useState<FeedTab>("foryou");
   const [viewMode, setViewMode] = useState<FeedViewMode>("feed");
-  const { config, features, sortByPriority, applyFeedRules, defaultTab, isBusiness, isOrg } = useFeedPersonalization();
-  const { requestLocation, city, hasLocation, isNearby } = useLocation();
-  const { trackLike, trackSave, trackClick, startViewTimer, endViewTimer } = useEngagement();
+  const {
+    config,
+    features,
+    sortByPriority,
+    applyFeedRules,
+    defaultTab,
+    isBusiness,
+    isOrg
+  } = useFeedPersonalization();
+  const {
+    requestLocation,
+    city,
+    hasLocation,
+    isNearby
+  } = useLocation();
+  const {
+    trackLike,
+    trackSave,
+    trackClick,
+    startViewTimer,
+    endViewTimer
+  } = useEngagement();
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [pets, setPets] = useState<any[]>([]);
   const [newlyAddedPetIds, setNewlyAddedPetIds] = useState<Set<string>>(new Set());
@@ -299,22 +320,22 @@ const Feed = () => {
   const fetchShopProducts = useCallback(async () => {
     try {
       // First try business_products
-      let { data: products, error } = await supabase
-        .from("business_products")
-        .select("id, name, price, sale_price, original_price, image_url, description, average_rating, review_count, is_featured")
-        .eq("in_stock", true)
-        .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(6);
-      
+      let {
+        data: products,
+        error
+      } = await supabase.from("business_products").select("id, name, price, sale_price, original_price, image_url, description, average_rating, review_count, is_featured").eq("in_stock", true).order("is_featured", {
+        ascending: false
+      }).order("created_at", {
+        ascending: false
+      }).limit(6);
+
       // If no business products, try scraped_products
       if ((!products || products.length === 0) && !error) {
-        const { data: scrapedProducts } = await supabase
-          .from("scraped_products")
-          .select("id, product_name, final_price, regular_price, main_image_url, short_description, rating, review_count, created_at")
-          .order("created_at", { ascending: false })
-          .limit(6);
-        
+        const {
+          data: scrapedProducts
+        } = await supabase.from("scraped_products").select("id, product_name, final_price, regular_price, main_image_url, short_description, rating, review_count, created_at").order("created_at", {
+          ascending: false
+        }).limit(6);
         if (scrapedProducts && scrapedProducts.length > 0) {
           const formattedProducts: FeedProduct[] = scrapedProducts.map((p: any) => ({
             id: p.id,
@@ -331,9 +352,7 @@ const Feed = () => {
           return;
         }
       }
-      
       if (error) throw error;
-      
       if (products && products.length > 0) {
         const formattedProducts: FeedProduct[] = products.map((p: any) => ({
           id: p.id,
@@ -501,7 +520,7 @@ const Feed = () => {
     if (!checkAuth("כדי לצפות בפוסטים של העוקבים שלך, יש להתחבר")) return;
     setActiveTab("following");
   };
-  
+
   // Handle tab changes
   const handleTabChange = (tab: FeedTab) => {
     setActiveTab(tab);
@@ -725,7 +744,6 @@ const Feed = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
   useEffect(() => {
     fetchPosts(0, false);
     fetchAdoptionPets();
@@ -993,7 +1011,6 @@ const Feed = () => {
       case "following":
         // Only show posts from followed users
         return postItems.filter(item => followingIds.includes((item.data as Post).user_id));
-      
       case "marketplace":
         // Prioritize products, include some posts
         const marketItems = [...productItems, ...postItems.slice(0, 3)];
@@ -1002,7 +1019,6 @@ const Feed = () => {
           if (a.type !== 'product' && b.type === 'product') return 1;
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
-      
       case "adopt":
         // Only adoption content with some emotional posts
         const adoptItems = [...adoptionItems, ...postItems.filter(p => {
@@ -1014,7 +1030,6 @@ const Feed = () => {
           if (a.type !== 'adoption' && b.type === 'adoption') return 1;
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
-      
       case "nearby":
         // Filter by user city if location is available
         if (hasLocation && city) {
@@ -1023,31 +1038,23 @@ const Feed = () => {
             // For posts, we'd need location data on posts - for now show all
             return true;
           });
-          return nearbyItems.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
+          return nearbyItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         }
         // Show all if no location
-        return [...postItems, ...adoptionItems, ...challengeItems].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-      
+        return [...postItems, ...adoptionItems, ...challengeItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       case "foryou":
       default:
         // Start with posts sorted by date
-        const sortedPosts = [...postItems].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
+        const sortedPosts = [...postItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         // Distribute non-organic content (challenges, products, ads, adoption, suggested) evenly
-        const nonOrganicItems = [
-          ...challengeItems,
-          ...adoptionItems,
-          ...productItems.slice(0, 3), // Limit products
-          ...adItems.slice(0, 2), // Limit ads
-          ...suggestedItems.slice(0, 2) // Limit suggested
+        const nonOrganicItems = [...challengeItems, ...adoptionItems, ...productItems.slice(0, 3),
+        // Limit products
+        ...adItems.slice(0, 2),
+        // Limit ads
+        ...suggestedItems.slice(0, 2) // Limit suggested
         ];
-        
+
         // Shuffle non-organic items for variety
         const shuffledNonOrganic = nonOrganicItems.sort(() => Math.random() - 0.5);
 
@@ -1055,23 +1062,22 @@ const Feed = () => {
         const result: FeedItem[] = [];
         let nonOrganicIndex = 0;
         const insertInterval = 5; // Insert after every 5 posts
-        
+
         sortedPosts.forEach((post, index) => {
           result.push(post);
-          
+
           // After every N posts, insert a non-organic item if available
           if ((index + 1) % insertInterval === 0 && nonOrganicIndex < shuffledNonOrganic.length) {
             result.push(shuffledNonOrganic[nonOrganicIndex]);
             nonOrganicIndex++;
           }
         });
-        
+
         // Add remaining non-organic items at the end (spaced out)
         while (nonOrganicIndex < shuffledNonOrganic.length) {
           result.push(shuffledNonOrganic[nonOrganicIndex]);
           nonOrganicIndex++;
         }
-
         return applyFeedRules ? applyFeedRules(result) : result;
     }
   }, [posts, adoptionPets, suggestedPosts, challenges, shopProducts, activeTab, followingIds, sortByPriority, applyFeedRules]);
@@ -1080,83 +1086,81 @@ const Feed = () => {
   const handleSuggestedFollow = useCallback((userId: string) => {
     setSuggestedPosts(prev => prev.filter(post => post.user_id !== userId));
   }, []);
-  const { showOnboarding, completeOnboarding } = useOnboarding();
+  const {
+    showOnboarding,
+    completeOnboarding
+  } = useOnboarding();
 
   // Show onboarding for new users
   if (showOnboarding) {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
-
   return <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-20" dir="rtl">
       {/* PetID-style Header - Modern, Clean */}
-      <motion.div 
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled 
-            ? "bg-card/98 backdrop-blur-xl border-b border-border/40 shadow-sm" 
-            : "bg-transparent"
-        }`}
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      <motion.div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-card/98 backdrop-blur-xl border-b border-border/40 shadow-sm" : "bg-transparent"}`} initial={{
+      y: -20,
+      opacity: 0
+    }} animate={{
+      y: 0,
+      opacity: 1
+    }} transition={{
+      duration: 0.3
+    }}>
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           {/* Right side (in RTL) - Logo */}
-          <motion.div 
-            className="flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <motion.div
-              whileHover={{ rotate: [0, -10, 10, 0] }}
-              transition={{ duration: 0.5 }}
-            >
+          <motion.div className="flex items-center gap-2" whileHover={{
+          scale: 1.02
+        }} whileTap={{
+          scale: 0.98
+        }}>
+            <motion.div whileHover={{
+            rotate: [0, -10, 10, 0]
+          }} transition={{
+            duration: 0.5
+          }}>
               <img src={petidIcon} alt="Petid" className="w-12 h-12 object-contain" />
             </motion.div>
-            <h1 
-              className="text-xl font-fredoka font-semibold cursor-pointer text-foreground tracking-wide"
-              onClick={() => {
-                setPage(0);
-                setHasMore(true);
-                fetchPosts(0, false);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
+            <h1 className="text-xl font-fredoka font-semibold cursor-pointer text-foreground tracking-wide" onClick={() => {
+            setPage(0);
+            setHasMore(true);
+            fetchPosts(0, false);
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+          }}>
               PetID
             </h1>
           </motion.div>
           
           {/* Left side (in RTL) - All Icons + Hamburger */}
           <div className="flex items-center gap-1">
-            <motion.button 
-              onClick={handleNavigateToNotifications} 
-              className="relative p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <motion.button onClick={handleNavigateToNotifications} className="relative p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
+            scale: 1.05
+          }} whileTap={{
+            scale: 0.95
+          }}>
               <Heart className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </motion.button>
-            <motion.button 
-              onClick={() => navigate('/explore')}
-              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <motion.button onClick={() => navigate('/explore')} className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
+            scale: 1.05
+          }} whileTap={{
+            scale: 0.95
+          }}>
               <Search className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </motion.button>
-            <motion.button 
-              onClick={handleNavigateToMessages}
-              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Send className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            <motion.button onClick={handleNavigateToMessages} className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
+            scale: 1.05
+          }} whileTap={{
+            scale: 0.95
+          }}>
+              
             </motion.button>
-            <motion.button 
-              onClick={() => setIsMenuOpen(true)}
-              className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            <motion.button onClick={() => setIsMenuOpen(true)} className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
+            scale: 1.05
+          }} whileTap={{
+            scale: 0.95
+          }}>
               <Menu className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
             </motion.button>
           </div>
@@ -1207,28 +1211,30 @@ const Feed = () => {
           {/* Header */}
           
           {/* Points Progress */}
-          <motion.div 
-            className="space-y-2" 
-            dir="rtl"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-          >
+          <motion.div className="space-y-2" dir="rtl" initial={{
+          opacity: 0,
+          x: -20
+        }} animate={{
+          opacity: 1,
+          x: 0
+        }} transition={{
+          delay: 0.3,
+          duration: 0.4
+        }}>
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">⭐ נקודות פעילות</span>
               <span className="text-primary font-semibold">{totalPoints} נק׳</span>
             </div>
             <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500" 
-                initial={{ width: 0 }}
-                animate={{ width: [`0%`, `100%`, `${Math.min(totalPoints / 1000 * 100, 100)}%`] }}
-                transition={{
-                  duration: 3,
-                  times: [0, 0.6, 1],
-                  ease: "easeInOut"
-                }} 
-              />
+              <motion.div className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500" initial={{
+              width: 0
+            }} animate={{
+              width: [`0%`, `100%`, `${Math.min(totalPoints / 1000 * 100, 100)}%`]
+            }} transition={{
+              duration: 3,
+              times: [0, 0.6, 1],
+              ease: "easeInOut"
+            }} />
             </div>
           </motion.div>
         </motion.div>
@@ -1240,74 +1246,88 @@ const Feed = () => {
 
       {/* Stories Bar - Context-aware, smooth transition */}
       <AnimatePresence>
-        {!isScrolled && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="bg-card/50 backdrop-blur-sm border-b border-border/20 overflow-hidden"
-          >
-            <StoriesBar 
-              activeTab={activeTab} 
-              userCity={city} 
-              followingIds={followingIds}
-            />
-          </motion.div>
-        )}
+        {!isScrolled && <motion.div initial={{
+        opacity: 0,
+        height: 0
+      }} animate={{
+        opacity: 1,
+        height: "auto"
+      }} exit={{
+        opacity: 0,
+        height: 0
+      }} transition={{
+        duration: 0.25,
+        ease: "easeInOut"
+      }} className="bg-card/50 backdrop-blur-sm border-b border-border/20 overflow-hidden">
+            <StoriesBar activeTab={activeTab} userCity={city} followingIds={followingIds} />
+          </motion.div>}
       </AnimatePresence>
 
       {/* Feed */}
       <div className="max-w-lg mx-auto">
-        {loading ? <SkeletonFeed /> : 
-        mixedFeed.length === 0 ?
+        {loading ? <SkeletonFeed /> : mixedFeed.length === 0 ?
       // Enhanced Empty state - Beautiful and inviting
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="text-center py-16 px-6"
-      >
-        <motion.div 
-          initial={{ scale: 0, rotate: -10 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
-          className="relative w-28 h-28 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-3xl flex items-center justify-center mx-auto mb-6"
-        >
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-3xl"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
+      <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.5,
+        ease: "easeOut"
+      }} className="text-center py-16 px-6">
+        <motion.div initial={{
+          scale: 0,
+          rotate: -10
+        }} animate={{
+          scale: 1,
+          rotate: 0
+        }} transition={{
+          delay: 0.15,
+          type: "spring",
+          stiffness: 200
+        }} className="relative w-28 h-28 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-3xl flex items-center justify-center mx-auto mb-6">
+          <motion.div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-3xl" animate={{
+            scale: [1, 1.1, 1]
+          }} transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }} />
           <Camera className="w-12 h-12 text-primary/60" strokeWidth={1.5} />
         </motion.div>
-        <motion.h3 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-xl font-bold text-foreground mb-2"
-        >
+        <motion.h3 initial={{
+          opacity: 0
+        }} animate={{
+          opacity: 1
+        }} transition={{
+          delay: 0.3
+        }} className="text-xl font-bold text-foreground mb-2">
           {activeTab === "following" ? "אין עדיין פוסטים" : "שתפו רגעים"}
         </motion.h3>
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto leading-relaxed"
-        >
-          {activeTab === "following" 
-            ? "עקבו אחרי חברים כדי לראות את הפוסטים שלהם" 
-            : "שתפו תמונות של חיית המחמד שלכם והצטרפו לקהילה"}
+        <motion.p initial={{
+          opacity: 0
+        }} animate={{
+          opacity: 1
+        }} transition={{
+          delay: 0.4
+        }} className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto leading-relaxed">
+          {activeTab === "following" ? "עקבו אחרי חברים כדי לראות את הפוסטים שלהם" : "שתפו תמונות של חיית המחמד שלכם והצטרפו לקהילה"}
         </motion.p>
-        <motion.button 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={handleCreatePost} 
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all"
-        >
+        <motion.button initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.5
+        }} whileHover={{
+          scale: 1.03
+        }} whileTap={{
+          scale: 0.97
+        }} onClick={handleCreatePost} className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all">
           <Camera className="w-4 h-4" />
           שתף את התמונה הראשונה
         </motion.button>
@@ -1358,12 +1378,13 @@ const Feed = () => {
       </div>
 
       {/* End of Feed - Refined design */}
-      {!loading && !hasMore && mixedFeed.length > 0 && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-10 px-6"
-        >
+      {!loading && !hasMore && mixedFeed.length > 0 && <motion.div initial={{
+      opacity: 0,
+      y: 10
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} className="text-center py-10 px-6">
           <div className="flex flex-col items-center gap-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-px bg-gradient-to-r from-transparent to-border" />
@@ -1371,20 +1392,19 @@ const Feed = () => {
               <div className="w-12 h-px bg-gradient-to-l from-transparent to-border" />
             </div>
             <p className="text-sm text-muted-foreground">סיימת לראות הכל 🐾</p>
-            <button 
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                setPage(0);
-                setHasMore(true);
-                fetchPosts(0, false);
-              }}
-              className="text-xs text-primary font-medium hover:underline"
-            >
+            <button onClick={() => {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+          setPage(0);
+          setHasMore(true);
+          fetchPosts(0, false);
+        }} className="text-xs text-primary font-medium hover:underline">
               חזור למעלה
             </button>
           </div>
-        </motion.div>
-      )}
+        </motion.div>}
 
       <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {
       setPage(0);
@@ -1422,14 +1442,7 @@ const Feed = () => {
     }]} />
 
       {/* My Pets Sheet */}
-      <MyPetsSheet 
-        open={isPetsSheetOpen} 
-        onOpenChange={setIsPetsSheetOpen}
-        pets={pets}
-        newlyAddedPetIds={newlyAddedPetIds}
-        onPetLongPressStart={handlePetLongPressStart}
-        onPetLongPressEnd={handlePetLongPressEnd}
-      />
+      <MyPetsSheet open={isPetsSheetOpen} onOpenChange={setIsPetsSheetOpen} pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
 
       <BottomNav />
     </div>;
