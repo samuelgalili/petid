@@ -293,54 +293,47 @@ export const PostCard = ({
   };
 
   return (
-    <motion.div 
-      className="bg-white border-b border-[#DBDBDB]"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+    <article 
+      className="bg-white"
     >
       {/* Post Header - Instagram style */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2.5">
-          <motion.div 
-            className="cursor-pointer"
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button 
+            className="cursor-pointer focus:outline-none"
             onClick={() => navigate(`/user/${post.user.id}`)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
-            <Avatar className="w-8 h-8 ring-2 ring-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 ring-offset-2">
-              <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-gray-100 text-[#262626] text-xs">
+            <Avatar className="w-8 h-8 ring-[1.5px] ring-rose-500 ring-offset-[1.5px] ring-offset-white">
+              <AvatarImage src={post.user.avatar_url} className="object-cover" />
+              <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
-          </motion.div>
-          <div 
-            className="cursor-pointer"
+          </button>
+          <button 
+            className="cursor-pointer text-right focus:outline-none"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <p className="font-semibold text-[#262626] text-sm leading-tight hover:underline">{post.user.full_name || "משתמש"}</p>
-          </div>
+            <span className="font-semibold text-neutral-900 text-[14px] leading-none tracking-tight">{post.user.full_name || "משתמש"}</span>
+          </button>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {currentUserId !== post.user_id && !isFollowing && (
-            <motion.button
-              className="text-sm font-semibold text-[#0095F6]"
+            <button
+              className="text-[13px] font-bold text-[#0095F6] active:opacity-60 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation();
                 handleFollow();
               }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
               עקוב
-            </motion.button>
+            </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-[#262626]">
-                <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+              <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
+                <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white z-50 border-[#DBDBDB]">
@@ -415,85 +408,80 @@ export const PostCard = ({
       </ImageCarousel>
 
       {/* Post Actions */}
-      <div className="px-3 pt-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <motion.button 
+      <div className="px-4 pt-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-4">
+            <button 
               onClick={handleLike}
-              className="p-1"
-              whileTap={{ scale: 0.8 }}
-              animate={isLicking ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.3 }}
+              className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
             >
-              <img 
-                src={pawHeartIcon} 
-                alt="Like"
-                className={`w-7 h-7 transition-all duration-300 ${
-                  post.is_liked 
-                    ? 'scale-110' 
-                    : 'opacity-80 hover:opacity-100 hover:scale-105'
-                }`}
-                style={post.is_liked ? { filter: 'invert(36%) sepia(98%) saturate(1752%) hue-rotate(330deg) brightness(95%) contrast(95%)' } : {}}
-              />
-            </motion.button>
+              <motion.div
+                animate={isLicking ? { scale: [1, 1.15, 1] } : {}}
+                transition={{ duration: 0.25 }}
+              >
+                <img 
+                  src={pawHeartIcon} 
+                  alt="Like"
+                  className={`w-7 h-7 transition-transform duration-200 ${
+                    post.is_liked 
+                      ? 'scale-105' 
+                      : 'hover:scale-105'
+                  }`}
+                  style={post.is_liked ? { filter: 'invert(36%) sepia(98%) saturate(1752%) hue-rotate(330deg) brightness(95%) contrast(95%)' } : {}}
+                />
+              </motion.div>
+            </button>
             
-            <motion.button 
-              className="text-foreground p-1"
+            <button 
+              className="text-neutral-900 p-0.5 active:opacity-50 transition-opacity focus:outline-none"
               onClick={() => navigate(`/post/${post.id}`)}
-              whileTap={{ scale: 0.9 }}
             >
-              <MessageCircle className="w-6 h-6 hover:text-muted-foreground transition-colors" strokeWidth={1.5} />
-            </motion.button>
+              <MessageCircle className="w-7 h-7" strokeWidth={1.25} />
+            </button>
             
-            <motion.button 
-              className="text-[#262626] p-1"
+            <button 
+              className="text-neutral-900 p-0.5 active:opacity-50 transition-opacity focus:outline-none"
               onClick={handleShare}
-              whileTap={{ scale: 0.9 }}
             >
-              <Send className="w-6 h-6 hover:text-[#8E8E8E] transition-colors" strokeWidth={1.5} />
-            </motion.button>
+              <Send className="w-7 h-7" strokeWidth={1.25} />
+            </button>
           </div>
-          <motion.button 
+          <button 
             onClick={handleSave}
-            className="text-[#262626] p-1 relative"
-            whileTap={{ scale: 0.8 }}
-            animate={isSaveAnimating ? { scale: [1, 1.3, 1] } : {}}
+            className="text-neutral-900 p-0.5 active:opacity-50 transition-opacity focus:outline-none"
           >
-            <Bookmark 
-              className={`w-6 h-6 transition-all duration-200 ${
-                post.is_saved 
-                  ? 'fill-[#262626]' 
-                  : 'hover:text-[#8E8E8E]'
-              }`} 
-              strokeWidth={1.5} 
-            />
-          </motion.button>
+            <motion.div
+              animate={isSaveAnimating ? { scale: [1, 1.2, 1] } : {}}
+              transition={{ duration: 0.25 }}
+            >
+              <Bookmark 
+                className={`w-7 h-7 ${
+                  post.is_saved 
+                    ? 'fill-neutral-900' 
+                    : ''
+                }`} 
+                strokeWidth={1.25} 
+              />
+            </motion.div>
+          </button>
         </div>
 
-        {/* Likes count with animation */}
-        <AnimatePresence mode="wait">
-          {post.likes_count > 0 && (
-            <motion.p 
-              key={post.likes_count}
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 5 }}
-              className="text-sm text-[#262626] font-semibold mb-1"
-            >
-              {post.likes_count.toLocaleString()} לייקים
-            </motion.p>
-          )}
-        </AnimatePresence>
+        {/* Likes count */}
+        {post.likes_count > 0 && (
+          <p className="text-[14px] text-neutral-900 font-semibold mb-1.5 tabular-nums">
+            {post.likes_count.toLocaleString('he-IL')} לייקים
+          </p>
+        )}
 
         {/* Post Caption */}
         {post.caption && (
-          <p className="text-[#262626] text-sm leading-[18px] mb-1">
-            <span
-              className="font-semibold cursor-pointer hover:underline"
+          <p className="text-neutral-900 text-[14px] leading-[1.35] mb-1.5">
+            <button
+              className="font-bold cursor-pointer focus:outline-none ml-1"
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
               {post.user.full_name || "משתמש"}
-            </span>{" "}
+            </button>
             {post.caption}
           </p>
         )}
@@ -505,7 +493,7 @@ export const PostCard = ({
         />
 
         {/* Time ago */}
-        <p className="text-[#8E8E8E] text-[10px] uppercase mt-1.5 mb-2">
+        <p className="text-neutral-400 text-[11px] mt-2 mb-1">
           {getTimeAgo(post.created_at)}
         </p>
 
@@ -527,10 +515,10 @@ export const PostCard = ({
       </div>
 
       {/* Add comment section */}
-      <div className="flex items-center gap-3 px-3 py-2.5 border-t border-[#EFEFEF]">
-        <Avatar className="w-6 h-6 flex-shrink-0">
-          <AvatarImage src={currentUserAvatar} />
-          <AvatarFallback className="bg-gray-100 text-[#262626] text-[10px]">
+      <div className="flex items-center gap-3 px-4 py-3 border-t border-neutral-100">
+        <Avatar className="w-7 h-7 flex-shrink-0">
+          <AvatarImage src={currentUserAvatar} className="object-cover" />
+          <AvatarFallback className="bg-neutral-100 text-neutral-600 text-[10px] font-medium">
             U
           </AvatarFallback>
         </Avatar>
@@ -541,7 +529,7 @@ export const PostCard = ({
           onChange={(e) => setCommentText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleComment()}
           onFocus={() => !isAuthenticated && checkAuth("כדי להגיב על פוסטים, יש להתחבר")}
-          className="flex-1 bg-transparent text-sm text-[#262626] placeholder-[#8E8E8E] outline-none"
+          className="flex-1 bg-transparent text-[14px] text-neutral-900 placeholder-neutral-400 outline-none"
           readOnly={!isAuthenticated}
         />
         <AnimatePresence>
@@ -551,13 +539,16 @@ export const PostCard = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={handleComment}
-              className="text-[#0095F6] text-sm font-semibold"
+              className="text-[#0095F6] text-[14px] font-semibold"
             >
               פרסם
             </motion.button>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Post Divider */}
+      <div className="h-[1px] bg-neutral-100" />
 
       {/* Report Dialog */}
       <ReportDialog
@@ -588,6 +579,6 @@ export const PostCard = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </motion.div>
+    </article>
   );
 };
