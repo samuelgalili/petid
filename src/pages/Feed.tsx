@@ -1125,7 +1125,7 @@ const Feed = () => {
           }}>
               PetID
             </h1>
-            <ChevronLeft className="w-4 h-4 text-foreground rotate-90" strokeWidth={2} />
+            <ChevronLeft className="w-4 h-4 text-foreground -rotate-90" strokeWidth={2} />
           </motion.div>
           
           {/* Center - Search Bar (Instagram style) */}
