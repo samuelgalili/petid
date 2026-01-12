@@ -74,54 +74,49 @@ export const SuggestedPostCard = ({ post, onFollow }: SuggestedPostCardProps) =>
   };
 
   return (
-    <motion.article
-      className="bg-white border-b border-[#DBDBDB]"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <article className="bg-white">
       {/* Header - Instagram style */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="cursor-pointer"
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button
+            className="cursor-pointer focus:outline-none"
             onClick={() => navigate(`/user/${post.user_id}`)}
           >
-            <Avatar className="w-8 h-8 ring-2 ring-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 ring-offset-2">
-              <AvatarImage src={post.user.avatar_url} />
-              <AvatarFallback className="bg-gray-100 text-[#262626] text-xs">
+            <Avatar className="w-8 h-8 ring-[1.5px] ring-rose-500 ring-offset-[1.5px] ring-offset-white">
+              <AvatarImage src={post.user.avatar_url} className="object-cover" />
+              <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
-          </div>
+          </button>
           <div>
             <div className="flex items-center gap-2">
-              <p 
-                className="font-semibold text-[#262626] text-sm cursor-pointer hover:underline"
+              <button 
+                className="font-semibold text-neutral-900 text-[14px] focus:outline-none"
                 onClick={() => navigate(`/user/${post.user_id}`)}
               >
                 {post.user.full_name}
-              </p>
+              </button>
               {!isFollowing && (
                 <button
                   onClick={handleFollow}
-                  className="text-sm font-semibold text-[#0095F6]"
+                  className="text-[13px] font-bold text-[#0095F6] active:opacity-60 transition-opacity"
                 >
                   • עקוב
                 </button>
               )}
             </div>
-            <p className="text-[11px] text-[#8E8E8E]">מומלץ עבורך</p>
+            <p className="text-[11px] text-neutral-400">מומלץ עבורך</p>
           </div>
         </div>
-        <button className="text-[#262626]">
-          <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+        <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
+          <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
         </button>
       </div>
 
       {/* Image - Instagram style square */}
-      <div 
-        className="relative aspect-square cursor-pointer"
+      <button 
+        className="relative aspect-square w-full cursor-pointer focus:outline-none"
         onClick={() => navigate(`/post/${post.id}`)}
       >
         <img
@@ -129,51 +124,49 @@ export const SuggestedPostCard = ({ post, onFollow }: SuggestedPostCardProps) =>
           alt={post.caption}
           className="w-full h-full object-cover"
         />
-      </div>
+      </button>
 
       {/* Actions - Instagram style */}
-      <div className="px-3 pt-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <motion.button
+      <div className="px-4 pt-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-4">
+            <button
               onClick={handleLike}
-              whileTap={{ scale: 0.8 }}
-              className="p-1"
+              className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
             >
-              <Heart className={`w-6 h-6 ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-[#262626]'}`} strokeWidth={1.5} />
-            </motion.button>
-            <button className="p-1" onClick={() => navigate(`/post/${post.id}`)}>
-              <MessageCircle className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <Heart className={`w-7 h-7 ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-neutral-900'}`} strokeWidth={1.25} />
             </button>
-            <button className="p-1">
-              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+            <button className="p-0.5 active:opacity-50 transition-opacity focus:outline-none" onClick={() => navigate(`/post/${post.id}`)}>
+              <MessageCircle className="w-7 h-7 text-neutral-900" strokeWidth={1.25} />
+            </button>
+            <button className="p-0.5 active:opacity-50 transition-opacity focus:outline-none">
+              <Send className="w-7 h-7 text-neutral-900" strokeWidth={1.25} />
             </button>
           </div>
-          <motion.button
+          <button
             onClick={() => setIsSaved(!isSaved)}
-            whileTap={{ scale: 0.8 }}
-            className="p-1"
+            className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
           >
-            <Bookmark className={`w-6 h-6 ${isSaved ? 'fill-[#262626]' : ''} text-[#262626]`} strokeWidth={1.5} />
-          </motion.button>
+            <Bookmark className={`w-7 h-7 ${isSaved ? 'fill-neutral-900' : ''} text-neutral-900`} strokeWidth={1.25} />
+          </button>
         </div>
 
         {/* Likes */}
         {likesCount > 0 && (
-          <p className="text-sm text-[#262626] font-semibold mb-1">
-            {likesCount.toLocaleString()} לייקים
+          <p className="text-[14px] text-neutral-900 font-semibold mb-1.5 tabular-nums">
+            {likesCount.toLocaleString('he-IL')} לייקים
           </p>
         )}
 
         {/* Caption */}
         {post.caption && (
-          <p className="text-[#262626] text-sm mb-1">
-            <span 
-              className="font-semibold cursor-pointer hover:underline"
+          <p className="text-neutral-900 text-[14px] leading-[1.35] mb-1.5">
+            <button 
+              className="font-bold cursor-pointer focus:outline-none ml-1"
               onClick={() => navigate(`/user/${post.user_id}`)}
             >
               {post.user.full_name}
-            </span>{" "}
+            </button>
             {post.caption}
           </p>
         )}
@@ -181,13 +174,16 @@ export const SuggestedPostCard = ({ post, onFollow }: SuggestedPostCardProps) =>
         {/* Comments */}
         {post.comments_count > 0 && (
           <button 
-            className="text-[#8E8E8E] text-sm mb-1"
+            className="text-neutral-400 text-[14px] mb-2 focus:outline-none"
             onClick={() => navigate(`/post/${post.id}`)}
           >
             הצג את כל {post.comments_count} התגובות
           </button>
         )}
       </div>
-    </motion.article>
+
+      {/* Post Divider */}
+      <div className="h-[1px] bg-neutral-100 mt-2" />
+    </article>
   );
 };

@@ -99,32 +99,25 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
   const challengeImage = challenge.cover_image_url || getDefaultImage(challenge.hashtag);
 
   return (
-    <motion.article
-      className="bg-white border-b border-[#DBDBDB]"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <article className="bg-white">
       {/* Header - Instagram style */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2.5">
-          <Avatar className="w-8 h-8">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-8 h-8 ring-[1.5px] ring-purple-500 ring-offset-[1.5px] ring-offset-white">
             <AvatarImage src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-challenge" />
             <AvatarFallback className="bg-gradient-to-tr from-purple-500 to-pink-500 text-white text-xs">
               🏆
             </AvatarFallback>
           </Avatar>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-[#262626] text-sm">Petid אתגרים</p>
-              <Badge className="bg-purple-500/20 text-purple-700 text-[10px] px-1.5 py-0 h-4 border-0">
-                אתגר
-              </Badge>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-neutral-900 text-[14px]">Petid אתגרים</span>
+            <Badge className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0 h-4 border-0 font-medium">
+              אתגר
+            </Badge>
           </div>
         </div>
-        <button className="text-[#262626]">
-          <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+        <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
+          <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
         </button>
       </div>
 
@@ -137,63 +130,61 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
         />
         
         {/* Hashtag badge */}
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[#262626] text-xs font-medium px-2.5 py-1 rounded-full">
+        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-neutral-900 text-[12px] font-semibold px-2.5 py-1 rounded-full shadow-sm">
           #{challenge.hashtag}
         </div>
         
         {/* Participants badge */}
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-[#262626] text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
-          <Users className="w-3 h-3" />
+        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm text-neutral-900 text-[12px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+          <Users className="w-3.5 h-3.5" />
           {participantCount}
         </div>
         
         {/* Subtle gradient at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent h-28 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/55 to-transparent h-32 pointer-events-none" />
         
         {/* Challenge info overlay */}
-        <div className="absolute bottom-3 left-3 right-3 text-white">
-          <h3 className="text-xl font-bold mb-1">{challenge.title_he}</h3>
+        <div className="absolute bottom-4 left-4 right-4 text-white">
+          <h3 className="text-xl font-bold tracking-tight mb-1">{challenge.title_he}</h3>
           {challenge.description_he && (
-            <p className="text-sm opacity-90 line-clamp-2">{challenge.description_he}</p>
+            <p className="text-[14px] opacity-95 line-clamp-2">{challenge.description_he}</p>
           )}
         </div>
       </div>
 
       {/* Actions - Instagram style */}
-      <div className="px-3 pt-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <motion.button
+      <div className="px-4 pt-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-4">
+            <button
               onClick={() => setIsLiked(!isLiked)}
-              whileTap={{ scale: 0.8 }}
-              className="p-1"
+              className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
             >
-              <Heart className={`w-6 h-6 ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-[#262626]'}`} strokeWidth={1.5} />
-            </motion.button>
-            <button className="p-1">
-              <MessageCircle className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+              <Heart className={`w-7 h-7 ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-neutral-900'}`} strokeWidth={1.25} />
             </button>
-            <button className="p-1">
-              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
+            <button className="p-0.5 active:opacity-50 transition-opacity focus:outline-none">
+              <MessageCircle className="w-7 h-7 text-neutral-900" strokeWidth={1.25} />
+            </button>
+            <button className="p-0.5 active:opacity-50 transition-opacity focus:outline-none">
+              <Send className="w-7 h-7 text-neutral-900" strokeWidth={1.25} />
             </button>
           </div>
-          <motion.button
+          <button
             onClick={() => setIsSaved(!isSaved)}
-            whileTap={{ scale: 0.8 }}
-            className="p-1"
+            className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
           >
-            <Bookmark className={`w-6 h-6 ${isSaved ? 'fill-[#262626]' : ''} text-[#262626]`} strokeWidth={1.5} />
-          </motion.button>
+            <Bookmark className={`w-7 h-7 ${isSaved ? 'fill-neutral-900' : ''} text-neutral-900`} strokeWidth={1.25} />
+          </button>
         </div>
 
         {/* Participants count */}
-        <p className="text-sm text-[#262626] font-semibold mb-1">
+        <p className="text-[14px] text-neutral-900 font-semibold mb-1.5 tabular-nums">
           {participantCount} משתתפים
         </p>
 
         {/* Caption */}
-        <p className="text-[#262626] text-sm mb-2">
-          <span className="font-semibold">Petid אתגרים</span>{" "}
+        <p className="text-neutral-900 text-[14px] leading-[1.35] mb-2">
+          <span className="font-bold">Petid אתגרים</span>{" "}
           🏆 הצטרפו לאתגר #{challenge.hashtag} ושתפו תמונות!
         </p>
       </div>
@@ -202,10 +193,10 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
       <button
         onClick={handleJoinChallenge}
         disabled={isJoining}
-        className={`w-full transition-colors flex items-center justify-between px-4 py-3 ${
+        className={`w-full transition-colors flex items-center justify-between px-4 py-3.5 active:opacity-80 ${
           isJoined 
-            ? 'bg-[#00C853]' 
-            : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-500'
+            ? 'bg-emerald-500' 
+            : 'bg-gradient-to-r from-purple-500 to-pink-500'
         }`}
       >
         <Trophy className="w-5 h-5 text-white" />
@@ -216,6 +207,9 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
           <ChevronLeft className="w-5 h-5 text-white" />
         </div>
       </button>
-    </motion.article>
+
+      {/* Post Divider */}
+      <div className="h-[1px] bg-neutral-100" />
+    </article>
   );
 };
