@@ -303,19 +303,22 @@ export const PostCard = ({
             className="cursor-pointer focus:outline-none"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <Avatar className="w-8 h-8 ring-[1.5px] ring-rose-500 ring-offset-[1.5px] ring-offset-white">
-              <AvatarImage src={post.user.avatar_url} className="object-cover" />
-              <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium">
+            <Avatar className="w-9 h-9 rounded-lg ring-[1.5px] ring-neutral-200 ring-offset-[1px] ring-offset-white">
+              <AvatarImage src={post.user.avatar_url} className="object-cover rounded-lg" />
+              <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium rounded-lg">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
           </button>
-          <button 
-            className="cursor-pointer text-right focus:outline-none"
-            onClick={() => navigate(`/user/${post.user.id}`)}
-          >
-            <span className="font-semibold text-neutral-900 text-[14px] leading-none tracking-tight">{post.user.full_name || "משתמש"}</span>
-          </button>
+          <div className="flex flex-col">
+            <button 
+              className="cursor-pointer text-right focus:outline-none"
+              onClick={() => navigate(`/user/${post.user.id}`)}
+            >
+              <span className="font-semibold text-neutral-900 text-[14px] leading-none tracking-tight">{post.user.full_name || "משתמש"}</span>
+            </button>
+            <span className="text-neutral-400 text-[12px] mt-0.5">{getTimeAgo(post.created_at)}</span>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
@@ -492,10 +495,6 @@ export const PostCard = ({
           totalComments={post.comments_count} 
         />
 
-        {/* Time ago */}
-        <p className="text-neutral-400 text-[11px] mt-2 mb-1">
-          {getTimeAgo(post.created_at)}
-        </p>
 
         {/* Adoption CTA - Show for adoption posts */}
         {isAdoptionPost && currentUserId !== post.user_id && (
