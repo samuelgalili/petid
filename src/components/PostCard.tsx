@@ -297,46 +297,52 @@ export const PostCard = ({
       className="bg-white"
     >
       {/* Post Header - Instagram style */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-2.5">
         <div className="flex items-center gap-3">
           <button 
             className="cursor-pointer focus:outline-none"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <Avatar className="w-9 h-9 rounded-lg ring-[1.5px] ring-neutral-200 ring-offset-[1px] ring-offset-white">
-              <AvatarImage src={post.user.avatar_url} className="object-cover rounded-lg" />
-              <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium rounded-lg">
-                {post.user.full_name?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
+            {/* Instagram gradient ring around avatar */}
+            <div className="p-[2px] rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600">
+              <div className="p-[2px] rounded-full bg-white">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={post.user.avatar_url} className="object-cover" />
+                  <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium">
+                    {post.user.full_name?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
           </button>
-          <div className="flex flex-col">
+          <div className="flex items-center gap-1">
             <button 
-              className="cursor-pointer text-right focus:outline-none"
+              className="cursor-pointer focus:outline-none"
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
-              <span className="font-semibold text-neutral-900 text-[14px] leading-none tracking-tight">{post.user.full_name || "משתמש"}</span>
+              <span className="font-semibold text-neutral-900 text-[14px] leading-none">{post.user.full_name || "משתמש"}</span>
             </button>
-            <span className="text-neutral-400 text-[12px] mt-0.5">{getTimeAgo(post.created_at)}</span>
+            <span className="text-neutral-400 text-[14px]">•</span>
+            <span className="text-neutral-500 text-[14px]">{getTimeAgo(post.created_at)}</span>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {currentUserId !== post.user_id && !isFollowing && (
             <button
-              className="text-[13px] font-bold text-[#0095F6] active:opacity-60 transition-opacity"
+              className="text-[14px] font-semibold text-[#0095F6] active:opacity-60 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation();
                 handleFollow();
               }}
             >
-              עקוב
+              Follow
             </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
-                <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
+              <button className="text-neutral-900 focus:outline-none">
+                <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white z-50 border-[#DBDBDB]">
