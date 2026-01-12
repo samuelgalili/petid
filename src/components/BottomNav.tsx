@@ -1,11 +1,12 @@
-import { Home, ShoppingBag, User, Search } from "lucide-react";
+import { Home, Compass, Play, Plus, MessageCircle, BarChart2, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 // Gradient icon wrapper for active state
 const GradientIcon = ({ children, isActive, id }: { children: React.ReactNode; isActive: boolean; id: string }) => {
@@ -56,6 +57,7 @@ const BottomNav = () => {
   const navigate = useNavigate();
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string>("");
+  const { unreadCount } = useRealtimeNotifications();
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
   const hiddenRoutes = ['/auth', '/signup', '/forgot-password', '/reset-password', '/splash', '/add-pet', '/onboarding', '/stories', '/reels', '/story'];
@@ -121,25 +123,66 @@ const BottomNav = () => {
             } else {
               navigate("/");
             }
-          }} icon={<Home className={`${isActive("/") ? "text-primary" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/") ? 2.5 : 1.5} />} isActive={isActive("/")} label="בית" />
+          }} icon={<Home className={`${isActive("/") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/") ? 2 : 1.5} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
-          <NavItem onClick={() => handleNavClick("/explore")} icon={<Search className={`${isActive("/explore") ? "text-primary" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/explore") ? 2.5 : 1.5} />} isActive={isActive("/explore")} label="חיפוש" />
+          <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className={`${isActive("/explore") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/explore") ? 2 : 1.5} />} isActive={isActive("/explore")} label="גילוי" />
 
-          {/* Shop */}
-          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`${isActive("/shop") ? "text-primary" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/shop") ? 2.5 : 1.5} />} isActive={isActive("/shop")} label="חנות" />
+          {/* Reels */}
+          <NavItem onClick={() => handleNavClick("/reels")} icon={<Play className={`${isActive("/reels") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/reels") ? 2 : 1.5} />} isActive={isActive("/reels")} label="סרטונים" />
 
-          {/* Profile with Avatar - Rounded Square like Instagram */}
+          {/* Create Post - Plus Icon */}
+          <button 
+            onClick={() => setCreatePostOpen(true)} 
+            className="flex items-center justify-center flex-1 active:opacity-50 transition-opacity" 
+            style={{ height: '50px' }} 
+            aria-label="יצירת פוסט"
+          >
+            <motion.div whileTap={{ scale: 0.92 }}>
+              <Plus className="text-foreground" style={{ width: '28px', height: '28px' }} strokeWidth={1.5} />
+            </motion.div>
+          </button>
+
+          {/* Messages with notification badge */}
+          <button 
+            onClick={() => handleNavClick("/messages")} 
+            className="flex items-center justify-center flex-1 relative active:opacity-50 transition-opacity" 
+            style={{ height: '50px' }} 
+            aria-label="הודעות"
+          >
+            <motion.div whileTap={{ scale: 0.92 }} className="relative">
+              <MessageCircle className={`${isActive("/messages") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/messages") ? 2 : 1.5} />
+              <AnimatePresence mode="wait">
+                {unreadCount > 0 && (
+                  <motion.span
+                    key={unreadCount}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF3B30] text-white rounded-full text-[10px] font-bold flex items-center justify-center"
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </button>
+
+          {/* Insights/Stats */}
+          <NavItem onClick={() => handleNavClick("/rewards")} icon={<BarChart2 className={`${isActive("/rewards") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/rewards") ? 2 : 1.5} />} isActive={isActive("/rewards")} label="תגמולים" />
+
+          {/* Profile with Avatar - Rounded like reference */}
           <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1" style={{ height: '50px' }} aria-label="פרופיל">
             <div className={cn(
-              "rounded-lg p-[2px] transition-all",
+              "rounded-full p-[2px] transition-all",
               isActive("/profile") 
-                ? "bg-gradient-to-br from-primary via-accent to-secondary" 
-                : "bg-transparent"
-            )} style={{ width: '28px', height: '28px' }}>
-              <Avatar className="w-full h-full rounded-md" style={{ width: '24px', height: '24px' }}>
-                <AvatarImage src={userAvatar} className="object-cover rounded-md" />
-                <AvatarFallback className="bg-muted text-muted-foreground text-[10px] rounded-md">
+                ? "ring-2 ring-foreground" 
+                : ""
+            )}>
+              <Avatar className="w-7 h-7 rounded-full">
+                <AvatarImage src={userAvatar} className="object-cover rounded-full" />
+                <AvatarFallback className="bg-muted text-muted-foreground text-[10px] rounded-full">
                   <User style={{ width: '14px', height: '14px' }} />
                 </AvatarFallback>
               </Avatar>
