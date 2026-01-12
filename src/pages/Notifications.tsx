@@ -2,31 +2,42 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Bell, Check, Trash2, Flame, Trophy, User, ChevronLeft, Star, Gift, Target, Zap } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
 import { he } from "date-fns/locale";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useAuth } from "@/hooks/useAuth";
-import { AppHeader } from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
-import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface NotificationItem {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  data?: {
+    user_id?: string;
+    user_name?: string;
+    user_avatar?: string;
+    post_id?: string;
+    post_image?: string;
+  };
+}
 
 const Notifications = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { 
-    unreadCount, 
     markAsRead: markNotificationAsRead, 
     markAllAsRead: markAllNotificationsAsRead 
   } = useRealtimeNotifications();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [profileCompletion, setProfileCompletion] = useState(0);
-  const [dailyStreak, setDailyStreak] = useState(0);
-  const [activeChallenges, setActiveChallenges] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -34,59 +45,7 @@ const Notifications = () => {
       return;
     }
     fetchNotifications();
-    fetchProfileCompletion();
-    fetchDailyStreak();
-    fetchActiveChallenges();
   }, [user]);
-
-  const fetchProfileCompletion = async () => {
-    if (!user) return;
-    
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url, bio")
-      .eq("id", user.id)
-      .single();
-    
-    const { data: pets } = await supabase
-      .from("pets")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("archived", false);
-    
-    let completion = 0;
-    if (profile?.full_name) completion += 25;
-    if (profile?.avatar_url) completion += 25;
-    if (profile?.bio) completion += 25;
-    if (pets && pets.length > 0) completion += 25;
-    
-    setProfileCompletion(completion);
-  };
-
-  const fetchDailyStreak = async () => {
-    if (!user) return;
-    
-    const { data } = await supabase
-      .from("daily_training_sessions")
-      .select("streak_day")
-      .eq("user_id", user.id)
-      .order("session_date", { ascending: false })
-      .limit(1)
-      .single();
-    
-    setDailyStreak(data?.streak_day || 0);
-  };
-
-  const fetchActiveChallenges = async () => {
-    const { data } = await supabase
-      .from("challenges")
-      .select("id, title_he, hashtag, participant_count")
-      .eq("is_active", true)
-      .order("participant_count", { ascending: false })
-      .limit(2);
-    
-    setActiveChallenges(data || []);
-  };
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -107,76 +66,133 @@ const Notifications = () => {
       });
     } else {
       setNotifications(data || []);
+      // Mark all as read when viewing
+      if (data && data.length > 0) {
+        markAllNotificationsAsRead();
+      }
     }
     
     setLoading(false);
   };
 
-  const markAsRead = async (notificationId: string) => {
-    await markNotificationAsRead(notificationId);
-    setNotifications(notifications.map(n => 
-      n.id === notificationId ? { ...n, is_read: true } : n
-    ));
-  };
-
-  const markAllAsRead = async () => {
-    await markAllNotificationsAsRead();
-    setNotifications(notifications.map(n => ({ ...n, is_read: true })));
-    toast({
-      title: "הצלחה",
-      description: "כל ההתראות סומנו כנקראו",
-    });
-  };
-
-  const deleteNotification = async (notificationId: string) => {
+  const handleFollowBack = async (userId: string) => {
+    if (!user) return;
+    
     const { error } = await supabase
-      .from("notifications")
-      .delete()
-      .eq("id", notificationId);
-
-    if (error) {
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן למחוק התראה",
-        variant: "destructive",
-      });
-    } else {
-      setNotifications(notifications.filter(n => n.id !== notificationId));
-      toast({
-        title: "הצלחה",
-        description: "ההתראה נמחקה",
-      });
+      .from("user_follows")
+      .insert({ follower_id: user.id, following_id: userId });
+    
+    if (!error) {
+      toast({ description: "עוקב בהצלחה" });
     }
   };
 
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case "story_view":
-        return "bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30";
-      case "success":
-        return "bg-green-500/10 border-green-500/30";
-      case "warning":
-        return "bg-amber-500/10 border-amber-500/30";
-      case "error":
-        return "bg-destructive/10 border-destructive/30";
-      default:
-        return "bg-primary/10 border-primary/30";
-    }
+  const getTimeAgo = (date: string) => {
+    return formatDistanceToNow(new Date(date), { addSuffix: false, locale: he });
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "story_view":
-        return "👁️";
-      case "success":
-        return "✅";
-      case "warning":
-        return "⚠️";
-      case "error":
-        return "❌";
-      default:
-        return "🔔";
-    }
+  // Group notifications by time period
+  const groupNotifications = () => {
+    const today: NotificationItem[] = [];
+    const yesterday: NotificationItem[] = [];
+    const thisWeek: NotificationItem[] = [];
+    const older: NotificationItem[] = [];
+
+    notifications.forEach((notification) => {
+      const date = new Date(notification.created_at);
+      if (isToday(date)) {
+        today.push(notification);
+      } else if (isYesterday(date)) {
+        yesterday.push(notification);
+      } else if (isThisWeek(date)) {
+        thisWeek.push(notification);
+      } else {
+        older.push(notification);
+      }
+    });
+
+    return { today, yesterday, thisWeek, older };
+  };
+
+  const { today, yesterday, thisWeek, older } = groupNotifications();
+
+  const NotificationRow = ({ notification }: { notification: NotificationItem }) => {
+    const isFollowType = notification.type === "follow" || notification.type === "new_follower";
+    const hasPostImage = notification.data?.post_image;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors cursor-pointer"
+        onClick={() => {
+          if (notification.data?.post_id) {
+            navigate(`/post/${notification.data.post_id}`);
+          } else if (notification.data?.user_id) {
+            navigate(`/user/${notification.data.user_id}`);
+          }
+        }}
+      >
+        {/* User Avatar */}
+        <Avatar className="w-11 h-11 shrink-0">
+          <AvatarImage src={notification.data?.user_avatar} />
+          <AvatarFallback className="bg-muted text-sm font-medium">
+            {notification.data?.user_name?.[0]?.toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-foreground leading-snug">
+            <span className="font-semibold">{notification.data?.user_name || "משתמש"}</span>
+            {" "}
+            <span className="text-foreground/90">{notification.message}</span>
+            {" "}
+            <span className="text-muted-foreground">{getTimeAgo(notification.created_at)}</span>
+          </p>
+        </div>
+
+        {/* Right side - Follow button or Post thumbnail */}
+        {isFollowType ? (
+          <Button
+            size="sm"
+            className="rounded-lg px-4 h-8 text-xs font-semibold bg-primary hover:bg-primary/90"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (notification.data?.user_id) {
+                handleFollowBack(notification.data.user_id);
+              }
+            }}
+          >
+            עקוב בחזרה
+          </Button>
+        ) : hasPostImage ? (
+          <div className="w-11 h-11 rounded-md overflow-hidden shrink-0">
+            <img 
+              src={notification.data?.post_image} 
+              alt="" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : null}
+      </motion.div>
+    );
+  };
+
+  const NotificationSection = ({ title, items }: { title: string; items: NotificationItem[] }) => {
+    if (items.length === 0) return null;
+    
+    return (
+      <div className="mb-2">
+        <h2 className="text-base font-semibold text-foreground px-4 py-3">{title}</h2>
+        <div className="divide-y divide-border/30">
+          {items.map((notification) => (
+            <NotificationRow key={notification.id} notification={notification} />
+          ))}
+        </div>
+        <div className="h-px bg-border/50 mx-4" />
+      </div>
+    );
   };
 
   if (loading) {
@@ -189,200 +205,39 @@ const Notifications = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
-      <AppHeader 
-        title="התראות" 
-        showBackButton={true}
-        showMenuButton={false}
-        extraAction={notifications.some(n => !n.is_read) ? {
-          icon: Check,
-          onClick: markAllAsRead
-        } : undefined}
-      />
-      
-      <div className="px-4 pt-4 space-y-4">
-        {/* Profile Completion CTA */}
-        {profileCompletion < 100 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-4 border border-primary/20"
+      {/* Instagram-style Header */}
+      <div className="sticky top-0 z-20 bg-background border-b border-border/50">
+        <div className="flex items-center justify-between px-4 h-12">
+          <button 
+            onClick={() => navigate(-1)}
+            className="p-1"
           >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground text-sm">השלם את הפרופיל שלך</h3>
-                <p className="text-xs text-muted-foreground">{profileCompletion}% הושלם</p>
-              </div>
-              <Button
-                size="sm"
-                variant="default"
-                className="rounded-full text-xs"
-                onClick={() => navigate("/edit-profile")}
-              >
-                השלם עכשיו
-              </Button>
-            </div>
-            <Progress value={profileCompletion} className="h-2" />
-          </motion.div>
-        )}
-
-        {/* Daily Streak CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 rounded-2xl p-4 border border-amber-500/20"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <Flame className="w-5 h-5 text-amber-500" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-foreground text-sm">סטריק יומי</h3>
-              <p className="text-xs text-muted-foreground">
-                {dailyStreak > 0 ? `${dailyStreak} ימים רצופים! 🔥` : "התחל את הסטריק שלך היום"}
-              </p>
-            </div>
-            <div className="flex items-center gap-1 text-amber-500 font-bold text-lg">
-              {dailyStreak}
-              <Zap className="w-4 h-4" />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Active Challenges CTA */}
-        {activeChallenges.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-2xl p-4 border border-purple-500/20"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-purple-500" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground text-sm">אתגרים פעילים</h3>
-                <p className="text-xs text-muted-foreground">הצטרף ותזכה בנקודות</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {activeChallenges.map((challenge) => (
-                <div 
-                  key={challenge.id}
-                  className="flex items-center justify-between bg-card/50 rounded-xl p-3 cursor-pointer hover:bg-card transition-colors"
-                  onClick={() => navigate("/")}
-                >
-                  <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm font-medium">#{challenge.hashtag}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <span>{challenge.participant_count} משתתפים</span>
-                    <ChevronLeft className="w-4 h-4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Rewards Progress CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 rounded-2xl p-4 border border-emerald-500/20"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <Gift className="w-5 h-5 text-emerald-500" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-foreground text-sm">תגמולים והטבות</h3>
-              <p className="text-xs text-muted-foreground">צבור נקודות וקבל הטבות בלעדיות</p>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full text-xs border-emerald-500/30 text-emerald-600"
-              onClick={() => navigate("/rewards")}
-            >
-              לתגמולים
-            </Button>
-          </div>
-        </motion.div>
-
-        {unreadCount > 0 && (
-          <p className="text-sm font-semibold text-muted-foreground">{unreadCount} התראות חדשות</p>
-        )}
+            <ChevronRight className="w-6 h-6 text-foreground" />
+          </button>
+          <h1 className="text-base font-semibold text-foreground">התראות</h1>
+          <div className="w-6" /> {/* Spacer for centering */}
+        </div>
       </div>
 
-      {/* Notifications List */}
-      <div className="p-4 space-y-3">
+      {/* Notifications List - Grouped by Time */}
+      <div className="pt-2">
         {notifications.length === 0 ? (
-          <div className="bg-card rounded-2xl p-8 text-center border border-border shadow-soft">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Bell className="w-8 h-8 text-primary" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+              <span className="text-4xl">❤️</span>
             </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">אין התראות</h2>
-            <p className="text-muted-foreground text-sm">כל ההתראות שלך יופיעו כאן</p>
+            <h2 className="text-lg font-semibold text-foreground mb-1">פעילות</h2>
+            <p className="text-sm text-muted-foreground text-center">
+              כשמישהו יאהב או יגיב על התוכן שלך, זה יופיע כאן
+            </p>
           </div>
         ) : (
-          notifications.map((notification, index) => (
-            <motion.div
-              key={notification.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className={`bg-card rounded-2xl p-4 border border-border shadow-soft ${
-                !notification.is_read ? "border-r-4 border-r-primary" : ""
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-lg flex-shrink-0">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground text-sm mb-1 text-right">
-                      {notification.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2 text-right">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-muted-foreground text-right">
-                      {format(new Date(notification.created_at), "dd/MM/yyyy HH:mm", { locale: he })}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 flex-shrink-0">
-                  {!notification.is_read && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => markAsRead(notification.id)}
-                      className="rounded-full h-8 w-8"
-                    >
-                      <Check className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteNotification(notification.id)}
-                    className="rounded-full h-8 w-8"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" strokeWidth={1.5} />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          ))
+          <>
+            <NotificationSection title="היום" items={today} />
+            <NotificationSection title="אתמול" items={yesterday} />
+            <NotificationSection title="השבוע" items={thisWeek} />
+            <NotificationSection title="מוקדם יותר" items={older} />
+          </>
         )}
       </div>
 
