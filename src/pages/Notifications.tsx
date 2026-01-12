@@ -31,7 +31,7 @@ interface NotificationItem {
 const Notifications = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { 
     markAsRead: markNotificationAsRead, 
     markAllAsRead: markAllNotificationsAsRead 
@@ -40,12 +40,15 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking user
+    if (authLoading) return;
+    
     if (!user) {
       navigate("/auth");
       return;
     }
     fetchNotifications();
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchNotifications = async () => {
     setLoading(true);
