@@ -303,17 +303,12 @@ export const PostCard = ({
             className="cursor-pointer focus:outline-none"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            {/* Instagram gradient ring around avatar */}
-            <div className="p-[2px] rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600">
-              <div className="p-[2px] rounded-full bg-white">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={post.user.avatar_url} className="object-cover" />
-                  <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium">
-                    {post.user.full_name?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            </div>
+            <Avatar className="w-9 h-9 rounded-lg">
+              <AvatarImage src={post.user.avatar_url} className="object-cover rounded-lg" />
+              <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium rounded-lg">
+                {post.user.full_name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
           </button>
           <div className="flex items-center gap-1">
             <button 
