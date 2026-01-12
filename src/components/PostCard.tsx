@@ -411,90 +411,98 @@ export const PostCard = ({
         )}
       </ImageCarousel>
 
-      {/* Post Actions */}
-      <div className="px-4 pt-3">
-        <div className="flex items-center justify-between mb-2.5">
+      {/* Post Actions - Instagram style */}
+      <div className="px-3 pt-2.5">
+        {/* Icons row */}
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
             <button 
               onClick={handleLike}
-              className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
+              className="active:opacity-50 transition-opacity focus:outline-none"
             >
               <motion.div
                 animate={isLicking ? { scale: [1, 1.15, 1] } : {}}
                 transition={{ duration: 0.25 }}
               >
-                <img 
-                  src={pawHeartIcon} 
-                  alt="Like"
-                  className={`w-7 h-7 transition-transform duration-200 ${
+                <Heart 
+                  className={`w-[26px] h-[26px] ${
                     post.is_liked 
-                      ? 'scale-105' 
-                      : 'hover:scale-105'
+                      ? 'fill-[#ED4956] text-[#ED4956]' 
+                      : 'text-neutral-900'
                   }`}
-                  style={post.is_liked ? { filter: 'invert(36%) sepia(98%) saturate(1752%) hue-rotate(330deg) brightness(95%) contrast(95%)' } : {}}
+                  strokeWidth={1.5}
                 />
               </motion.div>
             </button>
             
             <button 
-              className="text-neutral-900 p-0.5 active:opacity-50 transition-opacity focus:outline-none"
+              className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
               onClick={() => navigate(`/post/${post.id}`)}
             >
-              <MessageCircle className="w-7 h-7" strokeWidth={1.25} />
+              <MessageCircle className="w-[26px] h-[26px]" strokeWidth={1.5} />
             </button>
             
             <button 
-              className="text-neutral-900 p-0.5 active:opacity-50 transition-opacity focus:outline-none"
+              className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
               onClick={handleShare}
             >
-              <Send className="w-7 h-7" strokeWidth={1.25} />
+              <Send className="w-[26px] h-[26px]" strokeWidth={1.5} />
             </button>
           </div>
           <button 
             onClick={handleSave}
-            className="text-neutral-900 p-0.5 active:opacity-50 transition-opacity focus:outline-none"
+            className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
           >
             <motion.div
               animate={isSaveAnimating ? { scale: [1, 1.2, 1] } : {}}
               transition={{ duration: 0.25 }}
             >
               <Bookmark 
-                className={`w-7 h-7 ${
+                className={`w-[26px] h-[26px] ${
                   post.is_saved 
                     ? 'fill-neutral-900' 
                     : ''
                 }`} 
-                strokeWidth={1.25} 
+                strokeWidth={1.5} 
               />
             </motion.div>
           </button>
         </div>
 
-        {/* Likes count */}
-        {post.likes_count > 0 && (
-          <p className="text-[14px] text-neutral-900 font-semibold mb-1.5 tabular-nums">
-            {post.likes_count.toLocaleString('he-IL')} לייקים
-          </p>
-        )}
+        {/* Likes and comments count row - Instagram style */}
+        <div className="flex items-center gap-3 mb-1.5">
+          {post.likes_count > 0 && (
+            <div className="flex items-center gap-1">
+              <Heart className="w-4 h-4 text-neutral-900" strokeWidth={1.5} />
+              <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
+                {post.likes_count.toLocaleString('he-IL')}
+              </span>
+            </div>
+          )}
+          {post.comments_count > 0 && (
+            <div className="flex items-center gap-1">
+              <MessageCircle className="w-4 h-4 text-neutral-900" strokeWidth={1.5} />
+              <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
+                {post.comments_count.toLocaleString('he-IL')}
+              </span>
+            </div>
+          )}
+        </div>
 
-        {/* Post Caption */}
+        {/* Username + Caption - Instagram style */}
         {post.caption && (
-          <p className="text-neutral-900 text-[14px] leading-[1.35] mb-1.5">
+          <div className="mb-1.5">
             <button
-              className="font-bold cursor-pointer focus:outline-none ml-1"
+              className="font-semibold text-[14px] text-neutral-900 cursor-pointer focus:outline-none ml-1"
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
               {post.user.full_name || "משתמש"}
             </button>
-            {post.caption}
-          </p>
+            <span className="text-neutral-900 text-[14px] leading-[1.4]">
+              {post.caption}
+            </span>
+          </div>
         )}
-
-        {/* Comments Preview */}
-        <CommentsPreview 
-          postId={post.id} 
-          totalComments={post.comments_count} 
-        />
 
 
         {/* Adoption CTA - Show for adoption posts */}
