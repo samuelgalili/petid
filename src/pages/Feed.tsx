@@ -1106,21 +1106,15 @@ const Feed = () => {
     }} transition={{
       duration: 0.3
     }}>
-        <div className="max-w-lg mx-auto px-3 h-14 flex items-center gap-2">
-          {/* Right side (in RTL) - Logo */}
-          <motion.div className="flex items-center gap-2 shrink-0" whileHover={{
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
+          {/* Right side (in RTL) - Logo with Paw */}
+          <motion.div className="flex items-center gap-1 shrink-0" whileHover={{
           scale: 1.02
         }} whileTap={{
           scale: 0.98
         }}>
-            <motion.div whileHover={{
-            rotate: [0, -10, 10, 0]
-          }} transition={{
-            duration: 0.5
-          }}>
-              <img src={petidIcon} alt="Petid" className="w-9 h-9 object-contain" />
-            </motion.div>
-            <h1 className="text-xl font-black cursor-pointer text-foreground tracking-tight" onClick={() => {
+            <img src={petidIcon} alt="Petid" className="w-7 h-7 object-contain" />
+            <h1 className="text-[22px] font-black cursor-pointer text-foreground italic" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }} onClick={() => {
             setPage(0);
             setHasMore(true);
             fetchPosts(0, false);
@@ -1131,19 +1125,20 @@ const Feed = () => {
           }}>
               PetID
             </h1>
+            <ChevronLeft className="w-4 h-4 text-foreground rotate-90" strokeWidth={2} />
           </motion.div>
           
-          {/* Center - Search Bar (smaller & subtle) */}
+          {/* Center - Search Bar (Instagram style) */}
           <div 
-            className="flex-1 max-w-[140px] flex items-center gap-1.5 bg-muted/40 rounded-lg px-2.5 py-1.5 cursor-pointer hover:bg-muted/60 transition-colors border border-border/30"
+            className="flex-1 flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 cursor-pointer hover:bg-muted/70 transition-colors"
             onClick={() => navigate('/explore')}
           >
-            <Search className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" strokeWidth={1.5} />
-            <span className="text-xs text-muted-foreground/70">חיפוש</span>
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+            <span className="text-sm text-muted-foreground">Search</span>
           </div>
 
           {/* Left side (in RTL) - Heart Icon */}
-          <motion.button onClick={handleNavigateToNotifications} className="relative p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95 shrink-0" whileHover={{
+          <motion.button onClick={handleNavigateToNotifications} className="shrink-0" whileHover={{
             scale: 1.05
           }} whileTap={{
             scale: 0.95
