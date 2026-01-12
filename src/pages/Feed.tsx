@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, Menu, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
 import petidIcon from "@/assets/petid-icon.png";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { useLoyalty } from "@/hooks/useLoyalty";
@@ -20,7 +20,7 @@ import { PetidAnimations } from "@/animations/petid";
 import { MyPetsSection } from "@/components/home/MyPetsSection";
 import { PetEditSheet } from "@/components/home/PetEditSheet";
 import { playPetAddedSound } from "@/lib/sounds";
-import { HamburgerMenu } from "@/components/HamburgerMenu";
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { MyPetsSheet } from "@/components/MyPetsSheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -309,7 +309,7 @@ const Feed = () => {
     breed: ""
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
   const [isPetsSheetOpen, setIsPetsSheetOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -1156,13 +1156,6 @@ const Feed = () => {
           }}>
               
             </motion.button>
-            <motion.button onClick={() => setIsMenuOpen(true)} className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
-            scale: 1.05
-          }} whileTap={{
-            scale: 0.95
-          }}>
-              <Menu className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-            </motion.button>
           </div>
         </div>
       </motion.div>
@@ -1415,8 +1408,6 @@ const Feed = () => {
       {/* Pet Edit Sheet */}
       <PetEditSheet pet={editingPet} isOpen={isEditSheetOpen} onClose={handleCloseEditSheet} editFormData={editFormData} onFormDataChange={setEditFormData} onSave={handleSavePetEdit} onDelete={handleArchivePet} showDeleteConfirm={showDeleteConfirm} onDeleteConfirmChange={setShowDeleteConfirm} onAvatarUpdate={handlePetAvatarUpdate} />
 
-      {/* Hamburger Menu */}
-      <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* Floating Action Button for Create */}
       <FloatingActionButton icon={Plus} label="צור תוכן חדש" position="bottom-left" variant="primary" actions={[{
