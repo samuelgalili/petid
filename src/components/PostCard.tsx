@@ -412,10 +412,11 @@ export const PostCard = ({
       </ImageCarousel>
 
       {/* Post Actions - Instagram style */}
-      <div className="px-3 pt-2.5">
-        {/* Icons row */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-4">
+      <div className="px-3 pt-2.5 pb-1">
+        {/* Icons with counts inline */}
+        <div className="flex items-center gap-5">
+          {/* Like button with count */}
+          <div className="flex items-center gap-1.5">
             <button 
               onClick={handleLike}
               className="active:opacity-50 transition-opacity focus:outline-none"
@@ -434,55 +435,31 @@ export const PostCard = ({
                 />
               </motion.div>
             </button>
-            
+            <span className="text-[15px] text-neutral-900 font-normal tabular-nums">
+              {post.likes_count > 0 ? post.likes_count.toLocaleString('he-IL') : '0'}
+            </span>
+          </div>
+          
+          {/* Comment button with count */}
+          <div className="flex items-center gap-1.5">
             <button 
               className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
               onClick={() => navigate(`/post/${post.id}`)}
             >
               <MessageCircle className="w-[26px] h-[26px]" strokeWidth={1.5} />
             </button>
-            
-            <button 
-              className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
-              onClick={handleShare}
-            >
-              <Send className="w-[26px] h-[26px]" strokeWidth={1.5} />
-            </button>
-          </div>
-          <button 
-            onClick={handleSave}
-            className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
-          >
-            <motion.div
-              animate={isSaveAnimating ? { scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.25 }}
-            >
-              <Bookmark 
-                className={`w-[26px] h-[26px] ${
-                  post.is_saved 
-                    ? 'fill-neutral-900' 
-                    : ''
-                }`} 
-                strokeWidth={1.5} 
-              />
-            </motion.div>
-          </button>
-        </div>
-
-        {/* Likes and comments count row - Instagram style with icons */}
-        <div className="flex items-center gap-2 mb-1.5">
-          <div className="flex items-center gap-1">
-            <Heart className="w-4 h-4 fill-[#ED4956] text-[#ED4956]" strokeWidth={0} />
-            <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
-              {post.likes_count > 0 ? post.likes_count.toLocaleString('he-IL') : '0'}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <MessageCircle className="w-4 h-4 text-neutral-900" strokeWidth={1.5} />
-            <span className="text-[14px] text-neutral-900 font-normal tabular-nums">
+            <span className="text-[15px] text-neutral-900 font-normal tabular-nums">
               {post.comments_count > 0 ? post.comments_count.toLocaleString('he-IL') : '0'}
             </span>
           </div>
+          
+          {/* Share button */}
+          <button 
+            className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
+            onClick={handleShare}
+          >
+            <Send className="w-[26px] h-[26px]" strokeWidth={1.5} />
+          </button>
         </div>
 
         {/* Username + Caption - Instagram style */}
