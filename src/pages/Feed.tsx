@@ -1138,11 +1138,13 @@ const Feed = () => {
           </div>
 
           {/* Left side (in RTL) - Heart Icon */}
-          <motion.button onClick={handleNavigateToNotifications} className="shrink-0" whileHover={{
-            scale: 1.05
-          }} whileTap={{
-            scale: 0.95
-          }}>
+          <motion.button 
+            type="button"
+            onClick={handleNavigateToNotifications} 
+            className="shrink-0" 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }}
+          >
             <Heart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
           </motion.button>
         </div>
