@@ -1106,9 +1106,9 @@ const Feed = () => {
     }} transition={{
       duration: 0.3
     }}>
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-lg mx-auto px-3 h-14 flex items-center gap-3">
           {/* Right side (in RTL) - Logo */}
-          <motion.div className="flex items-center gap-2" whileHover={{
+          <motion.div className="flex items-center gap-1.5 shrink-0" whileHover={{
           scale: 1.02
         }} whileTap={{
           scale: 0.98
@@ -1118,9 +1118,9 @@ const Feed = () => {
           }} transition={{
             duration: 0.5
           }}>
-              <img src={petidIcon} alt="Petid" className="w-12 h-12 object-contain" />
+              <img src={petidIcon} alt="Petid" className="w-8 h-8 object-contain" />
             </motion.div>
-            <h1 className="text-xl font-fredoka font-semibold cursor-pointer text-foreground tracking-wide" onClick={() => {
+            <h1 className="text-lg font-black cursor-pointer text-foreground tracking-tight" onClick={() => {
             setPage(0);
             setHasMore(true);
             fetchPosts(0, false);
@@ -1133,30 +1133,23 @@ const Feed = () => {
             </h1>
           </motion.div>
           
-          {/* Left side (in RTL) - All Icons + Hamburger */}
-          <div className="flex items-center gap-1">
-            <motion.button onClick={handleNavigateToNotifications} className="relative p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
-            scale: 1.05
-          }} whileTap={{
-            scale: 0.95
-          }}>
-              <Heart className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-            </motion.button>
-            <motion.button onClick={() => navigate('/explore')} className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
-            scale: 1.05
-          }} whileTap={{
-            scale: 0.95
-          }}>
-              <Search className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-            </motion.button>
-            <motion.button onClick={handleNavigateToMessages} className="p-2.5 rounded-xl hover:bg-muted/60 transition-all active:scale-95" whileHover={{
-            scale: 1.05
-          }} whileTap={{
-            scale: 0.95
-          }}>
-              
-            </motion.button>
+          {/* Center - Search Bar */}
+          <div 
+            className="flex-1 flex items-center gap-2 bg-muted/60 rounded-xl px-3 py-2 cursor-pointer hover:bg-muted/80 transition-colors"
+            onClick={() => navigate('/explore')}
+          >
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+            <span className="text-sm text-muted-foreground">חיפוש</span>
           </div>
+
+          {/* Left side (in RTL) - Heart Icon */}
+          <motion.button onClick={handleNavigateToNotifications} className="relative p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95 shrink-0" whileHover={{
+            scale: 1.05
+          }} whileTap={{
+            scale: 0.95
+          }}>
+            <Heart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+          </motion.button>
         </div>
       </motion.div>
 
