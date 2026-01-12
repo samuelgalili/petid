@@ -1,9 +1,21 @@
 // PetID Service Worker - PWA + Push Notifications
-const CACHE_VERSION = 'petid-v7';
+// Version 8 - Force refresh all content
+const CACHE_VERSION = 'petid-v8';
+
+// Force unregister old service workers and clear all caches immediately
+(async () => {
+  try {
+    const allCaches = await caches.keys();
+    await Promise.all(allCaches.map(cacheName => caches.delete(cacheName)));
+    console.log('[SW] Cleared all caches on load');
+  } catch (e) {
+    console.log('[SW] Cache clear error:', e);
+  }
+})();
 
 // ===== INSTALL =====
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v7...');
+  console.log('[SW] Installing service worker v8...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -14,36 +26,45 @@ self.addEventListener('install', (event) => {
       );
     })
   );
+  // Force immediate activation
   self.skipWaiting();
 });
 
 // ===== ACTIVATE =====
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v7...');
+  console.log('[SW] Activating service worker v8...');
   event.waitUntil(
     Promise.all([
+      // Clear ALL caches
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => caches.delete(cacheName))
         );
       }),
-      self.clients.claim()
+      // Take control immediately
+      self.clients.claim(),
+      // Force reload all clients
+      self.clients.matchAll({ type: 'window' }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: 'RELOAD_PAGE' });
+        });
+      })
     ])
   );
 });
 
 // ===== FETCH =====
+// BYPASS ALL CACHING - Always fetch from network
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
   
-  // Always use network-first for all requests
+  // Always go to network - no caching at all
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        return response;
-      })
+    fetch(event.request, { cache: 'no-store' })
       .catch(() => {
+        // Only use cache as absolute last resort (offline)
         return caches.match(event.request);
       })
   );
