@@ -501,9 +501,9 @@ const Explore = () => {
   }, [posts]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-20" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20" dir="rtl">
       {/* Hero Header */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/20">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/20">
         {/* Title Bar */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
           <div className="flex items-center gap-3">
@@ -1235,6 +1235,9 @@ const Explore = () => {
         </div>
       )}
 
+      {/* Bottom padding for nav */}
+      <div className="h-20" />
+      
       <BottomNav />
     </div>
   );
