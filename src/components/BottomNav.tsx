@@ -60,7 +60,7 @@ const BottomNav = () => {
   const { unreadCount } = useRealtimeNotifications();
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
-  const hiddenRoutes = ['/auth', '/signup', '/forgot-password', '/reset-password', '/splash', '/add-pet', '/onboarding', '/stories', '/reels', '/story'];
+  const hiddenRoutes = ['/auth', '/signup', '/forgot-password', '/reset-password', '/splash', '/add-pet', '/onboarding', '/stories', '/story'];
   const isHiddenPage = hiddenRoutes.some(route => location.pathname.startsWith(route));
   if (isHiddenPage) return null;
 
