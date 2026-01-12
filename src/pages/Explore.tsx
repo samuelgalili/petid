@@ -501,7 +501,7 @@ const Explore = () => {
   }, [posts]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-24" dir="rtl">
       {/* Hero Header */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/20">
         {/* Title Bar */}
@@ -1235,8 +1235,8 @@ const Explore = () => {
         </div>
       )}
 
-      {/* Bottom padding for nav */}
-      <div className="h-20" />
+      {/* Bottom padding for fixed nav */}
+      <div className="h-24" />
       
       <BottomNav />
     </div>
