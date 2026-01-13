@@ -8,21 +8,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 // Gradient icon wrapper for active state
-const GradientIcon = ({ children, isActive, id }: { children: React.ReactNode; isActive: boolean; id: string }) => {
+const GradientIcon = ({
+  children,
+  isActive,
+  id
+}: {
+  children: React.ReactNode;
+  isActive: boolean;
+  id: string;
+}) => {
   if (!isActive) return <>{children}</>;
-  
-  return (
-    <svg width="0" height="0" className="absolute">
+  return <svg width="0" height="0" className="absolute">
       <defs>
         <linearGradient id={`gradient-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="hsl(var(--primary))" />
           <stop offset="100%" stopColor="hsl(var(--accent))" />
         </linearGradient>
       </defs>
-    </svg>
-  );
+    </svg>;
 };
-
 interface NavItemProps {
   to?: string;
   icon: React.ReactNode;
@@ -55,7 +59,9 @@ const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [userAvatar, setUserAvatar] = useState<string>("");
-  const { unreadCount } = useRealtimeNotifications();
+  const {
+    unreadCount
+  } = useRealtimeNotifications();
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
   const hiddenRoutes = ['/auth', '/signup', '/forgot-password', '/reset-password', '/splash', '/add-pet', '/onboarding', '/stories', '/story'];
@@ -81,18 +87,19 @@ const BottomNav = () => {
     };
     fetchUserAvatar();
   }, []);
-  
   const isActive = (path: string) => location.pathname === path;
-  
+
   // Scroll to top when clicking on current tab
   const handleNavClick = (path: string) => {
     if (location.pathname === path) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     } else {
       navigate(path);
     }
   };
-  
   return <>
       {/* SVG Gradient definitions - Light Blue (תכלת) */}
       <svg width="0" height="0" className="absolute">
@@ -109,67 +116,84 @@ const BottomNav = () => {
       position: 'fixed',
       bottom: 0
     }} role="navigation" aria-label="ניווט ראשי">
-        <div className="flex justify-around items-center w-full max-w-lg mx-auto" style={{ height: '50px' }}>
+        <div className="flex justify-around items-center w-full max-w-lg mx-auto" style={{
+        height: '50px'
+      }}>
           {/* Home */}
           <NavItem onClick={() => {
-            if (location.pathname === "/") {
-              window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-              });
-              window.dispatchEvent(new CustomEvent('refresh-feed'));
-            } else {
-              navigate("/");
-            }
-          }} icon={<Home className={`${isActive("/") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/") ? 2 : 1.5} />} isActive={isActive("/")} label="בית" />
+          if (location.pathname === "/") {
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth'
+            });
+            window.dispatchEvent(new CustomEvent('refresh-feed'));
+          } else {
+            navigate("/");
+          }
+        }} icon={<Home className={`${isActive("/") ? "text-foreground" : "text-muted-foreground"}`} style={{
+          width: '24px',
+          height: '24px'
+        }} strokeWidth={isActive("/") ? 2 : 1.5} />} isActive={isActive("/")} label="בית" />
 
           {/* Explore */}
-          <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className={`${isActive("/explore") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/explore") ? 2 : 1.5} />} isActive={isActive("/explore")} label="גילוי" />
+          <NavItem onClick={() => handleNavClick("/explore")} icon={<Compass className={`${isActive("/explore") ? "text-foreground" : "text-muted-foreground"}`} style={{
+          width: '24px',
+          height: '24px'
+        }} strokeWidth={isActive("/explore") ? 2 : 1.5} />} isActive={isActive("/explore")} label="גילוי" />
 
           {/* Reels */}
-          <NavItem onClick={() => handleNavClick("/reels")} icon={<Play className={`${isActive("/reels") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/reels") ? 2 : 1.5} />} isActive={isActive("/reels")} label="סרטונים" />
+          
 
           {/* Messages with notification badge */}
-          <button 
-            onClick={() => handleNavClick("/messages")} 
-            className="flex items-center justify-center flex-1 relative active:opacity-50 transition-opacity" 
-            style={{ height: '50px' }} 
-            aria-label="הודעות"
-          >
-            <motion.div whileTap={{ scale: 0.92 }} className="relative">
-              <MessageCircle className={`${isActive("/messages") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/messages") ? 2 : 1.5} />
+          <button onClick={() => handleNavClick("/messages")} className="flex items-center justify-center flex-1 relative active:opacity-50 transition-opacity" style={{
+          height: '50px'
+        }} aria-label="הודעות">
+            <motion.div whileTap={{
+            scale: 0.92
+          }} className="relative">
+              <MessageCircle className={`${isActive("/messages") ? "text-foreground" : "text-muted-foreground"}`} style={{
+              width: '24px',
+              height: '24px'
+            }} strokeWidth={isActive("/messages") ? 2 : 1.5} />
               <AnimatePresence mode="wait">
-                {unreadCount > 0 && (
-                  <motion.span
-                    key={unreadCount}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF3B30] text-white rounded-full text-[10px] font-bold flex items-center justify-center"
-                  >
+                {unreadCount > 0 && <motion.span key={unreadCount} initial={{
+                scale: 0,
+                opacity: 0
+              }} animate={{
+                scale: 1,
+                opacity: 1
+              }} exit={{
+                scale: 0,
+                opacity: 0
+              }} transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 25
+              }} className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF3B30] text-white rounded-full text-[10px] font-bold flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
-                  </motion.span>
-                )}
+                  </motion.span>}
               </AnimatePresence>
             </motion.div>
           </button>
 
           {/* Insights/Stats */}
-          <NavItem onClick={() => handleNavClick("/rewards")} icon={<BarChart2 className={`${isActive("/rewards") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/rewards") ? 2 : 1.5} />} isActive={isActive("/rewards")} label="תגמולים" />
+          <NavItem onClick={() => handleNavClick("/rewards")} icon={<BarChart2 className={`${isActive("/rewards") ? "text-foreground" : "text-muted-foreground"}`} style={{
+          width: '24px',
+          height: '24px'
+        }} strokeWidth={isActive("/rewards") ? 2 : 1.5} />} isActive={isActive("/rewards")} label="תגמולים" />
 
           {/* Profile with Avatar - Rounded like reference */}
-          <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1" style={{ height: '50px' }} aria-label="פרופיל">
-            <div className={cn(
-              "rounded-full p-[2px] transition-all",
-              isActive("/profile") 
-                ? "ring-2 ring-foreground" 
-                : ""
-            )}>
+          <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1" style={{
+          height: '50px'
+        }} aria-label="פרופיל">
+            <div className={cn("rounded-full p-[2px] transition-all", isActive("/profile") ? "ring-2 ring-foreground" : "")}>
               <Avatar className="w-7 h-7 rounded-full">
                 <AvatarImage src={userAvatar} className="object-cover rounded-full" />
                 <AvatarFallback className="bg-muted text-muted-foreground text-[10px] rounded-full">
-                  <User style={{ width: '14px', height: '14px' }} />
+                  <User style={{
+                  width: '14px',
+                  height: '14px'
+                }} />
                 </AvatarFallback>
               </Avatar>
             </div>
@@ -177,7 +201,9 @@ const BottomNav = () => {
         </div>
         
         {/* Safe area for notched devices - iOS safe area */}
-        <div className="bg-background" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
+        <div className="bg-background" style={{
+        height: 'env(safe-area-inset-bottom, 0px)'
+      }} />
       </nav>
     </>;
 };
