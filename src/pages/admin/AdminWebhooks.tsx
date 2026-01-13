@@ -152,29 +152,40 @@ const AdminWebhooks = () => {
     }
   });
 
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [showGeneratedKeyDialog, setShowGeneratedKeyDialog] = useState(false);
+
   const createApiKeyMutation = useMutation({
     mutationFn: async (data: typeof apiKeyForm) => {
-      const keyPrefix = `pk_${Math.random().toString(36).substring(2, 10)}`;
-      const keyHash = `hash_${Date.now()}`;
-      const { error } = await supabase
-        .from('api_keys')
-        .insert({
+      // Get current session for auth token
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        throw new Error('Authentication required');
+      }
+
+      // Call secure edge function to generate API key
+      const response = await supabase.functions.invoke('generate-api-key', {
+        body: {
           name: data.name,
-          key_prefix: keyPrefix,
-          key_hash: keyHash,
-          permissions: data.permissions,
-          is_active: true
-        });
-      if (error) throw error;
+          permissions: data.permissions
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to generate API key');
+      }
+
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-      toast.success('מפתח API נוצר בהצלחה');
+      setGeneratedKey(data.key);
+      setShowGeneratedKeyDialog(true);
       setApiKeyDialogOpen(false);
       setApiKeyForm({ name: "", permissions: [] });
     },
-    onError: () => {
-      toast.error('שגיאה ביצירת מפתח');
+    onError: (error: Error) => {
+      toast.error(error.message || 'שגיאה ביצירת מפתח');
     }
   });
 
@@ -480,6 +491,60 @@ const AdminWebhooks = () => {
                         disabled={createApiKeyMutation.isPending}
                       >
                         {createApiKeyMutation.isPending ? "יוצר..." : "צור מפתח"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Generated Key Display Dialog */}
+              <Dialog open={showGeneratedKeyDialog} onOpenChange={(open) => {
+                if (!open) {
+                  setGeneratedKey(null);
+                }
+                setShowGeneratedKeyDialog(open);
+              }}>
+                <DialogContent dir="rtl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      מפתח API נוצר בהצלחה
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-amber-800 text-sm font-medium mb-2">
+                        ⚠️ שמור את המפתח במקום בטוח - הוא לא יוצג שוב!
+                      </p>
+                    </div>
+                    <div>
+                      <Label>מפתח ה-API שלך:</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Input
+                          value={generatedKey || ''}
+                          readOnly
+                          className="font-mono text-sm"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => {
+                            if (generatedKey) {
+                              copyToClipboard(generatedKey);
+                              toast.success('המפתח הועתק ללוח');
+                            }
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button onClick={() => {
+                        setShowGeneratedKeyDialog(false);
+                        setGeneratedKey(null);
+                      }}>
+                        הבנתי, סגור
                       </Button>
                     </div>
                   </div>
