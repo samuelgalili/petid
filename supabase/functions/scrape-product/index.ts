@@ -417,25 +417,81 @@ serve(async (req) => {
 
     console.log("Scraping URL:", finalUrl);
 
-    // Call Firecrawl to scrape the page
-    const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: finalUrl,
-        formats: ["html"],
-        onlyMainContent: false,
-      }),
-    });
+    // Helper function to scrape with timeout and retry
+    async function scrapeWithRetry(targetUrl: string, retries = 2): Promise<Response> {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+          
+          const response = await fetch("https://api.firecrawl.dev/v1/scrape", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url: targetUrl,
+              formats: ["html"],
+              onlyMainContent: false,
+              timeout: 20000, // Tell Firecrawl to timeout at 20s
+            }),
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (response.ok) return response;
+          
+          // If 408 or 5xx, retry
+          if ((response.status === 408 || response.status >= 500) && attempt < retries) {
+            console.log(`Attempt ${attempt + 1} failed with ${response.status}, retrying...`);
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); // Backoff
+            continue;
+          }
+          
+          return response;
+        } catch (err) {
+          const error = err as Error;
+          if (error.name === "AbortError") {
+            console.log(`Attempt ${attempt + 1} timed out`);
+            if (attempt < retries) {
+              await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+              continue;
+            }
+            throw new Error("Request timed out after multiple attempts");
+          }
+          
+          // Network error - retry
+          if (attempt < retries) {
+            console.log(`Attempt ${attempt + 1} failed with network error, retrying...`);
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          throw error;
+        }
+      }
+      throw new Error("All retry attempts failed");
+    }
+
+    // Call Firecrawl to scrape the page with retry logic
+    let scrapeResponse: Response;
+    try {
+      scrapeResponse = await scrapeWithRetry(finalUrl);
+    } catch (err) {
+      const error = err as Error;
+      console.error("Firecrawl scrape failed after retries:", error);
+      return new Response(
+        JSON.stringify({ success: false, error: `שגיאה בגישה לאתר: ${error.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!scrapeResponse.ok) {
       const errorText = await scrapeResponse.text();
       console.error("Firecrawl scrape error:", scrapeResponse.status, errorText);
       return new Response(
-        JSON.stringify({ success: false, error: `Failed to scrape URL: ${scrapeResponse.status}` }),
+        JSON.stringify({ success: false, error: `שגיאה בסריקת האתר (${scrapeResponse.status})` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
