@@ -16,6 +16,7 @@ import { FlyingCartProvider } from "@/components/FlyingCartAnimation";
 import { GameProvider } from "@/contexts/GameContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PageTransition } from "@/components/PageTransition";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
@@ -146,6 +147,7 @@ const AnimatedRoutes = () => {
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
       <LoginPromptDialog />
+      <PWAInstallPrompt />
       <div className="flex-1">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
