@@ -777,9 +777,11 @@ const Checkout = () => {
                     <div>
                       <p className="font-semibold text-success font-jakarta text-sm">{appliedCoupon.code}</p>
                       <p className="text-xs text-muted-foreground font-jakarta">
-                        {appliedCoupon.discount_type === 'percentage' 
-                          ? `${appliedCoupon.discount_value}% הנחה`
-                          : `₪${appliedCoupon.discount_value} הנחה`}
+                        {appliedCoupon.discount_type === 'free_shipping'
+                          ? 'משלוח חינם!'
+                          : appliedCoupon.discount_type === 'percentage' 
+                            ? `${appliedCoupon.discount_value}% הנחה`
+                            : `₪${appliedCoupon.discount_value} הנחה`}
                       </p>
                     </div>
                     <button onClick={removeCoupon} className="p-1 hover:bg-destructive/10 rounded-full transition-colors">
@@ -934,10 +936,16 @@ const Checkout = () => {
                     <span className="font-semibold text-foreground font-jakarta">₪5.00</span>
                   </div>
                 )}
-                {appliedCoupon && (
+                {appliedCoupon && !isFreeShippingCoupon && discount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-success font-jakarta">הנחה ({appliedCoupon.code})</span>
                     <span className="font-semibold text-success font-jakarta">-₪{discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {isFreeShippingCoupon && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-success font-jakarta">משלוח חינם ({appliedCoupon?.code})</span>
+                    <span className="font-semibold text-success font-jakarta">-₪{baseShipping.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
