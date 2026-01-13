@@ -665,8 +665,7 @@ const Explore = () => {
               </motion.div>
             )}
           </motion.div>
-        )}
-      </div>
+      )}
 
       {/* Search Overlay */}
       <AnimatePresence>
