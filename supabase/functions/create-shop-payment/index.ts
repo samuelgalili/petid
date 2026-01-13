@@ -182,22 +182,29 @@ serve(async (req: Request): Promise<Response> => {
       .map(item => `${item.name} x${item.quantity}`)
       .join(', ');
 
-    // Build invoice lines array
-    const invoiceLines: any[] = requestData.items.map((item, index) => ({
-      [`InvoiceLines${index}.Description`]: item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : ''),
-      [`InvoiceLines${index}.Quantity`]: item.quantity,
-      [`InvoiceLines${index}.Price`]: item.price,
-    }));
-
-    // Flatten invoice lines into single object
-    const flatInvoiceLines = invoiceLines.reduce((acc, line) => ({ ...acc, ...line }), {});
+    // Build invoice lines in CardCom format
+    const flatInvoiceLines: Record<string, any> = {};
+    
+    requestData.items.forEach((item, index) => {
+      flatInvoiceLines[`Items[${index}].Description`] = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
+      flatInvoiceLines[`Items[${index}].UnitCost`] = item.price;
+      flatInvoiceLines[`Items[${index}].Quantity`] = item.quantity;
+    });
 
     // Add shipping if applicable
     if (requestData.shipping > 0) {
       const shippingIndex = requestData.items.length;
-      flatInvoiceLines[`InvoiceLines${shippingIndex}.Description`] = 'משלוח';
-      flatInvoiceLines[`InvoiceLines${shippingIndex}.Quantity`] = 1;
-      flatInvoiceLines[`InvoiceLines${shippingIndex}.Price`] = requestData.shipping;
+      flatInvoiceLines[`Items[${shippingIndex}].Description`] = 'משלוח';
+      flatInvoiceLines[`Items[${shippingIndex}].UnitCost`] = requestData.shipping;
+      flatInvoiceLines[`Items[${shippingIndex}].Quantity`] = 1;
+    }
+    
+    // Add tax if applicable
+    if (requestData.tax > 0) {
+      const taxIndex = requestData.items.length + (requestData.shipping > 0 ? 1 : 0);
+      flatInvoiceLines[`Items[${taxIndex}].Description`] = 'מע״מ (17%)';
+      flatInvoiceLines[`Items[${taxIndex}].UnitCost`] = Math.round(requestData.tax * 100) / 100;
+      flatInvoiceLines[`Items[${taxIndex}].Quantity`] = 1;
     }
 
     // Ensure total is a valid number with 2 decimal places
