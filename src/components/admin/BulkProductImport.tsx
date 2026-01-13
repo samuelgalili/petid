@@ -669,34 +669,78 @@ export const BulkProductImport = ({
               </div>
 
               {/* Products List */}
-              <ScrollArea className="h-[350px] pr-2">
-                <div className="space-y-2">
+              <ScrollArea className="h-[400px] pr-2">
+                <div className="space-y-3">
                   {parsedProducts.map((product) => (
                     <Collapsible
                       key={product.id}
                       open={expandedProducts.has(product.id)}
                       onOpenChange={() => toggleProductExpand(product.id)}
                     >
-                      <Card className={`p-3 ${!product.isValid ? 'border-destructive/50 bg-destructive/5' : ''}`}>
+                      <Card className={`overflow-hidden ${!product.isValid ? 'border-destructive/50 bg-destructive/5' : 'hover:border-primary/50'} transition-colors`}>
                         <CollapsibleTrigger asChild>
-                          <div className="flex items-center gap-3 cursor-pointer">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              product.isValid ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                            }`}>
-                              {product.isValid ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                          <div className="flex items-center gap-3 p-3 cursor-pointer">
+                            {/* Product Image */}
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0 border">
+                              {product.image_url ? (
+                                <img 
+                                  src={product.image_url} 
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                  <Image className="w-6 h-6" />
+                                </div>
+                              )}
                             </div>
+
+                            {/* Product Info */}
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{product.name || 'ללא שם'}</p>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span>₪{product.price}</span>
-                                {product.sku && <span>• {product.sku}</span>}
+                              <div className="flex items-center gap-2">
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  product.isValid ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                }`}>
+                                  {product.isValid ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                </div>
+                                <p className="font-medium truncate">{product.name || 'ללא שם'}</p>
                               </div>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                                <span className="font-semibold text-foreground">₪{product.price}</span>
+                                {product.sku && <span className="text-xs">מק״ט: {product.sku}</span>}
+                                {product.category && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {categories.find(c => c.value === product.category)?.label || product.category}
+                                  </Badge>
+                                )}
+                              </div>
+                              {product.description && (
+                                <p className="text-xs text-muted-foreground truncate mt-1">
+                                  {product.description}
+                                </p>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2">
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleProductExpand(product.id);
+                                }}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   removeProduct(product.id);
@@ -713,60 +757,96 @@ export const BulkProductImport = ({
                           </div>
                         </CollapsibleTrigger>
 
-                        <CollapsibleContent className="pt-3 mt-3 border-t space-y-3">
-                          {product.errors.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {product.errors.map((err, i) => (
-                                <Badge key={i} variant="destructive" className="text-xs">
-                                  {err}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
+                        <CollapsibleContent className="px-3 pb-3 border-t bg-muted/20">
+                          <div className="pt-3 space-y-3">
+                            {product.errors.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {product.errors.map((err, i) => (
+                                  <Badge key={i} variant="destructive" className="text-xs">
+                                    {err}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label className="text-xs">שם המוצר</Label>
-                              <Input
-                                value={product.name}
-                                onChange={(e) => updateProduct(product.id, { name: e.target.value })}
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">מחיר</Label>
-                              <Input
-                                type="number"
-                                value={product.price}
-                                onChange={(e) => updateProduct(product.id, { price: parseFloat(e.target.value) || 0 })}
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">מק״ט</Label>
-                              <Input
-                                value={product.sku}
-                                onChange={(e) => updateProduct(product.id, { sku: e.target.value })}
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">קטגוריה</Label>
-                              <Select
-                                value={product.category}
-                                onValueChange={(value) => updateProduct(product.id, { category: value })}
-                              >
-                                <SelectTrigger className="h-8 text-sm">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {categories.map((cat) => (
-                                    <SelectItem key={cat.value} value={cat.value}>
-                                      {cat.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="col-span-2 flex gap-3">
+                                {/* Image preview in edit mode */}
+                                <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 border">
+                                  {product.image_url ? (
+                                    <img 
+                                      src={product.image_url} 
+                                      alt={product.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                      <Image className="w-6 h-6" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <Label className="text-xs">קישור לתמונה</Label>
+                                  <Input
+                                    value={product.image_url}
+                                    onChange={(e) => updateProduct(product.id, { image_url: e.target.value })}
+                                    className="h-8 text-sm"
+                                    placeholder="https://..."
+                                    dir="ltr"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-xs">שם המוצר</Label>
+                                <Input
+                                  value={product.name}
+                                  onChange={(e) => updateProduct(product.id, { name: e.target.value })}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">מחיר</Label>
+                                <Input
+                                  type="number"
+                                  value={product.price}
+                                  onChange={(e) => updateProduct(product.id, { price: parseFloat(e.target.value) || 0 })}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">מק״ט</Label>
+                                <Input
+                                  value={product.sku}
+                                  onChange={(e) => updateProduct(product.id, { sku: e.target.value })}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">קטגוריה</Label>
+                                <Select
+                                  value={product.category}
+                                  onValueChange={(value) => updateProduct(product.id, { category: value })}
+                                >
+                                  <SelectTrigger className="h-8 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {categories.map((cat) => (
+                                      <SelectItem key={cat.value} value={cat.value}>
+                                        {cat.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="col-span-2">
+                                <Label className="text-xs">תיאור</Label>
+                                <Input
+                                  value={product.description}
+                                  onChange={(e) => updateProduct(product.id, { description: e.target.value })}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
                             </div>
                           </div>
                         </CollapsibleContent>
