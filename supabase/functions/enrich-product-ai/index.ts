@@ -5,18 +5,324 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface SearchResult {
-  content: string;
-  imageUrls: string[];
+interface ProductVariant {
+  name: string;
+  value: string;
+  price?: number;
+  sku?: string;
+  image_url?: string;
 }
 
-async function searchProduct(query: string, apiKey: string, isSku: boolean): Promise<SearchResult | null> {
+interface ScrapedProductData {
+  name: string;
+  description?: string;
+  price?: number;
+  salePrice?: number;
+  imageUrl?: string;
+  allImageUrls?: string[];
+  category?: string;
+  petType?: string;
+  brand?: string;
+  flavors?: string[];
+  sizes?: string[];
+  variants?: ProductVariant[];
+  weight?: string;
+  weightUnit?: string;
+  sku?: string;
+}
+
+// Parse product data from HTML content - comprehensive extraction
+function parseProductFromHtml(html: string, url: string): ScrapedProductData | null {
+  try {
+    // Extract product name from title or h1
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const h1Match = html.match(/<h1[^>]*class="[^"]*product[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
+                    html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    
+    const productName = h1Match?.[1]?.trim() || titleMatch?.[1]?.split('|')[0]?.trim() || '';
+    
+    if (!productName) return null;
+
+    // Extract prices - look for multiple patterns
+    const pricePatterns = [
+      /class="[^"]*woocommerce-Price-amount[^"]*"[^>]*><bdi>([^<]*)<span[^>]*class="[^"]*woocommerce-Price-currencySymbol/i,
+      /₪\s*([\d,]+(?:\.\d{2})?)/g,
+      /<span[^>]*class="[^"]*price[^"]*"[^>]*>[^₪]*₪\s*([\d,]+(?:\.\d{2})?)/i,
+    ];
+    
+    let finalPrice: number | undefined;
+    let regularPrice: number | undefined;
+    let salePrice: number | undefined;
+    
+    // Look for sale/regular price patterns
+    const salePriceMatch = html.match(/class="[^"]*sale[^"]*"[^>]*>.*?₪\s*([\d,]+(?:\.\d{2})?)/is) ||
+                           html.match(/<ins[^>]*>.*?₪\s*([\d,]+(?:\.\d{2})?)/is);
+    const regularPriceMatch = html.match(/class="[^"]*regular[^"]*"[^>]*>.*?₪\s*([\d,]+(?:\.\d{2})?)/is) ||
+                              html.match(/<del[^>]*>.*?₪\s*([\d,]+(?:\.\d{2})?)/is);
+    
+    // Extract all prices
+    const allPrices: number[] = [];
+    const priceMatches = html.matchAll(/₪\s*([\d,]+(?:\.\d{2})?)/g);
+    for (const match of priceMatches) {
+      const price = parseFloat(match[1].replace(',', ''));
+      if (price > 0 && price < 10000) {
+        allPrices.push(price);
+      }
+    }
+    
+    if (salePriceMatch) {
+      salePrice = parseFloat(salePriceMatch[1].replace(',', ''));
+      finalPrice = salePrice;
+    }
+    if (regularPriceMatch) {
+      regularPrice = parseFloat(regularPriceMatch[1].replace(',', ''));
+    }
+    
+    // If no specific price found, use first price
+    if (!finalPrice && allPrices.length > 0) {
+      finalPrice = Math.min(...allPrices);
+      if (allPrices.length > 1) {
+        regularPrice = Math.max(...allPrices);
+      }
+    }
+
+    // Extract main image - multiple patterns
+    let mainImageUrl: string | undefined;
+    const imagePatterns = [
+      /data-large_image="([^"]+)"/i,
+      /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i,
+      /class="[^"]*woocommerce-product-gallery__image[^"]*"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/i,
+      /<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/i,
+    ];
+    
+    for (const pattern of imagePatterns) {
+      const match = html.match(pattern);
+      if (match && match[1] && !match[1].includes('placeholder')) {
+        mainImageUrl = match[1];
+        break;
+      }
+    }
+    
+    // Extract all gallery images
+    const allImageUrls: string[] = [];
+    const galleryPatterns = [
+      /data-large_image="([^"]+)"/gi,
+      /data-src="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/gi,
+    ];
+    
+    for (const pattern of galleryPatterns) {
+      const matches = html.matchAll(pattern);
+      for (const match of matches) {
+        if (match[1] && !match[1].includes('placeholder') && !allImageUrls.includes(match[1])) {
+          allImageUrls.push(match[1]);
+        }
+      }
+    }
+
+    // Extract description
+    const shortDescMatch = html.match(/class="[^"]*woocommerce-product-details__short-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    const description = shortDescMatch?.[1]?.replace(/<[^>]+>/g, '').trim();
+
+    // Extract SKU
+    let sku: string | undefined;
+    const skuMatch = html.match(/class="[^"]*sku[^"]*"[^>]*>([A-Za-z0-9\-_]+)</i) ||
+                     html.match(/מק"ט[:\s]*([A-Za-z0-9\-_]+)/i);
+    if (skuMatch && skuMatch[1].length < 50) {
+      sku = skuMatch[1].trim();
+    }
+
+    // Extract brand
+    const brandMatch = html.match(/מותג[:\s]*<[^>]*>([^<]+)/i) ||
+                       html.match(/class="[^"]*brand[^"]*"[^>]*>([^<]+)/i);
+
+    // Extract pet type from URL/content
+    let petType: string | undefined;
+    const urlLower = url.toLowerCase();
+    let decodedUrl = urlLower;
+    try { decodedUrl = decodeURIComponent(url).toLowerCase(); } catch (e) {}
+    
+    if (decodedUrl.includes('כלב') || urlLower.includes('dog')) {
+      petType = 'dog';
+    } else if (decodedUrl.includes('חתול') || urlLower.includes('cat')) {
+      petType = 'cat';
+    }
+
+    // Extract weight from product name
+    let weight: string | undefined;
+    let weightUnit: string | undefined;
+    const weightMatch = productName.match(/(\d+(?:\.\d+)?)\s*(ק"ג|קג|ק״ג|kg|גרם|g)\b/i);
+    if (weightMatch) {
+      weight = weightMatch[1];
+      const unit = weightMatch[2].toLowerCase();
+      weightUnit = unit.includes('ק') || unit === 'kg' ? 'kg' : 'g';
+    }
+
+    // Extract WooCommerce variations - comprehensive extraction
+    const variants: ProductVariant[] = [];
+    const flavors: string[] = [];
+    const sizes: string[] = [];
+
+    // Helper function to decode URL-encoded strings
+    const decodeValue = (val: string): string => {
+      try {
+        return decodeURIComponent(val.replace(/-/g, ' '));
+      } catch {
+        return val.replace(/-/g, ' ');
+      }
+    };
+
+    // Pattern 1: data-product_variations attribute
+    const variationsMatch = html.match(/data-product_variations='([^']+)'/i) ||
+                            html.match(/data-product_variations="([^"]+)"/i);
+    if (variationsMatch) {
+      try {
+        const variationsData = JSON.parse(variationsMatch[1].replace(/&quot;/g, '"'));
+        if (Array.isArray(variationsData)) {
+          variationsData.forEach((v: any) => {
+            const attrs = v.attributes || {};
+            Object.entries(attrs).forEach(([key, value]: [string, any]) => {
+              if (value) {
+                const decodedName = decodeValue(key.replace('attribute_', '').replace('pa_', ''));
+                const decodedValue = decodeValue(String(value));
+                
+                variants.push({
+                  name: decodedName,
+                  value: decodedValue,
+                  price: v.display_price,
+                  sku: v.sku || undefined,
+                  image_url: v.image?.url
+                });
+                
+                // Categorize variants
+                const keyLower = decodedName.toLowerCase();
+                if (keyLower.includes('flavor') || keyLower.includes('taste') || keyLower.includes('טעם')) {
+                  if (!flavors.includes(decodedValue)) flavors.push(decodedValue);
+                } else if (keyLower.includes('size') || keyLower.includes('גודל') || keyLower.includes('משקל') || keyLower.includes('weight')) {
+                  if (!sizes.includes(decodedValue)) sizes.push(decodedValue);
+                }
+              }
+            });
+          });
+        }
+      } catch (e) {
+        console.log('Failed to parse variations:', e);
+      }
+    }
+
+    // Pattern 2: Select/option elements
+    const selectMatches = html.matchAll(/<select[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/select>/gi);
+    for (const selectMatch of selectMatches) {
+      const selectId = selectMatch[1].toLowerCase();
+      const optionsHtml = selectMatch[2];
+      const options = optionsHtml.matchAll(/<option[^>]*value="([^"]*)"[^>]*>([^<]*)<\/option>/gi);
+      
+      for (const opt of options) {
+        const value = opt[1] || opt[2];
+        const label = opt[2]?.trim();
+        if (value && label && !value.includes('בחר') && label !== 'בחר אפשרות') {
+          const decodedLabel = decodeValue(label);
+          
+          if (selectId.includes('flavor') || selectId.includes('טעם')) {
+            if (!flavors.includes(decodedLabel)) flavors.push(decodedLabel);
+          } else if (selectId.includes('size') || selectId.includes('גודל') || selectId.includes('weight') || selectId.includes('משקל')) {
+            if (!sizes.includes(decodedLabel)) sizes.push(decodedLabel);
+          }
+        }
+      }
+    }
+
+    // Pattern 3: Swatches
+    const swatchMatches = html.matchAll(/class="[^"]*swatch[^"]*"[^>]*data-value="([^"]+)"/gi);
+    for (const swatch of swatchMatches) {
+      const value = decodeValue(swatch[1]);
+      if (value) {
+        if (/^\d+/.test(value) || value.includes('kg') || value.includes('g') || value.includes('ק')) {
+          if (!sizes.includes(value)) sizes.push(value);
+        } else if (!flavors.includes(value)) {
+          flavors.push(value);
+        }
+      }
+    }
+
+    // Determine category from URL
+    let category: string | undefined;
+    if (decodedUrl.includes('מזון-יבש') || decodedUrl.includes('dry')) {
+      category = 'אוכל יבש';
+    } else if (decodedUrl.includes('מזון-רטוב') || decodedUrl.includes('wet')) {
+      category = 'אוכל רטוב';
+    } else if (decodedUrl.includes('חטיפ') || decodedUrl.includes('treats')) {
+      category = 'חטיפים';
+    } else if (decodedUrl.includes('צעצוע') || decodedUrl.includes('toys')) {
+      category = 'צעצועים';
+    }
+
+    return {
+      name: productName,
+      description,
+      price: finalPrice,
+      salePrice: salePrice !== finalPrice ? salePrice : undefined,
+      imageUrl: mainImageUrl,
+      allImageUrls: allImageUrls.length > 0 ? allImageUrls : undefined,
+      category,
+      petType,
+      brand: brandMatch?.[1]?.trim(),
+      flavors: flavors.length > 0 ? flavors : undefined,
+      sizes: sizes.length > 0 ? sizes : undefined,
+      variants: variants.length > 0 ? variants : undefined,
+      weight,
+      weightUnit,
+      sku,
+    };
+  } catch (error) {
+    console.error('Error parsing product:', error);
+    return null;
+  }
+}
+
+async function scrapeProductUrl(url: string, firecrawlKey: string): Promise<ScrapedProductData | null> {
+  try {
+    console.log('Scraping URL:', url);
+    
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        formats: ['html'],
+        onlyMainContent: false,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Firecrawl scrape error:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const html = data.data?.html || data.html || '';
+    
+    if (!html) {
+      console.error('No HTML returned from scrape');
+      return null;
+    }
+
+    return parseProductFromHtml(html, url);
+  } catch (error) {
+    console.error('Error scraping URL:', error);
+    return null;
+  }
+}
+
+async function searchProduct(query: string, apiKey: string, isSku: boolean): Promise<{ content: string; imageUrls: string[] } | null> {
   try {
     const searchQuery = isSku 
       ? `${query} pet product Israel מוצר לחיות מחמד barcode`
       : `${query} pet product Israel מוצר לחיות מחמד מחיר`;
     
-    console.log("Searching for:", searchQuery, "isSku:", isSku);
+    console.log("Searching for:", searchQuery);
     
     const response = await fetch("https://api.firecrawl.dev/v1/search", {
       method: "POST",
@@ -28,7 +334,7 @@ async function searchProduct(query: string, apiKey: string, isSku: boolean): Pro
         query: searchQuery,
         limit: 5,
         scrapeOptions: {
-          formats: ["markdown", "html"],
+          formats: ["markdown"],
         },
       }),
     });
@@ -39,105 +345,28 @@ async function searchProduct(query: string, apiKey: string, isSku: boolean): Pro
     }
 
     const data = await response.json();
-    console.log("Firecrawl search results:", JSON.stringify(data).substring(0, 1000));
     
-    // Combine all search results and extract image URLs
     let combinedContent = "";
     const imageUrls: string[] = [];
     
     if (data.data && Array.isArray(data.data)) {
       for (const result of data.data) {
-        combinedContent += `\n\nSource: ${result.url}\nTitle: ${result.title || ""}\nContent: ${result.markdown || result.description || ""}\n`;
+        combinedContent += `\nSource: ${result.url}\nTitle: ${result.title || ""}\nContent: ${result.markdown || result.description || ""}\n`;
         
-        // Extract image URLs from markdown
         const markdown = result.markdown || "";
         const imgMatches = markdown.matchAll(/!\[.*?\]\((https?:\/\/[^\s\)]+)\)/g);
         for (const match of imgMatches) {
           const imgUrl = match[1];
-          // Filter for likely product images
-          if (imgUrl && 
-              !imgUrl.includes('logo') && 
-              !imgUrl.includes('icon') && 
-              !imgUrl.includes('avatar') &&
-              !imgUrl.includes('placeholder') &&
-              (imgUrl.includes('.jpg') || imgUrl.includes('.jpeg') || imgUrl.includes('.png') || imgUrl.includes('.webp') || imgUrl.includes('product'))) {
-            imageUrls.push(imgUrl);
-          }
-        }
-        
-        // Also check for img src in HTML
-        const html = result.html || "";
-        const srcMatches = html.matchAll(/src=["'](https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/gi);
-        for (const match of srcMatches) {
-          const imgUrl = match[1];
-          if (imgUrl && 
-              !imgUrl.includes('logo') && 
-              !imgUrl.includes('icon') && 
-              !imgUrl.includes('avatar') &&
-              !imgUrl.includes('placeholder')) {
+          if (imgUrl && !imgUrl.includes('logo') && !imgUrl.includes('icon')) {
             imageUrls.push(imgUrl);
           }
         }
       }
     }
-    
-    console.log("Found", imageUrls.length, "potential product images");
     
     return { content: combinedContent, imageUrls };
   } catch (error) {
     console.error("Error searching product:", error);
-    return null;
-  }
-}
-
-async function searchProductImage(query: string, apiKey: string): Promise<string | null> {
-  try {
-    console.log("Searching for product image:", query);
-    
-    const response = await fetch("https://api.firecrawl.dev/v1/search", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: `${query} product image`,
-        limit: 3,
-        scrapeOptions: {
-          formats: ["markdown"],
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("Firecrawl image search error:", response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    
-    if (data.data && Array.isArray(data.data)) {
-      for (const result of data.data) {
-        const markdown = result.markdown || "";
-        // Look for image URLs in markdown
-        const imgMatches = markdown.matchAll(/!\[.*?\]\((https?:\/\/[^\s\)]+)\)/g);
-        for (const match of imgMatches) {
-          const imgUrl = match[1];
-          if (imgUrl && 
-              !imgUrl.includes('logo') && 
-              !imgUrl.includes('icon') &&
-              !imgUrl.includes('avatar') &&
-              (imgUrl.includes('.jpg') || imgUrl.includes('.jpeg') || imgUrl.includes('.png') || imgUrl.includes('.webp'))) {
-            console.log("Found product image:", imgUrl);
-            return imgUrl;
-          }
-        }
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("Error searching product image:", error);
     return null;
   }
 }
@@ -148,11 +377,11 @@ serve(async (req) => {
   }
 
   try {
-    const { productName, sku, category } = await req.json();
+    const { productName, sku, category, productUrl } = await req.json();
     
-    if (!productName && !sku) {
+    if (!productName && !sku && !productUrl) {
       return new Response(
-        JSON.stringify({ error: "Product name or SKU is required" }),
+        JSON.stringify({ error: "Product name, SKU, or URL is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -164,7 +393,48 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Search the web for product info
+    // If URL provided, scrape it directly - most accurate method
+    if (productUrl && FIRECRAWL_API_KEY) {
+      console.log("Direct URL scraping mode:", productUrl);
+      
+      const scrapedData = await scrapeProductUrl(productUrl, FIRECRAWL_API_KEY);
+      
+      if (scrapedData) {
+        console.log("Successfully scraped product:", scrapedData.name);
+        console.log("Found variants:", scrapedData.variants?.length || 0);
+        console.log("Found sizes:", scrapedData.sizes);
+        console.log("Found flavors:", scrapedData.flavors);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            data: {
+              name: scrapedData.name,
+              description: scrapedData.description,
+              suggestedPrice: scrapedData.price,
+              salePrice: scrapedData.salePrice,
+              imageUrl: scrapedData.imageUrl,
+              allImageUrls: scrapedData.allImageUrls,
+              category: scrapedData.category,
+              petType: scrapedData.petType,
+              flavors: scrapedData.flavors,
+              sizes: scrapedData.sizes,
+              variants: scrapedData.variants,
+              weight: scrapedData.weight,
+              weightUnit: scrapedData.weightUnit,
+              sku: scrapedData.sku,
+              brand: scrapedData.brand,
+              priceReason: "מחיר נמשך ישירות מהאתר",
+            }
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else {
+        console.log("Direct scraping failed, falling back to AI enrichment");
+      }
+    }
+
+    // Fallback: Search the web and use AI for enrichment
     let webSearchContext = "";
     let foundImageUrls: string[] = [];
     
@@ -175,56 +445,36 @@ serve(async (req) => {
       if (searchResults) {
         webSearchContext = searchResults.content;
         foundImageUrls = searchResults.imageUrls;
-        console.log("Found web search context for", isSku ? "SKU" : "product name");
       }
     }
 
     const searchQuery = sku || productName;
     const categoryContext = category ? `Category: ${category}` : "";
     
-    const systemPrompt = `You are a pet products expert assistant for an Israeli pet store called "PetID" (פטאיידי).
+    const systemPrompt = `You are a pet products expert assistant for an Israeli pet store.
 You help enrich product data based on SKU numbers or product names.
-Your responses should be in Hebrew and match the brand voice of PetID - friendly, professional, and pet-loving.
-Focus on pet products - food, treats, toys, accessories, health products, grooming supplies.
-When analyzing web search results, extract accurate product information.
-Always respond in valid JSON format.`;
+Your responses should be in Hebrew. Always respond in valid JSON format.`;
 
-    const userPrompt = `Enrich this pet product based on the following information:
+    const userPrompt = `Enrich this pet product:
 ${sku ? `SKU/מק"ט: ${sku}` : ""}
 ${productName ? `Product Name: ${productName}` : ""}
 ${categoryContext}
 
-${webSearchContext ? `
-Web Search Results (use this to extract accurate product information):
-${webSearchContext}
-` : ""}
+${webSearchContext ? `Web Search Results:\n${webSearchContext}` : ""}
 
-Return a JSON object with all these fields (use null if not applicable or unknown):
+Return a JSON object with these fields (use null if unknown):
 {
-  "name": "שם המוצר בעברית (אם נמצא ברשת, תרגם לעברית)",
-  "description": "תיאור מוצר מפורט בעברית בסגנון של פטאיידי - ידידותי ומקצועי (2-3 משפטים)",
+  "name": "שם המוצר בעברית",
+  "description": "תיאור מוצר מפורט בעברית (2-3 משפטים)",
   "petType": "dog" או "cat" או "both" או "other",
   "category": "קטגוריה - אוכל יבש/אוכל רטוב/חטיפים/צעצועים/אביזרים/טיפוח/בריאות/אחר",
-  "dimensions": "מידות המוצר אם רלוונטי (לדוגמה: 30x20x10 ס\"מ)",
-  "sizes": ["רשימת גדלים זמינים אם יש - S, M, L או משקל כמו 2 ק\"ג, 4 ק\"ג"],
-  "colors": ["רשימת צבעים זמינים"],
+  "sizes": ["רשימת משקלים/גדלים זמינים - לדוגמה: 1.5 ק\"ג, 3 ק\"ג, 7 ק\"ג"],
   "flavors": ["רשימת טעמים אם רלוונטי למזון/חטיפים"],
-  "benefits": ["יתרונות המוצר - 3-5 יתרונות עיקריים"],
-  "feedingGuide": "הוראות האכלה מומלצות אם זה מזון (לפי משקל הכלב/חתול)",
-  "brandWebsite": "כתובת אתר המותג הרשמי הבינלאומי (לא האתר שמכר את המוצר)",
-  "suggestedPrice": מחיר מומלץ בש״ח לפי מחירי השוק בישראל - המחיר הגבוה (מספר בלבד),
-  "priceReason": "הסבר קצר למחיר המומלץ - מאיפה נלקח המחיר",
-  "imageSearchQuery": "search query in English to find product image - be specific with brand and product name"
-}
+  "suggestedPrice": מחיר בש״ח (מספר בלבד),
+  "priceReason": "הסבר קצר למחיר"
+}`;
 
-Important:
-- For price, use the HIGHER price found in Israeli market
-- For brand website, use the international brand's official website, NOT the Israeli retailer
-- Description should be in PetID's friendly, professional Hebrew style
-- If this is food, include detailed feeding guide based on manufacturer recommendations
-- For imageSearchQuery, include the exact brand name and product name in English`;
-
-    console.log("Enriching product:", searchQuery);
+    console.log("AI enrichment for:", searchQuery);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -251,12 +501,6 @@ Important:
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       
       throw new Error(`AI request failed: ${response.status}`);
     }
@@ -268,13 +512,9 @@ Important:
       throw new Error("No content in AI response");
     }
 
-    console.log("AI response:", content);
-
-    // Parse JSON from response (handle markdown code blocks)
     let enrichedData;
     try {
       let jsonStr = content;
-      // Remove markdown code blocks if present
       if (jsonStr.includes("```json")) {
         jsonStr = jsonStr.replace(/```json\n?/g, "").replace(/```\n?/g, "");
       } else if (jsonStr.includes("```")) {
@@ -283,27 +523,16 @@ Important:
       enrichedData = JSON.parse(jsonStr.trim());
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
-      // Return partial data if parsing fails
       enrichedData = {
         description: content.substring(0, 200),
         suggestedPrice: null,
-        priceReason: "Unable to determine price",
       };
     }
 
-    // Add found image URLs to the response
+    // Add found image URLs
     if (foundImageUrls.length > 0) {
       enrichedData.imageUrl = foundImageUrls[0];
-      enrichedData.allImageUrls = foundImageUrls.slice(0, 5); // Return up to 5 images
-      console.log("Adding image URL to response:", foundImageUrls[0]);
-    } else if (enrichedData.imageSearchQuery && FIRECRAWL_API_KEY) {
-      // If no images found in initial search, try a dedicated image search
-      console.log("No images in initial search, trying dedicated image search");
-      const imageUrl = await searchProductImage(enrichedData.imageSearchQuery, FIRECRAWL_API_KEY);
-      if (imageUrl) {
-        enrichedData.imageUrl = imageUrl;
-        enrichedData.allImageUrls = [imageUrl];
-      }
+      enrichedData.allImageUrls = foundImageUrls.slice(0, 5);
     }
 
     return new Response(
