@@ -216,7 +216,7 @@ serve(async (req: Request): Promise<Response> => {
       TerminalNumber: parseInt(CARDCOM_TERMINAL),
       ApiName: CARDCOM_API_NAME,
       ApiPassword: CARDCOM_API_PASSWORD,
-      SumToBill: sumToBill.toFixed(2),
+      SumToBill: sumToBill, // Send as number, not string
       CoinID: 1, // ILS
       Language: 'he',
       SuccessRedirectUrl: `${requestData.success_url}?order_id=${orderData.id}`,
