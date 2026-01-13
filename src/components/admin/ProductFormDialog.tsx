@@ -572,23 +572,15 @@ export const ProductFormDialog = ({
                                   }`}
                                   onClick={() => toggleSearchImageSelection(url)}
                                 >
-                                  <img
+                                <img
                                     src={url}
                                     alt={`תמונה ${idx + 1}`}
                                     className="w-full h-full object-cover"
                                     loading="lazy"
-                                    crossOrigin="anonymous"
-                                    referrerPolicy="no-referrer"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
-                                      // Try loading without crossOrigin
-                                      if (target.crossOrigin) {
-                                        target.crossOrigin = '';
-                                        target.src = url;
-                                      } else {
-                                        // Show placeholder
-                                        target.src = '/placeholder.svg';
-                                      }
+                                      target.style.display = 'none';
+                                      target.parentElement?.classList.add('bg-muted');
                                     }}
                                   />
                                   {isSelected && (
