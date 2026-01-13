@@ -200,12 +200,23 @@ serve(async (req: Request): Promise<Response> => {
       flatInvoiceLines[`InvoiceLines${shippingIndex}.Price`] = requestData.shipping;
     }
 
+    // Ensure total is a valid number with 2 decimal places
+    const sumToBill = Math.round(requestData.total * 100) / 100;
+    
+    if (sumToBill <= 0) {
+      console.error('Invalid total amount:', sumToBill);
+      return new Response(
+        JSON.stringify({ error: 'סכום ההזמנה חייב להיות גדול מ-0' }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Create CardCom payment request
     const cardcomRequest = {
       TerminalNumber: parseInt(CARDCOM_TERMINAL),
       ApiName: CARDCOM_API_NAME,
       ApiPassword: CARDCOM_API_PASSWORD,
-      SumToBill: requestData.total,
+      SumToBill: sumToBill.toFixed(2),
       CoinID: 1, // ILS
       Language: 'he',
       SuccessRedirectUrl: `${requestData.success_url}?order_id=${orderData.id}`,
@@ -228,6 +239,8 @@ serve(async (req: Request): Promise<Response> => {
       'InvoiceHead.CustZipCode': requestData.shipping_address.zipCode,
       ...flatInvoiceLines,
     };
+    
+    console.log('CardCom request SumToBill:', sumToBill);
 
     console.log('Calling CardCom API...');
 
