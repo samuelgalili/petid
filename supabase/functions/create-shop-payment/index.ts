@@ -182,37 +182,54 @@ serve(async (req: Request): Promise<Response> => {
       .map(item => `${item.name} x${item.quantity}`)
       .join(', ');
 
-    // Build invoice lines in CardCom format (index starts from 1)
-    const flatInvoiceLines: Record<string, any> = {};
+    // Helper functions for CardCom money formatting
+    const toMoney = (n: number): number => {
+      return Number((Math.round(n * 100) / 100).toFixed(2));
+    };
     
-    requestData.items.forEach((item, index) => {
-      const i = index + 1; // CardCom uses 1-based indexing
-      flatInvoiceLines[`InvoiceLines${i}.Description`] = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
-      flatInvoiceLines[`InvoiceLines${i}.Price`] = item.price;
-      flatInvoiceLines[`InvoiceLines${i}.Quantity`] = item.quantity;
-    });
+    const toMoneyStr = (n: number): string => {
+      return toMoney(n).toFixed(2);
+    };
 
-    let lineIndex = requestData.items.length + 1;
+    // Build invoice lines in CardCom format (index starts from 1)
+    // CRITICAL: Price must be sent as STRING with exactly 2 decimal places
+    const flatInvoiceLines: Record<string, string> = {};
+    let lineIndex = 1;
+    
+    // Products
+    for (const item of requestData.items) {
+      const qty = Number(item.quantity ?? 1);
+      const unit = Number(item.price ?? 0);
+      const safeUnit = Number.isFinite(unit) ? unit : 0;
+      
+      const description = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
+      
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = String(description);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = String(qty);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(safeUnit);
+      lineIndex++;
+    }
 
     // Add shipping if applicable
     if (requestData.shipping > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = requestData.shipping;
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(requestData.shipping);
       lineIndex++;
     }
     
-    // Add tax as separate line
-    if (requestData.tax > 0) {
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'מע״מ (17%)';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = Math.round(requestData.tax * 100) / 100;
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
+    // Add discount as negative line if applicable
+    if (requestData.discount_amount && requestData.discount_amount > 0) {
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'קופון';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.discount_amount);
+      lineIndex++;
     }
     
-    console.log('Invoice lines being sent:', JSON.stringify(flatInvoiceLines));
+    console.log('CardCom InvoiceLines:', JSON.stringify(flatInvoiceLines));
 
     // Ensure total is a valid number with 2 decimal places
-    const sumToBill = Math.round(requestData.total * 100) / 100;
+    const sumToBill = toMoney(requestData.total);
     
     if (sumToBill <= 0) {
       console.error('Invalid total amount:', sumToBill);
