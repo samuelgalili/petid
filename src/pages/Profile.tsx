@@ -17,7 +17,8 @@ import {
   Award,
   Sparkles,
   Heart,
-  MessageCircle
+  MessageCircle,
+  Archive
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -537,6 +538,19 @@ const Profile = () => {
                   <span className="text-[11px] text-foreground font-medium truncate max-w-[72px]">{pet.name}</span>
                 </motion.button>
               ))}
+              
+              {/* Archived Pets Link */}
+              <motion.button 
+                className="flex flex-col items-center gap-2 min-w-[72px]"
+                onClick={() => navigate('/archived-pets')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <div className="w-[68px] h-[68px] rounded-2xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <Archive className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-[11px] text-muted-foreground font-medium">ארכיון</span>
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>
