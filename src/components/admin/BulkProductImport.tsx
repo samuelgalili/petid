@@ -2,7 +2,8 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FileSpreadsheet, FileText, Image, Upload, Loader2, 
-  Check, X, Edit2, ChevronDown, ChevronUp, AlertCircle, Link
+  Check, X, Edit2, ChevronDown, ChevronUp, AlertCircle, Link,
+  Sparkles, Wand2, RefreshCw, Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,8 @@ interface ParsedProduct {
   isValid: boolean;
   errors: string[];
   isEditing?: boolean;
+  sourceUrl?: string; // URL from which the product was scraped
+  isFixing?: boolean; // Currently being fixed by AI
 }
 
 interface BulkProductImportProps {
@@ -80,6 +83,9 @@ export const BulkProductImport = ({
   const [step, setStep] = useState<'upload' | 'url' | 'review'>('upload');
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [urlInput, setUrlInput] = useState("");
+  const [isFixingAll, setIsFixingAll] = useState(false);
+  const [fixProgress, setFixProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [isUploadingToStore, setIsUploadingToStore] = useState(false);
 
   const fileTypes = [
     { id: 'csv', label: 'CSV', icon: FileSpreadsheet, accept: '.csv', color: 'text-green-500' },
@@ -483,7 +489,190 @@ export const BulkProductImport = ({
     setSelectedFile(null);
     setExpandedProducts(new Set());
     setUrlInput("");
+    setIsFixingAll(false);
+    setFixProgress({ current: 0, total: 0 });
     onOpenChange(false);
+  };
+
+  // Fix a single product using AI/scraping
+  const fixProductWithAI = async (product: ParsedProduct): Promise<ParsedProduct> => {
+    try {
+      // Try to find and scrape product by name/SKU
+      const { data, error } = await supabase.functions.invoke("scrape-product", {
+        body: { 
+          mode: "sku", 
+          sku: product.sku || product.name,
+          query: product.name,
+          preferredDomains: ["pet-shop.co.il", "petshop.co.il", "zooplus.co.il"]
+        },
+      });
+
+      if (error || !data?.success || !data?.data) {
+        console.error("AI fix failed for product:", product.name, error);
+        return product;
+      }
+
+      const scraped = data.data;
+      const productInfo = scraped.product || scraped;
+      
+      // Build fixed product with scraped data
+      const fixedProduct: ParsedProduct = {
+        ...product,
+        name: productInfo.title || product.name,
+        description: productInfo.description || product.description,
+        price: productInfo.basePrice || productInfo.salePrice || product.price,
+        image_url: productInfo.images?.[0] || product.image_url,
+        category: product.category || mapCategory(scraped.source?.finalUrl || ""),
+        sourceUrl: scraped.source?.finalUrl,
+        errors: [],
+        isValid: true,
+        isFixing: false,
+      };
+
+      // Re-validate
+      if (!fixedProduct.name) {
+        fixedProduct.errors.push('שם המוצר חסר');
+        fixedProduct.isValid = false;
+      }
+      if (fixedProduct.price <= 0) {
+        fixedProduct.errors.push('מחיר לא תקין');
+        fixedProduct.isValid = false;
+      }
+
+      return fixedProduct;
+    } catch (err) {
+      console.error("AI fix error:", err);
+      return { ...product, isFixing: false };
+    }
+  };
+
+  // Fix all invalid products with AI
+  const handleFixAllWithAI = async () => {
+    const invalidProducts = parsedProducts.filter(p => !p.isValid);
+    
+    if (invalidProducts.length === 0) {
+      toast({
+        title: "אין מוצרים לתיקון",
+        description: "כל המוצרים תקינים",
+      });
+      return;
+    }
+
+    setIsFixingAll(true);
+    setFixProgress({ current: 0, total: invalidProducts.length });
+
+    // Mark all invalid products as fixing
+    setParsedProducts(prev => prev.map(p => 
+      !p.isValid ? { ...p, isFixing: true } : p
+    ));
+
+    let fixedCount = 0;
+    const BATCH_SIZE = 3;
+
+    // Process in batches
+    for (let i = 0; i < invalidProducts.length; i += BATCH_SIZE) {
+      const batch = invalidProducts.slice(i, i + BATCH_SIZE);
+      
+      const fixedBatch = await Promise.all(
+        batch.map(product => fixProductWithAI(product))
+      );
+
+      // Update products with fixed versions
+      setParsedProducts(prev => {
+        const newProducts = [...prev];
+        for (const fixed of fixedBatch) {
+          const idx = newProducts.findIndex(p => p.id === fixed.id);
+          if (idx !== -1) {
+            newProducts[idx] = fixed;
+            if (fixed.isValid) fixedCount++;
+          }
+        }
+        return newProducts;
+      });
+
+      setFixProgress({ current: Math.min(i + BATCH_SIZE, invalidProducts.length), total: invalidProducts.length });
+      
+      // Small delay between batches
+      if (i + BATCH_SIZE < invalidProducts.length) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+
+    setIsFixingAll(false);
+
+    toast({
+      title: `תוקנו ${fixedCount} מוצרים`,
+      description: fixedCount < invalidProducts.length 
+        ? `${invalidProducts.length - fixedCount} מוצרים לא נמצאו ברשת`
+        : "כל המוצרים תוקנו בהצלחה!",
+      variant: fixedCount > 0 ? "default" : "destructive",
+    });
+  };
+
+  // Upload all valid products to the store
+  const handleUploadToStore = async () => {
+    const validProducts = parsedProducts.filter(p => p.isValid);
+    
+    if (validProducts.length === 0) {
+      toast({
+        title: "אין מוצרים תקינים",
+        description: "תקן את השגיאות לפני העלאה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingToStore(true);
+
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const product of validProducts) {
+        try {
+          const { error } = await supabase.from("business_products").insert({
+            name: product.name,
+            description: product.description || null,
+            price: product.price,
+            sku: product.sku || null,
+            category: product.category || "other",
+            image_url: product.image_url || "/placeholder.svg",
+            in_stock: product.in_stock,
+            is_featured: false,
+            business_id: "00000000-0000-0000-0000-000000000000",
+          });
+
+          if (error) {
+            console.error("Insert error:", error);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (err) {
+          console.error("Error inserting product:", err);
+          errorCount++;
+        }
+      }
+
+      toast({
+        title: `${successCount} מוצרים הועלו לחנות`,
+        description: errorCount > 0 ? `${errorCount} מוצרים נכשלו` : "כל המוצרים הועלו בהצלחה!",
+        variant: errorCount > 0 && successCount === 0 ? "destructive" : "default",
+      });
+
+      if (successCount > 0) {
+        handleClose();
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast({
+        title: "שגיאה בהעלאה",
+        description: "אירעה שגיאה בהעלאת המוצרים",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingToStore(false);
+    }
   };
 
   const validCount = parsedProducts.filter(p => p.isValid).length;
@@ -645,27 +834,90 @@ export const BulkProductImport = ({
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4"
             >
-              {/* Stats */}
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <Badge variant="default" className="gap-1">
-                    <Check className="w-3 h-3" />
-                    {validCount} תקינים
-                  </Badge>
-                  {invalidCount > 0 && (
-                    <Badge variant="destructive" className="gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {invalidCount} לתיקון
+              {/* Stats & Actions */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Badge variant="default" className="gap-1">
+                      <Check className="w-3 h-3" />
+                      {validCount} תקינים
                     </Badge>
-                  )}
+                    {invalidCount > 0 && (
+                      <Badge variant="destructive" className="gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {invalidCount} לתיקון
+                      </Badge>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setStep('upload')}
+                  >
+                    העלאה חדשה
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStep('upload')}
-                >
-                  העלאה חדשה
-                </Button>
+
+                {/* AI Fix & Upload Actions */}
+                <div className="flex items-center gap-2">
+                  {invalidCount > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleFixAllWithAI}
+                      disabled={isFixingAll || isUploadingToStore}
+                      className="gap-2 flex-1 border-purple-500/50 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                    >
+                      {isFixingAll ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          מתקן... ({fixProgress.current}/{fixProgress.total})
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4" />
+                          תקן הכל עם AI ({invalidCount})
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleUploadToStore}
+                    disabled={validCount === 0 || isFixingAll || isUploadingToStore}
+                    className="gap-2 flex-1"
+                  >
+                    {isUploadingToStore ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        מעלה לחנות...
+                      </>
+                    ) : (
+                      <>
+                        <Store className="w-4 h-4" />
+                        העלה לחנות ({validCount})
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Progress indicator during AI fix */}
+                {isFixingAll && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-sm text-purple-700">
+                      <Sparkles className="w-4 h-4" />
+                      <span>ה-AI מחפש ומתקן את המוצרים...</span>
+                    </div>
+                    <div className="mt-2 w-full bg-purple-200 rounded-full h-2">
+                      <div 
+                        className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${fixProgress.total > 0 ? (fixProgress.current / fixProgress.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Products List */}
@@ -677,11 +929,16 @@ export const BulkProductImport = ({
                       open={expandedProducts.has(product.id)}
                       onOpenChange={() => toggleProductExpand(product.id)}
                     >
-                      <Card className={`overflow-hidden ${!product.isValid ? 'border-destructive/50 bg-destructive/5' : 'hover:border-primary/50'} transition-colors`}>
+                      <Card className={`overflow-hidden ${product.isFixing ? 'border-purple-500/50 bg-purple-50/50' : !product.isValid ? 'border-destructive/50 bg-destructive/5' : 'hover:border-primary/50'} transition-colors`}>
                         <CollapsibleTrigger asChild>
                           <div className="flex items-center gap-3 p-3 cursor-pointer">
                             {/* Product Image */}
-                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0 border">
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0 border relative">
+                              {product.isFixing && (
+                                <div className="absolute inset-0 bg-purple-500/20 flex items-center justify-center z-10">
+                                  <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+                                </div>
+                              )}
                               {product.image_url ? (
                                 <img 
                                   src={product.image_url} 
@@ -702,11 +959,23 @@ export const BulkProductImport = ({
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  product.isFixing ? 'bg-purple-100 text-purple-600' :
                                   product.isValid ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
                                 }`}>
-                                  {product.isValid ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                  {product.isFixing ? (
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                  ) : product.isValid ? (
+                                    <Check className="w-3 h-3" />
+                                  ) : (
+                                    <AlertCircle className="w-3 h-3" />
+                                  )}
                                 </div>
                                 <p className="font-medium truncate">{product.name || 'ללא שם'}</p>
+                                {product.isFixing && (
+                                  <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700">
+                                    מתקן...
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                                 <span className="font-semibold text-foreground">₪{product.price}</span>
@@ -726,6 +995,27 @@ export const BulkProductImport = ({
 
                             {/* Actions */}
                             <div className="flex items-center gap-1 flex-shrink-0">
+                              {/* Individual AI Fix Button */}
+                              {!product.isValid && !product.isFixing && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setParsedProducts(prev => prev.map(p => 
+                                      p.id === product.id ? { ...p, isFixing: true } : p
+                                    ));
+                                    const fixed = await fixProductWithAI(product);
+                                    setParsedProducts(prev => prev.map(p => 
+                                      p.id === product.id ? fixed : p
+                                    ));
+                                  }}
+                                  title="תקן עם AI"
+                                >
+                                  <Wand2 className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
