@@ -241,45 +241,61 @@ export const BulkProductImport = ({
 
   const parseURLWithAI = async (url: string): Promise<ParsedProduct[]> => {
     try {
+      // Use preview mode to scrape a single product page
       const { data, error } = await supabase.functions.invoke('scrape-products', {
         body: { 
-          url,
-          type: 'product_page'
+          productUrl: url,
+          mode: 'preview'
         },
       });
 
       if (error) throw error;
 
-      if (data?.products && Array.isArray(data.products)) {
-        return data.products.map((p: any, index: number) => ({
-          id: `import-${Date.now()}-${index}`,
-          name: p.name || '',
-          description: p.description || '',
-          price: parseFloat(p.price) || 0,
-          sku: p.sku || p.barcode || '',
-          category: p.category || 'other',
-          image_url: p.image_url || p.image || '',
-          in_stock: true,
-          isValid: Boolean(p.name && parseFloat(p.price) > 0),
-          errors: !p.name ? ['שם המוצר חסר'] : parseFloat(p.price) <= 0 ? ['מחיר לא תקין'] : [],
-        }));
-      }
-
-      // Single product fallback
-      if (data?.name) {
+      // Handle successful product scrape
+      if (data?.success && data?.product) {
+        const p = data.product;
         const product: ParsedProduct = {
           id: `import-${Date.now()}-0`,
-          name: data.name || '',
-          description: data.description || '',
-          price: parseFloat(data.price) || 0,
-          sku: data.sku || data.barcode || '',
-          category: data.category || 'other',
-          image_url: data.image_url || data.image || '',
-          in_stock: true,
-          isValid: Boolean(data.name && parseFloat(data.price) > 0),
-          errors: !data.name ? ['שם המוצר חסר'] : parseFloat(data.price) <= 0 ? ['מחיר לא תקין'] : [],
+          name: p.product_name || p.name || '',
+          description: p.short_description || p.description || '',
+          price: p.final_price || p.regular_price || parseFloat(p.price) || 0,
+          sku: p.sku || '',
+          category: mapCategory(p.main_category || p.category || ''),
+          image_url: p.main_image_url || p.image_url || '',
+          in_stock: p.stock_status === 'in_stock' || true,
+          isValid: Boolean((p.product_name || p.name) && (p.final_price || p.regular_price || parseFloat(p.price) > 0)),
+          errors: [],
         };
+        
+        if (!product.name) product.errors.push('שם המוצר חסר');
+        if (product.price <= 0) product.errors.push('מחיר לא תקין');
+        product.isValid = product.errors.length === 0;
+        
         return [product];
+      }
+
+      // Handle array of products
+      if (data?.products && Array.isArray(data.products)) {
+        return data.products.map((p: any, index: number) => {
+          const product: ParsedProduct = {
+            id: `import-${Date.now()}-${index}`,
+            name: p.product_name || p.name || '',
+            description: p.short_description || p.description || '',
+            price: p.final_price || p.regular_price || parseFloat(p.price) || 0,
+            sku: p.sku || '',
+            category: mapCategory(p.main_category || p.category || ''),
+            image_url: p.main_image_url || p.image_url || '',
+            in_stock: p.stock_status === 'in_stock' || true,
+            isValid: true,
+            errors: [],
+          };
+          
+          if (!product.name) product.errors.push('שם המוצר חסר');
+          if (product.price <= 0) product.errors.push('מחיר לא תקין');
+          product.isValid = product.errors.length === 0;
+          
+          return product;
+        });
       }
 
       return [];
@@ -287,6 +303,33 @@ export const BulkProductImport = ({
       console.error('URL parsing failed:', err);
       throw new Error('לא ניתן לטעון מוצרים מהקישור');
     }
+  };
+
+  // Helper to map scraped category to our categories
+  const mapCategory = (category: string): string => {
+    const categoryLower = category.toLowerCase();
+    const categoryMap: Record<string, string> = {
+      'אוכל יבש': 'dry-food',
+      'מזון יבש': 'dry-food',
+      'אוכל רטוב': 'wet-food',
+      'מזון רטוב': 'wet-food',
+      'חטיפים': 'treats',
+      'צעצועים': 'toys',
+      'אביזרים': 'accessories',
+      'בריאות': 'health',
+      'טיפוח': 'grooming',
+      'מיטות': 'beds',
+      'קולרים': 'collars',
+      'רצועות': 'collars',
+      'קערות': 'bowls',
+    };
+    
+    for (const [key, value] of Object.entries(categoryMap)) {
+      if (categoryLower.includes(key)) {
+        return value;
+      }
+    }
+    return 'other';
   };
 
   const handleURLImport = async () => {
