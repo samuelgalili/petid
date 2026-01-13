@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.scrape-product]
 verify_jwt = false
+
+[functions.import-products-from-url]
+verify_jwt = false
