@@ -555,7 +555,7 @@ export const ProductFormDialog = ({
                       {imageSearchResults.length > 0 && (
                         <div className="space-y-3">
                           <div className="text-xs text-muted-foreground">
-                            לחץ לבחירה מרובה. סדר הבחירה = סדר התצוגה (תמונה 1 = ראשית)
+                            נמצאו {imageSearchResults.length} תמונות. לחץ לבחירה מרובה (תמונה 1 = ראשית)
                           </div>
                           <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-1">
                             {imageSearchResults.map((url, idx) => {
@@ -565,19 +565,30 @@ export const ProductFormDialog = ({
                               return (
                                 <div
                                   key={idx}
-                                  className={`relative aspect-square cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                                  className={`relative aspect-square cursor-pointer rounded-lg overflow-hidden border-2 transition-all bg-muted ${
                                     isSelected 
                                       ? 'border-primary ring-2 ring-primary/30 scale-95' 
-                                      : 'border-transparent hover:border-primary/50'
+                                      : 'border-muted-foreground/20 hover:border-primary/50'
                                   }`}
                                   onClick={() => toggleSearchImageSelection(url)}
                                 >
                                   <img
                                     src={url}
-                                    alt=""
+                                    alt={`תמונה ${idx + 1}`}
                                     className="w-full h-full object-cover"
+                                    loading="lazy"
+                                    crossOrigin="anonymous"
+                                    referrerPolicy="no-referrer"
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                                      const target = e.target as HTMLImageElement;
+                                      // Try loading without crossOrigin
+                                      if (target.crossOrigin) {
+                                        target.crossOrigin = '';
+                                        target.src = url;
+                                      } else {
+                                        // Show placeholder
+                                        target.src = '/placeholder.svg';
+                                      }
                                     }}
                                   />
                                   {isSelected && (
@@ -588,7 +599,11 @@ export const ProductFormDialog = ({
                                     </div>
                                   )}
                                   {!isSelected && (
-                                    <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors" />
+                                    <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
+                                      <span className="text-white text-xs opacity-0 hover:opacity-100 bg-black/50 px-1 rounded">
+                                        {idx + 1}
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
                               );
