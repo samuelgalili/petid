@@ -476,7 +476,7 @@ export const ProductFormDialog = ({
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm">
                       <Globe className="w-4 h-4 ml-2" />
-                      חפש ברשת
+                      חפש תמונה בגוגל
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" align="center" dir="rtl">
