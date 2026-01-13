@@ -1,4 +1,4 @@
-import { Home, Compass, Play, MessageCircle, BarChart2, User } from "lucide-react";
+import { Home, Compass, Play, MessageCircle, ShoppingBag, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -176,11 +176,11 @@ const BottomNav = () => {
             </motion.div>
           </button>
 
-          {/* Insights/Stats */}
-          <NavItem onClick={() => handleNavClick("/rewards")} icon={<BarChart2 className={`${isActive("/rewards") ? "text-foreground" : "text-muted-foreground"}`} style={{
+          {/* Shop */}
+          <NavItem onClick={() => handleNavClick("/shop")} icon={<ShoppingBag className={`${isActive("/shop") ? "text-foreground" : "text-muted-foreground"}`} style={{
           width: '24px',
           height: '24px'
-        }} strokeWidth={isActive("/rewards") ? 2 : 1.5} />} isActive={isActive("/rewards")} label="תגמולים" />
+        }} strokeWidth={isActive("/shop") ? 2 : 1.5} />} isActive={isActive("/shop")} label="חנות" />
 
           {/* Profile with Avatar - Rounded like reference */}
           <button onClick={() => handleNavClick("/profile")} className="flex items-center justify-center flex-1" style={{
