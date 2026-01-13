@@ -31,7 +31,7 @@ import UserProfile from "./pages/UserProfile";
 import PostDetail from "./pages/PostDetail";
 import StoryViewer from "./pages/StoryViewer";
 import HighlightViewer from "./pages/HighlightViewer";
-import Tracker from "./pages/Tracker";
+// Tracker removed - redirects to MyProgress
 const Shop = lazy(() => import("./pages/Shop"));
 const ShopExplore = lazy(() => import("./pages/ShopExplore"));
 import ProductDetail from "./pages/ProductDetail";
@@ -90,7 +90,7 @@ const AdminAIService = lazy(() => import("./pages/admin/AdminAIService"));
 const AIControlRoom = lazy(() => import("./pages/admin/AIControlRoom"));
 import BreedHistory from "./pages/BreedHistory";
 import Insurance from "./pages/Insurance";
-import Tasks from "./pages/Tasks";
+import MyProgress from "./pages/MyProgress";
 import Rewards from "./pages/Rewards";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
@@ -106,7 +106,7 @@ import Notifications from "./pages/Notifications";
 const Training = lazy(() => import("./pages/Training"));
 import Grooming from "./pages/Grooming";
 // Onboarding merged into AddPet
-import Achievements from "./pages/Achievements";
+// Achievements redirects to MyProgress
 import Messages from "./pages/Messages";
 import MessageThread from "./pages/MessageThread";
 import Accessibility from "./pages/Accessibility";
@@ -119,7 +119,7 @@ import BusinessDirectory from "./pages/BusinessDirectory";
 import BusinessProfile from "./pages/BusinessProfile";
 import ConvertToBusiness from "./pages/ConvertToBusiness";
 import PrivacySettings from "./pages/PrivacySettings";
-import Pricing from "./pages/Pricing";
+// Pricing removed - system is free
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 
@@ -171,7 +171,10 @@ const AnimatedRoutes = () => {
         <Route path="/adoption" element={<PageTransition><Adoption /></PageTransition>} />
         <Route path="/reels" element={<PageTransition><PageErrorBoundary pageName="Reels"><Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div></div>}><Reels /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/explore" element={<PageTransition><PageErrorBoundary pageName="גילוי"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Explore /></Suspense></PageErrorBoundary></PageTransition>} />
-        <Route path="/tracker" element={<ProtectedRoute><PageTransition><Tracker /></PageTransition></ProtectedRoute>} />
+        <Route path="/my-progress" element={<ProtectedRoute><PageTransition><MyProgress /></PageTransition></ProtectedRoute>} />
+        <Route path="/tracker" element={<Navigate to="/my-progress" replace />} />
+        <Route path="/tasks" element={<Navigate to="/my-progress" replace />} />
+        <Route path="/achievements" element={<Navigate to="/my-progress" replace />} />
 <Route path="/shop" element={<PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/shop/explore" element={<PageTransition><PageErrorBoundary pageName="גילוי מוצרים"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><ShopExplore /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
@@ -181,7 +184,6 @@ const AnimatedRoutes = () => {
         <Route path="/order-confirmation" element={<ProtectedRoute><PageTransition><OrderConfirmation /></PageTransition></ProtectedRoute>} />
         <Route path="/order-history" element={<ProtectedRoute><PageTransition><OrderHistory /></PageTransition></ProtectedRoute>} />
         <Route path="/insurance" element={<PageTransition><Insurance /></PageTransition>} />
-        <Route path="/tasks" element={<ProtectedRoute><PageTransition><Tasks /></PageTransition></ProtectedRoute>} />
         <Route path="/rewards" element={<ProtectedRoute><PageTransition><Rewards /></PageTransition></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><PageTransition><Profile /></PageTransition></ProtectedRoute>} />
         <Route path="/edit-profile" element={<ProtectedRoute><PageTransition><EditProfile /></PageTransition></ProtectedRoute>} />
@@ -239,7 +241,6 @@ const AnimatedRoutes = () => {
         <Route path="/grooming" element={<PageTransition><Grooming /></PageTransition>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><PageTransition><Notifications /></PageTransition></ProtectedRoute>} />
-        <Route path="/achievements" element={<ProtectedRoute><PageTransition><Achievements /></PageTransition></ProtectedRoute>} />
         <Route path="/messages" element={<ProtectedRoute><PageTransition><Messages /></PageTransition></ProtectedRoute>} />
         <Route path="/messages/:userId" element={<ProtectedRoute><PageTransition><MessageThread /></PageTransition></ProtectedRoute>} />
         <Route path="/accessibility" element={<PageTransition><Accessibility /></PageTransition>} />
@@ -252,7 +253,6 @@ const AnimatedRoutes = () => {
         <Route path="/business/:id" element={<PageTransition><BusinessProfile /></PageTransition>} />
         <Route path="/convert-to-business" element={<ProtectedRoute><PageTransition><ConvertToBusiness /></PageTransition></ProtectedRoute>} />
         <Route path="/privacy-settings" element={<ProtectedRoute><PageTransition><PrivacySettings /></PageTransition></ProtectedRoute>} />
-        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
         <Route path="/payment-success" element={<PageTransition><PaymentSuccess /></PageTransition>} />
         <Route path="/payment-failed" element={<PageTransition><PaymentFailed /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
