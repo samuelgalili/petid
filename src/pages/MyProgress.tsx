@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Trophy, Star, Target, Calendar, Flame, Gift, 
   ChevronLeft, Award, Zap, TrendingUp, CheckCircle2,
-  Clock, Crown, Sparkles
+  Clock, Crown, Sparkles, Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { useLoyalty } from "@/hooks/useLoyalty";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { supabase } from "@/integrations/supabase/client";
+import { TaskProofDialog } from "@/components/TaskProofDialog";
 
 interface Task {
   id: string;
@@ -34,6 +35,8 @@ const MyProgress = () => {
   const { stats, awardPoints } = useLoyalty();
   const [activeTab, setActiveTab] = useState("overview");
   const [streak, setStreak] = useState(0);
+  const [proofDialogOpen, setProofDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   const [tasks, setTasks] = useState<Task[]>([
     { id: '1', title: 'טיול יומי', description: 'צא לטיול עם חיית המחמד', points: 10, completed: false, type: 'daily', category: 'activity' },
@@ -71,7 +74,15 @@ const MyProgress = () => {
   const dailyProgress = Math.round((dailyTasks.filter(t => t.completed).length / dailyTasks.length) * 100);
   const weeklyProgress = Math.round((weeklyTasks.filter(t => t.completed).length / weeklyTasks.length) * 100);
 
-  const handleCompleteTask = async (taskId: string) => {
+  const handleTaskClick = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.completed) return;
+    
+    setSelectedTask(task);
+    setProofDialogOpen(true);
+  };
+
+  const handleProofSubmitted = async (taskId: string, proofType: 'post' | 'story' | 'reel', mediaUrl: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task || task.completed) return;
 
@@ -287,25 +298,30 @@ const MyProgress = () => {
                     transition={{ delay: index * 0.1 }}
                   >
                     <Card 
-                      className={`p-4 border-0 ${task.completed ? 'bg-success/5' : 'bg-card'}`}
+                      className={`p-4 border-0 ${task.completed ? 'bg-success/5' : 'bg-card'} cursor-pointer`}
+                      onClick={() => !task.completed && handleTaskClick(task.id)}
                     >
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleCompleteTask(task.id)}
-                          disabled={task.completed}
+                        <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                             task.completed 
                               ? 'bg-success text-white' 
-                              : 'border-2 border-muted-foreground/30 hover:border-primary'
+                              : 'border-2 border-dashed border-primary/50 bg-primary/5'
                           }`}
                         >
-                          {task.completed && <CheckCircle2 className="w-5 h-5" />}
-                        </button>
+                          {task.completed ? (
+                            <CheckCircle2 className="w-5 h-5" />
+                          ) : (
+                            <Camera className="w-4 h-4 text-primary" />
+                          )}
+                        </div>
                         <div className="flex-1">
                           <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                             {getCategoryEmoji(task.category)} {task.title}
                           </p>
-                          <p className="text-xs text-muted-foreground">{task.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {task.completed ? task.description : '📸 העלה הוכחה להשלמה'}
+                          </p>
                         </div>
                         <span className={`text-sm font-bold ${task.completed ? 'text-success' : 'text-primary'}`}>
                           +{task.points}
@@ -332,25 +348,30 @@ const MyProgress = () => {
                     transition={{ delay: index * 0.1 }}
                   >
                     <Card 
-                      className={`p-4 border-0 ${task.completed ? 'bg-success/5' : 'bg-card'}`}
+                      className={`p-4 border-0 ${task.completed ? 'bg-success/5' : 'bg-card'} cursor-pointer`}
+                      onClick={() => !task.completed && handleTaskClick(task.id)}
                     >
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleCompleteTask(task.id)}
-                          disabled={task.completed}
+                        <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                             task.completed 
                               ? 'bg-success text-white' 
-                              : 'border-2 border-muted-foreground/30 hover:border-primary'
+                              : 'border-2 border-dashed border-accent/50 bg-accent/5'
                           }`}
                         >
-                          {task.completed && <CheckCircle2 className="w-5 h-5" />}
-                        </button>
+                          {task.completed ? (
+                            <CheckCircle2 className="w-5 h-5" />
+                          ) : (
+                            <Camera className="w-4 h-4 text-accent" />
+                          )}
+                        </div>
                         <div className="flex-1">
                           <p className={`font-medium ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                             {getCategoryEmoji(task.category)} {task.title}
                           </p>
-                          <p className="text-xs text-muted-foreground">{task.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {task.completed ? task.description : '📸 העלה הוכחה להשלמה'}
+                          </p>
                         </div>
                         <span className={`text-sm font-bold ${task.completed ? 'text-success' : 'text-accent'}`}>
                           +{task.points}
@@ -430,6 +451,13 @@ const MyProgress = () => {
       </div>
 
       <BottomNav />
+
+      <TaskProofDialog
+        open={proofDialogOpen}
+        onOpenChange={setProofDialogOpen}
+        task={selectedTask}
+        onProofSubmitted={handleProofSubmitted}
+      />
     </div>
   );
 };
