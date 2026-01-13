@@ -381,7 +381,7 @@ export const ProductFormDialog = ({
               className="gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              ייבוא מקובץ (CSV/Excel/PDF/תמונה)
+              ייבוא מקובץ / URL
             </Button>
           </div>
 

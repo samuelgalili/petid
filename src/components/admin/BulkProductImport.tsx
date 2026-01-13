@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FileSpreadsheet, FileText, Image, Upload, Loader2, 
-  Check, X, Edit2, ChevronDown, ChevronUp, AlertCircle
+  Check, X, Edit2, ChevronDown, ChevronUp, AlertCircle, Link
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,14 +77,16 @@ export const BulkProductImport = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedProducts, setParsedProducts] = useState<ParsedProduct[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [step, setStep] = useState<'upload' | 'review'>('upload');
+  const [step, setStep] = useState<'upload' | 'url' | 'review'>('upload');
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [urlInput, setUrlInput] = useState("");
 
   const fileTypes = [
     { id: 'csv', label: 'CSV', icon: FileSpreadsheet, accept: '.csv', color: 'text-green-500' },
     { id: 'excel', label: 'Excel', icon: FileSpreadsheet, accept: '.xlsx,.xls', color: 'text-blue-500' },
     { id: 'pdf', label: 'PDF', icon: FileText, accept: '.pdf', color: 'text-red-500' },
     { id: 'image', label: 'תמונה', icon: Image, accept: 'image/*', color: 'text-purple-500' },
+    { id: 'url', label: 'קישור URL', icon: Link, accept: '', color: 'text-orange-500' },
   ];
 
   const parseCSV = (text: string): ParsedProduct[] => {
@@ -237,6 +239,99 @@ export const BulkProductImport = ({
     }
   };
 
+  const parseURLWithAI = async (url: string): Promise<ParsedProduct[]> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('scrape-products', {
+        body: { 
+          url,
+          type: 'product_page'
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.products && Array.isArray(data.products)) {
+        return data.products.map((p: any, index: number) => ({
+          id: `import-${Date.now()}-${index}`,
+          name: p.name || '',
+          description: p.description || '',
+          price: parseFloat(p.price) || 0,
+          sku: p.sku || p.barcode || '',
+          category: p.category || 'other',
+          image_url: p.image_url || p.image || '',
+          in_stock: true,
+          isValid: Boolean(p.name && parseFloat(p.price) > 0),
+          errors: !p.name ? ['שם המוצר חסר'] : parseFloat(p.price) <= 0 ? ['מחיר לא תקין'] : [],
+        }));
+      }
+
+      // Single product fallback
+      if (data?.name) {
+        const product: ParsedProduct = {
+          id: `import-${Date.now()}-0`,
+          name: data.name || '',
+          description: data.description || '',
+          price: parseFloat(data.price) || 0,
+          sku: data.sku || data.barcode || '',
+          category: data.category || 'other',
+          image_url: data.image_url || data.image || '',
+          in_stock: true,
+          isValid: Boolean(data.name && parseFloat(data.price) > 0),
+          errors: !data.name ? ['שם המוצר חסר'] : parseFloat(data.price) <= 0 ? ['מחיר לא תקין'] : [],
+        };
+        return [product];
+      }
+
+      return [];
+    } catch (err) {
+      console.error('URL parsing failed:', err);
+      throw new Error('לא ניתן לטעון מוצרים מהקישור');
+    }
+  };
+
+  const handleURLImport = async () => {
+    if (!urlInput.trim()) {
+      toast({
+        title: "נא להזין קישור",
+        description: "הזן כתובת URL של דף מוצר או קטלוג",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const products = await parseURLWithAI(urlInput.trim());
+
+      if (products.length === 0) {
+        toast({
+          title: "לא נמצאו מוצרים",
+          description: "לא ניתן לזהות מוצרים בדף זה",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setParsedProducts(products);
+      setStep('review');
+
+      toast({
+        title: `נמצאו ${products.length} מוצרים`,
+        description: "בדוק ואשר את המוצרים לפני הייבוא",
+      });
+    } catch (err: any) {
+      console.error('URL import error:', err);
+      toast({
+        title: "שגיאה בטעינה מהקישור",
+        description: err.message || "נסה קישור אחר",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -344,6 +439,7 @@ export const BulkProductImport = ({
     setParsedProducts([]);
     setSelectedFile(null);
     setExpandedProducts(new Set());
+    setUrlInput("");
     onOpenChange(false);
   };
 
@@ -374,7 +470,7 @@ export const BulkProductImport = ({
               </p>
 
               <div className="grid grid-cols-2 gap-3">
-                {fileTypes.map((type) => (
+                {fileTypes.filter(t => t.id !== 'url').map((type) => (
                   <motion.button
                     key={type.id}
                     whileHover={{ scale: 1.02 }}
@@ -394,6 +490,18 @@ export const BulkProductImport = ({
                 ))}
               </div>
 
+              {/* URL Import Option */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => setStep('url')}
+                disabled={isProcessing}
+                className="w-full flex items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-orange-500/30 hover:border-orange-500 hover:bg-orange-500/5 transition-all disabled:opacity-50"
+              >
+                <Link className="w-6 h-6 text-orange-500" />
+                <span className="text-sm font-medium">ייבוא מקישור URL (דף מוצר או קטלוג)</span>
+              </motion.button>
+
               {isProcessing && (
                 <div className="flex flex-col items-center gap-3 py-6">
                   <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -410,6 +518,7 @@ export const BulkProductImport = ({
                   <li>CSV/Excel: עמודות name, price, sku, category, description</li>
                   <li>PDF: קטלוג מוצרים או רשימת מחיר</li>
                   <li>תמונה: צילום של מחירון או רשימת מוצרים</li>
+                  <li>URL: קישור לדף מוצר או קטלוג אונליין</li>
                 </ul>
               </div>
 
@@ -419,6 +528,69 @@ export const BulkProductImport = ({
                 className="hidden"
                 onChange={handleFileSelect}
               />
+            </motion.div>
+          )}
+
+          {step === 'url' && (
+            <motion.div
+              key="url"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4 py-4"
+            >
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep('upload')}
+                >
+                  חזרה
+                </Button>
+                <p className="text-sm font-medium">ייבוא מקישור URL</p>
+              </div>
+
+              <div className="space-y-3">
+                <Label>הזן קישור לדף מוצר או קטלוג</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://example.com/product/..."
+                    className="flex-1"
+                    dir="ltr"
+                  />
+                  <Button 
+                    onClick={handleURLImport}
+                    disabled={isProcessing || !urlInput.trim()}
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Link className="w-4 h-4 ml-2" />
+                        טען
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {isProcessing && (
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">טוען מוצרים מהקישור...</p>
+                </div>
+              )}
+
+              <div className="bg-muted/30 p-4 rounded-lg text-xs text-muted-foreground">
+                <p className="font-medium mb-2">דוגמאות לקישורים נתמכים:</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li>דף מוצר בודד מחנות אונליין</li>
+                  <li>עמוד קטגוריה עם רשימת מוצרים</li>
+                  <li>קטלוג דיגיטלי</li>
+                </ul>
+              </div>
             </motion.div>
           )}
 
