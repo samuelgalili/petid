@@ -264,77 +264,86 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      const orderNumber = `PID-${Date.now()}`;
       const orderTotal = total + (paymentMethod === "cash-on-delivery" ? 5 : 0);
 
-      // Insert order with coupon info
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          order_number: orderNumber,
-          status: "pending",
+      // Call the edge function to create payment and order
+      const { data, error } = await supabase.functions.invoke('create-shop-payment', {
+        body: {
+          items: items.map(item => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            variant: item.variant,
+            size: item.size,
+          })),
+          shipping_address: shippingData,
+          payment_method: paymentMethod,
+          installments: installments,
           subtotal: subtotal,
           shipping: shipping,
           tax: tax,
           total: orderTotal,
-          payment_method: paymentMethod,
-          shipping_address: shippingData,
-          coupon_id: appliedCoupon?.id || null,
+          coupon_id: appliedCoupon?.id,
           discount_amount: discount,
-          payment_installments: installments,
-        })
-        .select()
-        .single();
+          success_url: `${window.location.origin}/payment-success`,
+          cancel_url: `${window.location.origin}/payment-failed`,
+        }
+      });
 
-      if (orderError) throw orderError;
+      if (error) throw error;
 
-      // Insert order items
-      const orderItems = items.map((item) => ({
-        order_id: orderData.id,
-        product_name: item.name,
-        product_image: item.image,
-        quantity: item.quantity,
-        price: item.price,
-        variant: item.variant,
-        size: item.size,
-      }));
+      console.log('Payment response:', data);
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+      // If we got a payment URL (CardCom), redirect to it
+      if (data.payment_url) {
+        // Store order details for after payment
+        const orderDetails = {
+          orderId: data.order_number,
+          items,
+          shippingData,
+          paymentMethod,
+          subtotal,
+          shipping,
+          tax,
+          total: orderTotal,
+          orderDate: new Date().toISOString(),
+        };
+        localStorage.setItem("pendingOrder", JSON.stringify(orderDetails));
+        
+        // Redirect to CardCom payment page
+        window.location.href = data.payment_url;
+        return;
+      }
 
-      if (itemsError) throw itemsError;
+      // For cash on delivery or dev mode - direct success
+      if (data.success && data.redirect_url) {
+        const orderDetails = {
+          orderId: data.order_number,
+          items,
+          shippingData,
+          paymentMethod,
+          subtotal,
+          shipping,
+          tax,
+          total: orderTotal,
+          orderDate: new Date().toISOString(),
+        };
+        localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
+        clearCart();
+        
+        if (data.dev_mode) {
+          toast({
+            title: "מצב פיתוח",
+            description: "ההזמנה נשמרה ללא חיוב אמיתי (CardCom לא מוגדר)",
+          });
+        }
+        
+        navigate("/order-confirmation", { state: { order: orderDetails } });
+        return;
+      }
 
-      // Store order details for confirmation page
-      const orderDetails = {
-        orderId: orderNumber,
-        items,
-        shippingData,
-        paymentMethod,
-        subtotal,
-        shipping,
-        tax,
-        total: orderTotal,
-        orderDate: new Date().toISOString(),
-      };
-
-      localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
-
-      // Clear cart
-      clearCart();
-
-      setIsProcessing(false);
-
-      // Navigate to confirmation
-      navigate("/order-confirmation", { state: { order: orderDetails } });
+      throw new Error("תגובה לא צפויה מהשרת");
     } catch (error: any) {
       console.error("Error placing order:", error);
       setIsProcessing(false);

@@ -10,6 +10,9 @@ import {
   ShoppingCart,
   DollarSign,
   Eye,
+  CreditCard,
+  AlertCircle,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,10 +50,12 @@ interface Order {
   order_number: string;
   order_date: string;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  payment_status?: string;
   total: number;
   user_id: string;
   shipping_address: any;
   payment_method: string;
+  payment_transaction_id?: string;
 }
 
 const AdminOrders = () => {
@@ -200,6 +205,26 @@ const AdminOrders = () => {
     return types[status] || "pending";
   };
 
+  const getPaymentStatusLabel = (status?: string) => {
+    const labels: Record<string, string> = {
+      pending: "ממתין לתשלום",
+      paid: "שולם ✓",
+      failed: "תשלום נכשל",
+      awaiting_cod: "תשלום במסירה",
+      dev_approved: "מצב פיתוח",
+    };
+    return labels[status || "pending"] || status;
+  };
+
+  const getPaymentStatusColor = (status?: string) => {
+    switch (status) {
+      case "paid": return "text-green-600 bg-green-100";
+      case "failed": return "text-red-600 bg-red-100";
+      case "awaiting_cod": return "text-amber-600 bg-amber-100";
+      case "dev_approved": return "text-blue-600 bg-blue-100";
+      default: return "text-muted-foreground bg-muted";
+    }
+  };
   // Stats calculations
   const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.total?.toString() || "0"), 0);
   const pendingOrders = orders.filter(o => o.status === "pending").length;
@@ -315,13 +340,15 @@ const AdminOrders = () => {
                             </p>
                           )}
                         </div>
-                        <AdminStatusBadge 
-                          status={getStatusType(order.status)} 
-                          label={getStatusLabel(order.status)} 
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                        <div className="flex flex-col items-end gap-1">
+                          <AdminStatusBadge 
+                            status={getStatusType(order.status)} 
+                            label={getStatusLabel(order.status)} 
+                          />
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${getPaymentStatusColor(order.payment_status)}`}>
+                            {getPaymentStatusLabel(order.payment_status)}
+                          </span>
+                        </div>
                         <p className="text-lg font-bold">
                           ₪{order.total?.toFixed(2)}
                         </p>
