@@ -580,6 +580,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
           {[
             { id: 'overview', label: 'סקירה', icon: Sparkles },
             { id: 'breed', label: 'הגזע', icon: Info },
+            { id: 'breed-history', label: 'היסטוריית גזע', icon: TrendingUp, isLink: true, path: `/breed-history/${pet.id}` },
             { id: 'documents', label: 'מסמכים', icon: FileText },
             { id: 'training', label: 'אילוף', icon: GraduationCap },
             { id: 'photos', label: 'תמונות', icon: Image },
@@ -589,7 +590,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => (tab as any).isLink ? navigate((tab as any).path) : setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition-colors whitespace-nowrap text-xs font-medium ${
                   isActive 
                     ? 'bg-primary text-primary-foreground' 
