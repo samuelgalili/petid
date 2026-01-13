@@ -214,6 +214,30 @@ Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { user: caller }, error: authError } = await supabaseAuth.auth.getUser(token);
+
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { user_id, payload, notification } = await req.json();
     
     // Support both 'payload' and 'notification' for backwards compatibility
@@ -226,11 +250,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[Push] Sending notification to user: ${user_id}`);
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Authorization: Only allow sending to self OR if caller is admin
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    if (caller.id !== user_id) {
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', caller.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (!adminRole) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden - Cannot send notifications to other users' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    console.log(`[Push] Sending notification to user: ${user_id} (requested by: ${caller.id})`);
 
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
