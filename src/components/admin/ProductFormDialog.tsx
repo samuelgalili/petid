@@ -1,11 +1,13 @@
 import { useState, useRef, useCallback } from "react";
-import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check, FileSpreadsheet } from "lucide-react";
+import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check, FileSpreadsheet, Package, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +31,29 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BulkProductImport } from "./BulkProductImport";
+
+interface ScrapedProductVariant {
+  label: string;
+  weight?: number | null;
+  weight_unit?: string | null;
+  price?: number | null;
+  sale_price?: number | null;
+  sku?: string | null;
+  options?: Record<string, string>;
+}
+
+interface ScrapedProduct {
+  source_url: string;
+  title: string;
+  brand: string | null;
+  description: string | null;
+  images: string[];
+  currency: string | null;
+  basePrice: number | null;
+  salePrice: number | null;
+  sku: string | null;
+  variants: ScrapedProductVariant[];
+}
 
 interface ProductData {
   id?: string;
@@ -124,6 +149,14 @@ export const ProductFormDialog = ({
   const enrichTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [productUrl, setProductUrl] = useState("");
+  
+  // List import review modal state
+  const [showImportReview, setShowImportReview] = useState(false);
+  const [scrapedProducts, setScrapedProducts] = useState<ScrapedProduct[]>([]);
+  const [selectedProductIndices, setSelectedProductIndices] = useState<Set<number>>(new Set());
+  const [importDebugInfo, setImportDebugInfo] = useState<{ productLinksFound: number; pagesCrawled: number } | null>(null);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
 
   const enrichProduct = useCallback(async (productName: string, sku?: string, url?: string) => {
     if (!productName && !sku && !url) return;
@@ -410,7 +443,7 @@ export const ProductFormDialog = ({
     if (!productUrl || !productUrl.startsWith("http")) {
       toast({
         title: "כתובת לא תקינה",
-        description: "הזן כתובת URL מלאה של דף מוצר",
+        description: "הזן כתובת URL מלאה של דף מוצר או קטגוריה",
         variant: "destructive",
       });
       return;
@@ -419,12 +452,18 @@ export const ProductFormDialog = ({
     setIsEnriching(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke("scrape-product", {
-        body: { mode: "url", url: productUrl },
+      // Use the new unified import function that handles both products and lists
+      const { data, error } = await supabase.functions.invoke("import-products-from-url", {
+        body: { 
+          url: productUrl,
+          maxProducts: 30,
+          maxPages: 5,
+          sameDomainOnly: true 
+        },
       });
 
       if (error) {
-        console.error("Scrape error:", error);
+        console.error("Import error:", error);
         toast({
           title: "שגיאה בייבוא",
           description: error.message || "לא ניתן לייבא נתונים מהכתובת",
@@ -434,7 +473,39 @@ export const ProductFormDialog = ({
       }
 
       if (data?.success && data?.data) {
-        processScrapedData(data.data);
+        const result = data.data;
+        console.log("Import result:", result.mode, "products:", result.products?.length);
+        
+        // Store debug info
+        setImportDebugInfo({
+          productLinksFound: result.debug?.productLinksFound || 0,
+          pagesCrawled: result.debug?.pagesCrawled || 1,
+        });
+        
+        if (result.mode === "product" && result.products?.length === 1) {
+          // Single product - auto-fill form directly
+          const scrapedProduct = result.products[0];
+          processScrapedProductData(scrapedProduct);
+          toast({
+            title: "המוצר יובא בהצלחה",
+            description: `נמצאו ${scrapedProduct.variants?.length || 0} וריאנטים ו-${scrapedProduct.images?.length || 0} תמונות`,
+          });
+        } else if (result.products?.length > 0) {
+          // Multiple products - show review modal
+          setScrapedProducts(result.products);
+          setSelectedProductIndices(new Set(result.products.map((_: any, i: number) => i)));
+          setShowImportReview(true);
+          toast({
+            title: `נמצאו ${result.products.length} מוצרים`,
+            description: "בחר אילו מוצרים לייבא",
+          });
+        } else {
+          toast({
+            title: "לא נמצאו מוצרים",
+            description: "נסה קישור אחר או בדוק שהקישור תקין",
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "לא נמצאו נתונים",
@@ -452,6 +523,252 @@ export const ProductFormDialog = ({
     } finally {
       setIsEnriching(false);
     }
+  };
+
+  // Process a single scraped product and fill the form
+  const processScrapedProductData = useCallback((scrapedProduct: ScrapedProduct) => {
+    const updates: Partial<ProductData> = { ...product };
+    
+    // Title
+    if (scrapedProduct.title) {
+      updates.name = scrapedProduct.title;
+    }
+    
+    // Description
+    if (scrapedProduct.description) {
+      updates.description = scrapedProduct.description;
+    }
+    
+    // Images
+    if (scrapedProduct.images?.length > 0) {
+      updates.image_url = scrapedProduct.images[0];
+      if (scrapedProduct.images.length > 1) {
+        updates.images = scrapedProduct.images.slice(1);
+      }
+    }
+    
+    // Base price and sale price
+    if (scrapedProduct.basePrice) {
+      updates.price = scrapedProduct.basePrice;
+    }
+    if (scrapedProduct.salePrice) {
+      updates.sale_price = scrapedProduct.salePrice;
+      if (!updates.price) {
+        updates.price = scrapedProduct.salePrice;
+      }
+    }
+    
+    // SKU
+    if (scrapedProduct.sku) {
+      updates.sku = scrapedProduct.sku;
+    }
+    
+    // CRITICAL: Process ALL variants
+    const variants = scrapedProduct.variants || [];
+    if (variants.length > 0) {
+      console.log(`Processing ${variants.length} variants`);
+      
+      const variantLabels: string[] = [];
+      let firstWeightUnit: string | null = null;
+      let firstPrice: number | null = null;
+      
+      for (const v of variants) {
+        let label = v.label || "";
+        
+        // Add weight info if available
+        if (v.weight && v.weight_unit) {
+          const weightStr = v.weight_unit === "kg" ? `${v.weight} ק"ג` : 
+                           v.weight_unit === "g" ? `${v.weight} גרם` : 
+                           `${v.weight} ${v.weight_unit}`;
+          if (!label.includes(weightStr) && !label.match(/\d+\s*(kg|ק"ג|גרם|g)/i)) {
+            label = label ? `${label} (${weightStr})` : weightStr;
+          }
+        }
+        
+        // Add price to label
+        if (v.price) {
+          if (v.sale_price && v.sale_price < v.price) {
+            label += ` - ₪${v.sale_price} (במקום ₪${v.price})`;
+          } else {
+            label += ` - ₪${v.price}`;
+          }
+        }
+        
+        variantLabels.push(label);
+        
+        if (!firstWeightUnit && v.weight_unit) {
+          firstWeightUnit = v.weight_unit;
+        }
+        if (!firstPrice && v.price) {
+          firstPrice = v.price;
+        }
+      }
+      
+      updates.flavors = variantLabels;
+      
+      if (firstWeightUnit) {
+        updates.weight_unit = firstWeightUnit;
+      }
+      
+      if (!updates.price && firstPrice) {
+        updates.price = firstPrice;
+      }
+    }
+    
+    // Category detection from URL
+    const sourceUrl = scrapedProduct.source_url || "";
+    let decodedUrl = sourceUrl.toLowerCase();
+    try { decodedUrl = decodeURIComponent(sourceUrl).toLowerCase(); } catch {}
+    
+    if (decodedUrl.includes("מזון-יבש") || decodedUrl.includes("dry")) {
+      updates.category = "dry-food";
+    } else if (decodedUrl.includes("מזון-רטוב") || decodedUrl.includes("wet")) {
+      updates.category = "wet-food";
+    } else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) {
+      updates.category = "treats";
+    }
+    
+    // Pet type detection
+    if (decodedUrl.includes("כלב") || decodedUrl.includes("dog")) {
+      updates.pet_type = "dog";
+    } else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat")) {
+      updates.pet_type = "cat";
+    }
+    
+    onProductChange(updates);
+    
+    // Store enriched data for display
+    setEnrichedData({
+      name: scrapedProduct.title,
+      description: scrapedProduct.description || undefined,
+      suggestedPrice: scrapedProduct.basePrice || undefined,
+      salePrice: scrapedProduct.salePrice || undefined,
+      imageUrl: scrapedProduct.images?.[0],
+      allImageUrls: scrapedProduct.images,
+      category: updates.category,
+      petType: updates.pet_type,
+      brand: scrapedProduct.brand || undefined,
+      sizes: variants.map(v => v.label || ""),
+      variants: variants.map(v => ({
+        name: v.label || "",
+        value: v.weight ? `${v.weight} ${v.weight_unit || ""}` : "",
+        price: v.price || undefined,
+      })),
+    });
+    setShowEnrichmentDetails(true);
+  }, [product, onProductChange]);
+
+  // Toggle product selection for bulk import
+  const toggleProductSelection = (index: number) => {
+    setSelectedProductIndices(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  // Select/deselect all products
+  const toggleSelectAll = () => {
+    if (selectedProductIndices.size === scrapedProducts.length) {
+      setSelectedProductIndices(new Set());
+    } else {
+      setSelectedProductIndices(new Set(scrapedProducts.map((_, i) => i)));
+    }
+  };
+
+  // Import selected products to database
+  const handleBulkImport = async () => {
+    if (selectedProductIndices.size === 0) {
+      toast({
+        title: "לא נבחרו מוצרים",
+        description: "בחר לפחות מוצר אחד לייבוא",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBulkSaving(true);
+    
+    try {
+      const selectedProducts = scrapedProducts.filter((_, i) => selectedProductIndices.has(i));
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const scrapedProduct of selectedProducts) {
+        try {
+          // Create product record
+          const productData = {
+            name: scrapedProduct.title,
+            description: scrapedProduct.description,
+            price: scrapedProduct.basePrice || scrapedProduct.variants?.[0]?.price || 0,
+            sale_price: scrapedProduct.salePrice || scrapedProduct.variants?.[0]?.sale_price || null,
+            image_url: scrapedProduct.images?.[0] || "/placeholder.svg",
+            images: scrapedProduct.images?.slice(1) || [],
+            sku: scrapedProduct.sku,
+            in_stock: true,
+            is_featured: false,
+            // Map variants to flavors with prices
+            flavors: scrapedProduct.variants?.map(v => {
+              let label = v.label || "";
+              if (v.price) {
+                label += ` - ₪${v.price}`;
+              }
+              return label;
+            }) || [],
+            weight_unit: scrapedProduct.variants?.[0]?.weight_unit || null,
+            business_id: "00000000-0000-0000-0000-000000000000", // Default business ID
+          };
+
+          const { error } = await supabase.from("business_products").insert(productData);
+          
+          if (error) {
+            console.error("Error inserting product:", error);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (err) {
+          console.error("Error processing product:", err);
+          errorCount++;
+        }
+      }
+      
+      toast({
+        title: `יובאו ${successCount} מוצרים`,
+        description: errorCount > 0 ? `${errorCount} מוצרים נכשלו` : "כל המוצרים יובאו בהצלחה",
+        variant: errorCount > 0 ? "destructive" : "default",
+      });
+      
+      setShowImportReview(false);
+      setScrapedProducts([]);
+      setSelectedProductIndices(new Set());
+      setProductUrl("");
+      
+    } catch (err) {
+      console.error("Bulk import failed:", err);
+      toast({
+        title: "שגיאה בייבוא",
+        description: "אירעה שגיאה בייבוא המוצרים",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkSaving(false);
+    }
+  };
+
+  // Import single product from review modal
+  const handleImportSingleFromReview = (scrapedProduct: ScrapedProduct) => {
+    processScrapedProductData(scrapedProduct);
+    setShowImportReview(false);
+    setScrapedProducts([]);
+    toast({
+      title: "המוצר נבחר",
+      description: "פרטי המוצר מולאו בטופס",
+    });
   };
 
   const handleNameChange = (name: string) => {
