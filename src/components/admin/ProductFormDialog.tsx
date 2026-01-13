@@ -257,6 +257,155 @@ export const ProductFormDialog = ({
     }
   }, [product, onProductChange, toast]);
 
+  // Helper function to process scraped product data (used by both URL and SKU imports)
+  const processScrapedData = useCallback((scraped: any) => {
+    console.log("Processing scraped product data:", scraped);
+    
+    // Build updates from scraped data
+    const updates: Partial<ProductData> = { ...product };
+    
+    // Extract product info
+    const productInfo = scraped.product || scraped;
+    
+    // Title
+    if (productInfo.title) {
+      updates.name = productInfo.title;
+    }
+    
+    // Description
+    if (productInfo.description) {
+      updates.description = productInfo.description;
+    }
+    
+    // Images
+    const images = productInfo.images || scraped.images || [];
+    if (images.length > 0) {
+      updates.image_url = images[0];
+      if (images.length > 1) {
+        updates.images = images.slice(1);
+      }
+    }
+    
+    // Base price and sale price
+    if (productInfo.basePrice) {
+      updates.price = productInfo.basePrice;
+    }
+    if (productInfo.salePrice) {
+      updates.sale_price = productInfo.salePrice;
+      if (!updates.price && productInfo.salePrice) {
+        // If only sale price, it becomes the price
+        updates.price = productInfo.salePrice;
+      }
+    }
+    
+    // CRITICAL: Process ALL variants
+    const variants = scraped.variants || [];
+    if (variants.length > 0) {
+      console.log(`Found ${variants.length} variants - processing ALL`);
+      
+      // Clear existing flavors and add all variants
+      const variantLabels: string[] = [];
+      let firstWeightUnit: string | null = null;
+      let firstPrice: number | null = null;
+      
+      for (const v of variants) {
+        // Build variant label with price info
+        let label = v.label || "";
+        
+        // Add weight info if available
+        if (v.weight && v.weight_unit) {
+          const weightStr = v.weight_unit === "kg" ? `${v.weight} ק"ג` : 
+                           v.weight_unit === "g" ? `${v.weight} גרם` : 
+                           `${v.weight} ${v.weight_unit}`;
+          if (!label.includes(weightStr) && !label.match(/\d+\s*(kg|ק"ג|גרם|g)/i)) {
+            label = label ? `${label} (${weightStr})` : weightStr;
+          }
+        }
+        
+        // Add price to label
+        if (v.price) {
+          if (v.sale_price && v.sale_price < v.price) {
+            label += ` - ₪${v.sale_price} (במקום ₪${v.price})`;
+          } else {
+            label += ` - ₪${v.price}`;
+          }
+        }
+        
+        variantLabels.push(label);
+        
+        // Track first weight unit and price for default
+        if (!firstWeightUnit && v.weight_unit) {
+          firstWeightUnit = v.weight_unit;
+        }
+        if (!firstPrice && v.price) {
+          firstPrice = v.price;
+        }
+      }
+      
+      updates.flavors = variantLabels;
+      
+      // Set weight unit from first variant with weight
+      if (firstWeightUnit) {
+        updates.weight_unit = firstWeightUnit;
+      }
+      
+      // Set price from first variant if not already set
+      if (!updates.price && firstPrice) {
+        updates.price = firstPrice;
+      }
+    }
+    
+    // Category detection from URL patterns
+    const sourceUrl = scraped.source?.finalUrl || "";
+    let decodedUrl = sourceUrl.toLowerCase();
+    try { decodedUrl = decodeURIComponent(sourceUrl).toLowerCase(); } catch {}
+    
+    if (decodedUrl.includes("מזון-יבש") || decodedUrl.includes("dry")) {
+      updates.category = "dry-food";
+    } else if (decodedUrl.includes("מזון-רטוב") || decodedUrl.includes("wet")) {
+      updates.category = "wet-food";
+    } else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) {
+      updates.category = "treats";
+    }
+    
+    // Pet type detection
+    if (decodedUrl.includes("כלב") || decodedUrl.includes("dog")) {
+      updates.pet_type = "dog";
+    } else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat")) {
+      updates.pet_type = "cat";
+    }
+    
+    onProductChange(updates);
+    
+    // Store enriched data for display
+    setEnrichedData({
+      name: productInfo.title,
+      description: productInfo.description,
+      suggestedPrice: productInfo.basePrice,
+      salePrice: productInfo.salePrice,
+      imageUrl: images[0],
+      allImageUrls: images,
+      category: updates.category,
+      petType: updates.pet_type,
+      brand: productInfo.brand,
+      sizes: variants.map((v: any) => v.label || ""),
+      variants: variants.map((v: any) => ({
+        name: v.label || "",
+        value: v.weight ? `${v.weight} ${v.weight_unit || ""}` : "",
+        price: v.price,
+      })),
+    });
+    setShowEnrichmentDetails(true);
+    
+    const variantCount = variants.length;
+    const imageCount = images.length;
+    
+    toast({
+      title: "הנתונים יובאו בהצלחה",
+      description: `נמצאו ${variantCount} וריאנטים ו-${imageCount} תמונות`,
+    });
+  }, [product, onProductChange, toast]);
+
   const handleUrlImport = async () => {
     if (!productUrl || !productUrl.startsWith("http")) {
       toast({
@@ -270,8 +419,8 @@ export const ProductFormDialog = ({
     setIsEnriching(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke("scrape-product-url", {
-        body: { url: productUrl },
+      const { data, error } = await supabase.functions.invoke("scrape-product", {
+        body: { mode: "url", url: productUrl },
       });
 
       if (error) {
@@ -285,90 +434,12 @@ export const ProductFormDialog = ({
       }
 
       if (data?.success && data?.data) {
-        const scraped = data.data;
-        console.log("Scraped product data:", scraped);
-        
-        // Build updates from scraped data
-        const updates: Partial<ProductData> = { ...product };
-        
-        // Title
-        if (scraped.title) {
-          updates.name = scraped.title;
-        }
-        
-        // Description
-        if (scraped.description) {
-          updates.description = scraped.description;
-        }
-        
-        // Images
-        if (scraped.images && scraped.images.length > 0) {
-          updates.image_url = scraped.images[0];
-          if (scraped.images.length > 1) {
-            updates.images = scraped.images.slice(1);
-          }
-        }
-        
-        // SKU
-        if (scraped.sku) {
-          updates.sku = scraped.sku;
-        }
-        
-        // Category
-        if (scraped.category) {
-          updates.category = scraped.category;
-        }
-        
-        // Pet type
-        if (scraped.pet_type) {
-          updates.pet_type = scraped.pet_type;
-        }
-        
-        // Price - use base_price or first variant price
-        if (scraped.base_price) {
-          updates.price = scraped.base_price;
-        } else if (scraped.variants && scraped.variants.length > 0 && scraped.variants[0].price) {
-          updates.price = scraped.variants[0].price;
-        }
-        
-        // Variants - convert to flavors/variants display
-        if (scraped.variants && scraped.variants.length > 0) {
-          const variantLabels = scraped.variants.map((v: any) => {
-            let label = v.label;
-            if (v.price) {
-              label += ` - ₪${v.price}`;
-            }
-            return label;
-          });
-          updates.flavors = variantLabels;
-          
-          // Set weight unit from first variant with weight
-          const variantWithWeight = scraped.variants.find((v: any) => v.weight_unit);
-          if (variantWithWeight) {
-            updates.weight_unit = variantWithWeight.weight_unit;
-          }
-        }
-        
-        onProductChange(updates);
-        
-        // Store enriched data for display
-        setEnrichedData({
-          name: scraped.title,
-          description: scraped.description,
-          suggestedPrice: scraped.base_price,
-          imageUrl: scraped.images?.[0],
-          allImageUrls: scraped.images,
-          category: scraped.category,
-          petType: scraped.pet_type,
-          sku: scraped.sku,
-          brand: scraped.brand,
-          sizes: scraped.variants?.map((v: any) => v.label) || [],
-        });
-        setShowEnrichmentDetails(true);
-        
+        processScrapedData(data.data);
+      } else {
         toast({
-          title: "הנתונים יובאו בהצלחה",
-          description: `נמצאו ${scraped.variants?.length || 0} וריאנטים ו-${scraped.images?.length || 0} תמונות`,
+          title: "לא נמצאו נתונים",
+          description: data?.error || "לא ניתן לחלץ מידע מהדף",
+          variant: "destructive",
         });
       }
     } catch (err) {
@@ -414,15 +485,62 @@ export const ProductFormDialog = ({
     }
   };
 
-  const handleSkuSearch = () => {
-    if (product?.sku && product.sku.length >= 3) {
-      enrichProduct(product?.name || "", product.sku);
-    } else {
+  const handleSkuSearch = async () => {
+    if (!product?.sku || product.sku.length < 3) {
       toast({
         title: "מק״ט קצר מדי",
         description: "הזן לפחות 3 תווים לחיפוש",
         variant: "destructive",
       });
+      return;
+    }
+    
+    setIsEnriching(true);
+    
+    try {
+      // Use the new scrape-product function with SKU mode
+      const { data, error } = await supabase.functions.invoke("scrape-product", {
+        body: { 
+          mode: "sku", 
+          sku: product.sku,
+          query: product.name || undefined,
+          preferredDomains: ["pet-shop.co.il", "petshop.co.il", "zooplus.co.il", "petfood.co.il"]
+        },
+      });
+
+      if (error) {
+        console.error("SKU search error:", error);
+        toast({
+          title: "שגיאה בחיפוש",
+          description: error.message || "לא ניתן לחפש את המוצר",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.success && data?.data) {
+        processScrapedData(data.data);
+        
+        // Show the source URL in a toast
+        if (data.data.source?.finalUrl) {
+          console.log("Product found at:", data.data.source.finalUrl);
+        }
+      } else {
+        toast({
+          title: "לא נמצא מוצר",
+          description: data?.error || "נסה להוסיף שם מוצר או להשתמש בקישור ישיר",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("SKU search failed:", err);
+      toast({
+        title: "שגיאה בחיפוש",
+        description: "אירעה שגיאה בחיפוש המוצר",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEnriching(false);
     }
   };
 
