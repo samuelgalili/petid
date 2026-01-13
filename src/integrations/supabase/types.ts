@@ -4084,6 +4084,8 @@ export type Database = {
           order_number: string
           payment_installments: number | null
           payment_method: string
+          payment_status: string
+          payment_transaction_id: string | null
           shipping: number
           shipping_address: Json
           status: Database["public"]["Enums"]["order_status"]
@@ -4102,6 +4104,8 @@ export type Database = {
           order_number: string
           payment_installments?: number | null
           payment_method: string
+          payment_status?: string
+          payment_transaction_id?: string | null
           shipping: number
           shipping_address: Json
           status?: Database["public"]["Enums"]["order_status"]
@@ -4120,6 +4124,8 @@ export type Database = {
           order_number?: string
           payment_installments?: number | null
           payment_method?: string
+          payment_status?: string
+          payment_transaction_id?: string | null
           shipping?: number
           shipping_address?: Json
           status?: Database["public"]["Enums"]["order_status"]
