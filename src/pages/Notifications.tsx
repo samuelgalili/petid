@@ -209,18 +209,23 @@ const Notifications = () => {
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
       {/* Instagram-style Header */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border/50">
-        <div className="flex items-center justify-between px-4 h-12">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-1"
-          >
-            <ChevronRight className="w-6 h-6 text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">התראות</h1>
-          <div className="w-6" /> {/* Spacer for centering */}
+      <motion.div 
+        className="sticky top-0 z-20 bg-background/98 backdrop-blur-xl border-b border-border/40"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+            >
+              <ChevronRight className="w-5 h-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">התראות</h1>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Notifications List - Grouped by Time */}
       <div className="pt-2">

@@ -118,23 +118,26 @@ const Favorites = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card border-b border-border">
-        <div className="flex items-center justify-between px-4 py-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-          <h1 className="text-lg font-bold font-jakarta text-foreground">המועדפים שלי</h1>
-          <div className="w-10" />
+      {/* Instagram-style Header */}
+      <motion.div 
+        className="sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b border-border/40"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+            >
+              <ArrowRight className="w-5 h-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">המועדפים שלי</h1>
+          </div>
         </div>
-      </header>
+      </motion.div>
 
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6">
         {favoriteProducts.length === 0 ? (
           /* Empty State */
           <motion.div 
@@ -142,18 +145,18 @@ const Favorites = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-16 text-center"
           >
-            <div className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center mb-6">
-              <Heart className="w-12 h-12 text-muted" />
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
+              <Heart className="w-12 h-12 text-muted-foreground" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-2 font-jakarta">
+            <h2 className="text-xl font-bold text-foreground mb-2">
               אין מוצרים במועדפים
             </h2>
-            <p className="text-muted-foreground mb-6 font-jakarta">
+            <p className="text-muted-foreground mb-6">
               לחץ על הלב במוצרים כדי לשמור אותם כאן
             </p>
             <Button
               onClick={() => navigate("/shop")}
-              className="bg-instagram-blue hover:bg-instagram-blue/90 text-white font-bold rounded-xl px-6"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl px-6"
             >
               <ShoppingCart className="w-5 h-5 ml-2" />
               לחנות
@@ -162,7 +165,7 @@ const Favorites = () => {
         ) : (
           /* Favorites Grid */
           <div className="space-y-4">
-            <p className="text-sm text-gray-500 font-jakarta">
+            <p className="text-sm text-muted-foreground">
               {favoriteProducts.length} מוצרים במועדפים
             </p>
             
@@ -175,7 +178,7 @@ const Favorites = () => {
                   exit={{ opacity: 0, x: 20, height: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Card className="p-4 bg-white shadow-sm border-0">
+                  <Card className="p-4 bg-card border border-border/50">
                     <div className="flex gap-4">
                       {/* Product Image */}
                       <div 
@@ -193,23 +196,23 @@ const Favorites = () => {
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
                           <h3 
-                            className="font-bold text-gray-900 font-jakarta cursor-pointer hover:text-[#FFC107] transition-colors"
+                            className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
                             onClick={() => navigate(`/product/${product.id}`)}
                           >
                             {product.name}
                           </h3>
-                          <p className="text-sm text-gray-500 font-jakarta">
+                          <p className="text-sm text-muted-foreground">
                             {product.description}
                           </p>
                         </div>
 
                         {/* Price */}
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-[#E91E63] font-jakarta">
+                          <span className="text-lg font-bold text-primary">
                             ₪{product.price}
                           </span>
                           {product.originalPrice && (
-                            <span className="text-sm text-gray-400 line-through font-jakarta">
+                            <span className="text-sm text-muted-foreground line-through">
                               ₪{product.originalPrice}
                             </span>
                           )}
@@ -221,7 +224,7 @@ const Favorites = () => {
                         <motion.button
                           whileTap={{ scale: 0.9 }}
                           onClick={() => removeFavorite(product.id)}
-                          className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
+                          className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
                           aria-label="הסר ממועדפים"
                         >
                           <Trash2 className="w-5 h-5" strokeWidth={1.5} />
@@ -229,7 +232,7 @@ const Favorites = () => {
                         <motion.button
                           whileTap={{ scale: 0.9 }}
                           onClick={() => handleAddToCart(product)}
-                          className="w-10 h-10 rounded-full bg-[#FFC107] flex items-center justify-center text-gray-900 hover:bg-[#FFB300] transition-colors"
+                          className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
                           aria-label="הוסף לעגלה"
                         >
                           <ShoppingCart className="w-5 h-5" strokeWidth={1.5} />

@@ -501,60 +501,64 @@ const Explore = () => {
   }, [posts]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 pb-24" dir="rtl">
-      {/* Hero Header */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/20">
-        {/* Title Bar */}
-        <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
-          <div className="flex items-center gap-3">
-            <img src={petidIcon} alt="PetID" className="w-10 h-10 object-contain" />
-            <div>
-              <h1 className="text-xl font-bold text-foreground">גלה</h1>
-              <p className="text-xs text-muted-foreground">חקור את עולם החיות</p>
+    <div className="min-h-screen bg-background pb-24" dir="rtl">
+      {/* Instagram-style Header */}
+      <motion.div 
+        className="sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border/40"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="max-w-lg mx-auto px-4 py-3">
+          {/* Title Bar */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
+              <h1 className="text-lg font-semibold text-foreground">גלה</h1>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/notifications")}
+              className="w-9 h-9 rounded-xl hover:bg-muted"
+            >
+              <Zap className="w-5 h-5 text-muted-foreground" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/notifications")}
-            className="w-10 h-10 rounded-2xl hover:bg-muted/80"
-          >
-            <Zap className="w-5 h-5 text-muted-foreground" />
-          </Button>
-        </div>
 
-        {/* Search Bar */}
-        <div className="px-4 pb-2">
+          {/* Search Bar */}
           <div className="relative">
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Search className="w-4 h-4 text-primary" />
+            <div className={`flex items-center gap-3 bg-muted rounded-xl px-4 py-2.5 transition-all ${
+              isSearchFocused ? 'ring-2 ring-primary/20' : ''
+            }`}>
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                placeholder="חפש חיות, גזעים, בעלים..."
+                className="flex-1 bg-transparent border-0 p-0 h-auto text-sm focus-visible:ring-0"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="p-1 rounded-full hover:bg-background transition-colors"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
             </div>
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              placeholder="חפש חיות, גזעים, בעלים..."
-              className="pr-14 pl-12 h-12 rounded-2xl bg-card border-2 border-border/30 shadow-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40 transition-all text-base font-sans"
-            />
-            {searchQuery && (
-              <button
-                onClick={clearSearch}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-muted/80 flex items-center justify-center hover:bg-muted transition-colors"
-              >
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Tabs - Pill Style */}
+        {/* Tabs - Instagram style */}
         {!isSearchFocused && (
-          <div className="px-4 pb-4">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="max-w-lg mx-auto px-4 pb-3">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               {[
-                { id: "top", label: "מובילים", icon: TrendingUp, color: "purple" },
-                { id: "parks", label: "גינות", icon: Trees, color: "green" },
-                { id: "deals", label: "מבצעים", icon: Tag, color: "orange" },
+                { id: "top", label: "מובילים", icon: TrendingUp },
+                { id: "parks", label: "גינות", icon: Trees },
+                { id: "deals", label: "מבצעים", icon: Tag },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -563,10 +567,10 @@ const Explore = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     whileTap={{ scale: 0.95 }}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-medium text-sm whitespace-nowrap transition-all duration-300 ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
                       isActive
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                        : "bg-card border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -577,9 +581,10 @@ const Explore = () => {
             </div>
           </div>
         )}
+      </motion.div>
 
-        {/* Pet Filters - Only show when pets tab is active */}
-        {!isSearchFocused && activeTab === "pets" && (
+      {/* Pet Filters - Only show when pets tab is active */}
+      {!isSearchFocused && activeTab === "pets" && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

@@ -198,19 +198,27 @@ const MyProgress = () => {
           </Card>
         </motion.div>
 
-        {/* Tabs */}
+        {/* Tabs - Instagram style */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-10 p-1 bg-muted/50">
-            <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-card">
-              סקירה
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="text-xs data-[state=active]:bg-card">
-              משימות
-            </TabsTrigger>
-            <TabsTrigger value="badges" className="text-xs data-[state=active]:bg-card">
-              תגים
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex gap-2 border-b border-border pb-3">
+            {[
+              { value: "overview", label: "סקירה" },
+              { value: "tasks", label: "משימות" },
+              { value: "badges", label: "תגים" },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`flex-1 py-2.5 text-sm font-medium transition-all ${
+                  activeTab === tab.value
+                    ? "text-foreground border-b-2 border-foreground -mb-[13px]"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4 mt-4">
