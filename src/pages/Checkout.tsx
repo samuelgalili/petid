@@ -116,10 +116,14 @@ const Checkout = () => {
   }, [navigate, profileLoaded]);
 
   const subtotal = getSubtotal();
-  const shipping = subtotal >= 199 ? 0 : 25;
+  const baseShipping = subtotal >= 199 ? 0 : 25;
   
-  // Calculate discount
-  const discount = appliedCoupon 
+  // Check if coupon is free shipping type
+  const isFreeShippingCoupon = appliedCoupon?.discount_type === 'free_shipping';
+  const shipping = isFreeShippingCoupon ? 0 : baseShipping;
+  
+  // Calculate discount (only for non-free-shipping coupons)
+  const discount = appliedCoupon && !isFreeShippingCoupon
     ? appliedCoupon.discount_type === 'percentage'
       ? (subtotal * appliedCoupon.discount_value) / 100
       : appliedCoupon.discount_value
@@ -173,9 +177,11 @@ const Checkout = () => {
       setAppliedCoupon(data);
       toast({
         title: "קופון הופעל!",
-        description: data.discount_type === 'percentage' 
-          ? `הנחה של ${data.discount_value}%`
-          : `הנחה של ₪${data.discount_value}`,
+        description: data.discount_type === 'free_shipping'
+          ? 'משלוח חינם!'
+          : data.discount_type === 'percentage' 
+            ? `הנחה של ${data.discount_value}%`
+            : `הנחה של ₪${data.discount_value}`,
       });
     } catch (error) {
       console.error("Error validating coupon:", error);
