@@ -278,104 +278,50 @@ const Settings = () => {
     },
   ];
 
-  // Icon color mapping for visual variety
-  const getIconStyle = (icon: any) => {
-    const iconStyles: Record<string, string> = {
-      User: "bg-primary/15 text-primary",
-      Store: "bg-accent/15 text-accent",
-      QrCode: "bg-secondary/15 text-secondary",
-      Star: "bg-yellow-500/15 text-yellow-600",
-      FileText: "bg-blue-500/15 text-blue-600",
-      Calendar: "bg-purple-500/15 text-purple-600",
-      Bell: "bg-orange-500/15 text-orange-600",
-      BellOff: "bg-slate-500/15 text-slate-600",
-      Globe: "bg-green-500/15 text-green-600",
-      Languages: "bg-indigo-500/15 text-indigo-600",
-      Type: "bg-pink-500/15 text-pink-600",
-      Contrast: "bg-amber-500/15 text-amber-600",
-      Zap: "bg-cyan-500/15 text-cyan-600",
-      Lock: "bg-red-500/15 text-red-600",
-      Info: "bg-teal-500/15 text-teal-600",
-      Palette: "bg-fuchsia-500/15 text-fuchsia-600",
-      Moon: "bg-violet-500/15 text-violet-600",
-      Sun: "bg-yellow-500/15 text-yellow-600",
-      Monitor: "bg-gray-500/15 text-gray-600",
-    };
-    return iconStyles[icon.displayName || icon.name] || "bg-muted text-muted-foreground";
+  // Unified icon style - Instagram-like minimal
+  const getIconStyle = () => {
+    return "bg-muted text-foreground";
   };
 
   return (
     <div className="min-h-screen bg-background pb-20" dir={direction}>
-      {/* Hero Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-accent to-secondary opacity-90" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.2),transparent_50%)]" />
-        
-        {/* Back Button */}
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          onClick={() => navigate(-1)}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </motion.button>
-
-        <div className="relative pt-16 pb-8 px-6">
-          {/* Settings Icon */}
-          <motion.div 
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", duration: 0.6 }}
-            className="flex justify-center mb-4"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-              <SettingsIcon className="w-8 h-8 text-white" />
-            </div>
-          </motion.div>
-
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-2xl font-bold text-white text-center mb-1"
-          >
-            {t("settings.title")}
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-white/80 text-center text-sm"
-          >
-            התאם אישית את החוויה שלך
-          </motion.p>
+      {/* Clean Instagram-style Header */}
+      <motion.div 
+        className="sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border/40"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+            >
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">{t("settings.title")}</h1>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Profile Card - Floating Style */}
-      <div className="px-4 -mt-4 relative z-10">
+      {/* Profile Card */}
+      <div className="max-w-lg mx-auto px-4 pt-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
         >
-          <Card className="border-0 rounded-3xl p-5 shadow-xl bg-card">
+          <Card className="border border-border/50 rounded-2xl p-4 bg-card">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Avatar className="w-18 h-18 border-4 border-primary/20 shadow-lg">
+                <Avatar className="w-16 h-16 border-2 border-primary/20">
                   <AvatarImage src={profileAvatar || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold text-lg">
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                     {(profileName || user?.email || "מ")[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-md">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
-                </div>
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-lg text-foreground truncate">
+                <h3 className="font-semibold text-base text-foreground truncate">
                   {profileName || "משתמש"}
                 </h3>
                 <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
@@ -383,7 +329,7 @@ const Settings = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-2xl border-primary/30 text-primary hover:bg-primary/10 hover:border-primary font-medium px-4 transition-all duration-200 hover:scale-105 active:scale-95"
+                className="rounded-xl border-border text-foreground hover:bg-muted font-medium px-4"
                 onClick={() => navigate("/profile")}
               >
                 {t("settings.edit")}
@@ -408,7 +354,7 @@ const Settings = () => {
             <Card className="border-0 rounded-2xl overflow-hidden shadow-md bg-card">
               {section.items.map((item, itemIndex) => {
                 const Icon = item.icon;
-                const iconStyle = getIconStyle(Icon);
+                const iconStyle = getIconStyle();
                 return (
                   <div key={itemIndex}>
                     {itemIndex > 0 && <Separator className="bg-border/50" />}

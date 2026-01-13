@@ -367,20 +367,24 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* PetID-style Header */}
-      <div className="bg-gradient-to-b from-background to-muted/20 border-b border-border/30 sticky top-0 z-50 backdrop-blur-sm">
-        <div className="max-w-lg mx-auto px-4 py-4">
-          {/* Top Row: Title + Cart */}
-          <div className="flex items-center justify-between mb-4">
+      {/* Instagram-style Header */}
+      <motion.div 
+        className="sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b border-border/40"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="max-w-lg mx-auto px-4 py-3">
+          {/* Top Row: Logo + Cart */}
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <img src={petidIcon} alt="PetID" className="w-8 h-8 object-contain" />
-              <h1 className="text-xl font-bold text-foreground">חנות PetID</h1>
+              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
+              <h1 className="text-lg font-semibold text-foreground">חנות</h1>
             </div>
             <motion.button 
               ref={cartIconRef}
               whileTap={{ scale: 0.9 }}
               onClick={() => navigate('/cart')}
-              className={`p-2.5 relative rounded-2xl bg-card shadow-soft border border-border/30 ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
+              className={`p-2.5 relative rounded-xl bg-muted hover:bg-muted/80 transition-colors ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
               onAnimationComplete={() => {
                 if (cartIconRef.current) {
                   const rect = cartIconRef.current.getBoundingClientRect();
@@ -388,11 +392,11 @@ const Shop = () => {
                 }
               }}
             >
-              <ShoppingBag className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              <ShoppingBag className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               <AnimatePresence>
                 {getTotalItems() > 0 && (
                   <motion.span 
-                    className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-md"
+                    className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
@@ -405,12 +409,12 @@ const Shop = () => {
             </motion.button>
           </div>
           
-          {/* PetID-style Search Bar */}
+          {/* Search Bar */}
           <div className="relative">
-            <div className={`flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border transition-all shadow-soft ${
-              isSearchFocused ? 'border-primary/50 shadow-md' : 'border-border/30'
+            <div className={`flex items-center gap-3 bg-muted rounded-xl px-4 py-2.5 transition-all ${
+              isSearchFocused ? 'ring-2 ring-primary/20' : ''
             }`}>
-              <Search className="w-5 h-5 text-primary/60" strokeWidth={1.5} />
+              <Search className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -427,11 +431,11 @@ const Shop = () => {
                   setIsSearchFocused(false);
                   setTimeout(() => setShowSearchResults(false), 200);
                 }}
-                placeholder="🔍 חפש מוצרים, קטגוריות..."
+                placeholder="חפש מוצרים..."
                 className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
               {searchQuery && (
-                <button onClick={clearSearch} className="p-1 rounded-full hover:bg-muted transition-colors">
+                <button onClick={clearSearch} className="p-1 rounded-full hover:bg-background transition-colors">
                   <X className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
                 </button>
               )}
@@ -444,7 +448,7 @@ const Shop = () => {
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-card rounded-2xl border border-border/30 shadow-elevated overflow-hidden z-50"
+                  className="absolute top-full left-0 right-0 mt-2 bg-card rounded-xl border border-border shadow-lg overflow-hidden z-50"
                 >
                   {searchSuggestions.map((product) => (
                     <button
@@ -452,7 +456,7 @@ const Shop = () => {
                       onClick={() => handleSearchSelect(product)}
                       className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-right"
                     >
-                      <div className="w-12 h-12 bg-muted rounded-xl overflow-hidden">
+                      <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden">
                         <OptimizedImage src={product.image} alt={product.name} className="w-full h-full" objectFit="cover" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -466,38 +470,34 @@ const Shop = () => {
             </AnimatePresence>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* PetID-style Tabs */}
-      <div className="bg-background/80 backdrop-blur-sm border-b border-border/30">
-        <div className="max-w-lg mx-auto flex px-4 gap-2 py-2">
-          <button
-            onClick={() => setActiveTab("grid")}
-            className={`flex-1 py-2.5 text-center text-sm font-medium rounded-xl transition-all ${
-              activeTab === "grid"
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            🛍️ חנות
-          </button>
-          <button
-            onClick={() => setActiveTab("saved")}
-            className={`flex-1 py-2.5 text-center text-sm font-medium rounded-xl transition-all ${
-              activeTab === "saved"
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "bg-muted/50 text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            ❤️ מועדפים
-          </button>
+      {/* Tabs - Instagram style */}
+      <div className="sticky top-[104px] z-40 bg-background border-b border-border">
+        <div className="max-w-lg mx-auto flex px-4">
+          {[
+            { id: "grid", label: "חנות" },
+            { id: "saved", label: "מועדפים" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as "grid" | "saved")}
+              className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 ${
+                activeTab === tab.id
+                  ? "text-foreground border-foreground"
+                  : "text-muted-foreground border-transparent"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Categories - PetID pill style */}
-      <div className="bg-gradient-to-b from-background to-muted/10">
+      {/* Categories - Clean pill style */}
+      <div className="bg-background">
         <div className="max-w-lg mx-auto">
-          <div className="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar">
+          <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
             {subCategories.map((category) => (
               <button
                 key={category.id}
