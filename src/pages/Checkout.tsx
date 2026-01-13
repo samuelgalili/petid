@@ -57,10 +57,11 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUnder18, setIsUnder18] = useState<boolean | null>(null);
   const [ageCheckLoading, setAgeCheckLoading] = useState(true);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
-  // Check user age on component mount
+  // Check user age and pre-fill shipping data on component mount
   useEffect(() => {
-    const checkUserAge = async () => {
+    const loadUserProfile = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -70,30 +71,49 @@ const Checkout = () => {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('birthdate')
+          .select('birthdate, first_name, last_name, full_name, email, phone, street, house_number, apartment_number, city, postal_code')
           .eq('id', user.id)
           .single();
 
+        // Check age
         if (profile?.birthdate) {
           const birthdate = new Date(profile.birthdate);
           const age = differenceInYears(new Date(), birthdate);
           setIsUnder18(age < 18);
         } else {
-          // If no birthdate in profile, allow purchase (signup already requires 13+)
-          // Legacy users or users without birthdate can proceed
           setIsUnder18(false);
         }
+
+        // Pre-fill shipping data from profile
+        if (profile && !profileLoaded) {
+          const fullName = profile.full_name || 
+            [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 
+            '';
+          
+          const address = [profile.street, profile.house_number, profile.apartment_number ? `דירה ${profile.apartment_number}` : '']
+            .filter(Boolean)
+            .join(' ') || '';
+
+          setShippingData(prev => ({
+            fullName: prev.fullName || fullName,
+            email: prev.email || profile.email || user.email || '',
+            phone: prev.phone || profile.phone?.replace(/^0/, '') || '',
+            address: prev.address || address,
+            city: prev.city || profile.city || '',
+            zipCode: prev.zipCode || profile.postal_code || '',
+          }));
+          setProfileLoaded(true);
+        }
       } catch (error) {
-        console.error("Error checking age:", error);
-        // On error, allow purchase to not block legitimate users
+        console.error("Error loading profile:", error);
         setIsUnder18(false);
       } finally {
         setAgeCheckLoading(false);
       }
     };
 
-    checkUserAge();
-  }, [navigate]);
+    loadUserProfile();
+  }, [navigate, profileLoaded]);
 
   const subtotal = getSubtotal();
   const shipping = subtotal >= 199 ? 0 : 25;
