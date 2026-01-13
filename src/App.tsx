@@ -179,6 +179,7 @@ const AnimatedRoutes = () => {
         <Route path="/achievements" element={<Navigate to="/my-progress" replace />} />
 <Route path="/shop" element={<PageTransition><PageErrorBoundary pageName="החנות"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><Shop /></Suspense></PageErrorBoundary></PageTransition>} />
         <Route path="/shop/explore" element={<PageTransition><PageErrorBoundary pageName="גילוי מוצרים"><Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}><ShopExplore /></Suspense></PageErrorBoundary></PageTransition>} />
+        <Route path="/shop/checkout" element={<Navigate to="/checkout" replace />} />
         <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
         <Route path="/cart" element={<ProtectedRoute><PageTransition><Cart /></PageTransition></ProtectedRoute>} />
         <Route path="/favorites" element={<ProtectedRoute><PageTransition><Favorites /></PageTransition></ProtectedRoute>} />
