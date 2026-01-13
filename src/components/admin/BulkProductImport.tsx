@@ -46,8 +46,14 @@ interface ParsedProduct {
   isValid: boolean;
   errors: string[];
   isEditing?: boolean;
-  sourceUrl?: string; // URL from which the product was scraped
-  isFixing?: boolean; // Currently being fixed by AI
+  sourceUrl?: string;
+  isFixing?: boolean;
+  // Enrichment data
+  isEnriched?: boolean;
+  enrichedFrom?: string;
+  originalData?: Partial<ParsedProduct>;
+  brand?: string;
+  petType?: string;
 }
 
 interface BulkProductImportProps {
@@ -80,12 +86,15 @@ export const BulkProductImport = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedProducts, setParsedProducts] = useState<ParsedProduct[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [step, setStep] = useState<'upload' | 'url' | 'review'>('upload');
+  const [step, setStep] = useState<'upload' | 'url' | 'review' | 'enrich'>('upload');
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [urlInput, setUrlInput] = useState("");
   const [isFixingAll, setIsFixingAll] = useState(false);
   const [fixProgress, setFixProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [isUploadingToStore, setIsUploadingToStore] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
+  const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [enrichedProducts, setEnrichedProducts] = useState<ParsedProduct[]>([]);
 
   const fileTypes = [
     { id: 'csv', label: 'CSV', icon: FileSpreadsheet, accept: '.csv', color: 'text-green-500' },
@@ -491,6 +500,9 @@ export const BulkProductImport = ({
     setUrlInput("");
     setIsFixingAll(false);
     setFixProgress({ current: 0, total: 0 });
+    setIsEnriching(false);
+    setEnrichProgress({ current: 0, total: 0 });
+    setEnrichedProducts([]);
     onOpenChange(false);
   };
 
@@ -609,8 +621,89 @@ export const BulkProductImport = ({
     });
   };
 
-  // Upload all valid products to the store
-  const handleUploadToStore = async () => {
+  // Enrich a single product using AI - fill in missing data
+  const enrichProductWithAI = async (product: ParsedProduct): Promise<ParsedProduct> => {
+    // Check if product needs enrichment (missing key data)
+    const needsEnrichment = !product.description || !product.image_url || !product.category || product.category === 'other';
+    
+    if (!needsEnrichment && product.isValid) {
+      return { ...product, isEnriched: true, enrichedFrom: 'קיים' };
+    }
+
+    try {
+      // Use enrich-product-ai to fill missing data
+      const { data, error } = await supabase.functions.invoke("enrich-product-ai", {
+        body: { 
+          productName: product.name,
+          sku: product.sku,
+          category: product.category !== 'other' ? product.category : undefined
+        },
+      });
+
+      if (error || !data?.success || !data?.data) {
+        // Try scrape-product as fallback
+        const scrapeResult = await supabase.functions.invoke("scrape-product", {
+          body: { 
+            mode: "sku", 
+            sku: product.sku || product.name,
+            query: product.name,
+            preferredDomains: ["pet-shop.co.il", "petshop.co.il", "zooplus.co.il", "homepetcenter.co.il"]
+          },
+        });
+
+        if (scrapeResult.error || !scrapeResult.data?.success) {
+          return { ...product, isEnriched: false };
+        }
+
+        const scraped = scrapeResult.data.data;
+        const productInfo = scraped.product || scraped;
+        
+        return {
+          ...product,
+          description: product.description || productInfo.description || '',
+          image_url: product.image_url || productInfo.images?.[0] || productInfo.imageUrl || '',
+          category: product.category === 'other' ? mapCategory(scraped.source?.finalUrl || '') : product.category,
+          brand: productInfo.brand,
+          petType: productInfo.petType,
+          isEnriched: true,
+          enrichedFrom: scraped.source?.finalUrl || 'סריקה',
+          originalData: { 
+            description: product.description, 
+            image_url: product.image_url, 
+            category: product.category 
+          },
+          isValid: true,
+          errors: [],
+        };
+      }
+
+      const enriched = data.data;
+      
+      return {
+        ...product,
+        description: product.description || enriched.description || '',
+        image_url: product.image_url || enriched.imageUrl || enriched.allImageUrls?.[0] || '',
+        category: product.category === 'other' ? mapCategory(enriched.category || '') : product.category,
+        brand: enriched.brand,
+        petType: enriched.petType,
+        isEnriched: true,
+        enrichedFrom: 'AI',
+        originalData: { 
+          description: product.description, 
+          image_url: product.image_url, 
+          category: product.category 
+        },
+        isValid: true,
+        errors: [],
+      };
+    } catch (err) {
+      console.error("Enrichment error:", err);
+      return { ...product, isEnriched: false };
+    }
+  };
+
+  // Start enrichment process before upload
+  const handleEnrichAndUpload = async () => {
     const validProducts = parsedProducts.filter(p => p.isValid);
     
     if (validProducts.length === 0) {
@@ -622,13 +715,57 @@ export const BulkProductImport = ({
       return;
     }
 
+    setIsEnriching(true);
+    setEnrichProgress({ current: 0, total: validProducts.length });
+
+    const enrichedList: ParsedProduct[] = [];
+    const BATCH_SIZE = 3;
+
+    // Process in batches
+    for (let i = 0; i < validProducts.length; i += BATCH_SIZE) {
+      const batch = validProducts.slice(i, i + BATCH_SIZE);
+      
+      const enrichedBatch = await Promise.all(
+        batch.map(product => enrichProductWithAI(product))
+      );
+
+      enrichedList.push(...enrichedBatch);
+      setEnrichProgress({ current: Math.min(i + BATCH_SIZE, validProducts.length), total: validProducts.length });
+      
+      // Small delay between batches
+      if (i + BATCH_SIZE < validProducts.length) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+
+    setEnrichedProducts(enrichedList);
+    setIsEnriching(false);
+    setStep('enrich');
+
+    const enrichedCount = enrichedList.filter(p => p.isEnriched).length;
+    toast({
+      title: `${enrichedCount} מוצרים הועשרו`,
+      description: "בדוק ואשר לפני העלאה לחנות",
+    });
+  };
+
+  // Final upload after enrichment approval
+  const handleFinalUpload = async () => {
+    if (enrichedProducts.length === 0) {
+      toast({
+        title: "אין מוצרים להעלאה",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsUploadingToStore(true);
 
     try {
       let successCount = 0;
       let errorCount = 0;
 
-      for (const product of validProducts) {
+      for (const product of enrichedProducts) {
         try {
           const { error } = await supabase.from("business_products").insert({
             name: product.name,
@@ -640,6 +777,7 @@ export const BulkProductImport = ({
             in_stock: product.in_stock,
             is_featured: false,
             business_id: "00000000-0000-0000-0000-000000000000",
+            pet_type: product.petType as any || null,
           });
 
           if (error) {
@@ -675,8 +813,14 @@ export const BulkProductImport = ({
     }
   };
 
+  // Remove enriched product
+  const removeEnrichedProduct = (productId: string) => {
+    setEnrichedProducts(prev => prev.filter(p => p.id !== productId));
+  };
+
   const validCount = parsedProducts.filter(p => p.isValid).length;
   const invalidCount = parsedProducts.filter(p => !p.isValid).length;
+  const enrichedCount = enrichedProducts.filter(p => p.isEnriched).length;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -885,19 +1029,19 @@ export const BulkProductImport = ({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={handleUploadToStore}
-                    disabled={validCount === 0 || isFixingAll || isUploadingToStore}
+                    onClick={handleEnrichAndUpload}
+                    disabled={validCount === 0 || isFixingAll || isEnriching}
                     className="gap-2 flex-1"
                   >
-                    {isUploadingToStore ? (
+                    {isEnriching ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        מעלה לחנות...
+                        מעשיר נתונים... ({enrichProgress.current}/{enrichProgress.total})
                       </>
                     ) : (
                       <>
-                        <Store className="w-4 h-4" />
-                        העלה לחנות ({validCount})
+                        <Sparkles className="w-4 h-4" />
+                        העשר והעלה לחנות ({validCount})
                       </>
                     )}
                   </Button>
@@ -914,6 +1058,22 @@ export const BulkProductImport = ({
                       <div 
                         className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${fixProgress.total > 0 ? (fixProgress.current / fixProgress.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress indicator during enrichment */}
+                {isEnriching && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <Sparkles className="w-4 h-4" />
+                      <span>משלים נתונים חסרים ממקורות אמינים...</span>
+                    </div>
+                    <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${enrichProgress.total > 0 ? (enrichProgress.current / enrichProgress.total) * 100 : 0}%` }}
                       />
                     </div>
                   </div>
@@ -1145,6 +1305,153 @@ export const BulkProductImport = ({
                   ))}
                 </div>
               </ScrollArea>
+            </motion.div>
+          )}
+
+          {/* Enrichment Review Step */}
+          {step === 'enrich' && (
+            <motion.div
+              key="enrich"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4 py-4"
+            >
+              {/* Summary Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    {enrichedCount} הועשרו
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    מתוך {enrichedProducts.length} מוצרים
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep('review')}
+                >
+                  חזרה לעריכה
+                </Button>
+              </div>
+
+              {/* Info Banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start gap-2 text-sm text-blue-700">
+                  <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">בדוק את הנתונים המועשרים</p>
+                    <p className="text-blue-600 text-xs mt-1">
+                      הנתונים הושלמו ממקורות אמינים. וודא שהם נכונים לפני העלאה לחנות.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enriched Products List */}
+              <ScrollArea className="h-[350px] pr-2">
+                <div className="space-y-3">
+                  {enrichedProducts.map((product) => (
+                    <Card key={product.id} className={`overflow-hidden transition-colors ${product.isEnriched ? 'border-green-500/30' : 'border-orange-500/30'}`}>
+                      <div className="flex items-start gap-3 p-3">
+                        {/* Product Image */}
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0 border">
+                          {product.image_url ? (
+                            <img 
+                              src={product.image_url} 
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder.svg';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                              <Image className="w-6 h-6" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{product.name}</p>
+                            {product.isEnriched && (
+                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                                <Check className="w-3 h-3 mr-1" />
+                                הועשר
+                              </Badge>
+                            )}
+                            {!product.isEnriched && (
+                              <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                                לא הועשר
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <span className="font-semibold text-foreground">₪{product.price}</span>
+                            {product.sku && <span className="text-xs">מק״ט: {product.sku}</span>}
+                            {product.category && (
+                              <Badge variant="secondary" className="text-xs">
+                                {categories.find(c => c.value === product.category)?.label || product.category}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {product.description && (
+                            <p className="text-xs text-muted-foreground truncate mt-1">
+                              {product.description}
+                            </p>
+                          )}
+                          
+                          {product.enrichedFrom && product.enrichedFrom !== 'קיים' && (
+                            <p className="text-xs text-green-600 mt-1">
+                              מקור: {product.enrichedFrom}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Remove Button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-destructive flex-shrink-0"
+                          onClick={() => removeEnrichedProduct(product.id)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2 border-t">
+                <Button variant="outline" onClick={() => setStep('review')} className="flex-1">
+                  חזרה לעריכה
+                </Button>
+                <Button 
+                  onClick={handleFinalUpload}
+                  disabled={enrichedProducts.length === 0 || isUploadingToStore}
+                  className="flex-1 gap-2"
+                >
+                  {isUploadingToStore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      מעלה...
+                    </>
+                  ) : (
+                    <>
+                      <Store className="w-4 h-4" />
+                      אשר והעלה לחנות ({enrichedProducts.length})
+                    </>
+                  )}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
