@@ -174,6 +174,8 @@ const Checkout = () => {
         return;
       }
 
+      console.log('Coupon applied:', data);
+      console.log('Discount type:', data.discount_type);
       setAppliedCoupon(data);
       toast({
         title: "קופון הופעל!",
