@@ -227,7 +227,8 @@ serve(async (req: Request): Promise<Response> => {
       TerminalNumber: parseInt(CARDCOM_TERMINAL),
       ApiName: CARDCOM_API_NAME,
       ApiPassword: CARDCOM_API_PASSWORD,
-      SumToBill: sumToBill, // Send as number, not string
+      Operation: 1, // 1 = Charge (J4), 2 = Authorize only (J5)
+      SumToBill: sumToBill,
       CoinID: 1, // ILS
       Language: 'he',
       SuccessRedirectUrl: `${requestData.success_url}?order_id=${orderData.id}`,
@@ -239,15 +240,8 @@ serve(async (req: Request): Promise<Response> => {
       }),
       MaxNumOfPayments: requestData.installments || 1,
       ProductName: itemsDescription.substring(0, 50),
-      ShowInvoiceHead: true,
-      InvoiceHeadOperation: 1, // Create invoice head automatically
-      'InvoiceHead.CustName': requestData.shipping_address.fullName,
-      'InvoiceHead.SendByEmail': true,
-      'InvoiceHead.Email': requestData.shipping_address.email,
-      'InvoiceHead.CustMobilePH': requestData.shipping_address.phone,
-      'InvoiceHead.CustAddresLine1': requestData.shipping_address.address,
-      'InvoiceHead.CustCity': requestData.shipping_address.city,
-      'InvoiceHead.CustZipCode': requestData.shipping_address.zipCode,
+      HideSumField: false, // Show sum to customer
+      SumInStar498: false, // Don't let customer change sum
       ...flatInvoiceLines,
     };
     
