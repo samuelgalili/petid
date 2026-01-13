@@ -182,30 +182,34 @@ serve(async (req: Request): Promise<Response> => {
       .map(item => `${item.name} x${item.quantity}`)
       .join(', ');
 
-    // Build invoice lines in CardCom format
+    // Build invoice lines in CardCom format (index starts from 1)
     const flatInvoiceLines: Record<string, any> = {};
     
     requestData.items.forEach((item, index) => {
-      flatInvoiceLines[`Items[${index}].Description`] = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
-      flatInvoiceLines[`Items[${index}].UnitCost`] = item.price;
-      flatInvoiceLines[`Items[${index}].Quantity`] = item.quantity;
+      const i = index + 1; // CardCom uses 1-based indexing
+      flatInvoiceLines[`InvoiceLines${i}.Description`] = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
+      flatInvoiceLines[`InvoiceLines${i}.Price`] = item.price;
+      flatInvoiceLines[`InvoiceLines${i}.Quantity`] = item.quantity;
     });
+
+    let lineIndex = requestData.items.length + 1;
 
     // Add shipping if applicable
     if (requestData.shipping > 0) {
-      const shippingIndex = requestData.items.length;
-      flatInvoiceLines[`Items[${shippingIndex}].Description`] = 'משלוח';
-      flatInvoiceLines[`Items[${shippingIndex}].UnitCost`] = requestData.shipping;
-      flatInvoiceLines[`Items[${shippingIndex}].Quantity`] = 1;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = requestData.shipping;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
+      lineIndex++;
     }
     
-    // Add tax if applicable
+    // Add tax as separate line
     if (requestData.tax > 0) {
-      const taxIndex = requestData.items.length + (requestData.shipping > 0 ? 1 : 0);
-      flatInvoiceLines[`Items[${taxIndex}].Description`] = 'מע״מ (17%)';
-      flatInvoiceLines[`Items[${taxIndex}].UnitCost`] = Math.round(requestData.tax * 100) / 100;
-      flatInvoiceLines[`Items[${taxIndex}].Quantity`] = 1;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'מע״מ (17%)';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = Math.round(requestData.tax * 100) / 100;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
     }
+    
+    console.log('Invoice lines being sent:', JSON.stringify(flatInvoiceLines));
 
     // Ensure total is a valid number with 2 decimal places
     const sumToBill = Math.round(requestData.total * 100) / 100;
