@@ -1,10 +1,9 @@
-import { Home, Compass, Play, Plus, MessageCircle, BarChart2, User } from "lucide-react";
+import { Home, Compass, Play, MessageCircle, BarChart2, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
@@ -55,7 +54,6 @@ const NavItem = ({
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [createPostOpen, setCreatePostOpen] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string>("");
   const { unreadCount } = useRealtimeNotifications();
 
@@ -131,18 +129,6 @@ const BottomNav = () => {
           {/* Reels */}
           <NavItem onClick={() => handleNavClick("/reels")} icon={<Play className={`${isActive("/reels") ? "text-foreground" : "text-muted-foreground"}`} style={{ width: '24px', height: '24px' }} strokeWidth={isActive("/reels") ? 2 : 1.5} />} isActive={isActive("/reels")} label="סרטונים" />
 
-          {/* Create Post - Plus Icon */}
-          <button 
-            onClick={() => setCreatePostOpen(true)} 
-            className="flex items-center justify-center flex-1 active:opacity-50 transition-opacity" 
-            style={{ height: '50px' }} 
-            aria-label="יצירת פוסט"
-          >
-            <motion.div whileTap={{ scale: 0.92 }}>
-              <Plus className="text-foreground" style={{ width: '28px', height: '28px' }} strokeWidth={1.5} />
-            </motion.div>
-          </button>
-
           {/* Messages with notification badge */}
           <button 
             onClick={() => handleNavClick("/messages")} 
@@ -193,9 +179,6 @@ const BottomNav = () => {
         {/* Safe area for notched devices - iOS safe area */}
         <div className="bg-background" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
       </nav>
-
-      {/* Create Post Dialog */}
-      <CreatePostDialog open={createPostOpen} onOpenChange={setCreatePostOpen} onPostCreated={() => {}} />
     </>;
 };
 export default BottomNav;
