@@ -389,16 +389,16 @@ export const ProductFormDialog = ({
           <div className="bg-muted/30 p-4 rounded-lg border border-dashed border-primary/30">
             <Label className="flex items-center gap-2 text-primary font-medium">
               <Search className="w-4 h-4" />
-              חיפוש לפי מק״ט
+              חיפוש חכם
             </Label>
             <p className="text-xs text-muted-foreground mb-2">
-              הזן מק״ט והמערכת תמלא את כל הפרטים אוטומטית מהרשת
+              הזן מק״ט, שם מוצר או העלה תמונה - המערכת תמלא את כל הפרטים אוטומטית
             </p>
             <div className="flex gap-2">
               <Input
                 value={product.sku || ""}
                 onChange={(e) => handleSkuChange(e.target.value)}
-                placeholder="לדוגמה: 7290016026429"
+                placeholder="מק״ט, ברקוד או שם מוצר..."
                 className="flex-1"
               />
               <Button 
