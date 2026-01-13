@@ -246,20 +246,32 @@ const Settings = () => {
       ],
     },
     {
-      title: t("settings.info"),
+      title: "עזרה ותמיכה",
       items: [
         {
           icon: Info,
-          label: t("settings.about"),
-          description: t("settings.aboutDesc"),
-          action: () => {},
+          label: "תמיכה ועזרה",
+          description: "צ'אט, טלפון, שאלות נפוצות",
+          action: () => navigate("/support"),
           type: "link",
         },
         {
-          icon: Palette,
-          label: "מערכת צבעים",
-          description: "הצג את מערכת הצבעים והטוקנים הסמנטיים",
-          action: () => navigate("/color-system"),
+          icon: Info,
+          label: "הצהרת נגישות",
+          description: "מדיניות הנגישות שלנו",
+          action: () => navigate("/accessibility"),
+          type: "link",
+        },
+      ],
+    },
+    {
+      title: "ניהול חשבון",
+      items: [
+        {
+          icon: Info,
+          label: "מחיקת חשבון",
+          description: "מחק את כל המידע שלך",
+          action: () => navigate("/data-deletion"),
           type: "link",
         },
       ],
