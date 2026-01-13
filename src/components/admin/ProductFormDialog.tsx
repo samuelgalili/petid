@@ -61,11 +61,17 @@ interface EnrichedData {
   feedingGuide?: string;
   brandWebsite?: string;
   suggestedPrice?: number;
+  salePrice?: number;
   priceReason?: string;
   petType?: string;
   imageSearchQuery?: string;
   imageUrl?: string;
   allImageUrls?: string[];
+  variants?: { name: string; value: string; price?: number }[];
+  weight?: string;
+  weightUnit?: string;
+  sku?: string;
+  brand?: string;
 }
 
 interface ProductFormDialogProps {
@@ -117,9 +123,10 @@ export const ProductFormDialog = ({
   const [newFlavor, setNewFlavor] = useState("");
   const enrichTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [productUrl, setProductUrl] = useState("");
 
-  const enrichProduct = useCallback(async (productName: string, sku?: string) => {
-    if (!productName && !sku) return;
+  const enrichProduct = useCallback(async (productName: string, sku?: string, url?: string) => {
+    if (!productName && !sku && !url) return;
     
     setIsEnriching(true);
     setEnrichedData(null);
@@ -129,7 +136,8 @@ export const ProductFormDialog = ({
         body: { 
           productName, 
           sku,
-          category: product?.category 
+          category: product?.category,
+          productUrl: url
         },
       });
 
@@ -151,8 +159,8 @@ export const ProductFormDialog = ({
         // Auto-fill fields
         const updates: Partial<ProductData> = { ...product };
         
-        // Fill name if enriched from SKU search
-        if (enriched.name && !product?.name) {
+        // Fill name if enriched
+        if (enriched.name) {
           updates.name = enriched.name;
         }
         
@@ -160,12 +168,25 @@ export const ProductFormDialog = ({
           updates.description = enriched.description;
         }
         
-        if (enriched.suggestedPrice && !product?.price) {
+        // Fill price - prefer sale price if available
+        if (enriched.suggestedPrice) {
           updates.price = enriched.suggestedPrice;
         }
+        if (enriched.salePrice) {
+          updates.sale_price = enriched.salePrice;
+          updates.original_price = enriched.suggestedPrice || null;
+        }
         
+        // Fill flavors - combine with sizes for variants display
+        const allVariants: string[] = [];
         if (enriched.flavors && enriched.flavors.length > 0) {
-          updates.flavors = enriched.flavors;
+          allVariants.push(...enriched.flavors);
+        }
+        if (enriched.sizes && enriched.sizes.length > 0) {
+          allVariants.push(...enriched.sizes);
+        }
+        if (allVariants.length > 0) {
+          updates.flavors = allVariants;
         }
         
         if (enriched.petType) {
@@ -175,12 +196,27 @@ export const ProductFormDialog = ({
         }
         
         // Auto-fill image if found
-        if (enriched.imageUrl && !product?.image_url) {
+        if (enriched.imageUrl) {
           updates.image_url = enriched.imageUrl;
         }
         
+        // Add additional images
+        if (enriched.allImageUrls && enriched.allImageUrls.length > 1) {
+          updates.images = enriched.allImageUrls.slice(1);
+        }
+        
+        // Fill SKU if found
+        if (enriched.sku && !product?.sku) {
+          updates.sku = enriched.sku;
+        }
+        
+        // Fill weight unit if available
+        if (enriched.weightUnit) {
+          updates.weight_unit = enriched.weightUnit;
+        }
+        
         // Map enriched category to our category values
-        if (enriched.category && !product?.category) {
+        if (enriched.category) {
           const categoryMap: Record<string, string> = {
             "אוכל יבש": "dry-food",
             "אוכל רטוב": "wet-food",
@@ -203,9 +239,10 @@ export const ProductFormDialog = ({
         
         onProductChange(updates);
         
+        const source = url ? "מ-URL" : (sku ? "ממק״ט" : "מחיפוש");
         toast({
           title: "המוצר הועשר בהצלחה",
-          description: sku ? "המידע נמשך מהרשת ועודכן" : "המידע הושלם אוטומטית",
+          description: `המידע נמשך ${source} ועודכן`,
         });
       }
     } catch (err) {
@@ -219,6 +256,18 @@ export const ProductFormDialog = ({
       setIsEnriching(false);
     }
   }, [product, onProductChange, toast]);
+
+  const handleUrlEnrich = () => {
+    if (productUrl && productUrl.startsWith("http")) {
+      enrichProduct(product?.name || "", product?.sku || undefined, productUrl);
+    } else {
+      toast({
+        title: "כתובת לא תקינה",
+        description: "הזן כתובת URL מלאה של דף מוצר",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleNameChange = (name: string) => {
     onProductChange({ ...product, name });
@@ -420,14 +469,49 @@ export const ProductFormDialog = ({
             </Button>
           </div>
 
-          {/* SKU with Search Button - Primary Input */}
-          <div className="bg-muted/30 p-4 rounded-lg border border-dashed border-primary/30">
+          {/* URL Input - Primary Method */}
+          <div className="bg-primary/5 p-4 rounded-lg border border-primary/30">
             <Label className="flex items-center gap-2 text-primary font-medium">
-              <Search className="w-4 h-4" />
-              חיפוש חכם
+              <ExternalLink className="w-4 h-4" />
+              משיכה מ-URL (מומלץ)
             </Label>
             <p className="text-xs text-muted-foreground mb-2">
-              הזן מק״ט, שם מוצר או העלה תמונה - המערכת תמלא את כל הפרטים אוטומטית
+              הדבק קישור לדף מוצר - המערכת תמשוך את כל הנתונים כולל משקלים, וריאנטים ותמונות
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                placeholder="https://example.com/product/..."
+                className="flex-1"
+                dir="ltr"
+              />
+              <Button 
+                type="button" 
+                onClick={handleUrlEnrich}
+                disabled={isEnriching || !productUrl}
+                variant="default"
+              >
+                {isEnriching ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 ml-2" />
+                    משוך נתונים
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* SKU with Search Button - Secondary Input */}
+          <div className="bg-muted/30 p-4 rounded-lg border border-dashed border-muted-foreground/30">
+            <Label className="flex items-center gap-2 text-muted-foreground font-medium">
+              <Search className="w-4 h-4" />
+              חיפוש לפי מק״ט
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              אם אין לך קישור ישיר, הזן מק״ט לחיפוש ברשת
             </p>
             <div className="flex gap-2">
               <Input
@@ -440,7 +524,7 @@ export const ProductFormDialog = ({
                 type="button" 
                 onClick={handleSkuSearch}
                 disabled={isEnriching || !product.sku}
-                variant="default"
+                variant="outline"
               >
                 {isEnriching ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
