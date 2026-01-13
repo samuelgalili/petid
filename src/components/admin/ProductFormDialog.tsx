@@ -257,15 +257,129 @@ export const ProductFormDialog = ({
     }
   }, [product, onProductChange, toast]);
 
-  const handleUrlEnrich = () => {
-    if (productUrl && productUrl.startsWith("http")) {
-      enrichProduct(product?.name || "", product?.sku || undefined, productUrl);
-    } else {
+  const handleUrlImport = async () => {
+    if (!productUrl || !productUrl.startsWith("http")) {
       toast({
         title: "כתובת לא תקינה",
         description: "הזן כתובת URL מלאה של דף מוצר",
         variant: "destructive",
       });
+      return;
+    }
+
+    setIsEnriching(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-product-url", {
+        body: { url: productUrl },
+      });
+
+      if (error) {
+        console.error("Scrape error:", error);
+        toast({
+          title: "שגיאה בייבוא",
+          description: error.message || "לא ניתן לייבא נתונים מהכתובת",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data?.success && data?.data) {
+        const scraped = data.data;
+        console.log("Scraped product data:", scraped);
+        
+        // Build updates from scraped data
+        const updates: Partial<ProductData> = { ...product };
+        
+        // Title
+        if (scraped.title) {
+          updates.name = scraped.title;
+        }
+        
+        // Description
+        if (scraped.description) {
+          updates.description = scraped.description;
+        }
+        
+        // Images
+        if (scraped.images && scraped.images.length > 0) {
+          updates.image_url = scraped.images[0];
+          if (scraped.images.length > 1) {
+            updates.images = scraped.images.slice(1);
+          }
+        }
+        
+        // SKU
+        if (scraped.sku) {
+          updates.sku = scraped.sku;
+        }
+        
+        // Category
+        if (scraped.category) {
+          updates.category = scraped.category;
+        }
+        
+        // Pet type
+        if (scraped.pet_type) {
+          updates.pet_type = scraped.pet_type;
+        }
+        
+        // Price - use base_price or first variant price
+        if (scraped.base_price) {
+          updates.price = scraped.base_price;
+        } else if (scraped.variants && scraped.variants.length > 0 && scraped.variants[0].price) {
+          updates.price = scraped.variants[0].price;
+        }
+        
+        // Variants - convert to flavors/variants display
+        if (scraped.variants && scraped.variants.length > 0) {
+          const variantLabels = scraped.variants.map((v: any) => {
+            let label = v.label;
+            if (v.price) {
+              label += ` - ₪${v.price}`;
+            }
+            return label;
+          });
+          updates.flavors = variantLabels;
+          
+          // Set weight unit from first variant with weight
+          const variantWithWeight = scraped.variants.find((v: any) => v.weight_unit);
+          if (variantWithWeight) {
+            updates.weight_unit = variantWithWeight.weight_unit;
+          }
+        }
+        
+        onProductChange(updates);
+        
+        // Store enriched data for display
+        setEnrichedData({
+          name: scraped.title,
+          description: scraped.description,
+          suggestedPrice: scraped.base_price,
+          imageUrl: scraped.images?.[0],
+          allImageUrls: scraped.images,
+          category: scraped.category,
+          petType: scraped.pet_type,
+          sku: scraped.sku,
+          brand: scraped.brand,
+          sizes: scraped.variants?.map((v: any) => v.label) || [],
+        });
+        setShowEnrichmentDetails(true);
+        
+        toast({
+          title: "הנתונים יובאו בהצלחה",
+          description: `נמצאו ${scraped.variants?.length || 0} וריאנטים ו-${scraped.images?.length || 0} תמונות`,
+        });
+      }
+    } catch (err) {
+      console.error("URL import failed:", err);
+      toast({
+        title: "שגיאה בייבוא",
+        description: "אירעה שגיאה בייבוא הנתונים מהקישור",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEnriching(false);
     }
   };
 
@@ -488,7 +602,7 @@ export const ProductFormDialog = ({
               />
               <Button 
                 type="button" 
-                onClick={handleUrlEnrich}
+                onClick={handleUrlImport}
                 disabled={isEnriching || !productUrl}
                 variant="default"
               >
@@ -496,8 +610,8 @@ export const ProductFormDialog = ({
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <Search className="w-4 h-4 ml-2" />
-                    משוך נתונים
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                    ייבא נתונים
                   </>
                 )}
               </Button>
