@@ -46,45 +46,34 @@ function decodeValue(val: string): string {
   }
 }
 
-// Parse weight from string like "1.5 ק"ג" or "500g" or "12 kg"
+// Parse weight from string - SIMPLIFIED for performance
 function parseWeight(str: string): { weight: number; unit: string } | null {
-  // Multiple patterns for weight extraction
-  const patterns = [
-    /(\d+(?:[.,]\d+)?)\s*(ק"ג|קג|ק״ג|kg|KG|Kg)\b/i,
-    /(\d+(?:[.,]\d+)?)\s*(גרם|g|gr|GR)\b/i,
-    /(\d+(?:[.,]\d+)?)\s*(ליטר|L|l|lt|LT)\b/i,
-  ];
-  
-  for (const pattern of patterns) {
-    const match = str.match(pattern);
-    if (match) {
-      const weight = parseFloat(match[1].replace(",", "."));
-      const unitRaw = match[2].toLowerCase();
-      let unit = "kg";
-      if (unitRaw.includes("גרם") || unitRaw.startsWith("g")) {
-        unit = "g";
-      } else if (unitRaw.includes("ליטר") || unitRaw.startsWith("l")) {
-        unit = "L";
-      }
-      return { weight, unit };
-    }
+  const match = str.match(/(\d+(?:[.,]\d+)?)\s*(ק"ג|קג|ק״ג|kg|KG|גרם|g|gr|ליטר|L|l)/i);
+  if (match) {
+    const weight = parseFloat(match[1].replace(",", "."));
+    const unitRaw = match[2].toLowerCase();
+    let unit = "kg";
+    if (unitRaw.includes("גרם") || unitRaw.startsWith("g")) unit = "g";
+    else if (unitRaw.includes("ליטר") || unitRaw.startsWith("l")) unit = "L";
+    return { weight, unit };
   }
   return null;
 }
 
-// Parse price from string like "₪99.90" or "99.90 ש״ח"
+// Parse price from string
 function parsePrice(str: string): number | null {
-  // Remove currency symbols and extra whitespace
   const cleaned = str.replace(/[₪$€]/g, "").trim();
   const match = cleaned.match(/(\d+(?:[.,]\d{1,2})?)/);
-  if (match) {
-    return parseFloat(match[1].replace(",", "."));
-  }
+  if (match) return parseFloat(match[1].replace(",", "."));
   return null;
 }
 
-// Extract all product data from HTML
+// Extract product data - OPTIMIZED for performance
 function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductResult, "source"> {
+  // CRITICAL: Limit HTML size to prevent memory issues
+  const maxHtmlLength = 500000; // 500KB max
+  const truncatedHtml = html.length > maxHtmlLength ? html.substring(0, maxHtmlLength) : html;
+  
   const result: Omit<ScrapedProductResult, "source"> = {
     product: {
       title: "",
@@ -99,191 +88,109 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
     debug: { extraction: "html_parsing" },
   };
 
-  // ==================== TITLE ====================
-  // Priority: og:title → product h1 → first h1 → title tag
-  const ogTitleMatch = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
-  const h1ProductMatch = html.match(/<h1[^>]*class="[^"]*product[^"]*"[^>]*>([^<]+)<\/h1>/i);
-  const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  // ==================== TITLE (quick extraction) ====================
+  const ogTitleMatch = truncatedHtml.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
+  const h1Match = truncatedHtml.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+  const titleMatch = truncatedHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
   
   result.product.title = ogTitleMatch?.[1]?.trim() ||
-    h1ProductMatch?.[1]?.trim() ||
     h1Match?.[1]?.trim() ||
     titleMatch?.[1]?.split("|")[0]?.split("–")[0]?.split("-")[0]?.trim() || "";
 
-  // ==================== BRAND ====================
-  const brandPatterns = [
-    /"brand"\s*:\s*\{\s*"@type"\s*:\s*"Brand"\s*,\s*"name"\s*:\s*"([^"]+)"/i, // JSON-LD
-    /"brand"\s*:\s*"([^"]+)"/i,
-    /מותג[:\s]*<[^>]*>([^<]+)/i,
-    /class="[^"]*brand[^"]*"[^>]*>([^<]+)/i,
-  ];
-  for (const pattern of brandPatterns) {
-    const match = html.match(pattern);
-    if (match && match[1]) {
-      result.product.brand = match[1].trim();
-      break;
-    }
-  }
+  // ==================== DESCRIPTION (quick extraction) ====================
+  const ogDescMatch = truncatedHtml.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
+  const metaDescMatch = truncatedHtml.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i);
+  result.product.description = (ogDescMatch?.[1] || metaDescMatch?.[1] || "").substring(0, 500);
 
-  // ==================== DESCRIPTION ====================
-  const descPatterns = [
-    /<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i,
-    /<meta[^>]+name="description"[^>]+content="([^"]+)"/i,
-    /class="[^"]*woocommerce-product-details__short-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-    /class="[^"]*short-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-    /class="[^"]*product-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-  ];
-  for (const pattern of descPatterns) {
-    const match = html.match(pattern);
-    if (match && match[1]) {
-      result.product.description = match[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().substring(0, 1000);
-      break;
-    }
-  }
-
-  // ==================== IMAGES ====================
+  // ==================== IMAGES (limited extraction) ====================
   const imageUrls: string[] = [];
-  const imagePatterns = [
-    /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/gi,
-    /data-large_image="([^"]+)"/gi,
-    /data-src="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/gi,
-    /srcset="([^"\s]+\.(?:jpg|jpeg|png|webp)[^"\s]*)[\s,]/gi,
-    /<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/gi,
-    /<img[^>]+class="[^"]*attachment-shop_single[^"]*"[^>]+src="([^"]+)"/gi,
-    /data-zoom-image="([^"]+)"/gi,
-    /"image"\s*:\s*"([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/gi,
-  ];
   
-  for (const pattern of imagePatterns) {
-    const matches = html.matchAll(pattern);
-    for (const match of matches) {
-      let imgUrl = match[1];
-      // Make absolute URL
-      if (imgUrl.startsWith("//")) {
-        imgUrl = "https:" + imgUrl;
-      } else if (imgUrl.startsWith("/") && !imgUrl.startsWith("//")) {
-        try {
-          const urlObj = new URL(url);
-          imgUrl = urlObj.origin + imgUrl;
-        } catch {}
-      }
-      if (imgUrl && 
-          !imgUrl.includes("placeholder") && 
-          !imgUrl.includes("woocommerce-placeholder") &&
-          !imgUrl.includes("data:image") &&
-          !imgUrl.includes("logo") &&
-          !imgUrl.includes("icon") &&
-          !imgUrl.includes("spinner") &&
-          !imgUrl.includes("loading") &&
-          imgUrl.length < 500 &&
-          !imageUrls.includes(imgUrl)) {
-        imageUrls.push(imgUrl);
+  // OG image first
+  const ogImageMatch = truncatedHtml.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
+  if (ogImageMatch?.[1]) {
+    imageUrls.push(ogImageMatch[1]);
+  }
+  
+  // WooCommerce large images (limited to 10)
+  const wooImages = truncatedHtml.match(/data-large_image="([^"]+)"/gi);
+  if (wooImages) {
+    for (let i = 0; i < Math.min(wooImages.length, 10); i++) {
+      const match = wooImages[i].match(/data-large_image="([^"]+)"/i);
+      if (match?.[1] && !imageUrls.includes(match[1])) {
+        imageUrls.push(match[1]);
       }
     }
   }
-  result.product.images = imageUrls.slice(0, 20);
+  
+  result.product.images = imageUrls.filter(img => 
+    img && !img.includes("placeholder") && !img.includes("logo") && !img.includes("icon")
+  ).slice(0, 10);
 
-  // ==================== PRICES (Base & Sale) ====================
-  // Try JSON-LD first
-  const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
+  // ==================== PRICES (JSON-LD priority) ====================
+  const jsonLdMatch = truncatedHtml.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
   if (jsonLdMatch) {
-    for (const jsonScript of jsonLdMatch) {
-      try {
-        const jsonContent = jsonScript.replace(/<\/?script[^>]*>/gi, "");
-        const data = JSON.parse(jsonContent);
-        const offers = data.offers || data.Offers || (Array.isArray(data) ? data.find((d: any) => d.offers)?.offers : null);
-        if (offers) {
-          const offer = Array.isArray(offers) ? offers[0] : offers;
-          if (offer.price) {
-            result.product.basePrice = parseFloat(offer.price);
-          }
-          if (offer.priceCurrency) {
-            result.product.currency = offer.priceCurrency;
-          }
-        }
-      } catch {}
-    }
-  }
-
-  // Fallback to HTML patterns for prices
-  if (!result.product.basePrice) {
-    // Look for sale price (usually in <ins>) and original price (in <del>)
-    const salePriceMatch = html.match(/<ins[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/ins>/i) ||
-                           html.match(/class="[^"]*sale[^"]*price[^"]*"[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)/i);
-    const originalPriceMatch = html.match(/<del[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/del>/i);
-    
-    if (salePriceMatch) {
-      result.product.salePrice = parseFloat(salePriceMatch[1].replace(",", "."));
-    }
-    if (originalPriceMatch) {
-      result.product.basePrice = parseFloat(originalPriceMatch[1].replace(",", "."));
-    }
-    
-    // If only one price found, it's the base price
-    if (!result.product.basePrice && !result.product.salePrice) {
-      const pricePatterns = [
-        /class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>.*?(\d+(?:[.,]\d{1,2})?)/is,
-        /₪\s*(\d+(?:[.,]\d{1,2})?)/i,
-        /price[^>]*>.*?(\d+(?:[.,]\d{1,2})?)/is,
-      ];
-      for (const pattern of pricePatterns) {
-        const match = html.match(pattern);
-        if (match) {
-          result.product.basePrice = parseFloat(match[1].replace(",", "."));
-          break;
-        }
+    try {
+      const data = JSON.parse(jsonLdMatch[1]);
+      const offers = data.offers || data.Offers;
+      if (offers) {
+        const offer = Array.isArray(offers) ? offers[0] : offers;
+        if (offer.price) result.product.basePrice = parseFloat(offer.price);
+        if (offer.priceCurrency) result.product.currency = offer.priceCurrency;
       }
-    }
+    } catch {}
   }
 
-  // ==================== VARIANTS EXTRACTION (CRITICAL) ====================
-  
-  // Method 1: WooCommerce data-product_variations attribute
-  const variationsMatch = html.match(/data-product_variations='([^']+)'/i) ||
-                          html.match(/data-product_variations="([^"]+)"/i);
+  // Fallback price extraction
+  if (!result.product.basePrice) {
+    const priceMatch = truncatedHtml.match(/class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>.*?(\d+(?:[.,]\d{1,2})?)/is);
+    if (priceMatch) result.product.basePrice = parseFloat(priceMatch[1].replace(",", "."));
+  }
+
+  // Sale price
+  const salePriceMatch = truncatedHtml.match(/<ins[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/ins>/i);
+  const originalPriceMatch = truncatedHtml.match(/<del[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/del>/i);
+  if (salePriceMatch) result.product.salePrice = parseFloat(salePriceMatch[1].replace(",", "."));
+  if (originalPriceMatch && !result.product.basePrice) {
+    result.product.basePrice = parseFloat(originalPriceMatch[1].replace(",", "."));
+  }
+
+  // ==================== VARIANTS - WooCommerce ONLY (most reliable) ====================
+  const variationsMatch = truncatedHtml.match(/data-product_variations='([^']+)'/i) ||
+                          truncatedHtml.match(/data-product_variations="([^"]+)"/i);
   
   if (variationsMatch) {
     try {
-      let variationsJson = variationsMatch[1];
-      // Decode HTML entities
-      variationsJson = variationsJson.replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+      let variationsJson = variationsMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&");
       const variationsData = JSON.parse(variationsJson);
       
       if (Array.isArray(variationsData) && variationsData.length > 0) {
-        console.log("Found WooCommerce variations:", variationsData.length);
         result.debug.extraction = "woocommerce_variations";
         
-        for (const v of variationsData) {
+        for (const v of variationsData.slice(0, 50)) { // Limit to 50 variants
           const attrs = v.attributes || {};
           const variant: ProductVariant = {
             label: "",
             price: v.display_price || null,
-            sale_price: v.display_regular_price !== v.display_price ? v.display_price : null,
+            sale_price: null,
             sku: v.sku || null,
           };
           
-          // If there's a sale, the display_price is sale, display_regular is original
+          // Handle sale pricing
           if (v.display_regular_price && v.display_price && v.display_regular_price > v.display_price) {
             variant.price = v.display_regular_price;
             variant.sale_price = v.display_price;
-          } else {
-            variant.price = v.display_price || null;
-            variant.sale_price = null;
           }
           
-          // Build label from all attributes
+          // Build label from attributes
           const labelParts: string[] = [];
           for (const [key, value] of Object.entries(attrs)) {
             if (value) {
               const decodedValue = decodeValue(String(value));
               labelParts.push(decodedValue);
               
-              // Extract weight if this looks like a weight attribute
-              const keyLower = key.toLowerCase();
-              if (keyLower.includes("weight") || keyLower.includes("משקל") || 
-                  keyLower.includes("size") || keyLower.includes("גודל") ||
-                  keyLower.includes("pa_weight") || keyLower.includes("pa_size")) {
+              // Extract weight
+              if (key.toLowerCase().includes("weight") || key.toLowerCase().includes("משקל") || 
+                  key.toLowerCase().includes("size") || key.toLowerCase().includes("גודל")) {
                 const parsed = parseWeight(decodedValue);
                 if (parsed) {
                   variant.weight = parsed.weight;
@@ -296,7 +203,7 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
           variant.label = labelParts.join(" - ") || `וריאנט ${result.variants.length + 1}`;
           
           // Try to extract weight from label if not found
-          if (!variant.weight && variant.label) {
+          if (!variant.weight) {
             const parsed = parseWeight(variant.label);
             if (parsed) {
               variant.weight = parsed.weight;
@@ -312,182 +219,26 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
     }
   }
 
-  // Method 2: JSON-LD ProductGroup or hasVariant
-  if (result.variants.length === 0 && jsonLdMatch) {
-    for (const jsonScript of jsonLdMatch) {
-      try {
-        const jsonContent = jsonScript.replace(/<\/?script[^>]*>/gi, "");
-        const data = JSON.parse(jsonContent);
-        const variants = data.hasVariant || data.model || [];
-        if (Array.isArray(variants) && variants.length > 0) {
-          result.debug.extraction = "jsonld_variants";
-          for (const v of variants) {
-            const variant: ProductVariant = {
-              label: v.name || v.sku || "",
-              price: v.offers?.price ? parseFloat(v.offers.price) : null,
-              sku: v.sku || null,
-            };
-            const parsed = parseWeight(variant.label);
-            if (parsed) {
-              variant.weight = parsed.weight;
-              variant.weight_unit = parsed.unit;
-            }
-            result.variants.push(variant);
-          }
-        }
-      } catch {}
-    }
-  }
-
-  // Method 3: Select/option dropdowns
+  // Simple select fallback (only if no WooCommerce variants found)
   if (result.variants.length === 0) {
-    const selectMatches = html.matchAll(/<select[^>]*(?:id|name)="([^"]*)"[^>]*>([\s\S]*?)<\/select>/gi);
-    
-    for (const selectMatch of selectMatches) {
-      const selectIdOrName = selectMatch[1].toLowerCase();
-      const optionsHtml = selectMatch[2];
-      
-      // Only process attribute/variation selects
-      if (!selectIdOrName.includes("attribute") && 
-          !selectIdOrName.includes("weight") && !selectIdOrName.includes("משקל") &&
-          !selectIdOrName.includes("size") && !selectIdOrName.includes("גודל") &&
-          !selectIdOrName.includes("variation") && !selectIdOrName.includes("option")) {
-        continue;
-      }
-      
-      const options = optionsHtml.matchAll(/<option[^>]*value="([^"]*)"[^>]*(?:data-price="([^"]*)")?[^>]*>([^<]*)<\/option>/gi);
-      
+    const selectMatch = truncatedHtml.match(/<select[^>]*(?:id|name)="[^"]*(?:attribute|weight|size|variation)[^"]*"[^>]*>([\s\S]*?)<\/select>/i);
+    if (selectMatch) {
+      const options = selectMatch[1].matchAll(/<option[^>]*value="([^"]*)"[^>]*>([^<]*)<\/option>/gi);
       for (const opt of options) {
         const value = opt[1];
-        const dataPrice = opt[2];
-        const label = opt[3]?.trim();
-        
-        if (!value || !label || label.includes("בחר") || label === "בחר אפשרות" || label === "Choose an option") {
-          continue;
-        }
+        const label = opt[2]?.trim();
+        if (!value || !label || label.includes("בחר") || label === "Choose an option") continue;
         
         const decodedLabel = decodeValue(label);
-        const variant: ProductVariant = {
-          label: decodedLabel,
-          price: null,
-        };
-        
-        // Extract weight
+        const variant: ProductVariant = { label: decodedLabel, price: null };
         const parsed = parseWeight(decodedLabel);
         if (parsed) {
           variant.weight = parsed.weight;
           variant.weight_unit = parsed.unit;
         }
-        
-        // Extract price if available
-        if (dataPrice) {
-          variant.price = parsePrice(dataPrice);
-        }
-        
         result.variants.push(variant);
         result.debug.extraction = "select_options";
       }
-    }
-  }
-
-  // Method 4: Radio buttons / swatches
-  if (result.variants.length === 0) {
-    const swatchPatterns = [
-      /class="[^"]*swatch[^"]*"[^>]*data-value="([^"]+)"[^>]*(?:data-price="([^"]*)")?/gi,
-      /class="[^"]*variation-option[^"]*"[^>]*data-value="([^"]+)"[^>]*(?:data-price="([^"]*)")?/gi,
-      /data-option="([^"]+)"[^>]*(?:data-price="([^"]*)")?/gi,
-    ];
-    
-    for (const pattern of swatchPatterns) {
-      const swatches = html.matchAll(pattern);
-      for (const swatch of swatches) {
-        const value = decodeValue(swatch[1]);
-        const dataPrice = swatch[2];
-        
-        if (value && !result.variants.some(v => v.label === value)) {
-          const variant: ProductVariant = {
-            label: value,
-            price: dataPrice ? parsePrice(dataPrice) : null,
-          };
-          
-          const parsed = parseWeight(value);
-          if (parsed) {
-            variant.weight = parsed.weight;
-            variant.weight_unit = parsed.unit;
-          }
-          
-          result.variants.push(variant);
-          result.debug.extraction = "swatch_options";
-        }
-      }
-    }
-  }
-
-  // Method 5: Table-based variants (common in some stores)
-  if (result.variants.length === 0) {
-    const tableRows = html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
-    for (const row of tableRows) {
-      const cells = row[1].match(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi);
-      if (cells && cells.length >= 2) {
-        const cellTexts = cells.map(c => c.replace(/<[^>]+>/g, "").trim());
-        // Look for weight-price pairs
-        for (let i = 0; i < cellTexts.length - 1; i++) {
-          const weightParsed = parseWeight(cellTexts[i]);
-          const priceParsed = parsePrice(cellTexts[i + 1]);
-          if (weightParsed && priceParsed) {
-            result.variants.push({
-              label: cellTexts[i],
-              weight: weightParsed.weight,
-              weight_unit: weightParsed.unit,
-              price: priceParsed,
-            });
-            result.debug.extraction = "table_variants";
-          }
-        }
-      }
-    }
-  }
-
-  // Method 6: Look for weight-price patterns in text
-  if (result.variants.length === 0) {
-    const weightPricePatterns = [
-      /(\d+(?:[.,]\d+)?)\s*(ק"ג|קג|ק״ג|kg)\s*[-–:]\s*₪?\s*(\d+(?:[.,]\d{1,2})?)/gi,
-      /(\d+(?:[.,]\d+)?)\s*(גרם|g)\s*[-–:]\s*₪?\s*(\d+(?:[.,]\d{1,2})?)/gi,
-    ];
-    
-    for (const pattern of weightPricePatterns) {
-      const matches = html.matchAll(pattern);
-      for (const match of matches) {
-        const weight = parseFloat(match[1].replace(",", "."));
-        const unitRaw = match[2].toLowerCase();
-        const unit = unitRaw.includes("ק") || unitRaw === "kg" ? "kg" : "g";
-        const price = parseFloat(match[3].replace(",", "."));
-        
-        if (!result.variants.some(v => v.weight === weight && v.weight_unit === unit)) {
-          result.variants.push({
-            label: `${weight} ${unit === "kg" ? 'ק"ג' : "גרם"}`,
-            weight,
-            weight_unit: unit,
-            price,
-          });
-          result.debug.extraction = "text_patterns";
-        }
-      }
-    }
-  }
-
-  // If no variants but we have base price, check title for weight info
-  if (result.variants.length === 0 && result.product.title) {
-    const titleWeight = parseWeight(result.product.title);
-    if (titleWeight) {
-      result.variants.push({
-        label: `${titleWeight.weight} ${titleWeight.unit === "kg" ? 'ק"ג' : titleWeight.unit === "g" ? "גרם" : titleWeight.unit}`,
-        weight: titleWeight.weight,
-        weight_unit: titleWeight.unit,
-        price: result.product.basePrice,
-        sale_price: result.product.salePrice,
-      });
-      result.debug.extraction = "title_weight";
     }
   }
 
@@ -507,7 +258,6 @@ async function searchProductBySku(
   apiKey: string
 ): Promise<string | null> {
   const searchQuery = query ? `${sku} ${query}` : sku;
-  
   console.log("Searching for product with query:", searchQuery);
   
   try {
@@ -517,10 +267,7 @@ async function searchProductBySku(
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        query: searchQuery,
-        limit: 10,
-      }),
+      body: JSON.stringify({ query: searchQuery, limit: 10 }),
     });
 
     if (!searchResponse.ok) {
@@ -531,62 +278,36 @@ async function searchProductBySku(
     const searchData = await searchResponse.json();
     const results = searchData.data || searchData.results || [];
     
-    if (results.length === 0) {
-      console.log("No search results found");
-      return null;
-    }
-
+    if (results.length === 0) return null;
     console.log("Found", results.length, "search results");
 
-    // Filter and score results
-    const scoredResults = results.map((r: any) => {
+    // Score and filter results
+    let bestUrl = "";
+    let bestScore = -100;
+    
+    for (const r of results) {
       const url = r.url || r.link || "";
-      const title = (r.title || r.name || "").toLowerCase();
+      const title = (r.title || "").toLowerCase();
       const urlLower = url.toLowerCase();
       let score = 0;
 
-      // Boost for preferred domains
       if (preferredDomains) {
         for (const domain of preferredDomains) {
-          if (urlLower.includes(domain.toLowerCase())) {
-            score += 50;
-            break;
-          }
+          if (urlLower.includes(domain.toLowerCase())) { score += 50; break; }
         }
       }
+      if (urlLower.includes(sku.toLowerCase()) || title.includes(sku.toLowerCase())) score += 30;
+      if (urlLower.includes("/product") || urlLower.includes("/מוצר") || urlLower.includes("/shop/")) score += 20;
+      if (urlLower.includes("/category") || urlLower.includes("/cart") || urlLower.includes("/checkout")) score -= 50;
 
-      // Boost for containing SKU
-      if (urlLower.includes(sku.toLowerCase()) || title.includes(sku.toLowerCase())) {
-        score += 30;
+      if (score > bestScore) {
+        bestScore = score;
+        bestUrl = url;
       }
-
-      // Boost for product-like URLs
-      if (urlLower.includes("/product") || urlLower.includes("/מוצר") || 
-          urlLower.includes("/shop/") || urlLower.includes("/p/")) {
-        score += 20;
-      }
-
-      // Penalize non-product pages
-      if (urlLower.includes("/category") || urlLower.includes("/cart") || 
-          urlLower.includes("/checkout") || urlLower.includes("/blog") ||
-          urlLower.includes("/search") || urlLower.includes("/tag")) {
-        score -= 50;
-      }
-
-      return { url, score, title };
-    });
-
-    // Sort by score and return best result
-    scoredResults.sort((a: any, b: any) => b.score - a.score);
-    
-    const bestResult = scoredResults.find((r: any) => r.score >= 0);
-    if (bestResult) {
-      console.log("Best result:", bestResult.url, "score:", bestResult.score);
-      return bestResult.url;
     }
-
-    // Fallback to first result if none scored positively
-    return scoredResults[0]?.url || null;
+    
+    if (bestUrl) console.log("Best result:", bestUrl, "score:", bestScore);
+    return bestUrl || results[0]?.url || null;
   } catch (error) {
     console.error("Search error:", error);
     return null;
@@ -626,7 +347,7 @@ serve(async (req) => {
 
     if (mode === "url" && !url.startsWith("http://") && !url.startsWith("https://")) {
       return new Response(
-        JSON.stringify({ success: false, error: "Invalid URL format - must start with http:// or https://" }),
+        JSON.stringify({ success: false, error: "Invalid URL format" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -688,10 +409,7 @@ serve(async (req) => {
       
       if (!finalUrl) {
         return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "לא נמצא מוצר עם המק״ט הזה. נסה להוסיף שם מוצר או להשתמש בקישור ישיר." 
-          }),
+          JSON.stringify({ success: false, error: "לא נמצא מוצר עם המק״ט הזה" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -737,25 +455,17 @@ serve(async (req) => {
 
     // Build final response
     const result: ScrapedProductResult = {
-      source: {
-        mode,
-        input: inputValue,
-        finalUrl,
-      },
+      source: { mode, input: inputValue, finalUrl },
       ...productData,
     };
 
-    // Add Firecrawl metadata to debug
     result.debug.firecrawl = {
       sourceUrl: scrapeData.data?.sourceUrl || finalUrl,
       statusCode: scrapeData.data?.statusCode,
     };
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        data: result,
-      }),
+      JSON.stringify({ success: true, data: result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
