@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check } from "lucide-react";
+import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { BulkProductImport } from "./BulkProductImport";
 
 interface ProductData {
   id?: string;
@@ -114,6 +115,7 @@ export const ProductFormDialog = ({
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [newFlavor, setNewFlavor] = useState("");
   const enrichTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   const enrichProduct = useCallback(async (productName: string, sku?: string) => {
     if (!productName && !sku) return;
@@ -369,6 +371,20 @@ export const ProductFormDialog = ({
           e.preventDefault();
           onSave();
         }} className="space-y-4">
+          {/* Bulk Import Button */}
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBulkImport(true)}
+              className="gap-2"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              ייבוא מקובץ (CSV/Excel/PDF/תמונה)
+            </Button>
+          </div>
+
           {/* SKU with Search Button - Primary Input */}
           <div className="bg-muted/30 p-4 rounded-lg border border-dashed border-primary/30">
             <Label className="flex items-center gap-2 text-primary font-medium">
@@ -915,6 +931,35 @@ export const ProductFormDialog = ({
             </Button>
           </DialogFooter>
         </form>
+
+        {/* Bulk Import Dialog */}
+        <BulkProductImport
+          open={showBulkImport}
+          onOpenChange={setShowBulkImport}
+          onImportComplete={(products) => {
+            // For bulk import, we'll fill the first product's data
+            if (products.length > 0) {
+              const firstProduct = products[0];
+              onProductChange({
+                ...product,
+                name: firstProduct.name,
+                description: firstProduct.description,
+                price: firstProduct.price,
+                sku: firstProduct.sku,
+                category: firstProduct.category,
+                image_url: firstProduct.image_url || product?.image_url,
+                in_stock: firstProduct.in_stock,
+              });
+              
+              toast({
+                title: "המוצר יובא",
+                description: products.length > 1 
+                  ? `${products.length - 1} מוצרים נוספים ממתינים לייבוא` 
+                  : "פרטי המוצר עודכנו",
+              });
+            }
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
