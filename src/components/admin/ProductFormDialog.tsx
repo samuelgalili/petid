@@ -113,6 +113,7 @@ export const ProductFormDialog = ({
   const [imageSearchQuery, setImageSearchQuery] = useState("");
   const [imageSearchResults, setImageSearchResults] = useState<string[]>([]);
   const [isSearchingImages, setIsSearchingImages] = useState(false);
+  const [selectedSearchImages, setSelectedSearchImages] = useState<string[]>([]);
   const [newFlavor, setNewFlavor] = useState("");
   const enrichTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -305,15 +306,49 @@ export const ProductFormDialog = ({
     }
   };
 
-  const selectSearchImage = (imageUrl: string) => {
-    onProductChange({ ...product, image_url: imageUrl });
+  const toggleSearchImageSelection = (imageUrl: string) => {
+    setSelectedSearchImages(prev => {
+      if (prev.includes(imageUrl)) {
+        return prev.filter(url => url !== imageUrl);
+      }
+      return [...prev, imageUrl];
+    });
+  };
+
+  const confirmSelectedImages = () => {
+    if (selectedSearchImages.length === 0) {
+      toast({
+        title: "לא נבחרו תמונות",
+        description: "בחר לפחות תמונה אחת",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // First image becomes the main image, rest go to images array
+    const [mainImage, ...additionalImages] = selectedSearchImages;
+    const currentImages = product?.images || [];
+    
+    onProductChange({ 
+      ...product, 
+      image_url: mainImage,
+      images: [...currentImages, ...additionalImages]
+    });
+    
     setShowImageSearch(false);
     setImageSearchResults([]);
     setImageSearchQuery("");
+    setSelectedSearchImages([]);
+    
     toast({
-      title: "התמונה נבחרה",
-      description: "התמונה עודכנה בהצלחה",
+      title: `${selectedSearchImages.length} תמונות נבחרו`,
+      description: "התמונה הראשונה הוגדרה כראשית, השאר נוספו לגלריה",
     });
+  };
+
+  const clearImageSearch = () => {
+    setImageSearchResults([]);
+    setSelectedSearchImages([]);
   };
 
   const addFlavor = () => {
@@ -472,16 +507,28 @@ export const ProductFormDialog = ({
                   העלה תמונה
                 </Button>
                 
-                <Popover open={showImageSearch} onOpenChange={setShowImageSearch}>
+                <Popover open={showImageSearch} onOpenChange={(open) => {
+                  setShowImageSearch(open);
+                  if (!open) {
+                    clearImageSearch();
+                  }
+                }}>
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm">
                       <Globe className="w-4 h-4 ml-2" />
-                      חפש תמונה בגוגל
+                      חפש תמונות בגוגל
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80" align="center" dir="rtl">
+                  <PopoverContent className="w-[400px]" align="center" dir="rtl">
                     <div className="space-y-3">
-                      <div className="font-medium text-sm">חיפוש תמונה ברשת</div>
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-sm">חיפוש תמונות ברשת</div>
+                        {selectedSearchImages.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            נבחרו: {selectedSearchImages.length}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex gap-2">
                         <Input
                           placeholder={product?.name || "הזן מילות חיפוש..."}
@@ -506,33 +553,99 @@ export const ProductFormDialog = ({
                       
                       {/* Search Results */}
                       {imageSearchResults.length > 0 && (
-                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                          {imageSearchResults.map((url, idx) => (
-                            <div
-                              key={idx}
-                              className="relative aspect-square cursor-pointer rounded-md overflow-hidden border-2 border-transparent hover:border-primary transition-colors group"
-                              onClick={() => selectSearchImage(url)}
-                            >
-                              <img
-                                src={url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-primary/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Check className="w-5 h-5 text-white" />
+                        <div className="space-y-3">
+                          <div className="text-xs text-muted-foreground">
+                            לחץ לבחירה מרובה. סדר הבחירה = סדר התצוגה (תמונה 1 = ראשית)
+                          </div>
+                          <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-1">
+                            {imageSearchResults.map((url, idx) => {
+                              const selectionIndex = selectedSearchImages.indexOf(url);
+                              const isSelected = selectionIndex !== -1;
+                              
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`relative aspect-square cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                                    isSelected 
+                                      ? 'border-primary ring-2 ring-primary/30 scale-95' 
+                                      : 'border-transparent hover:border-primary/50'
+                                  }`}
+                                  onClick={() => toggleSearchImageSelection(url)}
+                                >
+                                  <img
+                                    src={url}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).parentElement!.style.display = 'none';
+                                    }}
+                                  />
+                                  {isSelected && (
+                                    <div className="absolute inset-0 bg-primary/40 flex items-center justify-center">
+                                      <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+                                        {selectionIndex + 1}
+                                      </div>
+                                    </div>
+                                  )}
+                                  {!isSelected && (
+                                    <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Selected Images Preview */}
+                          {selectedSearchImages.length > 0 && (
+                            <div className="border-t pt-3">
+                              <div className="text-xs text-muted-foreground mb-2">סדר התמונות:</div>
+                              <div className="flex gap-1 flex-wrap">
+                                {selectedSearchImages.map((url, idx) => (
+                                  <div key={url} className="relative">
+                                    <div className="w-10 h-10 rounded border overflow-hidden">
+                                      <img src={url} alt="" className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">
+                                      {idx + 1}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleSearchImageSelection(url);
+                                      }}
+                                      className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center"
+                                    >
+                                      <X className="w-2.5 h-2.5" />
+                                    </button>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ))}
+                          )}
+                          
+                          <Button 
+                            type="button" 
+                            className="w-full" 
+                            onClick={confirmSelectedImages}
+                            disabled={selectedSearchImages.length === 0}
+                          >
+                            <Check className="w-4 h-4 ml-2" />
+                            אשר בחירה ({selectedSearchImages.length} תמונות)
+                          </Button>
                         </div>
                       )}
                       
                       {isSearchingImages && (
-                        <div className="text-center py-4">
-                          <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                          <p className="text-xs text-muted-foreground mt-2">מחפש תמונות...</p>
+                        <div className="text-center py-8">
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                          <p className="text-sm text-muted-foreground mt-3">מחפש תמונות...</p>
+                        </div>
+                      )}
+                      
+                      {!isSearchingImages && imageSearchResults.length === 0 && (
+                        <div className="text-center py-4 text-muted-foreground text-sm">
+                          הזן מילות חיפוש ולחץ על חפש
                         </div>
                       )}
                     </div>
