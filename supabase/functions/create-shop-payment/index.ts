@@ -182,12 +182,30 @@ serve(async (req: Request): Promise<Response> => {
       .map(item => `${item.name} x${item.quantity}`)
       .join(', ');
 
+    // Build invoice lines array
+    const invoiceLines: any[] = requestData.items.map((item, index) => ({
+      [`InvoiceLines${index}.Description`]: item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : ''),
+      [`InvoiceLines${index}.Quantity`]: item.quantity,
+      [`InvoiceLines${index}.Price`]: item.price,
+    }));
+
+    // Flatten invoice lines into single object
+    const flatInvoiceLines = invoiceLines.reduce((acc, line) => ({ ...acc, ...line }), {});
+
+    // Add shipping if applicable
+    if (requestData.shipping > 0) {
+      const shippingIndex = requestData.items.length;
+      flatInvoiceLines[`InvoiceLines${shippingIndex}.Description`] = 'משלוח';
+      flatInvoiceLines[`InvoiceLines${shippingIndex}.Quantity`] = 1;
+      flatInvoiceLines[`InvoiceLines${shippingIndex}.Price`] = requestData.shipping;
+    }
+
     // Create CardCom payment request
     const cardcomRequest = {
-      TerminalNumber: CARDCOM_TERMINAL,
+      TerminalNumber: parseInt(CARDCOM_TERMINAL),
       ApiName: CARDCOM_API_NAME,
       ApiPassword: CARDCOM_API_PASSWORD,
-      SumToBill: Math.round(requestData.total * 100) / 100, // Ensure proper decimal
+      SumToBill: requestData.total,
       CoinID: 1, // ILS
       Language: 'he',
       SuccessRedirectUrl: `${requestData.success_url}?order_id=${orderData.id}`,
@@ -198,20 +216,17 @@ serve(async (req: Request): Promise<Response> => {
         order_number: orderNumber 
       }),
       MaxNumOfPayments: requestData.installments || 1,
-      ProductName: `הזמנה ${orderNumber}`,
-      InvoiceHead: {
-        CustName: requestData.shipping_address.fullName,
-        CustEmail: requestData.shipping_address.email,
-        CustMobilePH: requestData.shipping_address.phone,
-        CustAddress: requestData.shipping_address.address,
-        CustCity: requestData.shipping_address.city,
-        CustZIP: requestData.shipping_address.zipCode,
-      },
-      InvoiceLines: requestData.items.map(item => ({
-        Description: item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : ''),
-        Quantity: item.quantity,
-        Price: item.price,
-      })),
+      ProductName: itemsDescription.substring(0, 50),
+      ShowInvoiceHead: true,
+      InvoiceHeadOperation: 1, // Create invoice head automatically
+      'InvoiceHead.CustName': requestData.shipping_address.fullName,
+      'InvoiceHead.SendByEmail': true,
+      'InvoiceHead.Email': requestData.shipping_address.email,
+      'InvoiceHead.CustMobilePH': requestData.shipping_address.phone,
+      'InvoiceHead.CustAddresLine1': requestData.shipping_address.address,
+      'InvoiceHead.CustCity': requestData.shipping_address.city,
+      'InvoiceHead.CustZipCode': requestData.shipping_address.zipCode,
+      ...flatInvoiceLines,
     };
 
     console.log('Calling CardCom API...');
