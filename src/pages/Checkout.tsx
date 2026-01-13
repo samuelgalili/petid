@@ -294,6 +294,8 @@ const Checkout = () => {
     try {
       const orderTotal = total + (paymentMethod === "cash-on-delivery" ? 5 : 0);
 
+      console.log('Starting payment request with total:', orderTotal);
+
       // Call the edge function to create payment and order
       const { data, error } = await supabase.functions.invoke('create-shop-payment', {
         body: {
@@ -319,9 +321,16 @@ const Checkout = () => {
         }
       });
 
-      if (error) throw error;
+      console.log('Payment response:', data, 'Error:', error);
 
-      console.log('Payment response:', data);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'שגיאה בתקשורת עם השרת');
+      }
+
+      if (!data) {
+        throw new Error('לא התקבלה תגובה מהשרת');
+      }
 
       // If we got a payment URL (CardCom), redirect to it
       if (data.payment_url) {
@@ -339,6 +348,7 @@ const Checkout = () => {
         };
         localStorage.setItem("pendingOrder", JSON.stringify(orderDetails));
         
+        console.log('Redirecting to CardCom:', data.payment_url);
         // Redirect to CardCom payment page
         window.location.href = data.payment_url;
         return;
@@ -371,13 +381,43 @@ const Checkout = () => {
         return;
       }
 
+      // If we have success but no payment_url or redirect_url, check for order_id
+      if (data.success && data.order_id) {
+        const orderDetails = {
+          orderId: data.order_number || data.order_id,
+          items,
+          shippingData,
+          paymentMethod,
+          subtotal,
+          shipping,
+          tax,
+          total: orderTotal,
+          orderDate: new Date().toISOString(),
+        };
+        localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
+        clearCart();
+        navigate("/order-confirmation", { state: { order: orderDetails } });
+        return;
+      }
+
       throw new Error("תגובה לא צפויה מהשרת");
     } catch (error: any) {
       console.error("Error placing order:", error);
       setIsProcessing(false);
+      
+      // More specific error messages
+      let errorMessage = "נכשל בביצוע ההזמנה. אנא נסה שוב.";
+      if (error.message?.includes('Failed to send')) {
+        errorMessage = "שגיאת תקשורת - נסה שוב";
+      } else if (error.message?.includes('נדרשת התחברות')) {
+        errorMessage = "נא להתחבר מחדש ולנסות שוב";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "ההזמנה נכשלה",
-        description: error.message || "נכשל בביצוע ההזמנה. אנא נסה שוב.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
