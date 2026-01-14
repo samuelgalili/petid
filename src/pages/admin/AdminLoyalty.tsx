@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   RefreshCw,
   Search,
@@ -14,6 +15,7 @@ import {
   Plus,
   Edit,
   Settings,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -73,35 +76,92 @@ const levels: LoyaltyLevel[] = [
   { name: "Alpha", name_he: "אלפא", threshold: 2500, icon: Crown, color: "from-amber-400 to-amber-600", benefits: ["25% הנחה", "כל ההטבות", "אירועים בלעדיים"] },
 ];
 
-const defaultActions: PointAction[] = [
-  { id: "1", action: "purchase", action_he: "רכישה (₪1 = 1 נק')", points: 1, is_active: true },
-  { id: "2", action: "review", action_he: "כתיבת ביקורת", points: 50, is_active: true },
-  { id: "3", action: "referral", action_he: "הפניית חבר", points: 100, is_active: true },
-  { id: "4", action: "birthday", action_he: "יום הולדת", points: 200, is_active: true },
-  { id: "5", action: "social_share", action_he: "שיתוף ברשתות", points: 25, is_active: true },
-  { id: "6", action: "first_pet", action_he: "הוספת חיה ראשונה", points: 150, is_active: true },
-];
-
 const AdminLoyalty = () => {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [members, setMembers] = useState<Member[]>([]);
-  const [actions, setActions] = useState<PointAction[]>(defaultActions);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("members");
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [actionForm, setActionForm] = useState({
+    action: "",
     action_he: "",
     points: 0
   });
 
-  useEffect(() => {
-    fetchMembers();
-  }, []);
+  // Fetch loyalty actions from database
+  const { data: actions = [], isLoading: actionsLoading, refetch: refetchActions } = useQuery({
+    queryKey: ["loyalty-actions"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("loyalty_point_actions")
+        .select("*")
+        .order("points", { ascending: false });
+      
+      if (error) throw error;
+      return (data || []) as PointAction[];
+    },
+  });
 
-  const fetchMembers = async () => {
-    try {
-      setLoading(true);
+  // Create action mutation
+  const createActionMutation = useMutation({
+    mutationFn: async (action: Partial<PointAction>) => {
+      const { data, error } = await (supabase as any)
+        .from("loyalty_point_actions")
+        .insert(action)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyalty-actions"] });
+      toast({ title: "הפעולה נוספה בהצלחה" });
+      setActionDialogOpen(false);
+      setActionForm({ action: "", action_he: "", points: 0 });
+    },
+    onError: () => {
+      toast({ title: "שגיאה בהוספת הפעולה", variant: "destructive" });
+    },
+  });
+
+  // Toggle action active status
+  const toggleActionMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await (supabase as any)
+        .from("loyalty_point_actions")
+        .update({ is_active })
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyalty-actions"] });
+      toast({ title: "הסטטוס עודכן" });
+    },
+  });
+
+  // Delete action mutation
+  const deleteActionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("loyalty_point_actions")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["loyalty-actions"] });
+      toast({ title: "הפעולה נמחקה" });
+    },
+  });
+
+  // Fetch members
+  const { isLoading: membersLoading, refetch: refetchMembers } = useQuery({
+    queryKey: ["loyalty-members"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url, email, loyalty_points, created_at")
@@ -125,12 +185,9 @@ const AdminLoyalty = () => {
       } else {
         setMembers([]);
       }
-    } catch (error) {
-      console.error("Error fetching members:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data;
+    },
+  });
 
   const getLevelForPoints = (points: number): string => {
     for (let i = levels.length - 1; i >= 0; i--) {
@@ -169,6 +226,8 @@ const AdminLoyalty = () => {
     avgPoints: members.length > 0 ? Math.round(members.reduce((sum, m) => sum + m.points, 0) / members.length) : 0,
     alphaMembers: members.filter((m) => m.level === "אלפא").length,
   };
+
+  const loading = membersLoading || actionsLoading;
 
   return (
     <AdminLayout title="מועדון נאמנות" icon={Trophy} breadcrumbs={[{ label: "מועדון" }]}>
@@ -234,7 +293,7 @@ const AdminLoyalty = () => {
                 className="pr-10"
               />
             </div>
-            <Button variant="outline" size="icon" onClick={fetchMembers} disabled={loading}>
+            <Button variant="outline" size="icon" onClick={() => refetchMembers()} disabled={loading}>
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </div>
@@ -242,6 +301,10 @@ const AdminLoyalty = () => {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">
+              אין חברי מועדון עדיין
             </div>
           ) : (
             <div className="space-y-3">
@@ -364,10 +427,15 @@ const AdminLoyalty = () => {
         <TabsContent value="actions" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-bold">פעולות לצבירת נקודות</h3>
-            <Button size="sm" className="gap-2" onClick={() => setActionDialogOpen(true)}>
-              <Plus className="w-4 h-4" />
-              הוסף פעולה
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" onClick={() => refetchActions()} disabled={actionsLoading}>
+                <RefreshCw className={`w-4 h-4 ${actionsLoading ? "animate-spin" : ""}`} />
+              </Button>
+              <Button size="sm" className="gap-2" onClick={() => setActionDialogOpen(true)}>
+                <Plus className="w-4 h-4" />
+                הוסף פעולה
+              </Button>
+            </div>
           </div>
 
           <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
@@ -377,7 +445,16 @@ const AdminLoyalty = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>שם הפעולה *</Label>
+                  <Label>שם הפעולה (אנגלית) *</Label>
+                  <Input
+                    value={actionForm.action}
+                    onChange={(e) => setActionForm({ ...actionForm, action: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                    placeholder="לדוגמה: newsletter_signup"
+                    dir="ltr"
+                  />
+                </div>
+                <div>
+                  <Label>שם הפעולה (עברית) *</Label>
                   <Input
                     value={actionForm.action_he}
                     onChange={(e) => setActionForm({ ...actionForm, action_he: e.target.value })}
@@ -397,22 +474,18 @@ const AdminLoyalty = () => {
                   <Button variant="outline" onClick={() => setActionDialogOpen(false)}>ביטול</Button>
                   <Button 
                     onClick={() => {
-                      if (!actionForm.action_he) {
-                        toast({ title: "נא למלא שם פעולה", variant: "destructive" });
+                      if (!actionForm.action || !actionForm.action_he) {
+                        toast({ title: "נא למלא את כל השדות", variant: "destructive" });
                         return;
                       }
-                      const newAction: PointAction = {
-                        id: Date.now().toString(),
-                        action: actionForm.action_he.toLowerCase().replace(/\s+/g, '_'),
+                      createActionMutation.mutate({
+                        action: actionForm.action,
                         action_he: actionForm.action_he,
                         points: actionForm.points || 0,
                         is_active: true
-                      };
-                      setActions([...actions, newAction]);
-                      setActionDialogOpen(false);
-                      setActionForm({ action_he: "", points: 0 });
-                      toast({ title: "הפעולה נוספה בהצלחה" });
+                      });
                     }}
+                    disabled={createActionMutation.isPending}
                   >
                     הוסף פעולה
                   </Button>
@@ -421,40 +494,57 @@ const AdminLoyalty = () => {
             </DialogContent>
           </Dialog>
 
-          <div className="grid gap-3">
-            {actions.map((action, index) => (
-              <motion.div
-                key={action.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg ${action.is_active ? "bg-primary/10" : "bg-muted"} flex items-center justify-center`}>
-                        <Star className={`w-5 h-5 ${action.is_active ? "text-primary" : "text-muted-foreground"}`} />
+          {actionsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : actions.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">
+              אין פעולות נקודות עדיין
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {actions.map((action, index) => (
+                <motion.div
+                  key={action.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Card className={`p-4 ${!action.is_active ? 'opacity-50' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Star className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{action.action_he}</h4>
+                          <p className="text-xs text-muted-foreground">{action.action}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium">{action.action_he}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {action.is_active ? "פעיל" : "לא פעיל"}
-                        </p>
+                      <div className="flex items-center gap-4">
+                        <Badge variant="secondary" className="text-lg px-3">
+                          +{action.points}
+                        </Badge>
+                        <Switch
+                          checked={action.is_active}
+                          onCheckedChange={(checked) => toggleActionMutation.mutate({ id: action.id, is_active: checked })}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => deleteActionMutation.mutate(action.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="text-lg px-3">
-                        +{action.points}
-                      </Badge>
-                      <Button variant="ghost" size="icon">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </AdminLayout>

@@ -120,21 +120,13 @@ const AdminTasks = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setTasks(data.map(task => ({
           ...task,
-          assignee_name: task.assigned_to ? "יצחק נחמד" : undefined,
+          assignee_name: task.assigned_to ? "צוות" : undefined,
         })));
       } else {
-        // Mock data for demo
-        setTasks([
-          { id: "1", title: "שיחת פולאואפ על הצעת מחיר", description: "התקשרות לבירור הצעת מחיר", status: "todo", priority: "urgent", assigned_to: "1", due_date: "2025-11-28", rating: null, tags: ["מכירות"], created_at: "2025-11-24", assignee_name: "יצחק נחמד" },
-          { id: "2", title: "הקמת שרת ראשוני", description: "הקמה והתקנה של שרת", status: "in_progress", priority: "urgent", assigned_to: "1", due_date: "2025-11-22", rating: null, tags: ["טכני"], created_at: "2025-11-20", assignee_name: "יצחק נחמד" },
-          { id: "3", title: "gfgdg", description: "", status: "done", priority: "medium", assigned_to: "2", due_date: "2025-11-18", rating: null, tags: [], created_at: "2025-11-14", assignee_name: "לאה רובינסון" },
-          { id: "4", title: "משימה חשובה", description: "תיאור משימה", status: "todo", priority: "urgent", assigned_to: "3", due_date: "2025-10-31", rating: null, tags: [], created_at: "2025-10-29", assignee_name: "לילך יצחק" },
-          { id: "5", title: "משימה חשובה ביותר", description: "תיאור", status: "todo", priority: "low", assigned_to: "3", due_date: "2025-10-13", rating: null, tags: [], created_at: "2025-10-08", assignee_name: "לילך יצחק" },
-          { id: "6", title: "משימות לדוגמה", description: "בדיקה", status: "done", priority: "medium", assigned_to: "4", due_date: "2025-09-12", rating: null, tags: [], created_at: "2025-09-07", assignee_name: "יצחק דויד" },
-        ]);
+        setTasks([]);
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -172,19 +164,8 @@ const AdminTasks = () => {
       setNewTask({ title: "", description: "", priority: "medium", due_date: "", assigned_to: "" });
       toast({ title: "המשימה נוצרה בהצלחה" });
     } catch (error) {
-      const mockTask: Task = {
-        id: Date.now().toString(),
-        ...newTask,
-        status: "todo",
-        assigned_to: null,
-        rating: null,
-        tags: null,
-        created_at: new Date().toISOString(),
-        assignee_name: "צוות",
-      };
-      setTasks([mockTask, ...tasks]);
-      setIsCreateDialogOpen(false);
-      setNewTask({ title: "", description: "", priority: "medium", due_date: "", assigned_to: "" });
+      console.error("Error creating task:", error);
+      toast({ title: "שגיאה", description: "לא ניתן ליצור את המשימה", variant: "destructive" });
     }
   };
 
