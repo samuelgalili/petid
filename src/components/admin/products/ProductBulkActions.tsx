@@ -46,6 +46,7 @@ interface ProductBulkActionsProps {
   selectedIds: string[];
   onActionComplete: () => void;
   onClearSelection: () => void;
+  products?: Array<{ id: string; source?: 'manual' | 'scraped' }>;
 }
 
 const categories = [
@@ -61,7 +62,8 @@ const categories = [
 export function ProductBulkActions({ 
   selectedIds, 
   onActionComplete,
-  onClearSelection
+  onClearSelection,
+  products = []
 }: ProductBulkActionsProps) {
   const [loading, setLoading] = useState(false);
   const [priceDialog, setPriceDialog] = useState(false);
@@ -97,12 +99,43 @@ export function ProductBulkActions({
     
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('business_products')
-        .delete()
-        .in('id', selectedIds);
-
-      if (error) throw error;
+      // Separate products by source
+      const selectedProducts = products.filter(p => selectedIds.includes(p.id));
+      const manualIds = selectedProducts.filter(p => p.source === 'manual' || !p.source).map(p => p.id);
+      const scrapedIds = selectedProducts.filter(p => p.source === 'scraped').map(p => p.id);
+      
+      // If no products info provided, try both tables
+      if (selectedProducts.length === 0) {
+        // Delete from business_products
+        await supabase
+          .from('business_products')
+          .delete()
+          .in('id', selectedIds);
+        
+        // Delete from scraped_products
+        await supabase
+          .from('scraped_products')
+          .delete()
+          .in('id', selectedIds);
+      } else {
+        // Delete from business_products
+        if (manualIds.length > 0) {
+          const { error } = await supabase
+            .from('business_products')
+            .delete()
+            .in('id', manualIds);
+          if (error) throw error;
+        }
+        
+        // Delete from scraped_products
+        if (scrapedIds.length > 0) {
+          const { error } = await supabase
+            .from('scraped_products')
+            .delete()
+            .in('id', scrapedIds);
+          if (error) throw error;
+        }
+      }
       
       toast.success(`${selectedIds.length} מוצרים נמחקו`);
       onActionComplete();
