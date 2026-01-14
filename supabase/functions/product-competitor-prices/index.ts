@@ -22,12 +22,13 @@ interface CompetitorResult {
   found: boolean;
 }
 
-// Extract price from HTML content
+// Extract price from HTML content with improved accuracy
 function extractPrice(html: string): { price: number | null; originalPrice: number | null } {
   let price: number | null = null;
   let originalPrice: number | null = null;
+  const allFoundPrices: number[] = [];
 
-  // Try JSON-LD first (most reliable)
+  // 1. Try JSON-LD first (most reliable)
   const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
   if (jsonLdMatch) {
     for (const match of jsonLdMatch) {
@@ -37,21 +38,43 @@ function extractPrice(html: string): { price: number | null; originalPrice: numb
         
         const findPrice = (obj: any): number | null => {
           if (!obj) return null;
-          if (obj.offers?.price) return parseFloat(obj.offers.price);
-          if (obj.offers?.[0]?.price) return parseFloat(obj.offers[0].price);
+          
+          // Direct price
+          if (obj.offers?.price) {
+            const p = parseFloat(String(obj.offers.price));
+            if (!isNaN(p)) return p;
+          }
+          
+          // Array of offers
+          if (obj.offers?.[0]?.price) {
+            const p = parseFloat(String(obj.offers[0].price));
+            if (!isNaN(p)) return p;
+          }
+          
+          // Low price in offers
+          if (obj.offers?.lowPrice) {
+            const p = parseFloat(String(obj.offers.lowPrice));
+            if (!isNaN(p)) return p;
+          }
+          
+          // Array recursion
           if (Array.isArray(obj)) {
             for (const item of obj) {
               const found = findPrice(item);
               if (found) return found;
             }
           }
+          
+          // @graph recursion
           if (obj['@graph']) return findPrice(obj['@graph']);
+          
           return null;
         };
         
         const foundPrice = findPrice(data);
-        if (foundPrice) {
+        if (foundPrice && foundPrice >= 1 && foundPrice <= 50000) {
           price = foundPrice;
+          allFoundPrices.push(foundPrice);
           break;
         }
       } catch (e) {
@@ -60,56 +83,131 @@ function extractPrice(html: string): { price: number | null; originalPrice: numb
     }
   }
 
-  // Try common price patterns in HTML
+  // 2. Try meta tags (very reliable)
   if (!price) {
-    const pricePatterns = [
-      // WooCommerce
-      /<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>.*?(\d+(?:[.,]\d+)?)/gi,
-      // Generic price with currency
-      /₪\s*(\d+(?:[.,]\d+)?)/g,
-      /(\d+(?:[.,]\d+)?)\s*₪/g,
-      // Price meta tags
-      /<meta[^>]*property="product:price:amount"[^>]*content="(\d+(?:[.,]\d+)?)"/gi,
-      /<meta[^>]*name="price"[^>]*content="(\d+(?:[.,]\d+)?)"/gi,
-      // Data attributes
-      /data-price="(\d+(?:[.,]\d+)?)"/gi,
-      // Common price class patterns
-      /<[^>]*class="[^"]*(?:price|amount|cost)[^"]*"[^>]*>.*?(\d+(?:[.,]\d+)?)/gi,
+    const metaPatterns = [
+      /<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i,
+      /<meta[^>]*content="([^"]+)"[^>]*property="product:price:amount"/i,
+      /<meta[^>]*name="price"[^>]*content="([^"]+)"/i,
+      /<meta[^>]*property="og:price:amount"[^>]*content="([^"]+)"/i,
     ];
 
-    for (const pattern of pricePatterns) {
-      const matches = html.matchAll(pattern);
-      for (const match of matches) {
-        const potentialPrice = parseFloat(match[1].replace(',', '.'));
-        // Validate price range (between 1 and 50000 ILS)
-        if (potentialPrice >= 1 && potentialPrice <= 50000) {
-          price = potentialPrice;
+    for (const pattern of metaPatterns) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        const p = parseFloat(match[1].replace(/[^\d.]/g, ''));
+        if (!isNaN(p) && p >= 1 && p <= 50000) {
+          price = p;
+          allFoundPrices.push(p);
           break;
         }
       }
-      if (price) break;
     }
   }
 
-  // Try to find original/sale price
-  if (price) {
-    const salePatterns = [
-      /<del[^>]*>.*?(\d+(?:[.,]\d+)?)/gi,
-      /class="[^"]*(?:regular-price|was-price|original-price)[^"]*"[^>]*>.*?(\d+(?:[.,]\d+)?)/gi,
+  // 3. Try data attributes
+  if (!price) {
+    const dataPatterns = [
+      /data-price="(\d+(?:\.\d+)?)"/g,
+      /data-product-price="(\d+(?:\.\d+)?)"/g,
+      /data-current-price="(\d+(?:\.\d+)?)"/g,
     ];
 
-    for (const pattern of salePatterns) {
+    for (const pattern of dataPatterns) {
       const match = pattern.exec(html);
-      if (match) {
-        const potentialOriginal = parseFloat(match[1].replace(',', '.'));
-        if (potentialOriginal > price && potentialOriginal <= 50000) {
-          originalPrice = potentialOriginal;
+      if (match?.[1]) {
+        const p = parseFloat(match[1]);
+        if (!isNaN(p) && p >= 1 && p <= 50000) {
+          price = p;
+          allFoundPrices.push(p);
           break;
         }
       }
     }
   }
 
+  // 4. Try Israeli shekel patterns (more specific)
+  if (!price) {
+    // Look for price in specific elements first
+    const priceContainerPatterns = [
+      // WooCommerce sale price (current price)
+      /<ins[^>]*>.*?<bdi>₪([0-9,]+(?:\.[0-9]+)?)<\/bdi>/gi,
+      /<ins[^>]*>.*?₪([0-9,]+(?:\.[0-9]+)?)/gi,
+      // Price with bdi tag
+      /<bdi>₪([0-9,]+(?:\.[0-9]+)?)<\/bdi>/gi,
+      // Common price class with shekel
+      /class="[^"]*(?:current-price|sale-price|final-price)[^"]*"[^>]*>[^<]*₪\s*([0-9,]+(?:\.[0-9]+)?)/gi,
+      // Price followed by shekel
+      /class="[^"]*price[^"]*"[^>]*>[^<]*([0-9,]+(?:\.[0-9]+)?)\s*₪/gi,
+      // Shekel followed by price
+      /₪\s*([0-9,]+(?:\.[0-9]+)?)/g,
+      // Price followed by shekel
+      /([0-9,]+(?:\.[0-9]+)?)\s*₪/g,
+    ];
+
+    for (const pattern of priceContainerPatterns) {
+      let match;
+      const localPrices: number[] = [];
+      
+      while ((match = pattern.exec(html)) !== null) {
+        const priceStr = match[1].replace(/,/g, '');
+        const p = parseFloat(priceStr);
+        if (!isNaN(p) && p >= 5 && p <= 50000) {
+          localPrices.push(p);
+        }
+      }
+      
+      // If we found prices, take the most common one or the first reasonable one
+      if (localPrices.length > 0) {
+        // Count occurrences
+        const counts: Record<number, number> = {};
+        for (const p of localPrices) {
+          counts[p] = (counts[p] || 0) + 1;
+        }
+        
+        // Get the most frequent price
+        let maxCount = 0;
+        let mostFrequent = localPrices[0];
+        for (const [priceStr, count] of Object.entries(counts)) {
+          if (count > maxCount) {
+            maxCount = count;
+            mostFrequent = parseFloat(priceStr);
+          }
+        }
+        
+        price = mostFrequent;
+        allFoundPrices.push(...localPrices);
+        break;
+      }
+    }
+  }
+
+  // 5. Try to find original/regular price (for sale items)
+  const originalPricePatterns = [
+    // WooCommerce deleted price (original)
+    /<del[^>]*>.*?<bdi>₪([0-9,]+(?:\.[0-9]+)?)<\/bdi>/gi,
+    /<del[^>]*>.*?₪([0-9,]+(?:\.[0-9]+)?)/gi,
+    // Regular price class
+    /class="[^"]*(?:regular-price|was-price|original-price|compare-price)[^"]*"[^>]*>[^<]*₪\s*([0-9,]+(?:\.[0-9]+)?)/gi,
+    /class="[^"]*(?:regular-price|was-price|original-price|compare-price)[^"]*"[^>]*>[^<]*([0-9,]+(?:\.[0-9]+)?)\s*₪/gi,
+  ];
+
+  for (const pattern of originalPricePatterns) {
+    const match = pattern.exec(html);
+    if (match?.[1]) {
+      const priceStr = match[1].replace(/,/g, '');
+      const p = parseFloat(priceStr);
+      if (!isNaN(p) && p >= 5 && p <= 50000) {
+        if (price && p > price) {
+          originalPrice = p;
+          break;
+        }
+      }
+    }
+  }
+
+  console.log(`Price extraction: found=${price}, original=${originalPrice}, all prices found: ${allFoundPrices.slice(0, 5).join(', ')}`);
+  
   return { price, originalPrice };
 }
 
@@ -121,6 +219,7 @@ function checkInStock(html: string): boolean {
     /out.?of.?stock/i,
     /sold.?out/i,
     /unavailable/i,
+    /class="[^"]*out-of-stock/i,
   ];
 
   const inStockPatterns = [
@@ -129,16 +228,15 @@ function checkInStock(html: string): boolean {
     /available/i,
     /הוסף לסל/i,
     /add.?to.?cart/i,
+    /class="[^"]*in-stock/i,
   ];
 
-  const lowerHtml = html.toLowerCase();
-  
   for (const pattern of outOfStockPatterns) {
-    if (pattern.test(lowerHtml)) return false;
+    if (pattern.test(html)) return false;
   }
 
   for (const pattern of inStockPatterns) {
-    if (pattern.test(lowerHtml)) return true;
+    if (pattern.test(html)) return true;
   }
 
   return true; // Default to in stock if no indicators found
@@ -163,12 +261,12 @@ async function searchCompetitor(
   };
 
   try {
-    // Build search query
+    // Build search query - search for the exact product
     const searchQuery = sku 
-      ? `${productName} ${sku} site:${competitor.domain}`
-      : `${productName} site:${competitor.domain}`;
+      ? `"${productName}" OR "${sku}" site:${competitor.domain}`
+      : `"${productName}" site:${competitor.domain}`;
 
-    console.log(`Searching for: ${searchQuery}`);
+    console.log(`Searching ${competitor.name}: ${searchQuery}`);
 
     // Use Firecrawl search API
     const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
@@ -179,18 +277,15 @@ async function searchCompetitor(
       },
       body: JSON.stringify({
         query: searchQuery,
-        limit: 3,
+        limit: 5,
         lang: 'he',
         country: 'IL',
-        scrapeOptions: {
-          formats: ['rawHtml'],
-          waitFor: 2000,
-        },
       }),
     });
 
     if (!searchResponse.ok) {
-      console.error(`Search failed for ${competitor.name}: ${searchResponse.status}`);
+      const errorText = await searchResponse.text();
+      console.error(`Search failed for ${competitor.name}: ${searchResponse.status} - ${errorText}`);
       return result;
     }
 
@@ -201,49 +296,54 @@ async function searchCompetitor(
       return result;
     }
 
-    // Get the first relevant result
-    const firstResult = searchData.data[0];
-    result.url = firstResult.url || `https://${competitor.domain}`;
-
-    // If we have raw HTML, extract price
-    if (firstResult.rawHtml) {
-      const { price, originalPrice } = extractPrice(firstResult.rawHtml);
-      result.price = price;
-      result.originalPrice = originalPrice;
-      result.inStock = checkInStock(firstResult.rawHtml);
-      result.found = price !== null;
-    }
-
-    // If no price from search results, try to scrape the product page directly
-    if (!result.price && firstResult.url) {
-      console.log(`Scraping product page: ${firstResult.url}`);
-      
-      const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: firstResult.url,
-          formats: ['rawHtml'],
-          waitFor: 3000,
-        }),
-      });
-
-      if (scrapeResponse.ok) {
-        const scrapeData = await scrapeResponse.json();
-        if (scrapeData.success && scrapeData.data?.rawHtml) {
-          const { price, originalPrice } = extractPrice(scrapeData.data.rawHtml);
-          result.price = price;
-          result.originalPrice = originalPrice;
-          result.inStock = checkInStock(scrapeData.data.rawHtml);
-          result.found = price !== null;
-        }
+    // Find the best matching result (product page, not category)
+    let bestResult = searchData.data[0];
+    for (const r of searchData.data) {
+      const url = r.url?.toLowerCase() || '';
+      // Prefer product pages over category pages
+      if (url.includes('/product/') || url.includes('/item/') || url.includes('product_id=')) {
+        bestResult = r;
+        break;
       }
     }
 
-    console.log(`${competitor.name}: price=${result.price}, found=${result.found}`);
+    result.url = bestResult.url || `https://${competitor.domain}`;
+    console.log(`Found URL for ${competitor.name}: ${result.url}`);
+
+    // Scrape the product page to get accurate price
+    console.log(`Scraping product page: ${result.url}`);
+    
+    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: result.url,
+        formats: ['rawHtml'],
+        waitFor: 3000,
+        onlyMainContent: false,
+      }),
+    });
+
+    if (scrapeResponse.ok) {
+      const scrapeData = await scrapeResponse.json();
+      if (scrapeData.success && scrapeData.data?.rawHtml) {
+        const { price, originalPrice } = extractPrice(scrapeData.data.rawHtml);
+        result.price = price;
+        result.originalPrice = originalPrice;
+        result.inStock = checkInStock(scrapeData.data.rawHtml);
+        result.found = price !== null;
+        console.log(`${competitor.name}: scraped price=${price}, original=${originalPrice}, inStock=${result.inStock}`);
+      } else {
+        console.log(`${competitor.name}: scrape failed or no HTML`);
+      }
+    } else {
+      const errorText = await scrapeResponse.text();
+      console.error(`Scrape failed for ${competitor.name}: ${scrapeResponse.status} - ${errorText}`);
+    }
+
     return result;
 
   } catch (error) {
@@ -283,7 +383,7 @@ serve(async (req) => {
           { name: 'זופלוס', domain: 'zooplus.co.il', logo: '🐱' },
         ];
 
-    console.log(`Checking prices for: "${productName}" across ${competitorList.length} competitors`);
+    console.log(`Checking prices for: "${productName}" (SKU: ${sku || 'none'}) across ${competitorList.length} competitors`);
 
     // Search all competitors in parallel
     const results = await Promise.all(
@@ -305,7 +405,7 @@ serve(async (req) => {
       const highestPrice = Math.max(...prices);
 
       marketAnalysis = {
-        averagePrice: Math.round(avgPrice),
+        averagePrice: Math.round(avgPrice * 100) / 100,
         lowestPrice,
         highestPrice,
         priceSpread: Math.round(((highestPrice - lowestPrice) / avgPrice) * 100),
@@ -317,7 +417,7 @@ serve(async (req) => {
     // Build recommendations
     const recommendations: string[] = [];
     if (foundPrices.length === 0) {
-      recommendations.push('⚠️ לא נמצאו מחירים אצל המתחרים');
+      recommendations.push('⚠️ לא נמצאו מחירים אצל המתחרים - ייתכן שהמוצר לא קיים או שהחיפוש לא תואם');
     } else {
       recommendations.push(`✓ נמצאו ${foundPrices.length} מחירים מתוך ${competitorList.length} מתחרים`);
     }
@@ -325,8 +425,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         productName,
+        sku,
         competitors: foundPrices,
-        allResults: results, // Include all results for debugging
+        allResults: results,
         marketAnalysis,
         recommendations,
         lastUpdated: new Date().toISOString(),
