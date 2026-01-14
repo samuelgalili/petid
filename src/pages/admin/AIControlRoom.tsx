@@ -29,6 +29,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AIInsightsPanel, AIContentGenerator } from "@/components/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -309,8 +310,13 @@ const AIControlRoom = () => {
   return (
     <AdminLayout title="AI Control Room" icon={Crown}>
       <div className="grid lg:grid-cols-[1fr_380px] gap-6 h-[calc(100vh-180px)]">
-        {/* Main Chat Area */}
-        <Card className="flex flex-col overflow-hidden border-border/50">
+        {/* Main Content Area */}
+        <div className="flex flex-col gap-6 overflow-auto">
+          {/* AI Insights Panel */}
+          <AIInsightsPanel />
+          
+          {/* Chat Area */}
+          <Card className="flex flex-col flex-1 overflow-hidden border-border/50">
           <CardHeader className="border-b border-border/50 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -411,6 +417,7 @@ const AIControlRoom = () => {
             </div>
           </div>
         </Card>
+        </div>
 
         {/* Right Sidebar */}
         <div className="space-y-4 overflow-auto">

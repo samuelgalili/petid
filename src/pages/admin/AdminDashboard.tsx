@@ -39,6 +39,15 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { 
+  AdminGlobalSearch, 
+  AdminAICopilot, 
+  AdminQuickActions,
+  AdminGoalsWidget,
+  AdminNotesWidget,
+  AdminActivityFeed 
+} from "@/components/admin";
+import { useKeyboardShortcuts } from "@/hooks/admin/useKeyboardShortcuts";
 import {
   LineChart,
   Line,
@@ -115,8 +124,11 @@ interface LowStockProduct {
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showSearch, setShowSearch] = useState(false);
   
   useAdminNotifications();
+  useKeyboardShortcuts();
+  
   const [stats, setStats] = useState<OrderStats>({
     totalOrders: 0,
     totalRevenue: 0,
@@ -1005,6 +1017,12 @@ const AdminDashboard = () => {
           },
         ]}
       />
+      
+      {/* Global Search Dialog */}
+      <AdminGlobalSearch />
+      
+      {/* AI Copilot */}
+      <AdminAICopilot />
     </AdminLayout>
   );
 };

@@ -390,4 +390,4 @@ const AIContentGenerator = () => {
   );
 };
 
-export default AIContentGenerator;
+export { AIContentGenerator };

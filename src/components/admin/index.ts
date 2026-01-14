@@ -11,3 +11,4 @@ export { AdminGoalsWidget } from "./AdminGoalsWidget";
 export { AdminNotesWidget } from "./AdminNotesWidget";
 export { AdminActivityFeed } from "./AdminActivityFeed";
 export { AIInsightsPanel } from "./AIInsightsPanel";
+export { AIContentGenerator } from "./AIContentGenerator";
