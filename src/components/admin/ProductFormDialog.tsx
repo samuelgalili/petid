@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check, FileSpreadsheet, Package, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check, FileSpreadsheet, Package, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BulkProductImport } from "./BulkProductImport";
+import { CompetitorPriceManager } from "./products/CompetitorPriceManager";
 
 interface ScrapedProductVariant {
   label: string;
@@ -987,16 +990,17 @@ export const ProductFormDialog = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {product?.id ? "עריכת מוצר" : "הוספת מוצר"}
+            <Wand2 className="w-5 h-5 text-primary" />
+            {product?.id ? "עריכת מוצר" : "הוספת מוצר חכמה"}
             {isEnriching && (
               <Badge variant="secondary" className="animate-pulse">
-                <Sparkles className="w-3 h-3 ml-1" />
-                מחפש ברשת...
+                <Loader2 className="w-3 h-3 ml-1 animate-spin" />
+                מייבא נתונים...
               </Badge>
             )}
           </DialogTitle>
           <DialogDescription>
-            הזן מק״ט לחיפוש אוטומטי של פרטי המוצר מהרשת
+            הדבק קישור לדף מוצר או מק״ט - המערכת תמלא את כל השדות אוטומטית
           </DialogDescription>
         </DialogHeader>
         
@@ -1004,8 +1008,8 @@ export const ProductFormDialog = ({
           e.preventDefault();
           onSave();
         }} className="space-y-4">
-          {/* Bulk Import Button */}
-          <div className="flex justify-end">
+          {/* Quick Actions */}
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
@@ -1014,78 +1018,83 @@ export const ProductFormDialog = ({
               className="gap-2"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              ייבוא מקובץ / URL
+              ייבוא מקובץ
             </Button>
           </div>
 
-          {/* URL Input - Primary Method */}
-          <div className="bg-primary/5 p-4 rounded-lg border border-primary/30">
-            <Label className="flex items-center gap-2 text-primary font-medium">
-              <ExternalLink className="w-4 h-4" />
-              משיכה מ-URL (מומלץ)
-            </Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              הדבק קישור לדף מוצר - המערכת תמשוך את כל הנתונים כולל משקלים, וריאנטים ותמונות
-            </p>
-            <div className="flex gap-2">
-              <Input
-                value={productUrl}
-                onChange={(e) => setProductUrl(e.target.value)}
-                placeholder="https://example.com/product/..."
-                className="flex-1"
-                dir="ltr"
-              />
-              <Button 
-                type="button" 
-                onClick={handleUrlImport}
-                disabled={isEnriching || !productUrl}
-                variant="default"
-              >
-                {isEnriching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                    ייבא נתונים
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          {/* AI Import Section - Primary */}
+          <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                ייבוא אוטומטי
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* URL Input - Most Important */}
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2 mb-1.5">
+                  <ExternalLink className="w-4 h-4" />
+                  קישור לדף מוצר
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={productUrl}
+                    onChange={(e) => setProductUrl(e.target.value)}
+                    placeholder="https://example.com/product/..."
+                    className="flex-1 bg-background"
+                    dir="ltr"
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={handleUrlImport}
+                    disabled={isEnriching || !productUrl}
+                    className="min-w-[100px]"
+                  >
+                    {isEnriching ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4 ml-2" />
+                        ייבא
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  הדבק קישור מכל אתר - המערכת תמשוך שם, תמונות, מחיר וכל הוריאנטים
+                </p>
+              </div>
 
-          {/* SKU with Search Button - Secondary Input */}
-          <div className="bg-muted/30 p-4 rounded-lg border border-dashed border-muted-foreground/30">
-            <Label className="flex items-center gap-2 text-muted-foreground font-medium">
-              <Search className="w-4 h-4" />
-              חיפוש לפי מק״ט
-            </Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              אם אין לך קישור ישיר, הזן מק״ט לחיפוש ברשת
-            </p>
-            <div className="flex gap-2">
-              <Input
-                value={product.sku || ""}
-                onChange={(e) => handleSkuChange(e.target.value)}
-                placeholder="מק״ט, ברקוד או שם מוצר..."
-                className="flex-1"
-              />
-              <Button 
-                type="button" 
-                onClick={handleSkuSearch}
-                disabled={isEnriching || !product.sku}
-                variant="outline"
-              >
-                {isEnriching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 ml-2" />
-                    חפש
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+              {/* SKU Search - Secondary */}
+              <div className="pt-2 border-t border-primary/20">
+                <Label className="text-sm font-medium flex items-center gap-2 mb-1.5 text-muted-foreground">
+                  <Search className="w-4 h-4" />
+                  או חפש לפי מק״ט / ברקוד
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={product.sku || ""}
+                    onChange={(e) => handleSkuChange(e.target.value)}
+                    placeholder="הזן מק״ט, ברקוד או שם מוצר..."
+                    className="flex-1 bg-background/50"
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={handleSkuSearch}
+                    disabled={isEnriching || !product.sku}
+                    variant="secondary"
+                  >
+                    {isEnriching ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Image Section */}
           <div className="space-y-3">
@@ -1588,53 +1597,66 @@ export const ProductFormDialog = ({
               </div>
             )}
 
-            {/* Price with suggestion */}
-            <div>
-              <Label className="flex items-center gap-2">
-                מחיר *
-                {enrichedData?.suggestedPrice && (
-                  <Badge 
-                    variant="outline" 
-                    className="text-xs cursor-pointer hover:bg-primary/10"
-                    onClick={() => onProductChange({ ...product, price: enrichedData.suggestedPrice! })}
-                  >
-                    מומלץ: ₪{enrichedData.suggestedPrice}
-                  </Badge>
-                )}
-              </Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={product.price || ""}
-                onChange={(e) => onProductChange({ ...product, price: parseFloat(e.target.value) })}
-                required
-              />
-            </div>
+            {/* Price Section with Competitor Comparison */}
+            <div className="col-span-2 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                {/* Main Price */}
+                <div>
+                  <Label className="flex items-center gap-2">
+                    מחיר *
+                    {enrichedData?.suggestedPrice && (
+                      <Badge 
+                        variant="outline" 
+                        className="text-xs cursor-pointer hover:bg-primary/10"
+                        onClick={() => onProductChange({ ...product, price: enrichedData.suggestedPrice! })}
+                      >
+                        מומלץ: ₪{enrichedData.suggestedPrice}
+                      </Badge>
+                    )}
+                  </Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={product.price || ""}
+                    onChange={(e) => onProductChange({ ...product, price: parseFloat(e.target.value) })}
+                    required
+                  />
+                </div>
 
-            {/* Sale Price */}
-            <div>
-              <Label>מחיר הנחה</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={product.sale_price || ""}
-                onChange={(e) => onProductChange({ ...product, sale_price: parseFloat(e.target.value) || null })}
-                placeholder="השאר ריק אם אין הנחה"
-              />
-            </div>
+                {/* Sale Price */}
+                <div>
+                  <Label>מחיר הנחה</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={product.sale_price || ""}
+                    onChange={(e) => onProductChange({ ...product, sale_price: parseFloat(e.target.value) || null })}
+                    placeholder="אופציונלי"
+                  />
+                </div>
 
-            {/* Original Price (for display) */}
-            <div>
-              <Label>מחיר מקורי (לתצוגה)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={product.original_price || ""}
-                onChange={(e) => onProductChange({ ...product, original_price: parseFloat(e.target.value) || null })}
-                placeholder="מחיר לפני הנחה"
+                {/* Original Price */}
+                <div>
+                  <Label>מחיר מקורי</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={product.original_price || ""}
+                    onChange={(e) => onProductChange({ ...product, original_price: parseFloat(e.target.value) || null })}
+                    placeholder="לפני הנחה"
+                  />
+                </div>
+              </div>
+
+              {/* Competitor Price Comparison */}
+              <CompetitorPriceManager
+                productName={product.name || ""}
+                currentPrice={product.price}
+                sku={product.sku || undefined}
+                onPriceSelect={(price) => onProductChange({ ...product, price })}
               />
             </div>
 

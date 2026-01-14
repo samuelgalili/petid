@@ -4917,6 +4917,39 @@ export type Database = {
           },
         ]
       }
+      price_competitors: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          domain: string
+          id: string
+          is_active: boolean | null
+          logo_emoji: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          domain: string
+          id?: string
+          is_active?: boolean | null
+          logo_emoji?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          domain?: string
+          id?: string
+          is_active?: boolean | null
+          logo_emoji?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       price_rules: {
         Row: {
           conditions: Json | null
