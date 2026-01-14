@@ -311,10 +311,16 @@ export function CompetitorPriceManager({
                   key={idx} 
                   className="flex items-center justify-between p-2 bg-background rounded-md border text-sm"
                 >
-                  <div className="flex items-center gap-2">
+                  <a
+                    href={comp.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                  >
                     <span>{comp.logo}</span>
                     <span className="truncate max-w-20">{comp.competitor}</span>
-                  </div>
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </a>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
