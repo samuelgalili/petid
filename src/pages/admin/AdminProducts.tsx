@@ -20,6 +20,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { supabase } from "@/integrations/supabase/client";
+import { ProductBulkActions, ProductKeyboardShortcutsHelp } from "@/components/admin/products";
+import { useProductKeyboardShortcuts } from "@/hooks/useProductKeyboardShortcuts";
 
 interface ProductData {
   id: string;
@@ -75,6 +77,35 @@ const AdminProducts = () => {
   const [uploading, setUploading] = useState(false);
   const [showNeedsReview, setShowNeedsReview] = useState(false);
   const [showFlagged, setShowFlagged] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcuts
+  const { shortcuts } = useProductKeyboardShortcuts({
+    onNewProduct: () => {
+      setEditingProduct(emptyProduct);
+      setIsDialogOpen(true);
+    },
+    onSearch: () => searchInputRef.current?.focus(),
+    onSelectAll: () => setSelectedProducts(displayProducts.map(p => p.id)),
+    onDeselectAll: () => setSelectedProducts([]),
+    onDelete: () => selectedProducts.length > 0 && setBulkDeleteDialog(true),
+    onExport: () => {
+      const csvContent = [
+        ['שם', 'קטגוריה', 'מחיר'].join(','),
+        ...displayProducts.map(p => [`"${p.name}"`, `"${p.category || ''}"`, p.price].join(','))
+      ].join('\n');
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `products-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    },
+    onEscape: () => {
+      setSelectedProducts([]);
+      setIsDialogOpen(false);
+    },
+    enabled: !isDialogOpen,
+  });
 
   // Unflag product mutation
   const unflagMutation = useMutation({
@@ -416,6 +447,7 @@ const AdminProducts = () => {
             <Upload className="w-4 h-4 ml-2" />
             ייבוא CSV
           </Button>
+          <ProductKeyboardShortcutsHelp shortcuts={shortcuts} />
           <Button 
             variant="outline"
             onClick={() => {
@@ -501,16 +533,11 @@ const AdminProducts = () => {
         emptyIcon={<Package className="w-12 h-12" />}
         emptyMessage={showNeedsReview ? "אין מוצרים שדורשים בדיקה" : "לא נמצאו מוצרים"}
         bulkActions={
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={() => setBulkDeleteDialog(true)}
-            >
-              <Trash2 className="w-4 h-4 ml-1" />
-              מחק נבחרים
-            </Button>
-          </div>
+          <ProductBulkActions
+            selectedIds={selectedProducts}
+            onActionComplete={() => queryClient.invalidateQueries({ queryKey: ["admin-products"] })}
+            onClearSelection={() => setSelectedProducts([])}
+          />
         }
       />
 
