@@ -696,7 +696,8 @@ const AdminProducts = () => {
         bulkActions={
           <ProductBulkActions
             selectedIds={selectedProducts}
-            onActionComplete={() => queryClient.invalidateQueries({ queryKey: ["admin-products"] })}
+            products={products}
+            onActionComplete={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
             onClearSelection={() => setSelectedProducts([])}
           />
         }
