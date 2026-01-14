@@ -177,21 +177,11 @@ const AdminLeads = () => {
       });
     } catch (error) {
       console.error("Error creating lead:", error);
-      // Create locally for demo
-      const mockLead: Lead = {
-        id: Date.now().toString(),
-        name: newLead.name,
-        email: newLead.email || null,
-        phone: newLead.phone || null,
-        source: newLead.source,
-        status: "new",
-        notes: newLead.notes || null,
-        assigned_to: null,
-        created_at: new Date().toISOString(),
-      };
-      setLeads([mockLead, ...leads]);
-      setIsCreateDialogOpen(false);
-      resetForm();
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן ליצור את הליד",
+        variant: "destructive",
+      });
     }
   };
 
