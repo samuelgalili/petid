@@ -123,14 +123,7 @@ const AdminLoyalty = () => {
           }))
         );
       } else {
-        // Mock data
-        setMembers([
-          { id: "1", user_id: "u1", points: 840, total_earned: 1250, level: "צייד", joined_at: "2024-01-15", user: { full_name: "דני כהן", avatar_url: "", email: "dani@email.com" } },
-          { id: "2", user_id: "u2", points: 2650, total_earned: 3200, level: "אלפא", joined_at: "2023-06-20", user: { full_name: "שרה לוי", avatar_url: "", email: "sara@email.com" } },
-          { id: "3", user_id: "u3", points: 210, total_earned: 450, level: "גור", joined_at: "2024-08-10", user: { full_name: "אבי ישראלי", avatar_url: "", email: "avi@email.com" } },
-          { id: "4", user_id: "u4", points: 1350, total_earned: 1800, level: "סגן אלפא", joined_at: "2024-03-05", user: { full_name: "מיכל רוזן", avatar_url: "", email: "michal@email.com" } },
-          { id: "5", user_id: "u5", points: 520, total_earned: 680, level: "מגן", joined_at: "2024-05-22", user: { full_name: "יוסי אברהם", avatar_url: "", email: "yosi@email.com" } },
-        ]);
+        setMembers([]);
       }
     } catch (error) {
       console.error("Error fetching members:", error);

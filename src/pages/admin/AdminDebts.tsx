@@ -108,64 +108,10 @@ const AdminDebts = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setDebts(data);
       } else {
-        // Mock data for demo
-        setDebts([
-          {
-            id: "1",
-            customer_id: "c1",
-            customer_name: "יוסי כהן",
-            customer_email: "yossi@gmail.com",
-            customer_phone: "052-1234567",
-            amount: 1500,
-            original_amount: 2000,
-            due_date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0],
-            status: "overdue",
-            notes: "תשלום על מנוי שנתי",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "2",
-            customer_id: "c2",
-            customer_name: "רחל לוי",
-            customer_email: "rachel@gmail.com",
-            customer_phone: "054-7654321",
-            amount: 850,
-            original_amount: 850,
-            due_date: new Date(Date.now() + 86400000 * 10).toISOString().split('T')[0],
-            status: "pending",
-            notes: null,
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "3",
-            customer_id: "c3",
-            customer_name: "דני אברהם",
-            customer_email: "dani@gmail.com",
-            customer_phone: "050-9876543",
-            amount: 250,
-            original_amount: 1000,
-            due_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-            status: "partial",
-            notes: "שולם 750 ₪",
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "4",
-            customer_id: "c4",
-            customer_name: "שרה מזרחי",
-            customer_email: "sara@gmail.com",
-            customer_phone: "053-1111111",
-            amount: 0,
-            original_amount: 500,
-            due_date: null,
-            status: "paid",
-            notes: null,
-            created_at: new Date().toISOString(),
-          },
-        ]);
+        setDebts([]);
       }
     } catch (error) {
       console.error("Error fetching debts:", error);

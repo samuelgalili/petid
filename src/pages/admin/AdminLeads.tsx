@@ -118,56 +118,10 @@ const AdminLeads = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setLeads(data);
       } else {
-        // Mock data for demo
-        setLeads([
-          {
-            id: "1",
-            name: "יוסי כהן",
-            email: "yossi@gmail.com",
-            phone: "052-1234567",
-            source: "facebook",
-            status: "new",
-            notes: "מעוניין במנוי חודשי",
-            assigned_to: null,
-            created_at: new Date().toISOString(),
-          },
-          {
-            id: "2",
-            name: "רחל לוי",
-            email: "rachel@gmail.com",
-            phone: "054-7654321",
-            source: "instagram",
-            status: "contacted",
-            notes: null,
-            assigned_to: null,
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-          },
-          {
-            id: "3",
-            name: "דני אברהם",
-            email: "dani@gmail.com",
-            phone: "050-9876543",
-            source: "whatsapp",
-            status: "qualified",
-            notes: "לקוח פוטנציאלי מאוד",
-            assigned_to: null,
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-          },
-          {
-            id: "4",
-            name: "שרה מזרחי",
-            email: "sara@gmail.com",
-            phone: "053-1111111",
-            source: "website",
-            status: "converted",
-            notes: "הפך ללקוח!",
-            assigned_to: null,
-            created_at: new Date(Date.now() - 259200000).toISOString(),
-          },
-        ]);
+        setLeads([]);
       }
     } catch (error) {
       console.error("Error fetching leads:", error);

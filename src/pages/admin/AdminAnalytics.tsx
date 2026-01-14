@@ -48,27 +48,44 @@ const AdminAnalytics = () => {
   const totalUsers = profiles?.length || 0;
   const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+  // Calculate previous period for comparison
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+  const recentOrders = orders?.filter(o => new Date(o.created_at) >= thirtyDaysAgo) || [];
+  const previousOrders = orders?.filter(o => {
+    const date = new Date(o.created_at);
+    return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+  }) || [];
+
+  const currentRevenue = recentOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+  const previousRevenue = previousOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+  const revenueChange = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue * 100).toFixed(1) : "0";
+  const orderChange = previousOrders.length > 0 ? ((recentOrders.length - previousOrders.length) / previousOrders.length * 100).toFixed(1) : "0";
+
   const stats = [
     {
       title: "הכנסות",
       value: `₪${totalRevenue.toLocaleString()}`,
-      change: "+12.5%",
-      isPositive: true,
+      change: `${Number(revenueChange) >= 0 ? '+' : ''}${revenueChange}%`,
+      isPositive: Number(revenueChange) >= 0,
       icon: DollarSign,
       gradient: "from-emerald-500 to-green-600",
     },
     {
       title: "הזמנות",
       value: totalOrders.toLocaleString(),
-      change: "+8.2%",
-      isPositive: true,
+      change: `${Number(orderChange) >= 0 ? '+' : ''}${orderChange}%`,
+      isPositive: Number(orderChange) >= 0,
       icon: ShoppingCart,
       gradient: "from-violet-500 to-purple-600",
     },
     {
       title: "משתמשים",
       value: totalUsers.toLocaleString(),
-      change: "+15.3%",
+      change: "+0%",
       isPositive: true,
       icon: Users,
       gradient: "from-blue-500 to-cyan-600",
@@ -76,40 +93,66 @@ const AdminAnalytics = () => {
     {
       title: "ממוצע הזמנה",
       value: `₪${avgOrderValue.toFixed(0)}`,
-      change: "-2.1%",
-      isPositive: false,
+      change: "0%",
+      isPositive: true,
       icon: Target,
       gradient: "from-amber-500 to-orange-600",
     },
   ];
 
-  // Mock data for charts
-  const revenueData = [
-    { name: "ינו", revenue: 4000, orders: 24 },
-    { name: "פבר", revenue: 3000, orders: 18 },
-    { name: "מרץ", revenue: 5000, orders: 35 },
-    { name: "אפר", revenue: 4500, orders: 28 },
-    { name: "מאי", revenue: 6000, orders: 42 },
-    { name: "יוני", revenue: 5500, orders: 38 },
-  ];
+  // Generate revenue data from real orders grouped by month
+  const revenueData = (() => {
+    const months = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
+    const currentYear = new Date().getFullYear();
+    const monthlyData: { name: string; revenue: number; orders: number }[] = [];
 
-  const categoryData = [
-    { name: "מזון", value: 35, color: "#8B5CF6" },
-    { name: "צעצועים", value: 25, color: "#10B981" },
-    { name: "אביזרים", value: 20, color: "#F59E0B" },
-    { name: "בריאות", value: 15, color: "#3B82F6" },
-    { name: "אחר", value: 5, color: "#6B7280" },
-  ];
+    for (let i = 0; i < 6; i++) {
+      const monthIndex = new Date().getMonth() - 5 + i;
+      const adjustedMonth = monthIndex < 0 ? monthIndex + 12 : monthIndex;
+      const monthOrders = orders?.filter(o => {
+        const date = new Date(o.created_at);
+        return date.getMonth() === adjustedMonth && date.getFullYear() === (monthIndex < 0 ? currentYear - 1 : currentYear);
+      }) || [];
 
-  const trafficData = [
-    { name: "ראשון", visits: 1200, conversions: 45 },
-    { name: "שני", visits: 1800, conversions: 67 },
-    { name: "שלישי", visits: 1600, conversions: 58 },
-    { name: "רביעי", visits: 2100, conversions: 82 },
-    { name: "חמישי", visits: 1900, conversions: 71 },
-    { name: "שישי", visits: 800, conversions: 28 },
-    { name: "שבת", visits: 600, conversions: 22 },
-  ];
+      monthlyData.push({
+        name: months[adjustedMonth],
+        revenue: monthOrders.reduce((acc, o) => acc + (o.total || 0), 0),
+        orders: monthOrders.length,
+      });
+    }
+    return monthlyData;
+  })();
+
+  // Calculate category data from real orders
+  const categoryData = (() => {
+    const categories: Record<string, number> = {};
+    orders?.forEach(o => {
+      const category = (o as any).category || 'אחר';
+      categories[category] = (categories[category] || 0) + (o.total || 0);
+    });
+
+    const colors = ["#8B5CF6", "#10B981", "#F59E0B", "#3B82F6", "#6B7280"];
+    const total = Object.values(categories).reduce((a, b) => a + b, 0) || 1;
+
+    return Object.entries(categories).slice(0, 5).map(([name, value], i) => ({
+      name,
+      value: Math.round((value / total) * 100),
+      color: colors[i % colors.length],
+    }));
+  })();
+
+  // Traffic data - would need analytics table for real data
+  const trafficData = (() => {
+    const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    return days.map((name, i) => {
+      const dayOrders = orders?.filter(o => new Date(o.created_at).getDay() === i) || [];
+      return {
+        name,
+        visits: dayOrders.length * 10, // Estimate
+        conversions: dayOrders.length,
+      };
+    });
+  })();
 
   return (
     <AdminLayout title="אנליטיקות" icon={BarChart3}>

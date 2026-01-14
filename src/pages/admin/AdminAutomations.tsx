@@ -103,22 +103,14 @@ const AdminAutomations = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setAutomations(data);
       } else {
-        // Mock data
-        setAutomations([
-          { id: "1", name: "התראה על משימה באיחור", description: "שולח התראה כשמשימה עוברת את תאריך היעד", trigger_type: "task_overdue", trigger_conditions: {}, actions: [{ type: "send_notification", config: {} }], is_active: true, execution_count: 45, last_executed_at: "2025-01-07T10:30:00", created_at: "2025-01-01" },
-          { id: "2", name: "אימייל ברוכים הבאים", description: "שולח אימייל ללקוח חדש", trigger_type: "new_customer", trigger_conditions: {}, actions: [{ type: "send_email", config: {} }], is_active: true, execution_count: 123, last_executed_at: "2025-01-07T09:15:00", created_at: "2024-12-15" },
-          { id: "3", name: "משימת פולואפ אוטומטית", description: "יוצר משימת פולואפ כשעסקה עוברת לשלב הצעת מחיר", trigger_type: "deal_stage_changed", trigger_conditions: { stage: "proposal" }, actions: [{ type: "create_task", config: {} }], is_active: false, execution_count: 28, last_executed_at: "2025-01-05T14:00:00", created_at: "2024-12-20" },
-          { id: "4", name: "התראת הזמנה חדשה", description: "שולח התראה למנהל כשיש הזמנה חדשה", trigger_type: "order_placed", trigger_conditions: {}, actions: [{ type: "send_notification", config: {} }, { type: "send_email", config: {} }], is_active: true, execution_count: 89, last_executed_at: "2025-01-07T11:00:00", created_at: "2024-12-10" },
-        ]);
+        setAutomations([]);
       }
     } catch (error) {
       console.error("Error fetching automations:", error);
-      setAutomations([
-        { id: "1", name: "התראה על משימה באיחור", description: "שולח התראה כשמשימה עוברת את תאריך היעד", trigger_type: "task_overdue", trigger_conditions: {}, actions: [{ type: "send_notification", config: {} }], is_active: true, execution_count: 45, last_executed_at: "2025-01-07T10:30:00", created_at: "2025-01-01" },
-      ]);
+      setAutomations([]);
     } finally {
       setLoading(false);
     }

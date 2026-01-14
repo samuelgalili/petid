@@ -340,9 +340,9 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
   const tasks = getBreedTasks(pet.breed, pet.type);
   
-  // Mock data for stock - in real app would come from orders
-  const daysUntilReorder = 6;
-  const compatibilityScore = 92;
+  // Calculate from real order data when available
+  const daysUntilReorder = 0;
+  const compatibilityScore = 0;
 
   return (
     <motion.div 

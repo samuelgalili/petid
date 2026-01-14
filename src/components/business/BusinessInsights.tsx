@@ -23,8 +23,8 @@ export const BusinessInsights = ({
   totalReviews, 
   rating,
   businessId,
-  previousViewCount = Math.floor(viewCount * 0.85), // Mock previous data
-  previousReviews = Math.max(0, totalReviews - 2)
+  previousViewCount,
+  previousReviews
 }: BusinessInsightsProps) => {
   const navigate = useNavigate();
   

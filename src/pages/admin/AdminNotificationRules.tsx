@@ -48,6 +48,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationRule {
   id: string;
@@ -111,66 +113,62 @@ const AdminNotificationRules = () => {
     template_body: "",
   });
 
-  useEffect(() => {
-    // Mock data
-    setRules([
-      {
-        id: "1",
-        name: "התראה על הזמנה חדשה",
-        description: "שולח התראה למנהל כשנכנסת הזמנה חדשה",
-        event_type: "new_order",
-        channels: ["push", "email"],
-        is_active: true,
-        conditions: {},
-        template: { title: "הזמנה חדשה!", body: "הזמנה חדשה בסכום {{amount}} התקבלה מ-{{customer}}" },
-        created_at: "2024-12-01",
-        trigger_count: 156,
-      },
-      {
-        id: "2",
-        name: "התראת מלאי נמוך",
-        description: "מתריע כשמוצר יורד מתחת ל-5 יחידות",
-        event_type: "low_stock",
-        channels: ["push"],
-        is_active: true,
-        conditions: { threshold: 5 },
-        template: { title: "מלאי נמוך!", body: "המוצר {{product}} ירד ל-{{quantity}} יחידות" },
-        created_at: "2024-12-10",
-        trigger_count: 23,
-      },
-      {
-        id: "3",
-        name: "ברוכים הבאים למשתמש חדש",
-        description: "שולח אימייל ברוכים הבאים למשתמש חדש",
-        event_type: "new_user",
-        channels: ["email"],
-        is_active: true,
-        conditions: {},
-        template: { title: "ברוכים הבאים!", body: "שלום {{name}}, ברוך הבא למשפחת PetID!" },
-        created_at: "2024-11-15",
-        trigger_count: 89,
-      },
-      {
-        id: "4",
-        name: "התראה על משימה באיחור",
-        description: "מתריע כשמשימה עוברת את תאריך היעד",
-        event_type: "task_overdue",
-        channels: ["push", "email"],
-        is_active: false,
-        conditions: {},
-        template: { title: "משימה באיחור", body: "המשימה '{{task}}' עברה את תאריך היעד" },
-        created_at: "2024-12-20",
-        trigger_count: 12,
-      },
-    ]);
+  const { data: rulesData } = useQuery({
+    queryKey: ['notification-rules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notification_templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
-    setLogs([
-      { id: "1", rule_id: "1", rule_name: "התראה על הזמנה חדשה", channel: "push", recipient: "admin@petid.com", status: "sent", sent_at: new Date().toISOString(), message: "הזמנה חדשה בסכום ₪250" },
-      { id: "2", rule_id: "2", rule_name: "התראת מלאי נמוך", channel: "push", recipient: "admin@petid.com", status: "sent", sent_at: new Date(Date.now() - 3600000).toISOString(), message: "מזון לכלבים ירד ל-3 יחידות" },
-      { id: "3", rule_id: "1", rule_name: "התראה על הזמנה חדשה", channel: "email", recipient: "admin@petid.com", status: "failed", sent_at: new Date(Date.now() - 7200000).toISOString(), message: "הזמנה חדשה בסכום ₪180" },
-      { id: "4", rule_id: "3", rule_name: "ברוכים הבאים למשתמש חדש", channel: "email", recipient: "newuser@email.com", status: "sent", sent_at: new Date(Date.now() - 86400000).toISOString(), message: "שלום דני, ברוך הבא!" },
-    ]);
-  }, []);
+  const { data: logsData } = useQuery({
+    queryKey: ['notification-logs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  useEffect(() => {
+    if (rulesData) {
+      setRules(rulesData.map((r: any) => ({
+        id: r.id,
+        name: r.name || r.template_key,
+        description: r.description || '',
+        event_type: r.trigger_event || 'new_order',
+        channels: r.channels || ['push'],
+        is_active: r.is_active ?? true,
+        conditions: r.conditions || {},
+        template: { title: r.title_template || '', body: r.body_template || '' },
+        created_at: r.created_at,
+        trigger_count: 0,
+      })));
+    }
+  }, [rulesData]);
+
+  useEffect(() => {
+    if (logsData) {
+      setLogs(logsData.map((l: any) => ({
+        id: l.id,
+        rule_id: l.related_id || '',
+        rule_name: l.title || 'התראה',
+        channel: l.type || 'push',
+        recipient: l.user_id || '',
+        status: l.is_read ? 'sent' : 'pending',
+        sent_at: l.created_at,
+        message: l.message || '',
+      })));
+    }
+  }, [logsData]);
 
   const handleToggleRule = (id: string, isActive: boolean) => {
     setRules(rules.map((r) => (r.id === id ? { ...r, is_active: isActive } : r)));

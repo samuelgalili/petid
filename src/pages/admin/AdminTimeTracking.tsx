@@ -94,17 +94,10 @@ const AdminTimeTracking = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setTimeEntries(data.map(e => ({ ...e, task_title: "משימה", user_name: "משתמש" })));
       } else {
-        // Mock data
-        setTimeEntries([
-          { id: "1", task_id: "1", task_title: "פיתוח אתר", user_id: "1", user_name: "יצחק נחמד", start_time: "2025-01-07T09:00:00", end_time: "2025-01-07T12:30:00", duration_minutes: 210, description: "עבודה על הדשבורד", is_billable: true },
-          { id: "2", task_id: "2", task_title: "פגישת לקוח", user_id: "1", user_name: "יצחק נחמד", start_time: "2025-01-07T14:00:00", end_time: "2025-01-07T15:30:00", duration_minutes: 90, description: "פגישת הכרות", is_billable: true },
-          { id: "3", task_id: "3", task_title: "תיקוני באגים", user_id: "2", user_name: "לאה רובינסון", start_time: "2025-01-07T10:00:00", end_time: "2025-01-07T11:00:00", duration_minutes: 60, description: null, is_billable: false },
-          { id: "4", task_id: "1", task_title: "פיתוח אתר", user_id: "1", user_name: "יצחק נחמד", start_time: "2025-01-06T09:00:00", end_time: "2025-01-06T17:00:00", duration_minutes: 480, description: "עבודה על ממשק המשתמש", is_billable: true },
-          { id: "5", task_id: "4", task_title: "כתיבת תיעוד", user_id: "3", user_name: "לילך יצחק", start_time: "2025-01-06T14:00:00", end_time: "2025-01-06T16:00:00", duration_minutes: 120, description: null, is_billable: false },
-        ]);
+        setTimeEntries([]);
       }
     } catch (error) {
       console.error("Error fetching time entries:", error);

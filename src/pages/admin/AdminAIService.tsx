@@ -30,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 // Sub-pages imports
 import AIConversations from "@/components/admin/ai-service/AIConversations";
@@ -44,30 +46,73 @@ import AIAgentInbox from "@/components/admin/ai-service/AIAgentInbox";
 const AdminAIService = () => {
   const [activeTab, setActiveTab] = useState("home");
 
-  // Mock data for demo
+  // Fetch real data from agent_conversations
+  const { data: conversations = [] } = useQuery({
+    queryKey: ['ai-conversations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_conversations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ['ai-messages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_messages')
+        .select('*, agent_conversations(title)')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: agentTasks = [] } = useQuery({
+    queryKey: ['agent-tasks-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Calculate real stats
+  const totalConversations = conversations.length;
+  const activeConversations = conversations.filter((c: any) => c.is_active).length;
+  const resolvedByAI = agentTasks.filter((t: any) => t.status === 'completed').length;
+  const pendingHandoff = agentTasks.filter((t: any) => t.requires_approval && t.status === 'pending').length;
+
   const stats = {
-    totalConversations: 2847,
-    resolvedByAI: 2156,
+    totalConversations,
+    resolvedByAI,
     avgResponseTime: "12 שניות",
     satisfaction: 94.5,
-    leadsGenerated: 342,
-    conversionRate: 18.5,
+    leadsGenerated: agentTasks.filter((t: any) => t.task_type === 'lead_generation').length,
+    conversionRate: totalConversations > 0 ? ((resolvedByAI / totalConversations) * 100).toFixed(1) : 0,
     activeAgents: 3,
-    pendingHandoff: 8
+    pendingHandoff
   };
 
-  const recentConversations = [
-    { id: 1, customer: "שרה לוי", message: "מתי ההזמנה שלי תגיע?", status: "resolved", time: "לפני 2 דקות", channel: "whatsapp" },
-    { id: 2, customer: "דניאל כהן", message: "אני מעוניין במבצע השבועי", status: "active", time: "לפני 5 דקות", channel: "web" },
-    { id: 3, customer: "מיכל אברהם", message: "יש בעיה עם המוצר שקיבלתי", status: "handoff", time: "לפני 8 דקות", channel: "facebook" },
-    { id: 4, customer: "יוסי רוזנברג", message: "מה שעות הפעילות שלכם?", status: "resolved", time: "לפני 12 דקות", channel: "instagram" },
-  ];
+  const recentConversations = messages.slice(0, 4).map((m: any, i: number) => ({
+    id: m.id,
+    customer: m.agent_conversations?.title || `לקוח ${i + 1}`,
+    message: m.content?.substring(0, 50) + '...',
+    status: m.role === 'assistant' ? 'resolved' : 'active',
+    time: new Date(m.created_at).toLocaleString('he-IL', { hour: '2-digit', minute: '2-digit' }),
+    channel: 'web'
+  }));
 
   const channelStats = [
-    { name: "WhatsApp", count: 1247, percentage: 44, color: "bg-emerald-500" },
-    { name: "Web Chat", count: 892, percentage: 31, color: "bg-blue-500" },
-    { name: "Facebook", count: 456, percentage: 16, color: "bg-indigo-500" },
-    { name: "Instagram", count: 252, percentage: 9, color: "bg-pink-500" },
+    { name: "Web Chat", count: totalConversations, percentage: 100, color: "bg-blue-500" },
   ];
 
   const getStatusColor = (status: string) => {
