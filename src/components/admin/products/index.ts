@@ -4,3 +4,7 @@ export { ProductCompetitorPrices } from './ProductCompetitorPrices';
 export { ProductHistory } from './ProductHistory';
 export { ProductDuplicateCheck } from './ProductDuplicateCheck';
 export { ProductSEOAnalyzer } from './ProductSEOAnalyzer';
+export { ProductAIPanel } from './ProductAIPanel';
+export { ProductBulkActions } from './ProductBulkActions';
+export { ProductImageDragDrop } from './ProductImageDragDrop';
+export { ProductKeyboardShortcutsHelp } from './ProductKeyboardShortcutsHelp';
