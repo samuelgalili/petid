@@ -87,11 +87,29 @@ function parsePrice(str: string): number | null {
 }
 
 // Detect if the page is a product page or a list/category page
-function detectPageType(html: string): "product" | "list" {
+function detectPageType(html: string, url: string): "product" | "list" {
+  // Check URL patterns first - very reliable indicators
+  const urlLower = url.toLowerCase();
+  const isProductUrl = urlLower.includes("/product/") && !urlLower.includes("/product-category/");
+  const isCategoryUrl = urlLower.includes("/product-category/") || 
+                        urlLower.includes("/shop/") ||
+                        urlLower.includes("/category/");
+  
+  if (isCategoryUrl) {
+    console.log("URL pattern detected as category/list page");
+    return "list";
+  }
+  
+  if (isProductUrl) {
+    console.log("URL pattern detected as product page");
+    return "product";
+  }
+  
   // Strong product page signals
   const productSignals = [
     /"@type"\s*:\s*"Product"/i,
     /property="og:type"\s+content="product"/i,
+    /content="product"\s+property="og:type"/i,
     /class="[^"]*single-product[^"]*"/i,
     /class="[^"]*product-single[^"]*"/i,
     /<form[^>]*class="[^"]*variations_form[^"]*"/i,
@@ -102,6 +120,7 @@ function detectPageType(html: string): "product" | "list" {
     /id="product-images"/i,
     /<button[^>]*add[_-]to[_-]cart/i,
     /class="[^"]*summary[^"]*entry-summary[^"]*"/i,
+    /<body[^>]*class="[^"]*single-product[^"]*"/i,
   ];
 
   let productScore = 0;
@@ -121,6 +140,8 @@ function detectPageType(html: string): "product" | "list" {
     /class="[^"]*product-category[^"]*"/i,
     /class="[^"]*shop-container[^"]*"/i,
     /<ul[^>]*class="[^"]*products[^"]*"[^>]*>/i,
+    /<body[^>]*class="[^"]*archive[^"]*"/i,
+    /<body[^>]*class="[^"]*woocommerce-shop[^"]*"/i,
   ];
 
   let listScore = 0;
@@ -130,22 +151,25 @@ function detectPageType(html: string): "product" | "list" {
     }
   }
 
-  // Count product cards on page - more accurate counting
-  const productCardMatches = html.match(/class="[^"]*type-product[^"]*"/gi) || [];
-  if (productCardMatches.length > 5) {
+  // Count product cards on page - only count real product listing cards, not related products
+  const productCardMatches = html.match(/class="[^"]*type-product[^"]*product-category/gi) || [];
+  const loopProductMatches = html.match(/class="[^"]*woocommerce-loop-product__link/gi) || [];
+  const cardCount = Math.max(productCardMatches.length, loopProductMatches.length);
+  
+  if (cardCount > 8) {
     listScore += 3;
-  } else if (productCardMatches.length > 2) {
-    listScore += 1;
+  } else if (cardCount > 4) {
+    listScore += 2;
   }
 
-  console.log(`Page detection: productScore=${productScore}, listScore=${listScore}, productCards=${productCardMatches.length}`);
+  console.log(`Page detection: productScore=${productScore}, listScore=${listScore}, productCards=${cardCount}`);
 
-  // Product page if high product signals and not many product cards
-  if (productScore >= 3 && productCardMatches.length <= 3) {
+  // Product page if has strong product signals
+  if (productScore >= 3) {
     return "product";
   }
   
-  if (productScore >= 2 && listScore === 0) {
+  if (productScore >= 2 && listScore <= 1) {
     return "product";
   }
 
@@ -289,13 +313,34 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
   };
 
   // ==================== TITLE ====================
-  const ogTitleMatch = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
+  // Prioritize og:title and product-specific title patterns
+  const ogTitleMatch = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i) ||
+                       html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:title"/i);
+  
+  // Try multiple product-specific title patterns
   const h1ProductMatch = html.match(/<h1[^>]*class="[^"]*product[_-]?title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
-                         html.match(/<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([^<]+)<\/h1>/i);
-  const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+                         html.match(/<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
+                         html.match(/<h1[^>]*class="[^"]*product-name[^"]*"[^>]*>([^<]+)<\/h1>/i);
+  
+  // Find H1 that's inside a product summary/detail section (more reliable)
+  const summaryH1Match = html.match(/class="[^"]*(?:summary|product-details|product-info)[^"]*"[\s\S]*?<h1[^>]*>([^<]+)<\/h1>/i);
+  
+  // Generic H1 but filter out common widget/chat titles
+  let h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+  if (h1Match && h1Match[1]) {
+    const h1Text = h1Match[1].toLowerCase();
+    // Skip if this looks like a widget/chat title
+    if (h1Text.includes("chat") || h1Text.includes("joinchat") || h1Text.includes("whatsapp") ||
+        h1Text.includes("contact") || h1Text.includes("support") || h1Text.length < 3) {
+      h1Match = null;
+    }
+  }
+  
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   
+  // Prefer in order: product-specific H1 > summary H1 > og:title > generic H1 > page title
   product.title = h1ProductMatch?.[1]?.trim() ||
+    summaryH1Match?.[1]?.trim() ||
     ogTitleMatch?.[1]?.trim() ||
     h1Match?.[1]?.trim() ||
     titleMatch?.[1]?.split("|")[0]?.split("–")[0]?.split("-")[0]?.trim() || "";
@@ -306,6 +351,16 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
   }
   if (product.title.includes(" | ")) {
     product.title = product.title.split(" | ")[0].trim();
+  }
+  
+  // Validate title - skip if too short or still looks like a widget
+  if (product.title.length < 5 || product.title.toLowerCase().includes("joinchat") || 
+      product.title.toLowerCase().includes("whatsapp")) {
+    // Try extracting from JSON-LD
+    const jsonLdProductMatch = html.match(/"@type"\s*:\s*"Product"[\s\S]*?"name"\s*:\s*"([^"]+)"/i);
+    if (jsonLdProductMatch && jsonLdProductMatch[1]) {
+      product.title = jsonLdProductMatch[1].trim();
+    }
   }
 
   // ==================== BRAND ====================
@@ -395,58 +450,106 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
   product.images = imageUrls.slice(0, 20);
 
   // ==================== PRICES ====================
-  // First try JSON-LD
+  console.log("Extracting prices...");
+  
+  // First try JSON-LD - most reliable source
   const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
   if (jsonLdMatch) {
     for (const jsonScript of jsonLdMatch) {
       try {
         const jsonContent = jsonScript.replace(/<\/?script[^>]*>/gi, "");
         const data = JSON.parse(jsonContent);
-        const offers = data.offers || data.Offers || (Array.isArray(data) ? data.find((d: any) => d.offers)?.offers : null);
-        if (offers) {
-          const offer = Array.isArray(offers) ? offers[0] : offers;
-          if (offer.price) {
-            product.basePrice = parseFloat(offer.price);
-          }
-          if (offer.priceCurrency) {
-            product.currency = offer.priceCurrency;
+        
+        // Handle Product type directly
+        if (data["@type"] === "Product" || data.type === "Product") {
+          const offers = data.offers || data.Offers;
+          if (offers) {
+            const offer = Array.isArray(offers) ? offers[0] : offers;
+            if (offer.price !== undefined && offer.price !== null) {
+              product.basePrice = parseFloat(String(offer.price));
+              console.log("Found JSON-LD price:", product.basePrice);
+            }
+            if (offer.priceCurrency) {
+              product.currency = offer.priceCurrency;
+            }
           }
         }
-      } catch {}
+        
+        // Check for arrays containing Product
+        if (Array.isArray(data)) {
+          const productData = data.find((d: any) => d["@type"] === "Product");
+          if (productData?.offers) {
+            const offer = Array.isArray(productData.offers) ? productData.offers[0] : productData.offers;
+            if (offer.price !== undefined && !product.basePrice) {
+              product.basePrice = parseFloat(String(offer.price));
+              console.log("Found JSON-LD array price:", product.basePrice);
+            }
+          }
+        }
+      } catch (e) {
+        console.log("JSON-LD parse error:", e);
+      }
     }
   }
 
   // Fallback to HTML patterns for prices
   if (!product.basePrice) {
-    // Try to find sale and original prices
+    console.log("No JSON-LD price found, trying HTML patterns...");
+    
+    // Try to find sale and original prices (WooCommerce pattern)
     const salePriceMatch = html.match(/<ins[^>]*>[\s\S]*?<bdi>.*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/bdi>[\s\S]*?<\/ins>/i) ||
+                           html.match(/<ins[^>]*>[\s\S]*?₪\s*(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/ins>/i) ||
                            html.match(/<ins[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/ins>/i);
     const originalPriceMatch = html.match(/<del[^>]*>[\s\S]*?<bdi>.*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/bdi>[\s\S]*?<\/del>/i) ||
+                               html.match(/<del[^>]*>[\s\S]*?₪\s*(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/del>/i) ||
                                html.match(/<del[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/del>/i);
     
     if (salePriceMatch) {
       product.salePrice = parseFloat(salePriceMatch[1].replace(",", "."));
+      console.log("Found HTML sale price:", product.salePrice);
     }
     if (originalPriceMatch) {
       product.basePrice = parseFloat(originalPriceMatch[1].replace(",", "."));
+      console.log("Found HTML original price:", product.basePrice);
     }
     
     // If no base price found, look for regular price patterns
     if (!product.basePrice && !product.salePrice) {
       const pricePatterns = [
-        /class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[\s\S]*?<bdi>.*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/bdi>/i,
-        /class="[^"]*price[^"]*"[^>]*>[\s\S]*?₪\s*(\d+(?:[.,]\d{1,2})?)/i,
-        /₪\s*(\d+(?:[.,]\d{1,2})?)/i,
+        // WooCommerce price amount - more flexible matching
+        /woocommerce-Price-amount[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/(?:span|bdi)/i,
+        // Price class with any format
+        /class="[^"]*price[^"]*"[^>]*>[\s\S]{0,100}?(\d+(?:[.,]\d{1,2})?)/i,
+        // Price with span amount
+        /<span[^>]*amount[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)/i,
+        // Any shekel price
+        /₪\s*(\d+(?:[.,]\d{1,2})?)/,
+        // Price with shekel after
+        /(\d+(?:[.,]\d{1,2})?)\s*₪/,
+        // data-price attribute
+        /data-price="(\d+(?:[.,]\d{1,2})?)"/i,
       ];
       for (const pattern of pricePatterns) {
         const match = html.match(pattern);
-        if (match) {
-          product.basePrice = parseFloat(match[1].replace(",", "."));
-          break;
+        if (match && match[1]) {
+          const price = parseFloat(match[1].replace(",", "."));
+          if (price > 0) {
+            product.basePrice = price;
+            console.log("Found HTML pattern price:", product.basePrice);
+            break;
+          }
         }
       }
     }
   }
+  
+  // If we still have no basePrice but have salePrice, use sale as base
+  if (!product.basePrice && product.salePrice) {
+    product.basePrice = product.salePrice;
+    product.salePrice = null;
+  }
+  
+  console.log(`Final prices: base=${product.basePrice}, sale=${product.salePrice}`);
 
   // ==================== CATEGORY & PET TYPE FROM URL ====================
   let decodedUrl = url.toLowerCase();
@@ -713,9 +816,9 @@ async function scrapeUrl(url: string, apiKey: string): Promise<string | null> {
       },
       body: JSON.stringify({
         url,
-        formats: ["html"],
+        formats: ["rawHtml"], // Use rawHtml to get complete HTML with all scripts/data
         onlyMainContent: false,
-        waitFor: 2000, // Wait for JavaScript to load variations
+        waitFor: 3000, // Wait for JavaScript to load variations and prices
       }),
     });
 
@@ -725,10 +828,17 @@ async function scrapeUrl(url: string, apiKey: string): Promise<string | null> {
     }
 
     const scrapeData = await scrapeResponse.json();
-    const html = scrapeData.data?.html || scrapeData.html || null;
+    // Try rawHtml first, then html
+    const html = scrapeData.data?.rawHtml || scrapeData.data?.html || scrapeData.rawHtml || scrapeData.html || null;
     
     if (html) {
       console.log(`Received HTML: ${html.length} characters`);
+      
+      // Debug: Log if we find price-related content
+      const hasJsonLd = html.includes('"@type":"Product"') || html.includes('"@type": "Product"');
+      const hasPriceAmount = html.includes('woocommerce-Price-amount');
+      const hasVariations = html.includes('data-product_variations');
+      console.log(`HTML check: JSON-LD Product=${hasJsonLd}, PriceAmount=${hasPriceAmount}, Variations=${hasVariations}`);
     }
     
     return html;
@@ -826,7 +936,7 @@ serve(async (req) => {
     }
 
     // Step 2: Detect page type
-    const pageType = detectPageType(initialHtml);
+    const pageType = detectPageType(initialHtml, url);
     console.log("Detected page type:", pageType);
 
     const result: ImportResult = {
