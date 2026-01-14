@@ -40,6 +40,11 @@ interface ProductData {
   is_flagged?: boolean | null;
   flagged_reason?: string | null;
   flagged_at?: string | null;
+  sku?: string | null;
+  pet_type?: string | null;
+  // Unified field to track source
+  source?: 'manual' | 'scraped';
+  source_url?: string | null;
 }
 
 const emptyProduct: Partial<ProductData> = {
@@ -55,11 +60,15 @@ const emptyProduct: Partial<ProductData> = {
 
 const categories = [
   { value: "food", label: "מזון" },
+  { value: "dry-food", label: "מזון יבש" },
+  { value: "wet-food", label: "מזון רטוב" },
   { value: "treats", label: "חטיפים" },
   { value: "toys", label: "צעצועים" },
   { value: "accessories", label: "אביזרים" },
   { value: "health", label: "בריאות" },
   { value: "grooming", label: "טיפוח" },
+  { value: "חנות הכלבים", label: "חנות הכלבים" },
+  { value: "מותגים", label: "מותגים" },
 ];
 
 const AdminProducts = () => {
@@ -77,6 +86,8 @@ const AdminProducts = () => {
   const [uploading, setUploading] = useState(false);
   const [showNeedsReview, setShowNeedsReview] = useState(false);
   const [showFlagged, setShowFlagged] = useState(false);
+  const [showScrapedOnly, setShowScrapedOnly] = useState(false);
+  const [showManualOnly, setShowManualOnly] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
@@ -140,21 +151,60 @@ const AdminProducts = () => {
     }
   }, [searchParams]);
 
+  // Default business ID for the store
+  const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
+
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["admin-products"],
+    queryKey: ["admin-products-unified"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch from business_products (manual)
+      const { data: businessProducts, error: bpError } = await supabase
         .from("business_products")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as ProductData[];
+      if (bpError) console.error("Error fetching business_products:", bpError);
+
+      // Fetch from scraped_products (imported)
+      const { data: scrapedProducts, error: spError } = await supabase
+        .from("scraped_products")
+        .select("*")
+        .order("scraped_at", { ascending: false });
+
+      if (spError) console.error("Error fetching scraped_products:", spError);
+
+      // Transform and unify
+      const manualProducts: ProductData[] = (businessProducts || []).map(p => ({
+        ...p,
+        source: 'manual' as const,
+        source_url: null,
+      }));
+
+      const importedProducts: ProductData[] = (scrapedProducts || []).map(sp => ({
+        id: sp.id,
+        name: sp.product_name || '',
+        description: sp.long_description || sp.short_description || '',
+        price: sp.final_price || sp.regular_price || 0,
+        original_price: sp.regular_price !== sp.final_price ? sp.regular_price : null,
+        image_url: sp.main_image_url || '/placeholder.svg',
+        category: sp.sub_category || sp.main_category || null,
+        in_stock: sp.stock_status === 'in_stock' || sp.stock_status === null,
+        is_featured: false,
+        business_id: DEFAULT_BUSINESS_ID,
+        created_at: sp.created_at || sp.scraped_at,
+        is_flagged: sp.is_flagged || false,
+        flagged_reason: sp.flagged_reason || null,
+        sku: sp.sku || null,
+        pet_type: sp.pet_type || null,
+        source: 'scraped' as const,
+        source_url: (sp as any).source_url || null,
+      }));
+
+      // Combine - manual first, then scraped
+      return [...manualProducts, ...importedProducts];
     },
   });
 
-  // Default business ID for the store
-  const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
   const saveMutation = useMutation({
     mutationFn: async (product: Partial<ProductData>) => {
@@ -300,14 +350,38 @@ const AdminProducts = () => {
       header: "מוצר",
       render: (product) => (
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted">
+          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted">
             <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+            {/* Source indicator */}
+            {product.source === 'scraped' && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center" title="מיובא">
+                <Download className="w-2.5 h-2.5 text-white" />
+              </div>
+            )}
           </div>
-          <div>
-            <p className="font-medium">{product.name}</p>
-            <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
+          <div className="min-w-0">
+            <p className="font-medium truncate">{product.name}</p>
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
+            </div>
           </div>
         </div>
+      ),
+    },
+    {
+      key: "source",
+      header: "מקור",
+      render: (product) => (
+        <Badge 
+          variant="outline" 
+          className={`text-xs ${
+            product.source === 'scraped' 
+              ? 'bg-blue-50 text-blue-700 border-blue-200' 
+              : 'bg-purple-50 text-purple-700 border-purple-200'
+          }`}
+        >
+          {product.source === 'scraped' ? 'מיובא' : 'ידני'}
+        </Badge>
       ),
     },
     {
@@ -423,6 +497,14 @@ const AdminProducts = () => {
         { value: "false", label: "אזל" },
       ],
     },
+    {
+      key: "source",
+      label: "מקור",
+      options: [
+        { value: "manual", label: "ידני" },
+        { value: "scraped", label: "מיובא" },
+      ],
+    },
   ];
 
   // Filter products based on active filters
@@ -430,7 +512,14 @@ const AdminProducts = () => {
     ? products.filter(p => p.is_flagged)
     : showNeedsReview 
       ? products.filter(p => p.needs_image_review || p.needs_price_review)
-      : products;
+      : showScrapedOnly
+        ? products.filter(p => p.source === 'scraped')
+        : showManualOnly
+          ? products.filter(p => p.source === 'manual')
+          : products;
+
+  const scrapedCount = products.filter(p => p.source === 'scraped').length;
+  const manualCount = products.filter(p => p.source === 'manual').length;
 
   return (
     <AdminLayout title="ניהול מוצרים" icon={Package} breadcrumbs={[{ label: "מוצרים" }]}>
@@ -477,6 +566,18 @@ const AdminProducts = () => {
         </div>
         {/* Filter toggles */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Stats badges */}
+          <Badge variant="secondary" className="bg-muted">
+            סה״כ: {products.length}
+          </Badge>
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            <Download className="w-3 h-3 ml-1" />
+            מיובאים: {scrapedCount}
+          </Badge>
+          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+            ידניים: {manualCount}
+          </Badge>
+          
           {showFlagged && (
             <Badge variant="secondary" className="bg-red-100 text-red-800">
               <Flag className="w-3 h-3 ml-1" />
@@ -489,31 +590,64 @@ const AdminProducts = () => {
               מציג מוצרים לבדיקה ({products.filter(p => p.needs_image_review || p.needs_price_review).length})
             </Badge>
           )}
+          
+          {/* Source filter buttons */}
+          <Button 
+            variant={showScrapedOnly ? "default" : "outline"} 
+            size="sm"
+            className={showScrapedOnly ? "bg-blue-500 hover:bg-blue-600" : ""}
+            onClick={() => {
+              setShowScrapedOnly(!showScrapedOnly);
+              setShowManualOnly(false);
+              setShowFlagged(false);
+              setShowNeedsReview(false);
+            }}
+          >
+            <Download className="w-4 h-4 ml-2" />
+            מיובאים
+          </Button>
+          <Button 
+            variant={showManualOnly ? "default" : "outline"} 
+            size="sm"
+            className={showManualOnly ? "bg-purple-500 hover:bg-purple-600" : ""}
+            onClick={() => {
+              setShowManualOnly(!showManualOnly);
+              setShowScrapedOnly(false);
+              setShowFlagged(false);
+              setShowNeedsReview(false);
+            }}
+          >
+            ידניים
+          </Button>
           <Button 
             variant={showFlagged ? "default" : "outline"} 
             size="sm"
             className={showFlagged ? "bg-red-500 hover:bg-red-600" : ""}
             onClick={() => {
               setShowFlagged(!showFlagged);
-              if (showFlagged) setShowNeedsReview(false);
+              setShowNeedsReview(false);
+              setShowScrapedOnly(false);
+              setShowManualOnly(false);
             }}
           >
             <Flag className="w-4 h-4 ml-2" />
-            מדווחים ({products.filter(p => p.is_flagged).length})
+            מדווחים
           </Button>
           <Button 
             variant={showNeedsReview ? "default" : "outline"} 
             size="sm"
             onClick={() => {
               setShowNeedsReview(!showNeedsReview);
-              if (showNeedsReview) setShowFlagged(false);
+              setShowFlagged(false);
+              setShowScrapedOnly(false);
+              setShowManualOnly(false);
               if (showNeedsReview) {
                 navigate('/admin/products', { replace: true });
               }
             }}
           >
             <AlertCircle className="w-4 h-4 ml-2" />
-            דורשים בדיקה
+            לבדיקה
           </Button>
         </div>
       </div>
