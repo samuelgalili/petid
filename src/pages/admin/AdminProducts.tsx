@@ -121,8 +121,12 @@ const AdminProducts = () => {
   // Unflag product mutation
   const unflagMutation = useMutation({
     mutationFn: async (productId: string) => {
+      // Find the product to determine its source
+      const product = products.find(p => p.id === productId);
+      const tableName = product?.source === 'scraped' ? 'scraped_products' : 'business_products';
+      
       const { error } = await supabase
-        .from("business_products")
+        .from(tableName)
         .update({ is_flagged: false, flagged_at: null, flagged_reason: null })
         .eq("id", productId);
       if (error) throw error;
@@ -135,7 +139,7 @@ const AdminProducts = () => {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
       toast({ title: "המוצר הוסר מבדיקה", description: "המוצר זמין לרכישה שוב" });
     },
     onError: (error) => {
@@ -256,7 +260,7 @@ const AdminProducts = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
       toast({ title: editingProduct?.id ? "המוצר עודכן" : "המוצר נוסף בהצלחה!" });
       setIsDialogOpen(false);
       setEditingProduct(null);
@@ -269,8 +273,12 @@ const AdminProducts = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (productId: string) => {
+      // Find the product to determine its source
+      const product = products.find(p => p.id === productId);
+      const tableName = product?.source === 'scraped' ? 'scraped_products' : 'business_products';
+      
       const { error } = await supabase
-        .from("business_products")
+        .from(tableName)
         .delete()
         .eq("id", productId);
 
@@ -280,40 +288,59 @@ const AdminProducts = () => {
         action_type: "product.deleted",
         entity_type: "product",
         entity_id: productId,
+        metadata: { source: product?.source },
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
       toast({ title: "המוצר נמחק" });
       setDeleteDialog({ open: false });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Delete error:", error);
       toast({ title: "שגיאה", description: "המחיקה נכשלה", variant: "destructive" });
     },
   });
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (productIds: string[]) => {
-      const { error } = await supabase
-        .from("business_products")
-        .delete()
-        .in("id", productIds);
+      // Separate products by source
+      const productsToDelete = products.filter(p => productIds.includes(p.id));
+      const manualIds = productsToDelete.filter(p => p.source === 'manual').map(p => p.id);
+      const scrapedIds = productsToDelete.filter(p => p.source === 'scraped').map(p => p.id);
 
-      if (error) throw error;
+      // Delete from business_products
+      if (manualIds.length > 0) {
+        const { error } = await supabase
+          .from("business_products")
+          .delete()
+          .in("id", manualIds);
+        if (error) throw error;
+      }
+
+      // Delete from scraped_products
+      if (scrapedIds.length > 0) {
+        const { error } = await supabase
+          .from("scraped_products")
+          .delete()
+          .in("id", scrapedIds);
+        if (error) throw error;
+      }
 
       await logAction({
         action_type: "product.deleted",
         entity_type: "product",
-        metadata: { deleted_count: productIds.length, bulk: true },
+        metadata: { deleted_count: productIds.length, bulk: true, manual: manualIds.length, scraped: scrapedIds.length },
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
       toast({ title: `${selectedProducts.length} מוצרים נמחקו` });
       setBulkDeleteDialog(false);
       setSelectedProducts([]);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Bulk delete error:", error);
       toast({ title: "שגיאה", description: "המחיקה נכשלה", variant: "destructive" });
     },
   });
