@@ -42,7 +42,7 @@ export const CareDashboard = ({ className = "" }: CareDashboardProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPets = async () => {
+    const fetchPetsAndOrders = async () => {
       if (!user?.id) return;
       
       const { data, error } = await supabase
@@ -57,14 +57,27 @@ export const CareDashboard = ({ className = "" }: CareDashboardProps) => {
         setPets(data);
         if (data.length > 0) {
           setPrimaryPet(data[0]);
-          // Calculate days based on mock last purchase (would come from orders table)
-          setDaysUntilReorder(calculateDaysUntilReorder(new Date(Date.now() - 24 * 24 * 60 * 60 * 1000)));
+          
+          // Fetch last order to calculate days until reorder
+          const { data: lastOrder } = await supabase
+            .from("orders")
+            .select("created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          if (lastOrder) {
+            setDaysUntilReorder(calculateDaysUntilReorder(new Date(lastOrder.created_at)));
+          } else {
+            setDaysUntilReorder(0); // No previous orders
+          }
         }
       }
       setLoading(false);
     };
     
-    fetchPets();
+    fetchPetsAndOrders();
   }, [user?.id]);
 
   if (loading) {

@@ -101,17 +101,17 @@ const AdminFinancial = () => {
       if (balanceData) {
         setMonthlyBalance(balanceData);
       } else {
-        // Mock data for demo
+        // Create empty balance if none exists
         setMonthlyBalance({
           month: currentMonth,
           year: currentYear,
-          total_income: 125000,
-          total_expenses: 52884,
-          merchandise_expenses: 10577,
-          salary_expenses: 11634,
-          fixed_expenses: 21682,
-          variable_expenses: 10577,
-          balance: 72116,
+          total_income: 0,
+          total_expenses: 0,
+          merchandise_expenses: 0,
+          salary_expenses: 0,
+          fixed_expenses: 0,
+          variable_expenses: 0,
+          balance: 0,
         });
       }
 
@@ -128,25 +128,25 @@ const AdminFinancial = () => {
           amount: Number(s.monthly_amount) || 0
         })));
       } else {
-        // Mock data
-        setSupplierSummary([
-          { name: "דיו סנטר", type: "merchandise", amount: 1655 },
-          { name: "חברת החשמל", type: "fixed", amount: 7655 },
-          { name: "שרם שיווק", type: "variable", amount: 988 },
-          { name: "עיריית ירושלים", type: "fixed", amount: 2544 },
-        ]);
+        setSupplierSummary([]);
       }
 
-      // Generate yearly data for charts
-      const yearlyMockData = [];
-      for (let i = 1; i <= 12; i++) {
-        yearlyMockData.push({
-          month: monthNames[i],
-          income: Math.floor(Math.random() * 50000) + 80000,
-          expenses: Math.floor(Math.random() * 30000) + 40000,
-        });
+      // Fetch yearly data from monthly_balance table
+      const { data: yearlyBalanceData } = await supabase
+        .from("monthly_balance")
+        .select("*")
+        .eq("year", currentYear)
+        .order("month", { ascending: true });
+
+      if (yearlyBalanceData && yearlyBalanceData.length > 0) {
+        setYearlyData(yearlyBalanceData.map(b => ({
+          month: monthNames[b.month],
+          income: b.total_income,
+          expenses: b.total_expenses,
+        })));
+      } else {
+        setYearlyData([]);
       }
-      setYearlyData(yearlyMockData);
 
     } catch (error) {
       console.error("Error fetching financial data:", error);

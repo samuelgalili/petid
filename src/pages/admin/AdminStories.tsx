@@ -73,56 +73,10 @@ const AdminStories = () => {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         setStories(data as any);
       } else {
-        // Mock data for demo
-        setStories([
-          {
-            id: "1",
-            user_id: "u1",
-            media_url: "https://picsum.photos/400/700?random=1",
-            media_type: "image",
-            created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            expires_at: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(),
-            view_count: 412,
-            is_close_friends_only: false,
-            user: { full_name: "petid_official", avatar_url: "", username: "petid_official" },
-          },
-          {
-            id: "2",
-            user_id: "u2",
-            media_url: "https://picsum.photos/400/700?random=2",
-            media_type: "image",
-            created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-            expires_at: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
-            view_count: 98,
-            is_close_friends_only: true,
-            user: { full_name: "liran.pet", avatar_url: "", username: "liran.pet" },
-          },
-          {
-            id: "3",
-            user_id: "u3",
-            media_url: "https://picsum.photos/400/700?random=3",
-            media_type: "video",
-            created_at: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(),
-            expires_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-            view_count: 256,
-            is_close_friends_only: false,
-            user: { full_name: "maya_dogs", avatar_url: "", username: "maya_dogs" },
-          },
-          {
-            id: "4",
-            user_id: "u4",
-            media_url: "https://picsum.photos/400/700?random=4",
-            media_type: "image",
-            created_at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
-            expires_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-            view_count: 543,
-            is_close_friends_only: false,
-            user: { full_name: "cat_lover", avatar_url: "", username: "cat_lover" },
-          },
-        ]);
+        setStories([]);
       }
     } catch (error) {
       console.error("Error fetching stories:", error);

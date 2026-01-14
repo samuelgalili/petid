@@ -30,9 +30,9 @@ export const BusinessFeedBanner = () => {
 
   if (!isBusiness || !business) return null;
 
-  // Mock change percentages (in real app, compare to previous period)
-  const viewChange = Math.floor(Math.random() * 30) + 5;
-  const reviewChange = Math.floor(Math.random() * 20);
+  // Calculate real change from analytics (would need previous period data)
+  const viewChange = 0;
+  const reviewChange = 0;
 
   return (
     <motion.div
