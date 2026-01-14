@@ -23,105 +23,89 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!FIRECRAWL_API_KEY) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Firecrawl connector not configured',
+        images: []
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Searching images for:', query);
 
-    // Use AI to find relevant product images from known sources
-    const prompt = `Find ${limit} real product images for pet products matching: "${query}"
-
-Search for actual product images from major pet retailers and brands like:
-- Amazon product images
-- Chewy.com 
-- Petco
-- PetSmart
-- Royal Canin, Hill's, Purina official sites
-- Israeli pet stores (Pet2Go, Zoo-Land, etc.)
-
-Return ONLY a JSON array of direct image URLs (no explanation text):
-["https://example.com/image1.jpg", "https://example.com/image2.jpg", ...]
-
-Important:
-- Only include actual product images (not stock photos)
-- Images should be high quality and square/product-oriented
-- Prefer images with white/clean backgrounds
-- Return real, working URLs from known e-commerce sites`;
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Use Firecrawl search to find real product pages
+    const searchQuery = `${query} product image site:amazon.com OR site:chewy.com OR site:petco.com OR site:petsmart.com`;
+    
+    const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
+        query: searchQuery,
+        limit: limit * 2, // Get more results to filter
+        lang: 'en',
+        scrapeOptions: {
+          formats: ['html']
+        }
       }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error(`AI gateway error: ${response.status}`);
+    if (!searchResponse.ok) {
+      const errorData = await searchResponse.json();
+      console.error('Firecrawl search error:', errorData);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Search failed',
+        images: []
+      }), {
+        status: searchResponse.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
-    
-    console.log('AI image search response:', content);
+    const searchData = await searchResponse.json();
+    console.log('Firecrawl search results:', searchData.data?.length || 0);
 
-    let images: string[] = [];
-    try {
-      // Remove markdown code blocks if present
-      let cleanContent = content;
-      const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (codeBlockMatch) {
-        cleanContent = codeBlockMatch[1].trim();
-      }
-      
-      // Try to parse JSON array from response
-      const jsonMatch = cleanContent.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(parsed)) {
-          images = parsed.filter((url: unknown) => 
-            typeof url === 'string' && 
-            (url.startsWith('http://') || url.startsWith('https://'))
-          );
+    const images: string[] = [];
+    
+    // Extract images from search results
+    if (searchData.data && Array.isArray(searchData.data)) {
+      for (const result of searchData.data) {
+        if (images.length >= limit) break;
+        
+        const html = result.html || '';
+        const url = result.url || '';
+        
+        // Extract product images from HTML
+        const extractedImages = extractProductImages(html, url);
+        
+        for (const img of extractedImages) {
+          if (images.length >= limit) break;
+          if (!images.includes(img) && isValidProductImage(img)) {
+            images.push(img);
+          }
         }
       }
-      console.log('Parsed images:', images.length);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      // Try to extract URLs with regex as fallback
-      const urlRegex = /https?:\/\/[^\s"'\]\\]+\.(?:jpg|jpeg|png|webp|gif)/gi;
-      const matches = content.match(urlRegex);
-      if (matches) {
-        images = matches.slice(0, limit);
-        console.log('Fallback regex found images:', images.length);
-      }
     }
 
-    // Fallback: use placeholder product images if no results
+    console.log('Found images:', images.length);
+
+    // If no images found, return empty array (no fake fallbacks)
     if (images.length === 0) {
-      // Use Unsplash for pet product-related images as fallback
-      const fallbackQueries = ['pet food', 'dog food bag', 'cat food', 'pet treats', 'dog toys'];
-      const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)];
-      images = [
-        `https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400&h=400&fit=crop`,
-        `https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=400&fit=crop`,
-        `https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=400&h=400&fit=crop`,
-        `https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=400&fit=crop`,
-      ];
+      return new Response(JSON.stringify({ 
+        success: true, 
+        images: [],
+        query,
+        message: 'לא נמצאו תמונות רלוונטיות'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({ 
@@ -144,3 +128,145 @@ Important:
     });
   }
 });
+
+function extractProductImages(html: string, pageUrl: string): string[] {
+  const images: string[] = [];
+  
+  // Pattern 1: JSON-LD product images
+  const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi);
+  if (jsonLdMatch) {
+    for (const match of jsonLdMatch) {
+      try {
+        const jsonContent = match.replace(/<script[^>]*>|<\/script>/gi, '');
+        const data = JSON.parse(jsonContent);
+        
+        if (data.image) {
+          const imgs = Array.isArray(data.image) ? data.image : [data.image];
+          for (const img of imgs) {
+            if (typeof img === 'string') {
+              images.push(img);
+            } else if (img?.url) {
+              images.push(img.url);
+            }
+          }
+        }
+      } catch (e) {
+        // Continue if JSON parsing fails
+      }
+    }
+  }
+  
+  // Pattern 2: Open Graph images
+  const ogImageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/gi);
+  if (ogImageMatch) {
+    for (const match of ogImageMatch) {
+      const urlMatch = match.match(/content="([^"]+)"/);
+      if (urlMatch?.[1]) {
+        images.push(urlMatch[1]);
+      }
+    }
+  }
+  
+  // Pattern 3: Main product images with common class names
+  const productImagePatterns = [
+    /<img[^>]*class="[^"]*(?:product-image|main-image|primary-image|hero-image)[^"]*"[^>]*src="([^"]+)"/gi,
+    /<img[^>]*data-src="([^"]+)"[^>]*class="[^"]*product[^"]*"/gi,
+    /<img[^>]*id="[^"]*(?:main|primary|product)[^"]*"[^>]*src="([^"]+)"/gi,
+  ];
+  
+  for (const pattern of productImagePatterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      if (match[1]) {
+        images.push(resolveUrl(match[1], pageUrl));
+      }
+    }
+  }
+  
+  // Pattern 4: Amazon-specific images
+  const amazonPatterns = [
+    /data-old-hires="([^"]+)"/g,
+    /data-a-dynamic-image='\{([^}]+)\}'/g,
+    /"hiRes":"([^"]+)"/g,
+    /"large":"([^"]+)"/g,
+  ];
+  
+  for (const pattern of amazonPatterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      if (match[1]) {
+        // For dynamic image JSON, extract URLs
+        if (match[1].includes('http')) {
+          const urls = match[1].match(/https?:\/\/[^"',\s]+\.(?:jpg|jpeg|png|webp)/gi);
+          if (urls) {
+            images.push(...urls);
+          }
+        } else {
+          images.push(match[1]);
+        }
+      }
+    }
+  }
+  
+  // Pattern 5: Chewy/Petco-specific images
+  const retailerPatterns = [
+    /data-zoom-image="([^"]+)"/g,
+    /data-main-image="([^"]+)"/g,
+  ];
+  
+  for (const pattern of retailerPatterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      if (match[1]) {
+        images.push(resolveUrl(match[1], pageUrl));
+      }
+    }
+  }
+  
+  return images;
+}
+
+function resolveUrl(imgUrl: string, pageUrl: string): string {
+  if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+    return imgUrl;
+  }
+  if (imgUrl.startsWith('//')) {
+    return 'https:' + imgUrl;
+  }
+  try {
+    return new URL(imgUrl, pageUrl).href;
+  } catch {
+    return imgUrl;
+  }
+}
+
+function isValidProductImage(url: string): boolean {
+  // Filter out small images, icons, logos, etc.
+  const invalidPatterns = [
+    /icon/i,
+    /logo/i,
+    /sprite/i,
+    /button/i,
+    /banner/i,
+    /avatar/i,
+    /placeholder/i,
+    /loading/i,
+    /spinner/i,
+    /\d+x\d+/,  // Very small dimensions like 1x1
+    /transparent/i,
+    /blank/i,
+  ];
+  
+  for (const pattern of invalidPatterns) {
+    if (pattern.test(url)) {
+      return false;
+    }
+  }
+  
+  // Must be an image URL
+  if (!url.match(/\.(jpg|jpeg|png|webp|gif)/i) && !url.includes('/images/')) {
+    return false;
+  }
+  
+  return true;
+}
