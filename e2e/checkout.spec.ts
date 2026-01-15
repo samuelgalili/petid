@@ -159,14 +159,14 @@ test.describe('Checkout Flow', () => {
       await expect(page.locator('text=₪')).toBeVisible();
     });
 
-    test('should show tax calculation', async ({ page }) => {
+    test('should show VAT included message', async ({ page }) => {
       await page.goto('/checkout');
       
-      // Look for tax/VAT display
-      const taxLabel = page.getByText(/מע"מ|tax|vat/i);
+      // Look for VAT included message instead of separate tax line
+      const vatMessage = page.getByText(/המחירים כוללים מע״מ|vat included/i);
       const loginPrompt = page.getByText(/התחבר|log in/i);
       
-      await expect(taxLabel.or(loginPrompt).first()).toBeVisible();
+      await expect(vatMessage.or(loginPrompt).first()).toBeVisible();
     });
   });
 
