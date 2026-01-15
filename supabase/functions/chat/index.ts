@@ -25,6 +25,18 @@ type ProductRecord = {
   image_url?: string | null;
 };
 
+type OrderRecord = {
+  order_id: string;
+  order_number: string;
+  status: string;
+  tracking_number?: string | null;
+  carrier?: string | null;
+  estimated_delivery?: string | null;
+  total?: number | null;
+  created_at?: string | null;
+  shipping_address?: Record<string, any> | null;
+};
+
 // ============= Input Validation =============
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
@@ -65,6 +77,35 @@ function pickPetFromMessage(userText: string, pets: Pet[]): Pet | null {
   const byName = pets.find(p => p.name && t.includes(normalize(p.name)));
   if (byName) return byName;
   
+  return null;
+}
+
+// ============= Order Utilities =============
+function isOrderIntent(text: string): boolean {
+  const t = normalize(text);
+  return (
+    t.includes("הזמנה") ||
+    t.includes("משלוח") ||
+    t.includes("סטטוס") ||
+    t.includes("מעקב") ||
+    t.includes("איפה ההזמנה") ||
+    t.includes("הזמנתי") ||
+    t.includes("מתי יגיע")
+  );
+}
+
+function extractOrderNumber(text: string): string | null {
+  // Match common order number patterns (e.g., ORD-12345, #12345, 12345)
+  const patterns = [
+    /(?:ord[-_]?)?(\d{4,10})/i,
+    /#(\d{4,10})/,
+    /הזמנה\s*(?:מספר)?\s*:?\s*(\d{4,10})/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) return match[1];
+  }
   return null;
 }
 
@@ -251,6 +292,70 @@ health_notes: ${activePet.health_notes ?? "אין"}
       : "\n\n[ACTIVE_PET]\nnone\n[/ACTIVE_PET]";
 
     const userName = userContext?.userName ? `\nשם הלקוח: ${userContext.userName}` : '';
+
+    // ============= Order Intent Handler (bypasses AI for accuracy) =============
+    const orderIntent = isOrderIntent(lastUserMsg);
+    
+    if (orderIntent) {
+      const orderNumber = extractOrderNumber(lastUserMsg);
+      
+      if (!orderNumber) {
+        // Ask for order number
+        return new Response(
+          JSON.stringify({
+            role: "assistant",
+            content: "יש לך מספר הזמנה? אם לא — שלח/י את מספר הטלפון של ההזמנה.",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Lookup order in DB
+      const { data: orderData, error: orderError } = await supabase
+        .rpc("get_order_status", { p_order_number: orderNumber })
+        .maybeSingle();
+      
+      const order = orderData as OrderRecord | null;
+      
+      if (orderError || !order) {
+        return new Response(
+          JSON.stringify({
+            role: "assistant",
+            content: "לא מצאתי הזמנה עם המספר הזה. אפשר לבדוק שוב את מספר ההזמנה או לשלוח טלפון?",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Build order status response
+      const statusMap: Record<string, string> = {
+        pending: "ממתין לאישור",
+        confirmed: "אושר",
+        processing: "בהכנה",
+        shipped: "נשלח",
+        delivered: "נמסר",
+        cancelled: "בוטל",
+      };
+      
+      let responseContent = `מצאתי ✅\nהזמנה: ${order.order_number}\nסטטוס: ${statusMap[order.status] || order.status}`;
+      
+      if (order.tracking_number) {
+        responseContent += `\nמספר מעקב: ${order.tracking_number}`;
+        if (order.carrier) responseContent += ` (${order.carrier})`;
+      }
+      
+      if (order.estimated_delivery) {
+        const deliveryDate = new Date(order.estimated_delivery).toLocaleDateString('he-IL');
+        responseContent += `\nצפי הגעה: ${deliveryDate}`;
+      }
+      
+      responseContent += "\n\nרוצה עדכון משלוח או שינוי כתובת?";
+      
+      return new Response(
+        JSON.stringify({ role: "assistant", content: responseContent }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // ============= Product Search =============
     const productIntent = isProductIntent(lastUserMsg);
