@@ -291,14 +291,14 @@ const Adoption = () => {
   }
 
   return (
-    <>
+    <div className="h-screen bg-background overflow-hidden flex flex-col" dir="rtl">
       <AppHeader 
         title="אימוץ" 
         showBackButton={true}
         showMenuButton={false}
       />
       
-      <div className="min-h-screen bg-background pb-20">
+      <div className="flex-1 overflow-y-auto pb-[70px]">
         <div className="max-w-lg mx-auto">
           {/* Pet Type Filter - Dog & Cat Image */}
           <div className="px-4 py-6 border-b border-border/50">
@@ -987,7 +987,7 @@ const Adoption = () => {
       </Dialog>
 
       <BottomNav />
-    </>
+    </div>
   );
 };
 
