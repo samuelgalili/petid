@@ -6,7 +6,8 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 const CARDCOM_TERMINAL = Deno.env.get('CARDCOM_TERMINAL_NUMBER');
 const CARDCOM_API_NAME = Deno.env.get('CARDCOM_API_NAME');
 const CARDCOM_API_PASSWORD = Deno.env.get('CARDCOM_API_PASSWORD');
-const CARDCOM_API_URL = 'https://secure.cardcom.solutions/api/v11/LowProfile/Create';
+// WordPress uses this legacy endpoint - switch to test
+const CARDCOM_API_URL = 'https://secure.cardcom.solutions/Interface/LowProfile.aspx';
 
 interface ShopPaymentRequest {
   items: Array<{
