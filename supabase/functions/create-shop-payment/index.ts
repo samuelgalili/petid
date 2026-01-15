@@ -274,7 +274,7 @@ serve(async (req: Request): Promise<Response> => {
     formData.append('ApiPassword', CARDCOM_API_PASSWORD);
     formData.append('Operation', '1'); // 1 = Charge
     formData.append('SumToBill', sumToBill);
-    formData.append('CoinID', '1'); // ILS
+    formData.append('CoinId', '1'); // ILS
     formData.append('Language', 'he');
     formData.append('SuccessRedirectUrl', `${requestData.success_url}?order_id=${orderData.id}`);
     formData.append('FailedRedirectUrl', `${requestData.cancel_url}?order_id=${orderData.id}`);
