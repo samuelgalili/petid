@@ -15,18 +15,21 @@ const CARDCOM_API_PASSWORD = Deno.env.get('CARDCOM_API_PASSWORD');
 const CARDCOM_API_URL = 'https://secure.cardcom.solutions/api/v11/LowProfile/Create';
 
 interface CardComPaymentRequest {
-  TerminalNumber: string;
+  TerminalNumber: number;
   ApiName: string;
   ApiPassword: string;
-  Amount: number;
-  Currency: string; // '1' for ILS
+  SumToBill: number; // CardCom uses SumToBill, not Amount
+  CoinID: number; // 1 for ILS
+  Language: string;
   SuccessRedirectUrl: string;
   FailedRedirectUrl: string;
   WebHookUrl: string;
-  Document: {
-    Type: string; // '1' for Invoice
-  };
-  // TODO: Add additional CardCom fields as needed
+  ReturnValue: string;
+  ProductName: string;
+  MaxNumOfPayments: number;
+  InvoiceLines1Description?: string;
+  InvoiceLines1Price?: string;
+  InvoiceLines1Quantity?: string;
 }
 
 serve(async (req) => {
@@ -122,19 +125,37 @@ serve(async (req) => {
       paymentId: payment.id
     });
 
-    // CardCom API Request
+    // Ensure price is a valid number
+    const sumToBill = Number(product.price_ils);
+    
+    if (!sumToBill || sumToBill <= 0) {
+      console.error('Invalid product price:', product.price_ils);
+      return new Response(
+        JSON.stringify({ error: 'מחיר המוצר לא תקין' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Creating CardCom request with SumToBill:', sumToBill);
+
+    // CardCom API Request - Using correct field names
     const cardcomRequest: CardComPaymentRequest = {
-      TerminalNumber: CARDCOM_TERMINAL || '',
+      TerminalNumber: parseInt(CARDCOM_TERMINAL || '0'),
       ApiName: CARDCOM_API_NAME || '',
       ApiPassword: CARDCOM_API_PASSWORD || '',
-      Amount: product.price_ils,
-      Currency: '1', // ILS
+      SumToBill: sumToBill, // CRITICAL: Use SumToBill, not Amount
+      CoinID: 1, // ILS
+      Language: 'he',
       SuccessRedirectUrl: success_url || `${req.headers.get('origin')}/payment-success?payment_id=${payment.id}`,
       FailedRedirectUrl: cancel_url || `${req.headers.get('origin')}/payment-failed?payment_id=${payment.id}`,
       WebHookUrl: webhookUrl,
-      Document: {
-        Type: '1'
-      }
+      ReturnValue: JSON.stringify({ payment_id: payment.id }),
+      ProductName: product.name || 'מוצר',
+      MaxNumOfPayments: 1,
+      // Add invoice line for the product
+      InvoiceLines1Description: product.name || 'מוצר',
+      InvoiceLines1Price: sumToBill.toFixed(2),
+      InvoiceLines1Quantity: '1'
     };
 
     // Make actual CardCom API call
