@@ -246,6 +246,13 @@ serve(async (req: Request): Promise<Response> => {
     const sumToBill = toMoneyStr(requestData.total);
     const sumToBillNum = toMoney(requestData.total);
     
+    console.log('CARDcom_request_amounts', JSON.stringify({
+      requestData_total: requestData.total,
+      sumToBill: sumToBill,
+      sumToBillNum: sumToBillNum,
+      typeof_total: typeof requestData.total
+    }));
+    
     if (sumToBillNum <= 0) {
       console.error('Invalid total amount:', sumToBill);
       return new Response(
