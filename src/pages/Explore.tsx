@@ -524,8 +524,9 @@ const Explore = () => {
   }, [posts]);
 
   return (
-    <>
-    <div className="min-h-screen bg-background pb-[70px]" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      {/* התוכן בלבד גולל */}
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Instagram-style Header */}
       <motion.div 
         className="sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border/40"
@@ -1315,10 +1316,11 @@ const Explore = () => {
           toast.success("+15 נקודות! 🎉", { description: "העלאת פוסט הושלמה בהצלחה" });
         }} 
       />
+      </div>
+
+      {/* השורה התחתונה תמיד נראית */}
+      <BottomNav />
     </div>
-      
-    <BottomNav />
-    </>
   );
 };
 
