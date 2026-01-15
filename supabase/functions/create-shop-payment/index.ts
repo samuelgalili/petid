@@ -185,25 +185,29 @@ serve(async (req: Request): Promise<Response> => {
       .join(', ');
 
     // Helper functions for CardCom money formatting
-    // Use 2 decimal places as CardCom expects
+    // CardCom expects numbers with 2 decimal precision
     const toMoney = (n: any): number => {
       const v = Number(n);
       if (!Number.isFinite(v)) return 0;
       return Math.round(v * 100) / 100;
     };
     
+    // Return as number for invoice lines (not string)
+    const toMoneyNum = (n: any): number => {
+      return toMoney(n);
+    };
+    
+    // Return as string for SumToBill
     const toMoneyStr = (n: any): string => {
-      const v = Number(n);
-      if (!Number.isFinite(v)) return "0.00";
-      return v.toFixed(2);
+      return toMoney(n).toFixed(2);
     };
 
     // Build invoice lines in CardCom format (index starts from 1)
-    // CRITICAL: Price must be sent as STRING with exactly 2 decimal places
-    const flatInvoiceLines: Record<string, string> = {};
+    // Use string | number to allow both types
+    const flatInvoiceLines: Record<string, string | number> = {};
     let lineIndex = 1;
     
-    // Products
+    // Products - send Price as NUMBER (some CardCom terminals require this)
     for (const item of requestData.items) {
       const qty = Number(item.quantity ?? 1);
       const unit = Number(item.price ?? 0);
@@ -212,8 +216,8 @@ serve(async (req: Request): Promise<Response> => {
       const description = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
       
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = String(description);
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = String(qty);
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(safeUnit);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = qty;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(safeUnit);
       lineIndex++;
     }
 
@@ -221,16 +225,16 @@ serve(async (req: Request): Promise<Response> => {
     const shippingToShow = requestData.original_shipping ?? requestData.shipping;
     if (shippingToShow > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(shippingToShow);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(shippingToShow);
       lineIndex++;
     }
     
     // Add shipping discount as negative line if applicable (for free shipping coupons)
     if (requestData.shipping_discount && requestData.shipping_discount > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח חינם (קופון)';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.shipping_discount);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(-requestData.shipping_discount);
       lineIndex++;
     }
     
@@ -239,8 +243,8 @@ serve(async (req: Request): Promise<Response> => {
     // Add discount as negative line if applicable
     if (requestData.discount_amount && requestData.discount_amount > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'קופון';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.discount_amount);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(-requestData.discount_amount);
       lineIndex++;
     }
     
