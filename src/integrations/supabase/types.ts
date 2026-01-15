@@ -7912,6 +7912,17 @@ export type Database = {
       }
       is_moderator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_reward_available: { Args: { p_reward_id: string }; Returns: boolean }
+      search_food_products: {
+        Args: { p_pet_type: string; q: string }
+        Returns: {
+          category: string
+          id: string
+          name: string
+          pet_type: string
+          price: number
+          source: string
+        }[]
+      }
       send_post_notification: {
         Args: {
           p_body: string
