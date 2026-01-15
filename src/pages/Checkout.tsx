@@ -321,11 +321,17 @@ const Checkout = () => {
         }
       });
 
-      console.log('Payment response:', data, 'Error:', error);
+      console.log('Payment response:', JSON.stringify(data), 'Error:', JSON.stringify(error));
 
       if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'שגיאה בתקשורת עם השרת');
+        console.error('Edge function error:', JSON.stringify(error));
+        throw new Error(error.message || error.context?.body?.error || 'שגיאה בתקשורת עם השרת');
+      }
+
+      // Check for error in response data
+      if (data?.error) {
+        console.error('Payment error in response:', data.error);
+        throw new Error(data.error);
       }
 
       if (!data) {
