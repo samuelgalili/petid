@@ -782,26 +782,25 @@ const Explore = () => {
         )}
       </AnimatePresence>
 
-      {/* Points Missions Section - Enhanced */}
+      {/* Points Missions Section - Minimal */}
       {!isSearchFocused && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="px-4 py-3"
         >
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
             {[
-              { id: "add-pet-photo", icon: Camera, title: "העלה תמונה", points: 15, gradient: "from-primary to-primary/70", action: "camera" },
-              { id: "share-post", icon: Heart, title: "שתף רגע מתוק", points: 10, gradient: "from-pink-500 to-rose-400", action: "share" },
-              { id: "visit-park", icon: Trees, title: "טייל בגינה", points: 20, gradient: "from-green-500 to-emerald-400", link: "/parks" },
-              { id: "breed-info", icon: Dog, title: "גלה על הגזע", points: 10, gradient: "from-purple-500 to-violet-400", link: "/breed-history" },
-              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, gradient: "from-yellow-500 to-amber-400", link: "/invite" },
+              { id: "add-pet-photo", icon: Camera, title: "העלה תמונה", points: 15, action: "camera" },
+              { id: "share-post", icon: Heart, title: "שתף רגע", points: 10, action: "share" },
+              { id: "visit-park", icon: Trees, title: "טייל בגינה", points: 20, link: "/parks" },
+              { id: "breed-info", icon: Dog, title: "גלה על הגזע", points: 10, link: "/breed-history" },
+              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, link: "/invite" },
             ].map((mission, idx) => {
               const Icon = mission.icon;
               
               const handleMissionClick = () => {
                 if (mission.action === "camera") {
-                  // Open camera/file picker for photo upload
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.accept = 'image/*';
@@ -809,7 +808,6 @@ const Explore = () => {
                   input.onchange = (e) => {
                     const file = (e.target as HTMLInputElement).files?.[0];
                     if (file) {
-                      // Navigate to create post with the selected image
                       navigate('/create-post', { state: { imageFile: file } });
                     }
                   };
@@ -826,22 +824,16 @@ const Explore = () => {
                   key={mission.id} 
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.08 }}
-                  whileTap={{ scale: 0.95 }}
+                  transition={{ delay: idx * 0.05 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={handleMissionClick}
-                  className="flex-shrink-0 relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all"
+                  className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"
                 >
-                  <div className={`bg-gradient-to-br ${mission.gradient} p-3 min-w-[120px]`}>
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <p className="text-[11px] font-semibold text-white text-center leading-tight">{mission.title}</p>
-                      <div className="bg-white/30 backdrop-blur-sm rounded-full px-2.5 py-0.5">
-                        <p className="text-[10px] text-white font-bold">+{mission.points}</p>
-                      </div>
-                    </div>
+                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                    <Icon className="w-3.5 h-3.5 text-foreground" />
                   </div>
+                  <span className="text-xs font-medium text-foreground whitespace-nowrap">{mission.title}</span>
+                  <span className="text-[10px] font-bold text-primary">+{mission.points}</span>
                 </motion.button>
               );
             })}
