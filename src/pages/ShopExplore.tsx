@@ -124,7 +124,8 @@ const ShopExplore = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b">
         <div className="px-4 py-3">
@@ -332,6 +333,7 @@ const ShopExplore = () => {
           </TabsContent>
         </Tabs>
       )}
+      </div>
 
       <BottomNav />
     </div>

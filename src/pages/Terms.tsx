@@ -196,7 +196,8 @@ const Terms = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="bg-surface border-b border-border sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
@@ -273,6 +274,7 @@ const Terms = () => {
         <p className="text-center text-xs text-muted-foreground/60 mt-8 font-jakarta">
           עודכן לאחרונה: ינואר 2026
         </p>
+      </div>
       </div>
 
       <BottomNav />

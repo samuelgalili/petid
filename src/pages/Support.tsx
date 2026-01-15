@@ -42,7 +42,8 @@ const Support = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-surface pb-20" dir="rtl">
+    <div className="h-screen bg-surface overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
@@ -154,6 +155,7 @@ const Support = () => {
             </Button>
           </div>
         </div>
+      </div>
       </div>
 
       <BottomNav />

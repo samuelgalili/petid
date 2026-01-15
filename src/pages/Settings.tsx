@@ -284,7 +284,8 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir={direction}>
+    <div className="h-screen bg-background overflow-hidden" dir={direction}>
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Clean Instagram-style Header */}
       <motion.div 
         className="sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border/40"
@@ -471,6 +472,7 @@ const Settings = () => {
         }}
       />
       <ScheduledPostsManager open={showScheduled} onOpenChange={setShowScheduled} />
+      </div>
 
       <BottomNav />
     </div>

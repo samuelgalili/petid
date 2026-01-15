@@ -41,7 +41,8 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <div className="h-screen bg-background overflow-hidden" dir="rtl">
+        <div className="h-full overflow-y-auto pb-[70px]">
         <AppHeader title="עגלת הקניות" showBackButton={true} />
 
         {/* Empty Cart State */}
@@ -69,6 +70,7 @@ const Cart = () => {
             </Button>
           </motion.div>
         </div>
+        </div>
 
         <BottomNav />
       </div>
@@ -76,7 +78,8 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       <AppHeader title="עגלת הקניות" showBackButton={true} />
       
       {/* Cart Items */}
@@ -239,6 +242,7 @@ const Cart = () => {
         >
           ← המשך לקניות
         </motion.button>
+      </div>
       </div>
 
       <BottomNav />

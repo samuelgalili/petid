@@ -32,7 +32,8 @@ const Tracker = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       <AppHeader title="יומן מעקב" showBackButton={true} />
 
       {/* User Info Section */}
@@ -113,6 +114,7 @@ const Tracker = () => {
           <Plus className="w-5 h-5 ml-2" />
           הוספה
         </Button>
+      </div>
       </div>
 
       <BottomNav />

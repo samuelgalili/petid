@@ -354,7 +354,8 @@ const UserProfile = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white pb-20" dir="rtl">
+    <div className="h-screen bg-white overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header with gradient */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-border/50">
         <div className="max-w-lg mx-auto h-[56px] flex items-center justify-between px-4">
@@ -703,6 +704,7 @@ const UserProfile = () => {
         userId={userId!}
         defaultTab={followersDialogTab}
       />
+      </div>
 
       <BottomNav />
     </div>
