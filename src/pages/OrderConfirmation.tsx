@@ -214,11 +214,8 @@ const OrderConfirmation = () => {
                 <span className="font-semibold text-foreground font-jakarta">₪5.00</span>
               </div>
             )}
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground font-jakarta">מע״מ (17%)</span>
-              <span className="font-semibold text-foreground font-jakarta">
-                ₪{order.tax.toFixed(2)}
-              </span>
+            <div className="text-xs text-muted-foreground font-jakarta">
+              * המחירים כוללים מע״מ
             </div>
             <Separator />
             <div className="flex justify-between pt-2">

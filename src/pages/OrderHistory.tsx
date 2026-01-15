@@ -426,11 +426,8 @@ const OrderHistory = () => {
                         )}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">מע"מ</span>
-                      <span className="font-semibold text-gray-900 font-jakarta">
-                        ₪{selectedOrder.tax.toFixed(2)}
-                      </span>
+                    <div className="text-xs text-muted-foreground font-jakarta">
+                      * המחירים כוללים מע״מ
                     </div>
                     <Separator />
                     <div className="flex justify-between pt-2">
