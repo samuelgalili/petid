@@ -184,30 +184,19 @@ serve(async (req: Request): Promise<Response> => {
       .map(item => `${item.name} x${item.quantity}`)
       .join(', ');
 
-    // Helper functions for CardCom money formatting
-    // CardCom expects numbers with 2 decimal precision
-    const toMoney = (n: any): number => {
-      const v = Number(n);
-      if (!Number.isFinite(v)) return 0;
-      return Math.round(v * 100) / 100;
-    };
-    
-    // Return as number for invoice lines (not string)
-    const toMoneyNum = (n: any): number => {
-      return toMoney(n);
-    };
-    
-    // Return as string for SumToBill
+    // Helper function for CardCom money formatting - always return string with 2 decimals
     const toMoneyStr = (n: any): string => {
-      return toMoney(n).toFixed(2);
+      const v = Number(n);
+      if (!Number.isFinite(v)) return "0.00";
+      return v.toFixed(2);
     };
 
     // Build invoice lines in CardCom format (index starts from 1)
-    // Use string | number to allow both types
-    const flatInvoiceLines: Record<string, string | number> = {};
+    // ALL values as STRINGS - this is what CardCom expects
+    const flatInvoiceLines: Record<string, string> = {};
     let lineIndex = 1;
     
-    // Products - send Price as NUMBER (some CardCom terminals require this)
+    // Products
     for (const item of requestData.items) {
       const qty = Number(item.quantity ?? 1);
       const unit = Number(item.price ?? 0);
@@ -216,42 +205,39 @@ serve(async (req: Request): Promise<Response> => {
       const description = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
       
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = String(description);
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = qty;
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(safeUnit);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = String(qty);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(safeUnit);
       lineIndex++;
     }
 
-    // Add shipping if applicable (use original_shipping if provided to show full shipping)
+    // Add shipping if applicable
     const shippingToShow = requestData.original_shipping ?? requestData.shipping;
     if (shippingToShow > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(shippingToShow);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(shippingToShow);
       lineIndex++;
     }
     
     // Add shipping discount as negative line if applicable (for free shipping coupons)
     if (requestData.shipping_discount && requestData.shipping_discount > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח חינם (קופון)';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(-requestData.shipping_discount);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.shipping_discount);
       lineIndex++;
     }
-    
-    // Note: tax is not added as separate line since prices already include VAT
     
     // Add discount as negative line if applicable
     if (requestData.discount_amount && requestData.discount_amount > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'קופון';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = 1;
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyNum(-requestData.discount_amount);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.discount_amount);
       lineIndex++;
     }
     
     console.log('CardCom InvoiceLines:', JSON.stringify(flatInvoiceLines));
 
-    // CRITICAL: Calculate SumToBill from invoice lines, NOT from client total
-    // This ensures consistency and prevents 0-amount errors
+    // Calculate SumToBill from invoice lines
     let sumFromLines = 0;
     for (let i = 1; i < lineIndex; i++) {
       const qty = Number(flatInvoiceLines[`InvoiceLines${i}.Quantity`] ?? 1);
@@ -260,18 +246,16 @@ serve(async (req: Request): Promise<Response> => {
     }
     
     const sumToBill = toMoneyStr(sumFromLines);
-    const sumToBillNum = toMoney(sumFromLines);
     
     console.log('CARDcom_request_amounts', JSON.stringify({
       requestData_total: requestData.total,
       sumFromLines: sumFromLines,
       sumToBill: sumToBill,
-      sumToBillNum: sumToBillNum,
       invoiceLineCount: lineIndex - 1
     }));
     
     // GUARDRAIL: Block payment if calculated sum is zero or negative
-    if (sumToBillNum <= 0) {
+    if (sumFromLines <= 0) {
       console.error('BLOCK_CARDcom_ZERO_AMOUNT', { sumToBill, sumFromLines, flatInvoiceLines });
       return new Response(
         JSON.stringify({ 
@@ -282,43 +266,47 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create CardCom payment request
-    const cardcomRequest = {
-      TerminalNumber: parseInt(CARDCOM_TERMINAL),
-      ApiName: CARDCOM_API_NAME,
-      ApiPassword: CARDCOM_API_PASSWORD,
-      Operation: 1, // 1 = Charge (J4), 2 = Authorize only (J5)
-      SumToBill: sumToBill,
-      CoinID: 1, // ILS
-      Language: 'he',
-      SuccessRedirectUrl: `${requestData.success_url}?order_id=${orderData.id}`,
-      FailedRedirectUrl: `${requestData.cancel_url}?order_id=${orderData.id}`,
-      WebHookUrl: webhookUrl,
-      ReturnValue: JSON.stringify({ 
-        order_id: orderData.id,
-        order_number: orderNumber 
-      }),
-      MaxNumOfPayments: requestData.installments || 1,
-      ProductName: itemsDescription.substring(0, 50),
-      HideSumField: false, // Show sum to customer
-      SumInStar498: false, // Don't let customer change sum
-      ...flatInvoiceLines,
-    };
+    // Create CardCom payment request using URLSearchParams (form-urlencoded)
+    // CardCom Hosted Page requires this format
+    const formData = new URLSearchParams();
+    formData.append('TerminalNumber', CARDCOM_TERMINAL);
+    formData.append('ApiName', CARDCOM_API_NAME);
+    formData.append('ApiPassword', CARDCOM_API_PASSWORD);
+    formData.append('Operation', '1'); // 1 = Charge
+    formData.append('SumToBill', sumToBill);
+    formData.append('CoinID', '1'); // ILS
+    formData.append('Language', 'he');
+    formData.append('SuccessRedirectUrl', `${requestData.success_url}?order_id=${orderData.id}`);
+    formData.append('FailedRedirectUrl', `${requestData.cancel_url}?order_id=${orderData.id}`);
+    formData.append('WebHookUrl', webhookUrl);
+    formData.append('ReturnValue', JSON.stringify({ 
+      order_id: orderData.id,
+      order_number: orderNumber 
+    }));
+    formData.append('MaxNumOfPayments', String(requestData.installments || 1));
+    formData.append('ProductName', itemsDescription.substring(0, 50));
+    formData.append('HideSumField', 'false');
+    formData.append('SumInStar498', 'false');
+    
+    // Add invoice lines
+    for (const [key, value] of Object.entries(flatInvoiceLines)) {
+      formData.append(key, value);
+    }
     
     console.log('CardCom request SumToBill:', sumToBill);
     
     // Log full payload for debugging
-    console.log('CARDcom_payload_full', JSON.stringify(cardcomRequest));
+    console.log('CARDcom_payload_full', formData.toString());
 
-    console.log('Calling CardCom API...');
+    console.log('Calling CardCom API with form-urlencoded...');
 
-    // Call CardCom API
+    // Call CardCom API with form-urlencoded
     const cardcomResponse = await fetch(CARDCOM_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify(cardcomRequest),
+      body: formData.toString(),
     });
 
     const cardcomData = await cardcomResponse.json();
