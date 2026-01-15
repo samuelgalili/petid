@@ -621,14 +621,14 @@ const Shop = () => {
 
       {/* Product Details Sheet - Instagram style */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl bg-background p-0 overflow-hidden border-t border-border pb-20" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t border-border/50 pb-24 shadow-2xl" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
             <div className="flex flex-col h-full" dir="rtl">
               {/* Handle */}
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              <div className="flex justify-center pt-2 pb-1">
+                <div className="w-12 h-1.5 rounded-full bg-muted-foreground/20" />
               </div>
               
               {/* Top Actions */}
@@ -752,20 +752,20 @@ const Shop = () => {
 
               {/* Scrollable Content */}
               <ScrollArea className="flex-1">
-                {/* Product Image */}
-                <div className="relative px-4 mb-4">
+                {/* Product Image - Mobile optimized */}
+                <div className="relative px-5 mb-3">
                   <Carousel className="w-full" dir="ltr" setApi={setCarouselApi} opts={{ direction: "ltr" }}>
                     <CarouselContent>
                       {(selectedProduct.images || [selectedProduct.image]).map((img: string, index: number) => (
                         <CarouselItem key={index}>
                           <motion.div 
                             ref={index === 0 ? productImageRef : undefined}
-                            className="rounded-lg overflow-hidden bg-muted"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2 }}
+                            className="rounded-2xl overflow-hidden bg-muted/50 shadow-sm"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.25 }}
                           >
-                            <div className="w-full aspect-square">
+                            <div className="w-full aspect-[4/3] max-h-[200px]">
                               <OptimizedImage
                                 src={img}
                                 alt={selectedProduct.name}
@@ -781,12 +781,12 @@ const Shop = () => {
                   
                   {/* Dots Indicator */}
                   {(selectedProduct.images?.length || 1) > 1 && (
-                    <div className="flex justify-center gap-1 mt-3">
+                    <div className="flex justify-center gap-1.5 mt-2">
                       {(selectedProduct.images || [selectedProduct.image]).map((_: string, index: number) => (
                         <div
                           key={index}
-                          className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                            currentImageIndex === index ? 'bg-primary' : 'bg-muted-foreground/30'
+                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                            currentImageIndex === index ? 'bg-primary w-4' : 'bg-muted-foreground/20'
                           }`}
                         />
                       ))}
@@ -794,36 +794,36 @@ const Shop = () => {
                   )}
                 </div>
 
-                {/* Product Details - Instagram style */}
-                <div className="px-4 space-y-4 pb-4">
-                  {/* Title */}
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">{selectedProduct.name}</h2>
-                    <p className="text-sm text-muted-foreground mt-0.5">Petid Shop</p>
+                {/* Product Details - Clean mobile style */}
+                <div className="px-5 space-y-3 pb-4">
+                  {/* Title & Price Row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-base font-semibold text-foreground leading-tight line-clamp-2">{selectedProduct.name}</h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">Petid Shop</p>
+                    </div>
+                    <div className="text-left shrink-0">
+                      <span className="text-lg font-bold text-foreground">
+                        ₪{selectedProduct.price}
+                      </span>
+                      {selectedProduct.originalPrice && (
+                        <p className="text-xs text-muted-foreground line-through">₪{selectedProduct.originalPrice}</p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Price */}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-semibold text-foreground">
-                      ₪{selectedProduct.price}
-                    </span>
-                    {selectedProduct.originalPrice && (
-                      <span className="text-sm text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
-                    )}
-                  </div>
-
-                  {/* Rating */}
+                  {/* Rating - Compact */}
                   {selectedProduct.rating && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <div className="flex items-center gap-0.5">
                         {[...Array(5)].map((_, i) => (
                           <Star 
                             key={i} 
-                            className={`w-4 h-4 ${i < Math.floor(selectedProduct.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} 
+                            className={`w-3.5 h-3.5 ${i < Math.floor(selectedProduct.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/20'}`} 
                           />
                         ))}
                       </div>
-                      <span className="text-sm text-muted-foreground">({selectedProduct.reviews} ביקורות)</span>
+                      <span className="text-xs text-muted-foreground">({selectedProduct.reviews})</span>
                     </div>
                   )}
 
