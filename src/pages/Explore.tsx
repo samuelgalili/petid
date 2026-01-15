@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, TrendingUp, Hash, MapPin, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Star, Sparkles, Lightbulb, Flame, Dog, Cat, PawPrint, Filter, ShoppingBag, ArrowLeft, Compass, Zap } from "lucide-react";
+import { Search, X, TrendingUp, Hash, MapPin, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Star, Sparkles, Lightbulb, Flame, Dog, Cat, PawPrint, Filter, ShoppingBag, ArrowLeft, Compass, Zap, Images, Camera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -501,7 +501,7 @@ const Explore = () => {
   }, [posts]);
 
   return (
-    <div className="min-h-screen bg-background pb-24" dir="rtl">
+    <div className="min-h-screen bg-background pb-[70px]" dir="rtl">
       {/* Instagram-style Header */}
       <motion.div 
         className="sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border/40"
@@ -782,41 +782,67 @@ const Explore = () => {
         )}
       </AnimatePresence>
 
-      {/* Points Missions Section */}
+      {/* Points Missions Section - Enhanced */}
       {!isSearchFocused && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="px-4 py-2"
+          className="px-4 py-3"
         >
-          <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {[
-              { id: "share-post", icon: Heart, title: "שתף רגע מתוק", points: 10, color: "bg-pink-100 dark:bg-pink-900/30", iconColor: "text-pink-500", link: "/tasks" },
-              { id: "add-pet-photo", icon: PawPrint, title: "העלה תמונה", points: 15, color: "bg-primary/10", iconColor: "text-primary", link: "/tasks" },
-              { id: "breed-info", icon: Dog, title: "גלה על הגזע", points: 10, color: "bg-purple-100 dark:bg-purple-900/30", iconColor: "text-purple-500", link: "/breed-history" },
-              { id: "visit-park", icon: Trees, title: "טייל בגינה", points: 20, color: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-500", link: "/parks" },
-              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, color: "bg-yellow-100 dark:bg-yellow-900/30", iconColor: "text-yellow-500", link: "/tasks" },
+              { id: "add-pet-photo", icon: Camera, title: "העלה תמונה", points: 15, gradient: "from-primary to-primary/70", action: "camera" },
+              { id: "share-post", icon: Heart, title: "שתף רגע מתוק", points: 10, gradient: "from-pink-500 to-rose-400", action: "share" },
+              { id: "visit-park", icon: Trees, title: "טייל בגינה", points: 20, gradient: "from-green-500 to-emerald-400", link: "/parks" },
+              { id: "breed-info", icon: Dog, title: "גלה על הגזע", points: 10, gradient: "from-purple-500 to-violet-400", link: "/breed-history" },
+              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, gradient: "from-yellow-500 to-amber-400", link: "/invite" },
             ].map((mission, idx) => {
               const Icon = mission.icon;
+              
+              const handleMissionClick = () => {
+                if (mission.action === "camera") {
+                  // Open camera/file picker for photo upload
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.capture = 'environment';
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      // Navigate to create post with the selected image
+                      navigate('/create-post', { state: { imageFile: file } });
+                    }
+                  };
+                  input.click();
+                } else if (mission.action === "share") {
+                  navigate('/create-post');
+                } else if (mission.link) {
+                  navigate(mission.link);
+                }
+              };
+              
               return (
-                <motion.div 
+                <motion.button 
                   key={mission.id} 
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.1 }}
-                  onClick={() => navigate(mission.link)}
-                  className="flex-shrink-0 w-44 bg-card rounded-xl px-3 py-2.5 border border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  transition={{ delay: idx * 0.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleMissionClick}
+                  className="flex-shrink-0 relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all"
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${mission.color}`}>
-                        <Icon className={`w-3.5 h-3.5 ${mission.iconColor}`} />
+                  <div className={`bg-gradient-to-br ${mission.gradient} p-3 min-w-[120px]`}>
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-white" />
                       </div>
-                      <p className="text-xs font-semibold text-foreground truncate">{mission.title}</p>
+                      <p className="text-[11px] font-semibold text-white text-center leading-tight">{mission.title}</p>
+                      <div className="bg-white/30 backdrop-blur-sm rounded-full px-2.5 py-0.5">
+                        <p className="text-[10px] text-white font-bold">+{mission.points}</p>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-[11px] text-primary font-bold text-left">+{mission.points} נקודות</p>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>
@@ -1116,110 +1142,105 @@ const Explore = () => {
               </div>
             </div>
           ) : (
-            /* Posts Grid - Enhanced Design for top tab */
-            <div className="space-y-4">
+            /* Posts Grid - Instagram 3-column style */
+            <div className="space-y-0">
               {posts.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {posts.map((post, index) => (
-                    <motion.div
-                      key={post.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="relative cursor-pointer group"
-                      onClick={() => navigate(`/post/${post.id}`)}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        handleDoubleTap(post.id);
-                      }}
-                    >
-                      <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">
-                        <img
-                          src={post.image_url}
-                          alt=""
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        {/* Gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                        
-                        {/* Video indicator */}
-                        {post.media_type === "video" && (
-                          <div className="absolute top-3 left-3">
-                            <div className="w-9 h-9 rounded-2xl bg-black/50 backdrop-blur-md flex items-center justify-center">
-                              <Play className="w-5 h-5 text-white" fill="white" />
+                <div className="grid grid-cols-3 gap-0.5">
+                  {posts.map((post, index) => {
+                    // Determine media type icon
+                    const isVideo = post.media_type === "video";
+                    const isCarousel = post.image_url?.includes(',') || post.media_type === "carousel";
+                    const isProduct = false; // This would come from post data if it's a shop product
+                    
+                    return (
+                      <motion.div
+                        key={post.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: Math.min(index * 0.02, 0.2) }}
+                        className="relative cursor-pointer group"
+                        onClick={() => navigate(`/post/${post.id}`)}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          handleDoubleTap(post.id);
+                        }}
+                      >
+                        <div className="aspect-square overflow-hidden bg-muted">
+                          <img
+                            src={post.image_url}
+                            alt=""
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          
+                          {/* Hover overlay with stats */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="flex items-center gap-4 text-white text-sm font-medium">
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-4 h-4 fill-white" />
+                                {post.likes_count}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageCircle className="w-4 h-4 fill-white" />
+                                {post.comments_count}
+                              </span>
                             </div>
                           </div>
-                        )}
-
-                        {/* Stats overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5 text-white">
-                              <Heart className="w-5 h-5" fill="white" />
-                              <span className="text-sm font-semibold">{post.likes_count}</span>
+                          
+                          {/* Media type icon - top right */}
+                          {(isVideo || isCarousel || isProduct) && (
+                            <div className="absolute top-2 right-2">
+                              {isVideo && (
+                                <Play className="w-5 h-5 text-white drop-shadow-lg" fill="white" />
+                              )}
+                              {isCarousel && !isVideo && (
+                                <Images className="w-5 h-5 text-white drop-shadow-lg" />
+                              )}
+                              {isProduct && (
+                                <ShoppingBag className="w-5 h-5 text-white drop-shadow-lg" />
+                              )}
                             </div>
-                            <div className="flex items-center gap-1.5 text-white">
-                              <MessageCircle className="w-5 h-5" fill="white" />
-                              <span className="text-sm font-semibold">{post.comments_count}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Double Tap Heart Animation */}
-                        <AnimatePresence>
-                          {doubleTapPostId === post.id && (
-                            <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              transition={{ duration: 0.15 }}
-                              className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-                            >
-                              <motion.svg
-                                viewBox="0 0 24 24"
-                                className="w-24 h-24 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
-                                initial={{ scale: 0, rotate: -15 }}
-                                animate={{ 
-                                  scale: [0, 1.3, 1.1, 1.2, 1],
-                                  rotate: [-15, 10, -5, 5, 0]
-                                }}
-                                exit={{ scale: 0, opacity: 0 }}
-                                transition={{ 
-                                  duration: 0.6,
-                                  times: [0, 0.3, 0.5, 0.7, 1],
-                                  ease: "easeOut"
-                                }}
-                              >
-                                <motion.path
-                                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                                  fill="white"
-                                  stroke="white"
-                                  strokeWidth="0.5"
-                                />
-                              </motion.svg>
-                              
-                              {/* Particle effects */}
-                              {[...Array(8)].map((_, i) => (
-                                <motion.div
-                                  key={i}
-                                  className="absolute w-2.5 h-2.5 rounded-full bg-white"
-                                  initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
-                                  animate={{ 
-                                    scale: [0, 1, 0],
-                                    x: Math.cos((i / 8) * Math.PI * 2) * 60,
-                                    y: Math.sin((i / 8) * Math.PI * 2) * 60,
-                                    opacity: [1, 1, 0]
-                                  }}
-                                  transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-                                />
-                              ))}
-                            </motion.div>
                           )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
-                  ))}
+
+                          {/* Double Tap Heart Animation */}
+                          <AnimatePresence>
+                            {doubleTapPostId === post.id && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                              >
+                                <motion.svg
+                                  viewBox="0 0 24 24"
+                                  className="w-16 h-16 drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
+                                  initial={{ scale: 0, rotate: -15 }}
+                                  animate={{ 
+                                    scale: [0, 1.3, 1.1, 1.2, 1],
+                                    rotate: [-15, 10, -5, 5, 0]
+                                  }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  transition={{ 
+                                    duration: 0.6,
+                                    times: [0, 0.3, 0.5, 0.7, 1],
+                                    ease: "easeOut"
+                                  }}
+                                >
+                                  <motion.path
+                                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                    fill="white"
+                                    stroke="white"
+                                    strokeWidth="0.5"
+                                  />
+                                </motion.svg>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               ) : (
                 <motion.div 
@@ -1238,9 +1259,6 @@ const Explore = () => {
           )}
         </div>
       )}
-
-      {/* Bottom padding for fixed nav */}
-      <div className="h-24" />
       
       <BottomNav />
     </div>
