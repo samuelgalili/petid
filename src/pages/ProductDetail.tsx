@@ -106,15 +106,6 @@ const ProductDetail = () => {
     isFlagged: rawProduct.is_flagged || false,
     flaggedReason: rawProduct.flagged_reason,
   };
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
   const benefits = [{
     icon: Leaf,
     title: "100% טבעי",
@@ -275,6 +266,16 @@ const ProductDetail = () => {
       setIsReporting(false);
     }
   };
+
+  // Show loading state - must be after all hooks
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
       <div className="h-full overflow-y-auto pb-[70px]">
