@@ -817,10 +817,10 @@ export const BreedInfoCard = ({ breed, petType, petName }: BreedInfoCardProps) =
             <p className="text-2xl font-bold text-foreground">{breedData.weight.min}-{breedData.weight.max}</p>
             <p className="text-xs font-medium text-muted-foreground mt-1">{breedData.weight.unit}</p>
           </div>
-          <div className="p-3 rounded-2xl bg-secondary/10">
+          <div className="p-3 rounded-2xl bg-secondary/20 border border-secondary/30 shadow-sm">
             <div className="flex items-center justify-center mb-2">
-              <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-secondary" />
+              <div className="w-10 h-10 rounded-full bg-secondary/30 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-secondary-foreground" />
               </div>
             </div>
             <p className="text-2xl font-bold text-foreground">{breedData.height.min}-{breedData.height.max}</p>
