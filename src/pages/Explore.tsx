@@ -524,6 +524,7 @@ const Explore = () => {
   }, [posts]);
 
   return (
+    <>
     <div className="min-h-screen bg-background pb-[70px]" dir="rtl">
       {/* Instagram-style Header */}
       <motion.div 
@@ -1314,9 +1315,10 @@ const Explore = () => {
           toast.success("+15 נקודות! 🎉", { description: "העלאת פוסט הושלמה בהצלחה" });
         }} 
       />
-      
-      <BottomNav />
     </div>
+      
+    <BottomNav />
+    </>
   );
 };
 
