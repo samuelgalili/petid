@@ -112,13 +112,8 @@ const BottomNav = () => {
       </svg>
 
       {/* Instagram-style bottom nav - height: 50px like Instagram */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border" style={{
-      position: 'fixed',
-      bottom: 0
-    }} role="navigation" aria-label="ניווט ראשי">
-        <div className="flex justify-around items-center w-full max-w-lg mx-auto" style={{
-        height: '50px'
-      }}>
+      <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border pb-[env(safe-area-inset-bottom)]" role="navigation" aria-label="ניווט ראשי">
+        <div className="flex justify-around items-center w-full max-w-lg mx-auto h-[50px]">
           {/* Home */}
           <NavItem onClick={() => {
           if (location.pathname === "/") {
