@@ -285,7 +285,7 @@ serve(async (req: Request): Promise<Response> => {
     }));
     formData.append('MaxNumOfPayments', String(requestData.installments || 1));
     formData.append('ProductName', itemsDescription.substring(0, 50));
-    formData.append('HideSumField', 'false');
+    formData.append('HideSumField', 'true');
     formData.append('SumInStar498', 'false');
     
     // Add invoice lines
