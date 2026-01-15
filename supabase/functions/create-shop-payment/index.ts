@@ -218,6 +218,14 @@ serve(async (req: Request): Promise<Response> => {
       lineIndex++;
     }
     
+    // Add tax if applicable
+    if (requestData.tax > 0) {
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'מע"מ';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(requestData.tax);
+      lineIndex++;
+    }
+    
     // Add discount as negative line if applicable
     if (requestData.discount_amount && requestData.discount_amount > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'קופון';
