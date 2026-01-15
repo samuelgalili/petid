@@ -307,6 +307,18 @@ const Checkout = () => {
     try {
       const orderTotal = total + (paymentMethod === "cash-on-delivery" ? 5 : 0);
 
+      // GUARDRAIL: Block payment if total is invalid or zero
+      if (!Number.isFinite(orderTotal) || orderTotal <= 0) {
+        toast({
+          title: "שגיאת סכום",
+          description: "לא ניתן לבצע תשלום: סכום לתשלום הוא 0. בדוק/י עגלה וקופון.",
+          variant: "destructive",
+        });
+        console.error("BLOCK_PAYMENT_TOTAL_INVALID", { orderTotal, total, subtotal, shipping, discount, items });
+        setIsProcessing(false);
+        return;
+      }
+
       console.log('Starting payment request with total:', orderTotal);
 
       // Call the edge function to create payment and order
