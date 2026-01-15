@@ -3,7 +3,29 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Input validation schema
+// ============= Types =============
+type Pet = {
+  id?: string;
+  name: string;
+  type: string;
+  breed?: string | null;
+  age?: number | string | null;
+  gender?: string | null;
+  health_notes?: string | null;
+};
+
+type ProductRecord = {
+  id: string;
+  name: string;
+  price?: number | null;
+  sale_price?: number | null;
+  category?: string | null;
+  pet_type?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+};
+
+// ============= Input Validation =============
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
   content: z.string().max(10000, "Message content too long (max 10000 chars)")
@@ -11,6 +33,7 @@ const MessageSchema = z.object({
 
 const UserContextSchema = z.object({
   pets: z.array(z.object({
+    id: z.string().optional(),
     name: z.string().max(100).optional(),
     type: z.string().max(50).optional(),
     breed: z.string().max(100).optional(),
@@ -27,9 +50,122 @@ const ChatInputSchema = z.object({
   channel: z.enum(["web", "whatsapp"]).optional()
 });
 
-// Max payload size: 1MB
 const MAX_PAYLOAD_SIZE = 1024 * 1024;
 
+// ============= Pet Resolver Utilities =============
+function normalize(s: string): string {
+  return (s || "").trim().toLowerCase();
+}
+
+function pickPetFromMessage(userText: string, pets: Pet[]): Pet | null {
+  const t = normalize(userText);
+  if (!t || !pets?.length) return null;
+  
+  // Search for pet name mentioned in user message
+  const byName = pets.find(p => p.name && t.includes(normalize(p.name)));
+  if (byName) return byName;
+  
+  return null;
+}
+
+// ============= Product Search Utilities =============
+function isProductIntent(text: string): boolean {
+  const t = normalize(text);
+  return (
+    t.includes("מזון") ||
+    t.includes("אוכל") ||
+    t.includes("חטיף") ||
+    t.includes("צעצוע") ||
+    t.includes("מוצר") ||
+    t.includes("המלצ") ||
+    t.includes("לקנות") ||
+    t.includes("מומלץ") ||
+    t.includes("מה כדאי") ||
+    t.includes("חנות") ||
+    t.includes("קנ")
+  );
+}
+
+async function searchProducts(
+  supabase: any,
+  searchTerms: string[],
+  petType?: string | null,
+  limit = 6
+): Promise<ProductRecord[]> {
+  const allItems: ProductRecord[] = [];
+  
+  for (const term of searchTerms) {
+    // Search business_products
+    const { data: businessProducts } = await supabase
+      .from("business_products")
+      .select("id, name, price, sale_price, category, pet_type, description, image_url")
+      .eq("in_stock", true)
+      .ilike("name", `%${term}%`)
+      .limit(limit);
+    
+    if (businessProducts) allItems.push(...businessProducts);
+    
+    // Search scraped_products
+    const { data: scrapedProducts } = await supabase
+      .from("scraped_products")
+      .select("id, name, price, category, pet_type, description, image_url")
+      .ilike("name", `%${term}%`)
+      .limit(limit);
+    
+    if (scrapedProducts) allItems.push(...scrapedProducts);
+  }
+  
+  // Filter by pet type if specified
+  const filtered = petType 
+    ? allItems.filter(p => !p.pet_type || p.pet_type === petType)
+    : allItems;
+  
+  // Dedupe by id
+  const map = new Map(filtered.map(x => [x.id, x]));
+  return [...map.values()].slice(0, limit);
+}
+
+function extractSearchTerms(text: string): string[] {
+  const terms: string[] = [];
+  const t = normalize(text);
+  
+  if (t.includes("מזון") || t.includes("אוכל")) terms.push("מזון");
+  if (t.includes("חטיף")) terms.push("חטיף");
+  if (t.includes("צעצוע")) terms.push("צעצוע");
+  if (t.includes("קולר") || t.includes("רצועה")) terms.push("קולר", "רצועה");
+  if (t.includes("מיטה") || t.includes("מזרן")) terms.push("מיטה");
+  if (t.includes("שמפו") || t.includes("טיפוח")) terms.push("שמפו");
+  
+  // Default to "מזון" if no specific term found but it's a product intent
+  if (terms.length === 0) terms.push("מזון");
+  
+  return terms;
+}
+
+// ============= PRODUCTS Tag Utilities =============
+function extractProductIds(text: string): { ids: string[]; hasTag: boolean } {
+  const match = text.match(/\[PRODUCTS:([^\]]+)\]/);
+  if (!match) return { ids: [], hasTag: false };
+  const ids = match[1].split(",").map(x => x.trim()).filter(Boolean);
+  return { ids, hasTag: true };
+}
+
+function stripProductsTag(text: string): string {
+  return text.replace(/\n?\[PRODUCTS:[^\]]+\]\s*/g, "").trim();
+}
+
+function keepOnlyValidProducts(text: string, validIds: Set<string>): string {
+  const { ids, hasTag } = extractProductIds(text);
+  if (!hasTag) return text;
+  
+  const filtered = ids.filter(id => validIds.has(id));
+  const body = stripProductsTag(text);
+  
+  if (filtered.length === 0) return body; // No valid products → remove PRODUCTS tag
+  return `${body}\n\n[PRODUCTS:${filtered.join(",")}]`;
+}
+
+// ============= Main Handler =============
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
@@ -38,7 +174,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    // Check content length before parsing
+    // Check content length
     const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
       return new Response(JSON.stringify({ error: "Payload too large (max 1MB)" }), {
@@ -66,75 +202,81 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Initialize Supabase client for fetching products
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Build context about user's pets
-    let petsContext = "";
-    let petTypes: string[] = [];
-    if (userContext?.pets && userContext.pets.length > 0) {
-      petTypes = [...new Set(userContext.pets.map((p) => p.type).filter(Boolean))] as string[];
-      petsContext = `\n\n=== מידע על חיות המחמד של הלקוח (כבר במערכת - אל תשאל על זה!) ===
-${userContext.pets.map((pet) => 
-  `- ${pet.name || 'חיה'}: ${pet.type === 'dog' ? 'כלב' : pet.type === 'cat' ? 'חתול' : pet.type || 'לא ידוע'}${pet.breed ? `, גזע: ${pet.breed}` : ''}${pet.age ? `, גיל: ${pet.age}` : ''}${pet.gender ? `, ${pet.gender === 'male' ? 'זכר' : 'נקבה'}` : ''}${pet.health_notes ? `, הערות בריאות: ${pet.health_notes}` : ''}`
-).join('\n')}
-=== סוף מידע חיות מחמד ===`;
+    // ============= Pet Context Resolver =============
+    const pets: Pet[] = (userContext?.pets ?? []).map(p => ({
+      id: p.id,
+      name: p.name || "חיה",
+      type: p.type || "unknown",
+      breed: p.breed,
+      age: p.age,
+      gender: p.gender,
+      health_notes: p.health_notes
+    }));
+    
+    const lastUserMsg = [...messages].reverse().find(m => m.role === "user")?.content ?? "";
+    let activePet: Pet | null = pickPetFromMessage(lastUserMsg, pets);
+
+    // If no match by name in message:
+    if (!activePet) {
+      if (pets.length === 1) {
+        activePet = pets[0]; // Easy: only one pet
+      } else if (pets.length > 1) {
+        // Multiple pets and no selection → ask user to choose
+        const names = pets.map(p => p.name).join(" / ");
+        return new Response(
+          JSON.stringify({
+            role: "assistant",
+            content: `על איזו חיה מדובר? 😊\n${names}`,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
+
+    // Build Pet Card (short context for model)
+    const petCard = activePet
+      ? `\n\n[ACTIVE_PET]
+name: ${activePet.name}
+type: ${activePet.type === 'dog' ? 'כלב' : activePet.type === 'cat' ? 'חתול' : activePet.type}
+breed: ${activePet.breed ?? "לא ידוע"}
+age: ${activePet.age ?? "לא ידוע"}
+gender: ${activePet.gender === 'male' ? 'זכר' : activePet.gender === 'female' ? 'נקבה' : activePet.gender ?? "לא ידוע"}
+health_notes: ${activePet.health_notes ?? "אין"}
+[/ACTIVE_PET]`
+      : "\n\n[ACTIVE_PET]\nnone\n[/ACTIVE_PET]";
 
     const userName = userContext?.userName ? `\nשם הלקוח: ${userContext.userName}` : '';
 
-    // Check if last message is asking for product recommendations
-    const lastUserMessage = messages.filter((m) => m.role === "user").slice(-1)[0]?.content?.toLowerCase() || "";
-    const isProductRequest = 
-      lastUserMessage.includes("מוצר") || 
-      lastUserMessage.includes("המלצ") ||
-      lastUserMessage.includes("אוכל") ||
-      lastUserMessage.includes("מזון") ||
-      lastUserMessage.includes("קנ") ||
-      lastUserMessage.includes("חנות") ||
-      lastUserMessage.includes("לקנות") ||
-      lastUserMessage.includes("מומלץ") ||
-      lastUserMessage.includes("מה כדאי");
+    // ============= Product Search =============
+    const productIntent = isProductIntent(lastUserMsg);
+    let productContext = "";
+    let foundProducts: ProductRecord[] = [];
 
-    // Fetch relevant products if this looks like a product request
-    let productsContext = "";
-    let productsData: any[] = [];
-    
-    if (isProductRequest) {
-      // Build query based on pet types
-      let query = supabase
-        .from('business_products')
-        .select('id, name, description, price, sale_price, image_url, category, pet_type')
-        .eq('in_stock', true)
-        .limit(3);
-      
-      // Filter by pet type if we know what pets the user has
-      if (petTypes.length === 1) {
-        query = query.eq('pet_type', petTypes[0]);
-      } else if (petTypes.length > 1) {
-        query = query.in('pet_type', petTypes);
-      }
+    if (productIntent && !isWhatsApp) {
+      const searchTerms = extractSearchTerms(lastUserMsg);
+      const petType = activePet?.type ?? null;
+      foundProducts = await searchProducts(supabase, searchTerms, petType, 6);
 
-      const { data: products, error } = await query;
-      
-      if (!error && products && products.length > 0) {
-        productsData = products;
-        productsContext = `\n\n=== מוצרים זמינים בחנות (השתמש ב-IDs האלה!) ===
-${products.map((p: any) => 
-  `[ID:${p.id}] ${p.name} - ₪${p.sale_price || p.price}${p.sale_price ? ` (במקום ₪${p.price})` : ''}${p.category ? ` | ${p.category}` : ''}${p.pet_type ? ` | ל${p.pet_type === 'dog' ? 'כלבים' : p.pet_type === 'cat' ? 'חתולים' : 'חיות מחמד'}` : ''}`
+      if (foundProducts.length) {
+        productContext = `\n\n[PRODUCT_CANDIDATES]
+${foundProducts.map(p => 
+  `- ${p.id} | ${p.name} | ₪${p.sale_price ?? p.price ?? "?"} | ${p.category ?? ""} | ${p.pet_type === 'dog' ? 'לכלבים' : p.pet_type === 'cat' ? 'לחתולים' : ''}`
 ).join('\n')}
-=== סוף רשימת מוצרים ===
+[/PRODUCT_CANDIDATES]
 
-כשאתה ממליץ על מוצרים, החזר בסוף ההודעה את ה-IDs של המוצרים המומלצים בפורמט:
-[PRODUCTS:id1,id2,id3]
-לדוגמה: [PRODUCTS:abc123,def456]
-זה יאפשר הצגת כרטיסי המוצרים בצ'אט.`;
+כשאתה ממליץ על מוצרים, השתמש רק ב-IDs מהרשימה למעלה.
+בסוף ההודעה הוסף: [PRODUCTS:id1,id2,...]`;
+      } else {
+        productContext = `\n\n[PRODUCT_CANDIDATES]\nאין מוצרים תואמים בחיפוש\n[/PRODUCT_CANDIDATES]`;
       }
     }
 
-    // Build channel-specific instructions
+    // ============= Build System Prompt =============
     let channelInstructions = "";
     if (isWhatsApp) {
       channelInstructions = `
@@ -144,50 +286,40 @@ ${products.map((p: any) =>
 ❌ אסור לכלול קודים, טוקנים או placeholders
 ✅ רק טקסט נקי, אנושי וידידותי
 ✅ המלץ על עד 3 מוצרים בשמותיהם בלבד
-✅ בסוף כל המלצה הוסף CTA: "רוצה לינקים? כתוב 1/2/3"
-
-דוגמה לתשובה נכונה:
-"בשמחה! לכלב קטן הייתי ממליץ על:
-• חטיף דנטלי קטן
-• חטיפי אימון רכים
-• צעצוע קונג למילוי
-
-רוצה שאשלח לינקים? כתוב 1️⃣/2️⃣/3️⃣"`;
-    } else {
-      channelInstructions = `
-
-כשאתה ממליץ על מוצרים, הוסף בסוף ההודעה את ה-IDs בפורמט:
-[PRODUCTS:id1,id2,id3]`;
+✅ בסוף כל המלצה הוסף CTA: "רוצה לינקים? כתוב 1/2/3"`;
     }
 
-    // Build the PetID system prompt with strict rules
     const systemPrompt = `את/ה נציג/ת שירות של PetID. המטרה: לעזור במהירות ובדיוק, בלי להמציא מידע, ולהכווין לפעולה הבאה.
-${userName}${petsContext}${productsContext}
+${userName}${petCard}${productContext}
 
 === עקרונות חובה ===
 1. אין המצאות: אסור להמציא גיל/גזע/גודל/רגישויות/סטטוס הזמנה/מחיר/מלאי. אם אין נתון — שואלים שאלה אחת בלבד.
 
-2. נאמנות לפרופיל: אם סופק Pet Profile למעלה — אסור לסתור אותו. אם יש סתירה/חוסר התאמה (למשל גזע גדול מול המלצה לגזע קטן) — עוצרים ומבקשים אימות.
+2. נאמנות לפרופיל: השתמש/י רק במידע מ-[ACTIVE_PET] למעלה. אסור לסתור או להמציא פרטים.
 
-3. בחירת חיה: אם למשתמש יש יותר מחיית מחמד אחת ואין pet_id פעיל — לא ממליצים. שואלים: "על איזו חיה מדובר? (שם1/שם2…)".
+3. בחירת חיה: אם [ACTIVE_PET] הוא none — לא ממליצים. שואלים על איזו חיה מדובר.
 
-4. תשובות קצרות: 2–5 שורות, ואז פעולה/בחירה (כפתורים/מספרים).
+4. תשובות קצרות: 2–5 שורות, ואז פעולה/בחירה.
 
 5. תזונה/מזון: אסור לתת המלצת מזון בלי לפחות: סוג (כלב/חתול), שלב גיל (גור/בוגר/מבוגר), וגודל/גזע. אם חסר — שואלים שאלה אחת.
 
-6. מוצרים: ניתן להציע מוצרים רק אם התקבלו רשומות מהחיפוש ב-DB (ראה "מוצרים זמינים" למעלה). אם אין התאמות — מציעים 2–3 שאלות סינון קצרות.
+6. מוצרים: ניתן להציע מוצרים רק מ-[PRODUCT_CANDIDATES] למעלה. אם אין התאמות — מציעים 2–3 שאלות סינון קצרות.
 
-7. פורמט מוצרים: אם ממליץ/ה על מוצר(ים) — בסוף ההודעה חייב להופיע בדיוק: [PRODUCTS:id1,id2,…] בלי טקסט נוסף באותה שורה. אם אין מוצרים — לא מציגים PRODUCTS בכלל.
+7. פורמט מוצרים: אם ממליץ/ה על מוצר(ים) — בסוף ההודעה חייב להופיע בדיוק: [PRODUCTS:id1,id2,…] (רק IDs מהרשימה!). אם אין מוצרים — לא מציגים PRODUCTS.
 
-8. שפה וטון: עברית, קצר, שירותי, לא "חופר", בלי אמוג'ים מוגזמים (מקסימום 1).
+8. שפה וטון: עברית, קצר, שירותי, בלי אמוג'ים מוגזמים (מקסימום 1).
 
-9. הסלמה לנציג אנושי: אם המשתמש כועס/קללה/חיוב/ביטול/בעיה רפואית/טענה חמורה — מעבירים לנציג אנושי ושואלים רק פרט אחד לזירוז (מספר הזמנה/טלפון).
+9. הסלמה: אם המשתמש כועס/קללה/בעיה רפואית/טענה חמורה — מעבירים לנציג אנושי.
 
-=== מבנה תשובה מומלץ ===
+=== מבנה תשובה ===
 • משפט 1: מענה/הבהרה קצרה
-• משפט 2: שאלה אחת או 2–3 אופציות בחירה
+• משפט 2: שאלה אחת או 2–3 אופציות
 • שורה אחרונה (רק אם יש מוצרים): [PRODUCTS:…]
 ${channelInstructions}`;
+
+    // ============= AI Request =============
+    // If product intent → no stream (so we can validate PRODUCTS tag)
+    const shouldStream = !productIntent || isWhatsApp;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -201,7 +333,7 @@ ${channelInstructions}`;
           { role: "system", content: systemPrompt },
           ...messages,
         ],
-        stream: true,
+        stream: shouldStream,
       }),
     });
 
@@ -213,7 +345,7 @@ ${channelInstructions}`;
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "נדרש תשלום, אנא הוסף כספים לחשבון Lovable AI שלך" }), {
+        return new Response(JSON.stringify({ error: "נדרש תשלום, אנא הוסף כספים לחשבון" }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -226,16 +358,39 @@ ${channelInstructions}`;
       });
     }
 
-    // If we have products, we need to attach them to the response metadata
-    // We'll add a custom header with the products data
+    // ============= Non-Streaming Response (with PRODUCTS validation) =============
+    if (!shouldStream) {
+      const json = await response.json();
+      let text = json?.choices?.[0]?.message?.content ?? "";
+      
+      // Validate PRODUCTS tag - keep only valid IDs
+      const validIds = new Set(foundProducts.map(p => p.id));
+      const safeText = keepOnlyValidProducts(text, validIds);
+      
+      // Build response with products data header
+      const headers: Record<string, string> = { 
+        ...corsHeaders, 
+        "Content-Type": "application/json" 
+      };
+      
+      // Extract final valid product IDs for client
+      const { ids: finalProductIds } = extractProductIds(safeText);
+      if (finalProductIds.length > 0) {
+        const productsForClient = foundProducts.filter(p => finalProductIds.includes(p.id));
+        headers["X-Products-Data"] = encodeURIComponent(JSON.stringify(productsForClient));
+      }
+      
+      return new Response(
+        JSON.stringify({ role: "assistant", content: safeText }),
+        { headers }
+      );
+    }
+
+    // ============= Streaming Response =============
     const headers: Record<string, string> = { 
       ...corsHeaders, 
       "Content-Type": "text/event-stream" 
     };
-    
-    if (productsData.length > 0) {
-      headers["X-Products-Data"] = encodeURIComponent(JSON.stringify(productsData));
-    }
 
     return new Response(response.body, { headers });
   } catch (e) {
