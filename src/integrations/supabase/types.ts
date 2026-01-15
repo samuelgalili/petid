@@ -3543,6 +3543,48 @@ export type Database = {
         }
         Relationships: []
       }
+      music_tracks: {
+        Row: {
+          artist: string
+          cover_art_url: string | null
+          created_at: string
+          duration_seconds: number
+          full_url: string | null
+          genre: string | null
+          id: string
+          is_trending: boolean | null
+          play_count: number | null
+          preview_url: string
+          title: string
+        }
+        Insert: {
+          artist: string
+          cover_art_url?: string | null
+          created_at?: string
+          duration_seconds: number
+          full_url?: string | null
+          genre?: string | null
+          id?: string
+          is_trending?: boolean | null
+          play_count?: number | null
+          preview_url: string
+          title: string
+        }
+        Update: {
+          artist?: string
+          cover_art_url?: string | null
+          created_at?: string
+          duration_seconds?: number
+          full_url?: string | null
+          genre?: string | null
+          id?: string
+          is_trending?: boolean | null
+          play_count?: number | null
+          preview_url?: string
+          title?: string
+        }
+        Relationships: []
+      }
       normalized_customers: {
         Row: {
           address_line1: string | null
@@ -4653,6 +4695,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      post_collections: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       post_comments: {
         Row: {
@@ -5861,24 +5933,34 @@ export type Database = {
       }
       saved_posts: {
         Row: {
+          collection_id: string | null
           created_at: string | null
           id: string
           post_id: string
           user_id: string
         }
         Insert: {
+          collection_id?: string | null
           created_at?: string | null
           id?: string
           post_id: string
           user_id: string
         }
         Update: {
+          collection_id?: string | null
           created_at?: string | null
           id?: string
           post_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "saved_posts_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "post_collections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "saved_posts_post_id_fkey"
             columns: ["post_id"]
@@ -6138,6 +6220,8 @@ export type Database = {
           id: string
           media_type: string
           media_url: string
+          music_start_time: number | null
+          music_track_id: string | null
           user_id: string
         }
         Insert: {
@@ -6146,6 +6230,8 @@ export type Database = {
           id?: string
           media_type: string
           media_url: string
+          music_start_time?: number | null
+          music_track_id?: string | null
           user_id: string
         }
         Update: {
@@ -6154,9 +6240,19 @@ export type Database = {
           id?: string
           media_type?: string
           media_url?: string
+          music_start_time?: number | null
+          music_track_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stories_music_track_id_fkey"
+            columns: ["music_track_id"]
+            isOneToOne: false
+            referencedRelation: "music_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       story_highlights: {
         Row: {
@@ -7400,6 +7496,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_favorite_tracks: {
+        Row: {
+          created_at: string
+          id: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorite_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "music_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_follows: {
         Row: {

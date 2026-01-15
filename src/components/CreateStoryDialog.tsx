@@ -1,13 +1,26 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Image as ImageIcon, X, Loader2, Type, Smile, Sparkles, ShoppingBag } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Loader2, Type, Smile, Sparkles, ShoppingBag, Music, Sticker, Pause, Play } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { StoryProductTagger } from "@/components/shop/StoryProductTagger";
+import { MusicPicker } from "@/components/story/MusicPicker";
+import { InteractiveStickerPicker, InteractiveSticker } from "@/components/story/InteractiveStickerPicker";
+
+interface MusicTrack {
+  id: string;
+  title: string;
+  artist: string;
+  genre: string | null;
+  duration_seconds: number;
+  preview_url: string;
+  cover_art_url: string | null;
+  is_trending: boolean;
+}
 
 interface TextOverlay {
   id: string;
@@ -46,6 +59,12 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
   const [textColor, setTextColor] = useState("#FFFFFF");
   const [showProductTagger, setShowProductTagger] = useState(false);
   const [taggedProducts, setTaggedProducts] = useState<Array<{ productId: string; positionX: number; positionY: number }>>([]);
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState<MusicTrack | null>(null);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [interactiveStickers, setInteractiveStickers] = useState<InteractiveSticker[]>([]);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -79,8 +98,39 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
     setTexts([]);
     setStickers([]);
     setFilter("none");
+    setSelectedMusic(null);
+    setInteractiveStickers([]);
+    if (audioPreviewRef.current) {
+      audioPreviewRef.current.pause();
+      audioPreviewRef.current = null;
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
+  };
+
+  const toggleMusicPreview = () => {
+    if (!selectedMusic) return;
+    
+    if (isPlayingPreview) {
+      audioPreviewRef.current?.pause();
+      setIsPlayingPreview(false);
+    } else {
+      if (!audioPreviewRef.current) {
+        audioPreviewRef.current = new Audio(selectedMusic.preview_url);
+        audioPreviewRef.current.volume = 0.5;
+        audioPreviewRef.current.onended = () => setIsPlayingPreview(false);
+      }
+      audioPreviewRef.current.play();
+      setIsPlayingPreview(true);
+    }
+  };
+
+  const handleAddInteractiveSticker = (sticker: InteractiveSticker) => {
+    setInteractiveStickers(prev => [...prev, sticker]);
+  };
+
+  const removeInteractiveSticker = (index: number) => {
+    setInteractiveStickers(prev => prev.filter((_, i) => i !== index));
   };
 
   const stickersEmojis = ["😀", "😍", "🐶", "🐱", "❤️", "⭐", "🎉", "🔥", "👍", "💯"];
@@ -336,7 +386,118 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
                     <ShoppingBag className="w-5 h-5" />
                   </Button>
                 </motion.div>
+                {/* Music Button */}
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md ${selectedMusic ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setShowMusicPicker(true)}
+                  >
+                    <Music className="w-5 h-5" />
+                  </Button>
+                </motion.div>
+                {/* Interactive Stickers Button */}
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md ${interactiveStickers.length > 0 ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setShowStickerPicker(true)}
+                  >
+                    <Sticker className="w-5 h-5" />
+                  </Button>
+                </motion.div>
               </motion.div>
+
+              {/* Music Picker Dialog */}
+              <MusicPicker
+                open={showMusicPicker}
+                onOpenChange={setShowMusicPicker}
+                onSelectTrack={(track) => setSelectedMusic(track)}
+                selectedTrackId={selectedMusic?.id}
+              />
+
+              {/* Interactive Sticker Picker Dialog */}
+              <InteractiveStickerPicker
+                open={showStickerPicker}
+                onOpenChange={setShowStickerPicker}
+                onAddSticker={handleAddInteractiveSticker}
+              />
+
+              {/* Selected Music Display */}
+              {selectedMusic && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute top-16 right-4 bg-black/80 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 max-w-[200px]"
+                >
+                  <button
+                    onClick={toggleMusicPreview}
+                    className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 relative"
+                  >
+                    {selectedMusic.cover_art_url ? (
+                      <img src={selectedMusic.cover_art_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-primary/20 flex items-center justify-center">
+                        <Music className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      {isPlayingPreview ? (
+                        <Pause className="w-4 h-4 text-white" fill="white" />
+                      ) : (
+                        <Play className="w-4 h-4 text-white" fill="white" />
+                      )}
+                    </div>
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{selectedMusic.title}</p>
+                    <p className="text-white/60 text-xs truncate">{selectedMusic.artist}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedMusic(null);
+                      if (audioPreviewRef.current) {
+                        audioPreviewRef.current.pause();
+                        audioPreviewRef.current = null;
+                      }
+                      setIsPlayingPreview(false);
+                    }}
+                    className="text-white/60 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Interactive Stickers Preview */}
+              {interactiveStickers.length > 0 && (
+                <div className="absolute bottom-24 right-4 space-y-2">
+                  {interactiveStickers.map((sticker, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="bg-black/70 backdrop-blur-md rounded-lg px-3 py-2 flex items-center gap-2"
+                    >
+                      <span className="text-white text-xs capitalize">
+                        {sticker.type === 'poll' ? '📊 סקר' :
+                         sticker.type === 'question' ? '❓ שאלה' :
+                         sticker.type === 'countdown' ? '⏱️ ספירה' :
+                         sticker.type === 'emoji_slider' ? '😍 סליידר' :
+                         '🎯 חידון'}
+                      </span>
+                      <button
+                        onClick={() => removeInteractiveSticker(index)}
+                        className="text-white/60 hover:text-white"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
               {/* Product Tagger */}
               <StoryProductTagger
