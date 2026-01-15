@@ -297,6 +297,9 @@ const Checkout = () => {
       console.log('Starting payment request with total:', orderTotal);
 
       // Call the edge function to create payment and order
+      // Calculate shipping discount for free shipping coupons
+      const shippingDiscount = isFreeShippingCoupon ? baseShipping : 0;
+      
       const { data, error } = await supabase.functions.invoke('create-shop-payment', {
         body: {
           items: items.map(item => ({
@@ -312,6 +315,8 @@ const Checkout = () => {
           installments: installments,
           subtotal: subtotal,
           shipping: shipping,
+          original_shipping: baseShipping, // Send original shipping before discount
+          shipping_discount: shippingDiscount, // Send shipping discount amount
           tax: tax,
           total: orderTotal,
           coupon_id: appliedCoupon?.id,
