@@ -226,8 +226,11 @@ const Profile = () => {
   return (
     <PageTransition>
       <div 
-        className="min-h-screen bg-background pb-20" 
+        className="h-screen bg-background overflow-hidden flex flex-col" 
         dir="rtl"
+      >
+      <div 
+        className="flex-1 overflow-y-auto pb-[70px]"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -647,8 +650,6 @@ const Profile = () => {
             </motion.div>
           </TabsContent>
         </Tabs>
-
-        <BottomNav />
       </div>
 
       {/* Hamburger Menu */}
@@ -676,6 +677,9 @@ const Profile = () => {
         open={showCloseFriends}
         onOpenChange={setShowCloseFriends}
       />
+
+      <BottomNav />
+      </div>
     </PageTransition>
   );
 };
