@@ -366,7 +366,8 @@ const Shop = () => {
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Instagram-style Header */}
       <motion.div 
         className="sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b border-border/40"
@@ -951,6 +952,7 @@ const Shop = () => {
           )}
         </SheetContent>
       </Sheet>
+      </div>
 
       <BottomNav />
     </div>

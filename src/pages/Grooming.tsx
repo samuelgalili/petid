@@ -220,7 +220,8 @@ const Grooming = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       <AppHeader title="מספרות" showBackButton={true} />
 
       {/* City Filter */}
@@ -425,6 +426,7 @@ const Grooming = () => {
             <p className="text-muted-foreground/70 font-jakarta text-sm mt-1">נסה לחפש במילים אחרות</p>
           </motion.div>
         )}
+      </div>
       </div>
 
       <BottomNav />

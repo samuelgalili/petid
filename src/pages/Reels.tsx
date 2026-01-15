@@ -163,7 +163,8 @@ const Reels = () => {
   }
 
   return (
-    <div className="h-screen bg-black relative">
+    <div className="h-screen bg-black overflow-hidden relative">
+      <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-center">
         <h1 className="text-white text-xl font-bold">סרטונים</h1>
@@ -293,6 +294,7 @@ const Reels = () => {
             </div>
           ))
         )}
+      </div>
       </div>
 
       <BottomNav />

@@ -1095,7 +1095,8 @@ const Feed = () => {
   if (showOnboarding) {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
-  return <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-20" dir="rtl">
+  return <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden" dir="rtl">
+    <div className="h-full overflow-y-auto pb-[70px]">
       {/* PetID-style Header - Modern, Clean */}
       <motion.div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-card/98 backdrop-blur-xl border-b border-border/40 shadow-sm" : "bg-transparent"}`} initial={{
       y: -20,
@@ -1424,7 +1425,7 @@ const Feed = () => {
 
       {/* My Pets Sheet */}
       <MyPetsSheet open={isPetsSheetOpen} onOpenChange={setIsPetsSheetOpen} pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
-
+      </div>
       <BottomNav />
     </div>;
 };

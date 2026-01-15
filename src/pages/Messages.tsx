@@ -133,7 +133,8 @@ export default function Messages() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-full overflow-y-auto pb-[70px]">
       <div className="max-w-lg mx-auto">
         {/* Instagram-style Header */}
         <div className="bg-background border-b border-border sticky top-0 z-10">
@@ -276,6 +277,7 @@ export default function Messages() {
         vanishMode={vanishMode}
         onToggle={setVanishMode}
       />
+      </div>
       
       <BottomNav />
     </div>
