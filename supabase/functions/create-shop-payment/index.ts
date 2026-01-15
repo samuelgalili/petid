@@ -306,6 +306,9 @@ serve(async (req: Request): Promise<Response> => {
     };
     
     console.log('CardCom request SumToBill:', sumToBill);
+    
+    // Log full payload for debugging
+    console.log('CARDcom_payload_full', JSON.stringify(cardcomRequest));
 
     console.log('Calling CardCom API...');
 
