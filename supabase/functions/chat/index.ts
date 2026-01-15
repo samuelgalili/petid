@@ -5,7 +5,7 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 // ============= Types =============
 type Pet = {
-  id?: string;
+  id?: string | null;
   name: string;
   type: string;
   breed?: string | null;
@@ -45,16 +45,16 @@ const MessageSchema = z.object({
 
 const UserContextSchema = z.object({
   pets: z.array(z.object({
-    id: z.string().optional(),
-    name: z.string().max(100).optional(),
-    type: z.string().max(50).optional(),
-    breed: z.string().max(100).optional(),
-    age: z.union([z.string(), z.number()]).optional(),
-    gender: z.string().max(20).optional(),
-    health_notes: z.string().max(500).optional()
+    id: z.string().optional().nullable(),
+    name: z.string().max(100).optional().nullable(),
+    type: z.string().max(50).optional().nullable(),
+    breed: z.string().max(100).optional().nullable(),
+    age: z.union([z.string(), z.number()]).optional().nullable(),
+    gender: z.string().max(20).optional().nullable(),
+    health_notes: z.string().max(500).optional().nullable()
   })).max(20).optional(),
-  userName: z.string().max(100).optional()
-}).optional();
+  userName: z.string().max(100).optional().nullable()
+}).optional().nullable();
 
 const ChatInputSchema = z.object({
   messages: z.array(MessageSchema).min(1).max(50, "Too many messages (max 50)"),
