@@ -59,6 +59,19 @@ const Checkout = () => {
   const [ageCheckLoading, setAgeCheckLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
 
+  // Load coupon from sessionStorage (applied in Cart)
+  useEffect(() => {
+    const savedCoupon = sessionStorage.getItem('appliedCoupon');
+    if (savedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(savedCoupon));
+        sessionStorage.removeItem('appliedCoupon'); // Clear after loading
+      } catch (e) {
+        console.error('Error loading coupon:', e);
+      }
+    }
+  }, []);
+
   // Check user age and pre-fill shipping data on component mount
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -130,8 +143,8 @@ const Checkout = () => {
     : 0;
   
   const discountedSubtotal = Math.max(0, subtotal - discount);
-  const tax = discountedSubtotal * 0.17;
-  const total = discountedSubtotal + shipping + tax;
+  // Price already includes VAT - no need to add tax separately
+  const total = discountedSubtotal + shipping;
 
   const validateCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -317,7 +330,7 @@ const Checkout = () => {
           shipping: shipping,
           original_shipping: baseShipping, // Send original shipping before discount
           shipping_discount: shippingDiscount, // Send shipping discount amount
-          tax: tax,
+          tax: 0, // Price already includes VAT
           total: orderTotal,
           coupon_id: appliedCoupon?.id,
           discount_amount: discount,
@@ -353,7 +366,6 @@ const Checkout = () => {
           paymentMethod,
           subtotal,
           shipping,
-          tax,
           total: orderTotal,
           orderDate: new Date().toISOString(),
         };
@@ -374,7 +386,6 @@ const Checkout = () => {
           paymentMethod,
           subtotal,
           shipping,
-          tax,
           total: orderTotal,
           orderDate: new Date().toISOString(),
         };
@@ -401,7 +412,6 @@ const Checkout = () => {
           paymentMethod,
           subtotal,
           shipping,
-          tax,
           total: orderTotal,
           orderDate: new Date().toISOString(),
         };
@@ -1001,11 +1011,8 @@ const Checkout = () => {
                     <span className="font-semibold text-success font-jakarta">-₪{baseShipping.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground font-jakarta">מע״מ (17%)</span>
-                  <span className="font-semibold text-foreground font-jakarta">
-                    ₪{tax.toFixed(2)}
-                  </span>
+                <div className="text-xs text-muted-foreground font-jakarta">
+                  * המחירים כוללים מע״מ
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center pt-2">

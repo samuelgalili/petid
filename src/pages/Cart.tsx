@@ -2,22 +2,122 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
-import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingBag, Tag, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/AppHeader";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Coupon {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_order_amount: number;
+}
 
 const Cart = () => {
   const navigate = useNavigate();
   const { items, updateQuantity, removeFromCart, getSubtotal, getTotalItems } = useCart();
   const { toast } = useToast();
+  
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
-  const shippingCost = getSubtotal() >= 200 ? 0 : 25;
-  const taxRate = 0.17; // 17% VAT
-  const tax = getSubtotal() * taxRate;
-  const total = getSubtotal() + shippingCost + tax;
+  const subtotal = getSubtotal();
+  
+  // Check if coupon is free shipping type
+  const isFreeShippingCoupon = appliedCoupon?.discount_type === 'free_shipping';
+  const baseShipping = subtotal >= 200 ? 0 : 25;
+  const shipping = isFreeShippingCoupon ? 0 : baseShipping;
+  
+  // Calculate discount (only for non-free-shipping coupons)
+  const discount = appliedCoupon && !isFreeShippingCoupon
+    ? appliedCoupon.discount_type === 'percentage'
+      ? (subtotal * appliedCoupon.discount_value) / 100
+      : appliedCoupon.discount_value
+    : 0;
+  
+  // Price already includes VAT - no need to add tax separately
+  const discountedSubtotal = Math.max(0, subtotal - discount);
+  const total = discountedSubtotal + shipping;
+
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) return;
+    
+    setIsValidatingCoupon(true);
+    try {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', couponCode.toUpperCase())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        toast({
+          title: "קופון לא תקין",
+          description: "הקופון שהזנת לא קיים או לא פעיל",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.min_order_amount && subtotal < data.min_order_amount) {
+        toast({
+          title: "מינימום הזמנה",
+          description: `הזמנה מינימלית לקופון זה: ₪${data.min_order_amount}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.max_uses && data.used_count >= data.max_uses) {
+        toast({
+          title: "קופון מנוצל",
+          description: "הקופון הזה כבר נוצל עד תום",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAppliedCoupon(data);
+      toast({
+        title: "קופון הופעל!",
+        description: data.discount_type === 'free_shipping'
+          ? 'משלוח חינם!'
+          : data.discount_type === 'percentage' 
+            ? `הנחה של ${data.discount_value}%`
+            : `הנחה של ₪${data.discount_value}`,
+      });
+    } catch (error) {
+      console.error("Error validating coupon:", error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לבדוק את הקופון",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    toast({
+      title: "קופון הוסר",
+      duration: 1500,
+    });
+  };
 
   const handleRemoveItem = (id: string, name: string) => {
     removeFromCart(id);
@@ -29,6 +129,13 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
+    // Store coupon in sessionStorage for checkout page
+    if (appliedCoupon) {
+      sessionStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
+    } else {
+      sessionStorage.removeItem('appliedCoupon');
+    }
+    
     toast({
       title: "🎉 תודה!",
       description: "מעבר לדף תשלום...",
@@ -160,12 +267,60 @@ const Cart = () => {
           ))}
         </AnimatePresence>
 
+        {/* Coupon Input */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mt-4"
+        >
+          <Card className="p-4 bg-card border-0 rounded-2xl shadow-lg">
+            <Label className="font-jakarta text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              קוד קופון
+            </Label>
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between p-3 bg-success/10 rounded-xl border border-success/30">
+                <div>
+                  <p className="font-semibold text-success font-jakarta text-sm">{appliedCoupon.code}</p>
+                  <p className="text-xs text-muted-foreground font-jakarta">
+                    {appliedCoupon.discount_type === 'free_shipping'
+                      ? 'משלוח חינם!'
+                      : appliedCoupon.discount_type === 'percentage' 
+                        ? `${appliedCoupon.discount_value}% הנחה`
+                        : `₪${appliedCoupon.discount_value} הנחה`}
+                  </p>
+                </div>
+                <button onClick={removeCoupon} className="p-1 hover:bg-destructive/10 rounded-full transition-colors">
+                  <X className="w-4 h-4 text-destructive" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2 mt-2">
+                <Input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="הזן קוד קופון"
+                  className="flex-1 font-jakarta rounded-xl"
+                />
+                <Button
+                  onClick={validateCoupon}
+                  disabled={!couponCode.trim() || isValidatingCoupon}
+                  className="bg-accent hover:bg-accent-hover text-accent-foreground rounded-xl font-jakarta"
+                >
+                  {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "הפעל"}
+                </Button>
+              </div>
+            )}
+          </Card>
+        </motion.div>
+
         {/* Order Summary */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mt-8"
+          className="mt-6"
         >
           <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-muted/30">
             <div className="p-6">
@@ -178,32 +333,39 @@ const Cart = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground font-jakarta">סכום ביניים</span>
                   <span className="font-bold text-foreground font-jakarta">
-                    ₪{getSubtotal().toFixed(2)}
+                    ₪{subtotal.toFixed(2)}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-jakarta">משלוח</span>
-                  <span className="font-bold text-foreground font-jakarta">
-                    {shippingCost === 0 ? (
-                      <span className="text-success">חינם</span>
-                    ) : (
-                      `₪${shippingCost.toFixed(2)}`
-                    )}
-                  </span>
-                </div>
-
-                {getSubtotal() < 200 && (
-                  <div className="text-xs text-muted-foreground bg-accent/10 p-2 rounded-lg font-jakarta">
-                    הוסף עוד ₪{(200 - getSubtotal()).toFixed(2)} למשלוח חינם!
+                {/* Show discount if coupon applied */}
+                {discount > 0 && (
+                  <div className="flex justify-between items-center text-success">
+                    <span className="font-jakarta">הנחה ({appliedCoupon?.code})</span>
+                    <span className="font-bold font-jakarta">
+                      -₪{discount.toFixed(2)}
+                    </span>
                   </div>
                 )}
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-jakarta">מע״מ (17%)</span>
+                  <span className="text-muted-foreground font-jakarta">משלוח</span>
                   <span className="font-bold text-foreground font-jakarta">
-                    ₪{tax.toFixed(2)}
+                    {shipping === 0 ? (
+                      <span className="text-success">חינם</span>
+                    ) : (
+                      `₪${shipping.toFixed(2)}`
+                    )}
                   </span>
+                </div>
+
+                {subtotal < 200 && !isFreeShippingCoupon && (
+                  <div className="text-xs text-muted-foreground bg-accent/10 p-2 rounded-lg font-jakarta">
+                    הוסף עוד ₪{(200 - subtotal).toFixed(2)} למשלוח חינם!
+                  </div>
+                )}
+
+                <div className="text-xs text-muted-foreground font-jakarta">
+                  * המחירים כוללים מע״מ
                 </div>
 
                 <div className="border-t-2 border-dashed border-border pt-4">

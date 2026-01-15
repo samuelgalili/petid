@@ -229,13 +229,7 @@ serve(async (req: Request): Promise<Response> => {
       lineIndex++;
     }
     
-    // Add tax if applicable
-    if (requestData.tax > 0) {
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'מע"מ';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(requestData.tax);
-      lineIndex++;
-    }
+    // Note: tax is not added as separate line since prices already include VAT
     
     // Add discount as negative line if applicable
     if (requestData.discount_amount && requestData.discount_amount > 0) {
