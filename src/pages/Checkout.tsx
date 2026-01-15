@@ -826,6 +826,12 @@ const Checkout = () => {
                       ₪{(total / installments).toFixed(2)} × {installments} תשלומים
                     </p>
                   )}
+                  <div className="mt-3 p-3 bg-primary/5 rounded-xl border border-primary/20">
+                    <p className="text-xs text-muted-foreground font-jakarta text-center">
+                      <CreditCard className="w-4 h-4 inline-block ml-1" />
+                      פרטי הכרטיס יוזנו בעמוד תשלום מאובטח בשלב הבא
+                    </p>
+                  </div>
                 </Card>
               )}
 
