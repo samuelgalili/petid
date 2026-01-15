@@ -546,7 +546,7 @@ const Explore = () => {
               onClick={() => navigate("/notifications")}
               className="w-9 h-9 rounded-xl hover:bg-muted"
             >
-              <Zap className="w-5 h-5 text-muted-foreground" />
+              <Heart className="w-5 h-5 text-muted-foreground" />
             </Button>
           </div>
 
