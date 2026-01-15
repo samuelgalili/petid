@@ -311,7 +311,18 @@ serve(async (req: Request): Promise<Response> => {
       body: formData.toString(),
     });
 
-    const cardcomData = await cardcomResponse.json();
+    // Legacy endpoint returns form-encoded, not JSON
+    const responseText = await cardcomResponse.text();
+    console.log('CardCom raw response:', responseText);
+    
+    // Parse form-encoded response
+    const cardcomParams = new URLSearchParams(responseText);
+    const cardcomData = {
+      ResponseCode: parseInt(cardcomParams.get('ResponseCode') || '-1'),
+      Description: cardcomParams.get('Description') || '',
+      LowProfileId: cardcomParams.get('LowProfileCode') || '',
+      Url: cardcomParams.get('Url') || cardcomParams.get('url') || '',
+    };
     console.log('CardCom response:', cardcomData);
 
     if (cardcomData.ResponseCode !== 0 && cardcomData.ResponseCode !== undefined) {
@@ -345,7 +356,7 @@ serve(async (req: Request): Promise<Response> => {
         success: true,
         order_id: orderData.id,
         order_number: orderNumber,
-        payment_url: cardcomData.Url || cardcomData.url,
+        payment_url: cardcomData.Url,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
