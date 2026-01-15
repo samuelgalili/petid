@@ -242,9 +242,11 @@ serve(async (req: Request): Promise<Response> => {
     console.log('CardCom InvoiceLines:', JSON.stringify(flatInvoiceLines));
 
     // Ensure total is a valid number with 2 decimal places
-    const sumToBill = toMoney(requestData.total);
+    // CardCom requires SumToBill as STRING with 2 decimal places
+    const sumToBill = toMoneyStr(requestData.total);
+    const sumToBillNum = toMoney(requestData.total);
     
-    if (sumToBill <= 0) {
+    if (sumToBillNum <= 0) {
       console.error('Invalid total amount:', sumToBill);
       return new Response(
         JSON.stringify({ error: 'סכום ההזמנה חייב להיות גדול מ-0' }),
