@@ -29,6 +29,8 @@ interface ShopPaymentRequest {
   installments: number;
   subtotal: number;
   shipping: number;
+  original_shipping?: number; // Shipping before discount
+  shipping_discount?: number; // Shipping discount amount (for free shipping coupons)
   tax: number;
   total: number;
   coupon_id?: string;
@@ -210,11 +212,20 @@ serve(async (req: Request): Promise<Response> => {
       lineIndex++;
     }
 
-    // Add shipping if applicable
-    if (requestData.shipping > 0) {
+    // Add shipping if applicable (use original_shipping if provided to show full shipping)
+    const shippingToShow = requestData.original_shipping ?? requestData.shipping;
+    if (shippingToShow > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח';
       flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(requestData.shipping);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(shippingToShow);
+      lineIndex++;
+    }
+    
+    // Add shipping discount as negative line if applicable (for free shipping coupons)
+    if (requestData.shipping_discount && requestData.shipping_discount > 0) {
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח חינם (קופון)';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.shipping_discount);
       lineIndex++;
     }
     
