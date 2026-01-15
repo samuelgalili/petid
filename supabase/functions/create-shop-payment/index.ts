@@ -185,12 +185,13 @@ serve(async (req: Request): Promise<Response> => {
       .join(', ');
 
     // Helper functions for CardCom money formatting
+    // Round DOWN to whole numbers (no decimals) to avoid CardCom formatting issues
     const toMoney = (n: number): number => {
-      return Number((Math.round(n * 100) / 100).toFixed(2));
+      return Math.floor(n);
     };
     
     const toMoneyStr = (n: number): string => {
-      return toMoney(n).toFixed(2);
+      return String(Math.floor(n));
     };
 
     // Build invoice lines in CardCom format (index starts from 1)
