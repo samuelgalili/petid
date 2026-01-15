@@ -288,10 +288,11 @@ serve(async (req: Request): Promise<Response> => {
     formData.append('HideSumField', 'true');
     formData.append('SumInStar498', 'false');
     
-    // Add invoice lines
-    for (const [key, value] of Object.entries(flatInvoiceLines)) {
-      formData.append(key, value);
-    }
+    // TEMP DEBUG: Skip invoice lines to test if base fields work
+    // for (const [key, value] of Object.entries(flatInvoiceLines)) {
+    //   formData.append(key, value);
+    // }
+    console.log('DEBUG: Skipping InvoiceLines for isolation test');
     
     console.log('CardCom request SumToBill:', sumToBill);
     
