@@ -313,30 +313,34 @@ const Checkout = () => {
       // Calculate shipping discount for free shipping coupons
       const shippingDiscount = isFreeShippingCoupon ? baseShipping : 0;
       
+      const paymentPayload = {
+        items: items.map(item => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+          variant: item.variant,
+          size: item.size,
+        })),
+        shipping_address: shippingData,
+        payment_method: paymentMethod,
+        installments: installments,
+        subtotal: subtotal,
+        shipping: shipping,
+        original_shipping: baseShipping,
+        shipping_discount: shippingDiscount,
+        tax: 0,
+        total: orderTotal,
+        coupon_id: appliedCoupon?.id,
+        discount_amount: discount,
+        success_url: `${window.location.origin}/payment-success`,
+        cancel_url: `${window.location.origin}/payment-failed`,
+      };
+
+      console.log('PAYMENT_PAYLOAD', JSON.stringify(paymentPayload));
+
       const { data, error } = await supabase.functions.invoke('create-shop-payment', {
-        body: {
-          items: items.map(item => ({
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            image: item.image,
-            variant: item.variant,
-            size: item.size,
-          })),
-          shipping_address: shippingData,
-          payment_method: paymentMethod,
-          installments: installments,
-          subtotal: subtotal,
-          shipping: shipping,
-          original_shipping: baseShipping, // Send original shipping before discount
-          shipping_discount: shippingDiscount, // Send shipping discount amount
-          tax: 0, // Price already includes VAT
-          total: orderTotal,
-          coupon_id: appliedCoupon?.id,
-          discount_amount: discount,
-          success_url: `${window.location.origin}/payment-success`,
-          cancel_url: `${window.location.origin}/payment-failed`,
-        }
+        body: paymentPayload
       });
 
       console.log('Payment response:', JSON.stringify(data), 'Error:', JSON.stringify(error));
