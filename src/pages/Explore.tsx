@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, TrendingUp, Hash, MapPin, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Star, Sparkles, Lightbulb, Flame, Dog, Cat, PawPrint, Filter, ShoppingBag, ArrowLeft, Compass, Zap, Images, Camera } from "lucide-react";
+import { Search, X, TrendingUp, Hash, MapPin, Grid3X3, Play, Heart, MessageCircle, Trees, Tag, Star, Sparkles, Lightbulb, Flame, Dog, Cat, PawPrint, Filter, ShoppingBag, ArrowLeft, Compass, Zap, Images, Camera, Share2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,9 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PetSearch } from "@/components/PetSearch";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 // Park images
 import parkImage1 from "@/assets/parks/dog-park-1.jpg";
@@ -169,6 +172,7 @@ interface SmartDiscoveryResult {
 const Explore = () => {
   const navigate = useNavigate();
   const { checkAuth } = useRequireAuth();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeTab, setActiveTab] = useState("top");
@@ -183,6 +187,8 @@ const Explore = () => {
   const [doubleTapPostId, setDoubleTapPostId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [userPetId, setUserPetId] = useState<string | null>(null);
   
   // Pet filters
   const [petTypeFilter, setPetTypeFilter] = useState<"all" | "dog" | "cat">("all");
@@ -192,6 +198,23 @@ const Explore = () => {
     "חתולים פרסיים",
     "אימוץ בתל אביב"
   ]);
+
+  // Fetch user's first pet for breed info mission
+  useEffect(() => {
+    const fetchUserPet = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('pets')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('archived', false)
+        .limit(1);
+      if (data?.[0]) {
+        setUserPetId(data[0].id);
+      }
+    };
+    fetchUserPet();
+  }, [user]);
 
   // Calculate distance between two coordinates in km
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -790,53 +813,83 @@ const Explore = () => {
           className="px-4 py-3"
         >
           <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
-            {[
-              { id: "add-pet-photo", icon: Camera, title: "העלה תמונה", points: 15, action: "camera" },
-              { id: "share-post", icon: Heart, title: "שתף רגע", points: 10, action: "share" },
-              { id: "visit-park", icon: Trees, title: "טייל בגינה", points: 20, link: "/parks" },
-              { id: "breed-info", icon: Dog, title: "גלה על הגזע", points: 10, link: "/breed-history" },
-              { id: "invite-friend", icon: Star, title: "הזמן חבר", points: 50, link: "/invite" },
-            ].map((mission, idx) => {
-              const Icon = mission.icon;
-              
-              const handleMissionClick = () => {
-                if (mission.action === "camera") {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.capture = 'environment';
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) {
-                      navigate('/create-post', { state: { imageFile: file } });
-                    }
-                  };
-                  input.click();
-                } else if (mission.action === "share") {
-                  navigate('/create-post');
-                } else if (mission.link) {
-                  navigate(mission.link);
-                }
-              };
-              
-              return (
-                <motion.button 
-                  key={mission.id} 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.05 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleMissionClick}
-                  className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
-                    <Icon className="w-3.5 h-3.5 text-foreground" />
-                  </div>
-                  <span className="text-xs font-medium text-foreground whitespace-nowrap">{mission.title}</span>
-                  <span className="text-[10px] font-bold text-primary">+{mission.points}</span>
-                </motion.button>
-              );
-            })}
+            {/* Upload Photo Mission */}
+            <motion.button 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                if (!checkAuth("כדי להעלות תמונה, יש להתחבר")) return;
+                setCreatePostOpen(true);
+              }}
+              className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"
+            >
+              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                <Camera className="w-3.5 h-3.5 text-foreground" />
+              </div>
+              <span className="text-xs font-medium text-foreground whitespace-nowrap">העלה תמונה</span>
+              <span className="text-[10px] font-bold text-primary">+15</span>
+            </motion.button>
+
+            {/* Share Moment Mission */}
+            <motion.button 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.05 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                if (!checkAuth("כדי לשתף רגע, יש להתחבר")) return;
+                setCreatePostOpen(true);
+              }}
+              className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"
+            >
+              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                <Heart className="w-3.5 h-3.5 text-foreground" />
+              </div>
+              <span className="text-xs font-medium text-foreground whitespace-nowrap">שתף רגע</span>
+              <span className="text-[10px] font-bold text-primary">+10</span>
+            </motion.button>
+
+            {/* Discover Breed Mission - Only show if user has a pet */}
+            {userPetId && (
+              <motion.button 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate(`/pet/${userPetId}?tab=breed`)}
+                className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"
+              >
+                <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                  <Dog className="w-3.5 h-3.5 text-foreground" />
+                </div>
+                <span className="text-xs font-medium text-foreground whitespace-nowrap">גלה על הגזע</span>
+                <span className="text-[10px] font-bold text-primary">+10</span>
+              </motion.button>
+            )}
+
+            {/* Invite Friend Mission */}
+            <motion.button 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                if (!checkAuth("כדי להזמין חברים, יש להתחבר")) return;
+                const referralLink = `${window.location.origin}/signup?ref=${user?.id}`;
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`הצטרפו אליי ב-PetID! 🐾\n${referralLink}`)}`;
+                window.open(whatsappUrl, '_blank');
+                toast.success("לינק ההזמנה נשלח!", { description: "תקבל נקודות כשהחבר יצטרף" });
+              }}
+              className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"
+            >
+              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+                <Share2 className="w-3.5 h-3.5 text-foreground" />
+              </div>
+              <span className="text-xs font-medium text-foreground whitespace-nowrap">הזמן חבר</span>
+              <span className="text-[10px] font-bold text-primary">+50</span>
+            </motion.button>
           </div>
         </motion.div>
       )}
@@ -1251,6 +1304,16 @@ const Explore = () => {
           )}
         </div>
       )}
+
+      {/* Create Post Dialog */}
+      <CreatePostDialog 
+        open={createPostOpen} 
+        onOpenChange={setCreatePostOpen} 
+        onPostCreated={() => {
+          fetchExplorePosts();
+          toast.success("+15 נקודות! 🎉", { description: "העלאת פוסט הושלמה בהצלחה" });
+        }} 
+      />
       
       <BottomNav />
     </div>
