@@ -185,13 +185,17 @@ serve(async (req: Request): Promise<Response> => {
       .join(', ');
 
     // Helper functions for CardCom money formatting
-    // Round DOWN to whole numbers (no decimals) to avoid CardCom formatting issues
-    const toMoney = (n: number): number => {
-      return Math.floor(n);
+    // Use 2 decimal places as CardCom expects
+    const toMoney = (n: any): number => {
+      const v = Number(n);
+      if (!Number.isFinite(v)) return 0;
+      return Math.round(v * 100) / 100;
     };
     
-    const toMoneyStr = (n: number): string => {
-      return String(Math.floor(n));
+    const toMoneyStr = (n: any): string => {
+      const v = Number(n);
+      if (!Number.isFinite(v)) return "0.00";
+      return v.toFixed(2);
     };
 
     // Build invoice lines in CardCom format (index starts from 1)
@@ -242,22 +246,34 @@ serve(async (req: Request): Promise<Response> => {
     
     console.log('CardCom InvoiceLines:', JSON.stringify(flatInvoiceLines));
 
-    // Ensure total is a valid number with 2 decimal places
-    // CardCom requires SumToBill as STRING with 2 decimal places
-    const sumToBill = toMoneyStr(requestData.total);
-    const sumToBillNum = toMoney(requestData.total);
+    // CRITICAL: Calculate SumToBill from invoice lines, NOT from client total
+    // This ensures consistency and prevents 0-amount errors
+    let sumFromLines = 0;
+    for (let i = 1; i < lineIndex; i++) {
+      const qty = Number(flatInvoiceLines[`InvoiceLines${i}.Quantity`] ?? 1);
+      const price = Number(flatInvoiceLines[`InvoiceLines${i}.Price`] ?? 0);
+      sumFromLines += qty * price;
+    }
+    
+    const sumToBill = toMoneyStr(sumFromLines);
+    const sumToBillNum = toMoney(sumFromLines);
     
     console.log('CARDcom_request_amounts', JSON.stringify({
       requestData_total: requestData.total,
+      sumFromLines: sumFromLines,
       sumToBill: sumToBill,
       sumToBillNum: sumToBillNum,
-      typeof_total: typeof requestData.total
+      invoiceLineCount: lineIndex - 1
     }));
     
+    // GUARDRAIL: Block payment if calculated sum is zero or negative
     if (sumToBillNum <= 0) {
-      console.error('Invalid total amount:', sumToBill);
+      console.error('BLOCK_CARDcom_ZERO_AMOUNT', { sumToBill, sumFromLines, flatInvoiceLines });
       return new Response(
-        JSON.stringify({ error: 'סכום ההזמנה חייב להיות גדול מ-0' }),
+        JSON.stringify({ 
+          error: 'INVALID_AMOUNT',
+          message: 'הסכום לתשלום הוא 0. בדוק מוצרים/משלוח/קופון.' 
+        }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
