@@ -8026,20 +8026,35 @@ export type Database = {
     Functions: {
       can_user_redeem: { Args: { p_user_id: string }; Returns: boolean }
       cleanup_expired_whatsapp_otps: { Args: never; Returns: undefined }
-      get_order_status: {
-        Args: { p_order_number: string; p_phone?: string }
-        Returns: {
-          carrier: string
-          created_at: string
-          estimated_delivery: string
-          order_id: string
-          order_number: string
-          shipping_address: Json
-          status: string
-          total: number
-          tracking_number: string
-        }[]
-      }
+      get_order_status:
+        | {
+            Args: { p_order_number: string }
+            Returns: {
+              carrier: string
+              created_at: string
+              estimated_delivery: string
+              order_id: string
+              order_number: string
+              shipping_address: Json
+              status: string
+              total: number
+              tracking_number: string
+            }[]
+          }
+        | {
+            Args: { p_order_number: string; p_phone?: string }
+            Returns: {
+              carrier: string
+              created_at: string
+              estimated_delivery: string
+              order_id: string
+              order_number: string
+              shipping_address: Json
+              status: string
+              total: number
+              tracking_number: string
+            }[]
+          }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
