@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ProductCard, PromoCard, ProductCardSkeleton, PromoCardSkeleton } from "./ProductCard";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ComponentErrorFallback } from "@/components/ComponentErrorFallback";
+import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBoundary";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { Gift, Tag } from "lucide-react";
@@ -66,9 +65,8 @@ export const ProductCarousel = () => {
   };
 
   return (
-    <ErrorBoundary
-      fallback={<ComponentErrorFallback componentName="מוצרים מומלצים" />}
-      onReset={() => window.location.reload()}
+    <ComponentErrorBoundary
+      fallbackMessage="שגיאה בטעינת מוצרים מומלצים"
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -201,9 +199,9 @@ export const ProductCarousel = () => {
           onClick={() => navigate('/shop')}
           className="w-full mt-4 btn-primary font-jakarta font-bold py-3 rounded-2xl"
         >
-          צפה בכל המוצרים
+        צפה בכל המוצרים
         </Button>
       </motion.div>
-    </ErrorBoundary>
+    </ComponentErrorBoundary>
   );
 };
