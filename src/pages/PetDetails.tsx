@@ -17,6 +17,7 @@ import { BreedInfoCard } from "@/components/pet/BreedInfoCard";
 import { RecommendedProducts } from "@/components/pet/RecommendedProducts";
 import { PointsRewardsCard } from "@/components/pet/PointsRewardsCard";
 import { CategoryRecommendations } from "@/components/pet/CategoryRecommendations";
+import { PetProductCarousels } from "@/components/pet/PetProductCarousels";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -727,8 +728,8 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
           {/* נקודות ותגמולים */}
           <PointsRewardsCard petName={pet.name} />
           
-          {/* המלצות מותאמות לפי קטגוריה */}
-          <CategoryRecommendations 
+          {/* קרוסלות מוצרים מומלצים לפי גזע וגיל */}
+          <PetProductCarousels 
             petId={pet.id}
             petName={pet.name}
             petType={pet.type}
@@ -736,12 +737,13 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             petAge={calculateAge(pet.birth_date)}
           />
           
-          {/* מוצרים מומלצים */}
-          <RecommendedProducts 
-            petType={pet.type} 
-            petBreed={pet.breed} 
+          {/* המלצות מותאמות לפי קטגוריה - ביטוח, אילוף, פנסיון */}
+          <CategoryRecommendations 
+            petId={pet.id}
             petName={pet.name}
-            products={recommendedProducts}
+            petType={pet.type}
+            petBreed={pet.breed}
+            petAge={calculateAge(pet.birth_date)}
           />
         </TabsContent>
 
