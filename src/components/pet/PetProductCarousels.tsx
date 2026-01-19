@@ -217,8 +217,8 @@ export const PetProductCarousels = ({
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      {categories.map((category) => {
+    <div className="space-y-8" dir="rtl">
+      {categories.map((category, categoryIndex) => {
         const products = productsByCategory[category.key] || [];
         const Icon = category.icon;
         
@@ -226,85 +226,96 @@ export const PetProductCarousels = ({
 
         return (
           <div key={category.key}>
-            {/* כותרת קטגוריה */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-lg ${category.bgColor} flex items-center justify-center`}>
-                  <Icon className={`w-4 h-4 ${category.color}`} />
+            {/* כותרת קטגוריה - עיצוב משופר */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl ${category.bgColor} flex items-center justify-center shadow-sm`}>
+                  <Icon className={`w-5 h-5 ${category.color}`} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold">{category.title}</h3>
+                  <h3 className="text-base font-bold text-foreground">{category.title}</h3>
                   <p className="text-xs text-muted-foreground">{category.subtitle}</p>
                 </div>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="text-xs text-muted-foreground h-7 px-2"
+                className="text-xs text-primary hover:text-primary/80 h-8 px-3 rounded-full"
                 onClick={() => handleNavigateToShop(category.key)}
               >
-                לכל המוצרים
-                <ChevronLeft className="w-3 h-3 mr-1" />
+                הכל
+                <ChevronLeft className="w-4 h-4 mr-1" />
               </Button>
             </div>
 
-            {/* קרוסלת מוצרים */}
+            {/* קרוסלת מוצרים - עיצוב משופר */}
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-              {products.map((product) => (
+              {products.map((product, productIndex) => (
                 <Card 
                   key={product.id}
-                  className="flex-shrink-0 w-36 overflow-hidden border border-border hover:border-primary/30 transition-all cursor-pointer group"
+                  className="flex-shrink-0 w-40 overflow-hidden border-0 shadow-md hover:shadow-xl transition-all cursor-pointer group rounded-2xl bg-card"
                   onClick={() => navigate(`/product/${product.id}`)}
                 >
-                  {/* תמונה */}
-                  <div className="relative h-28 overflow-hidden bg-muted">
+                  {/* תמונה עם אפקט hover */}
+                  <div className="relative h-32 overflow-hidden bg-gradient-to-br from-muted to-muted/50">
                     <img 
                       src={product.image} 
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300';
                       }}
                     />
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    {/* תגית מבצע */}
                     {product.originalPrice && (
-                      <span className="absolute top-2 right-2 text-[10px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full">
-                        מבצע
+                      <span className="absolute top-2 right-2 text-[10px] font-bold bg-gradient-to-r from-red-500 to-pink-500 text-white px-2 py-1 rounded-full shadow-sm">
+                        🔥 מבצע
                       </span>
                     )}
-                  </div>
-
-                  {/* תוכן */}
-                  <div className="p-2.5">
-                    <h4 className="text-xs font-medium line-clamp-2 mb-1.5 min-h-[32px]">{product.name}</h4>
                     
-                    {/* דירוג */}
-                    {product.rating && (
-                      <div className="flex items-center gap-1 mb-1.5">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span className="text-[10px] text-muted-foreground">{product.rating.toFixed(1)}</span>
-                      </div>
-                    )}
-
-                    {/* מחיר */}
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-sm font-bold text-foreground">₪{product.price}</span>
-                      {product.originalPrice && (
-                        <span className="text-[10px] text-muted-foreground line-through">₪{product.originalPrice}</span>
-                      )}
-                    </div>
-
-                    {/* כפתור הוספה */}
+                    {/* Quick add button on hover */}
                     <Button
                       size="sm"
-                      className="w-full h-7 text-xs bg-primary hover:bg-primary/90 rounded-full"
+                      className="absolute bottom-2 left-2 right-2 h-8 text-[10px] bg-white/90 backdrop-blur-sm text-foreground hover:bg-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg font-semibold"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleAddToCart(product);
                       }}
                     >
                       <ShoppingBag className="w-3 h-3 ml-1" />
-                      הוסף
+                      הוסף לסל
                     </Button>
+                  </div>
+
+                  {/* תוכן */}
+                  <div className="p-3">
+                    <h4 className="text-sm font-semibold line-clamp-2 mb-2 min-h-[40px] text-foreground">{product.name}</h4>
+                    
+                    {/* דירוג */}
+                    {product.rating && (
+                      <div className="flex items-center gap-1 mb-2">
+                        <div className="flex items-center gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-3 h-3 ${i < Math.floor(product.rating!) ? 'fill-amber-400 text-amber-400' : 'fill-muted text-muted'}`} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-medium">({product.rating.toFixed(1)})</span>
+                      </div>
+                    )}
+
+                    {/* מחיר */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-primary">₪{product.price}</span>
+                      {product.originalPrice && (
+                        <span className="text-xs text-muted-foreground line-through">₪{product.originalPrice}</span>
+                      )}
+                    </div>
                   </div>
                 </Card>
               ))}
