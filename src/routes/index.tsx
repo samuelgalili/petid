@@ -1,0 +1,364 @@
+/**
+ * ROUTE CONFIGURATION - SINGLE SOURCE OF TRUTH
+ * =============================================
+ * All routes are defined here with lazy loading by module.
+ * Route changes should ONLY be made in this file.
+ */
+
+import { lazy, Suspense, ComponentType } from "react";
+import { Navigate, RouteObject } from "react-router-dom";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
+import { PageTransition } from "@/components/PageTransition";
+import { PageErrorBoundary } from "@/components/PageErrorBoundary";
+
+// Loading spinner component
+const LoadingSpinner = ({ dark = false }: { dark?: boolean }) => (
+  <div className={`min-h-screen flex items-center justify-center ${dark ? 'bg-black' : 'bg-background'}`}>
+    <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${dark ? 'border-white' : 'border-primary'}`} />
+  </div>
+);
+
+// Wrapper for lazy loaded components
+const LazyPage = ({ 
+  component: Component, 
+  pageName,
+  dark = false 
+}: { 
+  component: ComponentType; 
+  pageName: string;
+  dark?: boolean;
+}) => (
+  <PageTransition>
+    <PageErrorBoundary pageName={pageName}>
+      <Suspense fallback={<LoadingSpinner dark={dark} />}>
+        <Component />
+      </Suspense>
+    </PageErrorBoundary>
+  </PageTransition>
+);
+
+// Protected wrapper
+const Protected = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>{children}</ProtectedRoute>
+);
+
+// Admin wrapper
+const Admin = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AdminRoute>{children}</AdminRoute>
+  </ProtectedRoute>
+);
+
+// ==========================================
+// AUTH MODULE - Direct imports (critical path)
+// ==========================================
+import Auth from "@/pages/Auth";
+import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import Install from "@/pages/Install";
+
+export const authRoutes: RouteObject[] = [
+  { path: "/auth", element: <PageTransition><Auth /></PageTransition> },
+  { path: "/signup", element: <PageTransition><Signup /></PageTransition> },
+  { path: "/forgot-password", element: <PageTransition><ForgotPassword /></PageTransition> },
+  { path: "/reset-password", element: <PageTransition><ResetPassword /></PageTransition> },
+  { path: "/install", element: <PageTransition><Install /></PageTransition> },
+];
+
+// ==========================================
+// FEED MODULE - Lazy loaded
+// ==========================================
+const Feed = lazy(() => import("@/pages/Feed"));
+const Explore = lazy(() => import("@/pages/Explore"));
+const Reels = lazy(() => import("@/pages/Reels"));
+const UserProfile = lazy(() => import("@/pages/UserProfile"));
+const PostDetail = lazy(() => import("@/pages/PostDetail"));
+const StoryViewer = lazy(() => import("@/pages/StoryViewer"));
+const HighlightViewer = lazy(() => import("@/pages/HighlightViewer"));
+
+export const feedRoutes: RouteObject[] = [
+  { path: "/", element: <LazyPage component={Feed} pageName="הפיד" /> },
+  { path: "/home", element: <Navigate to="/" replace /> },
+  { path: "/explore", element: <LazyPage component={Explore} pageName="גילוי" /> },
+  { path: "/reels", element: <LazyPage component={Reels} pageName="Reels" dark /> },
+  { path: "/user/:userId", element: <LazyPage component={UserProfile} pageName="פרופיל משתמש" /> },
+  { path: "/post/:postId", element: <LazyPage component={PostDetail} pageName="פוסט" /> },
+  { 
+    path: "/story/:userId", 
+    element: (
+      <Suspense fallback={<LoadingSpinner dark />}>
+        <StoryViewer />
+      </Suspense>
+    )
+  },
+  { 
+    path: "/highlight/:highlightId", 
+    element: (
+      <Suspense fallback={<LoadingSpinner dark />}>
+        <HighlightViewer />
+      </Suspense>
+    )
+  },
+];
+
+// ==========================================
+// SHOP MODULE - Lazy loaded
+// ==========================================
+const Shop = lazy(() => import("@/pages/Shop"));
+const ShopExplore = lazy(() => import("@/pages/ShopExplore"));
+const ProductDetail = lazy(() => import("@/pages/ProductDetail"));
+const Cart = lazy(() => import("@/pages/Cart"));
+const Checkout = lazy(() => import("@/pages/Checkout"));
+const OrderConfirmation = lazy(() => import("@/pages/OrderConfirmation"));
+const OrderHistory = lazy(() => import("@/pages/OrderHistory"));
+const Favorites = lazy(() => import("@/pages/Favorites"));
+const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
+const PaymentFailed = lazy(() => import("@/pages/PaymentFailed"));
+const Deals = lazy(() => import("@/pages/Deals"));
+
+export const shopRoutes: RouteObject[] = [
+  { path: "/shop", element: <LazyPage component={Shop} pageName="החנות" /> },
+  { path: "/shop/explore", element: <LazyPage component={ShopExplore} pageName="גילוי מוצרים" /> },
+  { path: "/shop/checkout", element: <Navigate to="/checkout" replace /> },
+  { path: "/product/:id", element: <LazyPage component={ProductDetail} pageName="פרטי מוצר" /> },
+  { path: "/cart", element: <Protected><LazyPage component={Cart} pageName="עגלת קניות" /></Protected> },
+  { path: "/favorites", element: <Protected><LazyPage component={Favorites} pageName="מועדפים" /></Protected> },
+  { path: "/checkout", element: <Protected><LazyPage component={Checkout} pageName="תשלום" /></Protected> },
+  { path: "/order-confirmation", element: <Protected><LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /></Protected> },
+  { path: "/order-history", element: <Protected><LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /></Protected> },
+  { path: "/deals", element: <Protected><LazyPage component={Deals} pageName="מבצעים" /></Protected> },
+  { path: "/payment-success", element: <LazyPage component={PaymentSuccess} pageName="תשלום הצליח" /> },
+  { path: "/payment-failed", element: <LazyPage component={PaymentFailed} pageName="תשלום נכשל" /> },
+];
+
+// ==========================================
+// PET MODULE - Lazy loaded
+// ==========================================
+const AddPet = lazy(() => import("@/pages/AddPet"));
+const PetDetails = lazy(() => import("@/pages/PetDetails"));
+const EditPet = lazy(() => import("@/pages/EditPet"));
+const ArchivedPets = lazy(() => import("@/pages/ArchivedPets"));
+const BreedHistory = lazy(() => import("@/pages/BreedHistory"));
+const Photos = lazy(() => import("@/pages/Photos"));
+const Documents = lazy(() => import("@/pages/Documents"));
+const Training = lazy(() => import("@/pages/Training"));
+const Grooming = lazy(() => import("@/pages/Grooming"));
+const Insurance = lazy(() => import("@/pages/Insurance"));
+const Adoption = lazy(() => import("@/pages/Adoption"));
+
+export const petRoutes: RouteObject[] = [
+  { path: "/add-pet", element: <Protected><LazyPage component={AddPet} pageName="הוספת חיית מחמד" /></Protected> },
+  { path: "/pet/:petId", element: <Protected><LazyPage component={PetDetails} pageName="פרטי חיית מחמד" /></Protected> },
+  { path: "/edit-pet/:petId", element: <Protected><LazyPage component={EditPet} pageName="עריכת חיית מחמד" /></Protected> },
+  { path: "/archived-pets", element: <Protected><LazyPage component={ArchivedPets} pageName="חיות מחמד בארכיון" /></Protected> },
+  { path: "/breed-history/:petId", element: <Protected><LazyPage component={BreedHistory} pageName="היסטוריית גזע" /></Protected> },
+  { path: "/photos", element: <Protected><LazyPage component={Photos} pageName="תמונות" /></Protected> },
+  { path: "/documents", element: <Protected><LazyPage component={Documents} pageName="מסמכים" /></Protected> },
+  { path: "/training", element: <LazyPage component={Training} pageName="אימונים" /> },
+  { path: "/grooming", element: <LazyPage component={Grooming} pageName="טיפוח" /> },
+  { path: "/insurance", element: <LazyPage component={Insurance} pageName="ביטוח" /> },
+  { path: "/adoption", element: <LazyPage component={Adoption} pageName="אימוץ" /> },
+];
+
+// ==========================================
+// USER MODULE - Lazy loaded
+// ==========================================
+const Profile = lazy(() => import("@/pages/Profile"));
+const EditProfile = lazy(() => import("@/pages/EditProfile"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Notifications = lazy(() => import("@/pages/Notifications"));
+const Messages = lazy(() => import("@/pages/Messages"));
+const MessageThread = lazy(() => import("@/pages/MessageThread"));
+const PrivacySettings = lazy(() => import("@/pages/PrivacySettings"));
+const MyProgress = lazy(() => import("@/pages/MyProgress"));
+const Rewards = lazy(() => import("@/pages/Rewards"));
+const Chat = lazy(() => import("@/pages/Chat"));
+
+export const userRoutes: RouteObject[] = [
+  { path: "/profile", element: <Protected><LazyPage component={Profile} pageName="פרופיל" /></Protected> },
+  { path: "/edit-profile", element: <Protected><LazyPage component={EditProfile} pageName="עריכת פרופיל" /></Protected> },
+  { path: "/settings", element: <Protected><LazyPage component={Settings} pageName="הגדרות" /></Protected> },
+  { path: "/notifications", element: <Protected><LazyPage component={Notifications} pageName="התראות" /></Protected> },
+  { path: "/messages", element: <Protected><LazyPage component={Messages} pageName="הודעות" /></Protected> },
+  { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
+  { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
+  { path: "/my-progress", element: <Protected><LazyPage component={MyProgress} pageName="ההתקדמות שלי" /></Protected> },
+  { path: "/rewards", element: <Protected><LazyPage component={Rewards} pageName="תגמולים" /></Protected> },
+  { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
+  // Legacy redirects
+  { path: "/tracker", element: <Navigate to="/my-progress" replace /> },
+  { path: "/tasks", element: <Navigate to="/my-progress" replace /> },
+  { path: "/achievements", element: <Navigate to="/my-progress" replace /> },
+];
+
+// ==========================================
+// BUSINESS MODULE - Lazy loaded
+// ==========================================
+const BusinessDirectory = lazy(() => import("@/pages/BusinessDirectory"));
+const BusinessProfile = lazy(() => import("@/pages/BusinessProfile"));
+const ConvertToBusiness = lazy(() => import("@/pages/ConvertToBusiness"));
+const AdCampaigns = lazy(() => import("@/pages/AdCampaigns"));
+const Parks = lazy(() => import("@/pages/Parks"));
+const Experiences = lazy(() => import("@/pages/Experiences"));
+
+export const businessRoutes: RouteObject[] = [
+  { path: "/businesses", element: <LazyPage component={BusinessDirectory} pageName="ספריית עסקים" /> },
+  { path: "/business/:id", element: <LazyPage component={BusinessProfile} pageName="פרופיל עסק" /> },
+  { path: "/convert-to-business", element: <Protected><LazyPage component={ConvertToBusiness} pageName="המרה לעסק" /></Protected> },
+  { path: "/ad-campaigns", element: <LazyPage component={AdCampaigns} pageName="קמפיינים" /> },
+  { path: "/parks", element: <LazyPage component={Parks} pageName="גינות כלבים" /> },
+  { path: "/experiences", element: <LazyPage component={Experiences} pageName="חוויות" /> },
+];
+
+// ==========================================
+// STATIC PAGES - Lazy loaded
+// ==========================================
+const Accessibility = lazy(() => import("@/pages/Accessibility"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
+const Terms = lazy(() => import("@/pages/Terms"));
+const ClubTerms = lazy(() => import("@/pages/ClubTerms"));
+const Support = lazy(() => import("@/pages/Support"));
+const DataDeletion = lazy(() => import("@/pages/DataDeletion"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+export const staticRoutes: RouteObject[] = [
+  { path: "/accessibility", element: <LazyPage component={Accessibility} pageName="נגישות" /> },
+  { path: "/privacy-policy", element: <LazyPage component={Privacy} pageName="מדיניות פרטיות" /> },
+  { path: "/terms", element: <LazyPage component={Terms} pageName="תנאי שימוש" /> },
+  { path: "/club-terms", element: <LazyPage component={ClubTerms} pageName="תנאי מועדון" /> },
+  { path: "/support", element: <Protected><LazyPage component={Support} pageName="תמיכה" /></Protected> },
+  { path: "/data-deletion", element: <LazyPage component={DataDeletion} pageName="מחיקת נתונים" /> },
+  { path: "*", element: <LazyPage component={NotFound} pageName="עמוד לא נמצא" /> },
+];
+
+// ==========================================
+// ADMIN MODULE - All lazy loaded
+// ==========================================
+const AdminGrowo = lazy(() => import("@/pages/admin/AdminGrowo"));
+const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
+const AdminParks = lazy(() => import("@/pages/admin/AdminParks"));
+const AdminAdoption = lazy(() => import("@/pages/admin/AdminAdoption"));
+const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
+const AdminRoles = lazy(() => import("@/pages/admin/AdminRoles"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
+const AdminCoupons = lazy(() => import("@/pages/admin/AdminCoupons"));
+const AdminBusiness = lazy(() => import("@/pages/admin/AdminBusiness"));
+const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
+const AdminAudit = lazy(() => import("@/pages/admin/AdminAudit"));
+const AdminScraper = lazy(() => import("@/pages/admin/AdminScraper"));
+const AdminFinancial = lazy(() => import("@/pages/admin/AdminFinancial"));
+const AdminTasks = lazy(() => import("@/pages/admin/AdminTasks"));
+const AdminSuppliers = lazy(() => import("@/pages/admin/AdminSuppliers"));
+const AdminLeads = lazy(() => import("@/pages/admin/AdminLeads"));
+const AdminDebts = lazy(() => import("@/pages/admin/AdminDebts"));
+const AdminInventory = lazy(() => import("@/pages/admin/AdminInventory"));
+const AdminPurchaseOrders = lazy(() => import("@/pages/admin/AdminPurchaseOrders"));
+const AdminInvoices = lazy(() => import("@/pages/admin/AdminInvoices"));
+const AdminMarketing = lazy(() => import("@/pages/admin/AdminMarketing"));
+const AdminCustomerSegments = lazy(() => import("@/pages/admin/AdminCustomerSegments"));
+const AdminShipping = lazy(() => import("@/pages/admin/AdminShipping"));
+const AdminReturns = lazy(() => import("@/pages/admin/AdminReturns"));
+const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
+const AdminIntegrations = lazy(() => import("@/pages/admin/AdminIntegrations"));
+const AdminBackup = lazy(() => import("@/pages/admin/AdminBackup"));
+const AdminCRM = lazy(() => import("@/pages/admin/AdminCRM"));
+const AdminCategories = lazy(() => import("@/pages/admin/AdminCategories"));
+const AdminCalendar = lazy(() => import("@/pages/admin/AdminCalendar"));
+const AdminHelpDesk = lazy(() => import("@/pages/admin/AdminHelpDesk"));
+const AdminBranches = lazy(() => import("@/pages/admin/AdminBranches"));
+const AdminPricing = lazy(() => import("@/pages/admin/AdminPricing"));
+const AdminWebhooks = lazy(() => import("@/pages/admin/AdminWebhooks"));
+const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
+const AdminStories = lazy(() => import("@/pages/admin/AdminStories"));
+const AdminLoyalty = lazy(() => import("@/pages/admin/AdminLoyalty"));
+const AdminNotificationRules = lazy(() => import("@/pages/admin/AdminNotificationRules"));
+const AdminAutomations = lazy(() => import("@/pages/admin/AdminAutomations"));
+const AdminTimeTracking = lazy(() => import("@/pages/admin/AdminTimeTracking"));
+const AdminDataImport = lazy(() => import("@/pages/admin/AdminDataImport"));
+const AdminAIService = lazy(() => import("@/pages/admin/AdminAIService"));
+const AIControlRoom = lazy(() => import("@/pages/admin/AIControlRoom"));
+
+// Helper for admin routes
+const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
+  <Admin>
+    <LazyPage component={Component} pageName={pageName} />
+  </Admin>
+);
+
+export const adminRoutes: RouteObject[] = [
+  // Default admin route - redirects to new system
+  { path: "/admin", element: <Navigate to="/admin/growo" replace /> },
+  { path: "/admin/dashboard", element: <Navigate to="/admin/growo" replace /> },
+  
+  // Main admin pages
+  { path: "/admin/growo", element: <AdminPage component={AdminGrowo} pageName="לוח בקרה" /> },
+  { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" /> },
+  { path: "/admin/parks", element: <AdminPage component={AdminParks} pageName="גינות כלבים" /> },
+  { path: "/admin/adoption", element: <AdminPage component={AdminAdoption} pageName="אימוץ" /> },
+  { path: "/admin/reports", element: <AdminPage component={AdminReports} pageName="דיווחים" /> },
+  { path: "/admin/roles", element: <AdminPage component={AdminRoles} pageName="תפקידים" /> },
+  { path: "/admin/users", element: <AdminPage component={AdminUsers} pageName="משתמשים" /> },
+  { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" /> },
+  { path: "/admin/coupons", element: <AdminPage component={AdminCoupons} pageName="קופונים" /> },
+  { path: "/admin/business", element: <AdminPage component={AdminBusiness} pageName="עסקים" /> },
+  { path: "/admin/settings", element: <AdminPage component={AdminSettings} pageName="הגדרות" /> },
+  { path: "/admin/audit", element: <AdminPage component={AdminAudit} pageName="יומן פעולות" /> },
+  { path: "/admin/scraper", element: <AdminPage component={AdminScraper} pageName="סקרייפר" /> },
+  { path: "/admin/financial", element: <AdminPage component={AdminFinancial} pageName="פיננסי" /> },
+  { path: "/admin/tasks", element: <AdminPage component={AdminTasks} pageName="משימות" /> },
+  { path: "/admin/suppliers", element: <AdminPage component={AdminSuppliers} pageName="ספקים" /> },
+  { path: "/admin/leads", element: <AdminPage component={AdminLeads} pageName="לידים" /> },
+  { path: "/admin/debts", element: <AdminPage component={AdminDebts} pageName="חובות" /> },
+  { path: "/admin/inventory", element: <AdminPage component={AdminInventory} pageName="מלאי" /> },
+  { path: "/admin/purchase-orders", element: <AdminPage component={AdminPurchaseOrders} pageName="הזמנות רכש" /> },
+  { path: "/admin/invoices", element: <AdminPage component={AdminInvoices} pageName="חשבוניות" /> },
+  { path: "/admin/marketing", element: <AdminPage component={AdminMarketing} pageName="שיווק" /> },
+  { path: "/admin/segments", element: <AdminPage component={AdminCustomerSegments} pageName="סגמנטים" /> },
+  { path: "/admin/shipping", element: <AdminPage component={AdminShipping} pageName="משלוחים" /> },
+  { path: "/admin/returns", element: <AdminPage component={AdminReturns} pageName="החזרות" /> },
+  { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" /> },
+  { path: "/admin/integrations", element: <AdminPage component={AdminIntegrations} pageName="אינטגרציות" /> },
+  { path: "/admin/backup", element: <AdminPage component={AdminBackup} pageName="גיבוי" /> },
+  { path: "/admin/crm", element: <AdminPage component={AdminCRM} pageName="CRM" /> },
+  { path: "/admin/categories", element: <AdminPage component={AdminCategories} pageName="קטגוריות" /> },
+  { path: "/admin/calendar", element: <AdminPage component={AdminCalendar} pageName="יומן" /> },
+  { path: "/admin/helpdesk", element: <AdminPage component={AdminHelpDesk} pageName="תמיכה" /> },
+  { path: "/admin/branches", element: <AdminPage component={AdminBranches} pageName="סניפים" /> },
+  { path: "/admin/pricing", element: <AdminPage component={AdminPricing} pageName="תמחור" /> },
+  { path: "/admin/webhooks", element: <AdminPage component={AdminWebhooks} pageName="Webhooks" /> },
+  { path: "/admin/blog", element: <AdminPage component={AdminBlog} pageName="בלוג" /> },
+  { path: "/admin/stories", element: <AdminPage component={AdminStories} pageName="סטוריז" /> },
+  { path: "/admin/loyalty", element: <AdminPage component={AdminLoyalty} pageName="נאמנות" /> },
+  { path: "/admin/notification-rules", element: <AdminPage component={AdminNotificationRules} pageName="כללי התראות" /> },
+  { path: "/admin/automations", element: <AdminPage component={AdminAutomations} pageName="אוטומציות" /> },
+  { path: "/admin/time-tracking", element: <AdminPage component={AdminTimeTracking} pageName="מעקב זמן" /> },
+  { path: "/admin/data-import", element: <AdminPage component={AdminDataImport} pageName="ייבוא נתונים" /> },
+  { path: "/admin/ai-service", element: <AdminPage component={AdminAIService} pageName="שירות AI" /> },
+  { path: "/admin/control-room", element: <AdminPage component={AIControlRoom} pageName="חדר בקרה" /> },
+];
+
+// ==========================================
+// ALL ROUTES COMBINED
+// ==========================================
+export const allRoutes: RouteObject[] = [
+  ...authRoutes,
+  ...feedRoutes,
+  ...shopRoutes,
+  ...petRoutes,
+  ...userRoutes,
+  ...businessRoutes,
+  ...adminRoutes,
+  ...staticRoutes,
+];
+
+// Route validation for development
+if (process.env.NODE_ENV === 'development') {
+  const paths = allRoutes.map(r => r.path).filter(Boolean);
+  const duplicates = paths.filter((path, index) => paths.indexOf(path) !== index);
+  if (duplicates.length > 0) {
+    console.warn('[Routes] Duplicate routes detected:', duplicates);
+  }
+}

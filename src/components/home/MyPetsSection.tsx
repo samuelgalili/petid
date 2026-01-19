@@ -3,8 +3,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { PetCard, AddPetCard } from "./PetCard";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ComponentErrorFallback } from "@/components/ComponentErrorFallback";
+import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBoundary";
 
 interface MyPetsSectionProps {
   pets: any[];
@@ -22,9 +21,8 @@ export const MyPetsSection = ({
   const navigate = useNavigate();
 
   return (
-    <ErrorBoundary
-      fallback={<ComponentErrorFallback componentName="חיות המחמד שלי" />}
-      onReset={() => window.location.reload()}
+    <ComponentErrorBoundary
+      fallbackMessage="שגיאה בטעינת חיות המחמד"
     >
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -108,6 +106,6 @@ export const MyPetsSection = ({
         </div>
       )}
     </motion.div>
-    </ErrorBoundary>
+    </ComponentErrorBoundary>
   );
 };
