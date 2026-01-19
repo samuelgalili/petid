@@ -423,46 +423,54 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Hero Header - Clean Design */}
-      <div className="relative h-64 overflow-hidden bg-muted">
-        {/* Background Image */}
+      {/* Hero Header - Enhanced Design */}
+      <div className="relative h-72 overflow-hidden">
+        {/* Background Image with Blur Effect */}
         <div className="absolute inset-0">
           {pet.avatar_url ? (
             <>
               <img 
                 src={pet.avatar_url} 
-                alt={pet.name}
-                className="w-full h-full object-cover"
+                alt=""
+                className="w-full h-full object-cover blur-sm scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-background" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-background" />
             </>
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/10" />
+            <div className="w-full h-full bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/10" />
           )}
         </div>
 
-        {/* Top Navigation */}
+        {/* Top Navigation with Glass Effect */}
         <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/profile')}
-            className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </Button>
-          
-          <div className="flex items-center gap-2">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate(`/edit-pet/${petId}`)}
-              className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm"
+              onClick={() => navigate('/profile')}
+              className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-lg hover:bg-white/30"
             >
-              <Pencil className="w-4 h-4" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Button>
+          </motion.div>
+          
+          <div className="flex items-center gap-2">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(`/edit-pet/${petId}`)}
+                className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-lg hover:bg-white/30"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </motion.div>
             
-            <label className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center cursor-pointer hover:bg-background/90 transition-colors">
+            <motion.label 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+              className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-lg flex items-center justify-center cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <Camera className="w-4 h-4" />
               <input
                 type="file"
@@ -471,19 +479,21 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                 className="hidden"
                 disabled={isUploadingImage}
               />
-            </label>
+            </motion.label>
             
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full bg-destructive/20 backdrop-blur-md border border-destructive/30 text-white shadow-lg hover:bg-destructive/40"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </motion.div>
               </AlertDialogTrigger>
-              <AlertDialogContent dir="rtl">
+              <AlertDialogContent dir="rtl" className="rounded-2xl">
                 <AlertDialogHeader>
                   <AlertDialogTitle>מחיקת חיית מחמד</AlertDialogTitle>
                   <AlertDialogDescription>
@@ -515,103 +525,141 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
               className="absolute inset-0 z-30 bg-background/80 backdrop-blur-sm flex items-center justify-center"
             >
               <div className="text-center">
-                <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">מעלה תמונה...</p>
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm font-medium text-foreground">מעלה תמונה...</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Pet Info Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4" dir="rtl">
-          <div className="flex items-end gap-4">
-            {/* Avatar with Gradient Border */}
-            <div className="relative">
-              <div className="w-[88px] h-[88px] rounded-2xl p-[3px] bg-gradient-to-br from-primary via-accent to-secondary shadow-lg">
-                <Avatar className="w-full h-full rounded-xl border-2 border-background">
-                  <AvatarImage src={pet.avatar_url || undefined} className="object-cover rounded-xl" />
-                  <AvatarFallback className="bg-primary/10 text-3xl rounded-xl">
-                    {pet.type === 'dog' ? '🐕' : '🐈'}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
+        {/* Pet Avatar & Name - Centered Design */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pt-8" dir="rtl">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1, type: "spring" }}
+            className="relative"
+          >
+            {/* Glowing Ring */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary via-accent to-secondary blur-md opacity-60 animate-pulse" />
+            
+            {/* Avatar Container */}
+            <div className="relative w-28 h-28 rounded-full p-1 bg-gradient-to-br from-primary via-accent to-secondary shadow-2xl">
+              <Avatar className="w-full h-full rounded-full border-4 border-background">
+                <AvatarImage src={pet.avatar_url || undefined} className="object-cover rounded-full" />
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-4xl rounded-full">
+                  {pet.type === 'dog' ? '🐕' : '🐈'}
+                </AvatarFallback>
+              </Avatar>
             </div>
+          </motion.div>
 
-            {/* Name & Info */}
-            <div className="flex-1 mb-1">
-              <h1 className="text-2xl font-bold text-white drop-shadow-md mb-1">
-                {pet.name}
-              </h1>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-background/80 backdrop-blur-sm text-foreground rounded-full text-xs font-medium">
-                  {pet.type === 'dog' ? '🐕 כלב' : '🐈 חתול'}
+          <motion.div 
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-4 text-center"
+          >
+            <h1 className="text-3xl font-bold text-white drop-shadow-lg mb-2">
+              {pet.name}
+            </h1>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-md text-white rounded-full text-sm font-medium border border-white/20 shadow-sm">
+                {pet.type === 'dog' ? '🐕 כלב' : '🐈 חתול'}
+              </span>
+              {pet.breed && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/80 backdrop-blur-md text-primary-foreground rounded-full text-sm font-medium shadow-sm">
+                  ✨ {pet.breed}
                 </span>
-                {pet.breed && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/80 backdrop-blur-sm text-primary-foreground rounded-full text-xs font-medium">
-                    {pet.breed}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Stats Cards - Clean Design */}
-      <div className="px-4 -mt-4 relative z-10" dir="rtl">
-        <div className="grid grid-cols-4 gap-2">
+      {/* Stats Cards - Enhanced Glass Design */}
+      <div className="px-4 -mt-6 relative z-10" dir="rtl">
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="grid grid-cols-4 gap-2"
+        >
           {[
-            { emoji: '📅', value: calculateAge(pet.birth_date).split(' ')[0], label: 'גיל' },
-            { emoji: pet.gender === 'male' ? '♂️' : '♀️', value: pet.gender === 'male' ? 'זכר' : 'נקבה', label: 'מין' },
-            { emoji: '💚', value: 'מעולה', label: 'בריאות' },
-            { emoji: '⭐', value: `${compatibilityScore}%`, label: 'התאמה' },
-          ].map((stat) => (
-            <Card key={stat.label} className="p-3 text-center bg-card border border-border shadow-sm">
-              <div className="text-lg mb-0.5">{stat.emoji}</div>
-              <p className="text-xs font-semibold text-foreground">{stat.value}</p>
-              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-            </Card>
+            { emoji: '📅', value: calculateAge(pet.birth_date).split(' ')[0], label: 'גיל', gradient: 'from-blue-500/20 to-cyan-500/20' },
+            { emoji: pet.gender === 'male' ? '♂️' : '♀️', value: pet.gender === 'male' ? 'זכר' : 'נקבה', label: 'מין', gradient: 'from-pink-500/20 to-purple-500/20' },
+            { emoji: '💚', value: 'מעולה', label: 'בריאות', gradient: 'from-green-500/20 to-emerald-500/20' },
+            { emoji: '⭐', value: `${compatibilityScore || 95}%`, label: 'התאמה', gradient: 'from-amber-500/20 to-orange-500/20' },
+          ].map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 + index * 0.05 }}
+            >
+              <Card className={`p-3 text-center bg-gradient-to-br ${stat.gradient} border border-white/50 shadow-lg backdrop-blur-sm rounded-2xl`}>
+                <div className="text-xl mb-1">{stat.emoji}</div>
+                <p className="text-sm font-bold text-foreground">{stat.value}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
-      {/* Quick Action Buttons - Clean Style */}
-      <div className="px-4 mt-4 overflow-x-auto scrollbar-hide" dir="rtl">
+      {/* Quick Action Buttons - Enhanced Style */}
+      <motion.div 
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="px-4 mt-5 overflow-x-auto scrollbar-hide" 
+        dir="rtl"
+      >
         <div className="flex gap-2 pb-2">
           {[
-            { id: 'overview', label: 'סקירה', icon: Sparkles },
-            { id: 'breed', label: 'הגזע', icon: Info },
-            { id: 'breed-history', label: 'היסטוריית גזע', icon: TrendingUp, isLink: true, path: `/breed-history/${pet.id}` },
-            { id: 'documents', label: 'מסמכים', icon: FileText },
-            { id: 'training', label: 'אילוף', icon: GraduationCap },
-            { id: 'photos', label: 'תמונות', icon: Image },
-          ].map((tab) => {
+            { id: 'overview', label: 'סקירה', icon: Sparkles, color: 'from-violet-500 to-purple-600' },
+            { id: 'breed', label: 'הגזע', icon: Info, color: 'from-blue-500 to-cyan-500' },
+            { id: 'breed-history', label: 'היסטוריית גזע', icon: TrendingUp, isLink: true, path: `/breed-history/${pet.id}`, color: 'from-emerald-500 to-teal-500' },
+            { id: 'documents', label: 'מסמכים', icon: FileText, color: 'from-amber-500 to-orange-500' },
+            { id: 'training', label: 'אילוף', icon: GraduationCap, color: 'from-pink-500 to-rose-500' },
+            { id: 'photos', label: 'תמונות', icon: Image, color: 'from-indigo-500 to-blue-500' },
+          ].map((tab, index) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <button
+              <motion.button
                 key={tab.id}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.4 + index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => (tab as any).isLink ? navigate((tab as any).path) : setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition-colors whitespace-nowrap text-xs font-medium ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap text-xs font-semibold shadow-sm ${
                   isActive 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? `bg-gradient-to-r ${tab.color} text-white shadow-md` 
+                    : 'bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
-              </button>
+              </motion.button>
             );
           })}
           
-          {/* Adoption Button */}
-          <button
+          {/* Adoption Button - Special Style */}
+          <motion.button
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowAdoptionDialog(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors whitespace-nowrap text-xs font-medium"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white transition-all whitespace-nowrap text-xs font-semibold shadow-md"
           >
-            <Heart className="w-3.5 h-3.5" />
+            <Heart className="w-4 h-4" />
             <span>למסירה</span>
-          </button>
+          </motion.button>
 
           {/* Adoption Confirmation Dialog */}
           <AlertDialog open={showAdoptionDialog} onOpenChange={setShowAdoptionDialog}>
@@ -685,40 +733,60 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* Secondary Actions */}
-          <button
+          {/* Secondary Actions - Enhanced */}
+          <motion.button
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.75 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/grooming', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type } })}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
-            <Scissors className="w-3.5 h-3.5" />
+            <Scissors className="w-4 h-4" />
             <span>טיפוח</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/experiences', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="w-4 h-4" />
             <span>פנסיון</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.85 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/insurance', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
-            <Shield className="w-3.5 h-3.5" />
+            <Shield className="w-4 h-4" />
             <span>ביטוח</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/shop', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted text-muted-foreground hover:bg-muted/80 transition-colors whitespace-nowrap text-xs font-medium"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
-            <Package className="w-3.5 h-3.5" />
+            <Package className="w-4 h-4" />
             <span>חנות</span>
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" dir="rtl">
