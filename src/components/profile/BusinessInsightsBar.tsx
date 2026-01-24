@@ -9,9 +9,9 @@ import { useUserRole } from '@/hooks/useUserRole';
 export const BusinessInsightsBar = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isBusiness } = useUserRole();
+  const { isBusiness, isLoading: isRoleLoading } = useUserRole();
 
-  const { data: business } = useQuery({
+  const { data: business, isLoading: isBusinessLoading } = useQuery({
     queryKey: ['my-business-insights', user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -27,7 +27,8 @@ export const BusinessInsightsBar = () => {
     enabled: !!user && isBusiness,
   });
 
-  if (!isBusiness || !business) return null;
+  // Don't show for regular users or while loading
+  if (isRoleLoading || !isBusiness || (!isBusinessLoading && !business)) return null;
 
   const viewChange = Math.floor(Math.random() * 30) + 5;
   const reviewChange = Math.floor(Math.random() * 20);
