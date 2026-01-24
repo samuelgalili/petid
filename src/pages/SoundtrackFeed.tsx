@@ -615,7 +615,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       )}
 
       {/* Bottom section - centered action buttons */}
-      <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center pb-4">
+      <div className="absolute bottom-1 left-0 right-0 z-20 flex justify-center pb-2">
         <div className="flex items-end gap-6">
           {/* Product Cart Button */}
           {isProductPost && (
