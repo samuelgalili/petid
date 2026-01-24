@@ -161,7 +161,7 @@ export const CommentsSheet = ({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[80vh] rounded-t-[28px] bg-white border-none p-0 flex flex-col"
+        className="h-[85vh] rounded-t-[28px] bg-white border-none p-0 flex flex-col z-[100]"
       >
         {/* Drag Handle */}
         <div className="flex justify-center pt-3 pb-1">
@@ -311,7 +311,7 @@ export const CommentsSheet = ({
         </div>
 
         {/* Fixed Bottom Input */}
-        <div className="border-t border-gray-100 bg-white px-4 py-3 safe-area-inset-bottom">
+        <div className="border-t border-gray-100 bg-white px-4 pt-3 pb-20">
           {/* Quick Emoji Reactions */}
           <div className="flex justify-around mb-3">
             {quickReplies.map((reply, index) => (
