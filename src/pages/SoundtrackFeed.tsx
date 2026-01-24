@@ -406,22 +406,6 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       animate={{ opacity: 1 }}
       transition={{ delay: index * 0.1 }}
     >
-      {/* Media Type Icon - Top Left */}
-      <div className="absolute top-4 left-4 z-20">
-        {isVideo ? (
-          <div className="p-2 rounded-full bg-black/30 backdrop-blur-sm">
-            <Video className="w-5 h-5 text-white" />
-          </div>
-        ) : hasMultipleImages ? (
-          <div className="p-2 rounded-full bg-black/30 backdrop-blur-sm">
-            <Images className="w-5 h-5 text-white" />
-          </div>
-        ) : allImages.length === 1 && (
-          <div className="p-2 rounded-full bg-black/30 backdrop-blur-sm">
-            <Image className="w-5 h-5 text-white" />
-          </div>
-        )}
-      </div>
 
       {/* Post Image/Video with swipe support */}
       <div className="absolute inset-0">
@@ -477,8 +461,9 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         )}
       </div>
 
-      {/* Top user info */}
+      {/* Top user info row - below tabs */}
       <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
+        {/* User info - right side */}
         <div className="flex items-center gap-2">
           <Avatar 
             className="w-8 h-8 cursor-pointer border border-white/50"
@@ -500,29 +485,45 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
               <Check className="w-2 h-2 text-white" />
             </span>
           )}
+          {post.user_id !== userId && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onFollow(post.user_id)}
+              className={cn(
+                "h-6 px-2.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1 mr-2",
+                post.is_following 
+                  ? "text-white/90" 
+                  : "bg-white text-black"
+              )}
+            >
+              {post.is_following ? (
+                <>
+                  <Check className="w-3 h-3" />
+                  <span>עוקב</span>
+                </>
+              ) : (
+                <span>עקוב</span>
+              )}
+            </motion.button>
+          )}
         </div>
 
-        {post.user_id !== userId && (
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onFollow(post.user_id)}
-            className={cn(
-              "h-7 px-3 text-xs font-semibold rounded-full transition-all flex items-center gap-1",
-              post.is_following 
-                ? "text-white/90" 
-                : "bg-white text-black"
-            )}
-          >
-            {post.is_following ? (
-              <>
-                <Check className="w-3 h-3" />
-                <span>עוקב</span>
-              </>
-            ) : (
-              <span>עקוב</span>
-            )}
-          </motion.button>
-        )}
+        {/* Media type icon - left side */}
+        <div className="flex items-center gap-2">
+          {isVideo ? (
+            <div className="p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
+              <Video className="w-4 h-4 text-white" />
+            </div>
+          ) : hasMultipleImages ? (
+            <div className="p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
+              <Images className="w-4 h-4 text-white" />
+            </div>
+          ) : allImages.length === 1 && (
+            <div className="p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
+              <Image className="w-4 h-4 text-white" />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Overlay gradient */}
