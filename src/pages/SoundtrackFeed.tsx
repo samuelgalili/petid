@@ -468,12 +468,12 @@ const SoundtrackFeed = () => {
         </div>
       </motion.header>
 
-      {/* Feed Cards */}
+      {/* Feed Cards - with gaps to show next post peek */}
       <div 
         ref={containerRef}
-        className="h-full pb-[70px] overflow-y-auto snap-y snap-mandatory"
+        className="h-full pb-[70px] overflow-y-auto snap-y snap-mandatory scroll-smooth"
         onScroll={handleScroll}
-        style={{ scrollSnapType: 'y mandatory' }}
+        style={{ scrollSnapType: 'y mandatory', scrollPaddingTop: '8px' }}
       >
         {posts.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
@@ -601,57 +601,31 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
   return (
     <motion.div
-      className="h-[calc(100vh-56px-70px)] w-full snap-start relative"
+      className="h-[calc(100vh-56px-70px-16px)] w-full snap-start relative mx-2 my-2 rounded-2xl overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: index * 0.1 }}
     >
 
       {/* Post Image/Video with swipe support */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 rounded-2xl overflow-hidden">
         {allImages.length > 0 ? (
-          <div className="relative w-full h-full">
-            <AnimatePresence mode="wait">
+          <div 
+            className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex gap-2 px-1"
+            style={{ scrollSnapType: 'x mandatory' }}
+          >
+            {allImages.map((img, imgIndex) => (
               <motion.img 
-                ref={currentImageIndex === 0 ? productImageRef : undefined}
-                key={currentImageIndex}
-                src={allImages[currentImageIndex]} 
+                key={imgIndex}
+                ref={imgIndex === 0 ? productImageRef : undefined}
+                src={img} 
                 alt="" 
-                className="w-full h-full object-cover"
+                className="w-[calc(100%-12px)] h-full object-cover flex-shrink-0 snap-center rounded-xl"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                drag={hasMultipleImages ? "x" : false}
-                dragConstraints={{ left: 0, right: 0 }}
-                onDragEnd={(_, info) => {
-                  if (info.offset.x < -50) nextImage();
-                  if (info.offset.x > 50) prevImage();
-                }}
+                transition={{ duration: 0.3 }}
               />
-            </AnimatePresence>
-            
-            {/* Navigation arrows for gallery */}
-            {hasMultipleImages && (
-              <>
-                {currentImageIndex > 0 && (
-                  <button
-                    onClick={prevImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 backdrop-blur-sm"
-                  >
-                    <ChevronRight className="w-5 h-5 text-white" />
-                  </button>
-                )}
-                {currentImageIndex < allImages.length - 1 && (
-                  <button
-                    onClick={nextImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 backdrop-blur-sm"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-white" />
-                  </button>
-                )}
-              </>
-            )}
+            ))}
           </div>
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
