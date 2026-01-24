@@ -616,332 +616,143 @@ const Shop = () => {
 
       {/* Product Details Sheet - Instagram style */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t border-border/50 pb-24 shadow-2xl" aria-describedby="product-details-description">
+        <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t border-border/30 shadow-2xl" aria-describedby="product-details-description">
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
-            <div className="flex flex-col h-full" dir="rtl">
+            <div className="flex flex-col" dir="rtl">
               {/* Handle */}
               <div className="flex justify-center pt-2 pb-1">
-                <div className="w-12 h-1.5 rounded-full bg-muted-foreground/20" />
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
               </div>
               
-              {/* Top Actions */}
-              <div className="flex items-center justify-between px-4 pb-3">
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="p-2"
+              {/* Main Content - Horizontal Layout */}
+              <div className="flex gap-3 px-4 py-3">
+                {/* Product Image - Compact */}
+                <div 
+                  ref={productImageRef}
+                  className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-muted"
                 >
-                  <X className="w-6 h-6 text-foreground" strokeWidth={1.5} />
-                </button>
-                
-                <div className="flex items-center gap-2">
-                  {/* Report Issue Button */}
-                  <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-                    <DialogTrigger asChild>
-                      <button className="p-2 hover:bg-orange-50 rounded-full transition-colors">
-                        <Flag className="w-5 h-5 text-muted-foreground hover:text-orange-500" strokeWidth={1.5} />
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md" dir="rtl">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-right">
-                          <AlertTriangle className="w-5 h-5 text-orange-500" />
-                          דיווח על תקלה
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <p className="text-sm text-muted-foreground">
-                          מצאת משהו שלא נראה נכון? ספר לנו ונטפל בזה
-                        </p>
-                        
-                        <RadioGroup value={reportReason} onValueChange={setReportReason} className="space-y-3">
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                            <RadioGroupItem value="price" id="sheet-price" />
-                            <Label htmlFor="sheet-price" className="flex-1 cursor-pointer">
-                              <span className="font-medium">מחיר שגוי</span>
-                              <p className="text-xs text-muted-foreground">המחיר לא נכון או שהמבצע לא אמיתי</p>
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                            <RadioGroupItem value="image" id="sheet-image" />
-                            <Label htmlFor="sheet-image" className="flex-1 cursor-pointer">
-                              <span className="font-medium">תמונה לא מתאימה</span>
-                              <p className="text-xs text-muted-foreground">התמונה לא מייצגת את המוצר</p>
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                            <RadioGroupItem value="description" id="sheet-description" />
-                            <Label htmlFor="sheet-description" className="flex-1 cursor-pointer">
-                              <span className="font-medium">תיאור שגוי</span>
-                              <p className="text-xs text-muted-foreground">המידע על המוצר לא מדויק</p>
-                            </Label>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                            <RadioGroupItem value="other" id="sheet-other" />
-                            <Label htmlFor="sheet-other" className="flex-1 cursor-pointer">
-                              <span className="font-medium">בעיה אחרת</span>
-                              <p className="text-xs text-muted-foreground">משהו אחר שצריך לתקן</p>
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                        
-                        <Textarea
-                          placeholder="פרטים נוספים (אופציונלי)..."
-                          value={reportDetails}
-                          onChange={(e) => setReportDetails(e.target.value)}
-                          className="min-h-[80px] resize-none"
-                        />
+                  <OptimizedImage
+                    src={selectedProduct.image}
+                    alt={selectedProduct.name}
+                    className="w-full h-full"
+                    objectFit="cover"
+                  />
+                  {/* Sale badge */}
+                  {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
+                    <div className="absolute top-1 left-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                      -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Info - Minimal */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-foreground leading-tight line-clamp-2 mb-1">
+                      {selectedProduct.name}
+                    </h2>
+                    
+                    {/* Rating - Inline */}
+                    {selectedProduct.rating && (
+                      <div className="flex items-center gap-1 mb-2">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs text-muted-foreground">{selectedProduct.rating}</span>
                       </div>
-                      <DialogFooter className="gap-2 sm:gap-0">
-                        <DialogClose asChild>
-                          <Button variant="outline" className="rounded-xl">
-                            ביטול
-                          </Button>
-                        </DialogClose>
-                        <Button 
-                          onClick={handleReportIssue}
-                          disabled={isReporting}
-                          className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white gap-2"
-                        >
-                          {isReporting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Flag className="w-4 h-4" />
-                          )}
-                          שלח דיווח
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-foreground">₪{selectedProduct.price}</span>
+                    {selectedProduct.originalPrice && (
+                      <span className="text-xs text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Actions - Vertical */}
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => toggleFavorite(selectedProduct.id)}
+                    className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center"
+                  >
+                    <Heart 
+                      className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-muted-foreground"}`} 
+                      strokeWidth={2} 
+                    />
+                  </button>
                   <button
                     onClick={() => {
                       navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
                       setSelectedProduct(null);
                     }}
-                    className="p-2"
+                    className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center"
                   >
-                    <Info className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(window.location.href);
-                      toast({ title: "הקישור הועתק", duration: 1500 });
-                    }}
-                    className="p-2"
-                  >
-                    <Share2 className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => toggleFavorite(selectedProduct.id)}
-                    className="p-2"
-                  >
-                    <Heart 
-                      className={`w-5 h-5 transition-colors ${favorites.includes(selectedProduct.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-foreground"}`} 
-                      strokeWidth={1.5} 
-                    />
+                    <Info className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
                   </button>
                 </div>
               </div>
 
-              {/* Scrollable Content */}
-              <ScrollArea className="flex-1">
-                {/* Product Image - Mobile optimized */}
-                <div className="relative px-5 mb-3">
-                  <Carousel className="w-full" dir="ltr" setApi={setCarouselApi} opts={{ direction: "ltr" }}>
-                    <CarouselContent>
-                      {(selectedProduct.images || [selectedProduct.image]).map((img: string, index: number) => (
-                        <CarouselItem key={index}>
-                          <motion.div 
-                            ref={index === 0 ? productImageRef : undefined}
-                            className="rounded-2xl overflow-hidden bg-muted/50 shadow-sm"
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.25 }}
-                          >
-                            <div className="w-full aspect-[4/3] max-h-[200px]">
-                              <OptimizedImage
-                                src={img}
-                                alt={selectedProduct.name}
-                                className="w-full h-full"
-                                objectFit="cover"
-                              />
-                            </div>
-                          </motion.div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                  </Carousel>
-                  
-                  {/* Dots Indicator */}
-                  {(selectedProduct.images?.length || 1) > 1 && (
-                    <div className="flex justify-center gap-1.5 mt-2">
-                      {(selectedProduct.images || [selectedProduct.image]).map((_: string, index: number) => (
-                        <div
-                          key={index}
-                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                            currentImageIndex === index ? 'bg-primary w-4' : 'bg-muted-foreground/20'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
+              {/* Flavors - Horizontal scroll if exists */}
+              {selectedProduct.flavors && selectedProduct.flavors.length > 0 && (
+                <div className="px-4 pb-3">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                    {selectedProduct.flavors.map((flavor: string, index: number) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedSize(flavor)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                          selectedSize === flavor
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {flavor}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              )}
 
-                {/* Product Details - Clean mobile style */}
-                <div className="px-5 space-y-3 pb-4">
-                  {/* Title & Price Row */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-base font-semibold text-foreground leading-tight line-clamp-2">{selectedProduct.name}</h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">Petid Shop</p>
-                    </div>
-                    <div className="text-left shrink-0">
-                      <span className="text-lg font-bold text-foreground">
-                        ₪{selectedProduct.price}
-                      </span>
-                      {selectedProduct.originalPrice && (
-                        <p className="text-xs text-muted-foreground line-through">₪{selectedProduct.originalPrice}</p>
-                      )}
-                    </div>
+              {/* Quantity & Add to Cart - Fixed Bottom */}
+              <div className="border-t border-border/30 px-4 py-3 bg-background">
+                {selectedProduct.isFlagged ? (
+                  <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 text-red-600">
+                    <Flag className="w-4 h-4" />
+                    <span className="text-sm font-medium">מוצר בבדיקה</span>
                   </div>
-
-                  {/* Rating - Compact */}
-                  {selectedProduct.rating && (
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`w-3.5 h-3.5 ${i < Math.floor(selectedProduct.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/20'}`} 
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-muted-foreground">({selectedProduct.reviews})</span>
-                    </div>
-                  )}
-
-                  {/* Info badges */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {selectedProduct.freeShipping && (
-                      <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted text-foreground">
-                        <Truck className="w-3.5 h-3.5" />
-                        <span>משלוח חינם</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-muted text-foreground">
-                      <Shield className="w-3.5 h-3.5" />
-                      <span>אחריות מלאה</span>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  {selectedProduct.description && (
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {selectedProduct.description}
-                    </p>
-                  )}
-
-                  {/* Variants/Flavors Selector - only show if product has flavors */}
-                  {selectedProduct.flavors && selectedProduct.flavors.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-foreground mb-2">טעמים זמינים</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedProduct.flavors.map((flavor: string, index: number) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedSize(flavor)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                              selectedSize === flavor
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                          >
-                            {flavor}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quantity */}
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground mb-2">כמות</h3>
-                    <div className="flex items-center gap-4 w-fit">
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {/* Compact Quantity Selector */}
+                    <div className="flex items-center gap-2 bg-muted/50 rounded-full px-2 py-1">
                       <button
                         onClick={decreaseQuantity}
-                        className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-muted"
+                        className="w-7 h-7 rounded-full bg-background flex items-center justify-center"
                       >
-                        <Minus className="w-4 h-4 text-foreground" />
+                        <Minus className="w-3 h-3" />
                       </button>
-                      <span className="text-lg font-medium text-foreground w-8 text-center">{quantity}</span>
+                      <span className="text-sm font-semibold w-5 text-center">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-colors hover:bg-muted"
+                        className="w-7 h-7 rounded-full bg-background flex items-center justify-center"
                       >
-                        <Plus className="w-4 h-4 text-foreground" />
+                        <Plus className="w-3 h-3" />
                       </button>
                     </div>
-                  </div>
-
-                  {/* View more link */}
-                  <button
-                    onClick={() => {
-                      navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
-                      setSelectedProduct(null);
-                    }}
-                    className="text-sm text-primary font-medium"
-                  >
-                    לפרטים נוספים ולביקורות
-                  </button>
-
-                  <div className="h-4" />
-                </div>
-              </ScrollArea>
-              {/* Bottom Bar - Instagram style */}
-              <div className="flex-shrink-0 border-t border-border px-4 py-3 bg-background">
-                {/* Flagged product warning */}
-                {selectedProduct.isFlagged && (
-                  <div className="flex items-center gap-2 p-3 mb-3 rounded-xl bg-red-50 border border-red-200 text-red-700">
-                    <Flag className="w-4 h-4 flex-shrink-0" />
-                    <div className="text-sm">
-                      <p className="font-medium">מוצר זה נמצא בבדיקה</p>
-                      <p className="text-xs text-red-600">לא ניתן לרכוש עד לסיום הטיפול</p>
-                    </div>
+                    
+                    {/* Add to Cart Button */}
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={!selectedProduct.inStock}
+                      className="flex-1 h-11 text-sm font-semibold rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>הוסף ₪{selectedProduct.price * quantity}</span>
+                    </button>
                   </div>
                 )}
-                
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-muted-foreground">סה״כ</p>
-                    <p className="text-lg font-semibold text-foreground">
-                      ₪{selectedProduct.price * quantity}
-                    </p>
-                  </div>
-                  
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!selectedProduct.inStock || selectedProduct.isFlagged}
-                    className={`flex-1 h-11 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-opacity disabled:opacity-50 ${
-                      selectedProduct.isFlagged 
-                        ? 'bg-red-100 text-red-600 cursor-not-allowed' 
-                        : 'bg-primary text-primary-foreground hover:opacity-90'
-                    }`}
-                  >
-                    {selectedProduct.isFlagged ? (
-                      <>
-                        <Flag className="w-4 h-4" />
-                        מוצר בבדיקה
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag className="w-4 h-4" />
-                        {selectedProduct.inStock ? 'הוסף לעגלה' : 'אזל מהמלאי'}
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
             </div>
           )}
