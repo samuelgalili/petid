@@ -185,16 +185,17 @@ export const CommentsSheet = ({
               </div>
             </div>
             
-            {/* Engagement Icons */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <Heart className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-500 text-xs font-medium">{reactionsCount}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MessageCircle className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-500 text-xs font-medium">{commentsCount}</span>
-              </div>
+            {/* Reactions & Close */}
+            <div className="flex items-center gap-3">
+              {reactionsCount > 0 && (
+                <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-full">
+                  <div className="flex -space-x-1">
+                    <span className="text-sm">❤️</span>
+                    <span className="text-sm">🔥</span>
+                  </div>
+                  <span className="text-gray-600 text-xs font-medium">{reactionsCount}</span>
+                </div>
+              )}
               <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors">
                 <ChevronDown className="w-5 h-5 text-gray-600" />
               </button>
@@ -219,15 +220,6 @@ export const CommentsSheet = ({
               <p className="text-gray-900 font-semibold text-sm truncate">{postAuthor.name}</p>
               <p className="text-gray-400 text-xs">יוצר הפוסט</p>
             </div>
-            {reactionsCount > 0 && (
-              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full shadow-sm">
-                <div className="flex -space-x-1">
-                  <span className="text-sm">❤️</span>
-                  <span className="text-sm">🔥</span>
-                </div>
-                <span className="text-gray-600 text-xs font-medium">{reactionsCount}</span>
-              </div>
-            )}
           </motion.div>
         )}
 
