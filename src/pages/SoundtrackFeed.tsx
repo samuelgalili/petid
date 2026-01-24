@@ -250,6 +250,32 @@ const SoundtrackFeed = () => {
           cta_text: 'לאימוץ'
         };
 
+        const promoGalleryPost: FeedPost = {
+          id: 'promo-gallery-1',
+          user_id: 'petid-featured',
+          image_url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
+          media_urls: [
+            'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
+            'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800',
+            'https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?w=800',
+            'https://images.unsplash.com/photo-1588943211346-0908a1fb0b01?w=800'
+          ],
+          caption: '📸 הרגעים הכי יפים של השבוע! גלריית חיות מחמד מהקהילה שלנו 🐾',
+          created_at: new Date().toISOString(),
+          likes_count: 523,
+          comments_count: 67,
+          user_profile: {
+            full_name: 'PetID Featured',
+            avatar_url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100',
+            is_verified: true
+          },
+          is_liked: false,
+          is_saved: false,
+          is_following: false,
+          media_type: 'gallery',
+          post_type: 'regular'
+        };
+
         // Insert promo posts into the feed at different positions
         const allPosts = [...enrichedPosts];
         if (allPosts.length > 2) {
@@ -266,6 +292,11 @@ const SoundtrackFeed = () => {
           allPosts.splice(8, 0, promoCtaPost);
         } else {
           allPosts.push(promoCtaPost);
+        }
+        if (allPosts.length > 4) {
+          allPosts.splice(4, 0, promoGalleryPost);
+        } else {
+          allPosts.push(promoGalleryPost);
         }
 
         setPosts(allPosts);
