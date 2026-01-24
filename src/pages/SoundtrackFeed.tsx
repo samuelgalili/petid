@@ -29,10 +29,18 @@ import {
   Video,
   Check,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShoppingCart,
+  Plus,
+  Trophy,
+  ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
+import { playAddToCartSound } from "@/lib/sounds";
+import { useCart } from "@/contexts/CartContext";
+import { useFlyingCart } from "@/components/FlyingCartAnimation";
 
 interface FeedPost {
   id: string;
@@ -54,6 +62,15 @@ interface FeedPost {
   is_following?: boolean;
   recommendation_reason?: string;
   media_type?: 'image' | 'gallery' | 'video';
+  // Promotional post types
+  post_type?: 'regular' | 'product' | 'challenge' | 'cta';
+  product_id?: string;
+  product_name?: string;
+  product_price?: number;
+  challenge_id?: string;
+  challenge_title?: string;
+  cta_link?: string;
+  cta_text?: string;
 }
 
 const SoundtrackFeed = () => {
@@ -376,6 +393,10 @@ interface PostCardProps {
 const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, onFollow, userId }: PostCardProps) => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [addedToCart, setAddedToCart] = useState(false);
+  const { addToCart } = useCart();
+  const { triggerFly } = useFlyingCart();
+  const productImageRef = useRef<HTMLImageElement>(null);
   
   // Get all images for gallery
   const allImages = post.media_urls && post.media_urls.length > 0 
@@ -386,6 +407,57 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
   
   const hasMultipleImages = allImages.length > 1;
   const isVideo = post.media_type === 'video';
+  const isProductPost = post.post_type === 'product';
+  const isChallengePost = post.post_type === 'challenge';
+  const isCtaPost = post.post_type === 'cta';
+  const hasPromotion = isProductPost || isChallengePost || isCtaPost;
+  
+  const handleAddToCart = () => {
+    if (!post.product_id || addedToCart) return;
+    
+    // Trigger flying animation
+    if (productImageRef.current) {
+      const rect = productImageRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      triggerFly(allImages[0] || '', centerX, centerY);
+    }
+    
+    addToCart({
+      id: post.product_id,
+      name: post.product_name || 'מוצר',
+      price: post.product_price || 0,
+      image: allImages[0] || '',
+      quantity: 1,
+    });
+    
+    // Play sound
+    playAddToCartSound();
+    
+    // Confetti effect
+    confetti({
+      particleCount: 60,
+      spread: 55,
+      origin: { y: 0.8 },
+      colors: ['#FBD66A', '#F4C542', '#FFD748', '#37B679'],
+    });
+    
+    setAddedToCart(true);
+    toast.success("נוסף לעגלה! 🛒");
+    
+    // Reset after 2 seconds
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
+  
+  const handleCtaClick = () => {
+    if (isChallengePost && post.challenge_id) {
+      navigate(`/challenges/${post.challenge_id}`);
+    } else if (isCtaPost && post.cta_link) {
+      window.open(post.cta_link, '_blank');
+    } else if (isProductPost && post.product_id) {
+      navigate(`/shop/product/${post.product_id}`);
+    }
+  };
   
   const nextImage = () => {
     if (currentImageIndex < allImages.length - 1) {
@@ -413,6 +485,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           <div className="relative w-full h-full">
             <AnimatePresence mode="wait">
               <motion.img 
+                ref={currentImageIndex === 0 ? productImageRef : undefined}
                 key={currentImageIndex}
                 src={allImages[currentImageIndex]} 
                 alt="" 
@@ -543,7 +616,67 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
       {/* Bottom section - centered action buttons */}
       <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center pb-4">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
+          {/* Product Cart Button */}
+          {isProductPost && (
+            <motion.button
+              onClick={handleAddToCart}
+              whileTap={{ scale: 0.85 }}
+              animate={addedToCart ? { scale: [1, 1.2, 1] } : {}}
+              className={cn(
+                "relative flex flex-col items-center gap-1 p-2 rounded-full transition-all duration-300",
+                addedToCart 
+                  ? "bg-[#FBD66A]" 
+                  : "bg-gradient-to-br from-[#FBD66A] to-[#F4C542]"
+              )}
+            >
+              <div className="relative">
+                <ShoppingCart className={cn(
+                  "w-6 h-6 drop-shadow-lg",
+                  addedToCart ? "text-white" : "text-gray-800"
+                )} />
+                {!addedToCart && (
+                  <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-white rounded-full flex items-center justify-center shadow-sm">
+                    <Plus className="w-2.5 h-2.5 text-gray-800" />
+                  </div>
+                )}
+                {addedToCart && (
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center"
+                  >
+                    <Check className="w-2.5 h-2.5 text-white" />
+                  </motion.div>
+                )}
+              </div>
+            </motion.button>
+          )}
+
+          {/* Challenge/CTA Button */}
+          {hasPromotion && (
+            <motion.button
+              onClick={handleCtaClick}
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-full shadow-lg backdrop-blur-sm",
+                isChallengePost && "bg-gradient-to-r from-purple-500 to-pink-500 text-white",
+                isCtaPost && "bg-gradient-to-r from-blue-500 to-cyan-400 text-white",
+                isProductPost && "bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-gray-800"
+              )}
+            >
+              {isChallengePost && <Trophy className="w-4 h-4" />}
+              {isCtaPost && <ExternalLink className="w-4 h-4" />}
+              <span className="text-xs font-semibold">
+                {isChallengePost && (post.challenge_title || 'הצטרף לאתגר')}
+                {isCtaPost && (post.cta_text || 'לפרטים נוספים')}
+                {isProductPost && (post.product_price ? `₪${post.product_price}` : 'לרכישה')}
+              </span>
+              <ChevronLeft className="w-4 h-4" />
+            </motion.button>
+          )}
+
           <motion.button
             onClick={() => onLike(post.id)}
             whileTap={{ scale: 0.85 }}
