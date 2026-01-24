@@ -164,8 +164,9 @@ export const CommentsSheet = ({
         className="h-[85vh] rounded-t-[28px] bg-white border-none p-0 flex flex-col z-[100]"
       >
         {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-1">
+        <div className="flex flex-col items-center pt-3 pb-1">
           <div className="w-9 h-1 bg-gray-300 rounded-full" />
+          <h3 className="text-gray-900 font-bold text-[15px] mt-2">תגובות</h3>
         </div>
 
         {/* Header */}
