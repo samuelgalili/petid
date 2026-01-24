@@ -542,7 +542,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       )}
 
       {/* Bottom section - centered action buttons */}
-      <div className="absolute bottom-20 left-0 right-0 z-20 flex justify-center pb-4">
+      <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center pb-4">
         <div className="flex items-center gap-8">
           <motion.button
             onClick={() => onLike(post.id)}
