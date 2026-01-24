@@ -4,8 +4,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight, Heart, MessageCircle, Grid3x3, Plus, MoreHorizontal, 
   Bookmark, Video, UserSquare2, PawPrint, Award, Sparkles, 
-  Share2, ShieldCheck, Crown
+  Share2, ShieldCheck, Crown, Star, ChevronDown
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -199,6 +204,24 @@ const UserProfile = () => {
     setLoading(false);
   };
 
+  const [showFollowOptions, setShowFollowOptions] = useState(false);
+  const [isCloseFriend, setIsCloseFriend] = useState(false);
+
+  // Check close friends status
+  useEffect(() => {
+    const checkCloseFriendStatus = async () => {
+      if (!user || !userId) return;
+      const { data } = await supabase
+        .from("close_friends")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("friend_id", userId)
+        .maybeSingle();
+      setIsCloseFriend(!!data);
+    };
+    checkCloseFriendStatus();
+  }, [user, userId]);
+
   const handleFollowToggle = async () => {
     if (!user || isOwnProfile) return;
 
@@ -220,7 +243,33 @@ const UserProfile = () => {
       setIsFollowing(true);
       setFollowStats(prev => ({ ...prev, followers: prev.followers + 1 }));
       toast.success("התחלת לעקוב! 🎉");
+      setShowFollowOptions(true); // Show options after following
     }
+  };
+
+  const handleToggleCloseFriend = async () => {
+    if (!user || !userId) return;
+
+    try {
+      if (isCloseFriend) {
+        await supabase
+          .from("close_friends")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("friend_id", userId);
+        setIsCloseFriend(false);
+        toast.success("הוסר מחברים קרובים");
+      } else {
+        await supabase
+          .from("close_friends")
+          .insert({ user_id: user.id, friend_id: userId });
+        setIsCloseFriend(true);
+        toast.success("נוסף לחברים קרובים ⭐");
+      }
+    } catch (error) {
+      console.error("Error toggling close friend:", error);
+    }
+    setShowFollowOptions(false);
   };
 
   const handleShare = async () => {
@@ -503,17 +552,42 @@ const UserProfile = () => {
             </div>
           ) : (
             <div className="flex gap-2 mb-4">
-              <motion.button 
-                whileTap={{ scale: 0.95 }}
-                onClick={handleFollowToggle}
-                className={`flex-1 h-9 rounded-xl text-sm font-bold transition-all ${
-                  isFollowing 
-                    ? "bg-muted hover:bg-muted/80 text-foreground" 
-                    : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
-                }`}
-              >
-                {isFollowing ? "עוקב ✓" : "עקוב"}
-              </motion.button>
+              {isFollowing ? (
+                <Popover open={showFollowOptions} onOpenChange={setShowFollowOptions}>
+                  <PopoverTrigger asChild>
+                    <motion.button 
+                      whileTap={{ scale: 0.95 }}
+                      className="flex-1 h-9 rounded-xl text-sm font-bold transition-all bg-muted hover:bg-muted/80 text-foreground flex items-center justify-center gap-1"
+                    >
+                      <span>עוקב ✓</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </motion.button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-1" align="start">
+                    <button
+                      onClick={handleToggleCloseFriend}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                    >
+                      <Star className={`w-4 h-4 ${isCloseFriend ? "text-yellow-500 fill-yellow-500" : ""}`} />
+                      <span>{isCloseFriend ? "הסר מחברים קרובים" : "הוסף לחברים קרובים"}</span>
+                    </button>
+                    <button
+                      onClick={handleFollowToggle}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-muted text-destructive transition-colors"
+                    >
+                      הפסק לעקוב
+                    </button>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <motion.button 
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleFollowToggle}
+                  className="flex-1 h-9 rounded-xl text-sm font-bold transition-all bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
+                >
+                  עקוב
+                </motion.button>
+              )}
               <button 
                 onClick={() => navigate(`/messages/${userId}`)}
                 className="flex-1 h-9 bg-muted hover:bg-muted/80 rounded-xl text-sm font-semibold text-foreground transition-colors"
