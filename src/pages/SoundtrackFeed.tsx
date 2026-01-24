@@ -700,121 +700,79 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         </div>
       )}
 
-      {/* Bottom section - centered action buttons */}
+      {/* Bottom section - centered action bar */}
       <div className="absolute bottom-1 left-0 right-0 z-20 flex justify-center pb-2">
-        <div className="flex items-end gap-6">
-          {/* Product Cart Button */}
-          {isProductPost && (
-            <motion.button
-              onClick={handleAddToCart}
-              whileTap={{ scale: 0.85 }}
-              animate={addedToCart ? { scale: [1, 1.2, 1] } : {}}
-              className={cn(
-                "relative flex flex-col items-center gap-1 p-2 rounded-full transition-all duration-300",
-                addedToCart 
-                  ? "bg-[#FBD66A]" 
-                  : "bg-gradient-to-br from-[#FBD66A] to-[#F4C542]"
-              )}
-            >
-              <div className="relative">
-                <ShoppingCart className={cn(
-                  "w-6 h-6 drop-shadow-lg",
-                  addedToCart ? "text-white" : "text-gray-800"
-                )} />
-                {!addedToCart && (
-                  <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-white rounded-full flex items-center justify-center shadow-sm">
-                    <Plus className="w-2.5 h-2.5 text-gray-800" />
-                  </div>
-                )}
-                {addedToCart && (
-                  <motion.div 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center"
-                  >
-                    <Check className="w-2.5 h-2.5 text-white" />
-                  </motion.div>
-                )}
-              </div>
-            </motion.button>
-          )}
-
-          {/* Challenge/CTA Button */}
-          {hasPromotion && (
-            <motion.button
-              onClick={handleCtaClick}
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.05 }}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full shadow-lg backdrop-blur-sm",
-                isChallengePost && "bg-gradient-to-r from-purple-500 to-pink-500 text-white",
-                isCtaPost && "bg-gradient-to-r from-blue-500 to-cyan-400 text-white",
-                isProductPost && "bg-gradient-to-r from-[#FBD66A] to-[#F4C542] text-gray-800"
-              )}
-            >
-              {isChallengePost && <Trophy className="w-4 h-4" />}
-              {isCtaPost && <ExternalLink className="w-4 h-4" />}
-              <span className="text-xs font-semibold">
-                {isChallengePost && (post.challenge_title || 'הצטרף לאתגר')}
-                {isCtaPost && (post.cta_text || 'לפרטים נוספים')}
-                {isProductPost && (post.product_price ? `₪${post.product_price}` : 'לרכישה')}
-              </span>
-              <ChevronLeft className="w-4 h-4" />
-            </motion.button>
-          )}
-
+        <div className="flex items-center gap-5 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
+          {/* Core interaction icons - minimalist aligned */}
           <motion.button
             onClick={() => onLike(post.id)}
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center justify-start h-14"
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center gap-1.5"
           >
             <Heart 
               className={cn(
-                "w-7 h-7 drop-shadow-lg",
+                "w-5 h-5",
                 post.is_liked 
                   ? "fill-red-500 text-red-500" 
                   : "text-white"
               )} 
+              strokeWidth={1.5}
             />
-            <span className="text-white text-xs drop-shadow-md h-4 mt-1">
-              {post.likes_count > 0 ? post.likes_count : ''}
-            </span>
+            {post.likes_count > 0 && (
+              <span className="text-white text-xs font-medium">{post.likes_count}</span>
+            )}
           </motion.button>
 
           <motion.button
             onClick={() => navigate(`/post/${post.id}`)}
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center justify-start h-14"
+            whileTap={{ scale: 0.9 }}
+            className="flex items-center gap-1.5"
           >
-            <MessageCircle className="w-7 h-7 text-white drop-shadow-lg" />
-            <span className="text-white text-xs drop-shadow-md h-4 mt-1">
-              {post.comments_count > 0 ? post.comments_count : ''}
-            </span>
+            <MessageCircle className="w-5 h-5 text-white" strokeWidth={1.5} />
+            {post.comments_count > 0 && (
+              <span className="text-white text-xs font-medium">{post.comments_count}</span>
+            )}
           </motion.button>
 
           <motion.button
             onClick={() => onSave(post.id)}
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center justify-start h-14"
+            whileTap={{ scale: 0.9 }}
           >
             <Bookmark 
               className={cn(
-                "w-7 h-7 drop-shadow-lg",
+                "w-5 h-5",
                 post.is_saved 
                   ? "fill-yellow-400 text-yellow-400" 
                   : "text-white"
               )} 
+              strokeWidth={1.5}
             />
-            <span className="h-4 mt-1"></span>
           </motion.button>
 
-          <motion.button 
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center justify-start h-14"
-          >
-            <Share2 className="w-7 h-7 text-white drop-shadow-lg" />
-            <span className="h-4 mt-1"></span>
+          <motion.button whileTap={{ scale: 0.9 }}>
+            <Share2 className="w-5 h-5 text-white" strokeWidth={1.5} />
           </motion.button>
+
+          {/* CTA Button at the end */}
+          {hasPromotion && (
+            <motion.button
+              onClick={handleCtaClick}
+              whileTap={{ scale: 0.95 }}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold",
+                isChallengePost && "bg-purple-500 text-white",
+                isCtaPost && "bg-blue-500 text-white",
+                isProductPost && "bg-[#FBD66A] text-gray-800"
+              )}
+            >
+              <span>
+                {isChallengePost && 'הצטרף'}
+                {isCtaPost && (post.cta_text || 'לפרטים')}
+                {isProductPost && (post.product_price ? `₪${post.product_price}` : 'לרכישה')}
+              </span>
+              <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
+            </motion.button>
+          )}
         </div>
       </div>
     </motion.div>
