@@ -23,7 +23,13 @@ import {
   User,
   Star,
   Volume2,
-  VolumeX
+  VolumeX,
+  Image,
+  Images,
+  Video,
+  Check,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -32,6 +38,8 @@ interface FeedPost {
   id: string;
   user_id: string;
   image_url: string | null;
+  media_urls?: string[] | null;
+  video_url?: string | null;
   caption: string | null;
   created_at: string;
   likes_count: number;
@@ -45,6 +53,7 @@ interface FeedPost {
   is_saved?: boolean;
   is_following?: boolean;
   recommendation_reason?: string;
+  media_type?: 'image' | 'gallery' | 'video';
 }
 
 const SoundtrackFeed = () => {
@@ -116,20 +125,34 @@ const SoundtrackFeed = () => {
         likesCount.data?.forEach(l => { likesMap[l.post_id] = (likesMap[l.post_id] || 0) + 1; });
         commentsCount.data?.forEach(c => { commentsMap[c.post_id] = (commentsMap[c.post_id] || 0) + 1; });
 
-        const enrichedPosts: FeedPost[] = postsData.map(post => ({
-          id: post.id,
-          user_id: post.user_id,
-          image_url: post.image_url,
-          caption: post.caption,
-          created_at: post.created_at,
-          likes_count: likesMap[post.id] || 0,
-          comments_count: commentsMap[post.id] || 0,
-          user_profile: profiles?.find(p => p.id === post.user_id) || undefined,
-          is_liked: likedPostIds.includes(post.id),
-          is_saved: savedPostIds.includes(post.id),
-          is_following: followingIds.includes(post.user_id),
-          recommendation_reason: activeTab === "discover" ? "בשבילך" : undefined
-        }));
+        const enrichedPosts: FeedPost[] = postsData.map(post => {
+          // Determine media type
+          const hasVideo = !!(post as any).video_url;
+          const mediaUrls = (post as any).media_urls as string[] | null;
+          const hasMultipleImages = mediaUrls && mediaUrls.length > 1;
+          
+          let mediaType: 'image' | 'gallery' | 'video' = 'image';
+          if (hasVideo) mediaType = 'video';
+          else if (hasMultipleImages) mediaType = 'gallery';
+          
+          return {
+            id: post.id,
+            user_id: post.user_id,
+            image_url: post.image_url,
+            media_urls: mediaUrls,
+            video_url: (post as any).video_url,
+            caption: post.caption,
+            created_at: post.created_at,
+            likes_count: likesMap[post.id] || 0,
+            comments_count: commentsMap[post.id] || 0,
+            user_profile: profiles?.find(p => p.id === post.user_id) || undefined,
+            is_liked: likedPostIds.includes(post.id),
+            is_saved: savedPostIds.includes(post.id),
+            is_following: followingIds.includes(post.user_id),
+            recommendation_reason: activeTab === "discover" ? "בשבילך" : undefined,
+            media_type: mediaType
+          };
+        });
 
         setPosts(enrichedPosts);
       } else {
@@ -317,179 +340,310 @@ const SoundtrackFeed = () => {
           </div>
         ) : (
           posts.map((post, index) => (
-            <motion.div
+            <PostCard
               key={post.id}
-              className="h-[calc(100vh-56px-70px)] w-full snap-start relative"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              {/* Post Image/Video */}
-              <div className="absolute inset-0">
-                {post.image_url ? (
-                  <img 
-                    src={post.image_url} 
-                    alt="" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <p className="text-lg text-foreground/70 px-8 text-center">
-                      {post.caption || "פוסט ללא תמונה"}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
-
-              {/* Tap to preview overlay (optional) */}
-              {index === currentIndex && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <button 
-                    onClick={() => setMuted(!muted)}
-                    className="p-4 rounded-full bg-black/30 backdrop-blur-sm pointer-events-auto"
-                  >
-                    {muted ? (
-                      <VolumeX className="w-8 h-8 text-white" />
-                    ) : (
-                      <Volume2 className="w-8 h-8 text-white" />
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {/* Right side actions */}
-              <div className="absolute left-4 bottom-32 flex flex-col items-center gap-5">
-                {/* Like */}
-                <motion.button
-                  onClick={() => handleLike(post.id)}
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center"
-                >
-                  <Heart 
-                    className={cn(
-                      "w-7 h-7",
-                      post.is_liked ? "fill-red-500 text-red-500" : "text-white"
-                    )} 
-                  />
-                  <span className="text-white text-xs mt-1 font-medium">
-                    {post.likes_count}
-                  </span>
-                </motion.button>
-
-                {/* Comment */}
-                <motion.button
-                  onClick={() => navigate(`/post/${post.id}`)}
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center"
-                >
-                  <MessageCircle className="w-7 h-7 text-white" />
-                  <span className="text-white text-xs mt-1 font-medium">
-                    {post.comments_count}
-                  </span>
-                </motion.button>
-
-                {/* Save */}
-                <motion.button
-                  onClick={() => handleSave(post.id)}
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center"
-                >
-                  <Bookmark 
-                    className={cn(
-                      "w-7 h-7",
-                      post.is_saved ? "fill-white text-white" : "text-white"
-                    )} 
-                  />
-                </motion.button>
-
-                {/* Share */}
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center"
-                >
-                  <Share2 className="w-7 h-7 text-white" />
-                </motion.button>
-              </div>
-
-              {/* Bottom info panel */}
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                {/* Recommendation reason */}
-                {post.recommendation_reason && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-white/80 text-xs">
-                      {post.recommendation_reason}
-                    </span>
-                  </div>
-                )}
-
-                {/* Caption */}
-                {post.caption && (
-                  <p className="text-white font-medium text-base mb-3 line-clamp-2">
-                    {post.caption}
-                  </p>
-                )}
-
-                {/* User info bar */}
-                <div className="flex items-center justify-between bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar 
-                      className="w-10 h-10 cursor-pointer"
-                      onClick={() => navigate(`/user/${post.user_id}`)}
-                    >
-                      <AvatarImage src={post.user_profile?.avatar_url || ""} />
-                      <AvatarFallback>
-                        <User className="w-5 h-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <span 
-                          className="font-semibold text-foreground cursor-pointer"
-                          onClick={() => navigate(`/user/${post.user_id}`)}
-                        >
-                          {post.user_profile?.full_name || "משתמש"}
-                        </span>
-                        {post.user_profile?.is_verified && (
-                          <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-[8px]">✓</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {!post.is_following && post.user_id !== user?.id && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-4 text-xs font-semibold rounded-full"
-                        onClick={() => handleFollow(post.user_id)}
-                      >
-                        עקוב
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Play button */}
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center"
-                    onClick={() => navigate(`/post/${post.id}`)}
-                  >
-                    <Play className="w-5 h-5 text-background fill-background mr-[-2px]" />
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
+              post={post}
+              index={index}
+              currentIndex={currentIndex}
+              muted={muted}
+              setMuted={setMuted}
+              onLike={handleLike}
+              onSave={handleSave}
+              onFollow={handleFollow}
+              userId={user?.id}
+            />
           ))
         )}
       </div>
 
       <BottomNav />
     </div>
+  );
+};
+
+// Separate PostCard component for cleaner code
+interface PostCardProps {
+  post: FeedPost;
+  index: number;
+  currentIndex: number;
+  muted: boolean;
+  setMuted: (v: boolean) => void;
+  onLike: (id: string) => void;
+  onSave: (id: string) => void;
+  onFollow: (id: string) => void;
+  userId?: string;
+}
+
+const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, onFollow, userId }: PostCardProps) => {
+  const navigate = useNavigate();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Get all images for gallery
+  const allImages = post.media_urls && post.media_urls.length > 0 
+    ? post.media_urls 
+    : post.image_url 
+      ? [post.image_url] 
+      : [];
+  
+  const hasMultipleImages = allImages.length > 1;
+  const isVideo = post.media_type === 'video';
+  
+  const nextImage = () => {
+    if (currentImageIndex < allImages.length - 1) {
+      setCurrentImageIndex(prev => prev + 1);
+    }
+  };
+  
+  const prevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(prev => prev - 1);
+    }
+  };
+
+  return (
+    <motion.div
+      className="h-[calc(100vh-56px-70px)] w-full snap-start relative"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      {/* Media Type Icon - Top Left */}
+      <div className="absolute top-4 left-4 z-20">
+        {isVideo ? (
+          <div className="p-2 rounded-full bg-black/30 backdrop-blur-sm">
+            <Video className="w-5 h-5 text-white" />
+          </div>
+        ) : hasMultipleImages ? (
+          <div className="p-2 rounded-full bg-black/30 backdrop-blur-sm">
+            <Images className="w-5 h-5 text-white" />
+          </div>
+        ) : allImages.length === 1 && (
+          <div className="p-2 rounded-full bg-black/30 backdrop-blur-sm">
+            <Image className="w-5 h-5 text-white" />
+          </div>
+        )}
+      </div>
+
+      {/* Post Image/Video with swipe support */}
+      <div className="absolute inset-0">
+        {allImages.length > 0 ? (
+          <div className="relative w-full h-full">
+            <AnimatePresence mode="wait">
+              <motion.img 
+                key={currentImageIndex}
+                src={allImages[currentImageIndex]} 
+                alt="" 
+                className="w-full h-full object-cover"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                drag={hasMultipleImages ? "x" : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x < -50) nextImage();
+                  if (info.offset.x > 50) prevImage();
+                }}
+              />
+            </AnimatePresence>
+            
+            {/* Navigation arrows for gallery */}
+            {hasMultipleImages && (
+              <>
+                {currentImageIndex > 0 && (
+                  <button
+                    onClick={prevImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 backdrop-blur-sm"
+                  >
+                    <ChevronRight className="w-5 h-5 text-white" />
+                  </button>
+                )}
+                {currentImageIndex < allImages.length - 1 && (
+                  <button
+                    onClick={nextImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 backdrop-blur-sm"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-white" />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <p className="text-lg text-foreground/70 px-8 text-center">
+              {post.caption || "פוסט ללא תמונה"}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 pointer-events-none" />
+
+      {/* Sound toggle for videos */}
+      {isVideo && index === currentIndex && (
+        <div className="absolute top-4 right-4 z-20">
+          <button 
+            onClick={() => setMuted(!muted)}
+            className="p-2 rounded-full bg-black/30 backdrop-blur-sm"
+          >
+            {muted ? (
+              <VolumeX className="w-5 h-5 text-white" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-white" />
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Gallery progress indicator */}
+      {hasMultipleImages && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+          {allImages.map((_, i) => (
+            <div 
+              key={i} 
+              className={cn(
+                "h-1 rounded-full transition-all duration-300",
+                i === currentImageIndex 
+                  ? "w-6 bg-white" 
+                  : "w-1.5 bg-white/50"
+              )}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Bottom action buttons - horizontal in transparent box */}
+      <div className="absolute bottom-28 left-4 right-4 z-20">
+        <div className="flex items-center justify-around bg-black/30 backdrop-blur-sm rounded-2xl py-3 px-4">
+          {/* Like */}
+          <motion.button
+            onClick={() => onLike(post.id)}
+            whileTap={{ scale: 0.9 }}
+            className="flex flex-col items-center"
+          >
+            <Heart 
+              className={cn(
+                "w-7 h-7 transition-colors",
+                post.is_liked ? "fill-red-500 text-red-500" : "text-white"
+              )} 
+            />
+            <span className="text-white text-xs mt-1 font-medium">
+              {post.likes_count}
+            </span>
+          </motion.button>
+
+          {/* Comment */}
+          <motion.button
+            onClick={() => navigate(`/post/${post.id}`)}
+            whileTap={{ scale: 0.9 }}
+            className="flex flex-col items-center"
+          >
+            <MessageCircle className="w-7 h-7 text-white" />
+            <span className="text-white text-xs mt-1 font-medium">
+              {post.comments_count}
+            </span>
+          </motion.button>
+
+          {/* Save - Yellow when saved */}
+          <motion.button
+            onClick={() => onSave(post.id)}
+            whileTap={{ scale: 0.9 }}
+            className="flex flex-col items-center"
+          >
+            <Bookmark 
+              className={cn(
+                "w-7 h-7 transition-colors",
+                post.is_saved ? "fill-yellow-400 text-yellow-400" : "text-white"
+              )} 
+            />
+          </motion.button>
+
+          {/* Share */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            className="flex flex-col items-center"
+          >
+            <Share2 className="w-7 h-7 text-white" />
+          </motion.button>
+        </div>
+      </div>
+
+      {/* User info panel - below action buttons */}
+      <div className="absolute bottom-4 left-4 right-4 z-20">
+        {/* Recommendation reason */}
+        {post.recommendation_reason && (
+          <div className="flex items-center gap-2 mb-2">
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            <span className="text-white/80 text-xs">
+              {post.recommendation_reason}
+            </span>
+          </div>
+        )}
+
+        {/* Caption */}
+        {post.caption && (
+          <p className="text-white font-medium text-sm mb-2 line-clamp-2">
+            {post.caption}
+          </p>
+        )}
+
+        {/* User info bar */}
+        <div className="flex items-center justify-between bg-black/30 backdrop-blur-sm rounded-2xl p-3">
+          <div className="flex items-center gap-3">
+            <Avatar 
+              className="w-10 h-10 cursor-pointer border-2 border-white/30"
+              onClick={() => navigate(`/user/${post.user_id}`)}
+            >
+              <AvatarImage src={post.user_profile?.avatar_url || ""} />
+              <AvatarFallback className="bg-white/20">
+                <User className="w-5 h-5 text-white" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex items-center gap-1">
+                <span 
+                  className="font-semibold text-white cursor-pointer"
+                  onClick={() => navigate(`/user/${post.user_id}`)}
+                >
+                  {post.user_profile?.full_name || "משתמש"}
+                </span>
+                {post.user_profile?.is_verified && (
+                  <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-[8px]">✓</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Follow button */}
+          {post.user_id !== userId && (
+            <Button
+              variant={post.is_following ? "ghost" : "outline"}
+              size="sm"
+              className={cn(
+                "h-8 px-4 text-xs font-semibold rounded-full border-white/50",
+                post.is_following 
+                  ? "text-white bg-transparent hover:bg-white/10" 
+                  : "text-white bg-transparent hover:bg-white/10"
+              )}
+              onClick={() => onFollow(post.user_id)}
+            >
+              {post.is_following ? (
+                <span className="flex items-center gap-1">
+                  <Check className="w-4 h-4 text-white" />
+                  עוקב
+                </span>
+              ) : (
+                "עקוב"
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
