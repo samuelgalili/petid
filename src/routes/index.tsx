@@ -78,9 +78,19 @@ const PostDetail = lazy(() => import("@/pages/PostDetail"));
 const StoryViewer = lazy(() => import("@/pages/StoryViewer"));
 const HighlightViewer = lazy(() => import("@/pages/HighlightViewer"));
 
+// New Home Page component (User Profile based)
+const HomePage = lazy(() => import("@/pages/HomePage"));
+// Soundtrack-style Feed
+const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
+
 export const feedRoutes: RouteObject[] = [
-  { path: "/", element: <LazyPage component={Feed} pageName="הפיד" /> },
+  // Home = User Profile (new primary page)
+  { path: "/", element: <LazyPage component={HomePage} pageName="בית" /> },
   { path: "/home", element: <Navigate to="/" replace /> },
+  // Feed = Soundtrack-style feed
+  { path: "/feed", element: <LazyPage component={SoundtrackFeed} pageName="פיד" /> },
+  // Legacy feed route redirect
+  { path: "/old-feed", element: <LazyPage component={Feed} pageName="הפיד" /> },
   { path: "/explore", element: <LazyPage component={Explore} pageName="גילוי" /> },
   { path: "/reels", element: <LazyPage component={Reels} pageName="Reels" dark /> },
   { path: "/user/:userId", element: <LazyPage component={UserProfile} pageName="פרופיל משתמש" /> },
