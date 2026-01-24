@@ -170,13 +170,34 @@ export const CommentsSheet = ({
 
         {/* Header */}
         <SheetHeader className="px-4 py-3 border-b border-gray-100">
-          <div className="flex items-center justify-center relative">
-            <button onClick={onClose} className="absolute right-0 p-1.5 hover:bg-gray-100 rounded-full transition-colors">
-              <ChevronDown className="w-5 h-5 text-gray-600" />
-            </button>
-            <div className="text-center">
-              <h2 className="text-gray-900 font-bold text-[15px]">תגובות</h2>
-              <p className="text-gray-400 text-xs mt-0.5">{commentsCount} תגובות</p>
+          <div className="flex items-center justify-between">
+            {/* User Avatar */}
+            <div className="flex items-center gap-2">
+              <Avatar className="w-8 h-8 ring-2 ring-white shadow-sm">
+                <AvatarImage src={userAvatar} />
+                <AvatarFallback className="bg-gradient-to-br from-pink-400 to-orange-400 text-white text-xs font-medium">
+                  {user?.email?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-gray-900 font-bold text-[14px]">תגובות</h2>
+                <p className="text-gray-400 text-[11px]">{commentsCount} תגובות</p>
+              </div>
+            </div>
+            
+            {/* Engagement Icons */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <Heart className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-500 text-xs font-medium">{reactionsCount}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MessageCircle className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-500 text-xs font-medium">{commentsCount}</span>
+              </div>
+              <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full transition-colors">
+                <ChevronDown className="w-5 h-5 text-gray-600" />
+              </button>
             </div>
           </div>
         </SheetHeader>
