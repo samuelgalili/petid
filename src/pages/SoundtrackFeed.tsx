@@ -33,7 +33,11 @@ import {
   ShoppingCart,
   Plus,
   Trophy,
-  ExternalLink
+  ExternalLink,
+  Weight,
+  Ruler,
+  Palette,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -71,6 +75,10 @@ interface FeedPost {
   challenge_title?: string;
   cta_link?: string;
   cta_text?: string;
+  // Product variants
+  product_weight?: string;
+  product_sizes?: string[];
+  product_colors?: string[];
 }
 
 const SoundtrackFeed = () => {
@@ -192,7 +200,10 @@ const SoundtrackFeed = () => {
           post_type: 'product',
           product_id: 'prod-dog-food-1',
           product_name: 'מזון פרימיום לכלבים',
-          product_price: 89.90
+          product_price: 89.90,
+          product_weight: '15 ק״ג',
+          product_colors: ['חום', 'בז׳'],
+          product_sizes: ['S', 'M', 'L']
         };
 
         const promoChallengePost: FeedPost = {
@@ -620,22 +631,55 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         )}
       </div>
 
-      {/* Second row - User info on right, media icon on left */}
-      <div className="absolute top-14 left-4 right-4 z-20 flex items-center justify-between">
-        {/* Media type icon - left side */}
-        <div className="flex items-center">
+      {/* Second row - User info on right, media icon + variants on left */}
+      <div className="absolute top-14 left-4 right-4 z-20 flex items-start justify-between">
+        {/* Media type icon + Product variants - left side vertical stack */}
+        <div className="flex flex-col gap-2">
           {isVideo ? (
             <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20">
-              <Video className="w-5 h-5 text-white" />
+              <Video className="w-5 h-5 text-white" strokeWidth={1.5} />
             </div>
           ) : hasMultipleImages ? (
             <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20">
-              <Images className="w-5 h-5 text-white" />
+              <Images className="w-5 h-5 text-white" strokeWidth={1.5} />
             </div>
           ) : allImages.length === 1 && (
             <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20">
-              <Image className="w-5 h-5 text-white" />
+              <Image className="w-5 h-5 text-white" strokeWidth={1.5} />
             </div>
+          )}
+          
+          {/* Product variant icons */}
+          {isProductPost && (
+            <>
+              {post.product_weight && (
+                <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center gap-1.5">
+                  <Weight className="w-4 h-4 text-white" strokeWidth={1.5} />
+                  <span className="text-white text-xs">{post.product_weight}</span>
+                </div>
+              )}
+              {post.product_sizes && post.product_sizes.length > 0 && (
+                <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center gap-1.5">
+                  <Ruler className="w-4 h-4 text-white" strokeWidth={1.5} />
+                  <span className="text-white text-xs">{post.product_sizes.join(', ')}</span>
+                </div>
+              )}
+              {post.product_colors && post.product_colors.length > 0 && (
+                <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20 flex items-center gap-1.5">
+                  <Palette className="w-4 h-4 text-white" strokeWidth={1.5} />
+                  <span className="text-white text-xs">{post.product_colors.length} צבעים</span>
+                </div>
+              )}
+              {post.product_id && (
+                <motion.button
+                  onClick={() => navigate(`/product/${post.product_id}`)}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20"
+                >
+                  <Info className="w-4 h-4 text-white" strokeWidth={1.5} />
+                </motion.button>
+              )}
+            </>
           )}
         </div>
 
