@@ -368,7 +368,39 @@ const Profile = () => {
                 </motion.button>
               ))}
             </div>
+            
+            {/* User Rank Badge - Inline */}
+            <motion.div 
+              className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full px-3 py-1.5"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.35 }}
+            >
+              <span className="text-sm">🏆</span>
+              <span className="text-xs font-semibold text-foreground">{profile?.rank || 'גור'}</span>
+            </motion.div>
           </div>
+          
+          {/* Points Progress Bar - Minimalist */}
+          <motion.div 
+            className="mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] text-muted-foreground">{profile?.points || 0} נקודות</span>
+              <span className="text-[11px] text-muted-foreground">100 לדרגה הבאה</span>
+            </div>
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(((profile?.points || 0) % 100), 100)}%` }}
+                transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+              />
+            </div>
+          </motion.div>
 
           {/* Bio Section - Enhanced */}
           <motion.div 
