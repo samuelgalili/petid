@@ -27,8 +27,8 @@ export const BusinessInsightsBar = () => {
     enabled: !!user && isBusiness,
   });
 
-  // Don't show for regular users or while loading
-  if (isRoleLoading || !isBusiness || (!isBusinessLoading && !business)) return null;
+  // Don't show for regular users or while loading or if no business data
+  if (isRoleLoading || isBusinessLoading || !isBusiness || !business) return null;
 
   const viewChange = Math.floor(Math.random() * 30) + 5;
   const reviewChange = Math.floor(Math.random() * 20);
@@ -36,21 +36,21 @@ export const BusinessInsightsBar = () => {
   const insights = [
     { 
       icon: Eye, 
-      value: business.view_count || 0, 
+      value: business.view_count ?? 0, 
       label: 'צפיות', 
       change: `+${viewChange}%`,
       color: 'text-blue-500'
     },
     { 
       icon: MessageCircle, 
-      value: business.total_reviews || 0, 
+      value: business.total_reviews ?? 0, 
       label: 'ביקורות', 
       change: reviewChange > 0 ? `+${reviewChange}%` : null,
       color: 'text-purple-500'
     },
     { 
       icon: Star, 
-      value: business.rating?.toFixed(1) || '0', 
+      value: business.rating?.toFixed(1) ?? '0', 
       label: 'דירוג', 
       change: null,
       color: 'text-amber-500'
