@@ -78,15 +78,16 @@ const PostDetail = lazy(() => import("@/pages/PostDetail"));
 const StoryViewer = lazy(() => import("@/pages/StoryViewer"));
 const HighlightViewer = lazy(() => import("@/pages/HighlightViewer"));
 
-// New Home Page component (User Profile based)
-const HomePage = lazy(() => import("@/pages/HomePage"));
 // Soundtrack-style Feed
 const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
+// Profile page (primary home)
+const ProfilePage = lazy(() => import("@/pages/Profile"));
 
 export const feedRoutes: RouteObject[] = [
-  // Home = User Profile (new primary page)
-  { path: "/", element: <LazyPage component={HomePage} pageName="בית" /> },
+  // Home = Profile page (primary landing)
+  { path: "/", element: <Protected><LazyPage component={ProfilePage} pageName="בית" /></Protected> },
   { path: "/home", element: <Navigate to="/" replace /> },
+  { path: "/profile", element: <Navigate to="/" replace /> },
   // Feed = Soundtrack-style feed
   { path: "/feed", element: <LazyPage component={SoundtrackFeed} pageName="פיד" /> },
   // Legacy feed route redirect
@@ -175,7 +176,7 @@ export const petRoutes: RouteObject[] = [
 // ==========================================
 // USER MODULE - Lazy loaded
 // ==========================================
-const Profile = lazy(() => import("@/pages/Profile"));
+// Profile is loaded in feedRoutes as the main home page
 const EditProfile = lazy(() => import("@/pages/EditProfile"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
@@ -187,7 +188,7 @@ const Rewards = lazy(() => import("@/pages/Rewards"));
 const Chat = lazy(() => import("@/pages/Chat"));
 
 export const userRoutes: RouteObject[] = [
-  { path: "/profile", element: <Protected><LazyPage component={Profile} pageName="פרופיל" /></Protected> },
+  // Profile is now at root, redirect /profile there
   { path: "/edit-profile", element: <Protected><LazyPage component={EditProfile} pageName="עריכת פרופיל" /></Protected> },
   { path: "/settings", element: <Protected><LazyPage component={Settings} pageName="הגדרות" /></Protected> },
   { path: "/notifications", element: <Protected><LazyPage component={Notifications} pageName="התראות" /></Protected> },
