@@ -611,8 +611,17 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       <div className="absolute inset-0 rounded-xl overflow-hidden bg-black">
         {allImages.length > 0 ? (
           <div 
-            className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex"
+            className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex gallery-scroll"
             style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onScroll={(e) => {
+              const container = e.currentTarget;
+              const scrollLeft = container.scrollLeft;
+              const itemWidth = container.offsetWidth;
+              const newIndex = Math.round(scrollLeft / itemWidth);
+              if (newIndex !== currentImageIndex && newIndex >= 0 && newIndex < allImages.length) {
+                setCurrentImageIndex(newIndex);
+              }
+            }}
           >
             {allImages.map((img, imgIndex) => (
               <motion.img 
@@ -632,22 +641,6 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
             <p className="text-lg text-white/70 px-8 text-center">
               {post.caption || "פוסט ללא תמונה"}
             </p>
-          </div>
-        )}
-        
-        {/* Gallery indicator dots */}
-        {hasMultipleImages && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex gap-1.5 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
-            {allImages.map((_, i) => (
-              <div 
-                key={i} 
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                  i === 0 ? "bg-white" : "bg-white/40"
-                )}
-              />
-            ))}
-            <span className="text-white text-[10px] font-medium mr-1">{allImages.length}</span>
           </div>
         )}
       </div>
@@ -748,25 +741,25 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         </div>
       )}
 
-      {/* Gallery progress indicator */}
-      {hasMultipleImages && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
-          {allImages.map((_, i) => (
-            <div 
-              key={i} 
-              className={cn(
-                "h-1 rounded-full transition-all duration-300",
-                i === currentImageIndex 
-                  ? "w-6 bg-white" 
-                  : "w-1.5 bg-white/50"
-              )}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Bottom section - centered action bar */}
-      <div className="absolute bottom-1 left-0 right-0 z-20 flex justify-center pb-2">
+      {/* Bottom section - centered action bar with gallery indicator */}
+      <div className="absolute bottom-1 left-0 right-0 z-20 flex flex-col items-center gap-2 pb-2">
+        {/* Gallery progress indicator - above action bar */}
+        {hasMultipleImages && (
+          <div className="flex gap-1.5">
+            {allImages.map((_, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  "h-1 rounded-full transition-all duration-300",
+                  i === currentImageIndex 
+                    ? "w-5 bg-white" 
+                    : "w-1.5 bg-white/50"
+                )}
+              />
+            ))}
+          </div>
+        )}
+        
         <div className="flex items-center gap-5 bg-black/30 backdrop-blur-sm rounded-full px-4 py-2">
           {/* Core interaction icons - minimalist aligned */}
           <motion.button
