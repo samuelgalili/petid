@@ -45,6 +45,7 @@ import confetti from "canvas-confetti";
 import { playAddToCartSound } from "@/lib/sounds";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
+import { CommentsSheet } from "@/components/CommentsSheet";
 
 interface FeedPost {
   id: string;
@@ -522,6 +523,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const { addToCart } = useCart();
   const { triggerFly } = useFlyingCart();
   const productImageRef = useRef<HTMLImageElement>(null);
@@ -782,7 +784,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           </motion.button>
 
           <motion.button
-            onClick={() => navigate(`/post/${post.id}`)}
+            onClick={() => setShowComments(true)}
             whileTap={{ scale: 0.9 }}
             className="flex items-center gap-1.5"
           >
@@ -791,6 +793,18 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
               <span className="text-white text-xs font-medium">{post.comments_count}</span>
             )}
           </motion.button>
+          
+          <CommentsSheet 
+            isOpen={showComments}
+            onClose={() => setShowComments(false)}
+            postId={post.id}
+            postAuthor={{
+              name: post.user_profile?.full_name || "משתמש",
+              avatar_url: post.user_profile?.avatar_url || "",
+            }}
+            commentsCount={post.comments_count}
+            reactionsCount={post.likes_count}
+          />
 
           <motion.button
             onClick={() => onSave(post.id)}
