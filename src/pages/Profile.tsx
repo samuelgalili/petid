@@ -432,8 +432,6 @@ const Profile = () => {
           {/* Business Insights - Instagram style */}
           <BusinessInsightsBar />
 
-          {/* Loyalty Rank Card - New System */}
-          <LoyaltyRankCard className="mb-5" />
 
           {/* Action Buttons - Enhanced with Tooltips */}
           <motion.div 
