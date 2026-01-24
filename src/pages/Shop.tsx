@@ -618,25 +618,34 @@ const Shop = () => {
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <SheetContent 
           side="bottom" 
-          className="rounded-t-3xl bg-background p-0 overflow-hidden border-t border-border/30 shadow-2xl z-[100]" 
-          style={{ height: 'auto', maxHeight: '55vh', paddingBottom: '80px' }}
+          className="rounded-t-[28px] bg-gradient-to-b from-background to-muted/20 p-0 overflow-hidden border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[100]" 
+          style={{ height: 'auto', maxHeight: '50vh', paddingBottom: '85px' }}
           aria-describedby="product-details-description"
         >
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
-            <div className="flex flex-col h-full" dir="rtl">
+            <motion.div 
+              className="flex flex-col h-full" 
+              dir="rtl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
               {/* Handle */}
-              <div className="flex justify-center pt-2 pb-1">
-                <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-12 h-1.5 rounded-full bg-foreground/10" />
               </div>
               
-              {/* Main Content - Horizontal Layout */}
-              <div className="flex gap-3 px-4 py-2">
-                {/* Product Image - Compact */}
-                <div 
+              {/* Main Content - Card Style */}
+              <div className="flex gap-4 px-5 py-3">
+                {/* Product Image - Elevated */}
+                <motion.div 
                   ref={productImageRef}
-                  className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-muted"
+                  className="relative w-[100px] h-[100px] flex-shrink-0 rounded-2xl overflow-hidden bg-white shadow-lg"
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.25 }}
                 >
                   <OptimizedImage
                     src={selectedProduct.image}
@@ -646,44 +655,56 @@ const Shop = () => {
                   />
                   {/* Sale badge */}
                   {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                    <div className="absolute top-1 left-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                    <div className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                       -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
                     </div>
                   )}
-                </div>
+                </motion.div>
 
-                {/* Product Info - Minimal */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-                  <h2 className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
-                    {selectedProduct.name}
-                  </h2>
-                  
-                  {/* Rating & Price Row */}
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-lg font-bold text-foreground">₪{selectedProduct.price}</span>
-                      {selectedProduct.originalPrice && (
-                        <span className="text-xs text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
-                      )}
-                    </div>
+                {/* Product Info */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                  <div>
+                    <h2 className="text-base font-bold text-foreground leading-snug line-clamp-2 mb-1">
+                      {selectedProduct.name}
+                    </h2>
+                    {/* Rating */}
                     {selectedProduct.rating && (
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs text-muted-foreground">{selectedProduct.rating}</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-3 h-3 ${i < Math.floor(selectedProduct.rating) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/20'}`} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-foreground">({selectedProduct.reviews || 0})</span>
                       </div>
+                    )}
+                  </div>
+                  
+                  {/* Price */}
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-foreground">₪{selectedProduct.price}</span>
+                    {selectedProduct.originalPrice && (
+                      <span className="text-sm text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
                     )}
                   </div>
                 </div>
 
-                {/* Quick Actions - Vertical */}
-                <div className="flex flex-col gap-1.5">
+                {/* Quick Actions */}
+                <div className="flex flex-col gap-2 pt-1">
                   <button
                     onClick={() => toggleFavorite(selectedProduct.id)}
-                    className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center"
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      favorites.includes(selectedProduct.id) 
+                        ? "bg-red-50 shadow-sm" 
+                        : "bg-muted/50 hover:bg-muted"
+                    }`}
                   >
                     <Heart 
-                      className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-muted-foreground"}`} 
-                      strokeWidth={2} 
+                      className={`w-5 h-5 transition-all ${favorites.includes(selectedProduct.id) ? "fill-[#FF3040] text-[#FF3040] scale-110" : "text-muted-foreground"}`} 
+                      strokeWidth={1.5} 
                     />
                   </button>
                   <button
@@ -691,25 +712,25 @@ const Shop = () => {
                       navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
                       setSelectedProduct(null);
                     }}
-                    className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center"
+                    className="w-10 h-10 rounded-full bg-muted/50 hover:bg-muted flex items-center justify-center transition-colors"
                   >
-                    <Info className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
+                    <Info className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
                   </button>
                 </div>
               </div>
 
-              {/* Flavors - Horizontal scroll if exists */}
+              {/* Variants - Pills style */}
               {selectedProduct.flavors && selectedProduct.flavors.length > 0 && (
-                <div className="px-4 py-2">
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                <div className="px-5 pb-3">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
                     {selectedProduct.flavors.map((flavor: string, index: number) => (
                       <button
                         key={index}
                         onClick={() => setSelectedSize(flavor)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                           selectedSize === flavor
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "bg-white border border-border/50 text-foreground hover:border-primary/50"
                         }`}
                       >
                         {flavor}
@@ -719,45 +740,45 @@ const Shop = () => {
                 </div>
               )}
 
-              {/* Quantity & Add to Cart - Always visible */}
-              <div className="border-t border-border/30 px-4 py-3 bg-background mt-auto">
+              {/* Action Bar - Glassmorphism */}
+              <div className="px-5 py-4 bg-white/80 backdrop-blur-lg border-t border-border/20 mt-auto">
                 {selectedProduct.isFlagged ? (
-                  <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 text-red-600">
+                  <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-100">
                     <Flag className="w-4 h-4" />
                     <span className="text-sm font-medium">מוצר בבדיקה</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3">
-                    {/* Compact Quantity Selector */}
-                    <div className="flex items-center bg-muted/60 rounded-full">
+                  <div className="flex items-center gap-4">
+                    {/* Quantity Selector - Modern */}
+                    <div className="flex items-center bg-muted/80 rounded-2xl p-1">
                       <button
                         onClick={decreaseQuantity}
-                        className="w-10 h-10 rounded-full flex items-center justify-center active:bg-muted"
+                        className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
                       >
-                        <Minus className="w-4 h-4" />
+                        <Minus className="w-5 h-5 text-foreground" />
                       </button>
-                      <span className="text-base font-bold w-8 text-center">{quantity}</span>
+                      <span className="text-lg font-bold w-10 text-center">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="w-10 h-10 rounded-full flex items-center justify-center active:bg-muted"
+                        className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-5 h-5 text-foreground" />
                       </button>
                     </div>
                     
-                    {/* Add to Cart Button */}
+                    {/* Add to Cart Button - Premium */}
                     <button
                       onClick={handleAddToCart}
                       disabled={!selectedProduct.inStock}
-                      className="flex-1 h-12 text-base font-bold rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform shadow-lg"
+                      className="flex-1 h-[52px] text-base font-bold rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground flex items-center justify-center gap-2.5 disabled:opacity-50 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
                     >
                       <ShoppingBag className="w-5 h-5" />
-                      <span>הוסף ₪{selectedProduct.price * quantity}</span>
+                      <span>הוסף לסל • ₪{selectedProduct.price * quantity}</span>
                     </button>
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           )}
         </SheetContent>
       </Sheet>
