@@ -514,128 +514,47 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         </div>
       )}
 
-      {/* Bottom section with actions and user info */}
-      <div className="absolute bottom-20 left-0 right-0 z-20 px-4 space-y-3">
-        {/* Caption and recommendation */}
-        <div className="space-y-2">
-          {post.recommendation_reason && (
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-              <span className="text-white/90 text-xs font-medium drop-shadow-lg">
-                {post.recommendation_reason}
-              </span>
-            </div>
-          )}
-
-          {post.caption && (
-            <p className="text-white font-medium text-sm line-clamp-2 drop-shadow-lg">
-              {post.caption}
-            </p>
-          )}
-        </div>
-
-        {/* Action buttons - horizontal bar */}
-        <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-2xl py-3.5 px-6 border border-white/10">
-          {/* Like */}
-          <motion.button
-            onClick={() => onLike(post.id)}
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1 min-w-[50px]"
-          >
-            <Heart 
-              className={cn(
-                "w-7 h-7 transition-all duration-200",
-                post.is_liked 
-                  ? "fill-red-500 text-red-500 scale-110" 
-                  : "text-white hover:text-red-300"
-              )} 
-            />
-            <span className="text-white text-[11px] font-semibold">
-              {post.likes_count > 0 ? post.likes_count : ""}
-            </span>
-          </motion.button>
-
-          {/* Comment */}
-          <motion.button
-            onClick={() => navigate(`/post/${post.id}`)}
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1 min-w-[50px]"
-          >
-            <MessageCircle className="w-7 h-7 text-white hover:text-blue-300 transition-colors" />
-            <span className="text-white text-[11px] font-semibold">
-              {post.comments_count > 0 ? post.comments_count : ""}
-            </span>
-          </motion.button>
-
-          {/* Save - Yellow when saved */}
-          <motion.button
-            onClick={() => onSave(post.id)}
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1 min-w-[50px]"
-          >
-            <Bookmark 
-              className={cn(
-                "w-7 h-7 transition-all duration-200",
-                post.is_saved 
-                  ? "fill-yellow-400 text-yellow-400 scale-110" 
-                  : "text-white hover:text-yellow-300"
-              )} 
-            />
-          </motion.button>
-
-          {/* Share */}
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1 min-w-[50px]"
-          >
-            <Share2 className="w-7 h-7 text-white hover:text-green-300 transition-colors" />
-          </motion.button>
-        </div>
-
-        {/* User info bar */}
-        <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-2xl p-3.5 border border-white/10">
-          <div className="flex items-center gap-3">
+      {/* Bottom section - clean minimal design */}
+      <div className="absolute bottom-20 left-0 right-0 z-20 px-4 pb-2">
+        {/* User info row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
             <Avatar 
-              className="w-11 h-11 cursor-pointer ring-2 ring-white/40 ring-offset-1 ring-offset-transparent"
+              className="w-8 h-8 cursor-pointer border border-white/50"
               onClick={() => navigate(`/user/${post.user_id}`)}
             >
               <AvatarImage src={post.user_profile?.avatar_url || ""} className="object-cover" />
-              <AvatarFallback className="bg-gradient-to-br from-primary/50 to-accent/50">
-                <User className="w-5 h-5 text-white" />
+              <AvatarFallback className="bg-white/20">
+                <User className="w-4 h-4 text-white" />
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span 
-                  className="font-bold text-white text-base cursor-pointer hover:underline"
-                  onClick={() => navigate(`/user/${post.user_id}`)}
-                >
-                  {post.user_profile?.full_name || "משתמש"}
-                </span>
-                {post.user_profile?.is_verified && (
-                  <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Check className="w-2.5 h-2.5 text-white" />
-                  </span>
-                )}
-              </div>
-            </div>
+            <span 
+              className="font-semibold text-white text-sm cursor-pointer drop-shadow-md"
+              onClick={() => navigate(`/user/${post.user_id}`)}
+            >
+              {post.user_profile?.full_name || "משתמש"}
+            </span>
+            {post.user_profile?.is_verified && (
+              <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center">
+                <Check className="w-2 h-2 text-white" />
+              </span>
+            )}
           </div>
 
-          {/* Follow button */}
           {post.user_id !== userId && (
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => onFollow(post.user_id)}
               className={cn(
-                "h-9 px-5 text-sm font-bold rounded-full transition-all duration-200 flex items-center gap-1.5",
+                "h-7 px-3 text-xs font-semibold rounded-full transition-all flex items-center gap-1",
                 post.is_following 
-                  ? "bg-white/20 text-white border border-white/30" 
-                  : "bg-white text-black hover:bg-white/90"
+                  ? "text-white/90" 
+                  : "bg-white text-black"
               )}
             >
               {post.is_following ? (
                 <>
-                  <Check className="w-4 h-4" />
+                  <Check className="w-3 h-3" />
                   <span>עוקב</span>
                 </>
               ) : (
@@ -643,6 +562,63 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
               )}
             </motion.button>
           )}
+        </div>
+
+        {/* Caption */}
+        {post.caption && (
+          <p className="text-white text-sm mb-3 line-clamp-2 drop-shadow-md">
+            {post.caption}
+          </p>
+        )}
+
+        {/* Action buttons - minimal row */}
+        <div className="flex items-center gap-5">
+          <motion.button
+            onClick={() => onLike(post.id)}
+            whileTap={{ scale: 0.85 }}
+            className="flex items-center gap-1.5"
+          >
+            <Heart 
+              className={cn(
+                "w-6 h-6 drop-shadow-md",
+                post.is_liked 
+                  ? "fill-red-500 text-red-500" 
+                  : "text-white"
+              )} 
+            />
+            {post.likes_count > 0 && (
+              <span className="text-white text-xs drop-shadow-md">{post.likes_count}</span>
+            )}
+          </motion.button>
+
+          <motion.button
+            onClick={() => navigate(`/post/${post.id}`)}
+            whileTap={{ scale: 0.85 }}
+            className="flex items-center gap-1.5"
+          >
+            <MessageCircle className="w-6 h-6 text-white drop-shadow-md" />
+            {post.comments_count > 0 && (
+              <span className="text-white text-xs drop-shadow-md">{post.comments_count}</span>
+            )}
+          </motion.button>
+
+          <motion.button
+            onClick={() => onSave(post.id)}
+            whileTap={{ scale: 0.85 }}
+          >
+            <Bookmark 
+              className={cn(
+                "w-6 h-6 drop-shadow-md",
+                post.is_saved 
+                  ? "fill-yellow-400 text-yellow-400" 
+                  : "text-white"
+              )} 
+            />
+          </motion.button>
+
+          <motion.button whileTap={{ scale: 0.85 }}>
+            <Share2 className="w-6 h-6 text-white drop-shadow-md" />
+          </motion.button>
         </div>
       </div>
     </motion.div>
