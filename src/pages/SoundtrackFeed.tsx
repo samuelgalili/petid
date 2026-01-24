@@ -279,21 +279,21 @@ const SoundtrackFeed = () => {
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
       {/* Header with Tabs */}
       <motion.header 
-        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm"
+        className="absolute top-0 left-0 right-0 z-50 pointer-events-none"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <div className="flex items-center justify-center h-14 relative">
+        <div className="flex items-center justify-center h-12 relative pointer-events-auto">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "discover" | "following")}>
             <TabsList className="bg-transparent gap-6">
               <TabsTrigger 
                 value="discover" 
                 className={cn(
-                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-2",
+                  "bg-transparent border-0 shadow-none text-sm font-semibold px-0 py-1.5",
                   "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                   activeTab === "discover" 
-                    ? "text-foreground border-b-2 border-foreground rounded-none" 
-                    : "text-muted-foreground"
+                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none" 
+                    : "text-white/60"
                 )}
               >
                 גלה
@@ -301,11 +301,11 @@ const SoundtrackFeed = () => {
               <TabsTrigger 
                 value="following" 
                 className={cn(
-                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-2",
+                  "bg-transparent border-0 shadow-none text-sm font-semibold px-0 py-1.5",
                   "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                   activeTab === "following" 
-                    ? "text-foreground border-b-2 border-foreground rounded-none" 
-                    : "text-muted-foreground"
+                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none" 
+                    : "text-white/60"
                 )}
               >
                 עוקבים
@@ -313,13 +313,12 @@ const SoundtrackFeed = () => {
             </TabsList>
           </Tabs>
 
-          {/* More button */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="absolute left-4 top-1/2 -translate-y-1/2"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white"
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <MoreHorizontal className="w-5 h-5 drop-shadow-md" />
           </Button>
         </div>
       </motion.header>
@@ -327,7 +326,7 @@ const SoundtrackFeed = () => {
       {/* Feed Cards */}
       <div 
         ref={containerRef}
-        className="h-full pt-14 pb-[70px] overflow-y-auto snap-y snap-mandatory"
+        className="h-full pb-[70px] overflow-y-auto snap-y snap-mandatory"
         onScroll={handleScroll}
         style={{ scrollSnapType: 'y mandatory' }}
       >
