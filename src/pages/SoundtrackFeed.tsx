@@ -279,11 +279,11 @@ const SoundtrackFeed = () => {
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
       {/* Header with Tabs */}
       <motion.header 
-        className="absolute top-0 left-0 right-0 z-50 pointer-events-none"
+        className="absolute top-14 left-0 right-0 z-40 pointer-events-none"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <div className="flex items-center justify-center h-12 relative pointer-events-auto">
+        <div className="flex items-center justify-center h-10 relative pointer-events-auto">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "discover" | "following")}>
             <TabsList className="bg-transparent gap-6">
               <TabsTrigger 
