@@ -477,12 +477,60 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         )}
       </div>
 
+      {/* Top user info */}
+      <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Avatar 
+            className="w-8 h-8 cursor-pointer border border-white/50"
+            onClick={() => navigate(`/user/${post.user_id}`)}
+          >
+            <AvatarImage src={post.user_profile?.avatar_url || ""} className="object-cover" />
+            <AvatarFallback className="bg-white/20">
+              <User className="w-4 h-4 text-white" />
+            </AvatarFallback>
+          </Avatar>
+          <span 
+            className="font-semibold text-white text-sm cursor-pointer drop-shadow-md"
+            onClick={() => navigate(`/user/${post.user_id}`)}
+          >
+            {post.user_profile?.full_name || "משתמש"}
+          </span>
+          {post.user_profile?.is_verified && (
+            <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center">
+              <Check className="w-2 h-2 text-white" />
+            </span>
+          )}
+        </div>
+
+        {post.user_id !== userId && (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onFollow(post.user_id)}
+            className={cn(
+              "h-7 px-3 text-xs font-semibold rounded-full transition-all flex items-center gap-1",
+              post.is_following 
+                ? "text-white/90" 
+                : "bg-white text-black"
+            )}
+          >
+            {post.is_following ? (
+              <>
+                <Check className="w-3 h-3" />
+                <span>עוקב</span>
+              </>
+            ) : (
+              <span>עקוב</span>
+            )}
+          </motion.button>
+        )}
+      </div>
+
       {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40 pointer-events-none" />
 
       {/* Sound toggle for videos */}
       {isVideo && index === currentIndex && (
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-14 right-4 z-20">
           <button 
             onClick={() => setMuted(!muted)}
             className="p-2 rounded-full bg-black/30 backdrop-blur-sm"
@@ -498,7 +546,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
       {/* Gallery progress indicator */}
       {hasMultipleImages && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
           {allImages.map((_, i) => (
             <div 
               key={i} 
@@ -513,63 +561,8 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         </div>
       )}
 
-      {/* Bottom section - clean minimal design */}
+      {/* Bottom section - action buttons only */}
       <div className="absolute bottom-20 left-0 right-0 z-20 px-4 pb-2">
-        {/* User info row */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Avatar 
-              className="w-8 h-8 cursor-pointer border border-white/50"
-              onClick={() => navigate(`/user/${post.user_id}`)}
-            >
-              <AvatarImage src={post.user_profile?.avatar_url || ""} className="object-cover" />
-              <AvatarFallback className="bg-white/20">
-                <User className="w-4 h-4 text-white" />
-              </AvatarFallback>
-            </Avatar>
-            <span 
-              className="font-semibold text-white text-sm cursor-pointer drop-shadow-md"
-              onClick={() => navigate(`/user/${post.user_id}`)}
-            >
-              {post.user_profile?.full_name || "משתמש"}
-            </span>
-            {post.user_profile?.is_verified && (
-              <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center">
-                <Check className="w-2 h-2 text-white" />
-              </span>
-            )}
-          </div>
-
-          {post.user_id !== userId && (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => onFollow(post.user_id)}
-              className={cn(
-                "h-7 px-3 text-xs font-semibold rounded-full transition-all flex items-center gap-1",
-                post.is_following 
-                  ? "text-white/90" 
-                  : "bg-white text-black"
-              )}
-            >
-              {post.is_following ? (
-                <>
-                  <Check className="w-3 h-3" />
-                  <span>עוקב</span>
-                </>
-              ) : (
-                <span>עקוב</span>
-              )}
-            </motion.button>
-          )}
-        </div>
-
-        {/* Caption */}
-        {post.caption && (
-          <p className="text-white text-sm mb-3 line-clamp-2 drop-shadow-md">
-            {post.caption}
-          </p>
-        )}
-
         {/* Action buttons - minimal row */}
         <div className="flex items-center gap-5">
           <motion.button
