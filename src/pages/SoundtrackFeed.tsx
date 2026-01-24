@@ -798,23 +798,33 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           </motion.button>
 
           {/* CTA Button at the end */}
-          {hasPromotion && (
+          {hasPromotion && !isProductPost && (
             <motion.button
               onClick={handleCtaClick}
               whileTap={{ scale: 0.95 }}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold",
                 isChallengePost && "bg-purple-500 text-white",
-                isCtaPost && "bg-blue-500 text-white",
-                isProductPost && "bg-[#FBD66A] text-gray-800"
+                isCtaPost && "bg-blue-500 text-white"
               )}
             >
               <span>
                 {isChallengePost && 'הצטרף'}
                 {isCtaPost && (post.cta_text || 'לפרטים')}
-                {isProductPost && (post.product_price ? `₪${post.product_price}` : 'לרכישה')}
               </span>
               <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
+            </motion.button>
+          )}
+
+          {/* Add to cart button for products */}
+          {isProductPost && (
+            <motion.button
+              onClick={handleAddToCart}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FBD66A] text-gray-800"
+            >
+              <span>{post.product_price ? `₪${post.product_price}` : 'הוסף'}</span>
+              <Plus className="w-3.5 h-3.5" strokeWidth={2} />
             </motion.button>
           )}
         </div>
