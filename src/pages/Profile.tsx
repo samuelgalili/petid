@@ -491,19 +491,19 @@ const Profile = () => {
           <TabsList className="w-full h-12 rounded-none border-y border-border/30 bg-background p-0 gap-0">
             <TabsTrigger 
               value="posts" 
-              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground bg-transparent transition-colors"
+              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground/70 data-[state=active]:text-foreground/80 data-[state=inactive]:text-muted-foreground/60 bg-transparent transition-colors"
             >
               <Grid3X3 className="w-[22px] h-[22px]" />
             </TabsTrigger>
             <TabsTrigger 
               value="reels" 
-              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground bg-transparent transition-colors"
+              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground/70 data-[state=active]:text-foreground/80 data-[state=inactive]:text-muted-foreground/60 bg-transparent transition-colors"
             >
               <Film className="w-[22px] h-[22px]" />
             </TabsTrigger>
             <TabsTrigger 
               value="tagged" 
-              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground bg-transparent transition-colors"
+              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground/70 data-[state=active]:text-foreground/80 data-[state=inactive]:text-muted-foreground/60 bg-transparent transition-colors"
             >
               <UserSquare className="w-[22px] h-[22px]" />
             </TabsTrigger>
