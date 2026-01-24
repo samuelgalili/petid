@@ -180,7 +180,7 @@ export const CommentsSheet = ({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-gray-900 font-bold text-[14px]">תגובות</h2>
+                <h2 className="text-gray-900 font-bold text-[14px]">{postAuthor?.name || "תגובות"}</h2>
                 <p className="text-gray-400 text-[11px]">{commentsCount} תגובות</p>
               </div>
             </div>
