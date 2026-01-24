@@ -190,6 +190,15 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
 
             {/* Menu Items */}
             <div className="py-2">
+              {/* Profile Section */}
+              <MenuItem
+                icon={Settings}
+                label="עריכת פרופיל"
+                onClick={() => handleNavigation("/edit-profile")}
+              />
+              
+              <Divider />
+
               {/* My Pets Section */}
               <MenuItem
                 icon={PawPrint}
