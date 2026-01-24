@@ -716,8 +716,8 @@ const Shop = () => {
                 </div>
               )}
 
-              {/* Quantity & Add to Cart - Fixed Bottom */}
-              <div className="border-t border-border/30 px-4 py-3 bg-background">
+              {/* Quantity & Add to Cart - With safe area padding */}
+              <div className="border-t border-border/30 px-4 pt-3 pb-6 bg-background safe-area-bottom">
                 {selectedProduct.isFlagged ? (
                   <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 text-red-600">
                     <Flag className="w-4 h-4" />
@@ -729,16 +729,16 @@ const Shop = () => {
                     <div className="flex items-center gap-2 bg-muted/50 rounded-full px-2 py-1">
                       <button
                         onClick={decreaseQuantity}
-                        className="w-7 h-7 rounded-full bg-background flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-background flex items-center justify-center shadow-sm"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-4 h-4" />
                       </button>
-                      <span className="text-sm font-semibold w-5 text-center">{quantity}</span>
+                      <span className="text-base font-bold w-6 text-center">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="w-7 h-7 rounded-full bg-background flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-background flex items-center justify-center shadow-sm"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
                     
@@ -746,9 +746,9 @@ const Shop = () => {
                     <button
                       onClick={handleAddToCart}
                       disabled={!selectedProduct.inStock}
-                      className="flex-1 h-11 text-sm font-semibold rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform"
+                      className="flex-1 h-12 text-base font-bold rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform shadow-lg"
                     >
-                      <ShoppingBag className="w-4 h-4" />
+                      <ShoppingBag className="w-5 h-5" />
                       <span>הוסף ₪{selectedProduct.price * quantity}</span>
                     </button>
                   </div>
