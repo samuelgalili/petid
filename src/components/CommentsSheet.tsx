@@ -145,55 +145,55 @@ export const CommentsSheet = ({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[85vh] rounded-t-3xl bg-[#1C1C1E] border-none p-0"
+        className="h-[85vh] rounded-t-3xl bg-white border-none p-0"
       >
         {/* Drag Handle */}
         <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 bg-gray-600 rounded-full" />
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
         {/* Header */}
-        <SheetHeader className="px-4 pb-4 border-b border-gray-800">
+        <SheetHeader className="px-4 pb-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <button onClick={onClose} className="p-2 -ml-2">
-              <ChevronDown className="w-6 h-6 text-white" />
+              <ChevronDown className="w-6 h-6 text-gray-800" />
             </button>
-            <h2 className="text-white font-semibold text-base">תגובות</h2>
+            <h2 className="text-gray-900 font-semibold text-base">תגובות</h2>
             <button className="p-2 -mr-2">
-              <SlidersHorizontal className="w-5 h-5 text-white" />
+              <SlidersHorizontal className="w-5 h-5 text-gray-800" />
             </button>
           </div>
         </SheetHeader>
 
         {/* Post Author Info */}
         {postAuthor && (
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-800">
+          <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200">
             <Avatar className="w-12 h-12">
               <AvatarImage src={postAuthor.avatar_url} />
-              <AvatarFallback className="bg-gray-700 text-white">
+              <AvatarFallback className="bg-gray-200 text-gray-700">
                 {postAuthor.name?.[0] || "U"}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-white font-semibold">{postAuthor.name}</p>
+              <p className="text-gray-900 font-semibold">{postAuthor.name}</p>
               {postAuthor.subtitle && (
-                <p className="text-gray-400 text-sm">{postAuthor.subtitle}</p>
+                <p className="text-gray-500 text-sm">{postAuthor.subtitle}</p>
               )}
             </div>
           </div>
         )}
 
         {/* Reactions & Stats */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <div className="flex -space-x-1">
               <span className="text-lg">🔥</span>
               <span className="text-lg">👏</span>
               <span className="text-lg">😍</span>
             </div>
-            <span className="text-gray-400 text-sm">{reactionsCount}</span>
+            <span className="text-gray-500 text-sm">{reactionsCount}</span>
           </div>
-          <span className="text-gray-400 text-sm">
+          <span className="text-gray-500 text-sm">
             {commentsCount} תגובות
           </span>
         </div>
@@ -203,12 +203,12 @@ export const CommentsSheet = ({
           <AnimatePresence>
             {loading ? (
               <div className="flex justify-center py-8">
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
               </div>
             ) : comments.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">אין תגובות עדיין</p>
-                <p className="text-gray-600 text-sm mt-1">היה הראשון להגיב!</p>
+                <p className="text-gray-400">אין תגובות עדיין</p>
+                <p className="text-gray-500 text-sm mt-1">היה הראשון להגיב!</p>
               </div>
             ) : (
               comments.map((comment) => (
@@ -220,37 +220,37 @@ export const CommentsSheet = ({
                 >
                   <Avatar className="w-10 h-10 flex-shrink-0">
                     <AvatarImage src={comment.user.avatar_url} />
-                    <AvatarFallback className="bg-gray-700 text-white text-sm">
+                    <AvatarFallback className="bg-gray-200 text-gray-700 text-sm">
                       {comment.user.full_name?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-white font-semibold text-sm">
+                      <span className="text-gray-900 font-semibold text-sm">
                         {comment.user.full_name}
                       </span>
-                      <span className="text-blue-400 text-xs">
+                      <span className="text-gray-400 text-xs">
                         {formatTime(comment.created_at)}
                       </span>
                     </div>
                     
-                    <p className="text-gray-300 text-sm mt-1 leading-relaxed">
+                    <p className="text-gray-700 text-sm mt-1 leading-relaxed">
                       {comment.comment_text}
                     </p>
                     
                     <div className="flex items-center gap-4 mt-2">
-                      <button className="text-gray-500 text-xs font-medium hover:text-white transition-colors">
+                      <button className="text-gray-400 text-xs font-medium hover:text-gray-700 transition-colors">
                         הגב
                       </button>
-                      <button className="text-gray-500 hover:text-white transition-colors">
+                      <button className="text-gray-400 hover:text-gray-700 transition-colors">
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                   
                   <button className="flex-shrink-0 p-1">
-                    <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors" />
+                    <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
                   </button>
                 </motion.div>
               ))
@@ -259,14 +259,14 @@ export const CommentsSheet = ({
         </div>
 
         {/* Quick Replies */}
-        <div className="px-4 py-3 border-t border-gray-800">
+        <div className="px-4 py-3 border-t border-gray-200">
           <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
             {quickReplies.map((reply, index) => (
               <button
                 key={index}
                 onClick={() => handleSubmitComment(reply.text)}
                 disabled={submitting || !user}
-                className="flex-shrink-0 px-4 py-2 bg-gray-800 rounded-full text-white text-sm hover:bg-gray-700 transition-colors"
+                className="flex-shrink-0 px-4 py-2 bg-gray-100 rounded-full text-gray-700 text-sm hover:bg-gray-200 transition-colors"
               >
                 {reply.text}
               </button>
@@ -290,7 +290,7 @@ export const CommentsSheet = ({
                 onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
                 placeholder="הוסף תגובה..."
                 disabled={!user || submitting}
-                className="w-full bg-gray-800 text-white placeholder-gray-500 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-600"
+                className="w-full bg-gray-100 text-gray-900 placeholder-gray-400 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
               />
             </div>
           </div>
