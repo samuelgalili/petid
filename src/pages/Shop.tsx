@@ -618,8 +618,8 @@ const Shop = () => {
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <SheetContent 
           side="bottom" 
-          className="rounded-t-[28px] bg-gradient-to-b from-background to-muted/20 p-0 overflow-hidden border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[100]" 
-          style={{ height: 'auto', maxHeight: '50vh', paddingBottom: '85px' }}
+          className="rounded-t-[28px] bg-gradient-to-b from-background to-muted/20 p-0 overflow-visible border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[100]" 
+          style={{ height: 'auto', maxHeight: '45vh', marginBottom: '70px' }}
           aria-describedby="product-details-description"
         >
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
