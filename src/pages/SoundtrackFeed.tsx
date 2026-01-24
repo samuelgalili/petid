@@ -680,7 +680,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           <motion.button
             onClick={() => onLike(post.id)}
             whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center justify-start h-14"
           >
             <Heart 
               className={cn(
@@ -690,26 +690,26 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
                   : "text-white"
               )} 
             />
-            {post.likes_count > 0 && (
-              <span className="text-white text-xs drop-shadow-md">{post.likes_count}</span>
-            )}
+            <span className="text-white text-xs drop-shadow-md h-4 mt-1">
+              {post.likes_count > 0 ? post.likes_count : ''}
+            </span>
           </motion.button>
 
           <motion.button
             onClick={() => navigate(`/post/${post.id}`)}
             whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center justify-start h-14"
           >
             <MessageCircle className="w-7 h-7 text-white drop-shadow-lg" />
-            {post.comments_count > 0 && (
-              <span className="text-white text-xs drop-shadow-md">{post.comments_count}</span>
-            )}
+            <span className="text-white text-xs drop-shadow-md h-4 mt-1">
+              {post.comments_count > 0 ? post.comments_count : ''}
+            </span>
           </motion.button>
 
           <motion.button
             onClick={() => onSave(post.id)}
             whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center justify-start h-14"
           >
             <Bookmark 
               className={cn(
@@ -719,13 +719,15 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
                   : "text-white"
               )} 
             />
+            <span className="h-4 mt-1"></span>
           </motion.button>
 
           <motion.button 
             whileTap={{ scale: 0.85 }}
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center justify-start h-14"
           >
             <Share2 className="w-7 h-7 text-white drop-shadow-lg" />
+            <span className="h-4 mt-1"></span>
           </motion.button>
         </div>
       </div>
