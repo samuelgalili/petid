@@ -171,7 +171,93 @@ const SoundtrackFeed = () => {
           };
         });
 
-        setPosts(enrichedPosts);
+        // Add promotional demo posts
+        const promoProductPost: FeedPost = {
+          id: 'promo-product-1',
+          user_id: 'petid-shop',
+          image_url: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=800',
+          caption: '🐕 מזון פרימיום לכלבים - 20% הנחה! מזון איכותי עשיר בחלבון לבריאות מיטבית של הכלב שלכם.',
+          created_at: new Date().toISOString(),
+          likes_count: 156,
+          comments_count: 23,
+          user_profile: {
+            full_name: 'PetID Shop',
+            avatar_url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=100',
+            is_verified: true
+          },
+          is_liked: false,
+          is_saved: false,
+          is_following: false,
+          media_type: 'image',
+          post_type: 'product',
+          product_id: 'prod-dog-food-1',
+          product_name: 'מזון פרימיום לכלבים',
+          product_price: 89.90
+        };
+
+        const promoChallengePost: FeedPost = {
+          id: 'promo-challenge-1',
+          user_id: 'petid-community',
+          image_url: 'https://images.unsplash.com/photo-1587559045816-8b0a54d1f2b7?w=800',
+          caption: '🏆 אתגר #PetidCutePhoto - שתפו את התמונה הכי חמודה של חיית המחמד שלכם וזכו ב-500 נקודות!',
+          created_at: new Date().toISOString(),
+          likes_count: 342,
+          comments_count: 89,
+          user_profile: {
+            full_name: 'PetID Community',
+            avatar_url: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=100',
+            is_verified: true
+          },
+          is_liked: false,
+          is_saved: false,
+          is_following: false,
+          media_type: 'image',
+          post_type: 'challenge',
+          challenge_id: 'challenge-cute-photo',
+          challenge_title: 'הצטרף לאתגר!'
+        };
+
+        const promoCtaPost: FeedPost = {
+          id: 'promo-cta-1',
+          user_id: 'petid-adoption',
+          image_url: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800',
+          caption: '🐾 אימוץ במקום קנייה! מאות כלבים וחתולים מחכים לבית חם. בואו לפגוש את החבר החדש שלכם.',
+          created_at: new Date().toISOString(),
+          likes_count: 278,
+          comments_count: 45,
+          user_profile: {
+            full_name: 'PetID Adoption',
+            avatar_url: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=100',
+            is_verified: true
+          },
+          is_liked: false,
+          is_saved: false,
+          is_following: false,
+          media_type: 'image',
+          post_type: 'cta',
+          cta_link: '/adopt',
+          cta_text: 'לאימוץ'
+        };
+
+        // Insert promo posts into the feed at different positions
+        const allPosts = [...enrichedPosts];
+        if (allPosts.length > 2) {
+          allPosts.splice(2, 0, promoProductPost);
+        } else {
+          allPosts.push(promoProductPost);
+        }
+        if (allPosts.length > 5) {
+          allPosts.splice(5, 0, promoChallengePost);
+        } else {
+          allPosts.push(promoChallengePost);
+        }
+        if (allPosts.length > 8) {
+          allPosts.splice(8, 0, promoCtaPost);
+        } else {
+          allPosts.push(promoCtaPost);
+        }
+
+        setPosts(allPosts);
       } else {
         setPosts([]);
       }
