@@ -474,23 +474,6 @@ const Profile = () => {
                 </TooltipTrigger>
                 <TooltipContent>קוד QR</TooltipContent>
               </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    className="h-11 px-4 rounded-2xl border-accent/30 bg-accent/10 hover:bg-accent/20 text-accent"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowCloseFriends(true);
-                    }}
-                  >
-                    <Star className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>חברים קרובים</TooltipContent>
-              </Tooltip>
             </TooltipProvider>
           </motion.div>
 
