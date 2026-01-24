@@ -601,18 +601,18 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
   return (
     <motion.div
-      className="h-[calc(100vh-56px-70px-16px)] w-full snap-start relative mx-2 my-2 rounded-2xl overflow-hidden"
+      className="h-[calc(100vh-56px-70px-8px)] w-full snap-start relative mx-1 my-1 rounded-xl overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: index * 0.1 }}
     >
 
       {/* Post Image/Video with swipe support */}
-      <div className="absolute inset-0 rounded-2xl overflow-hidden">
+      <div className="absolute inset-0 rounded-xl overflow-hidden bg-black">
         {allImages.length > 0 ? (
           <div 
-            className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex gap-2 px-1"
-            style={{ scrollSnapType: 'x mandatory' }}
+            className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex"
+            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {allImages.map((img, imgIndex) => (
               <motion.img 
@@ -620,7 +620,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
                 ref={imgIndex === 0 ? productImageRef : undefined}
                 src={img} 
                 alt="" 
-                className="w-[calc(100%-12px)] h-full object-cover flex-shrink-0 snap-center rounded-xl"
+                className="w-[calc(100%-6px)] h-full object-cover flex-shrink-0 snap-center first:ml-0 last:mr-0 mx-[3px]"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
@@ -628,10 +628,26 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
             ))}
           </div>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-            <p className="text-lg text-foreground/70 px-8 text-center">
+          <div className="w-full h-full bg-black flex items-center justify-center">
+            <p className="text-lg text-white/70 px-8 text-center">
               {post.caption || "פוסט ללא תמונה"}
             </p>
+          </div>
+        )}
+        
+        {/* Gallery indicator dots */}
+        {hasMultipleImages && (
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex gap-1.5 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
+            {allImages.map((_, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                  i === 0 ? "bg-white" : "bg-white/40"
+                )}
+              />
+            ))}
+            <span className="text-white text-[10px] font-medium mr-1">{allImages.length}</span>
           </div>
         )}
       </div>
