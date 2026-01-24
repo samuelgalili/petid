@@ -540,66 +540,51 @@ const Shop = () => {
                     <button className="text-sm text-primary font-medium">הכל ←</button>
                   </div>
                   
-                  {/* Horizontal Carousel */}
-                  <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2">
+                  {/* Horizontal Carousel - Compact for quick shopping */}
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory">
                     {categoryProducts.slice(0, 10).map((product) => (
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product)}
-                        className="flex-shrink-0 w-40 cursor-pointer group"
+                        className="flex-shrink-0 w-28 cursor-pointer snap-start"
                       >
-                        {/* Instagram-style Card */}
-                        <div className="relative rounded-xl overflow-hidden bg-card shadow-sm border border-border/40">
-                          {/* Square Image */}
+                        {/* Compact Card */}
+                        <div className="relative rounded-lg overflow-hidden bg-card shadow-sm border border-border/30">
+                          {/* Small Square Image */}
                           <div className="relative aspect-square bg-muted">
                             <OptimizedImage
                               src={product.image}
                               alt={product.name}
-                              className={`w-full h-full transition-transform group-hover:scale-105 ${product.isFlagged ? 'opacity-50' : ''}`}
+                              className={`w-full h-full ${product.isFlagged ? 'opacity-50' : ''}`}
                               objectFit="cover"
-                              sizes="160px"
+                              sizes="112px"
                             />
                             
-                            {/* Flagged indicator */}
-                            {product.isFlagged && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                <div className="bg-red-500 text-white px-2 py-1 rounded-full flex items-center gap-1 text-[10px] font-medium">
-                                  <Flag className="w-3 h-3" />
-                                  <span>בבדיקה</span>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Wishlist button */}
+                            {/* Wishlist button - smaller */}
                             <button
                               onClick={(e) => toggleFavorite(product.id, e)}
-                              className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm"
+                              className="absolute top-1 right-1 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-sm"
                             >
                               <Heart 
-                                className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-gray-600"}`} 
+                                className={`w-3 h-3 ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-gray-500"}`} 
                                 strokeWidth={2} 
                               />
                             </button>
 
-                            {/* Sale badge */}
+                            {/* Sale badge - smaller */}
                             {product.originalPrice && product.originalPrice > product.price && (
-                              <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
                                 -{Math.round((1 - product.price / product.originalPrice) * 100)}%
                               </div>
                             )}
                           </div>
                           
-                          {/* Product Info */}
-                          <div className="p-3">
-                            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1 leading-tight">
+                          {/* Minimal Product Info */}
+                          <div className="p-2">
+                            <h3 className="text-[11px] font-medium text-foreground line-clamp-1 mb-0.5">
                               {product.name}
                             </h3>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-foreground">₪{product.price}</span>
-                              {product.originalPrice && product.originalPrice > product.price && (
-                                <span className="text-xs text-muted-foreground line-through">₪{product.originalPrice}</span>
-                              )}
-                            </div>
+                            <span className="text-xs font-bold text-primary">₪{product.price}</span>
                           </div>
                         </div>
                       </div>
