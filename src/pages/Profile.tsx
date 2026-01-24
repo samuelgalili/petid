@@ -294,31 +294,14 @@ const Profile = () => {
                 </motion.span>
               )}
             </div>
-            <div className="flex items-center gap-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.button 
-                      onClick={() => navigate('/settings')}
-                      className="p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Settings className="w-5 h-5 text-muted-foreground" />
-                    </motion.button>
-                  </TooltipTrigger>
-                  <TooltipContent>הגדרות</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <motion.button 
-                onClick={() => setIsMenuOpen(true)}
-                className="p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Menu className="w-5 h-5 text-foreground" />
-              </motion.button>
-            </div>
+            <motion.button 
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Menu className="w-5 h-5 text-foreground" />
+            </motion.button>
           </div>
         </motion.div>
 
@@ -427,15 +410,6 @@ const Profile = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Button 
-              type="button"
-              className="flex-1 h-11 font-semibold text-sm rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-foreground hover:from-primary/20 hover:to-accent/20 transition-all duration-300"
-              onClick={() => navigate('/edit-profile')}
-            >
-              <Settings className="w-4 h-4 ml-1.5" />
-              עריכת פרופיל
-            </Button>
-            
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
