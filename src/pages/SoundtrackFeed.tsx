@@ -277,31 +277,27 @@ const SoundtrackFeed = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
-      {/* Header with Tabs */}
+      {/* Header with Tabs - at top */}
       <motion.header 
-        className="absolute top-14 left-0 right-0 z-40 pointer-events-none"
+        className="absolute top-0 left-0 right-0 z-50 pointer-events-none pt-2"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
         <div className="flex items-center justify-center h-10 relative pointer-events-auto">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white"
+          >
+            <MoreHorizontal className="w-5 h-5 drop-shadow-md" />
+          </Button>
+
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "discover" | "following")}>
-            <TabsList className="bg-transparent gap-6">
-              <TabsTrigger 
-                value="discover" 
-                className={cn(
-                  "bg-transparent border-0 shadow-none text-sm font-semibold px-0 py-1.5",
-                  "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                  activeTab === "discover" 
-                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none" 
-                    : "text-white/60"
-                )}
-              >
-                גלה
-              </TabsTrigger>
+            <TabsList className="bg-transparent gap-8">
               <TabsTrigger 
                 value="following" 
                 className={cn(
-                  "bg-transparent border-0 shadow-none text-sm font-semibold px-0 py-1.5",
+                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
                   "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                   activeTab === "following" 
                     ? "text-white drop-shadow-md border-b-2 border-white rounded-none" 
@@ -310,16 +306,20 @@ const SoundtrackFeed = () => {
               >
                 עוקבים
               </TabsTrigger>
+              <TabsTrigger 
+                value="discover" 
+                className={cn(
+                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
+                  "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                  activeTab === "discover" 
+                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none" 
+                    : "text-white/60"
+                )}
+              >
+                גלה
+              </TabsTrigger>
             </TabsList>
           </Tabs>
-
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-white"
-          >
-            <MoreHorizontal className="w-5 h-5 drop-shadow-md" />
-          </Button>
         </div>
       </motion.header>
 
@@ -461,67 +461,46 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         )}
       </div>
 
-      {/* Top user info row - below tabs */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
+      {/* Second row - User info on right, media icon on left */}
+      <div className="absolute top-14 left-4 right-4 z-20 flex items-center justify-between">
+        {/* Media type icon - left side */}
+        <div className="flex items-center">
+          {isVideo ? (
+            <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20">
+              <Video className="w-5 h-5 text-white" />
+            </div>
+          ) : hasMultipleImages ? (
+            <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20">
+              <Images className="w-5 h-5 text-white" />
+            </div>
+          ) : allImages.length === 1 && (
+            <div className="p-2 rounded-lg bg-black/20 backdrop-blur-sm border border-white/20">
+              <Image className="w-5 h-5 text-white" />
+            </div>
+          )}
+        </div>
+
         {/* User info - right side */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-row-reverse">
           <Avatar 
-            className="w-8 h-8 cursor-pointer border border-white/50"
+            className="w-10 h-10 cursor-pointer border-2 border-white/50"
             onClick={() => navigate(`/user/${post.user_id}`)}
           >
             <AvatarImage src={post.user_profile?.avatar_url || ""} className="object-cover" />
             <AvatarFallback className="bg-white/20">
-              <User className="w-4 h-4 text-white" />
+              <User className="w-5 h-5 text-white" />
             </AvatarFallback>
           </Avatar>
           <span 
-            className="font-semibold text-white text-sm cursor-pointer drop-shadow-md"
+            className="font-semibold text-white text-sm cursor-pointer drop-shadow-lg"
             onClick={() => navigate(`/user/${post.user_id}`)}
           >
             {post.user_profile?.full_name || "משתמש"}
           </span>
           {post.user_profile?.is_verified && (
-            <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center">
-              <Check className="w-2 h-2 text-white" />
+            <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+              <Check className="w-2.5 h-2.5 text-white" />
             </span>
-          )}
-          {post.user_id !== userId && (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => onFollow(post.user_id)}
-              className={cn(
-                "h-6 px-2.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1 mr-2",
-                post.is_following 
-                  ? "text-white/90" 
-                  : "bg-white text-black"
-              )}
-            >
-              {post.is_following ? (
-                <>
-                  <Check className="w-3 h-3" />
-                  <span>עוקב</span>
-                </>
-              ) : (
-                <span>עקוב</span>
-              )}
-            </motion.button>
-          )}
-        </div>
-
-        {/* Media type icon - left side */}
-        <div className="flex items-center gap-2">
-          {isVideo ? (
-            <div className="p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
-              <Video className="w-4 h-4 text-white" />
-            </div>
-          ) : hasMultipleImages ? (
-            <div className="p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
-              <Images className="w-4 h-4 text-white" />
-            </div>
-          ) : allImages.length === 1 && (
-            <div className="p-1.5 rounded-full bg-black/30 backdrop-blur-sm">
-              <Image className="w-4 h-4 text-white" />
-            </div>
           )}
         </div>
       </div>
@@ -562,18 +541,17 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         </div>
       )}
 
-      {/* Bottom section - action buttons only */}
-      <div className="absolute bottom-20 left-0 right-0 z-20 px-4 pb-2">
-        {/* Action buttons - minimal row */}
-        <div className="flex items-center gap-5">
+      {/* Bottom section - centered action buttons */}
+      <div className="absolute bottom-20 left-0 right-0 z-20 flex justify-center pb-4">
+        <div className="flex items-center gap-8">
           <motion.button
             onClick={() => onLike(post.id)}
             whileTap={{ scale: 0.85 }}
-            className="flex items-center gap-1.5"
+            className="flex flex-col items-center gap-1"
           >
             <Heart 
               className={cn(
-                "w-6 h-6 drop-shadow-md",
+                "w-7 h-7 drop-shadow-lg",
                 post.is_liked 
                   ? "fill-red-500 text-red-500" 
                   : "text-white"
@@ -587,9 +565,9 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           <motion.button
             onClick={() => navigate(`/post/${post.id}`)}
             whileTap={{ scale: 0.85 }}
-            className="flex items-center gap-1.5"
+            className="flex flex-col items-center gap-1"
           >
-            <MessageCircle className="w-6 h-6 text-white drop-shadow-md" />
+            <MessageCircle className="w-7 h-7 text-white drop-shadow-lg" />
             {post.comments_count > 0 && (
               <span className="text-white text-xs drop-shadow-md">{post.comments_count}</span>
             )}
@@ -598,10 +576,11 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           <motion.button
             onClick={() => onSave(post.id)}
             whileTap={{ scale: 0.85 }}
+            className="flex flex-col items-center gap-1"
           >
             <Bookmark 
               className={cn(
-                "w-6 h-6 drop-shadow-md",
+                "w-7 h-7 drop-shadow-lg",
                 post.is_saved 
                   ? "fill-yellow-400 text-yellow-400" 
                   : "text-white"
@@ -609,8 +588,11 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
             />
           </motion.button>
 
-          <motion.button whileTap={{ scale: 0.85 }}>
-            <Share2 className="w-6 h-6 text-white drop-shadow-md" />
+          <motion.button 
+            whileTap={{ scale: 0.85 }}
+            className="flex flex-col items-center gap-1"
+          >
+            <Share2 className="w-7 h-7 text-white drop-shadow-lg" />
           </motion.button>
         </div>
       </div>
