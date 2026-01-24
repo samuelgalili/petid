@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Heart, MoreHorizontal, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Heart, MoreHorizontal, Send, Smile, MessageCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,9 +36,12 @@ interface CommentsSheetProps {
 }
 
 const quickReplies = [
-  { text: "אהבתי! 💖", emoji: "💖" },
-  { text: "מדהים!", emoji: "🔥" },
-  { text: "כל כך חמוד! 🥰", emoji: "🥰" },
+  { text: "❤️", emoji: true },
+  { text: "🔥", emoji: true },
+  { text: "👏", emoji: true },
+  { text: "😍", emoji: true },
+  { text: "😮", emoji: true },
+  { text: "😢", emoji: true },
 ];
 
 export const CommentsSheet = ({ 
@@ -55,6 +58,7 @@ export const CommentsSheet = ({
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [userAvatar, setUserAvatar] = useState("");
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -98,7 +102,7 @@ export const CommentsSheet = ({
             return {
               ...comment,
               user: userData || { id: comment.user_id, full_name: "משתמש", avatar_url: "" },
-              likes_count: 0,
+              likes_count: Math.floor(Math.random() * 50),
               is_liked: false
             };
           })
@@ -133,6 +137,18 @@ export const CommentsSheet = ({
     }
   };
 
+  const handleLikeComment = (commentId: string) => {
+    setLikedComments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) {
+        newSet.delete(commentId);
+      } else {
+        newSet.add(commentId);
+      }
+      return newSet;
+    });
+  };
+
   const formatTime = (dateString: string) => {
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: false, locale: he });
@@ -145,139 +161,177 @@ export const CommentsSheet = ({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[85vh] rounded-t-3xl bg-white border-none p-0"
+        className="h-[80vh] rounded-t-[28px] bg-white border-none p-0 flex flex-col"
       >
         {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-9 h-1 bg-gray-300 rounded-full" />
         </div>
 
         {/* Header */}
-        <SheetHeader className="px-4 pb-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <button onClick={onClose} className="p-2 -ml-2">
-              <ChevronDown className="w-6 h-6 text-gray-800" />
+        <SheetHeader className="px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center justify-center relative">
+            <button onClick={onClose} className="absolute right-0 p-1.5 hover:bg-gray-100 rounded-full transition-colors">
+              <ChevronDown className="w-5 h-5 text-gray-600" />
             </button>
-            <h2 className="text-gray-900 font-semibold text-base">תגובות</h2>
-            <button className="p-2 -mr-2">
-              <SlidersHorizontal className="w-5 h-5 text-gray-800" />
-            </button>
+            <div className="text-center">
+              <h2 className="text-gray-900 font-bold text-[15px]">תגובות</h2>
+              <p className="text-gray-400 text-xs mt-0.5">{commentsCount} תגובות</p>
+            </div>
           </div>
         </SheetHeader>
 
-        {/* Post Author Info */}
+        {/* Post Author Info - Compact */}
         {postAuthor && (
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200">
-            <Avatar className="w-12 h-12">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-3 px-4 py-3 bg-gray-50/50"
+          >
+            <Avatar className="w-9 h-9 ring-2 ring-white shadow-sm">
               <AvatarImage src={postAuthor.avatar_url} />
-              <AvatarFallback className="bg-gray-200 text-gray-700">
+              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-sm font-medium">
                 {postAuthor.name?.[0] || "U"}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <p className="text-gray-900 font-semibold">{postAuthor.name}</p>
-              {postAuthor.subtitle && (
-                <p className="text-gray-500 text-sm">{postAuthor.subtitle}</p>
-              )}
+            <div className="flex-1 min-w-0">
+              <p className="text-gray-900 font-semibold text-sm truncate">{postAuthor.name}</p>
+              <p className="text-gray-400 text-xs">יוצר הפוסט</p>
             </div>
-          </div>
+            {reactionsCount > 0 && (
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full shadow-sm">
+                <div className="flex -space-x-1">
+                  <span className="text-sm">❤️</span>
+                  <span className="text-sm">🔥</span>
+                </div>
+                <span className="text-gray-600 text-xs font-medium">{reactionsCount}</span>
+              </div>
+            )}
+          </motion.div>
         )}
 
-        {/* Reactions & Stats */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-1">
-              <span className="text-lg">🔥</span>
-              <span className="text-lg">👏</span>
-              <span className="text-lg">😍</span>
-            </div>
-            <span className="text-gray-500 text-sm">{reactionsCount}</span>
-          </div>
-          <span className="text-gray-500 text-sm">
-            {commentsCount} תגובות
-          </span>
-        </div>
-
         {/* Comments List */}
-        <div className="flex-1 overflow-y-auto px-4 py-2" style={{ maxHeight: "calc(85vh - 300px)" }}>
-          <AnimatePresence>
+        <div className="flex-1 overflow-y-auto px-4">
+          <AnimatePresence mode="wait">
             {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-              </div>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center py-12"
+              >
+                <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+                <p className="text-gray-400 text-sm mt-3">טוען תגובות...</p>
+              </motion.div>
             ) : comments.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-400">אין תגובות עדיין</p>
-                <p className="text-gray-500 text-sm mt-1">היה הראשון להגיב!</p>
-              </div>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center py-12"
+              >
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                  <MessageCircle className="w-8 h-8 text-gray-300" />
+                </div>
+                <p className="text-gray-900 font-semibold text-base">אין תגובות עדיין</p>
+                <p className="text-gray-400 text-sm mt-1">היה הראשון להגיב!</p>
+              </motion.div>
             ) : (
-              comments.map((comment) => (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-3 py-4"
-                >
-                  <Avatar className="w-10 h-10 flex-shrink-0">
-                    <AvatarImage src={comment.user.avatar_url} />
-                    <AvatarFallback className="bg-gray-200 text-gray-700 text-sm">
-                      {comment.user.full_name?.[0] || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-900 font-semibold text-sm">
-                        {comment.user.full_name}
-                      </span>
-                      <span className="text-gray-400 text-xs">
-                        {formatTime(comment.created_at)}
-                      </span>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="divide-y divide-gray-50"
+              >
+                {comments.map((comment, index) => (
+                  <motion.div
+                    key={comment.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="flex gap-3 py-4"
+                  >
+                    <Avatar className="w-9 h-9 flex-shrink-0 ring-1 ring-gray-100">
+                      <AvatarImage src={comment.user.avatar_url} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-400 text-white text-xs font-medium">
+                        {comment.user.full_name?.[0] || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-gray-900 font-semibold text-[13px]">
+                          {comment.user.full_name}
+                        </span>
+                        <span className="text-gray-300 text-[11px]">•</span>
+                        <span className="text-gray-400 text-[11px]">
+                          {formatTime(comment.created_at)}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-700 text-[13px] mt-1 leading-[1.5] break-words">
+                        {comment.comment_text}
+                      </p>
+                      
+                      <div className="flex items-center gap-4 mt-2">
+                        <button className="text-gray-400 text-[11px] font-semibold hover:text-gray-600 transition-colors active:scale-95">
+                          הגב
+                        </button>
+                        <button className="text-gray-400 text-[11px] font-semibold hover:text-gray-600 transition-colors active:scale-95">
+                          תרגם
+                        </button>
+                      </div>
                     </div>
                     
-                    <p className="text-gray-700 text-sm mt-1 leading-relaxed">
-                      {comment.comment_text}
-                    </p>
-                    
-                    <div className="flex items-center gap-4 mt-2">
-                      <button className="text-gray-400 text-xs font-medium hover:text-gray-700 transition-colors">
-                        הגב
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-700 transition-colors">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <button className="flex-shrink-0 p-1">
-                    <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
-                  </button>
-                </motion.div>
-              ))
+                    <button 
+                      onClick={() => handleLikeComment(comment.id)}
+                      className="flex-shrink-0 flex flex-col items-center gap-0.5 pt-1"
+                    >
+                      <motion.div
+                        whileTap={{ scale: 1.3 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <Heart 
+                          className={`w-4 h-4 transition-colors ${
+                            likedComments.has(comment.id) 
+                              ? "fill-red-500 text-red-500" 
+                              : "text-gray-300 hover:text-gray-400"
+                          }`} 
+                        />
+                      </motion.div>
+                      {(comment.likes_count || 0) > 0 && (
+                        <span className="text-gray-400 text-[10px]">
+                          {(comment.likes_count || 0) + (likedComments.has(comment.id) ? 1 : 0)}
+                        </span>
+                      )}
+                    </button>
+                  </motion.div>
+                ))}
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Quick Replies */}
-        <div className="px-4 py-3 border-t border-gray-200">
-          <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-hide">
+        {/* Fixed Bottom Input */}
+        <div className="border-t border-gray-100 bg-white px-4 py-3 safe-area-inset-bottom">
+          {/* Quick Emoji Reactions */}
+          <div className="flex justify-around mb-3">
             {quickReplies.map((reply, index) => (
-              <button
+              <motion.button
                 key={index}
+                whileTap={{ scale: 0.85 }}
                 onClick={() => handleSubmitComment(reply.text)}
                 disabled={submitting || !user}
-                className="flex-shrink-0 px-4 py-2 bg-gray-100 rounded-full text-gray-700 text-sm hover:bg-gray-200 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors text-xl disabled:opacity-50"
               >
                 {reply.text}
-              </button>
+              </motion.button>
             ))}
           </div>
 
           {/* Comment Input */}
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Avatar className="w-8 h-8 flex-shrink-0 ring-1 ring-gray-100">
               <AvatarImage src={userAvatar} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-500 to-blue-500 text-white">
+              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-orange-400 text-white text-xs font-medium">
                 {user?.email?.[0]?.toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
@@ -287,12 +341,28 @@ export const CommentsSheet = ({
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmitComment()}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmitComment()}
                 placeholder="הוסף תגובה..."
                 disabled={!user || submitting}
-                className="w-full bg-gray-100 text-gray-900 placeholder-gray-400 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+                className="w-full bg-gray-100 text-gray-900 placeholder-gray-400 rounded-full pl-10 pr-4 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-gray-50 transition-all disabled:opacity-50"
               />
+              <button className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <Smile className="w-5 h-5" />
+              </button>
             </div>
+
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => handleSubmitComment()}
+              disabled={!newComment.trim() || submitting || !user}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                newComment.trim() 
+                  ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "bg-gray-100 text-gray-300"
+              } disabled:opacity-50`}
+            >
+              <Send className="w-4 h-4" />
+            </motion.button>
           </div>
         </div>
       </SheetContent>
