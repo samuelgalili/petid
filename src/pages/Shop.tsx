@@ -618,10 +618,11 @@ const Shop = () => {
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <SheetContent 
           side="bottom" 
-          className="rounded-t-[28px] bg-background p-0 border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[100]" 
-          style={{ height: 'auto', maxHeight: 'calc(100vh - 140px)', bottom: '70px' }}
+          className="rounded-t-[28px] bg-background p-0 border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[60] !pb-0"
           aria-describedby="product-details-description"
         >
+          {/* Background extension to cover gap above BottomNav */}
+          <div className="absolute -bottom-20 left-0 right-0 h-20 bg-background" />
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
@@ -740,8 +741,8 @@ const Shop = () => {
                 </div>
               )}
 
-              {/* Action Bar - Glassmorphism */}
-              <div className="px-5 py-4 bg-white/80 backdrop-blur-lg border-t border-border/20 mt-auto">
+              {/* Action Bar - With extra padding for BottomNav */}
+              <div className="px-5 pt-4 pb-24 bg-background border-t border-border/20 mt-auto">
                 {selectedProduct.isFlagged ? (
                   <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-100">
                     <Flag className="w-4 h-4" />
