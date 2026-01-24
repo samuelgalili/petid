@@ -261,20 +261,22 @@ const Profile = () => {
           )}
         </AnimatePresence>
 
-        {/* Premium Header with Gradient */}
+        {/* Clean Header */}
         <motion.div 
-          className="sticky top-0 z-20 backdrop-blur-xl border-b border-border/20"
+          className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/10"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          style={{
-            background: 'linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%)',
-          }}
         >
-          <div className="flex items-center justify-between px-4 h-11">
-            <div className="flex items-center gap-3">
-              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
+          <div className="flex items-center justify-between px-4 h-12">
+            <div className="flex items-center gap-2.5">
+              <motion.img 
+                src={petidIcon} 
+                alt="PetID" 
+                className="w-6 h-6 object-contain"
+                whileHover={{ rotate: 10 }}
+              />
               <motion.h1 
-                className="text-xl font-bold bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text"
+                className="text-lg font-bold text-foreground"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
@@ -282,21 +284,10 @@ const Profile = () => {
                 {profile?.full_name?.split(' ')[0] || 'משתמש'}
               </motion.h1>
               <RoleBadge size="sm" />
-              {profile?.points > 100 && (
-                <motion.span 
-                  className="bg-gradient-to-r from-primary/20 to-accent/20 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring" }}
-                >
-                  <Sparkles className="w-3 h-3" />
-                  {Math.floor((profile?.points || 0) / 100)}+
-                </motion.span>
-              )}
             </div>
             <motion.button 
               onClick={() => setIsMenuOpen(true)}
-              className="p-2.5 rounded-xl hover:bg-muted/50 transition-all duration-200"
+              className="p-2 rounded-xl hover:bg-muted/60 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -307,27 +298,27 @@ const Profile = () => {
 
         {/* Profile Header Section */}
         <motion.div 
-          className="px-4 pt-6"
+          className="px-5 pt-5"
           style={{ transform: `translateY(${pullDistance * 0.3}px)` }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          {/* Avatar and Stats Row - Enhanced */}
-          <div className="flex items-center gap-5 mb-5">
-            {/* Profile Picture with Gradient Border - Rounded Square */}
-            <div className="relative">
+          {/* Avatar and Stats Row */}
+          <div className="flex items-start gap-6 mb-4">
+            {/* Profile Picture with Premium Ring */}
+            <div className="relative flex-shrink-0">
               <motion.div 
-                className="relative w-24 h-24"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                className="relative"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {/* Gradient border wrapper */}
-                <div className="w-full h-full rounded-2xl p-[3px] bg-gradient-to-br from-primary via-accent to-secondary shadow-lg">
-                  <div className="w-full h-full rounded-xl bg-background overflow-hidden">
-                    <Avatar className="w-full h-full rounded-xl">
-                      <AvatarImage src={profile?.avatar_url} className="object-cover rounded-xl" />
-                      <AvatarFallback className="bg-muted text-foreground font-bold text-3xl rounded-xl">
+                {/* Gradient ring */}
+                <div className="w-[88px] h-[88px] rounded-full p-[3px] bg-gradient-to-br from-primary via-accent to-secondary">
+                  <div className="w-full h-full rounded-full bg-background p-[2px]">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={profile?.avatar_url} className="object-cover" />
+                      <AvatarFallback className="bg-gradient-to-br from-muted to-muted/60 text-foreground/80 font-bold text-2xl">
                         {profile?.full_name?.[0]?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -336,16 +327,16 @@ const Profile = () => {
               </motion.div>
               <motion.button
                 onClick={() => setIsImageEditorOpen(true)}
-                className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-xl flex items-center justify-center ring-3 ring-background shadow-lg"
+                className="absolute -bottom-0.5 -right-0.5 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-background shadow-md"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <Camera className="w-4 h-4 text-primary-foreground" />
+                <Plus className="w-4 h-4 text-primary-foreground" />
               </motion.button>
             </div>
 
-            {/* Stats with Enhanced Animation */}
-            <div className="flex-1 grid grid-cols-3 gap-2">
+            {/* Stats Grid */}
+            <div className="flex-1 grid grid-cols-3 gap-1 pt-2">
               {[
                 { value: stats?.posts || 0, label: 'פוסטים', onClick: () => setActiveTab("posts") },
                 { value: stats?.followers || 0, label: 'עוקבים', onClick: () => {} },
@@ -353,78 +344,55 @@ const Profile = () => {
               ].map((stat, index) => (
                 <motion.button 
                   key={stat.label}
-                  className="text-center p-2 rounded-2xl hover:bg-muted/50 transition-colors"
+                  className="text-center py-1.5 rounded-xl hover:bg-muted/40 transition-colors"
                   onClick={stat.onClick}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  transition={{ delay: 0.15 + index * 0.05 }}
+                  whileTap={{ scale: 0.97 }}
                 >
-                  <p className="text-xl font-bold text-foreground">
+                  <p className="text-lg font-bold text-foreground tabular-nums">
                     <AnimatedCounter value={stat.value} />
                   </p>
-                  <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
+                  <p className="text-[11px] text-muted-foreground">{stat.label}</p>
                 </motion.button>
               ))}
             </div>
-            
-            {/* User Rank Badge - Inline */}
-            <motion.div 
-              className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full px-3 py-1.5"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.35 }}
-            >
-              <span className="text-sm">🏆</span>
-              <span className="text-xs font-semibold text-foreground">{profile?.rank || 'גור'}</span>
-            </motion.div>
           </div>
           
-          {/* Points Progress Bar - Minimalist */}
+          {/* Bio Section */}
           <motion.div 
-            className="mb-4"
+            className="mb-4 space-y-1.5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] text-muted-foreground">{profile?.points || 0} נקודות</span>
-              <span className="text-[11px] text-muted-foreground">100 לדרגה הבאה</span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(((profile?.points || 0) % 100), 100)}%` }}
-                transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
-              />
-            </div>
-          </motion.div>
-
-          {/* Bio Section - Enhanced */}
-          <motion.div 
-            className="mb-5 space-y-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.25 }}
           >
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-foreground text-base">{profile?.full_name || "משתמש"}</h2>
+              <h2 className="font-semibold text-foreground text-[15px]">{profile?.full_name || "משתמש"}</h2>
               <ActivityStatus userId={profile?.id} size="sm" />
             </div>
+            {profile?.bio && (
+              <p className="text-foreground/85 text-sm leading-relaxed">{profile.bio}</p>
+            )}
             {pets.length > 0 && (
-              <p className="text-muted-foreground text-sm flex items-center gap-1">
-                <Heart className="w-3.5 h-3.5 text-accent" />
+              <p className="text-muted-foreground text-[13px] flex items-center gap-1.5">
+                <span className="text-base">🐾</span>
                 בעל/ת {pets.length} חיות מחמד
               </p>
             )}
-            {profile?.bio && (
-              <p className="text-foreground/90 text-sm leading-relaxed">{profile.bio}</p>
-            )}
+            
+            {/* Points & Rank - Inline */}
+            <div className="flex items-center gap-3 pt-1">
+              <span className="text-[12px] text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
+                🏆 {profile?.rank || 'גור'}
+              </span>
+              <span className="text-[12px] text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
+                ⭐ {profile?.points || 0} נקודות
+              </span>
+            </div>
             
             {/* Mutual Followers */}
-            <div className="pt-1">
+            <div className="pt-0.5">
               <MutualFollowers userId={profile?.id} currentUserId={profile?.id} />
             </div>
           </motion.div>
@@ -433,138 +401,111 @@ const Profile = () => {
           <BusinessInsightsBar />
 
 
-          {/* Action Buttons - Enhanced with Tooltips */}
+          {/* Action Buttons Row */}
           <motion.div 
-            className="flex gap-2 mb-5 relative z-10"
+            className="flex gap-2 mb-4"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.3 }}
           >
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    className="h-11 px-4 rounded-2xl border-border/50 bg-card hover:bg-muted/50"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate('/messages');
-                    }}
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>הודעות</TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    className="h-11 px-4 rounded-2xl border-border/50 bg-card hover:bg-muted/50"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setShowQRCode(true);
-                    }}
-                  >
-                    <QrCode className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>קוד QR</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button 
+              variant="secondary"
+              className="flex-1 h-9 rounded-lg text-[13px] font-semibold bg-muted hover:bg-muted/80"
+              onClick={() => navigate('/edit-profile')}
+            >
+              עריכת פרופיל
+            </Button>
+            <Button 
+              variant="secondary"
+              className="flex-1 h-9 rounded-lg text-[13px] font-semibold bg-muted hover:bg-muted/80"
+              onClick={() => setShowQRCode(true)}
+            >
+              שיתוף פרופיל
+            </Button>
+            <Button 
+              variant="secondary"
+              className="h-9 w-9 rounded-lg bg-muted hover:bg-muted/80 p-0"
+              onClick={() => navigate('/settings')}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
           </motion.div>
 
-          {/* Pet Highlights - Enhanced */}
+          {/* Pet Highlights - Story Style */}
           <motion.div 
-            className="mb-5"
+            className="mb-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.35 }}
           >
-            <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {/* Add New Pet */}
               <motion.button 
-                className="flex flex-col items-center gap-2 min-w-[72px]"
+                className="flex flex-col items-center gap-1.5 min-w-[66px]"
                 onClick={() => navigate('/add-pet')}
-                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="w-[68px] h-[68px] rounded-2xl border-2 border-dashed border-primary/40 flex items-center justify-center bg-primary/5 hover:bg-primary/10 transition-colors">
-                  <Plus className="w-6 h-6 text-primary" />
+                <div className="w-[64px] h-[64px] rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/20">
+                  <Plus className="w-6 h-6 text-muted-foreground" />
                 </div>
-                <span className="text-[11px] text-muted-foreground font-medium">הוסף חיה</span>
+                <span className="text-[11px] text-muted-foreground">חדש</span>
               </motion.button>
 
-              {/* Pet Highlights - Rounded Square with Gradient */}
+              {/* Pet Highlights */}
               {pets.map((pet, index) => (
                 <motion.button 
                   key={pet.id}
-                  className="flex flex-col items-center gap-2 min-w-[72px]"
+                  className="flex flex-col items-center gap-1.5 min-w-[66px]"
                   onClick={() => navigate(`/pet/${pet.id}`)}
-                  initial={{ opacity: 0, scale: 0.8 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  whileHover={{ scale: 1.05 }}
+                  transition={{ delay: 0.35 + index * 0.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="w-[68px] h-[68px] rounded-2xl p-[2px] bg-gradient-to-br from-primary via-accent to-secondary shadow-md">
-                    <div className="w-full h-full rounded-xl bg-background overflow-hidden">
-                      {pet.avatar_url ? (
-                        <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                          {pet.type === 'dog' ? (
-                            <img src={dogIcon} alt="dog" className="w-8 h-8" />
-                          ) : (
-                            <img src={catIcon} alt="cat" className="w-8 h-8" />
-                          )}
-                        </div>
-                      )}
+                  <div className="w-[64px] h-[64px] rounded-full p-[2px] bg-gradient-to-br from-primary via-accent to-secondary">
+                    <div className="w-full h-full rounded-full bg-background p-[1.5px]">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-muted">
+                        {pet.avatar_url ? (
+                          <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            {pet.type === 'dog' ? (
+                              <img src={dogIcon} alt="dog" className="w-7 h-7" />
+                            ) : (
+                              <img src={catIcon} alt="cat" className="w-7 h-7" />
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <span className="text-[11px] text-foreground font-medium truncate max-w-[72px]">{pet.name}</span>
+                  <span className="text-[11px] text-foreground truncate max-w-[66px]">{pet.name}</span>
                 </motion.button>
               ))}
-              
-              {/* Archived Pets Link */}
-              <motion.button 
-                className="flex flex-col items-center gap-2 min-w-[72px]"
-                onClick={() => navigate('/archived-pets')}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <div className="w-[68px] h-[68px] rounded-2xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <Archive className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <span className="text-[11px] text-muted-foreground font-medium">ארכיון</span>
-              </motion.button>
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Content Tabs - Enhanced */}
+        {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full h-14 rounded-none border-t border-border/50 bg-card/50 backdrop-blur-sm p-0 gap-0">
+          <TabsList className="w-full h-12 rounded-none border-y border-border/30 bg-background p-0 gap-0">
             <TabsTrigger 
               value="posts" 
-              className="flex-1 h-full rounded-none data-[state=active]:border-b-[3px] data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none bg-transparent transition-all duration-200"
+              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground bg-transparent transition-colors"
             >
-              <Grid3X3 className="w-5 h-5" />
+              <Grid3X3 className="w-[22px] h-[22px]" />
             </TabsTrigger>
             <TabsTrigger 
               value="reels" 
-              className="flex-1 h-full rounded-none data-[state=active]:border-b-[3px] data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none bg-transparent transition-all duration-200"
+              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground bg-transparent transition-colors"
             >
-              <Film className="w-5 h-5" />
+              <Film className="w-[22px] h-[22px]" />
             </TabsTrigger>
             <TabsTrigger 
               value="tagged" 
-              className="flex-1 h-full rounded-none data-[state=active]:border-b-[3px] data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none bg-transparent transition-all duration-200"
+              className="flex-1 h-full rounded-none border-b-[1.5px] border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=inactive]:text-muted-foreground bg-transparent transition-colors"
             >
-              <UserSquare className="w-5 h-5" />
+              <UserSquare className="w-[22px] h-[22px]" />
             </TabsTrigger>
           </TabsList>
 
