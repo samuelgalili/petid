@@ -516,90 +516,100 @@ const Shop = () => {
         </div>
       </div>
 
-      {/* Instagram-style Products Grid with thin borders */}
-      <div className="max-w-lg mx-auto">
-        {/* Editors' Picks Section */}
+      {/* Instagram-style Category Carousels */}
+      <div className="max-w-lg mx-auto pb-24">
+        {/* Group products by category and display as carousels */}
         {activeTab === "grid" && filteredAndSortedProducts.length > 0 && (
-          <div className="px-4 py-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Editors' picks</h2>
-            <div className="flex gap-3 overflow-x-auto hide-scrollbar">
-              {filteredAndSortedProducts.slice(0, 4).map((product) => (
-                <div
-                  key={`pick-${product.id}`}
-                  onClick={() => handleProductClick(product)}
-                  className="flex-shrink-0 w-28 cursor-pointer"
-                >
-                  <div className="w-28 h-28 rounded-lg overflow-hidden bg-muted mb-2">
-                    <OptimizedImage
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full"
-                      objectFit="cover"
-                    />
+          <>
+            {/* Get unique categories from products */}
+            {(() => {
+              const productsByCategory = filteredAndSortedProducts.reduce((acc, product) => {
+                const category = product.category || 'אחר';
+                if (!acc[category]) {
+                  acc[category] = [];
+                }
+                acc[category].push(product);
+                return acc;
+              }, {} as Record<string, typeof filteredAndSortedProducts>);
+
+              return Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+                <div key={category} className="mb-6">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <h2 className="text-base font-bold text-foreground">{category}</h2>
+                    <button className="text-sm text-primary font-medium">הכל ←</button>
                   </div>
-                  <p className="text-xs text-foreground line-clamp-1">{product.name}</p>
-                  <p className="text-xs font-semibold text-foreground">₪{product.price}</p>
+                  
+                  {/* Horizontal Carousel */}
+                  <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2">
+                    {categoryProducts.slice(0, 10).map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => handleProductClick(product)}
+                        className="flex-shrink-0 w-40 cursor-pointer group"
+                      >
+                        {/* Instagram-style Card */}
+                        <div className="relative rounded-xl overflow-hidden bg-card shadow-sm border border-border/40">
+                          {/* Square Image */}
+                          <div className="relative aspect-square bg-muted">
+                            <OptimizedImage
+                              src={product.image}
+                              alt={product.name}
+                              className={`w-full h-full transition-transform group-hover:scale-105 ${product.isFlagged ? 'opacity-50' : ''}`}
+                              objectFit="cover"
+                              sizes="160px"
+                            />
+                            
+                            {/* Flagged indicator */}
+                            {product.isFlagged && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <div className="bg-red-500 text-white px-2 py-1 rounded-full flex items-center gap-1 text-[10px] font-medium">
+                                  <Flag className="w-3 h-3" />
+                                  <span>בבדיקה</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Wishlist button */}
+                            <button
+                              onClick={(e) => toggleFavorite(product.id, e)}
+                              className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm"
+                            >
+                              <Heart 
+                                className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-gray-600"}`} 
+                                strokeWidth={2} 
+                              />
+                            </button>
+
+                            {/* Sale badge */}
+                            {product.originalPrice && product.originalPrice > product.price && (
+                              <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Product Info */}
+                          <div className="p-3">
+                            <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-1 leading-tight">
+                              {product.name}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-foreground">₪{product.price}</span>
+                              {product.originalPrice && product.originalPrice > product.price && (
+                                <span className="text-xs text-muted-foreground line-through">₪{product.originalPrice}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              ));
+            })()}
+          </>
         )}
-
-        {/* Products Grid */}
-        <div className="grid grid-cols-2">
-          {filteredAndSortedProducts.map((product, index) => (
-            <div
-              key={product.id}
-              onClick={() => handleProductClick(product)}
-              className={`bg-background cursor-pointer border-b border-border ${
-                index % 2 === 0 ? 'border-l border-l-border' : ''
-              }`}
-            >
-              {/* Square Image */}
-              <div className="relative aspect-square bg-muted">
-                <OptimizedImage
-                  src={product.image}
-                  alt={product.name}
-                  className={`w-full h-full ${product.isFlagged ? 'opacity-50' : ''}`}
-                  objectFit="cover"
-                  sizes="(max-width: 768px) 50vw, 200px"
-                />
-                
-                {/* Flagged indicator */}
-                {product.isFlagged && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <div className="bg-red-500 text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium shadow-lg">
-                      <Flag className="w-3.5 h-3.5" />
-                      <span>בבדיקה</span>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Wishlist button - transparent Instagram style */}
-                <button
-                  onClick={(e) => toggleFavorite(product.id, e)}
-                  className="absolute top-2 right-2"
-                >
-                  <Heart 
-                    className={`w-5 h-5 drop-shadow-md ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-white"}`} 
-                    strokeWidth={2} 
-                  />
-                </button>
-              </div>
-
-              {/* Product Info */}
-              <div className="p-3">
-                <h3 className="text-sm font-normal text-foreground line-clamp-1">
-                  {product.name}
-                </h3>
-                <p className="text-xs text-[#8E8E8E] mb-1">Petid Shop</p>
-                <span className="text-sm font-bold text-foreground">
-                  ₪{product.price}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
 
         {/* Loading State */}
         {(isLoadingProducts || isFetching) && filteredAndSortedProducts.length === 0 && (
@@ -609,7 +619,7 @@ const Shop = () => {
           </div>
         )}
 
-        {/* Empty State - only show when not loading and no products */}
+        {/* Empty State */}
         {!isLoadingProducts && !isFetching && filteredAndSortedProducts.length === 0 && (
           <div className="py-20 text-center">
             <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" strokeWidth={1} />
