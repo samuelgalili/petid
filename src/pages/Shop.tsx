@@ -616,22 +616,27 @@ const Shop = () => {
 
       {/* Product Details Sheet - Instagram style */}
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-3xl bg-background p-0 overflow-hidden border-t border-border/30 shadow-2xl" aria-describedby="product-details-description">
+        <SheetContent 
+          side="bottom" 
+          className="rounded-t-3xl bg-background p-0 overflow-hidden border-t border-border/30 shadow-2xl z-[100]" 
+          style={{ height: 'auto', maxHeight: '55vh', paddingBottom: '80px' }}
+          aria-describedby="product-details-description"
+        >
           <SheetTitle className="sr-only">פרטי מוצר</SheetTitle>
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
-            <div className="flex flex-col" dir="rtl">
+            <div className="flex flex-col h-full" dir="rtl">
               {/* Handle */}
               <div className="flex justify-center pt-2 pb-1">
                 <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
               </div>
               
               {/* Main Content - Horizontal Layout */}
-              <div className="flex gap-3 px-4 py-3">
+              <div className="flex gap-3 px-4 py-2">
                 {/* Product Image - Compact */}
                 <div 
                   ref={productImageRef}
-                  className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden bg-muted"
+                  className="relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-muted"
                 >
                   <OptimizedImage
                     src={selectedProduct.image}
@@ -648,35 +653,33 @@ const Shop = () => {
                 </div>
 
                 {/* Product Info - Minimal */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between">
-                  <div>
-                    <h2 className="text-sm font-semibold text-foreground leading-tight line-clamp-2 mb-1">
-                      {selectedProduct.name}
-                    </h2>
-                    
-                    {/* Rating - Inline */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                  <h2 className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
+                    {selectedProduct.name}
+                  </h2>
+                  
+                  {/* Rating & Price Row */}
+                  <div className="flex items-center justify-between mt-auto">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-bold text-foreground">₪{selectedProduct.price}</span>
+                      {selectedProduct.originalPrice && (
+                        <span className="text-xs text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
+                      )}
+                    </div>
                     {selectedProduct.rating && (
-                      <div className="flex items-center gap-1 mb-2">
+                      <div className="flex items-center gap-1">
                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                         <span className="text-xs text-muted-foreground">{selectedProduct.rating}</span>
                       </div>
                     )}
                   </div>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-foreground">₪{selectedProduct.price}</span>
-                    {selectedProduct.originalPrice && (
-                      <span className="text-xs text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
-                    )}
-                  </div>
                 </div>
 
                 {/* Quick Actions - Vertical */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5">
                   <button
                     onClick={() => toggleFavorite(selectedProduct.id)}
-                    className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center"
+                    className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center"
                   >
                     <Heart 
                       className={`w-4 h-4 ${favorites.includes(selectedProduct.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-muted-foreground"}`} 
@@ -688,7 +691,7 @@ const Shop = () => {
                       navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
                       setSelectedProduct(null);
                     }}
-                    className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center"
+                    className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center"
                   >
                     <Info className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
                   </button>
@@ -697,7 +700,7 @@ const Shop = () => {
 
               {/* Flavors - Horizontal scroll if exists */}
               {selectedProduct.flavors && selectedProduct.flavors.length > 0 && (
-                <div className="px-4 pb-3">
+                <div className="px-4 py-2">
                   <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                     {selectedProduct.flavors.map((flavor: string, index: number) => (
                       <button
@@ -716,8 +719,8 @@ const Shop = () => {
                 </div>
               )}
 
-              {/* Quantity & Add to Cart - With safe area padding */}
-              <div className="border-t border-border/30 px-4 pt-3 pb-6 bg-background safe-area-bottom">
+              {/* Quantity & Add to Cart - Always visible */}
+              <div className="border-t border-border/30 px-4 py-3 bg-background mt-auto">
                 {selectedProduct.isFlagged ? (
                   <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-50 text-red-600">
                     <Flag className="w-4 h-4" />
@@ -726,17 +729,17 @@ const Shop = () => {
                 ) : (
                   <div className="flex items-center gap-3">
                     {/* Compact Quantity Selector */}
-                    <div className="flex items-center gap-2 bg-muted/50 rounded-full px-2 py-1">
+                    <div className="flex items-center bg-muted/60 rounded-full">
                       <button
                         onClick={decreaseQuantity}
-                        className="w-8 h-8 rounded-full bg-background flex items-center justify-center shadow-sm"
+                        className="w-10 h-10 rounded-full flex items-center justify-center active:bg-muted"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="text-base font-bold w-6 text-center">{quantity}</span>
+                      <span className="text-base font-bold w-8 text-center">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="w-8 h-8 rounded-full bg-background flex items-center justify-center shadow-sm"
+                        className="w-10 h-10 rounded-full flex items-center justify-center active:bg-muted"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
