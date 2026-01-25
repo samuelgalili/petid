@@ -282,13 +282,13 @@ const ProductDetail = () => {
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
       <div className="h-full overflow-y-auto pb-[180px]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50 overflow-visible">
+        <div className="flex items-center justify-between px-4 py-3 overflow-visible">
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted w-10 h-10" onClick={() => navigate(-1)}>
             <ArrowRight className="w-5 h-5 text-foreground" />
           </Button>
           <h1 className="text-base font-bold font-jakarta text-foreground">פרטי מוצר</h1>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-visible">
             {/* Report Issue Button */}
             <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
               <DialogTrigger asChild>
