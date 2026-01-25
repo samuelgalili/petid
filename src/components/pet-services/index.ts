@@ -8,3 +8,5 @@ export { FoodSheet } from './FoodSheet';
 export { ToysSheet } from './ToysSheet';
 export { DocumentsSection } from './DocumentsSection';
 export { DocumentsSheet } from './DocumentsSheet';
+export { DogWalkerSheet } from './DogWalkerSheet';
+export { ProductsSheet } from './ProductsSheet';
