@@ -44,7 +44,35 @@ const Profile = () => {
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isProfileCollapsed, setIsProfileCollapsed] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-collapse profile section after 30 seconds
+  useEffect(() => {
+    if (!loading && !isProfileCollapsed) {
+      collapseTimerRef.current = setTimeout(() => {
+        setIsProfileCollapsed(true);
+      }, 30000); // 30 seconds
+    }
+
+    return () => {
+      if (collapseTimerRef.current) {
+        clearTimeout(collapseTimerRef.current);
+      }
+    };
+  }, [loading, isProfileCollapsed]);
+
+  // Reset timer when user expands profile
+  const handleExpandProfile = () => {
+    setIsProfileCollapsed(false);
+    if (collapseTimerRef.current) {
+      clearTimeout(collapseTimerRef.current);
+    }
+    collapseTimerRef.current = setTimeout(() => {
+      setIsProfileCollapsed(true);
+    }, 30000);
+  };
 
   // Get selected pet object
   const selectedPet = pets.find(p => p.id === selectedPetId) || null;
@@ -143,18 +171,44 @@ const Profile = () => {
         className="h-screen bg-background overflow-hidden flex flex-col" 
         dir="rtl"
       >
-        {/* Clean Header */}
+        {/* Header with Collapsible Profile */}
         <motion.div 
           className="flex items-center justify-between px-4 h-14 bg-background z-20"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2 -mr-2"
-          >
-            <ChevronRight className="w-6 h-6 text-foreground" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate(-1)}
+              className="p-2 -mr-2"
+            >
+              <ChevronRight className="w-6 h-6 text-foreground" />
+            </button>
+            
+            {/* Collapsed Profile Avatar - shows after 30 seconds */}
+            <AnimatePresence>
+              {isProfileCollapsed && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.5, x: -20 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, x: -20 }}
+                  transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                  onClick={handleExpandProfile}
+                  className="w-9 h-9 rounded-full p-[2px] bg-gradient-to-br from-primary via-primary/80 to-primary/60"
+                >
+                  <div className="w-full h-full rounded-full bg-background p-[1px]">
+                    <Avatar className="w-full h-full">
+                      <AvatarImage src={profile?.avatar_url} className="object-cover" />
+                      <AvatarFallback className="bg-muted text-foreground font-bold text-xs">
+                        {profile?.full_name?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+          
           <div className="flex items-center gap-3">
             <button 
               onClick={() => navigate('/edit-profile')}
@@ -177,39 +231,49 @@ const Profile = () => {
           className="flex-1 overflow-y-auto pb-[70px]"
           onScroll={handleScroll}
         >
-          {/* Centered Profile Section - Fixed height to prevent jumping */}
-          <div className="flex flex-col items-center px-5 pt-2 pb-4">
-            {/* Profile Picture with Ring */}
-            <motion.div 
-              className="relative mb-3 shrink-0"
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsImageEditorOpen(true)}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-primary via-primary/80 to-primary/60">
-                <div className="w-full h-full rounded-full bg-background p-[2px]">
-                  <Avatar className="w-full h-full">
-                    <AvatarImage src={profile?.avatar_url} className="object-cover" />
-                    <AvatarFallback className="bg-muted text-foreground font-bold text-2xl">
-                      {profile?.full_name?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              </div>
-            </motion.div>
+          {/* Expanded Profile Section - hides after 30 seconds */}
+          <AnimatePresence>
+            {!isProfileCollapsed && (
+              <motion.div 
+                className="flex flex-col items-center px-5 pt-2 pb-4"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* Profile Picture with Ring */}
+                <motion.div 
+                  className="relative mb-3 shrink-0"
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsImageEditorOpen(true)}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                  <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-primary via-primary/80 to-primary/60">
+                    <div className="w-full h-full rounded-full bg-background p-[2px]">
+                      <Avatar className="w-full h-full">
+                        <AvatarImage src={profile?.avatar_url} className="object-cover" />
+                        <AvatarFallback className="bg-muted text-foreground font-bold text-2xl">
+                          {profile?.full_name?.[0]?.toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </div>
+                </motion.div>
 
-            {/* Name & Bio */}
-            <h1 className="text-xl font-bold text-foreground mb-1 shrink-0">
-              {profile?.full_name || "משתמש"}
-            </h1>
-            {profile?.bio && (
-              <p className="text-sm text-muted-foreground text-center max-w-[250px] mb-2 shrink-0">
-                {profile.bio}
-              </p>
+                {/* Name & Bio */}
+                <h1 className="text-xl font-bold text-foreground mb-1 shrink-0">
+                  {profile?.full_name || "משתמש"}
+                </h1>
+                {profile?.bio && (
+                  <p className="text-sm text-muted-foreground text-center max-w-[250px] mb-2 shrink-0">
+                    {profile.bio}
+                  </p>
+                )}
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
 
           {/* Pet Sphere Section */}
           <AnimatePresence mode="wait">
