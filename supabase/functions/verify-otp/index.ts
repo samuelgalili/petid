@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitExceededResponse,
+  RATE_LIMITS 
+} from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +25,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Apply IP-based rate limiting
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, "verify_otp", RATE_LIMITS.verifyOtp);
+    
+    if (!rateLimit.allowed) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     const { email, otp, newPassword }: VerifyOtpRequest = await req.json();
     
     console.log(`Verifying OTP for ${email}`);
@@ -27,6 +42,14 @@ const handler = async (req: Request): Promise<Response> => {
     if (!email || !otp || !newPassword) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate OTP format (must be 6 digits)
+    if (!/^\d{6}$/.test(otp)) {
+      return new Response(
+        JSON.stringify({ error: "OTP must be 6 digits" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -111,7 +134,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(
       JSON.stringify({ success: true, message: "Password updated successfully" }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { 
+        status: 200, 
+        headers: { 
+          "Content-Type": "application/json",
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+          ...corsHeaders 
+        } 
+      }
     );
   } catch (error: any) {
     console.error("Error in verify-otp function:", error);

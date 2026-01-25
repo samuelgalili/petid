@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitExceededResponse,
+  RATE_LIMITS 
+} from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,6 +45,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Apply IP-based rate limiting
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, "send_whatsapp_otp", RATE_LIMITS.sendOtp);
+    
+    if (!rateLimit.allowed) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     const { phone, type }: SendOtpRequest = await req.json();
     
     if (!phone) {
@@ -49,6 +64,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const formattedPhone = formatPhoneNumber(phone);
+    
+    // Validate phone format (should be valid Israeli number)
+    if (!/^972[0-9]{9}$/.test(formattedPhone)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid phone number format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
@@ -141,7 +165,14 @@ const handler = async (req: Request): Promise<Response> => {
         message: "OTP sent via WhatsApp",
         messageId: whatsappResult.messages?.[0]?.id
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        status: 200, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+        } 
+      }
     );
 
   } catch (error) {

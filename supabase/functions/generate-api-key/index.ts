@@ -1,5 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitExceededResponse,
+  RATE_LIMITS 
+} from "../_shared/rate-limit.ts";
 
 interface GenerateApiKeyRequest {
   name: string;
@@ -40,6 +46,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Apply rate limiting (per user + IP)
+    const clientIP = getClientIP(req);
+    const identifier = `${user.id}:${clientIP}`;
+    const rateLimit = checkRateLimit(identifier, "generate_api_key", RATE_LIMITS.generateApiKey);
+    
+    if (!rateLimit.allowed) {
+      console.log(`Rate limit exceeded for user: ${user.id}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     // Use service role for admin check and insert
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     
@@ -64,6 +80,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!name || name.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "Name is required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate name length
+    if (name.trim().length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Name must be less than 100 characters" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -111,7 +135,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
         prefix: keyPrefix,
         message: "Save this key securely - it will not be shown again!"
       }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { 
+        status: 200, 
+        headers: { 
+          "Content-Type": "application/json",
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+          ...corsHeaders 
+        } 
+      }
     );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
