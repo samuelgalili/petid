@@ -39,7 +39,7 @@ export const ServiceBottomSheet = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl z-50 max-h-[85vh] flex flex-col"
+            className="fixed bottom-0 left-0 right-0 top-4 bg-background rounded-t-3xl z-50 flex flex-col"
             dir="rtl"
           >
             {/* Handle */}
