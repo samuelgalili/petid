@@ -120,7 +120,7 @@ const AdminPetServices = () => {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout title="שירותי חיות מחמד" breadcrumbs={[{ label: "שירותי חיות מחמד" }]}>
       <div className="p-6 space-y-6" dir="rtl">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">ניהול שירותי חיות מחמד</h1>
