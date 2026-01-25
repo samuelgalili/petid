@@ -7,7 +7,15 @@ import {
   Plus,
   Settings,
   Edit3,
-  ChevronDown
+  ChevronDown,
+  Shield,
+  Utensils,
+  Cookie,
+  Building2,
+  Sparkles,
+  Scissors,
+  Heart,
+  Stethoscope
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +53,7 @@ const Profile = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isProfileCollapsed, setIsProfileCollapsed] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -128,8 +137,26 @@ const Profile = () => {
   // Handle pet click
   const handlePetClick = (petId: string) => {
     setSelectedPetId(petId);
+    setSelectedCategory(null); // Reset category when selecting new pet
     setIsExpanded(true);
   };
+
+  // Handle category click
+  const handleCategoryClick = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+  };
+
+  // Categories for pet recommendations
+  const categories = [
+    { id: 'insurance', label: 'ביטוח', icon: Shield, color: 'from-blue-500 to-cyan-400' },
+    { id: 'food', label: 'מזון', icon: Utensils, color: 'from-orange-500 to-amber-400' },
+    { id: 'treats', label: 'חטיפים', icon: Cookie, color: 'from-pink-500 to-rose-400' },
+    { id: 'grooming', label: 'טיפוח', icon: Scissors, color: 'from-purple-500 to-violet-400' },
+    { id: 'health', label: 'בריאות', icon: Heart, color: 'from-red-500 to-pink-400' },
+    { id: 'vet', label: 'וטרינר', icon: Stethoscope, color: 'from-green-500 to-emerald-400' },
+    { id: 'boarding', label: 'פנסיון', icon: Building2, color: 'from-indigo-500 to-blue-400' },
+    { id: 'services', label: 'שירותים', icon: Sparkles, color: 'from-amber-500 to-yellow-400' },
+  ];
 
   // Handle scroll to collapse
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -368,7 +395,7 @@ const Profile = () => {
             ) : (
               <motion.div 
                 key="expanded"
-                className="flex-1"
+                className="flex-1 px-4"
                 initial={{ opacity: 0, y: 100 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 100 }}
@@ -377,18 +404,30 @@ const Profile = () => {
                 {/* Collapse Handle */}
                 <div 
                   className="flex justify-center py-3 cursor-pointer"
-                  onClick={() => setIsExpanded(false)}
+                  onClick={() => {
+                    if (selectedCategory) {
+                      setSelectedCategory(null);
+                    } else {
+                      setIsExpanded(false);
+                    }
+                  }}
                 >
                   <div className="flex flex-col items-center gap-1">
                     <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">גלול למטה לסגירה</span>
+                    <span className="text-xs text-muted-foreground">
+                      {selectedCategory ? 'חזור לקטגוריות' : 'חזור לחיות מחמד'}
+                    </span>
                   </div>
                 </div>
 
                 {/* Selected Pet Header */}
                 {selectedPet && (
-                  <div className="flex items-center justify-center gap-3 px-5 pb-4">
-                    <div className="w-12 h-12 rounded-full p-[2px] bg-gradient-to-br from-primary via-primary/80 to-primary/60">
+                  <div className="flex items-center justify-center gap-3 pb-4">
+                    <motion.div 
+                      className="w-14 h-14 rounded-full p-[2px] bg-gradient-to-br from-primary via-primary/80 to-primary/60"
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
                       <div className="w-full h-full rounded-full bg-background p-[1px]">
                         <div className="w-full h-full rounded-full overflow-hidden bg-muted">
                           {selectedPet.avatar_url ? (
@@ -398,15 +437,15 @@ const Profile = () => {
                               <img 
                                 src={selectedPet.type === 'dog' ? dogIcon : catIcon} 
                                 alt={selectedPet.type} 
-                                className="w-6 h-6" 
+                                className="w-7 h-7" 
                               />
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                     <div className="text-center">
-                      <h3 className="font-bold text-foreground">{selectedPet.name}</h3>
+                      <h3 className="font-bold text-foreground text-lg">{selectedPet.name}</h3>
                       <p className="text-xs text-muted-foreground">
                         {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
                         {selectedPet.age_years ? ` • ${selectedPet.age_years} שנים` : ''}
@@ -415,42 +454,62 @@ const Profile = () => {
                   </div>
                 )}
 
-                {/* Pet Selector Pills */}
-                <div className="flex gap-2 overflow-x-auto px-5 pb-4 scrollbar-hide">
-                  {pets.map((pet) => {
-                    const isSelected = selectedPetId === pet.id;
-                    return (
-                      <button
-                        key={pet.id}
-                        onClick={() => setSelectedPetId(pet.id)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-all ${
-                          isSelected 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted/60 text-muted-foreground'
-                        }`}
-                      >
-                        <div className="w-5 h-5 rounded-full overflow-hidden bg-muted">
-                          {pet.avatar_url ? (
-                            <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <img 
-                              src={pet.type === 'dog' ? dogIcon : catIcon} 
-                              alt={pet.type} 
-                              className="w-full h-full p-0.5" 
-                            />
-                          )}
-                        </div>
-                        {pet.name}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Pet Recommendations */}
-                <PetRecommendationsInline 
-                  selectedPet={selectedPet} 
-                  points={profile?.points || 70}
-                />
+                {/* Category Spheres or Recommendations */}
+                <AnimatePresence mode="wait">
+                  {!selectedCategory ? (
+                    <motion.div
+                      key="categories"
+                      className="flex flex-wrap justify-center gap-4 py-4"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                    >
+                      {categories.map((category, index) => {
+                        const Icon = category.icon;
+                        return (
+                          <motion.button
+                            key={category.id}
+                            onClick={() => handleCategoryClick(category.id)}
+                            className="flex flex-col items-center gap-2"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05, duration: 0.3 }}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <motion.div 
+                              className={`w-16 h-16 rounded-full bg-gradient-to-br ${category.color} shadow-lg flex items-center justify-center`}
+                              animate={{ y: [0, -5, 0] }}
+                              transition={{ 
+                                duration: 2.5, 
+                                repeat: Infinity, 
+                                delay: index * 0.2,
+                                ease: "easeInOut" 
+                              }}
+                            >
+                              <Icon className="w-7 h-7 text-white" />
+                            </motion.div>
+                            <span className="text-xs font-medium text-foreground">
+                              {category.label}
+                            </span>
+                          </motion.button>
+                        );
+                      })}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="recommendations"
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -50 }}
+                    >
+                      <PetRecommendationsInline 
+                        selectedPet={selectedPet} 
+                        points={profile?.points || 70}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
