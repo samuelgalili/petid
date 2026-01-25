@@ -39,6 +39,7 @@ const TAB_LABELS: Record<FeedTab, string> = {
   foryou: "סטוריז",
   following: "עוקבים",
   dogparks: "גינות כלבים",
+  explore: "גלה",
   nearby: "בסביבה",
   marketplace: "חנויות",
   adopt: "אימוץ"
