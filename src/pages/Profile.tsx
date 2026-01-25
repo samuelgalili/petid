@@ -106,6 +106,14 @@ const Profile = () => {
     description: pet.breed || (pet.type === 'dog' ? 'כלב' : 'חתול')
   }));
 
+  // Dynamic sphere sizing based on pet count - fewer pets = smaller sphere, larger images
+  const petCount = pets.length;
+  const sphereConfig = {
+    containerSize: petCount <= 2 ? 200 : petCount <= 4 ? 240 : 280,
+    sphereRadius: petCount <= 2 ? 50 : petCount <= 4 ? 70 : 100,
+    baseImageScale: petCount <= 2 ? 0.35 : petCount <= 4 ? 0.3 : 0.25,
+  };
+
   // Handle pet click from sphere
   const handlePetClick = (image: ImageData) => {
     setSelectedPetId(image.id);
@@ -220,10 +228,10 @@ const Profile = () => {
                   <>
                     <SphereImageGrid
                       images={petSphereImages}
-                      containerSize={280}
-                      sphereRadius={100}
-                      baseImageScale={0.25}
-                      autoRotate={true}
+                      containerSize={sphereConfig.containerSize}
+                      sphereRadius={sphereConfig.sphereRadius}
+                      baseImageScale={sphereConfig.baseImageScale}
+                      autoRotate={petCount > 2}
                       autoRotateSpeed={0.15}
                       dragSensitivity={0.6}
                       onImageClick={handlePetClick}
