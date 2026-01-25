@@ -50,7 +50,9 @@ import {
   BreedInfoSheet,
   FoodSheet,
   ToysSheet,
-  DocumentsSheet
+  DocumentsSheet,
+  DogWalkerSheet,
+  ProductsSheet
 } from "@/components/pet-services";
 
 
@@ -177,8 +179,18 @@ const Profile = () => {
     setShowPetShop(false);
   };
 
-  // Handle category click - opens bottom sheet
+  // Handle category click - opens bottom sheet or navigates
   const handleCategoryClick = (categoryId: string) => {
+    // Special handling for adoption - navigate to adoption page
+    if (categoryId === 'adoption') {
+      navigate('/adoption');
+      return;
+    }
+    // Special handling for products - open products sheet
+    if (categoryId === 'products') {
+      setActiveSheet('products');
+      return;
+    }
     setActiveSheet(categoryId);
   };
 
@@ -775,6 +787,16 @@ const Profile = () => {
         />
         <DocumentsSheet 
           isOpen={activeSheet === 'documents'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <DogWalkerSheet 
+          isOpen={activeSheet === 'dog_walker'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <ProductsSheet 
+          isOpen={activeSheet === 'products'} 
           onClose={handleCloseSheet} 
           pet={selectedPet} 
         />
