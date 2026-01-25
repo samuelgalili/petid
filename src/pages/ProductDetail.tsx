@@ -388,7 +388,7 @@ const ProductDetail = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="rounded-full hover:bg-muted w-10 h-10 relative" 
+                className="rounded-full hover:bg-muted w-10 h-10 relative overflow-visible" 
                 onClick={() => navigate("/cart")}
               >
                 <ShoppingCart className="w-5 h-5 text-foreground" />
@@ -398,7 +398,7 @@ const ProductDetail = () => {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center"
+                      className="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1 bg-primary text-primary-foreground text-[11px] font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-background z-10"
                     >
                       {getTotalItems() > 9 ? '9+' : getTotalItems()}
                     </motion.span>
