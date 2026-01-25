@@ -985,6 +985,96 @@ export type Database = {
           },
         ]
       }
+      breed_information: {
+        Row: {
+          apartment_friendly: boolean | null
+          breed_name: string
+          breed_name_he: string | null
+          created_at: string
+          description: string | null
+          description_he: string | null
+          dietary_notes: string | null
+          exercise_needs: string | null
+          good_with_children: boolean | null
+          good_with_other_pets: boolean | null
+          grooming_needs: string | null
+          health_issues: string[] | null
+          health_issues_he: string[] | null
+          height_range_cm: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          life_expectancy_years: string | null
+          origin_country: string | null
+          pet_type: string
+          size_category: string | null
+          source_references: string[] | null
+          temperament: string[] | null
+          temperament_he: string[] | null
+          training_difficulty: string | null
+          updated_at: string
+          weight_range_kg: string | null
+        }
+        Insert: {
+          apartment_friendly?: boolean | null
+          breed_name: string
+          breed_name_he?: string | null
+          created_at?: string
+          description?: string | null
+          description_he?: string | null
+          dietary_notes?: string | null
+          exercise_needs?: string | null
+          good_with_children?: boolean | null
+          good_with_other_pets?: boolean | null
+          grooming_needs?: string | null
+          health_issues?: string[] | null
+          health_issues_he?: string[] | null
+          height_range_cm?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          life_expectancy_years?: string | null
+          origin_country?: string | null
+          pet_type?: string
+          size_category?: string | null
+          source_references?: string[] | null
+          temperament?: string[] | null
+          temperament_he?: string[] | null
+          training_difficulty?: string | null
+          updated_at?: string
+          weight_range_kg?: string | null
+        }
+        Update: {
+          apartment_friendly?: boolean | null
+          breed_name?: string
+          breed_name_he?: string | null
+          created_at?: string
+          description?: string | null
+          description_he?: string | null
+          dietary_notes?: string | null
+          exercise_needs?: string | null
+          good_with_children?: boolean | null
+          good_with_other_pets?: boolean | null
+          grooming_needs?: string | null
+          health_issues?: string[] | null
+          health_issues_he?: string[] | null
+          height_range_cm?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          life_expectancy_years?: string | null
+          origin_country?: string | null
+          pet_type?: string
+          size_category?: string | null
+          source_references?: string[] | null
+          temperament?: string[] | null
+          temperament_he?: string[] | null
+          training_difficulty?: string | null
+          updated_at?: string
+          weight_range_kg?: string | null
+        }
+        Relationships: []
+      }
       business_analytics: {
         Row: {
           business_id: string
@@ -4362,6 +4452,132 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_boarding_bookings: {
+        Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          end_date: string
+          id: string
+          pet_id: string
+          service_id: string
+          start_date: string
+          status: string
+          total_nights: number | null
+          total_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          pet_id: string
+          service_id: string
+          start_date: string
+          status?: string
+          total_nights?: number | null
+          total_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          pet_id?: string
+          service_id?: string
+          start_date?: string
+          status?: string
+          total_nights?: number | null
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_boarding_bookings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_boarding_bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "pet_boarding_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_boarding_services: {
+        Row: {
+          amenities: string[] | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          max_age_years: number | null
+          min_age_months: number | null
+          name: string
+          price_per_night: number | null
+          provider_address: string | null
+          provider_image_url: string | null
+          provider_name: string
+          provider_phone: string | null
+          suitable_breeds: string[] | null
+          suitable_pet_types: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_age_years?: number | null
+          min_age_months?: number | null
+          name: string
+          price_per_night?: number | null
+          provider_address?: string | null
+          provider_image_url?: string | null
+          provider_name: string
+          provider_phone?: string | null
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_age_years?: number | null
+          min_age_months?: number | null
+          name?: string
+          price_per_night?: number | null
+          provider_address?: string | null
+          provider_image_url?: string | null
+          provider_name?: string
+          provider_phone?: string | null
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pet_documents: {
         Row: {
           description: string | null
@@ -4412,6 +4628,174 @@ export type Database = {
           },
         ]
       }
+      pet_grooming_bookings: {
+        Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          pet_id: string
+          requested_date: string
+          requested_time: string | null
+          service_id: string
+          status: string
+          total_price: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          pet_id: string
+          requested_date: string
+          requested_time?: string | null
+          service_id: string
+          status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          pet_id?: string
+          requested_date?: string
+          requested_time?: string | null
+          service_id?: string
+          status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_grooming_bookings_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_grooming_bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "pet_grooming_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_grooming_services: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number | null
+          provider_address: string | null
+          provider_name: string | null
+          provider_phone: string | null
+          service_type: string
+          suitable_breeds: string[] | null
+          suitable_pet_types: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price?: number | null
+          provider_address?: string | null
+          provider_name?: string | null
+          provider_phone?: string | null
+          service_type: string
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number | null
+          provider_address?: string | null
+          provider_name?: string | null
+          provider_phone?: string | null
+          service_type?: string
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pet_insurance_policies: {
+        Row: {
+          annual_price: number | null
+          coverage_details: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          max_age_years: number | null
+          min_age_months: number | null
+          monthly_price: number | null
+          name: string
+          provider_name: string
+          suitable_breeds: string[] | null
+          suitable_pet_types: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          annual_price?: number | null
+          coverage_details?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_age_years?: number | null
+          min_age_months?: number | null
+          monthly_price?: number | null
+          name: string
+          provider_name: string
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          annual_price?: number | null
+          coverage_details?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_age_years?: number | null
+          min_age_months?: number | null
+          monthly_price?: number | null
+          name?: string
+          provider_name?: string
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pet_photos: {
         Row: {
           caption: string | null
@@ -4449,6 +4833,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pet_training_programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_sessions: number | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          max_age_years: number | null
+          min_age_months: number | null
+          name: string
+          price: number | null
+          suitable_breeds: string[] | null
+          suitable_pet_types: string[] | null
+          trainer_image_url: string | null
+          trainer_name: string | null
+          trainer_phone: string | null
+          training_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_sessions?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_age_years?: number | null
+          min_age_months?: number | null
+          name: string
+          price?: number | null
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          trainer_image_url?: string | null
+          trainer_name?: string | null
+          trainer_phone?: string | null
+          training_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_sessions?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_age_years?: number | null
+          min_age_months?: number | null
+          name?: string
+          price?: number | null
+          suitable_breeds?: string[] | null
+          suitable_pet_types?: string[] | null
+          trainer_image_url?: string | null
+          trainer_name?: string | null
+          trainer_phone?: string | null
+          training_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       pet_vaccinations: {
         Row: {
