@@ -1,4 +1,4 @@
-import { Home, Compass, MessageCircle, ShoppingBag, User, Newspaper } from "lucide-react";
+import { Home, MessageCircle, ShoppingBag, User, Newspaper } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -147,21 +147,6 @@ const BottomNav = () => {
             label="פיד"
           />
 
-          {/* Explore */}
-          <NavItem 
-            onClick={() => handleNavClick("/explore")}
-            icon={
-              <Compass 
-                className={cn(
-                  "w-6 h-6",
-                  isActive("/explore") ? "text-foreground" : "text-muted-foreground"
-                )}
-                strokeWidth={isActive("/explore") ? 2 : 1.5}
-              />
-            }
-            isActive={isActive("/explore")}
-            label="גלה"
-          />
 
           {/* Shop */}
           <NavItem 
