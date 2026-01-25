@@ -211,7 +211,7 @@ const Profile = () => {
               <ChevronRight className="w-6 h-6 text-foreground" />
             </button>
             
-            {/* Collapsed Profile Avatar - shows after 30 seconds */}
+            {/* Collapsed Profile Avatar - shows after 3 seconds */}
             <AnimatePresence>
               {isProfileCollapsed && (
                 <motion.button
@@ -229,6 +229,40 @@ const Profile = () => {
                         {profile?.full_name?.[0]?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
+                  </div>
+                </motion.button>
+              )}
+            </AnimatePresence>
+            
+            {/* Selected Pet Avatar - shows next to user avatar when pet is selected */}
+            <AnimatePresence>
+              {selectedPet && isExpanded && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.5, x: -20 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, x: -20 }}
+                  transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                  onClick={() => setIsExpanded(false)}
+                  className="w-9 h-9 rounded-full p-[2px] bg-gradient-to-br from-primary via-primary/80 to-primary/60"
+                >
+                  <div className="w-full h-full rounded-full bg-background p-[1px]">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-muted">
+                      {selectedPet.avatar_url ? (
+                        <img 
+                          src={selectedPet.avatar_url} 
+                          alt={selectedPet.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <img 
+                            src={selectedPet.type === 'dog' ? dogIcon : catIcon} 
+                            alt={selectedPet.type} 
+                            className="w-5 h-5" 
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </motion.button>
               )}
