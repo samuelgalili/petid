@@ -109,9 +109,9 @@ const Profile = () => {
   // Dynamic sphere sizing based on pet count - fewer pets = smaller sphere, larger images
   const petCount = pets.length;
   const sphereConfig = {
-    containerSize: petCount <= 2 ? 200 : petCount <= 4 ? 240 : 280,
-    sphereRadius: petCount <= 2 ? 50 : petCount <= 4 ? 70 : 100,
-    baseImageScale: petCount <= 2 ? 0.35 : petCount <= 4 ? 0.3 : 0.25,
+    containerSize: petCount <= 2 ? 280 : petCount <= 4 ? 320 : 360,
+    sphereRadius: petCount <= 2 ? 60 : petCount <= 4 ? 80 : 100,
+    baseImageScale: petCount <= 2 ? 0.5 : petCount <= 4 ? 0.45 : 0.4,
   };
 
   // Handle pet click from sphere
