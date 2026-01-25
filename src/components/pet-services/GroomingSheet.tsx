@@ -1,6 +1,7 @@
 /**
  * GroomingSheet - Pet grooming services with date selection
  * Requires admin approval before billing
+ * Provider: סטודיו פול
  */
 
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { DocumentsSection } from './DocumentsSection';
 
 interface Pet {
   id: string;
@@ -324,6 +326,15 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
             </Button>
           </div>
         </div>
+      )}
+      
+      {/* Documents Section */}
+      {pet && step === 'select' && (
+        <DocumentsSection 
+          petId={pet.id} 
+          category="grooming" 
+          title="מסמכי טיפוח"
+        />
       )}
     </ServiceBottomSheet>
   );

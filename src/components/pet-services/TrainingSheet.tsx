@@ -1,6 +1,7 @@
 /**
  * TrainingSheet - Pet training recommendations by breed and age
  * Includes professional training and minimalist chat option
+ * Provider: אביעד - מאלף כלבים מוסמך
  */
 
 import { useState } from 'react';
@@ -11,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
+import { DocumentsSection } from './DocumentsSection';
 
 interface Pet {
   id: string;
@@ -194,6 +196,15 @@ export const TrainingSheet = ({ isOpen, onClose, pet }: TrainingSheetProps) => {
             נסה את הצ'אט החכם לקבלת טיפים
           </p>
         </div>
+      )}
+      
+      {/* Documents Section */}
+      {pet && (
+        <DocumentsSection 
+          petId={pet.id} 
+          category="training" 
+          title="מסמכי אילוף ותעודות"
+        />
       )}
     </ServiceBottomSheet>
   );

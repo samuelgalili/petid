@@ -4834,6 +4834,59 @@ export type Database = {
           },
         ]
       }
+      pet_service_documents: {
+        Row: {
+          category: string
+          created_at: string
+          document_name: string
+          document_type: string | null
+          document_url: string
+          expiry_date: string | null
+          file_size: number | null
+          id: string
+          notes: string | null
+          pet_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          document_name: string
+          document_type?: string | null
+          document_url: string
+          expiry_date?: string | null
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          document_name?: string
+          document_type?: string | null
+          document_url?: string
+          expiry_date?: string | null
+          file_size?: number | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_service_documents_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_training_programs: {
         Row: {
           created_at: string
