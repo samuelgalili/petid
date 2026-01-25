@@ -15,7 +15,10 @@ import {
   Sparkles,
   Scissors,
   Heart,
-  Stethoscope
+  Stethoscope,
+  Info,
+  Gamepad2,
+  GraduationCap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +30,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
-import { PetRecommendationsInline } from "@/components/profile/PetRecommendationsInline";
+import {
+  InsuranceSheet,
+  TrainingSheet,
+  GroomingSheet,
+  BoardingSheet,
+  BreedInfoSheet,
+  FoodSheet,
+  ToysSheet
+} from "@/components/pet-services";
 
 
 interface Pet {
@@ -54,6 +65,7 @@ const Profile = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isProfileCollapsed, setIsProfileCollapsed] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeSheet, setActiveSheet] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -141,21 +153,25 @@ const Profile = () => {
     setIsExpanded(true);
   };
 
-  // Handle category click
+  // Handle category click - opens bottom sheet
   const handleCategoryClick = (categoryId: string) => {
-    setSelectedCategory(categoryId);
+    setActiveSheet(categoryId);
   };
 
-  // Categories for pet recommendations
+  // Close sheet
+  const handleCloseSheet = () => {
+    setActiveSheet(null);
+  };
+
+  // Categories for pet services - each opens a bottom sheet
   const categories = [
     { id: 'insurance', label: 'ביטוח', icon: Shield, color: 'from-blue-500 to-cyan-400' },
-    { id: 'food', label: 'מזון', icon: Utensils, color: 'from-orange-500 to-amber-400' },
-    { id: 'treats', label: 'חטיפים', icon: Cookie, color: 'from-pink-500 to-rose-400' },
+    { id: 'training', label: 'אילוף', icon: GraduationCap, color: 'from-green-500 to-emerald-400' },
     { id: 'grooming', label: 'טיפוח', icon: Scissors, color: 'from-purple-500 to-violet-400' },
-    { id: 'health', label: 'בריאות', icon: Heart, color: 'from-red-500 to-pink-400' },
-    { id: 'vet', label: 'וטרינר', icon: Stethoscope, color: 'from-green-500 to-emerald-400' },
+    { id: 'food', label: 'מזון', icon: Utensils, color: 'from-orange-500 to-amber-400' },
+    { id: 'toys', label: 'צעצועים', icon: Gamepad2, color: 'from-pink-500 to-rose-400' },
+    { id: 'breed_info', label: 'על הגזע', icon: Info, color: 'from-teal-500 to-cyan-400' },
     { id: 'boarding', label: 'פנסיון', icon: Building2, color: 'from-indigo-500 to-blue-400' },
-    { id: 'services', label: 'שירותים', icon: Sparkles, color: 'from-amber-500 to-yellow-400' },
   ];
 
   // Handle scroll to collapse
@@ -454,62 +470,44 @@ const Profile = () => {
                   </div>
                 )}
 
-                {/* Category Spheres or Recommendations */}
-                <AnimatePresence mode="wait">
-                  {!selectedCategory ? (
-                    <motion.div
-                      key="categories"
-                      className="flex flex-wrap justify-center gap-4 py-4"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                    >
-                      {categories.map((category, index) => {
-                        const Icon = category.icon;
-                        return (
-                          <motion.button
-                            key={category.id}
-                            onClick={() => handleCategoryClick(category.id)}
-                            className="flex flex-col items-center gap-2"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05, duration: 0.3 }}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <motion.div 
-                              className={`w-16 h-16 rounded-full bg-gradient-to-br ${category.color} shadow-lg flex items-center justify-center`}
-                              animate={{ y: [0, -5, 0] }}
-                              transition={{ 
-                                duration: 2.5, 
-                                repeat: Infinity, 
-                                delay: index * 0.2,
-                                ease: "easeInOut" 
-                              }}
-                            >
-                              <Icon className="w-7 h-7 text-white" />
-                            </motion.div>
-                            <span className="text-xs font-medium text-foreground">
-                              {category.label}
-                            </span>
-                          </motion.button>
-                        );
-                      })}
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="recommendations"
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -50 }}
-                    >
-                      <PetRecommendationsInline 
-                        selectedPet={selectedPet} 
-                        points={profile?.points || 70}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* Category Spheres - each opens a bottom sheet */}
+                <motion.div
+                  className="flex flex-wrap justify-center gap-4 py-4"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  {categories.map((category, index) => {
+                    const Icon = category.icon;
+                    return (
+                      <motion.button
+                        key={category.id}
+                        onClick={() => handleCategoryClick(category.id)}
+                        className="flex flex-col items-center gap-2"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <motion.div 
+                          className={`w-16 h-16 rounded-full bg-gradient-to-br ${category.color} shadow-lg flex items-center justify-center`}
+                          animate={{ y: [0, -5, 0] }}
+                          transition={{ 
+                            duration: 2.5, 
+                            repeat: Infinity, 
+                            delay: index * 0.2,
+                            ease: "easeInOut" 
+                          }}
+                        >
+                          <Icon className="w-7 h-7 text-white" />
+                        </motion.div>
+                        <span className="text-xs font-medium text-foreground">
+                          {category.label}
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -526,6 +524,43 @@ const Profile = () => {
           onImageUpdated={(url) => {
             setProfile((prev: any) => ({ ...prev, avatar_url: url }));
           }}
+        />
+
+        {/* Service Bottom Sheets */}
+        <InsuranceSheet 
+          isOpen={activeSheet === 'insurance'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <TrainingSheet 
+          isOpen={activeSheet === 'training'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <GroomingSheet 
+          isOpen={activeSheet === 'grooming'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <FoodSheet 
+          isOpen={activeSheet === 'food'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <ToysSheet 
+          isOpen={activeSheet === 'toys'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <BreedInfoSheet 
+          isOpen={activeSheet === 'breed_info'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
+        <BoardingSheet 
+          isOpen={activeSheet === 'boarding'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
         />
 
         <BottomNav />
