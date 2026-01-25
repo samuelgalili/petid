@@ -8,18 +8,28 @@ import {
   Settings,
   Edit3,
   ChevronDown,
+  ChevronLeft,
   Shield,
   Utensils,
-  Cookie,
   Building2,
-  Sparkles,
   Scissors,
   Heart,
   Stethoscope,
   Info,
-  Gamepad2,
   GraduationCap,
-  FileText
+  FileText,
+  Camera,
+  Video,
+  MessageCircle,
+  Calendar,
+  Dog,
+  Gift,
+  Flame,
+  BookOpen,
+  ShoppingBag,
+  Truck,
+  Handshake,
+  Footprints
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,8 +76,8 @@ const Profile = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isProfileCollapsed, setIsProfileCollapsed] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
+  const [activeHub, setActiveHub] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -151,7 +161,7 @@ const Profile = () => {
   // Handle pet click
   const handlePetClick = (petId: string) => {
     setSelectedPetId(petId);
-    setSelectedCategory(null); // Reset category when selecting new pet
+    setActiveHub(null); // Reset hub when selecting new pet
     setIsExpanded(true);
   };
 
@@ -165,17 +175,68 @@ const Profile = () => {
     setActiveSheet(null);
   };
 
-  // Categories for pet services - each opens a bottom sheet
-  const categories = [
-    { id: 'insurance', label: 'ביטוח', icon: Shield },
-    { id: 'training', label: 'אילוף', icon: GraduationCap },
-    { id: 'grooming', label: 'טיפוח', icon: Scissors },
-    { id: 'food', label: 'מזון', icon: Utensils },
-    { id: 'toys', label: 'צעצועים', icon: Gamepad2 },
-    { id: 'breed_info', label: 'על הגזע', icon: Info },
-    { id: 'boarding', label: 'פנסיון', icon: Building2 },
-    { id: 'documents', label: 'מסמכים', icon: FileText },
+  // 4 Hubs structure with sub-categories
+  const hubs = [
+    {
+      id: 'care',
+      label: 'טיפול',
+      color: 'from-blue-500 to-emerald-400',
+      bgColor: 'bg-blue-500/10',
+      textColor: 'text-blue-600',
+      icon: Heart,
+      categories: [
+        { id: 'insurance', label: 'ביטוח', icon: Shield },
+        { id: 'grooming', label: 'טיפוח', icon: Scissors },
+        { id: 'training', label: 'אילוף', icon: GraduationCap },
+        { id: 'health', label: 'בריאות', icon: Stethoscope },
+        { id: 'documents', label: 'מסמכים', icon: FileText },
+      ]
+    },
+    {
+      id: 'life',
+      label: 'חיים',
+      color: 'from-purple-500 to-cyan-400',
+      bgColor: 'bg-purple-500/10',
+      textColor: 'text-purple-600',
+      icon: Camera,
+      categories: [
+        { id: 'stories', label: 'סטוריז', icon: Camera },
+        { id: 'videos', label: 'וידאו', icon: Video },
+        { id: 'chat', label: 'צ׳אט', icon: MessageCircle },
+        { id: 'calendar', label: 'יומן', icon: Calendar },
+      ]
+    },
+    {
+      id: 'services',
+      label: 'שירותים',
+      color: 'from-orange-500 to-blue-600',
+      bgColor: 'bg-orange-500/10',
+      textColor: 'text-orange-600',
+      icon: ShoppingBag,
+      categories: [
+        { id: 'boarding', label: 'פנסיון', icon: Building2 },
+        { id: 'dog_walker', label: 'דוג ווקר', icon: Footprints },
+        { id: 'products', label: 'מוצרים', icon: ShoppingBag },
+        { id: 'delivery', label: 'משלוחים', icon: Truck },
+      ]
+    },
+    {
+      id: 'identity',
+      label: 'זהות',
+      color: 'from-gray-700 to-gray-500',
+      bgColor: 'bg-gray-500/10',
+      textColor: 'text-gray-700',
+      icon: Dog,
+      categories: [
+        { id: 'breed_info', label: 'על הגזע', icon: Info },
+        { id: 'adoption', label: 'למסירה', icon: Gift },
+        { id: 'memorial', label: 'זיכרון', icon: Flame },
+        { id: 'life_story', label: 'סיפור חיים', icon: BookOpen },
+      ]
+    }
   ];
+
+  const activeHubData = hubs.find(h => h.id === activeHub);
 
   // Handle scroll to collapse
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -458,8 +519,8 @@ const Profile = () => {
                 <div 
                   className="flex justify-center py-3 cursor-pointer"
                   onClick={() => {
-                    if (selectedCategory) {
-                      setSelectedCategory(null);
+                    if (activeHub) {
+                      setActiveHub(null);
                     } else {
                       setIsExpanded(false);
                     }
@@ -468,7 +529,7 @@ const Profile = () => {
                   <div className="flex flex-col items-center gap-1">
                     <ChevronDown className="w-5 h-5 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {selectedCategory ? 'חזור לקטגוריות' : 'חזור לחיות מחמד'}
+                      {activeHub ? 'חזור לעולמות' : 'חזור לחיות מחמד'}
                     </span>
                   </div>
                 </div>
@@ -492,35 +553,90 @@ const Profile = () => {
                   )}
                 </AnimatePresence>
 
-                {/* Category Spheres - each opens a bottom sheet */}
-                <motion.div
-                  className="grid grid-cols-4 gap-3 py-6 px-2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {categories.map((category, index) => {
-                    const Icon = category.icon;
-                    return (
-                      <motion.button
-                        key={category.id}
-                        onClick={() => handleCategoryClick(category.id)}
-                        className="flex flex-col items-center gap-1.5"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.03, duration: 0.2 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border/50 flex items-center justify-center transition-colors hover:bg-muted">
-                          <Icon className="w-6 h-6 text-foreground/70" />
+                {/* Hub Selection or Sub-categories */}
+                <AnimatePresence mode="wait">
+                  {!activeHub ? (
+                    /* 4 Hubs Grid */
+                    <motion.div
+                      key="hubs"
+                      className="grid grid-cols-2 gap-4 py-6 px-4"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {hubs.map((hub, index) => {
+                        const HubIcon = hub.icon;
+                        return (
+                          <motion.button
+                            key={hub.id}
+                            onClick={() => setActiveHub(hub.id)}
+                            className={`flex flex-col items-center justify-center gap-2 p-6 rounded-2xl ${hub.bgColor} border border-border/30 transition-all hover:scale-[1.02] active:scale-[0.98]`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05, duration: 0.2 }}
+                          >
+                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${hub.color} flex items-center justify-center shadow-md`}>
+                              <HubIcon className="w-6 h-6 text-white" />
+                            </div>
+                            <span className={`text-sm font-semibold ${hub.textColor}`}>
+                              {hub.label}
+                            </span>
+                          </motion.button>
+                        );
+                      })}
+                    </motion.div>
+                  ) : (
+                    /* Sub-categories for selected hub */
+                    <motion.div
+                      key="categories"
+                      className="py-6 px-4"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {/* Hub Header */}
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/50">
+                        <button 
+                          onClick={() => setActiveHub(null)}
+                          className="p-1.5 rounded-full hover:bg-muted transition-colors"
+                        >
+                          <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+                        </button>
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${activeHubData?.color} flex items-center justify-center`}>
+                          {activeHubData && <activeHubData.icon className="w-4 h-4 text-white" />}
                         </div>
-                        <span className="text-[10px] font-medium text-muted-foreground">
-                          {category.label}
+                        <span className={`font-semibold ${activeHubData?.textColor}`}>
+                          {activeHubData?.label}
                         </span>
-                      </motion.button>
-                    );
-                  })}
-                </motion.div>
+                      </div>
+
+                      {/* Categories Grid */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {activeHubData?.categories.map((category, index) => {
+                          const CategoryIcon = category.icon;
+                          return (
+                            <motion.button
+                              key={category.id}
+                              onClick={() => handleCategoryClick(category.id)}
+                              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-muted/30 border border-border/30 hover:bg-muted/50 transition-colors"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.03, duration: 0.15 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <CategoryIcon className="w-6 h-6 text-foreground/70" />
+                              <span className="text-xs font-medium text-muted-foreground text-center">
+                                {category.label}
+                              </span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
