@@ -74,7 +74,7 @@ const Profile = () => {
     if (!loading && !isProfileCollapsed) {
       collapseTimerRef.current = setTimeout(() => {
         setIsProfileCollapsed(true);
-      }, 30000); // 30 seconds
+      }, 3000); // 3 seconds
     }
 
     return () => {
@@ -92,7 +92,7 @@ const Profile = () => {
     }
     collapseTimerRef.current = setTimeout(() => {
       setIsProfileCollapsed(true);
-    }, 30000);
+    }, 3000); // 3 seconds
   };
 
   // Get selected pet object
