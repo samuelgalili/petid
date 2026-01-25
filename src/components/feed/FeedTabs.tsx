@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { MapPin, ShoppingBag, Heart, Users, Sparkles, Trees } from "lucide-react";
+import { MapPin, ShoppingBag, Heart, Users, Sparkles, Trees, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type FeedTab = "foryou" | "following" | "dogparks" | "nearby" | "marketplace" | "adopt";
+export type FeedTab = "foryou" | "following" | "dogparks" | "explore" | "nearby" | "marketplace" | "adopt";
 
 interface FeedTabsProps {
   activeTab: FeedTab;
@@ -15,6 +15,7 @@ const tabs: { id: FeedTab; label: string; icon: React.ElementType; requiresAuth?
   { id: "foryou", label: "בשבילך", icon: Sparkles },
   { id: "following", label: "עוקבים", icon: Users, requiresAuth: true },
   { id: "dogparks", label: "גינות כלבים", icon: Trees },
+  { id: "explore", label: "גלה", icon: Compass },
   { id: "nearby", label: "קרוב אליי", icon: MapPin },
   { id: "marketplace", label: "חנות", icon: ShoppingBag },
   { id: "adopt", label: "אימוץ", icon: Heart },
