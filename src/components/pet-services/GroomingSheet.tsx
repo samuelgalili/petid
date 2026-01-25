@@ -11,8 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateWheelPicker } from '@/components/ui/date-wheel-picker';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -198,33 +197,29 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
                 ))}
               </div>
 
-              {/* Date Selection */}
+              {/* Date Selection - Wheel Picker */}
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-muted-foreground">בחר תאריך</h3>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-right rounded-xl h-12",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="ml-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, 'PPP', { locale: he }) : 'בחר תאריך'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
-                    <CalendarComponent
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                
+                {/* Selected Date Display */}
+                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-muted/50 border border-border/50">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    {selectedDate ? format(selectedDate, 'PPP', { locale: he }) : 'בחר תאריך'}
+                  </span>
+                </div>
+
+                {/* Wheel Date Picker */}
+                <div className="flex justify-center py-4 bg-muted/30 rounded-2xl">
+                  <DateWheelPicker
+                    value={selectedDate || new Date()}
+                    onChange={(date) => setSelectedDate(date)}
+                    minYear={new Date().getFullYear()}
+                    maxYear={new Date().getFullYear() + 2}
+                    size="md"
+                    locale="he-IL"
+                  />
+                </div>
               </div>
 
               {/* Continue Button */}
