@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
@@ -556,35 +556,90 @@ const Profile = () => {
                 {/* Hub Selection or Sub-categories */}
                 <AnimatePresence mode="wait">
                   {!activeHub ? (
-                    /* 4 Hubs Grid */
+                    /* Services Grid - Like reference image */
                     <motion.div
                       key="hubs"
-                      className="grid grid-cols-2 gap-4 py-6 px-4"
+                      className="py-6 px-4"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {hubs.map((hub, index) => {
-                        const HubIcon = hub.icon;
-                        return (
-                          <motion.button
-                            key={hub.id}
-                            onClick={() => setActiveHub(hub.id)}
-                            className={`flex flex-col items-center justify-center gap-2 p-6 rounded-2xl ${hub.bgColor} border border-border/30 transition-all hover:scale-[1.02] active:scale-[0.98]`}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05, duration: 0.2 }}
-                          >
-                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${hub.color} flex items-center justify-center shadow-md`}>
-                              <HubIcon className="w-6 h-6 text-white" />
-                            </div>
-                            <span className={`text-sm font-semibold ${hub.textColor}`}>
-                              {hub.label}
-                            </span>
-                          </motion.button>
-                        );
-                      })}
+                      {/* Title */}
+                      <h2 className="text-center text-lg font-medium text-foreground mb-6">
+                        שירותים מותאמים ל<span className="font-bold">{selectedPet?.name || 'חיית המחמד'}</span>
+                      </h2>
+
+                      {/* Services Grid - 2 rows x 4 columns like reference */}
+                      <div className="relative">
+                        {/* First Row */}
+                        <div className="flex items-center justify-center">
+                          {hubs.slice(0, 4).map((hub, index) => {
+                            const HubIcon = hub.icon;
+                            return (
+                              <React.Fragment key={hub.id}>
+                                <motion.button
+                                  onClick={() => setActiveHub(hub.id)}
+                                  className="flex flex-col items-center justify-center w-[72px] h-[72px] bg-muted/40 rounded-lg hover:bg-muted/60 transition-all active:scale-95"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.05, duration: 0.2 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  <HubIcon className="w-6 h-6 text-foreground/80 mb-1" strokeWidth={1.5} />
+                                  <span className="text-[10px] font-medium text-muted-foreground">
+                                    {hub.label}
+                                  </span>
+                                </motion.button>
+                                {index < 3 && (
+                                  <span className="text-muted-foreground/30 text-base font-light mx-1">+</span>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+
+                        {/* Vertical Plus Signs */}
+                        <div className="flex items-center justify-center py-1.5">
+                          <div className="flex items-center" style={{ gap: '62px' }}>
+                            <span className="text-muted-foreground/30 text-base font-light">+</span>
+                            <span className="text-muted-foreground/30 text-base font-light">+</span>
+                            <span className="text-muted-foreground/30 text-base font-light">+</span>
+                          </div>
+                        </div>
+
+                        {/* Second Row - Popular services */}
+                        <div className="flex items-center justify-center">
+                          {[
+                            { id: 'insurance', label: 'ביטוח', icon: hubs[0].categories[0].icon },
+                            { id: 'grooming', label: 'טיפוח', icon: hubs[0].categories[1].icon },
+                            { id: 'boarding', label: 'פנסיון', icon: hubs[2].categories[0].icon },
+                            { id: 'training', label: 'אילוף', icon: hubs[0].categories[2].icon },
+                          ].map((service, index) => {
+                            const ServiceIcon = service.icon;
+                            return (
+                              <React.Fragment key={service.id}>
+                                <motion.button
+                                  onClick={() => handleCategoryClick(service.id)}
+                                  className="flex flex-col items-center justify-center w-[72px] h-[72px] bg-muted/40 rounded-lg hover:bg-muted/60 transition-all active:scale-95"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: (index + 4) * 0.05, duration: 0.2 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  <ServiceIcon className="w-6 h-6 text-foreground/80 mb-1" strokeWidth={1.5} />
+                                  <span className="text-[10px] font-medium text-muted-foreground">
+                                    {service.label}
+                                  </span>
+                                </motion.button>
+                                {index < 3 && (
+                                  <span className="text-muted-foreground/30 text-base font-light mx-1">+</span>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </motion.div>
                   ) : (
                     /* Sub-categories for selected hub */
