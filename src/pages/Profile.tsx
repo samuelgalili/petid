@@ -41,6 +41,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
+import { PetShopView } from "@/components/profile/PetShopView";
 import {
   InsuranceSheet,
   TrainingSheet,
@@ -78,6 +79,7 @@ const Profile = () => {
   const [isProfileCollapsed, setIsProfileCollapsed] = useState(false);
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
   const [activeHub, setActiveHub] = useState<string | null>(null);
+  const [showPetShop, setShowPetShop] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -158,11 +160,16 @@ const Profile = () => {
     }
   };
 
-  // Handle pet click
+  // Handle pet click - opens the pet shop view
   const handlePetClick = (petId: string) => {
     setSelectedPetId(petId);
-    setActiveHub(null); // Reset hub when selecting new pet
-    setIsExpanded(true);
+    setActiveHub(null);
+    setShowPetShop(true); // Open pet shop view instead of services panel
+  };
+
+  // Close pet shop view
+  const handleClosePetShop = () => {
+    setShowPetShop(false);
   };
 
   // Handle category click - opens bottom sheet
@@ -751,6 +758,17 @@ const Profile = () => {
           onClose={handleCloseSheet} 
           pet={selectedPet} 
         />
+        
+        {/* Pet Shop View - Full screen shop for selected pet */}
+        <AnimatePresence>
+          {showPetShop && selectedPet && (
+            <PetShopView 
+              pet={selectedPet} 
+              onBack={handleClosePetShop} 
+            />
+          )}
+        </AnimatePresence>
+        
         <BottomNav />
       </div>
     </PageTransition>
