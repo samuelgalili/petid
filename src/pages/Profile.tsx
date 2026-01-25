@@ -165,13 +165,13 @@ const Profile = () => {
 
   // Categories for pet services - each opens a bottom sheet
   const categories = [
-    { id: 'insurance', label: 'ביטוח', icon: Shield, color: 'from-blue-500 to-cyan-400' },
-    { id: 'training', label: 'אילוף', icon: GraduationCap, color: 'from-green-500 to-emerald-400' },
-    { id: 'grooming', label: 'טיפוח', icon: Scissors, color: 'from-purple-500 to-violet-400' },
-    { id: 'food', label: 'מזון', icon: Utensils, color: 'from-orange-500 to-amber-400' },
-    { id: 'toys', label: 'צעצועים', icon: Gamepad2, color: 'from-pink-500 to-rose-400' },
-    { id: 'breed_info', label: 'על הגזע', icon: Info, color: 'from-teal-500 to-cyan-400' },
-    { id: 'boarding', label: 'פנסיון', icon: Building2, color: 'from-indigo-500 to-blue-400' },
+    { id: 'insurance', label: 'ביטוח', icon: Shield },
+    { id: 'training', label: 'אילוף', icon: GraduationCap },
+    { id: 'grooming', label: 'טיפוח', icon: Scissors },
+    { id: 'food', label: 'מזון', icon: Utensils },
+    { id: 'toys', label: 'צעצועים', icon: Gamepad2 },
+    { id: 'breed_info', label: 'על הגזע', icon: Info },
+    { id: 'boarding', label: 'פנסיון', icon: Building2 },
   ];
 
   // Handle scroll to collapse
@@ -491,9 +491,10 @@ const Profile = () => {
 
                 {/* Category Spheres - each opens a bottom sheet */}
                 <motion.div
-                  className="flex flex-wrap justify-center gap-4 py-4"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  className="grid grid-cols-4 gap-3 py-6 px-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
                 >
                   {categories.map((category, index) => {
                     const Icon = category.icon;
@@ -501,26 +502,16 @@ const Profile = () => {
                       <motion.button
                         key={category.id}
                         onClick={() => handleCategoryClick(category.id)}
-                        className="flex flex-col items-center gap-2"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05, duration: 0.3 }}
-                        whileHover={{ scale: 1.1 }}
+                        className="flex flex-col items-center gap-1.5"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: index * 0.03, duration: 0.2 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <motion.div 
-                          className={`w-16 h-16 rounded-full bg-gradient-to-br ${category.color} shadow-lg flex items-center justify-center`}
-                          animate={{ y: [0, -5, 0] }}
-                          transition={{ 
-                            duration: 2.5, 
-                            repeat: Infinity, 
-                            delay: index * 0.2,
-                            ease: "easeInOut" 
-                          }}
-                        >
-                          <Icon className="w-7 h-7 text-white" />
-                        </motion.div>
-                        <span className="text-xs font-medium text-foreground">
+                        <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border/50 flex items-center justify-center transition-colors hover:bg-muted">
+                          <Icon className="w-6 h-6 text-foreground/70" />
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground">
                           {category.label}
                         </span>
                       </motion.button>
