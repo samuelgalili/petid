@@ -38,6 +38,7 @@ const STORY_GRADIENT_SHOP = "bg-gradient-to-tr from-[#f093fb] to-[#f5576c]";
 const TAB_LABELS: Record<FeedTab, string> = {
   foryou: "סטוריז",
   following: "עוקבים",
+  dogparks: "גינות כלבים",
   nearby: "בסביבה",
   marketplace: "חנויות",
   adopt: "אימוץ"
