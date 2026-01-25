@@ -18,7 +18,8 @@ import {
   Stethoscope,
   Info,
   Gamepad2,
-  GraduationCap
+  GraduationCap,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -172,6 +173,7 @@ const Profile = () => {
     { id: 'toys', label: 'צעצועים', icon: Gamepad2 },
     { id: 'breed_info', label: 'על הגזע', icon: Info },
     { id: 'boarding', label: 'פנסיון', icon: Building2 },
+    { id: 'documents', label: 'מסמכים', icon: FileText },
   ];
 
   // Handle scroll to collapse
