@@ -676,7 +676,7 @@ const ProductDetail = () => {
       </motion.div>
 
       {/* Trust Section */}
-      <motion.div className="mx-4 mb-6 relative p-[2px] rounded-2xl overflow-hidden" style={{
+      <motion.div className="mx-4 mb-32 relative p-[2px] rounded-2xl overflow-hidden" style={{
       background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
     }} initial={{
       opacity: 0,
