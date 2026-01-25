@@ -470,16 +470,24 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Pet name shown below collapse handle */}
-                {selectedPet && (
-                  <div className="text-center pb-4">
-                    <h3 className="font-bold text-foreground text-lg">{selectedPet.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
-                      {selectedPet.age_years ? ` • ${selectedPet.age_years} שנים` : ''}
-                    </p>
-                  </div>
-                )}
+                {/* Pet name shown below collapse handle - only when profile is not collapsed */}
+                <AnimatePresence>
+                  {selectedPet && !isProfileCollapsed && (
+                    <motion.div 
+                      className="text-center pb-4"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <h3 className="font-bold text-foreground text-lg">{selectedPet.name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
+                        {selectedPet.age_years ? ` • ${selectedPet.age_years} שנים` : ''}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Category Spheres - each opens a bottom sheet */}
                 <motion.div
