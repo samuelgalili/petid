@@ -11,13 +11,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateWheelPicker } from '@/components/ui/date-wheel-picker';
 import { format, differenceInDays } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
 import { DocumentsSection } from './DocumentsSection';
 
 interface Pet {
@@ -39,7 +37,8 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [startDate, setStartDate] = useState<Date>(new Date()); // Default to today
+  const [endDate, setEndDate] = useState<Date>(new Date()); // Default to today
   const [step, setStep] = useState<'select' | 'confirm'>('select');
 
   const { data: services, isLoading } = useQuery({
@@ -68,8 +67,8 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
   });
 
   const selectedServiceData = services?.find(s => s.id === selectedService);
-  const nights = dateRange?.from && dateRange?.to 
-    ? differenceInDays(dateRange.to, dateRange.from) 
+  const nights = startDate && endDate && endDate > startDate
+    ? differenceInDays(endDate, startDate) 
     : 0;
   const totalPrice = selectedServiceData?.price_per_night 
     ? selectedServiceData.price_per_night * nights 
@@ -79,7 +78,7 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      if (!pet || !selectedService || !dateRange?.from || !dateRange?.to) throw new Error('Missing data');
+      if (!pet || !selectedService || !startDate || !endDate) throw new Error('Missing data');
       
       const { error } = await supabase
         .from('pet_boarding_bookings')
@@ -87,8 +86,8 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
           user_id: user.id,
           pet_id: pet.id,
           service_id: selectedService,
-          start_date: format(dateRange.from, 'yyyy-MM-dd'),
-          end_date: format(dateRange.to, 'yyyy-MM-dd'),
+          start_date: format(startDate, 'yyyy-MM-dd'),
+          end_date: format(endDate, 'yyyy-MM-dd'),
           total_nights: nights,
           total_price: totalPrice,
           status: 'pending',
@@ -105,7 +104,8 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
       onClose();
       setStep('select');
       setSelectedService(null);
-      setDateRange(undefined);
+      setStartDate(new Date());
+      setEndDate(new Date());
     },
     onError: () => {
       toast({
@@ -117,7 +117,7 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
   });
 
   const handleContinue = () => {
-    if (selectedService && dateRange?.from && dateRange?.to) {
+    if (selectedService && startDate && endDate && endDate > startDate) {
       setStep('confirm');
     }
   };
@@ -129,7 +129,8 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
         onClose();
         setStep('select');
         setSelectedService(null);
-        setDateRange(undefined);
+        setStartDate(new Date());
+        setEndDate(new Date());
       }}
       title={step === 'confirm' ? 'אישור הזמנה' : `פנסיון ל${pet?.name || 'חיית המחמד'}`}
     >
@@ -215,44 +216,55 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
                 ))}
               </div>
 
-              {/* Date Range Selection */}
-              <div className="space-y-3">
+              {/* Date Range Selection - Wheel Pickers */}
+              <div className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">בחר תאריכים</h3>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-right rounded-xl h-12",
-                        !dateRange && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="ml-2 h-4 w-4" />
-                      {dateRange?.from ? (
-                        dateRange.to ? (
-                          <>
-                            {format(dateRange.from, 'P', { locale: he })} - {format(dateRange.to, 'P', { locale: he })}
-                          </>
-                        ) : (
-                          format(dateRange.from, 'P', { locale: he })
-                        )
-                      ) : (
-                        'בחר טווח תאריכים'
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
-                    <CalendarComponent
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      disabled={(date) => date < new Date()}
-                      numberOfMonths={1}
-                      initialFocus
-                      className="pointer-events-auto"
+                
+                {/* Selected Dates Display */}
+                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-muted/50 border border-border/50">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    {format(startDate, 'P', { locale: he })} - {format(endDate, 'P', { locale: he })}
+                  </span>
+                </div>
+
+                {/* Start Date */}
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground text-center block">תאריך כניסה</label>
+                  <div className="flex justify-center py-3 bg-muted/30 rounded-2xl">
+                    <DateWheelPicker
+                      value={startDate}
+                      onChange={(date) => {
+                        setStartDate(date);
+                        // Ensure end date is after start date
+                        if (date >= endDate) {
+                          const nextDay = new Date(date);
+                          nextDay.setDate(nextDay.getDate() + 1);
+                          setEndDate(nextDay);
+                        }
+                      }}
+                      minYear={new Date().getFullYear()}
+                      maxYear={new Date().getFullYear() + 2}
+                      size="sm"
+                      locale="he-IL"
                     />
-                  </PopoverContent>
-                </Popover>
+                  </div>
+                </div>
+
+                {/* End Date */}
+                <div className="space-y-2">
+                  <label className="text-xs text-muted-foreground text-center block">תאריך יציאה</label>
+                  <div className="flex justify-center py-3 bg-muted/30 rounded-2xl">
+                    <DateWheelPicker
+                      value={endDate}
+                      onChange={setEndDate}
+                      minYear={new Date().getFullYear()}
+                      maxYear={new Date().getFullYear() + 2}
+                      size="sm"
+                      locale="he-IL"
+                    />
+                  </div>
+                </div>
                 
                 {nights > 0 && (
                   <p className="text-xs text-muted-foreground text-center">
@@ -264,7 +276,7 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
               {/* Continue */}
               <Button 
                 className="w-full rounded-full h-12"
-                disabled={!selectedService || !dateRange?.from || !dateRange?.to}
+                disabled={!selectedService || nights <= 0}
                 onClick={handleContinue}
               >
                 המשך לאישור
@@ -317,13 +329,13 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">כניסה</span>
                 <span className="font-medium text-foreground">
-                  {dateRange?.from && format(dateRange.from, 'PPP', { locale: he })}
+                  {format(startDate, 'PPP', { locale: he })}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">יציאה</span>
                 <span className="font-medium text-foreground">
-                  {dateRange?.to && format(dateRange.to, 'PPP', { locale: he })}
+                  {format(endDate, 'PPP', { locale: he })}
                 </span>
               </div>
               <div className="flex justify-between">

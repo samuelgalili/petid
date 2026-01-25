@@ -44,7 +44,7 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date()); // Default to today
   const [step, setStep] = useState<'select' | 'confirm'>('select');
 
   const { data: services, isLoading } = useQuery({
@@ -205,15 +205,15 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
                 <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-muted/50 border border-border/50">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium">
-                    {selectedDate ? format(selectedDate, 'PPP', { locale: he }) : 'בחר תאריך'}
+                    {format(selectedDate, 'PPP', { locale: he })}
                   </span>
                 </div>
 
                 {/* Wheel Date Picker */}
                 <div className="flex justify-center py-4 bg-muted/30 rounded-2xl">
                   <DateWheelPicker
-                    value={selectedDate || new Date()}
-                    onChange={(date) => setSelectedDate(date)}
+                    value={selectedDate}
+                    onChange={setSelectedDate}
                     minYear={new Date().getFullYear()}
                     maxYear={new Date().getFullYear() + 2}
                     size="md"
@@ -225,7 +225,7 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
               {/* Continue Button */}
               <Button 
                 className="w-full rounded-full h-12"
-                disabled={!selectedService || !selectedDate}
+                disabled={!selectedService}
                 onClick={handleContinue}
               >
                 המשך לאישור
