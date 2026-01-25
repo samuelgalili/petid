@@ -38,7 +38,8 @@ import {
   BoardingSheet,
   BreedInfoSheet,
   FoodSheet,
-  ToysSheet
+  ToysSheet,
+  DocumentsSheet
 } from "@/components/pet-services";
 
 
@@ -574,7 +575,11 @@ const Profile = () => {
           onClose={handleCloseSheet} 
           pet={selectedPet} 
         />
-
+        <DocumentsSheet 
+          isOpen={activeSheet === 'documents'} 
+          onClose={handleCloseSheet} 
+          pet={selectedPet} 
+        />
         <BottomNav />
       </div>
     </PageTransition>
