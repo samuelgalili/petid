@@ -69,9 +69,8 @@ const BottomNav = () => {
   // Pages where we hide bottom nav completely (fullscreen experiences)
   const hiddenRoutes = ['/auth', '/signup', '/forgot-password', '/reset-password', '/splash', '/add-pet', '/onboarding', '/stories', '/story'];
   const isHiddenPage = hiddenRoutes.some(route => location.pathname.startsWith(route));
-  if (isHiddenPage) return null;
 
-  // Fetch user avatar
+  // Fetch user avatar - MUST be before any conditional returns
   useEffect(() => {
     const fetchUserAvatar = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -88,6 +87,9 @@ const BottomNav = () => {
     };
     fetchUserAvatar();
   }, []);
+
+  // Early return AFTER all hooks
+  if (isHiddenPage) return null;
 
   const isActive = (path: string) => location.pathname === path;
 
