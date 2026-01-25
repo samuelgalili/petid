@@ -160,11 +160,16 @@ const Profile = () => {
     }
   };
 
-  // Handle pet click - opens the pet shop view
+  // Handle pet click - opens the services panel
   const handlePetClick = (petId: string) => {
     setSelectedPetId(petId);
     setActiveHub(null);
-    setShowPetShop(true); // Open pet shop view instead of services panel
+    setIsExpanded(true); // Show services panel with categories
+  };
+
+  // Open pet shop view
+  const handleOpenPetShop = () => {
+    setShowPetShop(true);
   };
 
   // Close pet shop view
@@ -645,6 +650,21 @@ const Profile = () => {
                               </React.Fragment>
                             );
                           })}
+                        </div>
+
+                        {/* Shop Button - Opens Pet Shop View */}
+                        <div className="flex justify-center mt-4 pt-4 border-t border-border/30">
+                          <motion.button
+                            onClick={handleOpenPetShop}
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl font-medium shadow-md hover:shadow-lg transition-all"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <ShoppingBag className="w-5 h-5" />
+                            <span>מוצרים ל{selectedPet?.name}</span>
+                          </motion.button>
                         </div>
                       </div>
                     </motion.div>
