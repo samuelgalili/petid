@@ -20,7 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { PetRecommendationsInline } from "@/components/profile/PetRecommendationsInline";
-import SphereImageGrid, { ImageData } from "@/components/ui/img-sphere";
+
 
 interface Pet {
   id: string;
@@ -125,26 +125,9 @@ const Profile = () => {
     }
   };
 
-  // Convert pets to sphere images
-  const petSphereImages: ImageData[] = pets.map(pet => ({
-    id: pet.id,
-    src: pet.avatar_url || (pet.type === 'dog' ? dogIcon : catIcon),
-    alt: pet.name,
-    title: pet.name,
-    description: pet.breed || (pet.type === 'dog' ? 'כלב' : 'חתול')
-  }));
-
-  // Dynamic sphere sizing based on pet count - fewer pets = smaller sphere, larger images
-  const petCount = pets.length;
-  const sphereConfig = {
-    containerSize: petCount <= 2 ? 280 : petCount <= 4 ? 320 : 360,
-    sphereRadius: petCount <= 2 ? 60 : petCount <= 4 ? 80 : 100,
-    baseImageScale: petCount <= 2 ? 0.5 : petCount <= 4 ? 0.45 : 0.4,
-  };
-
-  // Handle pet click from sphere
-  const handlePetClick = (image: ImageData) => {
-    setSelectedPetId(image.id);
+  // Handle pet click
+  const handlePetClick = (petId: string) => {
+    setSelectedPetId(petId);
     setIsExpanded(true);
   };
 
@@ -275,12 +258,12 @@ const Profile = () => {
             )}
           </AnimatePresence>
 
-          {/* Pet Sphere Section */}
+          {/* Pet Selection Section */}
           <AnimatePresence mode="wait">
             {!isExpanded ? (
               <motion.div 
-                key="sphere"
-                className="flex flex-col items-center"
+                key="pets-grid"
+                className="flex flex-col items-center px-4"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -288,17 +271,84 @@ const Profile = () => {
               >
                 {pets.length > 0 ? (
                   <>
-                    <SphereImageGrid
-                      images={petSphereImages}
-                      containerSize={sphereConfig.containerSize}
-                      sphereRadius={sphereConfig.sphereRadius}
-                      baseImageScale={sphereConfig.baseImageScale}
-                      autoRotate={petCount > 2}
-                      autoRotateSpeed={0.15}
-                      dragSensitivity={0.6}
-                      onImageClick={handlePetClick}
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
+                    {/* Floating Pet Bubbles */}
+                    <div className="flex flex-wrap justify-center gap-4 py-6">
+                      {pets.map((pet, index) => (
+                        <motion.button
+                          key={pet.id}
+                          onClick={() => handlePetClick(pet.id)}
+                          className="flex flex-col items-center gap-2"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ 
+                            opacity: 1, 
+                            y: 0,
+                          }}
+                          transition={{ 
+                            delay: index * 0.1,
+                            duration: 0.4
+                          }}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {/* Pet Avatar with Gradient Ring */}
+                          <motion.div 
+                            className="w-20 h-20 rounded-full p-[3px] bg-gradient-to-br from-primary via-primary/80 to-primary/60 shadow-lg"
+                            animate={{ 
+                              y: [0, -6, 0],
+                            }}
+                            transition={{
+                              duration: 3,
+                              repeat: Infinity,
+                              delay: index * 0.5,
+                              ease: "easeInOut"
+                            }}
+                          >
+                            <div className="w-full h-full rounded-full bg-background p-[2px]">
+                              <div className="w-full h-full rounded-full overflow-hidden bg-muted">
+                                {pet.avatar_url ? (
+                                  <img 
+                                    src={pet.avatar_url} 
+                                    alt={pet.name} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                                    <img 
+                                      src={pet.type === 'dog' ? dogIcon : catIcon} 
+                                      alt={pet.type} 
+                                      className="w-10 h-10" 
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                          
+                          {/* Pet Name */}
+                          <span className="text-sm font-medium text-foreground">
+                            {pet.name}
+                          </span>
+                        </motion.button>
+                      ))}
+                      
+                      {/* Add Pet Button */}
+                      <motion.button
+                        onClick={() => navigate('/add-pet')}
+                        className="flex flex-col items-center gap-2"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: pets.length * 0.1, duration: 0.4 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <div className="w-20 h-20 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center bg-muted/30">
+                          <Plus className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <span className="text-sm text-muted-foreground">הוסף</span>
+                      </motion.button>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground">
                       לחץ על חיית מחמד לצפייה בהתאמות
                     </p>
                   </>
