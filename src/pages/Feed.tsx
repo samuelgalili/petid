@@ -1030,6 +1030,27 @@ const Feed = () => {
           if (a.type !== 'adoption' && b.type === 'adoption') return 1;
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
+      case "dogparks":
+        // Show posts related to dog parks and outdoor activities
+        const dogparkItems = postItems.filter(p => {
+          const post = p.data as Post;
+          return post.caption?.includes('גינה') || 
+                 post.caption?.includes('גינות') || 
+                 post.caption?.includes('פארק') || 
+                 post.caption?.includes('park') || 
+                 post.caption?.includes('כלבים') ||
+                 post.caption?.includes('טיול') ||
+                 post.caption?.includes('חוץ');
+        });
+        // If no matching posts, show all posts as fallback
+        if (dogparkItems.length === 0) {
+          return postItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }
+        return dogparkItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      case "explore":
+        // Show diverse content for exploration
+        const exploreItems = [...postItems, ...challengeItems, ...adoptionItems];
+        return exploreItems.sort(() => Math.random() - 0.5).slice(0, 20);
       case "nearby":
         // Filter by user city if location is available
         if (hasLocation && city) {
