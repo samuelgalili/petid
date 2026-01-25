@@ -10,8 +10,7 @@ import {
   Film,
   UserSquare,
   RefreshCw,
-  Settings,
-  Check
+  Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +33,7 @@ import { AnimatedCounter } from "@/components/profile/AnimatedCounter";
 import { MutualFollowers } from "@/components/profile/MutualFollowers";
 import { ActivityStatus } from "@/components/profile/ActivityStatus";
 import { BusinessInsightsBar } from "@/components/profile/BusinessInsightsBar";
-import { PetRecommendations } from "@/components/profile/PetRecommendations";
+import { PetRecommendationsSheet } from "@/components/profile/PetRecommendationsSheet";
 
 interface Pet {
   id: string;
@@ -55,6 +54,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
+  const [isPetSheetOpen, setIsPetSheetOpen] = useState(false);
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
@@ -168,7 +168,11 @@ const Profile = () => {
         .eq('id', user.id)
         .maybeSingle();
 
-      setProfile({ ...profileData, id: user.id });
+      // Get avatar from auth provider metadata if not set in profile
+      const authAvatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+      const avatarUrl = profileData?.avatar_url || authAvatarUrl;
+
+      setProfile({ ...profileData, id: user.id, avatar_url: avatarUrl });
 
       const { data: petsData } = await supabase
         .from('pets')
@@ -223,9 +227,10 @@ const Profile = () => {
     setStartY(0);
   }, [pullDistance, refetchStats, refetchPosts, toast]);
 
-  // Handle pet selection
+  // Handle pet selection - opens recommendation sheet
   const handlePetSelect = (petId: string) => {
     setSelectedPetId(petId);
+    setIsPetSheetOpen(true);
   };
 
   if (loading) {
@@ -506,17 +511,6 @@ const Profile = () => {
                           </div>
                         </div>
                       </div>
-                      {/* Selection Indicator */}
-                      {isSelected && (
-                        <motion.div 
-                          className="absolute -bottom-0.5 right-4 w-5 h-5 bg-primary rounded-full flex items-center justify-center ring-2 ring-background"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                        >
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        </motion.div>
-                      )}
                       <span className={`text-[11px] truncate max-w-[66px] transition-colors ${
                         isSelected ? 'text-primary font-medium' : 'text-foreground'
                       }`}>
@@ -528,18 +522,6 @@ const Profile = () => {
               </div>
             </motion.div>
           </motion.div>
-
-          {/* Pet Recommendations Section */}
-          {pets.length > 0 && (
-            <motion.div
-              className="border-t border-border/30 bg-muted/10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <PetRecommendations selectedPet={selectedPet} />
-            </motion.div>
-          )}
 
           {/* Content Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -659,6 +641,13 @@ const Profile = () => {
         <CloseFriendsManager
           open={showCloseFriends}
           onOpenChange={setShowCloseFriends}
+        />
+
+        {/* Pet Recommendations Sheet */}
+        <PetRecommendationsSheet
+          pet={selectedPet}
+          isOpen={isPetSheetOpen}
+          onClose={() => setIsPetSheetOpen(false)}
         />
 
         <BottomNav />
