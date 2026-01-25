@@ -278,7 +278,7 @@ const ProductDetail = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
-      <div className="h-full overflow-y-auto pb-[70px]">
+      <div className="h-full overflow-y-auto pb-[180px]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50">
         <div className="flex items-center justify-between px-4 py-3">
@@ -717,17 +717,21 @@ const ProductDetail = () => {
         </div>
       </motion.div>
 
-      {/* Sticky Bottom CTA */}
-      <motion.div className="fixed bottom-16 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 p-4 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]" initial={{
-      y: 100
-    }} animate={{
-      y: 0
-    }} transition={{
-      delay: 0.3,
-      type: "spring",
-      stiffness: 300,
-      damping: 30
-    }}>
+      {/* Sticky Bottom CTA - positioned above BottomNav */}
+      <motion.div 
+        className="fixed left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border/50 p-4 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]" 
+        style={{ bottom: '70px' }}
+        initial={{ y: 100 }} 
+        animate={{ y: 0 }} 
+        transition={{
+          delay: 0.3,
+          type: "spring",
+          stiffness: 300,
+          damping: 30
+        }}
+      >
+        {/* Background extension to fill gap */}
+        <div className="absolute -bottom-20 left-0 right-0 h-20 bg-background" />
         <div className="max-w-lg mx-auto">
           {/* Quantity & Total */}
           <div className="flex items-center justify-between mb-3">
