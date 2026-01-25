@@ -177,18 +177,16 @@ const Profile = () => {
           className="flex-1 overflow-y-auto pb-[70px]"
           onScroll={handleScroll}
         >
-          {/* Centered Profile Section */}
-          <motion.div 
-            className="flex flex-col items-center px-5 pt-2 pb-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
+          {/* Centered Profile Section - Fixed height to prevent jumping */}
+          <div className="flex flex-col items-center px-5 pt-2 pb-4">
             {/* Profile Picture with Ring */}
             <motion.div 
-              className="relative mb-3"
+              className="relative mb-3 shrink-0"
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsImageEditorOpen(true)}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
             >
               <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-primary via-primary/80 to-primary/60">
                 <div className="w-full h-full rounded-full bg-background p-[2px]">
@@ -203,15 +201,15 @@ const Profile = () => {
             </motion.div>
 
             {/* Name & Bio */}
-            <h1 className="text-xl font-bold text-foreground mb-1">
+            <h1 className="text-xl font-bold text-foreground mb-1 shrink-0">
               {profile?.full_name || "משתמש"}
             </h1>
             {profile?.bio && (
-              <p className="text-sm text-muted-foreground text-center max-w-[250px] mb-2">
+              <p className="text-sm text-muted-foreground text-center max-w-[250px] mb-2 shrink-0">
                 {profile.bio}
               </p>
             )}
-          </motion.div>
+          </div>
 
           {/* Pet Sphere Section */}
           <AnimatePresence mode="wait">
