@@ -1,6 +1,7 @@
 /**
  * BoardingSheet - Pet boarding/pension services with date range selection
  * Requires admin approval
+ * Provider: פנסיון אביעד
  */
 
 import { useState } from 'react';
@@ -17,6 +18,7 @@ import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import { DocumentsSection } from './DocumentsSection';
 
 interface Pet {
   id: string;
@@ -361,6 +363,15 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
             </Button>
           </div>
         </div>
+      )}
+      
+      {/* Documents Section */}
+      {pet && step === 'select' && (
+        <DocumentsSection 
+          petId={pet.id} 
+          category="boarding" 
+          title="מסמכי פנסיון"
+        />
       )}
     </ServiceBottomSheet>
   );

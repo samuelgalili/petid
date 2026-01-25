@@ -1,5 +1,6 @@
 /**
  * InsuranceSheet - Pet insurance recommendations by breed and age
+ * Provider: ליברה ביטוח
  */
 
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
+import { DocumentsSection } from './DocumentsSection';
 
 interface Pet {
   id: string;
@@ -182,6 +184,15 @@ export const InsuranceSheet = ({ isOpen, onClose, pet }: InsuranceSheetProps) =>
             נעדכן אותך כשיהיו הצעות חדשות
           </p>
         </div>
+      )}
+      
+      {/* Documents Section */}
+      {pet && (
+        <DocumentsSection 
+          petId={pet.id} 
+          category="insurance" 
+          title="מסמכי ביטוח ופוליסות"
+        />
       )}
     </ServiceBottomSheet>
   );
