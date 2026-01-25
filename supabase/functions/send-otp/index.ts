@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitExceededResponse,
+  RATE_LIMITS 
+} from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -26,6 +32,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Apply IP-based rate limiting
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, "send_otp", RATE_LIMITS.sendOtp);
+    
+    if (!rateLimit.allowed) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     const { email, type }: SendOtpRequest = await req.json();
     
     console.log(`Sending OTP to ${email} for ${type}`);
@@ -125,7 +140,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(
       JSON.stringify({ success: true, message: "OTP sent successfully" }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { 
+        status: 200, 
+        headers: { 
+          "Content-Type": "application/json",
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+          ...corsHeaders 
+        } 
+      }
     );
   } catch (error: any) {
     console.error("Error in send-otp function:", error);

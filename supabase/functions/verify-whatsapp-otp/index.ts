@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  checkRateLimit, 
+  getClientIP, 
+  rateLimitExceededResponse,
+  RATE_LIMITS 
+} from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,30 +18,9 @@ interface VerifyOtpRequest {
   fullName?: string;
 }
 
-// Rate limiting configuration
+// Rate limiting configuration for failed attempts
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
-
-// In-memory rate limiting (resets on function cold start, but DB tracking persists)
-const attemptCache = new Map<string, { count: number; firstAttempt: number }>();
-const CACHE_WINDOW_MS = 60000; // 1 minute window for in-memory cache
-
-function checkInMemoryRateLimit(phone: string): boolean {
-  const now = Date.now();
-  const record = attemptCache.get(phone);
-  
-  if (!record || (now - record.firstAttempt > CACHE_WINDOW_MS)) {
-    attemptCache.set(phone, { count: 1, firstAttempt: now });
-    return false;
-  }
-  
-  if (record.count >= MAX_ATTEMPTS) {
-    return true;
-  }
-  
-  record.count++;
-  return false;
-}
 
 // Format phone number for WhatsApp (remove leading 0, add country code if needed)
 function formatPhoneNumber(phone: string): string {
@@ -58,6 +43,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Apply IP-based rate limiting
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, "verify_whatsapp_otp", RATE_LIMITS.verifyOtp);
+    
+    if (!rateLimit.allowed) {
+      console.log(`Rate limit exceeded for IP: ${clientIP}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     const { phone, otp, fullName }: VerifyOtpRequest = await req.json();
     
     if (!phone || !otp) {
@@ -76,14 +70,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const formattedPhone = formatPhoneNumber(phone);
-
-    // Check in-memory rate limit first (fast path)
-    if (checkInMemoryRateLimit(formattedPhone)) {
-      return new Response(
-        JSON.stringify({ error: "Too many attempts. Please wait before trying again." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -170,54 +156,136 @@ const handler = async (req: Request): Promise<Response> => {
     const email = `${formattedPhone}@phone.petid.app`;
 
     if (existingUser) {
-      // User exists - generate a session for them
-      // First, update their password to a known value so we can sign them in
-      const tempPassword = crypto.randomUUID();
+      // User exists - check their auth method to decide how to authenticate
+      const userMetadata = existingUser.user_metadata || {};
+      const authMethod = userMetadata.auth_method;
       
-      const { error: updateError } = await supabase.auth.admin.updateUserById(
-        existingUser.id,
-        { password: tempPassword }
-      );
-
-      if (updateError) {
-        console.error("Error updating user password:", updateError);
-        return new Response(
-          JSON.stringify({ error: "Failed to authenticate user" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      // If user signed up via WhatsApp (has no email/password set), use temp password approach
+      // Otherwise, use magic link to preserve their existing password
+      if (authMethod === 'whatsapp' || existingUser.email?.endsWith('@phone.petid.app')) {
+        // WhatsApp-only user - safe to use temp password
+        const tempPassword = crypto.randomUUID();
+        
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+          existingUser.id,
+          { password: tempPassword }
         );
-      }
 
-      // Now sign in with the new password to get a session
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: existingUser.email || email,
-        password: tempPassword,
-      });
+        if (updateError) {
+          console.error("Error updating user password:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Failed to authenticate user" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
 
-      if (signInError || !signInData.session) {
-        console.error("Error signing in user:", signInError);
+        // Sign in with the temp password to get a session
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: existingUser.email || email,
+          password: tempPassword,
+        });
+
+        if (signInError || !signInData.session) {
+          console.error("Error signing in user:", signInError);
+          return new Response(
+            JSON.stringify({ error: "Failed to create session" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ error: "Failed to create session" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ 
+            success: true,
+            isNewUser: false,
+            userId: existingUser.id,
+            session: {
+              access_token: signInData.session.access_token,
+              refresh_token: signInData.session.refresh_token,
+              expires_in: signInData.session.expires_in,
+              expires_at: signInData.session.expires_at,
+            },
+            message: "User authenticated successfully"
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
-      }
+      } else {
+        // User has email/password set - use magic link to preserve their password
+        try {
+          const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: existingUser.email!,
+          });
 
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          isNewUser: false,
-          userId: existingUser.id,
-          session: {
-            access_token: signInData.session.access_token,
-            refresh_token: signInData.session.refresh_token,
-            expires_in: signInData.session.expires_in,
-            expires_at: signInData.session.expires_at,
-          },
-          message: "User authenticated successfully"
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+          if (linkError || !linkData) {
+            console.error("Error generating magic link:", linkError);
+            // Fallback: Return success without session, user will need to sign in manually
+            return new Response(
+              JSON.stringify({ 
+                success: true,
+                isNewUser: false,
+                userId: existingUser.id,
+                needsManualSignIn: true,
+                message: "OTP verified. Please sign in with your email credentials."
+              }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
+          // The magic link contains session tokens
+          const actionLink = linkData.properties?.action_link;
+          if (actionLink) {
+            const url = new URL(actionLink);
+            // Extract the token from the magic link
+            const token = url.hash?.replace('#access_token=', '').split('&')[0] ||
+                          url.searchParams.get('access_token');
+            
+            if (token) {
+              // Verify the token to get the session
+              const { data: sessionData, error: sessionError } = await supabase.auth.getUser(token);
+              
+              if (!sessionError && sessionData.user) {
+                return new Response(
+                  JSON.stringify({ 
+                    success: true,
+                    isNewUser: false,
+                    userId: existingUser.id,
+                    magicLink: actionLink,
+                    message: "User verified. Use the magic link to complete sign in."
+                  }),
+                  { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+                );
+              }
+            }
+          }
+
+          // Fallback: Return success with magic link
+          return new Response(
+            JSON.stringify({ 
+              success: true,
+              isNewUser: false,
+              userId: existingUser.id,
+              needsManualSignIn: true,
+              message: "OTP verified. Please check your email to complete sign in."
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("Error with magic link approach:", error);
+          // Final fallback
+          return new Response(
+            JSON.stringify({ 
+              success: true,
+              isNewUser: false,
+              userId: existingUser.id,
+              needsManualSignIn: true,
+              message: "OTP verified. Please sign in with your email credentials."
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
     } else {
-      // New user - create account with a known password
+      // New user - create account with WhatsApp auth method marker
       const tempPassword = crypto.randomUUID();
 
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
@@ -229,7 +297,7 @@ const handler = async (req: Request): Promise<Response> => {
         user_metadata: {
           full_name: fullName || '',
           phone: formattedPhone,
-          auth_method: 'whatsapp'
+          auth_method: 'whatsapp' // Mark as WhatsApp-only user
         }
       });
 
