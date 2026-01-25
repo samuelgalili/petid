@@ -30,7 +30,9 @@ const ProductDetail = () => {
     toast
   } = useToast();
   const {
-    addToCart
+    addToCart,
+    getTotalItems,
+    cartShake
   } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [showReviews, setShowReviews] = useState(false);
@@ -378,6 +380,32 @@ const ProductDetail = () => {
             <Button variant="ghost" size="icon" className={`rounded-full hover:bg-muted w-10 h-10 transition-all duration-300 ${isWishlisted ? 'text-red-500 scale-110' : 'text-foreground'}`} onClick={toggleWishlist}>
               <Heart className={`w-5 h-5 transition-all duration-300 ${isWishlisted ? 'fill-current animate-pulse' : ''}`} />
             </Button>
+            {/* Cart Icon with badge */}
+            <motion.div
+              animate={cartShake ? { rotate: [0, -10, 10, -10, 10, 0] } : {}}
+              transition={{ duration: 0.5 }}
+            >
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full hover:bg-muted w-10 h-10 relative" 
+                onClick={() => navigate("/cart")}
+              >
+                <ShoppingCart className="w-5 h-5 text-foreground" />
+                <AnimatePresence>
+                  {getTotalItems() > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center"
+                    >
+                      {getTotalItems() > 9 ? '9+' : getTotalItems()}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Button>
+            </motion.div>
           </div>
         </div>
       </header>
