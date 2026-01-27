@@ -21,6 +21,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import petidIcon from "@/assets/petid-icon.png";
+import { SEO } from "@/components/SEO";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -367,6 +368,11 @@ const Shop = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO 
+        title="חנות"
+        description="מוצרים איכותיים לחיות מחמד במחירים משתלמים - מזון, צעצועים, ציוד ועוד"
+        url="/shop"
+      />
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Instagram-style Header */}
       <motion.div 

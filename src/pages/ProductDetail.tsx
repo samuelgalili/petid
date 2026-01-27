@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
+import { SEO } from "@/components/SEO";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -280,6 +281,15 @@ const ProductDetail = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO 
+        title={product.name}
+        description={product.description || `${product.name} - מחיר: ₪${product.price}`}
+        image={product.image}
+        url={`/product/${id}`}
+        type="product"
+        price={product.price}
+        availability="in_stock"
+      />
       <div className="h-full overflow-y-auto pb-[180px]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50 overflow-visible">

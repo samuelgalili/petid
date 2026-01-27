@@ -1,0 +1,284 @@
+/**
+ * SEO Component - Dynamic meta tags for all pages
+ * Handles OG tags, Twitter cards, and structured data
+ */
+
+import { useEffect } from 'react';
+
+interface SEOProps {
+  title?: string;
+  description?: string;
+  image?: string;
+  url?: string;
+  type?: 'website' | 'article' | 'product' | 'profile';
+  noIndex?: boolean;
+  // Product specific
+  price?: number;
+  currency?: string;
+  availability?: 'in_stock' | 'out_of_stock';
+  // Article specific
+  publishedTime?: string;
+  author?: string;
+}
+
+const BASE_URL = 'https://petid.lovable.app';
+const DEFAULT_IMAGE = 'https://petid.lovable.app/pwa-512x512.png';
+const SITE_NAME = 'Petid';
+const DEFAULT_DESCRIPTION = 'Petid — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ שמרו רגעים, עקבו אחר טיפול, קבלו תזכורות וגלו מקומות ידידותיים לחיות מחמד.';
+
+export const SEO = ({
+  title,
+  description = DEFAULT_DESCRIPTION,
+  image = DEFAULT_IMAGE,
+  url,
+  type = 'website',
+  noIndex = false,
+  price,
+  currency = 'ILS',
+  availability,
+  publishedTime,
+  author,
+}: SEOProps) => {
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — האפליקציה לחיים עם חיית המחמד שלך`;
+  const fullUrl = url ? `${BASE_URL}${url}` : BASE_URL;
+  const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
+
+  useEffect(() => {
+    // Update document title
+    document.title = fullTitle;
+
+    // Helper to set or create meta tag
+    const setMeta = (property: string, content: string, isName = false) => {
+      const attribute = isName ? 'name' : 'property';
+      let element = document.querySelector(`meta[${attribute}="${property}"]`);
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(attribute, property);
+        document.head.appendChild(element);
+      }
+      element.setAttribute('content', content);
+    };
+
+    // Basic meta tags
+    setMeta('description', description, true);
+    if (noIndex) {
+      setMeta('robots', 'noindex, nofollow', true);
+    } else {
+      setMeta('robots', 'index, follow', true);
+    }
+
+    // Open Graph tags
+    setMeta('og:title', fullTitle);
+    setMeta('og:description', description);
+    setMeta('og:image', fullImage);
+    setMeta('og:url', fullUrl);
+    setMeta('og:type', type);
+    setMeta('og:site_name', SITE_NAME);
+    setMeta('og:locale', 'he_IL');
+
+    // Twitter Card tags
+    setMeta('twitter:card', 'summary_large_image', true);
+    setMeta('twitter:title', fullTitle, true);
+    setMeta('twitter:description', description, true);
+    setMeta('twitter:image', fullImage, true);
+
+    // Product specific meta
+    if (type === 'product' && price !== undefined) {
+      setMeta('product:price:amount', price.toString());
+      setMeta('product:price:currency', currency);
+      if (availability) {
+        setMeta('product:availability', availability);
+      }
+    }
+
+    // Article specific meta
+    if (type === 'article') {
+      if (publishedTime) {
+        setMeta('article:published_time', publishedTime);
+      }
+      if (author) {
+        setMeta('article:author', author);
+      }
+    }
+
+    // Canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', fullUrl);
+
+    // Cleanup function
+    return () => {
+      // Reset title when component unmounts
+      document.title = `${SITE_NAME} — האפליקציה לחיים עם חיית המחמד שלך`;
+    };
+  }, [fullTitle, description, fullImage, fullUrl, type, noIndex, price, currency, availability, publishedTime, author]);
+
+  // Also render JSON-LD structured data
+  const structuredData = getStructuredData({
+    type,
+    title: fullTitle,
+    description,
+    image: fullImage,
+    url: fullUrl,
+    price,
+    currency,
+    availability,
+    publishedTime,
+    author,
+  });
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+    />
+  );
+};
+
+// Generate JSON-LD structured data based on page type
+function getStructuredData(props: {
+  type: string;
+  title: string;
+  description: string;
+  image: string;
+  url: string;
+  price?: number;
+  currency?: string;
+  availability?: string;
+  publishedTime?: string;
+  author?: string;
+}) {
+  const baseData = {
+    '@context': 'https://schema.org',
+  };
+
+  switch (props.type) {
+    case 'product':
+      return {
+        ...baseData,
+        '@type': 'Product',
+        name: props.title,
+        description: props.description,
+        image: props.image,
+        url: props.url,
+        ...(props.price && {
+          offers: {
+            '@type': 'Offer',
+            price: props.price,
+            priceCurrency: props.currency || 'ILS',
+            availability: props.availability === 'in_stock' 
+              ? 'https://schema.org/InStock' 
+              : 'https://schema.org/OutOfStock',
+          },
+        }),
+      };
+
+    case 'article':
+      return {
+        ...baseData,
+        '@type': 'Article',
+        headline: props.title,
+        description: props.description,
+        image: props.image,
+        url: props.url,
+        datePublished: props.publishedTime,
+        author: {
+          '@type': 'Person',
+          name: props.author || 'Petid',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Petid',
+          logo: {
+            '@type': 'ImageObject',
+            url: 'https://petid.lovable.app/pwa-512x512.png',
+          },
+        },
+      };
+
+    case 'profile':
+      return {
+        ...baseData,
+        '@type': 'ProfilePage',
+        name: props.title,
+        description: props.description,
+        image: props.image,
+        url: props.url,
+      };
+
+    default:
+      return {
+        ...baseData,
+        '@type': 'WebPage',
+        name: props.title,
+        description: props.description,
+        image: props.image,
+        url: props.url,
+        isPartOf: {
+          '@type': 'WebSite',
+          name: 'Petid',
+          url: 'https://petid.lovable.app',
+        },
+      };
+  }
+}
+
+// Export SEO configuration for each major route
+export const SEO_CONFIG: Record<string, SEOProps> = {
+  '/': {
+    title: 'בית',
+    description: 'נהלו את חיית המחמד שלכם בקלות - ביטוח, טיפוח, אימונים ועוד',
+    url: '/',
+  },
+  '/feed': {
+    title: 'פיד',
+    description: 'גלו תוכן מעניין מקהילת בעלי חיות המחמד בישראל',
+    url: '/feed',
+  },
+  '/shop': {
+    title: 'חנות',
+    description: 'מוצרים איכותיים לחיות מחמד במחירים משתלמים - מזון, צעצועים, ציוד ועוד',
+    url: '/shop',
+  },
+  '/explore': {
+    title: 'גילוי',
+    description: 'גלו עסקים, שירותים ומקומות ידידותיים לחיות מחמד באזור שלכם',
+    url: '/explore',
+  },
+  '/adoption': {
+    title: 'אימוץ',
+    description: 'מצאו חיית מחמד לאימוץ - כלבים, חתולים ועוד מחכים לבית חם',
+    url: '/adoption',
+  },
+  '/businesses': {
+    title: 'עסקים',
+    description: 'מצאו וטרינרים, מאלפים, מספרות כלבים ועוד שירותים לחיות מחמד',
+    url: '/businesses',
+  },
+  '/parks': {
+    title: 'גינות כלבים',
+    description: 'מצאו גינות כלבים באזור שלכם - מיקום, שעות פתיחה וחוות דעת',
+    url: '/parks',
+  },
+  '/training': {
+    title: 'אימונים',
+    description: 'שירותי אילוף כלבים מקצועיים - משמעת, סוציאליזציה ועוד',
+    url: '/training',
+  },
+  '/grooming': {
+    title: 'טיפוח',
+    description: 'שירותי טיפוח וספא לחיות מחמד - תספורת, רחצה, טיפול בציפורניים',
+    url: '/grooming',
+  },
+  '/insurance': {
+    title: 'ביטוח',
+    description: 'ביטוח בריאות לחיות מחמד - הגנה מפני הוצאות וטרינריות בלתי צפויות',
+    url: '/insurance',
+  },
+};
+
+export default SEO;
