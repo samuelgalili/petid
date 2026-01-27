@@ -23,6 +23,7 @@ import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { AppHeader } from "@/components/AppHeader";
 import catDogSilhouette from "@/assets/adoption/cat-dog-silhouette.png";
+import { SEO } from "@/components/SEO";
 
 interface AdoptionPet {
   id: string;
@@ -292,6 +293,11 @@ const Adoption = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden flex flex-col" dir="rtl">
+      <SEO 
+        title="אימוץ חיות מחמד"
+        description="מצאו חיית מחמד לאימוץ - כלבים, חתולים ועוד מחכים לבית חם"
+        url="/adoption"
+      />
       <AppHeader 
         title="אימוץ" 
         showBackButton={true}
