@@ -41,6 +41,7 @@ import { useFeedPersonalization } from "@/hooks/useFeedPersonalization";
 import { useLocation } from "@/hooks/useLocation";
 import { useEngagement } from "@/hooks/useEngagement";
 import { filterSafeContent, sortBySafetyScore } from "@/lib/contentSafety";
+import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -257,6 +258,7 @@ const Feed = () => {
   const {
     stats
   } = useLoyalty();
+  const { unreadCount: notificationCount } = useNotificationsBadge();
   const totalPoints = stats?.totalPoints || 0;
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
