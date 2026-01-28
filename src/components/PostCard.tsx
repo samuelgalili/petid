@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Send, Heart, Home, Mail, Trash2 } from "lucide-react";
+import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2, EyeOff, Send, Heart, Home, Mail, Trash2, Repeat2, PlusCircle } from "lucide-react";
 import pawHeartIcon from "@/assets/paw-heart-icon.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -12,6 +12,12 @@ import { ProductTagOverlay } from "@/components/post/ProductTagOverlay";
 import { HeartBurstAnimation } from "@/components/post/HeartBurstAnimation";
 import { ImageCarousel } from "@/components/post/ImageCarousel";
 import { CommentsPreview } from "@/components/post/CommentsPreview";
+import { RichCaption } from "@/components/post/RichCaption";
+import { CommentsPreviewSection } from "@/components/post/CommentsPreviewSection";
+import { LocationTag } from "@/components/post/LocationTag";
+import { ViewsCounter } from "@/components/post/ViewsCounter";
+import { RepostButton } from "@/components/post/RepostButton";
+import { ShareToStoryButton } from "@/components/post/ShareToStoryButton";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -54,6 +60,10 @@ interface PostCardProps {
     media_urls?: string[];
     caption: string;
     created_at: string;
+    location_name?: string;
+    views_count?: number;
+    video_url?: string;
+    media_type?: string;
     user: {
       id: string;
       full_name: string;
@@ -340,7 +350,7 @@ export const PostCard = ({
                 <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white z-50 border-[#DBDBDB]">
+            <DropdownMenuContent align="end" className="bg-white z-50 border-[#DBDBDB] min-w-[180px]">
               <DropdownMenuItem
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
@@ -351,6 +361,14 @@ export const PostCard = ({
                 <Link2 className="w-4 h-4 ml-2" />
                 העתק קישור
               </DropdownMenuItem>
+              
+              {/* Share to Story option */}
+              <ShareToStoryButton 
+                postId={post.id} 
+                imageUrl={post.image_url} 
+                caption={post.caption}
+              />
+              
               {!isOwner && (
                 <DropdownMenuItem
                   onClick={() => {
@@ -453,6 +471,9 @@ export const PostCard = ({
             </span>
           </div>
           
+          {/* Repost button */}
+          <RepostButton postId={post.id} />
+          
           {/* Share button */}
           <button 
             className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
@@ -462,7 +483,17 @@ export const PostCard = ({
           </button>
         </div>
 
-        {/* Username + Caption - Instagram style */}
+        {/* Location tag */}
+        {post.location_name && (
+          <LocationTag locationName={post.location_name} className="mb-1" />
+        )}
+
+        {/* Views counter */}
+        {(post.views_count || 0) > 0 && (
+          <ViewsCounter count={post.views_count || 0} className="mb-1" />
+        )}
+
+        {/* Username + Caption with clickable hashtags/mentions */}
         {post.caption && (
           <div className="mb-1.5">
             <button
@@ -471,14 +502,16 @@ export const PostCard = ({
             >
               {post.user.full_name || "משתמש"}
             </button>
-            <span className="text-neutral-900 text-[14px] leading-[1.4]">
-              {post.caption}
-            </span>
+            <RichCaption 
+              caption={post.caption} 
+              className="text-neutral-900 text-[14px] leading-[1.4]"
+              maxLength={150}
+            />
           </div>
         )}
 
-
-        {/* Adoption CTA - Show for adoption posts */}
+        {/* Comments preview */}
+        <CommentsPreviewSection postId={post.id} commentsCount={post.comments_count} />
         {isAdoptionPost && currentUserId !== post.user_id && (
           <motion.button
             onClick={() => navigate(`/messages/thread/${post.user_id}`)}

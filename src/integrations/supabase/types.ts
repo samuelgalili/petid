@@ -3335,6 +3335,48 @@ export type Database = {
         }
         Relationships: []
       }
+      mentions: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          id: string
+          mentioned_user_id: string
+          mentioner_user_id: string
+          post_id: string | null
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          mentioned_user_id: string
+          mentioner_user_id: string
+          post_id?: string | null
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          mentioned_user_id?: string
+          mentioner_user_id?: string
+          post_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_events: {
         Row: {
           created_at: string
@@ -5349,6 +5391,38 @@ export type Database = {
           },
         ]
       }
+      post_views: {
+        Row: {
+          id: string
+          post_id: string
+          viewed_at: string
+          viewer_id: string | null
+          viewer_ip: string | null
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          viewed_at?: string
+          viewer_id?: string | null
+          viewer_ip?: string | null
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          viewed_at?: string
+          viewer_id?: string | null
+          viewer_ip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           alt_text: string | null
@@ -5359,6 +5433,9 @@ export type Database = {
           is_featured: boolean | null
           is_pinned: boolean | null
           location_id: string | null
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
           media_type: string | null
           media_urls: string[] | null
           pet_id: string | null
@@ -5367,7 +5444,9 @@ export type Database = {
           removed_by: string | null
           updated_at: string
           user_id: string
+          video_thumbnail_url: string | null
           video_url: string | null
+          views_count: number | null
         }
         Insert: {
           alt_text?: string | null
@@ -5378,6 +5457,9 @@ export type Database = {
           is_featured?: boolean | null
           is_pinned?: boolean | null
           location_id?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
           media_type?: string | null
           media_urls?: string[] | null
           pet_id?: string | null
@@ -5386,7 +5468,9 @@ export type Database = {
           removed_by?: string | null
           updated_at?: string
           user_id: string
+          video_thumbnail_url?: string | null
           video_url?: string | null
+          views_count?: number | null
         }
         Update: {
           alt_text?: string | null
@@ -5397,6 +5481,9 @@ export type Database = {
           is_featured?: boolean | null
           is_pinned?: boolean | null
           location_id?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
           media_type?: string | null
           media_urls?: string[] | null
           pet_id?: string | null
@@ -5405,7 +5492,9 @@ export type Database = {
           removed_by?: string | null
           updated_at?: string
           user_id?: string
+          video_thumbnail_url?: string | null
           video_url?: string | null
+          views_count?: number | null
         }
         Relationships: [
           {
@@ -6338,6 +6427,38 @@ export type Database = {
           },
         ]
       }
+      reposts: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          original_post_id: string
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          original_post_id: string
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          original_post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reposts_original_post_id_fkey"
+            columns: ["original_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rewards: {
         Row: {
           created_at: string
@@ -6809,6 +6930,47 @@ export type Database = {
             columns: ["sticker_id"]
             isOneToOne: false
             referencedRelation: "story_stickers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_polls: {
+        Row: {
+          created_at: string
+          id: string
+          option_a: string
+          option_a_count: number | null
+          option_b: string
+          option_b_count: number | null
+          question: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_a: string
+          option_a_count?: number | null
+          option_b: string
+          option_b_count?: number | null
+          question: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_a?: string
+          option_a_count?: number | null
+          option_b?: string
+          option_b_count?: number | null
+          question?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_polls_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]
@@ -8561,6 +8723,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_post_views: {
+        Args: { post_id_param: string; viewer_id_param?: string }
+        Returns: undefined
+      }
       is_moderator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_reward_available: { Args: { p_reward_id: string }; Returns: boolean }
       search_food_products: {
@@ -8582,6 +8748,10 @@ export type Database = {
           p_title: string
           p_user_id: string
         }
+        Returns: undefined
+      }
+      vote_on_poll: {
+        Args: { option_param: string; poll_id_param: string }
         Returns: undefined
       }
     }
