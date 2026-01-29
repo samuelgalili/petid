@@ -78,6 +78,11 @@ const PostDetail = lazy(() => import("@/pages/PostDetail"));
 const StoryViewer = lazy(() => import("@/pages/StoryViewer"));
 const HighlightViewer = lazy(() => import("@/pages/HighlightViewer"));
 
+// Live Streaming
+const LivePage = lazy(() => import("@/pages/LivePage"));
+const LiveStreamViewer = lazy(() => import("@/components/live/LiveStreamViewer").then(m => ({ default: m.LiveStreamViewer })));
+const LiveBroadcaster = lazy(() => import("@/components/live/LiveBroadcaster").then(m => ({ default: m.LiveBroadcaster })));
+
 // Soundtrack-style Feed
 const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
 // Profile page (primary home)
@@ -110,6 +115,26 @@ export const feedRoutes: RouteObject[] = [
       <Suspense fallback={<LoadingSpinner dark />}>
         <HighlightViewer />
       </Suspense>
+    )
+  },
+  // Live Streaming Routes
+  { path: "/live", element: <LazyPage component={LivePage} pageName="שידורים חיים" /> },
+  { 
+    path: "/live/:streamId", 
+    element: (
+      <Suspense fallback={<LoadingSpinner dark />}>
+        <LiveStreamViewer />
+      </Suspense>
+    )
+  },
+  { 
+    path: "/live/:streamId/broadcast", 
+    element: (
+      <Protected>
+        <Suspense fallback={<LoadingSpinner dark />}>
+          <LiveBroadcaster />
+        </Suspense>
+      </Protected>
     )
   },
 ];
