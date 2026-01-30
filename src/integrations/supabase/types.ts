@@ -1768,6 +1768,48 @@ export type Database = {
           },
         ]
       }
+      content_guides: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          guide_type: string
+          id: string
+          is_published: boolean | null
+          save_count: number | null
+          title: string
+          updated_at: string
+          user_id: string
+          view_count: number | null
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          guide_type?: string
+          id?: string
+          is_published?: boolean | null
+          save_count?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+          view_count?: number | null
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          guide_type?: string
+          id?: string
+          is_published?: boolean | null
+          save_count?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       content_reports: {
         Row: {
           content_id: string
@@ -2869,6 +2911,44 @@ export type Database = {
           working_hours?: Json | null
         }
         Relationships: []
+      }
+      guide_items: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          guide_id: string
+          id: string
+          item_id: string
+          item_type: string
+          note: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          guide_id: string
+          id?: string
+          item_id: string
+          item_type: string
+          note?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          guide_id?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_items_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "content_guides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guide_products: {
         Row: {
@@ -6710,6 +6790,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      saved_guides: {
+        Row: {
+          guide_id: string
+          id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          guide_id: string
+          id?: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          guide_id?: string
+          id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_guides_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "content_guides"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_posts: {
         Row: {
