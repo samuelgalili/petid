@@ -2,11 +2,46 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
+/**
+ * CardCom Payment Integration - Shop Orders
+ *
+ * This function creates payment requests using CardCom's Legacy LowProfile API.
+ *
+ * API Documentation:
+ * - Endpoint: https://secure.cardcom.solutions/Interface/LowProfile.aspx
+ * - Doc: https://support.cardcom.solutions/hc/he/articles/360021519340-Low-profile-interface-EN-Step-1-2
+ * - Support: dev@secure.cardcom.co.il | 03-9436100 (press 2)
+ *
+ * Required Parameters (Legacy LowProfile.aspx):
+ * - TerminalNumber: Merchant terminal ID
+ * - ApiName: API username (note: some docs refer to this as "UserName")
+ * - ApiPassword: API password
+ * - APILevel: API version ("10" for current)
+ * - codepage: Character encoding ("65001" for UTF-8)
+ * - Operation: "1" for charge
+ * - SumToBill: Amount in ILS (string with 2 decimals)
+ * - CoinId: Currency ("1" for ILS)
+ * - SuccessRedirectUrl: Redirect after successful payment
+ * - ErrorRedirectUrl: Redirect after failed payment (note: legacy uses "ErrorRedirectUrl", not "FailedRedirectUrl")
+ *
+ * Response Validation:
+ * - Check "ResponseCode" field (0 = success)
+ * - "LowProfileCode" contains the payment session ID
+ * - "Url" contains the payment page URL to redirect the customer
+ *
+ * Future Migration:
+ * - Consider migrating to CardCom API v11: https://secure.cardcom.solutions/api/v11/LowProfile/Create
+ * - v11 uses JSON request/response format and "Amount" instead of "SumToBill"
+ *
+ * Last updated: 2026-01-31
+ */
+
 // CardCom API Configuration
 const CARDCOM_TERMINAL = Deno.env.get('CARDCOM_TERMINAL_NUMBER');
 const CARDCOM_API_NAME = Deno.env.get('CARDCOM_API_NAME');
 const CARDCOM_API_PASSWORD = Deno.env.get('CARDCOM_API_PASSWORD');
-// WordPress uses this legacy endpoint - switch to test
+
+// Legacy LowProfile endpoint - form-urlencoded request/response
 const CARDCOM_API_URL = 'https://secure.cardcom.solutions/Interface/LowProfile.aspx';
 
 interface ShopPaymentRequest {
@@ -268,32 +303,50 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Create CardCom payment request using URLSearchParams (form-urlencoded)
-    // CardCom Hosted Page requires this format
+    // CardCom Legacy LowProfile.aspx requires this format
     const formData = new URLSearchParams();
+
+    // Authentication parameters
     formData.append('TerminalNumber', CARDCOM_TERMINAL);
     formData.append('ApiName', CARDCOM_API_NAME);
     formData.append('ApiPassword', CARDCOM_API_PASSWORD);
-    formData.append('Operation', '1'); // 1 = Charge
+
+    // Required legacy API parameters (missing these caused failures)
+    formData.append('APILevel', '10');      // API version - required for legacy endpoint
+    formData.append('codepage', '65001');   // UTF-8 encoding - required for Hebrew text
+
+    // Transaction parameters
+    formData.append('Operation', '1');      // 1 = Charge (bill the card)
     formData.append('SumToBill', sumToBill);
-    formData.append('CoinId', '1'); // ILS
-    formData.append('Language', 'he');
+    formData.append('CoinId', '1');         // 1 = ILS (Israeli Shekel)
+    formData.append('Language', 'he');      // Hebrew interface
+
+    // Redirect URLs - note: legacy API uses "ErrorRedirectUrl" not "FailedRedirectUrl"
     formData.append('SuccessRedirectUrl', `${requestData.success_url}?order_id=${orderData.id}`);
-    formData.append('FailedRedirectUrl', `${requestData.cancel_url}?order_id=${orderData.id}`);
+    formData.append('ErrorRedirectUrl', `${requestData.cancel_url}?order_id=${orderData.id}`);
+
+    // Webhook for payment result notification
     formData.append('WebHookUrl', webhookUrl);
-    formData.append('ReturnValue', JSON.stringify({ 
+    formData.append('IndicatorUrl', webhookUrl); // Legacy API alternative webhook parameter
+
+    // Custom data to identify the order in webhook callback
+    formData.append('ReturnValue', JSON.stringify({
       order_id: orderData.id,
-      order_number: orderNumber 
+      order_number: orderNumber
     }));
+
+    // Payment options
     formData.append('MaxNumOfPayments', String(requestData.installments || 1));
     formData.append('ProductName', itemsDescription.substring(0, 50));
     formData.append('HideSumField', 'true');
     formData.append('SumInStar498', 'false');
-    
-    // TEMP DEBUG: Skip invoice lines to test if base fields work
-    // for (const [key, value] of Object.entries(flatInvoiceLines)) {
-    //   formData.append(key, value);
-    // }
-    console.log('DEBUG: Skipping InvoiceLines for isolation test');
+
+    // Append invoice lines with product details
+    // IMPORTANT: These must be included for CardCom to process the payment correctly
+    for (const [key, value] of Object.entries(flatInvoiceLines)) {
+      formData.append(key, value);
+    }
+    console.log('CardCom: Invoice lines appended, count:', lineIndex - 1);
     
     console.log('CardCom request SumToBill:', sumToBill);
     
@@ -314,18 +367,30 @@ serve(async (req: Request): Promise<Response> => {
     // Legacy endpoint returns form-encoded, not JSON
     const responseText = await cardcomResponse.text();
     console.log('CardCom raw response:', responseText);
-    
+
     // Parse form-encoded response
     const cardcomParams = new URLSearchParams(responseText);
-    const cardcomData = {
-      ResponseCode: parseInt(cardcomParams.get('ResponseCode') || '-1'),
-      Description: cardcomParams.get('Description') || '',
-      LowProfileId: cardcomParams.get('LowProfileCode') || '',
-      Url: cardcomParams.get('Url') || cardcomParams.get('url') || '',
-    };
-    console.log('CardCom response:', cardcomData);
 
-    if (cardcomData.ResponseCode !== 0 && cardcomData.ResponseCode !== undefined) {
+    // CardCom response field mapping:
+    // - ResponseCode: General response code (0 = success)
+    // - OperationResponse: Operation-specific response (0 = success) - some docs refer to this
+    // - LowProfileCode: The payment session identifier
+    // - Url/url: The payment page URL to redirect the customer to
+    const responseCode = parseInt(cardcomParams.get('ResponseCode') || cardcomParams.get('OperationResponse') || '-1');
+    const cardcomData = {
+      ResponseCode: responseCode,
+      OperationResponse: parseInt(cardcomParams.get('OperationResponse') || '-1'),
+      Description: cardcomParams.get('Description') || cardcomParams.get('ErrorDescription') || '',
+      LowProfileId: cardcomParams.get('LowProfileCode') || cardcomParams.get('LowProfileId') || '',
+      Url: cardcomParams.get('Url') || cardcomParams.get('url') || cardcomParams.get('LowProfileUrl') || '',
+    };
+    console.log('CardCom parsed response:', cardcomData);
+
+    // Check for success: ResponseCode should be 0
+    // Also accept if we got a valid URL even without explicit success code
+    const isSuccess = responseCode === 0 || (cardcomData.Url && cardcomData.Url.length > 0 && responseCode === -1);
+
+    if (!isSuccess) {
       console.error('CardCom error:', cardcomData);
       
       // Mark order as payment failed
