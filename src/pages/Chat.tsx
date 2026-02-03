@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
+import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 
 interface Message {
   role: "user" | "assistant";
@@ -524,29 +524,19 @@ const Chat = () => {
               </motion.div>
             )}
 
-            {/* Date Picker */}
+            {/* Date Picker - Horizontal Style */}
             {showDatePicker && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-4 mx-2"
               >
-                <div className="bg-card border border-border/50 rounded-2xl p-4 shadow-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Calendar className="w-5 h-5 text-petid-gold" />
-                    <h3 className="text-sm font-heebo font-semibold text-foreground">בחר תאריך</h3>
-                  </div>
-                  <DateWheelPicker
+                <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-lg">
+                  <HorizontalDatePicker
                     value={selectedDate}
-                    onChange={setSelectedDate}
-                    minYear={new Date().getFullYear()}
+                    onChange={handleDateSelect}
+                    minDate={new Date()}
                   />
-                  <Button
-                    onClick={() => handleDateSelect(selectedDate)}
-                    className="w-full mt-4 bg-gradient-to-r from-petid-blue to-petid-teal text-white rounded-full font-heebo"
-                  >
-                    אישור
-                  </Button>
                 </div>
               </motion.div>
             )}
