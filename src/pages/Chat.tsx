@@ -24,7 +24,7 @@ interface Pet {
 async function fetchUserPets(userId: string): Promise<Pet[]> {
   // Using explicit any to avoid deep type instantiation issues with Supabase
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (supabase as any).from("pets").select("id, name, type, breed").eq("owner_id", userId);
+  const result = await (supabase as any).from("pets").select("id, name, type, breed").eq("user_id", userId);
   return (result.data || []) as Pet[];
 }
 
