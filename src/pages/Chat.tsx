@@ -118,6 +118,12 @@ const Chat = () => {
   ];
 
   const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
+    // Special handling for training - navigate to dedicated training chat
+    if (category.id === "training") {
+      navigate("/training");
+      return;
+    }
+    
     setShowCategories(false);
     const userMessage: Message = { role: "user", content: `${category.icon} ${category.label}` };
     setMessages((prev) => [...prev, userMessage]);
