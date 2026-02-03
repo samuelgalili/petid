@@ -591,82 +591,94 @@ ${lesson.instructions_he || 'בצע את התרגיל והעלה הוכחה.'}`
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+    <div className="flex flex-col h-full bg-gradient-to-b from-background via-background to-muted/30">
+      {/* Header - Matching AI Chat Style */}
+      <div className="flex items-center justify-between px-4 py-3 bg-card/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center gap-3">
           {selectedPet ? (
-            <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
-              {selectedPet.avatar_url ? (
-                <img src={selectedPet.avatar_url} alt={selectedPet.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Dog className="w-5 h-5 text-gray-400" />
+            <div className="relative">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-petid-gold via-warning to-petid-coral p-[2.5px]">
+                <div className="w-full h-full rounded-full overflow-hidden bg-card">
+                  {selectedPet.avatar_url ? (
+                    <img src={selectedPet.avatar_url} alt={selectedPet.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Dog className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-card shadow-lg" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
-              <Dog className="w-5 h-5 text-white" />
+            <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-petid-gold via-warning to-petid-coral p-[2.5px]">
+              <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                <Dog className="w-5 h-5 text-petid-gold" />
+              </div>
             </div>
           )}
-          <div>
-            <h3 className="font-semibold text-gray-900 text-sm">
+          <div className="text-right">
+            <h3 className="text-base font-bold text-foreground font-heebo">
               {selectedPet ? `אימון ${selectedPet.name}` : 'מאלף דיגיטלי'}
             </h3>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-success font-heebo flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
               {selectedModule ? selectedModule.title_he : phase === 'daily' ? 'אימון יומי' : 'מוכן לאימון'}
             </p>
           </div>
         </div>
         
         {/* Stats */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-full">
-            <Star className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-xs font-medium text-amber-700">{totalXP}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-petid-gold/10 px-3 py-1.5 rounded-full">
+            <Star className="w-4 h-4 text-petid-gold" />
+            <span className="text-xs font-bold text-petid-gold">{totalXP}</span>
           </div>
-          <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-full">
-            <Flame className="w-3.5 h-3.5 text-orange-500" />
-            <span className="text-xs font-medium text-orange-700">{streak}</span>
+          <div className="flex items-center gap-1.5 bg-petid-coral/10 px-3 py-1.5 rounded-full">
+            <Flame className="w-4 h-4 text-petid-coral" />
+            <span className="text-xs font-bold text-petid-coral">{streak}</span>
           </div>
         </div>
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Pet Selection */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        {/* Pet Selection - Matching AI Chat Style */}
         {phase === 'select-pet' && pets.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-50 rounded-xl p-4"
+            className="flex flex-wrap gap-4 justify-center"
           >
-            <p className="text-sm text-gray-700 mb-3">בחר את הכלב לאימון:</p>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {pets.map(pet => (
-                <button
-                  key={pet.id}
-                  onClick={() => handleSelectPet(pet)}
-                  className="flex flex-col items-center gap-1 flex-shrink-0"
-                >
-                  <div className="w-16 h-16 rounded-full bg-white border-2 border-gray-200 overflow-hidden hover:border-gray-900 transition-colors">
+            {pets.map((pet, index) => (
+              <motion.button
+                key={pet.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleSelectPet(pet)}
+                className="flex flex-col items-center gap-2"
+              >
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-petid-gold via-warning to-petid-coral p-[2.5px] shadow-lg">
+                  <div className="w-full h-full rounded-full overflow-hidden bg-card">
                     {pet.avatar_url ? (
                       <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Dog className="w-6 h-6 text-gray-400" />
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
+                        <Dog className="w-6 h-6 text-muted-foreground" />
                       </div>
                     )}
                   </div>
-                  <span className="text-xs font-medium text-gray-700">{pet.name}</span>
-                </button>
-              ))}
-            </div>
+                </div>
+                <span className="text-xs font-heebo font-medium text-foreground">{pet.name}</span>
+              </motion.button>
+            ))}
           </motion.div>
         )}
 
-        {/* Mode Selection */}
+        {/* Mode Selection - Updated Colors */}
         {phase === 'mode-select' && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -676,17 +688,17 @@ ${lesson.instructions_he || 'בצע את התרגיל והעלה הוכחה.'}`
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={handleSelectDailyMode}
-              className="w-full bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200 rounded-xl p-4 text-right hover:shadow-md transition-all"
+              className="w-full bg-gradient-to-r from-petid-gold/10 to-warning/10 border border-petid-gold/30 rounded-2xl p-4 text-right hover:shadow-md transition-all"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-petid-gold to-warning flex items-center justify-center shadow-lg">
                   <Calendar className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-gray-900">אימון יומי</h4>
-                  <p className="text-xs text-gray-600">תרגילים מותאמים אישית לכלב שלך</p>
+                  <h4 className="font-bold text-foreground font-heebo">אימון יומי</h4>
+                  <p className="text-xs text-muted-foreground font-heebo">תרגילים מותאמים אישית לכלב שלך</p>
                 </div>
-                <div className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                <div className="bg-petid-gold text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">
                   מומלץ
                 </div>
               </div>
@@ -695,15 +707,15 @@ ${lesson.instructions_he || 'בצע את התרגיל והעלה הוכחה.'}`
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={handleSelectModulesMode}
-              className="w-full bg-white border border-gray-200 rounded-xl p-4 text-right hover:border-gray-300 hover:shadow-sm transition-all"
+              className="w-full bg-card border border-border/50 rounded-2xl p-4 text-right hover:border-primary/30 hover:shadow-sm transition-all"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-gray-600" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-petid-blue/10 to-petid-teal/10 flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-petid-blue" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-gray-900">קורס מלא</h4>
-                  <p className="text-xs text-gray-600">מודולים מובנים עם שיעורים והתקדמות</p>
+                  <h4 className="font-bold text-foreground font-heebo">קורס מלא</h4>
+                  <p className="text-xs text-muted-foreground font-heebo">מודולים מובנים עם שיעורים והתקדמות</p>
                 </div>
               </div>
             </motion.button>
@@ -728,19 +740,38 @@ ${lesson.instructions_he || 'בצע את התרגיל והעלה הוכחה.'}`
           ))}
         </AnimatePresence>
 
-        {/* Loading indicator */}
+        {/* Loading indicator - Matching AI Chat Style */}
         {isUploading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-2 text-gray-500"
+            className="flex items-center gap-2.5"
           >
-            <div className="flex gap-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-petid-gold to-warning p-[2px] shadow-md">
+              <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                <Dog className="w-3.5 h-3.5 text-petid-gold" />
+              </div>
             </div>
-            <span className="text-xs">מנתח...</span>
+            <div className="bg-card border border-border/50 rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="flex items-center gap-1.5">
+                <motion.div
+                  className="w-2 h-2 bg-petid-gold rounded-full"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                />
+                <motion.div
+                  className="w-2 h-2 bg-petid-gold rounded-full"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                />
+                <motion.div
+                  className="w-2 h-2 bg-petid-gold rounded-full"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                />
+                <span className="text-xs text-muted-foreground font-heebo mr-2">מנתח...</span>
+              </div>
+            </div>
           </motion.div>
         )}
 
