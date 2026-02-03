@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Image, Mic, Smile, Sparkles, X, Plus, Camera, MapPin, Calendar } from "lucide-react";
+import { Send, Image as ImageIcon, Mic, Sparkles, X, Plus, Camera, MapPin, Calendar, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatInputBarProps {
   value: string;
@@ -10,13 +11,8 @@ interface ChatInputBarProps {
   onKeyPress: (e: React.KeyboardEvent) => void;
   isLoading: boolean;
   placeholder?: string;
+  onQuickAction?: (actionId: string) => void;
 }
-
-const quickActions = [
-  { id: "camera", icon: Camera, label: "צלם תמונה", color: "from-pink-500 to-rose-500" },
-  { id: "location", icon: MapPin, label: "שתף מיקום", color: "from-green-500 to-emerald-500" },
-  { id: "calendar", icon: Calendar, label: "קבע תור", color: "from-blue-500 to-cyan-500" },
-];
 
 const ChatInputBar = ({
   value,
@@ -25,13 +21,23 @@ const ChatInputBar = ({
   onKeyPress,
   isLoading,
   placeholder = "כתוב הודעה...",
+  onQuickAction,
 }: ChatInputBarProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [clickedAction, setClickedAction] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingInterval = useRef<NodeJS.Timeout | null>(null);
+  const { toast } = useToast();
+
+  const quickActions = [
+    { id: "camera", icon: Camera, label: "צלם תמונה", color: "from-pink-500 to-rose-500" },
+    { id: "location", icon: MapPin, label: "שתף מיקום", color: "from-green-500 to-emerald-500" },
+    { id: "calendar", icon: Calendar, label: "קבע תור", color: "from-blue-500 to-cyan-500" },
+  ];
 
   // Auto-resize textarea
   useEffect(() => {
@@ -67,46 +73,166 @@ const ChatInputBar = ({
   };
 
   const handleMicPress = () => {
-    setIsRecording(!isRecording);
     if (isRecording) {
-      // Stop recording logic would go here
+      // Stop recording
+      setIsRecording(false);
+      toast({
+        title: "ההקלטה נשמרה",
+        description: `משך ההקלטה: ${formatTime(recordingTime)}`,
+      });
+      // Send voice message indication
+      onChange("🎤 הודעה קולית נשלחה");
+      setTimeout(() => onSend(), 100);
+    } else {
+      // Start recording
+      setIsRecording(true);
+      toast({
+        title: "מקליט...",
+        description: "לחץ שוב לעצירה",
+      });
     }
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast({
+        title: "תמונה נבחרה",
+        description: file.name,
+      });
+      onChange(`📷 תמונה: ${file.name}`);
+      // Reset file input
+      e.target.value = "";
+    }
+  };
+
+  const handleQuickActionClick = (actionId: string) => {
+    setClickedAction(actionId);
+    
+    // Visual feedback
+    setTimeout(() => {
+      setClickedAction(null);
+      setShowQuickActions(false);
+    }, 300);
+
+    // Handle each action
+    switch (actionId) {
+      case "camera":
+        toast({
+          title: "📸 מצלמה",
+          description: "פותח מצלמה לצילום...",
+        });
+        onChange("📸 רוצה לשלוח תמונה של חיית המחמד שלי");
+        break;
+      case "location":
+        toast({
+          title: "📍 מיקום",
+          description: "משתף מיקום נוכחי...",
+        });
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              onChange(`📍 המיקום שלי: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
+            },
+            () => {
+              onChange("📍 רוצה לשתף את המיקום שלי");
+            }
+          );
+        } else {
+          onChange("📍 רוצה לשתף את המיקום שלי");
+        }
+        break;
+      case "calendar":
+        toast({
+          title: "📅 קביעת תור",
+          description: "פותח יומן...",
+        });
+        if (onQuickAction) {
+          onQuickAction("calendar");
+        } else {
+          onChange("📅 רוצה לקבוע תור");
+        }
+        break;
+    }
+  };
+
+  const handleSparkleClick = () => {
+    // AI suggestions
+    const suggestions = [
+      "מה הטיפולים הנדרשים לכלב שלי?",
+      "מתי החיסון הבא?",
+      "איפה הווטרינר הקרוב אליי?",
+      "איך לטפל בפרווה של החתול?",
+    ];
+    const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+    onChange(randomSuggestion);
+    toast({
+      title: "✨ הצעה חכמה",
+      description: "נוספה שאלה מומלצת",
+    });
   };
 
   const hasContent = value.trim().length > 0;
 
   return (
     <div className="relative">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       {/* Quick Actions Overlay */}
       <AnimatePresence>
         {showQuickActions && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="absolute bottom-full left-0 right-0 mb-2 px-4"
           >
             <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border/50 p-3 shadow-xl">
               <div className="flex items-center justify-around gap-2">
-                {quickActions.map((action, index) => (
-                  <motion.button
-                    key={action.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center gap-1.5 p-3"
-                  >
-                    <div className={cn(
-                      "w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg",
-                      action.color
-                    )}>
-                      <action.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-[10px] text-muted-foreground font-heebo">{action.label}</span>
-                  </motion.button>
-                ))}
+                {quickActions.map((action, index) => {
+                  const IconComponent = action.icon;
+                  const isClicked = clickedAction === action.id;
+                  
+                  return (
+                    <motion.button
+                      key={action.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleQuickActionClick(action.id)}
+                      className="flex flex-col items-center gap-1.5 p-3"
+                    >
+                      <motion.div 
+                        animate={isClicked ? { scale: [1, 1.2, 1] } : {}}
+                        className={cn(
+                          "w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg transition-all",
+                          action.color,
+                          isClicked && "ring-2 ring-white ring-offset-2"
+                        )}
+                      >
+                        {isClicked ? (
+                          <Check className="w-5 h-5 text-white" />
+                        ) : (
+                          <IconComponent className="w-5 h-5 text-white" />
+                        )}
+                      </motion.div>
+                      <span className="text-[10px] text-muted-foreground font-heebo">{action.label}</span>
+                    </motion.button>
+                  );
+                })}
               </div>
             </div>
           </motion.div>
@@ -133,12 +259,25 @@ const ChatInputBar = ({
                   <span className="text-sm font-heebo text-foreground">מקליט...</span>
                   <span className="text-sm font-mono text-red-500">{formatTime(recordingTime)}</span>
                 </div>
-                <button
-                  onClick={() => setIsRecording(false)}
-                  className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/30 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      setIsRecording(false);
+                      toast({ title: "ההקלטה בוטלה" });
+                    }}
+                    className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/30 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleMicPress}
+                    className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-colors"
+                  >
+                    <Check className="w-4 h-4" />
+                  </motion.button>
+                </div>
               </div>
               
               {/* Audio Waveform Animation */}
@@ -183,11 +322,16 @@ const ChatInputBar = ({
             className={cn(
               "w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full transition-all",
               showQuickActions 
-                ? "bg-muted text-foreground rotate-45" 
+                ? "bg-petid-blue text-white" 
                 : "text-muted-foreground hover:text-petid-blue hover:bg-muted/50"
             )}
           >
-            <Plus className="w-5 h-5 transition-transform" style={{ transform: showQuickActions ? 'rotate(45deg)' : 'none' }} />
+            <motion.div
+              animate={{ rotate: showQuickActions ? 45 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Plus className="w-5 h-5" />
+            </motion.div>
           </motion.button>
 
           {/* Input Container */}
@@ -199,7 +343,7 @@ const ChatInputBar = ({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  onKeyPress(e as unknown as React.KeyboardEvent);
+                  onSend();
                 }
               }}
               onFocus={() => {
@@ -210,40 +354,46 @@ const ChatInputBar = ({
               placeholder={placeholder}
               rows={1}
               className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-[15px] placeholder:text-muted-foreground resize-none py-2 px-2 font-heebo max-h-[120px] leading-relaxed"
-              disabled={isLoading}
+              disabled={isLoading || isRecording}
               dir="rtl"
             />
           </div>
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            {!hasContent && (
-              <>
-                {/* Image Button */}
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-petid-blue rounded-full transition-colors"
-                >
-                  <Image className="w-5 h-5" />
-                </motion.button>
+            <AnimatePresence mode="popLayout">
+              {!hasContent && !isRecording && (
+                <>
+                  {/* Image Button */}
+                  <motion.button
+                    key="image"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleImageClick}
+                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-colors"
+                  >
+                    <ImageIcon className="w-5 h-5" />
+                  </motion.button>
 
-                {/* Mic Button */}
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleMicPress}
-                  className={cn(
-                    "w-9 h-9 flex items-center justify-center rounded-full transition-all",
-                    isRecording 
-                      ? "bg-red-500 text-white" 
-                      : "text-muted-foreground hover:text-petid-blue"
-                  )}
-                >
-                  <Mic className="w-5 h-5" />
-                </motion.button>
-              </>
-            )}
+                  {/* Mic Button */}
+                  <motion.button
+                    key="mic"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleMicPress}
+                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-colors"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </motion.button>
+                </>
+              )}
+            </AnimatePresence>
 
             {/* Send Button */}
             <AnimatePresence mode="wait">
@@ -267,9 +417,10 @@ const ChatInputBar = ({
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   exit={{ scale: 0 }}
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.1, rotate: 15 }}
                   whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-petid-gold/20 to-petid-gold/10 rounded-full text-petid-gold"
+                  onClick={handleSparkleClick}
+                  className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-petid-gold/20 to-petid-gold/10 hover:from-petid-gold/30 hover:to-petid-gold/20 rounded-full text-petid-gold transition-colors"
                 >
                   <Sparkles className="w-5 h-5" />
                 </motion.button>
@@ -280,7 +431,7 @@ const ChatInputBar = ({
 
         {/* Typing Indicator / Suggestions */}
         <AnimatePresence>
-          {isFocused && !hasContent && (
+          {isFocused && !hasContent && !isRecording && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -294,8 +445,12 @@ const ChatInputBar = ({
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => onChange(suggestion)}
+                    onClick={() => {
+                      onChange(suggestion);
+                      inputRef.current?.focus();
+                    }}
                     className="flex-shrink-0 px-3 py-1.5 bg-muted/50 hover:bg-muted rounded-full text-xs text-muted-foreground hover:text-foreground font-heebo transition-colors border border-border/50"
                   >
                     {suggestion}
