@@ -586,6 +586,11 @@ const Chat = () => {
           onKeyPress={handleKeyPress}
           isLoading={isLoading}
           placeholder="כתוב הודעה..."
+          onQuickAction={(actionId) => {
+            if (actionId === "calendar") {
+              setShowDatePicker(true);
+            }
+          }}
         />
       </div>
 
