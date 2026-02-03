@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -71,6 +72,19 @@ const Profile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { role } = useUserRole();
+  
+  // Map role to Hebrew display text
+  const getRoleDisplayText = (role: string): string => {
+    const roleLabels: Record<string, string> = {
+      admin: 'אדמין',
+      business: 'חנות',
+      org: 'עמותה',
+      moderator: 'מנהל תוכן',
+      user: 'משתמש'
+    };
+    return roleLabels[role] || 'משתמש';
+  };
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [pets, setPets] = useState<Pet[]>([]);
@@ -410,10 +424,13 @@ const Profile = () => {
                   </div>
                 </motion.div>
 
-                {/* Name & Bio */}
-                <h1 className="text-xl font-bold text-foreground mb-1 shrink-0">
+                {/* Name & Role */}
+                <h1 className="text-xl font-bold text-foreground mb-0.5 shrink-0">
                   {profile?.full_name || "משתמש"}
                 </h1>
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full mb-1">
+                  {getRoleDisplayText(role)}
+                </span>
                 {profile?.bio && (
                   <p className="text-sm text-muted-foreground text-center max-w-[250px] mb-2 shrink-0">
                     {profile.bio}
