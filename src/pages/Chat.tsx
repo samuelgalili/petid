@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Send, ChevronRight, Sparkles, Heart, Image, Mic, Smile } from "lucide-react";
+import { Send, ChevronRight, Sparkles, Heart, Image, Mic, Smile, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 
 interface Message {
   role: "user" | "assistant";
@@ -38,6 +39,9 @@ const Chat = () => {
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [showPetSelection, setShowPetSelection] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [pendingDateContext, setPendingDateContext] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -254,6 +258,45 @@ const Chat = () => {
       }
     }
     setIsTyping(false);
+    
+    // Check for ACTION tags in the final response
+    handleActionTags(assistantContent);
+  };
+
+  // Handle ACTION tags from AI responses
+  const handleActionTags = (content: string) => {
+    if (content.includes("[ACTION:SHOW_CALENDAR]")) {
+      setPendingDateContext("grooming");
+      setShowDatePicker(true);
+    }
+  };
+
+  // Handle date selection from picker
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setShowDatePicker(false);
+    
+    const formattedDate = date.toLocaleDateString('he-IL', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    // Send the selected date as a user message
+    const userMessage: Message = { role: "user", content: `בחרתי את ${formattedDate}` };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Continue the conversation
+    streamChat([...messages, userMessage]);
+    setPendingDateContext(null);
+  };
+
+  // Strip ACTION tags from display
+  const cleanMessageContent = (content: string): string => {
+    return content
+      .replace(/\[ACTION:[^\]]+\]/g, "")
+      .trim();
   };
 
   const handleSend = async () => {
@@ -403,7 +446,7 @@ const Chat = () => {
                     }`}
                   >
                     <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                      {message.content}
+                      {cleanMessageContent(message.content)}
                     </p>
                   </div>
                 </div>
@@ -477,6 +520,33 @@ const Chat = () => {
                       <span className="text-[10px] text-foreground font-heebo font-medium leading-tight text-center">{cat.label}</span>
                     </motion.button>
                   ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Date Picker */}
+            {showDatePicker && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 mx-2"
+              >
+                <div className="bg-card border border-border/50 rounded-2xl p-4 shadow-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="w-5 h-5 text-petid-gold" />
+                    <h3 className="text-sm font-heebo font-semibold text-foreground">בחר תאריך</h3>
+                  </div>
+                  <DateWheelPicker
+                    value={selectedDate}
+                    onChange={setSelectedDate}
+                    minYear={new Date().getFullYear()}
+                  />
+                  <Button
+                    onClick={() => handleDateSelect(selectedDate)}
+                    className="w-full mt-4 bg-gradient-to-r from-petid-blue to-petid-teal text-white rounded-full font-heebo"
+                  >
+                    אישור
+                  </Button>
                 </div>
               </motion.div>
             )}
