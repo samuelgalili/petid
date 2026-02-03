@@ -286,42 +286,45 @@ const Chat = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Instagram-style Header */}
-      <div className="sticky top-0 z-50 bg-card border-b border-border">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-20" dir="rtl">
+      {/* Modern Glassmorphism Header */}
+      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <button 
             onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
           >
             <ChevronRight className="w-6 h-6 text-foreground" />
           </button>
           
           <div className="flex items-center gap-3">
-            {/* AI Avatar with PetID gradient ring */}
+            {/* AI Avatar with animated gradient ring */}
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-blue p-[2px]">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                  <span className="text-lg">🐾</span>
+              <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2.5px] animate-pulse-slow">
+                <div className="w-full h-full rounded-full bg-card flex items-center justify-center shadow-inner">
+                  <Sparkles className="w-5 h-5 text-petid-gold" />
                 </div>
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-card shadow-lg" />
             </div>
             <div className="text-right">
-              <h1 className="text-base font-bold text-foreground font-heebo">Petid AI</h1>
-              <p className="text-xs text-success font-heebo">פעיל עכשיו</p>
+              <h1 className="text-base font-bold text-foreground font-heebo">PetID AI</h1>
+              <p className="text-xs text-emerald-500 font-heebo flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                פעיל עכשיו
+              </p>
             </div>
           </div>
           
-          <div className="w-10 h-10 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-[#DD2A7B]" />
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-petid-blue/10 to-petid-gold/10">
+            <Heart className="w-5 h-5 text-petid-gold" />
           </div>
         </div>
       </div>
 
       <div className="flex flex-col h-[calc(100vh-140px)]">
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-6">
           <AnimatePresence>
             {messages.length === 0 && (
               <motion.div
@@ -330,28 +333,35 @@ const Chat = () => {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center h-full py-8"
               >
-                {/* AI Profile Card */}
-                <div className="w-24 h-24 rounded-full bg-gradient-instagram p-[3px] mb-4">
-                  <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                    <span className="text-4xl">🐾</span>
+                {/* AI Profile Card - Enhanced */}
+                <div className="relative mb-6">
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[3px] shadow-xl">
+                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                      <Sparkles className="w-10 h-10 text-petid-gold" />
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500 rounded-full shadow-lg">
+                    <span className="text-[10px] text-white font-bold">AI</span>
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-foreground font-heebo mb-1">Petid AI</h2>
-                <p className="text-sm text-muted-foreground font-heebo mb-6">העוזר החכם לבעלי חיות מחמד</p>
+                <h2 className="text-2xl font-bold text-foreground font-heebo mb-1">PetID AI</h2>
+                <p className="text-sm text-muted-foreground font-heebo mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
                 
-                {/* Example Questions Grid */}
-                <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+                {/* Example Questions Grid - Enhanced */}
+                <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
                   {exampleQuestions.map((q, index) => (
                     <motion.button
                       key={index}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => setInput(q.text)}
-                      className="flex items-center gap-2 px-4 py-3 bg-secondary hover:bg-secondary/80 rounded-2xl transition-colors text-right"
+                      className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-card/80 rounded-2xl transition-all text-right border border-border/50 shadow-sm hover:shadow-md"
                     >
-                      <span className="text-xl">{q.icon}</span>
-                      <span className="text-sm text-foreground font-heebo">{q.text}</span>
+                      <span className="text-2xl">{q.icon}</span>
+                      <span className="text-sm text-foreground font-heebo font-medium">{q.text}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -364,24 +374,24 @@ const Chat = () => {
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.2 }}
-                className={`flex mb-3 ${message.role === "user" ? "justify-start" : "justify-end"}`}
+                className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
               >
-                <div className={`flex items-end gap-2 max-w-[80%] ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
-                  {/* Avatar */}
+                <div className={`flex items-end gap-2.5 max-w-[85%] ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
+                  {/* Avatar - Enhanced */}
                   {message.role === "assistant" && (
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-instagram p-[1.5px]">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2px] shadow-md">
                       <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                        <span className="text-xs">🐾</span>
+                        <Sparkles className="w-3.5 h-3.5 text-petid-gold" />
                       </div>
                     </div>
                   )}
                   
-                  {/* Message Bubble */}
+                  {/* Message Bubble - Enhanced */}
                   <div
-                    className={`px-4 py-2.5 rounded-3xl font-heebo ${
+                    className={`px-4 py-3 font-heebo shadow-sm ${
                       message.role === "user"
-                        ? "bg-gradient-instagram text-white rounded-br-lg"
-                        : "bg-secondary text-foreground rounded-bl-lg"
+                        ? "bg-gradient-to-br from-petid-blue to-petid-blue/90 text-white rounded-2xl rounded-br-md"
+                        : "bg-card border border-border/50 text-foreground rounded-2xl rounded-bl-md"
                     }`}
                   >
                     <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
@@ -392,49 +402,53 @@ const Chat = () => {
               </motion.div>
             ))}
 
-            {/* Pet Selection Buttons */}
+            {/* Pet Selection Buttons - Enhanced */}
             {showPetSelection && userPets.length > 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap gap-2 justify-center mb-3"
+                className="flex flex-wrap gap-3 justify-center mb-4 px-4"
               >
-                {userPets.map((pet) => (
+                {userPets.map((pet, index) => (
                   <motion.button
                     key={pet.id}
-                    whileHover={{ scale: 1.05 }}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handlePetSelect(pet)}
-                    className="px-4 py-2 bg-gradient-to-r from-petid-blue to-petid-gold text-white rounded-full font-heebo text-sm flex items-center gap-2"
+                    className="px-5 py-2.5 bg-gradient-to-r from-petid-blue via-petid-teal to-petid-gold text-white rounded-full font-heebo text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow"
                   >
-                    <span>{pet.type === 'dog' ? '🐕' : pet.type === 'cat' ? '🐈' : '🐾'}</span>
-                    <span>{pet.name}</span>
+                    <span className="text-lg">{pet.type === 'dog' ? '🐕' : pet.type === 'cat' ? '🐈' : '🐾'}</span>
+                    <span className="font-medium">{pet.name}</span>
                   </motion.button>
                 ))}
               </motion.div>
             )}
 
-            {/* Category Quick Buttons - show after pet is selected or if no pets */}
+            {/* Category Quick Buttons - Enhanced Grid */}
             {!showPetSelection && messages.length > 0 && messages.length <= 2 && !isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-4"
+                className="mb-4 px-2"
               >
-                <div className="grid grid-cols-4 gap-2 px-2">
+                <p className="text-xs text-muted-foreground text-center mb-3 font-heebo">במה אוכל לעזור?</p>
+                <div className="grid grid-cols-4 gap-2">
                   {categoryButtons.map((cat, index) => (
                     <motion.button
                       key={cat.id}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.05 }}
-                      whileHover={{ scale: 1.05 }}
+                      whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleCategorySelect(cat)}
-                      className="flex flex-col items-center gap-1 p-2 bg-secondary hover:bg-secondary/80 rounded-xl transition-colors"
+                      className="flex flex-col items-center gap-1.5 p-3 bg-card hover:bg-card/80 rounded-2xl transition-all border border-border/50 shadow-sm hover:shadow-md"
                     >
-                      <span className="text-xl">{cat.icon}</span>
-                      <span className="text-[10px] text-foreground font-heebo leading-tight text-center">{cat.label}</span>
+                      <span className="text-2xl">{cat.icon}</span>
+                      <span className="text-[10px] text-foreground font-heebo font-medium leading-tight text-center">{cat.label}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -480,21 +494,21 @@ const Chat = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Instagram-style Input Area */}
-        <div className="px-4 py-3 bg-card border-t border-border">
-          <div className="flex items-center gap-2">
+        {/* Enhanced Input Area */}
+        <div className="px-4 py-3 bg-card/80 backdrop-blur-xl border-t border-border/50">
+          <div className="flex items-center gap-3">
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
-              <button className="w-9 h-9 flex items-center justify-center text-instagram-blue hover:bg-secondary rounded-full transition-colors">
+              <button className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-all">
                 <Image className="w-5 h-5" />
               </button>
-              <button className="w-9 h-9 flex items-center justify-center text-instagram-blue hover:bg-secondary rounded-full transition-colors">
+              <button className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-all">
                 <Mic className="w-5 h-5" />
               </button>
             </div>
             
-            {/* Input Field */}
-            <div className="flex-1 flex items-center bg-secondary rounded-full border border-border px-4 py-2">
+            {/* Input Field - Enhanced */}
+            <div className="flex-1 flex items-center bg-muted/50 rounded-full border border-border/50 px-4 py-2.5 focus-within:border-petid-blue/50 focus-within:bg-background transition-all">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -504,24 +518,26 @@ const Chat = () => {
                 disabled={isLoading}
                 dir="rtl"
               />
-              <button className="mr-2 text-gray-400 hover:text-gray-600 transition-colors">
+              <button className="mr-2 text-muted-foreground hover:text-foreground transition-colors">
                 <Smile className="w-5 h-5" />
               </button>
             </div>
             
-            {/* Send Button */}
+            {/* Send Button - Enhanced */}
             {input.trim() ? (
               <motion.button
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={handleSend}
                 disabled={isLoading}
-                className="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-petid-blue via-petid-gold to-petid-blue rounded-full text-white disabled:opacity-50"
+                className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-petid-blue via-petid-teal to-petid-gold rounded-full text-white disabled:opacity-50 shadow-lg hover:shadow-xl transition-shadow"
               >
                 <Send className="w-4 h-4" />
               </motion.button>
             ) : (
-              <button className="w-9 h-9 flex items-center justify-center text-destructive hover:bg-muted rounded-full transition-colors">
+              <button className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-petid-gold hover:bg-muted/50 rounded-full transition-all">
                 <Heart className="w-5 h-5" />
               </button>
             )}
