@@ -40,12 +40,24 @@ const Chat = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const [userName, setUserName] = useState<string | null>(null);
+
   // Fetch user's pets on mount
   useEffect(() => {
     const loadPets = async () => {
       const authResult = await supabase.auth.getUser();
       const user = authResult.data?.user;
       if (!user) return;
+
+      // Fetch user profile for name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name")
+        .eq("id", user.id)
+        .single();
+      
+      const displayName = profile?.first_name || user.email?.split('@')[0] || "חבר";
+      setUserName(displayName);
 
       const pets = await fetchUserPets(user.id);
 
@@ -55,19 +67,19 @@ const Chat = () => {
           setSelectedPet(pets[0]);
           setMessages([{
             role: "assistant",
-            content: `שלום! 👋 אני רואה שיש לך את ${pets[0].name}. איך אוכל לעזור לך היום?`
+            content: `היי ${displayName}! 👋\nאני העוזר החכם של PetID.\nאני רואה שיש לך את ${pets[0].name}.\n\nבמה אוכל לעזור היום?\n1) ביטוח 🛡️\n2) טיפוח ✂️\n3) אילוף 🎓\n4) מוצרים 🛒\n5) משלוחים 📦\n6) מידע על ${pets[0].breed || 'הגזע'} 🐕\n7) אחר`
           }]);
         } else {
           setShowPetSelection(true);
           setMessages([{
             role: "assistant",
-            content: `שלום! 👋 אני רואה שיש לך כמה חיות מחמד. על מי נדבר היום?`
+            content: `היי ${displayName}! 👋\nאני העוזר החכם של PetID.\nאני רואה שיש לך כמה חיות מחמד.\n\nעל מי נדבר היום?`
           }]);
         }
       } else {
         setMessages([{
           role: "assistant",
-          content: `שלום! 👋 אני Petid AI, העוזר החכם שלך לכל מה שקשור לחיות מחמד. איך אוכל לעזור לך היום?`
+          content: `היי ${displayName}! 👋\nאני העוזר החכם של PetID.\n\nבמה אוכל לעזור היום?\n1) ביטוח 🛡️\n2) טיפוח ✂️\n3) אילוף 🎓\n4) מוצרים 🛒\n5) משלוחים 📦\n6) אחר`
         }]);
       }
     };
@@ -80,7 +92,7 @@ const Chat = () => {
     setMessages(prev => [
       ...prev,
       { role: "user", content: pet.name },
-      { role: "assistant", content: `מעולה! נדבר על ${pet.name}. איך אוכל לעזור לך?` }
+      { role: "assistant", content: `מעולה! נדבר על ${pet.name}.\n\nבמה אוכל לעזור היום?\n1) ביטוח 🛡️\n2) טיפוח ✂️\n3) אילוף 🎓\n4) מוצרים 🛒\n5) משלוחים 📦\n6) מידע על ${pet.breed || 'הגזע'} 🐕\n7) אחר` }
     ]);
   };
 
@@ -96,13 +108,24 @@ const Chat = () => {
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
     setIsTyping(true);
     
+    // Build user context with pet data
+    const userContext = {
+      userName: userName,
+      pets: userPets.map(pet => ({
+        id: pet.id,
+        name: pet.name,
+        type: pet.type,
+        breed: pet.breed,
+      }))
+    };
+    
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, userContext }),
     });
 
     if (!resp.ok || !resp.body) {
