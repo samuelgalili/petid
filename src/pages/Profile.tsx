@@ -72,7 +72,7 @@ const Profile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { role } = useUserRole();
+  const { role, isAdmin } = useUserRole();
   
   // Map role to Hebrew display text
   const getRoleDisplayText = (role: string): string => {
@@ -372,12 +372,21 @@ const Profile = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate('/edit-profile')}
-              className="p-2"
-            >
-              <Edit3 className="w-5 h-5 text-foreground" />
-            </button>
+            {isAdmin ? (
+              <button 
+                onClick={() => navigate('/admin/dashboard')}
+                className="p-2"
+              >
+                <Shield className="w-5 h-5 text-primary" />
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/edit-profile')}
+                className="p-2"
+              >
+                <Edit3 className="w-5 h-5 text-foreground" />
+              </button>
+            )}
             <button 
               onClick={() => setIsMenuOpen(true)}
               className="p-2 -ml-2"
