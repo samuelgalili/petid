@@ -6,10 +6,26 @@ import { Send, ChevronRight, Sparkles, Heart, Image, Mic, Smile } from "lucide-r
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+interface Pet {
+  id: string;
+  name: string;
+  type: string;
+  breed: string | null;
+}
+
+// Helper function to fetch pets - outside component to avoid type issues
+async function fetchUserPets(userId: string): Promise<Pet[]> {
+  // Using explicit any to avoid deep type instantiation issues with Supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await (supabase as any).from("pets").select("id, name, type, breed").eq("owner_id", userId);
+  return (result.data || []) as Pet[];
 }
 
 const Chat = () => {
@@ -17,9 +33,56 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [userPets, setUserPets] = useState<Pet[]>([]);
+  const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
+  const [showPetSelection, setShowPetSelection] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Fetch user's pets on mount
+  useEffect(() => {
+    const loadPets = async () => {
+      const authResult = await supabase.auth.getUser();
+      const user = authResult.data?.user;
+      if (!user) return;
+
+      const pets = await fetchUserPets(user.id);
+
+      if (pets && pets.length > 0) {
+        setUserPets(pets);
+        if (pets.length === 1) {
+          setSelectedPet(pets[0]);
+          setMessages([{
+            role: "assistant",
+            content: `שלום! 👋 אני רואה שיש לך את ${pets[0].name}. איך אוכל לעזור לך היום?`
+          }]);
+        } else {
+          setShowPetSelection(true);
+          setMessages([{
+            role: "assistant",
+            content: `שלום! 👋 אני רואה שיש לך כמה חיות מחמד. על מי נדבר היום?`
+          }]);
+        }
+      } else {
+        setMessages([{
+          role: "assistant",
+          content: `שלום! 👋 אני Petid AI, העוזר החכם שלך לכל מה שקשור לחיות מחמד. איך אוכל לעזור לך היום?`
+        }]);
+      }
+    };
+    loadPets();
+  }, []);
+
+  const handlePetSelect = (pet: Pet) => {
+    setSelectedPet(pet);
+    setShowPetSelection(false);
+    setMessages(prev => [
+      ...prev,
+      { role: "user", content: pet.name },
+      { role: "assistant", content: `מעולה! נדבר על ${pet.name}. איך אוכל לעזור לך?` }
+    ]);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -274,6 +337,28 @@ const Chat = () => {
                 </div>
               </motion.div>
             ))}
+
+            {/* Pet Selection Buttons */}
+            {showPetSelection && userPets.length > 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-wrap gap-2 justify-center mb-3"
+              >
+                {userPets.map((pet) => (
+                  <motion.button
+                    key={pet.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handlePetSelect(pet)}
+                    className="px-4 py-2 bg-gradient-to-r from-petid-blue to-petid-gold text-white rounded-full font-heebo text-sm flex items-center gap-2"
+                  >
+                    <span>{pet.type === 'dog' ? '🐕' : pet.type === 'cat' ? '🐈' : '🐾'}</span>
+                    <span>{pet.name}</span>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
 
             {/* Typing Indicator */}
             {isTyping && (
