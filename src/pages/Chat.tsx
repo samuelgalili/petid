@@ -72,7 +72,7 @@ const Chat = () => {
           setShowCategories(true);
           setMessages([{
             role: "assistant",
-            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?\n\n📊 מדד הטיפול של ${pets[0].name}: 65%`
+            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?`
           }]);
         } else {
           setShowPetSelection(true);
@@ -99,7 +99,7 @@ const Chat = () => {
     setMessages(prev => [
       ...prev,
       { role: "user", content: pet.name },
-      { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?\n\n📊 מדד הטיפול של ${pet.name}: 65%` }
+      { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?` }
     ]);
   };
 
