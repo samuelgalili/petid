@@ -67,19 +67,19 @@ const Chat = () => {
           setSelectedPet(pets[0]);
           setMessages([{
             role: "assistant",
-            content: `היי ${displayName}! 👋\nאני העוזר החכם של PetID.\nאני רואה שיש לך את ${pets[0].name}.\n\nבמה אוכל לעזור היום?\n1) ביטוח 🛡️\n2) טיפוח ✂️\n3) אילוף 🎓\n4) מוצרים 🛒\n5) משלוחים 📦\n6) מידע על ${pets[0].breed || 'הגזע'} 🐕\n7) אחר`
+            content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?\n\n📊 מדד הטיפול של ${pets[0].name}: 65%`
           }]);
         } else {
           setShowPetSelection(true);
           setMessages([{
             role: "assistant",
-            content: `היי ${displayName}! 👋\nאני העוזר החכם של PetID.\nאני רואה שיש לך כמה חיות מחמד.\n\nעל מי נדבר היום?`
+            content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`
           }]);
         }
       } else {
         setMessages([{
           role: "assistant",
-          content: `היי ${displayName}! 👋\nאני העוזר החכם של PetID.\n\nבמה אוכל לעזור היום?\n1) ביטוח 🛡️\n2) טיפוח ✂️\n3) אילוף 🎓\n4) מוצרים 🛒\n5) משלוחים 📦\n6) אחר`
+          content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`
         }]);
       }
     };
@@ -92,8 +92,39 @@ const Chat = () => {
     setMessages(prev => [
       ...prev,
       { role: "user", content: pet.name },
-      { role: "assistant", content: `מעולה! נדבר על ${pet.name}.\n\nבמה אוכל לעזור היום?\n1) ביטוח 🛡️\n2) טיפוח ✂️\n3) אילוף 🎓\n4) מוצרים 🛒\n5) משלוחים 📦\n6) מידע על ${pet.breed || 'הגזע'} 🐕\n7) אחר` }
+      { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?\n\n📊 מדד הטיפול של ${pet.name}: 65%` }
     ]);
+  };
+
+  // Category buttons for quick selection
+  const categoryButtons = [
+    { id: "insurance", label: "ביטוח", icon: "🛡️" },
+    { id: "grooming", label: "טיפוח", icon: "✂️" },
+    { id: "training", label: "אילוף", icon: "🎓" },
+    { id: "documents", label: "מסמכים", icon: "📂" },
+    { id: "boarding", label: "פנסיון", icon: "🏨" },
+    { id: "delivery", label: "משלוחים", icon: "📦" },
+    { id: "breed", label: "מידע על הגזע", icon: "🐕" },
+    { id: "rehoming", label: "למסירה", icon: "🏠" },
+  ];
+
+  const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
+    const userMessage: Message = { role: "user", content: `${category.icon} ${category.label}` };
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      await streamChat([...messages, userMessage]);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "שגיאה",
+        description: error instanceof Error ? error.message : "משהו השתבש",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const scrollToBottom = () => {
@@ -380,6 +411,33 @@ const Chat = () => {
                     <span>{pet.name}</span>
                   </motion.button>
                 ))}
+              </motion.div>
+            )}
+
+            {/* Category Quick Buttons - show after pet is selected or if no pets */}
+            {!showPetSelection && messages.length > 0 && messages.length <= 2 && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4"
+              >
+                <div className="grid grid-cols-4 gap-2 px-2">
+                  {categoryButtons.map((cat, index) => (
+                    <motion.button
+                      key={cat.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleCategorySelect(cat)}
+                      className="flex flex-col items-center gap-1 p-2 bg-secondary hover:bg-secondary/80 rounded-xl transition-colors"
+                    >
+                      <span className="text-xl">{cat.icon}</span>
+                      <span className="text-[10px] text-foreground font-heebo leading-tight text-center">{cat.label}</span>
+                    </motion.button>
+                  ))}
+                </div>
               </motion.div>
             )}
 
