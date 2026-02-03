@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Send, ChevronRight, Sparkles, Heart, Image, Mic, Smile, Calendar } from "lucide-react";
+import { ChevronRight, Sparkles, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
-
+import ChatInputBar from "@/components/chat/ChatInputBar";
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -581,54 +579,14 @@ const Chat = () => {
         </div>
 
         {/* Enhanced Input Area */}
-        <div className="px-4 py-3 bg-card/80 backdrop-blur-xl border-t border-border/50">
-          <div className="flex items-center gap-3">
-            {/* Action Buttons */}
-            <div className="flex items-center gap-1">
-              <button className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-all">
-                <Image className="w-5 h-5" />
-              </button>
-              <button className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-all">
-                <Mic className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* Input Field - Enhanced */}
-            <div className="flex-1 flex items-center bg-muted/50 rounded-full border border-border/50 px-4 py-2.5 focus-within:border-petid-blue/50 focus-within:bg-background transition-all">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="כתוב הודעה..."
-                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-[15px] placeholder:text-muted-foreground p-0 h-auto font-heebo"
-                disabled={isLoading}
-                dir="rtl"
-              />
-              <button className="mr-2 text-muted-foreground hover:text-foreground transition-colors">
-                <Smile className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* Send Button - Enhanced */}
-            {input.trim() ? (
-              <motion.button
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleSend}
-                disabled={isLoading}
-                className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-petid-blue via-petid-teal to-petid-gold rounded-full text-white disabled:opacity-50 shadow-lg hover:shadow-xl transition-shadow"
-              >
-                <Send className="w-4 h-4" />
-              </motion.button>
-            ) : (
-              <button className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-petid-gold hover:bg-muted/50 rounded-full transition-all">
-                <Heart className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
+        <ChatInputBar
+          value={input}
+          onChange={setInput}
+          onSend={handleSend}
+          onKeyPress={handleKeyPress}
+          isLoading={isLoading}
+          placeholder="כתוב הודעה..."
+        />
       </div>
 
       <BottomNav />
