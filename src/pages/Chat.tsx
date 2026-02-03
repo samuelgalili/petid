@@ -143,19 +143,19 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const streamChat = async (messages: Message[]) => {
+  const streamChat = async (messagesToSend: Message[]) => {
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
     setIsTyping(true);
     
-    // Build user context with pet data
+    // Build user context with pet data - send only selected pet or all if none selected
+    const petsToSend = selectedPet 
+      ? [{ id: selectedPet.id, name: selectedPet.name, type: selectedPet.type, breed: selectedPet.breed }]
+      : userPets.map(pet => ({ id: pet.id, name: pet.name, type: pet.type, breed: pet.breed }));
+    
     const userContext = {
       userName: userName,
-      pets: userPets.map(pet => ({
-        id: pet.id,
-        name: pet.name,
-        type: pet.type,
-        breed: pet.breed,
-      }))
+      pets: petsToSend,
+      selectedPetName: selectedPet?.name || null
     };
     
     const resp = await fetch(CHAT_URL, {
@@ -164,7 +164,7 @@ const Chat = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages, userContext }),
+      body: JSON.stringify({ messages: messagesToSend, userContext }),
     });
 
     if (!resp.ok || !resp.body) {

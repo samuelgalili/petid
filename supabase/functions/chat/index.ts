@@ -53,7 +53,8 @@ const UserContextSchema = z.object({
     gender: z.string().max(20).optional().nullable(),
     health_notes: z.string().max(500).optional().nullable()
   })).max(20).optional(),
-  userName: z.string().max(100).optional().nullable()
+  userName: z.string().max(100).optional().nullable(),
+  selectedPetName: z.string().max(100).optional().nullable()
 }).optional().nullable();
 
 const ChatInputSchema = z.object({
@@ -260,23 +261,25 @@ serve(async (req) => {
     }));
     
     const lastUserMsg = [...messages].reverse().find(m => m.role === "user")?.content ?? "";
-    let activePet: Pet | null = pickPetFromMessage(lastUserMsg, pets);
+    let activePet: Pet | null = null;
+    
+    // First check if a pet was pre-selected by the frontend
+    const selectedPetName = userContext?.selectedPetName;
+    if (selectedPetName) {
+      activePet = pets.find(p => p.name === selectedPetName) || null;
+    }
+    
+    // If not pre-selected, try to find from message
+    if (!activePet) {
+      activePet = pickPetFromMessage(lastUserMsg, pets);
+    }
 
-    // If no match by name in message:
+    // If still no match:
     if (!activePet) {
       if (pets.length === 1) {
         activePet = pets[0]; // Easy: only one pet
-      } else if (pets.length > 1) {
-        // Multiple pets and no selection → ask user to choose
-        const names = pets.map(p => p.name).join(" / ");
-        return new Response(
-          JSON.stringify({
-            role: "assistant",
-            content: `על איזו חיה מדובר? 😊\n${names}`,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
       }
+      // Note: Don't ask for pet selection here - the frontend handles this
     }
 
     // Build Pet Card (short context for model)
