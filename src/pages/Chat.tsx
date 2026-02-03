@@ -54,12 +54,14 @@ const Chat = () => {
       // Fetch user profile for name
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name")
+        .select("full_name")
         .eq("id", user.id)
         .single();
       
-      const displayName = profile?.first_name || user.email?.split('@')[0] || "חבר";
-      setUserName(displayName);
+      // Extract first name only from full name
+      const fullName = profile?.full_name || "";
+      const firstName = fullName.split(" ")[0] || user.email?.split('@')[0] || "חבר";
+      setUserName(firstName);
 
       const pets = await fetchUserPets(user.id);
 
@@ -70,20 +72,20 @@ const Chat = () => {
           setShowCategories(true);
           setMessages([{
             role: "assistant",
-            content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?\n\n📊 מדד הטיפול של ${pets[0].name}: 65%`
+            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?\n\n📊 מדד הטיפול של ${pets[0].name}: 65%`
           }]);
         } else {
           setShowPetSelection(true);
           setMessages([{
             role: "assistant",
-            content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`
+            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`
           }]);
         }
       } else {
         setShowCategories(true);
         setMessages([{
           role: "assistant",
-          content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`
+          content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`
         }]);
       }
     };
