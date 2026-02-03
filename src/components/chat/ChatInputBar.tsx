@@ -34,9 +34,9 @@ const ChatInputBar = ({
   const { toast } = useToast();
 
   const quickActions = [
-    { id: "camera", icon: Camera, label: "צלם תמונה", color: "from-pink-500 to-rose-500" },
-    { id: "location", icon: MapPin, label: "שתף מיקום", color: "from-green-500 to-emerald-500" },
-    { id: "calendar", icon: Calendar, label: "קבע תור", color: "from-blue-500 to-cyan-500" },
+    { id: "camera", icon: Camera, label: "צלם תמונה", color: "from-petid-coral to-petid-pink" },
+    { id: "location", icon: MapPin, label: "שתף מיקום", color: "from-success to-petid-teal" },
+    { id: "calendar", icon: Calendar, label: "קבע תור", color: "from-petid-blue to-petid-sky" },
   ];
 
   // Auto-resize textarea
@@ -248,16 +248,16 @@ const ChatInputBar = ({
             exit={{ opacity: 0, height: 0 }}
             className="absolute bottom-full left-0 right-0 mb-2 px-4"
           >
-            <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 backdrop-blur-xl rounded-2xl border border-red-500/30 p-4 shadow-xl">
+            <div className="bg-gradient-to-r from-error/10 to-warning/10 backdrop-blur-xl rounded-2xl border border-error/30 p-4 shadow-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 1, repeat: Infinity }}
-                    className="w-3 h-3 bg-red-500 rounded-full"
+                    className="w-3 h-3 bg-error rounded-full"
                   />
                   <span className="text-sm font-heebo text-foreground">מקליט...</span>
-                  <span className="text-sm font-mono text-red-500">{formatTime(recordingTime)}</span>
+                  <span className="text-sm font-mono text-error">{formatTime(recordingTime)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <motion.button
@@ -266,14 +266,14 @@ const ChatInputBar = ({
                       setIsRecording(false);
                       toast({ title: "ההקלטה בוטלה" });
                     }}
-                    className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/30 transition-colors"
+                    className="w-8 h-8 rounded-full bg-error/20 flex items-center justify-center text-error hover:bg-error/30 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </motion.button>
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={handleMicPress}
-                    className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-colors"
+                    className="w-8 h-8 rounded-full bg-success flex items-center justify-center text-white hover:bg-success/90 transition-colors"
                   >
                     <Check className="w-4 h-4" />
                   </motion.button>
@@ -285,7 +285,7 @@ const ChatInputBar = ({
                 {[...Array(20)].map((_, i) => (
                   <motion.div
                     key={i}
-                    className="w-1 bg-gradient-to-t from-red-500 to-orange-400 rounded-full"
+                    className="w-1 bg-gradient-to-t from-error to-warning rounded-full"
                     animate={{
                       height: [8, Math.random() * 24 + 8, 8],
                     }}
