@@ -18,13 +18,14 @@ interface Pet {
   name: string;
   type: string;
   breed: string | null;
+  avatar_url: string | null;
 }
 
 // Helper function to fetch pets - outside component to avoid type issues
 async function fetchUserPets(userId: string): Promise<Pet[]> {
   // Using explicit any to avoid deep type instantiation issues with Supabase
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (supabase as any).from("pets").select("id, name, type, breed").eq("user_id", userId);
+  const result = await (supabase as any).from("pets").select("id, name, type, breed, avatar_url").eq("user_id", userId);
   return (result.data || []) as Pet[];
 }
 
@@ -36,6 +37,7 @@ const Chat = () => {
   const [userPets, setUserPets] = useState<Pet[]>([]);
   const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
   const [showPetSelection, setShowPetSelection] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -65,6 +67,7 @@ const Chat = () => {
         setUserPets(pets);
         if (pets.length === 1) {
           setSelectedPet(pets[0]);
+          setShowCategories(true);
           setMessages([{
             role: "assistant",
             content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?\n\n📊 מדד הטיפול של ${pets[0].name}: 65%`
@@ -77,6 +80,7 @@ const Chat = () => {
           }]);
         }
       } else {
+        setShowCategories(true);
         setMessages([{
           role: "assistant",
           content: `היי ${displayName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`
@@ -89,6 +93,7 @@ const Chat = () => {
   const handlePetSelect = (pet: Pet) => {
     setSelectedPet(pet);
     setShowPetSelection(false);
+    setShowCategories(true);
     setMessages(prev => [
       ...prev,
       { role: "user", content: pet.name },
@@ -109,6 +114,7 @@ const Chat = () => {
   ];
 
   const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
+    setShowCategories(false);
     const userMessage: Message = { role: "user", content: `${category.icon} ${category.label}` };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
@@ -402,12 +408,12 @@ const Chat = () => {
               </motion.div>
             ))}
 
-            {/* Pet Selection Buttons - Enhanced */}
+            {/* Pet Selection Buttons - Circle Profile Style */}
             {showPetSelection && userPets.length > 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap gap-3 justify-center mb-4 px-4"
+                className="flex flex-wrap gap-4 justify-center mb-4 px-4"
               >
                 {userPets.map((pet, index) => (
                   <motion.button
@@ -415,20 +421,38 @@ const Chat = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handlePetSelect(pet)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-petid-blue via-petid-teal to-petid-gold text-white rounded-full font-heebo text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow"
+                    className="flex flex-col items-center gap-2"
                   >
-                    <span className="text-lg">{pet.type === 'dog' ? '🐕' : pet.type === 'cat' ? '🐈' : '🐾'}</span>
-                    <span className="font-medium">{pet.name}</span>
+                    {/* Pet Avatar Circle with Gradient Border */}
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2.5px] shadow-lg">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-card">
+                        {pet.avatar_url ? (
+                          <img 
+                            src={pet.avatar_url} 
+                            alt={pet.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <span className="text-2xl">
+                              {pet.type === 'dog' ? '🐕' : pet.type === 'cat' ? '🐈' : '🐾'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Pet Name */}
+                    <span className="text-xs font-heebo font-medium text-foreground">{pet.name}</span>
                   </motion.button>
                 ))}
               </motion.div>
             )}
 
             {/* Category Quick Buttons - Enhanced Grid */}
-            {!showPetSelection && messages.length > 0 && messages.length <= 2 && !isLoading && (
+            {showCategories && !isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
