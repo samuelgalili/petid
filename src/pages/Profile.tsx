@@ -639,43 +639,43 @@ const Profile = () => {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {/* Service Rows - Bank App Style */}
+                      {/* Service Rows - Enhanced Bank App Style */}
                       {[
-                        { id: 'insurance', label: 'ביטוח', subtitle: 'כיסוי מלא', emoji: '🛡️' },
-                        { id: 'boarding', label: 'פנסיון', subtitle: 'טיפול 24/7', emoji: '🏠' },
-                        { id: 'grooming', label: 'טיפוח', subtitle: 'מראה מושלם', emoji: '✂️' },
-                        { id: 'training', label: 'אילוף', subtitle: 'מאלפים מוסמכים', emoji: '🎓' },
-                        { id: 'health', label: 'בריאות', subtitle: 'מעקב רפואי', emoji: '💊' },
-                        { id: 'dog_walker', label: 'דוג ווקר', subtitle: 'טיולים יומיים', emoji: '🐕' },
+                        { id: 'insurance', label: 'ביטוח', subtitle: 'כיסוי מלא לחיית המחמד', emoji: '🛡️' },
+                        { id: 'boarding', label: 'פנסיון', subtitle: 'טיפול מסביב לשעון', emoji: '🏠' },
+                        { id: 'grooming', label: 'טיפוח', subtitle: 'מראה מושלם ובריא', emoji: '✂️' },
+                        { id: 'training', label: 'אילוף', subtitle: 'מאלפים מוסמכים ומנוסים', emoji: '🎓' },
+                        { id: 'health', label: 'בריאות', subtitle: 'מעקב וטיפול רפואי', emoji: '💊' },
+                        { id: 'dog_walker', label: 'דוג ווקר', subtitle: 'טיולים יומיים מקצועיים', emoji: '🐕' },
                       ].map((service, index) => (
                         <motion.button
                           key={service.id}
                           onClick={() => handleCategoryClick(service.id)}
-                          className="w-full flex items-center gap-2 bg-background rounded-2xl shadow-sm border border-border/20 overflow-hidden hover:shadow-md transition-all active:scale-[0.99]"
-                          initial={{ opacity: 0, x: 20 }}
+                          className="w-full flex items-center gap-3 p-3 bg-card rounded-2xl shadow-md border border-border/30 overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all active:scale-[0.98]"
+                          initial={{ opacity: 0, x: 30 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.04, duration: 0.2 }}
-                          whileTap={{ scale: 0.98 }}
+                          transition={{ delay: index * 0.05, duration: 0.25 }}
+                          whileTap={{ scale: 0.97 }}
                         >
-                          {/* Emoji Icon */}
-                          <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
-                            <span className="text-2xl">{service.emoji}</span>
+                          {/* Emoji Icon - Larger with background */}
+                          <div className="w-14 h-14 rounded-xl bg-muted/50 flex items-center justify-center flex-shrink-0">
+                            <span className="text-3xl">{service.emoji}</span>
                           </div>
                           
-                          {/* Title - Dark Navy Pill */}
-                          <div className="bg-[#1a2744] text-white px-4 py-2 rounded-lg flex-shrink-0">
+                          {/* Title - Dark Navy Pill with better contrast */}
+                          <div className="bg-foreground text-background px-4 py-2.5 rounded-xl flex-shrink-0 shadow-sm">
                             <span className="font-bold text-sm">{service.label}</span>
                           </div>
                           
-                          {/* Subtitle - Light Section */}
-                          <div className="flex-1 text-right pr-2">
-                            <span className="text-xs text-muted-foreground">
+                          {/* Subtitle - Better visibility */}
+                          <div className="flex-1 text-right px-2">
+                            <span className="text-sm text-muted-foreground leading-tight">
                               {service.subtitle}
                             </span>
                           </div>
                           
-                          {/* Arrow Button */}
-                          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center ml-2 flex-shrink-0">
+                          {/* Arrow Button - Larger and more prominent */}
+                          <div className="w-11 h-11 rounded-full bg-primary shadow-md flex items-center justify-center flex-shrink-0">
                             <ChevronLeft className="w-5 h-5 text-primary-foreground" />
                           </div>
                         </motion.button>
