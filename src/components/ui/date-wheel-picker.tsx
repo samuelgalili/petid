@@ -98,8 +98,8 @@ function WheelItem({
   return (
     <motion.div
       className={cn(
-        "absolute w-full flex items-center justify-center cursor-pointer select-none",
-        isSelected && "font-semibold text-primary",
+        "absolute w-full flex items-center justify-center cursor-pointer select-none transition-colors",
+        isSelected ? "font-bold text-foreground" : "text-muted-foreground/60",
         disabled && "cursor-not-allowed opacity-50"
       )}
       style={{
@@ -112,7 +112,7 @@ function WheelItem({
       }}
       onClick={() => !disabled && onClick()}
     >
-      <span className="whitespace-nowrap">
+      <span className="whitespace-nowrap tabular-nums">
         {item}
       </span>
     </motion.div>
