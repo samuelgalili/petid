@@ -421,35 +421,30 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
                 )}
               </div>
             ) : editField === 'size' ? (
-              <div className="space-y-2">
-                <Label>{getFieldLabel()}</Label>
-                <Select value={editValue} onValueChange={setEditValue}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder="בחר גודל" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="small">קטן</SelectItem>
-                    <SelectItem value="medium">בינוני</SelectItem>
-                    <SelectItem value="large">גדול</SelectItem>
-                    <SelectItem value="extra_large">ענק</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>{getFieldLabel()}</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  placeholder="הזן משקל"
-                  className="h-12 text-lg text-center"
-                  autoFocus
+              <div className="space-y-3">
+                <Label className="block text-center text-sm text-muted-foreground">
+                  בחר גודל
+                </Label>
+                <SizeWheelPicker
+                  value={sizeValue}
+                  onChange={setSizeValue}
+                  defaultFromBreed={breedInfo?.size_category}
                 />
               </div>
-            )}
+            ) : editField === 'weight' ? (
+              <div className="space-y-3">
+                <Label className="block text-center text-sm text-muted-foreground">
+                  בחר משקל
+                </Label>
+                <WeightWheelPicker
+                  value={weightValue}
+                  onChange={setWeightValue}
+                  min={1}
+                  max={100}
+                  step={1}
+                />
+              </div>
+            ) : null}
 
             <div className="flex gap-2">
               <Button
