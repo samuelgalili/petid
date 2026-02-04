@@ -401,7 +401,7 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
                   size="sm"
                 />
                 {birthDate && (
-                  <div className="text-center text-sm text-muted-foreground pt-2 border-t">
+                  <div className="text-center text-xs text-muted-foreground pt-2 border-t">
                     גיל: {(() => {
                       const now = new Date();
                       let years = now.getFullYear() - birthDate.getFullYear();
