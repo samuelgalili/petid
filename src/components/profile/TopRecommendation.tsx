@@ -180,7 +180,12 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     if (!isOwner) return;
     setEditField(field);
     if (field === 'age') {
-      setEditValue(String(pet.age_years || ''));
+      // Set birthDate from pet data or default to today
+      if (pet.birth_date) {
+        setBirthDate(new Date(pet.birth_date));
+      } else {
+        setBirthDate(new Date());
+      }
     } else if (field === 'size') {
       setEditValue(pet.size || '');
     } else if (field === 'weight') {
