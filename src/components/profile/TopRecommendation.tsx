@@ -376,20 +376,6 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           </button>
         </div>
 
-        {/* Owner Info */}
-        <button
-          onClick={handleMessageOwner}
-          disabled={!owner}
-          className="w-full flex items-center justify-between p-3 bg-primary/10 hover:bg-primary/20 transition-colors rounded-lg mb-4 disabled:opacity-50 disabled:cursor-not-allowed group"
-        >
-          <div>
-            <span className="text-xs text-primary block">בעלים</span>
-            <span className="text-sm font-semibold text-primary">
-              {owner?.full_name?.split(' ')[0] || 'אני'}
-            </span>
-          </div>
-          <MessageCircle className="w-4 h-4 text-primary" />
-        </button>
 
         {/* Breed Traits - Energy, Grooming, Feeding with level indicator */}
         <div className="grid grid-cols-3 gap-2">
