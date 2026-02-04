@@ -146,6 +146,7 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
             <Edit2 className="w-4 h-4 text-primary" />
           </button>
         )}
+      </div>
       
       {/* Pet Details Grid */}
       <div className="grid grid-cols-4 gap-2">
