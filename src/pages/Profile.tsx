@@ -108,6 +108,9 @@ const Profile = () => {
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
   const [activeHub, setActiveHub] = useState<string | null>(null);
   const [showPetShop, setShowPetShop] = useState(false);
+  const [energySheetOpen, setEnergySheetOpen] = useState(false);
+  const [groomingSheetOpen, setGroomingSheetOpen] = useState(false);
+  const [feedingSheetOpen, setFeedingSheetOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
