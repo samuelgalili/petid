@@ -62,7 +62,10 @@ import {
   ToysSheet,
   DocumentsSheet,
   DogWalkerSheet,
-  ProductsSheet
+  ProductsSheet,
+  EnergySheet,
+  GroomingProductsSheet,
+  FeedingSheet
 } from "@/components/pet-services";
 
 
