@@ -75,23 +75,31 @@ export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProducts
     return 'בינוני';
   };
 
+  const groomingInfo = (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Scissors className="w-4 h-4 text-primary" />
+        <span className="font-semibold text-foreground">תדירות טיפוח</span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {getGroomingFrequency()}
+      </p>
+      {breedInfo?.grooming_needs && (
+        <p className="text-xs text-muted-foreground mt-2">
+          {breedInfo.grooming_needs}
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <ServiceBottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="תדירות טיפוח"
+      title="מוצרי טיפוח מומלצים"
+      infoContent={groomingInfo}
     >
       <div className="space-y-4">
-        {/* Grooming Info */}
-        <div className="bg-primary/10 p-4 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Scissors className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-foreground">מוצרי טיפוח מומלצים</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {breedInfo?.grooming_needs || 'מוצרים לטיפוח בריא'} • {getGroomingFrequency()}
-          </p>
-        </div>
 
         {/* Products Grid */}
         {loading ? (
