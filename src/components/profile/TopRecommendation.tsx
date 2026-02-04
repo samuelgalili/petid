@@ -381,15 +381,15 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
 
       {/* Edit Modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="max-w-sm" dir="rtl">
+        <DialogContent className="max-w-xs p-4" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="text-center">עדכון {getFieldLabel()}</DialogTitle>
+            <DialogTitle className="text-center text-lg">עדכון {getFieldLabel()}</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             {editField === 'age' ? (
-              <div className="space-y-3">
-                <Label className="block text-center text-sm text-muted-foreground">
+              <div className="space-y-2">
+                <Label className="block text-center text-xs text-muted-foreground">
                   בחר תאריך לידה
                 </Label>
                 <DateWheelPicker
@@ -398,7 +398,7 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
                   minYear={1990}
                   maxYear={new Date().getFullYear()}
                   locale="he-IL"
-                  size="md"
+                  size="sm"
                 />
                 {birthDate && (
                   <div className="text-center text-sm text-muted-foreground pt-2 border-t">
