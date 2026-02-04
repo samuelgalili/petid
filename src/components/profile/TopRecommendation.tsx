@@ -47,7 +47,7 @@ interface TopRecommendationProps {
   onFeedingOpen?: () => void;
 }
 
-export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
+export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeedingOpen }: TopRecommendationProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
