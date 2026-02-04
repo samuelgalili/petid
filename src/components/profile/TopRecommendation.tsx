@@ -419,8 +419,8 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
                 )}
               </div>
             ) : editField === 'size' ? (
-              <div className="space-y-3">
-                <Label className="block text-center text-sm text-muted-foreground">
+              <div className="space-y-2">
+                <Label className="block text-center text-xs text-muted-foreground">
                   בחר גודל
                 </Label>
                 <SizeWheelPicker
@@ -430,8 +430,8 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
                 />
               </div>
             ) : editField === 'weight' ? (
-              <div className="space-y-3">
-                <Label className="block text-center text-sm text-muted-foreground">
+              <div className="space-y-2">
+                <Label className="block text-center text-xs text-muted-foreground">
                   בחר משקל
                 </Label>
                 <WeightWheelPicker
@@ -444,18 +444,18 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
               </div>
             ) : null}
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-1">
               <Button
                 variant="outline"
                 onClick={() => setEditModalOpen(false)}
-                className="flex-1"
+                className="flex-1 h-9 text-sm"
                 disabled={saving}
               >
                 ביטול
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1"
+                className="flex-1 h-9 text-sm"
                 disabled={saving}
               >
                 {saving ? 'שומר...' : 'שמור'}
