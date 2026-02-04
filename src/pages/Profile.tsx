@@ -20,7 +20,7 @@ import { PetHealthScore } from "@/components/profile/PetHealthScore";
 import { TopRecommendation } from "@/components/profile/TopRecommendation";
 import { PetEssentials } from "@/components/profile/PetEssentials";
 import { BreedStatsCard } from "@/components/profile/BreedStatsCard";
-import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet } from "@/components/pet-services";
+import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, FurProductsSheet, MemorialSheet } from "@/components/pet-services";
 interface Pet {
   id: string;
   name: string;
