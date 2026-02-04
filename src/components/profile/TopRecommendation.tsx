@@ -4,10 +4,8 @@ import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 import { SizeWheelPicker, WeightWheelPicker } from "@/components/ui/wheel-picker";
