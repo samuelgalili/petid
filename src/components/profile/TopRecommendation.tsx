@@ -493,27 +493,26 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             onClick={onFeedingOpen}
             className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
           >
-            {/* Mini gauge arc */}
-            <div className="relative w-10 h-5 mb-1">
-              <svg viewBox="0 0 100 50" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  strokeDashoffset="63"
-                />
-              </svg>
-            </div>
+            {/* Show recommended grams prominently */}
+            {recommendedGrams ? (
+              <div className="flex items-baseline gap-0.5 mb-1">
+                <span className="text-lg font-bold text-primary">{recommendedGrams}</span>
+                <span className="text-[8px] text-muted-foreground">גרם/יום</span>
+              </div>
+            ) : (
+              /* Mini gauge arc when no data */
+              <div className="relative w-10 h-5 mb-1">
+                <svg viewBox="0 0 100 50" className="w-full h-full">
+                  <path
+                    d="M 10 50 A 40 40 0 0 1 90 50"
+                    fill="none"
+                    stroke="hsl(var(--muted))"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+            )}
             <Utensils className="w-4 h-4 text-primary mb-0.5" />
             <span className="text-[10px] font-semibold text-foreground text-center">האכלה</span>
           </button>
