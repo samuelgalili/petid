@@ -11,6 +11,8 @@ export { DocumentsSheet } from './DocumentsSheet';
 export { DogWalkerSheet } from './DogWalkerSheet';
 export { ProductsSheet } from './ProductsSheet';
 export { EnergySheet } from './EnergySheet';
+export { ProductRecommendationSheet } from './ProductRecommendationSheet';
+export type { ProductWithLabel } from './ProductRecommendationSheet';
 export { GroomingProductsSheet } from './GroomingProductsSheet';
 export { FeedingSheet } from './FeedingSheet';
 export { FurProductsSheet } from './FurProductsSheet';
