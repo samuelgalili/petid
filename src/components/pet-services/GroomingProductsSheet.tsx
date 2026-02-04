@@ -80,18 +80,16 @@ export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProducts
       isOpen={isOpen}
       onClose={onClose}
       title="תדירות טיפוח"
-      subtitle={`${getGroomingFrequency()}`}
     >
       <div className="space-y-4">
         {/* Grooming Info */}
-        <div className="bg-pink-500/10 p-4 rounded-xl">
+        <div className="bg-primary/10 p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <Scissors className="w-5 h-5 text-pink-600" />
+            <Scissors className="w-5 h-5 text-primary" />
             <span className="font-semibold text-foreground">מוצרי טיפוח מומלצים</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {breedInfo?.grooming_needs || 'מוצרים לטיפוח בריא'}
-          </p>
+            {breedInfo?.grooming_needs || 'מוצרים לטיפוח בריא'} • {getGroomingFrequency()}
         </div>
 
         {/* Products Grid */}

@@ -103,21 +103,19 @@ export const FeedingSheet = ({ pet, isOpen, onClose }: FeedingSheetProps) => {
       isOpen={isOpen}
       onClose={onClose}
       title="כמות האכלה מומלצת"
-      subtitle={dailyAmount || 'לפי משקל'}
     >
       <div className="space-y-4">
         {/* Daily Amount Info */}
-        <div className="bg-orange-500/10 p-4 rounded-xl">
+        <div className="bg-accent/10 p-4 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
-            <Utensils className="w-5 h-5 text-orange-600" />
+            <Utensils className="w-5 h-5 text-accent" />
             <span className="font-semibold text-foreground">כמות יומית מומלצת</span>
           </div>
-          <p className="text-sm font-bold text-orange-600 mb-1">
+          <p className="text-sm font-bold text-accent mb-1">
             {dailyAmount || 'בחישוב משקל...'}
           </p>
           <p className="text-xs text-muted-foreground">
             {breedInfo?.dietary_notes || 'חלקו לשתי הנשמות במהלך היום'}
-          </p>
         </div>
 
         {/* Dry Food Section */}

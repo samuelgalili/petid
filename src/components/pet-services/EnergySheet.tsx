@@ -87,17 +87,16 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
       isOpen={isOpen}
       onClose={onClose}
       title="פריקת אנרגיה"
-      subtitle={`רמה: ${getEnergyLevel()}`}
     >
       <div className="space-y-4">
         {/* Energy Level Info */}
         <div className={`bg-gradient-to-r ${getEnergyColor()} bg-opacity-20 p-4 rounded-xl`}>
           <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-5 h-5 text-yellow-600" />
+            <Zap className="w-5 h-5" />
             <span className="font-semibold text-foreground">צעצועים מומלצים</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {breedInfo?.exercise_needs || 'צעצועים לפריקת אנרגיה'}
+            רמה: {getEnergyLevel()}
           </p>
         </div>
 
