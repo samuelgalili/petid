@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Calendar as CalendarIcon, ArrowRight, Save } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Save } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -39,7 +39,8 @@ const EditPet = () => {
     gender: "",
     is_neutered: "false"
   });
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempBirthDate, setTempBirthDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const fetchPet = async () => {
