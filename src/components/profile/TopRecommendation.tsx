@@ -379,10 +379,40 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>{getFieldLabel()}</Label>
-              
-              {editField === 'size' ? (
+            {editField === 'age' ? (
+              <div className="space-y-3">
+                <Label className="block text-center text-sm text-muted-foreground">
+                  בחר תאריך לידה
+                </Label>
+                <DateWheelPicker
+                  value={birthDate}
+                  onChange={setBirthDate}
+                  minYear={1990}
+                  maxYear={new Date().getFullYear()}
+                  locale="he-IL"
+                  size="md"
+                />
+                {birthDate && (
+                  <div className="text-center text-sm text-muted-foreground pt-2 border-t">
+                    גיל: {(() => {
+                      const now = new Date();
+                      let years = now.getFullYear() - birthDate.getFullYear();
+                      let months = now.getMonth() - birthDate.getMonth();
+                      if (months < 0) { years--; months += 12; }
+                      if (now.getDate() < birthDate.getDate()) { months--; if (months < 0) { years--; months += 12; } }
+                      const yearsText = years === 1 ? 'שנה' : 'שנים';
+                      const monthsText = months === 1 ? 'חודש' : 'חודשים';
+                      if (years > 0 && months > 0) return `${years} ${yearsText} ו-${months} ${monthsText}`;
+                      if (years > 0) return `${years} ${yearsText}`;
+                      if (months > 0) return `${months} ${monthsText}`;
+                      return 'פחות מחודש';
+                    })()}
+                  </div>
+                )}
+              </div>
+            ) : editField === 'size' ? (
+              <div className="space-y-2">
+                <Label>{getFieldLabel()}</Label>
                 <Select value={editValue} onValueChange={setEditValue}>
                   <SelectTrigger className="h-12">
                     <SelectValue placeholder="בחר גודל" />
@@ -394,19 +424,22 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
                     <SelectItem value="extra_large">ענק</SelectItem>
                   </SelectContent>
                 </Select>
-              ) : (
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{getFieldLabel()}</Label>
                 <Input
                   type="number"
-                  step={editField === 'weight' ? '0.1' : '1'}
+                  step="0.1"
                   min="0"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  placeholder={editField === 'age' ? 'הזן גיל בשנים' : 'הזן משקל'}
+                  placeholder="הזן משקל"
                   className="h-12 text-lg text-center"
                   autoFocus
                 />
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button
