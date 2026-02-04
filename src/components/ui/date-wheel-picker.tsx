@@ -15,11 +15,11 @@ export interface DateWheelPickerProps
   locale?: string;
 }
 
-const ITEM_HEIGHT = 40;
+const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
 
 function getMonthNames(locale?: string): string[] {
-  const formatter = new Intl.DateTimeFormat(locale, { month: "long" });
+  const formatter = new Intl.DateTimeFormat(locale, { month: "short" });
   return Array.from({ length: 12 }, (_, i) =>
     formatter.format(new Date(2000, i, 1))
   );
@@ -30,19 +30,19 @@ const sizeConfig = {
     height: ITEM_HEIGHT * VISIBLE_ITEMS * 0.8,
     itemHeight: ITEM_HEIGHT * 0.8,
     fontSize: "text-sm",
-    gap: "gap-2",
+    gap: "gap-1",
   },
   md: {
     height: ITEM_HEIGHT * VISIBLE_ITEMS,
     itemHeight: ITEM_HEIGHT,
     fontSize: "text-base",
-    gap: "gap-4",
+    gap: "gap-2",
   },
   lg: {
     height: ITEM_HEIGHT * VISIBLE_ITEMS * 1.2,
     itemHeight: ITEM_HEIGHT * 1.2,
     fontSize: "text-lg",
-    gap: "gap-6",
+    gap: "gap-3",
   },
 };
 
