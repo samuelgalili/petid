@@ -536,10 +536,6 @@ const Profile = () => {
                     </div>
                     <span className="text-xs text-muted-foreground">הוסף חיית מחמד ראשונה</span>
                   </motion.button>
-                )}
-                    <span className="text-sm text-muted-foreground">הוסף חיית מחמד ראשונה</span>
-                  </motion.button>
-                )}
               </motion.div>
             ) : (
               <motion.div 
