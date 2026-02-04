@@ -599,8 +599,7 @@ const Profile = () => {
 
                 {/* Service Categories - Row Layout */}
                 <AnimatePresence mode="wait">
-                  {!activeHub ? (/* Services as Rows - Minimal Professional Style */
-                  ) : (/* Sub-categories for selected hub */
+                   {!activeHub ? null : (/* Sub-categories for selected hub */
               <motion.div key="categories" className="py-6 px-4" initial={{
                 opacity: 0,
                 x: 20
