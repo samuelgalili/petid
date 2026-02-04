@@ -9,13 +9,6 @@ interface Pet {
   breed?: string;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  category?: string;
-}
 
 interface GroomingProductsSheetProps {
   pet: Pet;
