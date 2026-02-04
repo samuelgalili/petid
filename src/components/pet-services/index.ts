@@ -10,3 +10,6 @@ export { DocumentsSection } from './DocumentsSection';
 export { DocumentsSheet } from './DocumentsSheet';
 export { DogWalkerSheet } from './DogWalkerSheet';
 export { ProductsSheet } from './ProductsSheet';
+export { EnergySheet } from './EnergySheet';
+export { GroomingProductsSheet } from './GroomingProductsSheet';
+export { FeedingSheet } from './FeedingSheet';
