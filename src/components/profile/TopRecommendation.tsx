@@ -231,6 +231,49 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
   const recommendedGrams = getRecommendedFeedingGrams();
 
+  // Get recommended activity minutes based on exercise needs
+  const getActivityMinutes = (): number | null => {
+    const exercise = breedInfo?.exercise_needs?.toLowerCase() || '';
+    if (exercise.includes('very high') || exercise.includes('גבוהה מאוד')) return 90;
+    if (exercise.includes('high') || exercise.includes('גבוה')) return 60;
+    if (exercise.includes('moderate') || exercise.includes('medium') || exercise.includes('בינוני')) return 45;
+    if (exercise.includes('low') || exercise.includes('נמוך')) return 30;
+    return 45; // default
+  };
+
+  // Get grooming frequency level
+  const getGroomingLevel = (): 'low' | 'medium' | 'high' => {
+    const grooming = breedInfo?.grooming_needs?.toLowerCase() || '';
+    if (grooming.includes('high') || grooming.includes('daily') || grooming.includes('גבוה') || grooming.includes('יומי')) return 'high';
+    if (grooming.includes('low') || grooming.includes('minimal') || grooming.includes('נמוך')) return 'low';
+    return 'medium';
+  };
+
+  const getGroomingLevelHe = () => {
+    const levels: Record<string, string> = { low: 'נמוך', medium: 'בינוני', high: 'גבוה' };
+    return levels[getGroomingLevel()];
+  };
+
+  // Determine fur length from grooming needs
+  const getFurLength = (): 'short' | 'medium' | 'long' => {
+    const grooming = breedInfo?.grooming_needs?.toLowerCase() || '';
+    if (grooming.includes('long') || grooming.includes('ארוך') || grooming.includes('daily')) return 'long';
+    if (grooming.includes('short') || grooming.includes('קצר') || grooming.includes('minimal')) return 'short';
+    return 'medium';
+  };
+
+  const getFurLengthHe = () => {
+    const lengths: Record<string, string> = { short: 'קצר', medium: 'בינוני', long: 'ארוך' };
+    return lengths[getFurLength()];
+  };
+
+  // Get life expectancy display
+  const getLifeExpectancy = (): string | null => {
+    return breedInfo?.life_expectancy_years || null;
+  };
+
+  const activityMinutes = getActivityMinutes();
+
   // Open edit modal
   const openEditModal = (field: 'age' | 'size' | 'weight') => {
     if (!isOwner) return;
