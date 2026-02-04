@@ -604,7 +604,10 @@ const Profile = () => {
                     {/* Top Recommendation */}
                     <TopRecommendation 
                       pet={selectedPet} 
-                      onViewPolicy={() => setActiveSheet('insurance')} 
+                      onViewPolicy={() => setActiveSheet('insurance')}
+                      onEnergyOpen={() => setEnergySheetOpen(true)}
+                      onGroomingOpen={() => setGroomingSheetOpen(true)}
+                      onFeedingOpen={() => setFeedingSheetOpen(true)}
                     />
                     
                     {/* Essentials */}
