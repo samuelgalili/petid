@@ -550,7 +550,7 @@ const Profile = () => {
                     <PetHealthScore pet={selectedPet} />
                     
                     {/* Top Recommendation */}
-                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setEnergySheetOpen(true)} onGroomingOpen={() => setGroomingSheetOpen(true)} onFeedingOpen={() => setFeedingSheetOpen(true)} />
+                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setEnergySheetOpen(true)} onGroomingOpen={() => setGroomingSheetOpen(true)} onFeedingOpen={() => setFeedingSheetOpen(true)} onFurOpen={() => setFurSheetOpen(true)} onLifeExpectancyOpen={() => setMemorialSheetOpen(true)} />
                     
                     {/* Breed Stats Card - Shows detailed breed information */}
                     <BreedStatsCard pet={selectedPet} />
