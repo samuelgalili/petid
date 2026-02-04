@@ -43,6 +43,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { PetShopView } from "@/components/profile/PetShopView";
+import { PetHealthScore } from "@/components/profile/PetHealthScore";
+import { TopRecommendation } from "@/components/profile/TopRecommendation";
+import { PetEssentials } from "@/components/profile/PetEssentials";
 import {
   InsuranceSheet,
   TrainingSheet,
@@ -603,23 +606,42 @@ const Profile = () => {
                   )}
                 </AnimatePresence>
 
+                {/* Health Score, Recommendation & Essentials */}
+                {selectedPet && !activeHub && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mb-4"
+                  >
+                    {/* Health Score */}
+                    <PetHealthScore pet={selectedPet} />
+                    
+                    {/* Top Recommendation */}
+                    <TopRecommendation 
+                      pet={selectedPet} 
+                      onViewPolicy={() => setActiveSheet('insurance')} 
+                    />
+                    
+                    {/* Essentials */}
+                    <PetEssentials 
+                      pet={selectedPet} 
+                      onOpenShop={handleOpenPetShop} 
+                    />
+                  </motion.div>
+                )}
+
                 {/* Hub Selection or Sub-categories */}
                 <AnimatePresence mode="wait">
                   {!activeHub ? (
                     /* Services Grid - Like reference image */
                     <motion.div
                       key="hubs"
-                      className="py-6 px-4"
+                      className="py-2 px-4"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {/* Title */}
-                      <h2 className="text-center text-lg font-medium text-foreground mb-6">
-                        שירותים מותאמים ל<span className="font-bold">{selectedPet?.name || 'חיית המחמד'}</span>
-                      </h2>
-
                       {/* Services Grid - 2 rows x 4 columns like reference */}
                       <div className="relative">
                         {/* First Row */}
