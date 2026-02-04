@@ -514,20 +514,7 @@ const Profile = () => {
             stiffness: 300
           }}>
                 {/* Collapse Handle */}
-                <div className="flex justify-center py-3 cursor-pointer" onClick={() => {
-              if (activeHub) {
-                setActiveHub(null);
-              } else {
-                setIsExpanded(false);
-              }
-            }}>
-                  <div className="flex flex-col items-center gap-1">
-                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      {activeHub ? 'חזור לעולמות' : 'חזור לחיות מחמד'}
-                    </span>
-                  </div>
-                </div>
+                
 
                 {/* Pet name shown below collapse handle - only when profile is not collapsed */}
                 <AnimatePresence>
