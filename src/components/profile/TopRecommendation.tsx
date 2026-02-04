@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Feather, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,8 @@ interface BreedInfo {
   size_category?: string;
   weight_range_kg?: string;
   life_expectancy_years?: string;
+  exercise_needs?: string;
+  grooming_needs?: string;
 }
 
 interface TopRecommendationProps {
@@ -45,6 +47,8 @@ interface TopRecommendationProps {
   onEnergyOpen?: () => void;
   onGroomingOpen?: () => void;
   onFeedingOpen?: () => void;
+  onFurOpen?: () => void;
+  onLifeExpectancyOpen?: () => void;
 }
 
 export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeedingOpen }: TopRecommendationProps) => {
