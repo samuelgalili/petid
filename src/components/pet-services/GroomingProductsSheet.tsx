@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Scissors, ShoppingCart, Loader2 } from "lucide-react";
-import { ServiceBottomSheet } from "./ServiceBottomSheet";
+import { Scissors } from "lucide-react";
+import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 
 interface Pet {
   id: string;
