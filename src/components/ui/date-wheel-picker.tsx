@@ -411,7 +411,7 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
       <div
         ref={ref}
         className={cn(
-          "flex items-center justify-center rounded-lg bg-background p-4",
+          "flex items-center justify-center rounded-xl bg-background/50 backdrop-blur-sm py-2 px-3",
           config.gap,
           config.fontSize,
           disabled && "opacity-50 pointer-events-none",
@@ -426,9 +426,11 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
           itemHeight={config.itemHeight}
           visibleItems={VISIBLE_ITEMS}
           disabled={disabled}
-          className="w-12"
+          className="w-14"
           ariaLabel="Select day"
         />
+
+        <div className="text-muted-foreground/30 font-light text-lg">/</div>
 
         <WheelColumn
           items={months}
@@ -437,9 +439,11 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
           itemHeight={config.itemHeight}
           visibleItems={VISIBLE_ITEMS}
           disabled={disabled}
-          className="w-28"
+          className="w-20"
           ariaLabel="Select month"
         />
+
+        <div className="text-muted-foreground/30 font-light text-lg">/</div>
 
         <WheelColumn
           items={years}
@@ -448,7 +452,7 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
           itemHeight={config.itemHeight}
           visibleItems={VISIBLE_ITEMS}
           disabled={disabled}
-          className="w-20"
+          className="w-16"
           ariaLabel="Select year"
         />
       </div>
