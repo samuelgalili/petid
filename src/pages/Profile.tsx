@@ -683,6 +683,8 @@ const Profile = () => {
         <EnergySheet isOpen={energySheetOpen} onClose={() => setEnergySheetOpen(false)} pet={selectedPet} />
         <GroomingProductsSheet isOpen={groomingSheetOpen} onClose={() => setGroomingSheetOpen(false)} pet={selectedPet} />
         <FeedingSheet isOpen={feedingSheetOpen} onClose={() => setFeedingSheetOpen(false)} pet={selectedPet} />
+        <FurProductsSheet isOpen={furSheetOpen} onClose={() => setFurSheetOpen(false)} pet={selectedPet} furLength="medium" />
+        <MemorialSheet isOpen={memorialSheetOpen} onClose={() => setMemorialSheetOpen(false)} pet={selectedPet} />
         <AnimatePresence>
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={handleClosePetShop} />}
         </AnimatePresence>
