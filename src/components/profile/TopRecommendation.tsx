@@ -490,95 +490,73 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         </div>
 
 
-        {/* Breed Traits - Energy, Grooming, Feeding with level indicator */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* Energy Button */}
+        {/* Breed Traits - 5 buttons: Energy, Grooming, Feeding, Fur, Life Expectancy */}
+        <div className="grid grid-cols-5 gap-1.5">
+          {/* Energy Button - Shows activity minutes */}
           <button
             onClick={onEnergyOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
           >
-            {/* Mini gauge arc */}
-            <div className="relative w-10 h-5 mb-1">
-              <svg viewBox="0 0 100 50" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  strokeDashoffset="42"
-                />
-              </svg>
-            </div>
-            <Zap className="w-4 h-4 text-primary mb-0.5" />
-            <span className="text-[10px] font-semibold text-foreground text-center">אנרגיה</span>
-          </button>
-
-          {/* Grooming Button */}
-          <button
-            onClick={onGroomingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
-          >
-            {/* Mini gauge arc */}
-            <div className="relative w-10 h-5 mb-1">
-              <svg viewBox="0 0 100 50" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  strokeDashoffset="42"
-                />
-              </svg>
-            </div>
-            <Scissors className="w-4 h-4 text-primary mb-0.5" />
-            <span className="text-[10px] font-semibold text-foreground text-center">טיפוח</span>
-          </button>
-
-          {/* Feeding Button */}
-          <button
-            onClick={onFeedingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
-          >
-            {/* Show recommended grams prominently */}
-            {recommendedGrams ? (
-              <div className="flex items-baseline gap-0.5 mb-1">
-                <span className="text-lg font-bold text-primary">{recommendedGrams}</span>
-                <span className="text-[8px] text-muted-foreground">גרם/יום</span>
-              </div>
-            ) : (
-              /* Mini gauge arc when no data */
-              <div className="relative w-10 h-5 mb-1">
-                <svg viewBox="0 0 100 50" className="w-full h-full">
-                  <path
-                    d="M 10 50 A 40 40 0 0 1 90 50"
-                    fill="none"
-                    stroke="hsl(var(--muted))"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                  />
-                </svg>
+            {activityMinutes && (
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-sm font-bold text-primary">{activityMinutes}</span>
+                <span className="text-[7px] text-muted-foreground">דק׳</span>
               </div>
             )}
-            <Utensils className="w-4 h-4 text-primary mb-0.5" />
-            <span className="text-[10px] font-semibold text-foreground text-center">האכלה</span>
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">אנרגיה</span>
+          </button>
+
+          {/* Grooming Button - Shows frequency level */}
+          <button
+            onClick={onGroomingOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            <span className="text-[10px] font-bold text-primary">{getGroomingLevelHe()}</span>
+            <Scissors className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">טיפוח</span>
+          </button>
+
+          {/* Feeding Button - Shows grams */}
+          <button
+            onClick={onFeedingOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            {recommendedGrams ? (
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-sm font-bold text-primary">{recommendedGrams}</span>
+                <span className="text-[7px] text-muted-foreground">ג׳</span>
+              </div>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">—</span>
+            )}
+            <Utensils className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">האכלה</span>
+          </button>
+
+          {/* Fur Length Button - Shows short/medium/long */}
+          <button
+            onClick={onFurOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            <span className="text-[10px] font-bold text-primary">{getFurLengthHe()}</span>
+            <Feather className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">פרווה</span>
+          </button>
+
+          {/* Life Expectancy Button */}
+          <button
+            onClick={onLifeExpectancyOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            {getLifeExpectancy() && (
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-[10px] font-bold text-primary">{getLifeExpectancy()?.split('-')[0]}</span>
+                <span className="text-[7px] text-muted-foreground">ש׳</span>
+              </div>
+            )}
+            <Heart className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">תוחלת</span>
           </button>
         </div>
       </motion.div>
