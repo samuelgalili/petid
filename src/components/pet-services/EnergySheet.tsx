@@ -1,14 +1,12 @@
 /**
  * EnergySheet - Activity recommendations based on exercise needs
- * Shows recommended activity minutes and 3 products: toy, thinking game, feeding game
+ * ✅ Uses unified ProductRecommendationSheet
  */
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Zap, ShoppingCart, Loader2 } from "lucide-react";
-import { ServiceBottomSheet } from "./ServiceBottomSheet";
+import { Zap } from "lucide-react";
+import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 
 interface Pet {
   id: string;
@@ -16,18 +14,19 @@ interface Pet {
   breed?: string;
 }
 
+interface EnergySheetProps {
+  pet: Pet;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+// Product interface for internal fetching
 interface Product {
   id: string;
   name: string;
   price: number;
   image_url: string;
   category?: string;
-}
-
-interface EnergySheetProps {
-  pet: Pet;
-  isOpen: boolean;
-  onClose: () => void;
 }
 
 export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
@@ -113,7 +112,11 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
     return 'בינונית';
   };
 
-  const allProducts = [...toyProducts, ...puzzleProducts, ...feedingGameProducts];
+  const allProducts: ProductWithLabel[] = [
+    ...toyProducts.map(p => ({ ...p, label: 'צעצוע' })),
+    ...puzzleProducts.map(p => ({ ...p, label: 'משחק חשיבה' })),
+    ...feedingGameProducts.map(p => ({ ...p, label: 'משחק האכלה' }))
+  ];
 
   const energyInfo = (
     <div className="space-y-2">
@@ -130,72 +133,14 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
     </div>
   );
 
-  const renderProduct = (product: Product, index: number, label: string) => (
-    <motion.div
-      key={product.id}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="flex gap-3 p-3 bg-muted/30 rounded-lg border border-border/30 hover:border-border/60 transition-colors"
-    >
-      {/* Product Image */}
-      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="w-full h-full object-cover"
-        />
-      </div>
-
-      {/* Product Info */}
-      <div className="flex-1 flex flex-col justify-between">
-        <div>
-          <span className="text-[10px] text-primary font-medium">{label}</span>
-          <h4 className="text-sm font-semibold text-foreground line-clamp-1">
-            {product.name}
-          </h4>
-          <p className="text-xs text-muted-foreground">
-            ₪{product.price.toFixed(0)}
-          </p>
-        </div>
-      </div>
-
-      {/* Add to Cart Button */}
-      <Button
-        size="sm"
-        className="h-8 w-8 p-0 flex-shrink-0"
-        variant="outline"
-        title="הוסף לעגלה"
-      >
-        <ShoppingCart className="w-4 h-4" />
-      </Button>
-    </motion.div>
-  );
-
   return (
-    <ServiceBottomSheet
+    <ProductRecommendationSheet
       isOpen={isOpen}
       onClose={onClose}
       title="המלצות פעילות ומשחקים"
       infoContent={energyInfo}
-    >
-      <div className="space-y-4">
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 text-primary animate-spin" />
-          </div>
-        ) : allProducts.length > 0 ? (
-          <div className="space-y-2">
-            {toyProducts.map((p, i) => renderProduct(p, i, 'צעצוע'))}
-            {puzzleProducts.map((p, i) => renderProduct(p, toyProducts.length + i, 'משחק חשיבה'))}
-            {feedingGameProducts.map((p, i) => renderProduct(p, toyProducts.length + puzzleProducts.length + i, 'משחק האכלה'))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-sm text-muted-foreground">לא נמצאו מוצרים מומלצים</p>
-          </div>
-        )}
-      </div>
-    </ServiceBottomSheet>
+      products={allProducts}
+      loading={loading}
+    />
   );
 };

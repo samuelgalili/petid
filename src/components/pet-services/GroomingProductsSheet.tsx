@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Scissors, ShoppingCart, Loader2 } from "lucide-react";
-import { ServiceBottomSheet } from "./ServiceBottomSheet";
+import { Scissors } from "lucide-react";
+import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 
 interface Pet {
   id: string;
@@ -11,18 +9,19 @@ interface Pet {
   breed?: string;
 }
 
+interface GroomingProductsSheetProps {
+  pet: Pet;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+// Product interface for internal fetching
 interface Product {
   id: string;
   name: string;
   price: number;
   image_url: string;
   category?: string;
-}
-
-interface GroomingProductsSheetProps {
-  pet: Pet;
-  isOpen: boolean;
-  onClose: () => void;
 }
 
 export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProductsSheetProps) => {
@@ -75,6 +74,11 @@ export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProducts
     return 'בינוני';
   };
 
+  const groomingProducts: ProductWithLabel[] = products.map((p, i) => ({
+    ...p,
+    label: ['עדיפות 1', 'עדיפות 2', 'עדיפות 3'][i] || undefined
+  }));
+
   const groomingInfo = (
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-2">
@@ -93,68 +97,13 @@ export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProducts
   );
 
   return (
-    <ServiceBottomSheet
+    <ProductRecommendationSheet
       isOpen={isOpen}
       onClose={onClose}
       title="מוצרי טיפוח מומלצים"
       infoContent={groomingInfo}
-    >
-      <div className="space-y-4">
-
-        {/* Products Grid */}
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 text-primary animate-spin" />
-          </div>
-        ) : products.length > 0 ? (
-          <div className="space-y-2">
-            {products.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex gap-3 p-3 bg-muted/30 rounded-lg border border-border/30 hover:border-border/60 transition-colors"
-              >
-                {/* Product Image */}
-                <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Product Info */}
-                <div className="flex-1 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground line-clamp-1">
-                      {product.name}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      ₪{product.price.toFixed(0)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Add to Cart Button */}
-                <Button
-                  size="sm"
-                  className="h-8 w-8 p-0 flex-shrink-0"
-                  variant="outline"
-                  title="הוסף לעגלה"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                </Button>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-sm text-muted-foreground">לא נמצאו מוצרים מומלצים</p>
-          </div>
-        )}
-      </div>
-    </ServiceBottomSheet>
+      products={groomingProducts}
+      loading={loading}
+    />
   );
 };

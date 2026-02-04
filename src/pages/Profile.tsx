@@ -580,7 +580,11 @@ const Profile = () => {
               }, {
                 label: 'אחרונים',
                 icon: Clock
-              }].map((filter, idx) => {})}
+              }].map((filter, idx) => (
+                <button key={idx} className="px-4 py-2 rounded-full text-sm whitespace-nowrap bg-muted text-foreground hover:bg-primary/20 transition-colors">
+                  {filter.label}
+                </button>
+              ))}
                 </motion.div>
 
                 {/* Service Categories - Row Layout */}
