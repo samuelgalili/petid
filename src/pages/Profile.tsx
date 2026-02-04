@@ -279,12 +279,9 @@ const Profile = () => {
 
   const activeHubData = hubs.find(h => h.id === activeHub);
 
-  // Handle scroll to collapse
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    if (scrollTop < 50 && isExpanded) {
-      setIsExpanded(false);
-    }
+  // Handle scroll - removed collapse logic to allow free scrolling
+  const handleScroll = (_e: React.UIEvent<HTMLDivElement>) => {
+    // Scrolling is now free - no auto-collapse behavior
   };
 
   if (loading) {
