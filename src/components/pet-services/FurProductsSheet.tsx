@@ -1,14 +1,12 @@
 /**
  * FurProductsSheet - Fur care products based on coat length
- * Shows brush/shampoo/serum recommendations
+ * ✅ Uses unified ProductRecommendationSheet
  */
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Sparkles, ShoppingCart, Loader2 } from "lucide-react";
-import { ServiceBottomSheet } from "./ServiceBottomSheet";
+import { Sparkles } from "lucide-react";
+import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 
 interface Pet {
   id: string;
