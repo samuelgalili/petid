@@ -4,7 +4,8 @@ import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { useLoyalty } from "@/hooks/useLoyalty";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, memo } from "react";
+import { Virtuoso } from "react-virtuoso";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -802,26 +803,12 @@ const Feed = () => {
     return () => window.removeEventListener('refresh-feed', handleRefreshFeed);
   }, [fetchPosts, fetchAdoptionPets, fetchChallenges, fetchShopProducts]);
 
-  // Infinite scroll observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !loadingMore && hasMore && posts.length > 0) {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchPosts(nextPage, true);
-      }
-    }, {
-      threshold: 0.5
-    });
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
+  // Load more posts function for Virtuoso
+  const loadMorePosts = useCallback(() => {
+    if (loadingMore || !hasMore || posts.length === 0) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchPosts(nextPage, true);
   }, [loadingMore, hasMore, posts.length, page, fetchPosts]);
   const handleLike = useCallback(async (postId: string) => {
     if (!user) {
@@ -1338,50 +1325,80 @@ const Feed = () => {
           <Camera className="w-4 h-4" />
           שתף את התמונה הראשונה
         </motion.button>
-      </motion.div> : <div>
-            {mixedFeed.map((item, index) => {
-          if (item.type === 'post') {
-            return <div key={`post-${item.data.id}`}>
-                    <PostCardErrorBoundary>
-                      <PostCard post={item.data} currentUserId={user?.id} currentUserAvatar={userAvatar} onLike={handleLike} onSave={handleSave} onDoubleTap={handleDoubleTap} onComment={handleComment} showDoubleTapAnimation={doubleTapLike === item.data.id} getTimeAgo={getTimeAgo} />
-                    </PostCardErrorBoundary>
-                  </div>;
-          } else if (item.type === 'adoption') {
-            return <div key={`adoption-${item.data.id}`}>
-                    <AdoptionPostCard pet={item.data} getTimeAgo={getTimeAgo} />
-                  </div>;
-          } else if (item.type === 'product') {
-            return <div key={`product-${item.data.id}`}>
-                    <ProductPostCard product={item.data} />
-                  </div>;
-          } else if (item.type === 'ad') {
-            return <div key={`ad-${item.data.id}`}>
-                    <AdPostCard ad={item.data} />
-                  </div>;
-          } else if (item.type === 'suggested') {
-            return <div key={`suggested-${item.data.id}`}>
-                    <SuggestedPostCard post={item.data} onFollow={handleSuggestedFollow} />
-                  </div>;
-          } else if (item.type === 'challenge') {
-            return <div key={`challenge-${item.data.id}`}>
-                    <ChallengePostCard challenge={item.data} gradientIndex={index} onJoinChange={fetchChallenges} />
-                  </div>;
-          }
-          return null;
-        })}
-            
-            {/* Infinite Scroll Observer Target */}
-            {hasMore && <div ref={observerTarget} className="py-6 text-center">
-                {loadingMore && <motion.div initial={{
-            opacity: 0
-          }} animate={{
-            opacity: 1
-          }} className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin text-[#8E8E8E]" />
-                    <span className="text-[13px] text-[#8E8E8E]">טוען עוד...</span>
-                  </motion.div>}
-              </div>}
-          </div>}
+      </motion.div> : <Virtuoso
+          data={mixedFeed}
+          useWindowScroll
+          overscan={500}
+          endReached={() => {
+            if (hasMore && !loadingMore) {
+              loadMorePosts();
+            }
+          }}
+          itemContent={(index, item) => {
+            if (item.type === 'post') {
+              return (
+                <div key={`post-${item.data.id}`}>
+                  <PostCardErrorBoundary>
+                    <PostCard 
+                      post={item.data} 
+                      currentUserId={user?.id} 
+                      currentUserAvatar={userAvatar} 
+                      onLike={handleLike} 
+                      onSave={handleSave} 
+                      onDoubleTap={handleDoubleTap} 
+                      onComment={handleComment} 
+                      showDoubleTapAnimation={doubleTapLike === item.data.id} 
+                      getTimeAgo={getTimeAgo} 
+                    />
+                  </PostCardErrorBoundary>
+                </div>
+              );
+            } else if (item.type === 'adoption') {
+              return (
+                <div key={`adoption-${item.data.id}`}>
+                  <AdoptionPostCard pet={item.data} getTimeAgo={getTimeAgo} />
+                </div>
+              );
+            } else if (item.type === 'product') {
+              return (
+                <div key={`product-${item.data.id}`}>
+                  <ProductPostCard product={item.data} />
+                </div>
+              );
+            } else if (item.type === 'ad') {
+              return (
+                <div key={`ad-${item.data.id}`}>
+                  <AdPostCard ad={item.data} />
+                </div>
+              );
+            } else if (item.type === 'suggested') {
+              return (
+                <div key={`suggested-${item.data.id}`}>
+                  <SuggestedPostCard post={item.data} onFollow={handleSuggestedFollow} />
+                </div>
+              );
+            } else if (item.type === 'challenge') {
+              return (
+                <div key={`challenge-${item.data.id}`}>
+                  <ChallengePostCard challenge={item.data} gradientIndex={index} onJoinChange={fetchChallenges} />
+                </div>
+              );
+            }
+            return null;
+          }}
+          components={{
+            Footer: () => loadingMore ? (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="flex items-center justify-center gap-2 py-6"
+              >
+                <Loader2 className="w-5 h-5 animate-spin text-[#8E8E8E]" />
+                <span className="text-[13px] text-[#8E8E8E]">טוען עוד...</span>
+              </motion.div>
+            ) : null
+          }}
+        />}
       </div>
 
       {/* End of Feed - Refined design */}
