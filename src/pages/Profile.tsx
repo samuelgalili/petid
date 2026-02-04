@@ -675,19 +675,7 @@ const Profile = () => {
                             <ChevronLeft className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground transition-colors flex-shrink-0" />
                           </motion.button>;
                 })}
-
-                      {/* More Services - Minimal */}
-                      <motion.button onClick={() => setActiveHub('care')} className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground transition-colors" initial={{
-                  opacity: 0
-                }} animate={{
-                  opacity: 1
-                }} transition={{
-                  delay: 0.2
-                }}>
-                        <Plus className="w-4 h-4" />
-                        <span className="text-xs font-medium">עוד שירותים</span>
-                      </motion.button>
-                    </motion.div>) : (/* Sub-categories for selected hub */
+                     </motion.div>) : (/* Sub-categories for selected hub */
               <motion.div key="categories" className="py-6 px-4" initial={{
                 opacity: 0,
                 x: 20
