@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useDocumentExtraction } from '@/hooks/useDocumentExtraction';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 
