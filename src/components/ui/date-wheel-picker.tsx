@@ -15,11 +15,11 @@ export interface DateWheelPickerProps
   locale?: string;
 }
 
-const ITEM_HEIGHT = 40;
+const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
 
 function getMonthNames(locale?: string): string[] {
-  const formatter = new Intl.DateTimeFormat(locale, { month: "long" });
+  const formatter = new Intl.DateTimeFormat(locale, { month: "short" });
   return Array.from({ length: 12 }, (_, i) =>
     formatter.format(new Date(2000, i, 1))
   );
@@ -30,19 +30,19 @@ const sizeConfig = {
     height: ITEM_HEIGHT * VISIBLE_ITEMS * 0.8,
     itemHeight: ITEM_HEIGHT * 0.8,
     fontSize: "text-sm",
-    gap: "gap-2",
+    gap: "gap-1",
   },
   md: {
     height: ITEM_HEIGHT * VISIBLE_ITEMS,
     itemHeight: ITEM_HEIGHT,
     fontSize: "text-base",
-    gap: "gap-4",
+    gap: "gap-2",
   },
   lg: {
     height: ITEM_HEIGHT * VISIBLE_ITEMS * 1.2,
     itemHeight: ITEM_HEIGHT * 1.2,
     fontSize: "text-lg",
-    gap: "gap-6",
+    gap: "gap-3",
   },
 };
 
@@ -98,8 +98,8 @@ function WheelItem({
   return (
     <motion.div
       className={cn(
-        "absolute w-full flex items-center justify-center cursor-pointer select-none",
-        isSelected && "font-semibold text-primary",
+        "absolute w-full flex items-center justify-center cursor-pointer select-none transition-colors",
+        isSelected ? "font-bold text-foreground" : "text-muted-foreground/60",
         disabled && "cursor-not-allowed opacity-50"
       )}
       style={{
@@ -112,7 +112,7 @@ function WheelItem({
       }}
       onClick={() => !disabled && onClick()}
     >
-      <span className="whitespace-nowrap">
+      <span className="whitespace-nowrap tabular-nums">
         {item}
       </span>
     </motion.div>
@@ -260,13 +260,13 @@ function WheelColumn({
     >
       {/* Top gradient fade */}
       <div 
-        className="absolute top-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-b from-background to-transparent"
-        style={{ height: itemHeight * 2 }}
+        className="absolute top-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-b from-background via-background/80 to-transparent"
+        style={{ height: itemHeight * 1.8 }}
       />
 
-      {/* Selection indicator */}
+      {/* Selection indicator - clean line style */}
       <div
-        className="absolute left-0 right-0 z-5 pointer-events-none border-y border-border bg-muted/30"
+        className="absolute left-2 right-2 z-5 pointer-events-none rounded-lg bg-muted/40"
         style={{
           height: itemHeight,
           top: centerOffset,
@@ -275,8 +275,8 @@ function WheelColumn({
 
       {/* Bottom gradient fade */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-t from-background to-transparent"
-        style={{ height: itemHeight * 2 }}
+        className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-t from-background via-background/80 to-transparent"
+        style={{ height: itemHeight * 1.8 }}
       />
 
       <motion.div
@@ -411,7 +411,7 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
       <div
         ref={ref}
         className={cn(
-          "flex items-center justify-center rounded-lg bg-background p-4",
+          "flex items-center justify-center rounded-xl bg-background/50 backdrop-blur-sm py-2 px-3",
           config.gap,
           config.fontSize,
           disabled && "opacity-50 pointer-events-none",
@@ -426,9 +426,11 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
           itemHeight={config.itemHeight}
           visibleItems={VISIBLE_ITEMS}
           disabled={disabled}
-          className="w-12"
+          className="w-14"
           ariaLabel="Select day"
         />
+
+        <div className="text-muted-foreground/30 font-light text-lg">/</div>
 
         <WheelColumn
           items={months}
@@ -437,9 +439,11 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
           itemHeight={config.itemHeight}
           visibleItems={VISIBLE_ITEMS}
           disabled={disabled}
-          className="w-28"
+          className="w-20"
           ariaLabel="Select month"
         />
+
+        <div className="text-muted-foreground/30 font-light text-lg">/</div>
 
         <WheelColumn
           items={years}
@@ -448,7 +452,7 @@ const DateWheelPicker = React.forwardRef<HTMLDivElement, DateWheelPickerProps>(
           itemHeight={config.itemHeight}
           visibleItems={VISIBLE_ITEMS}
           disabled={disabled}
-          className="w-20"
+          className="w-16"
           ariaLabel="Select year"
         />
       </div>
