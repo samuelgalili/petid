@@ -33,7 +33,9 @@ interface TopRecommendationProps {
 
 export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [owner, setOwner] = useState<OwnerProfile | null>(null);
+  const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
   useEffect(() => {
