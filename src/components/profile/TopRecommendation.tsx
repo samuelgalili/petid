@@ -54,6 +54,7 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editField, setEditField] = useState<'age' | 'size' | 'weight' | null>(null);
   const [editValue, setEditValue] = useState<string>('');
+  const [birthDate, setBirthDate] = useState<Date>(new Date());
   const [saving, setSaving] = useState(false);
   const isOwner = user?.id === pet.user_id;
 
