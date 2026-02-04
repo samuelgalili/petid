@@ -1,5 +1,8 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 
@@ -13,6 +16,13 @@ interface Pet {
   size?: string;
   weight?: number;
   avatar_url?: string;
+  user_id?: string;
+}
+
+interface OwnerProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
 }
 
 interface TopRecommendationProps {
@@ -21,6 +31,28 @@ interface TopRecommendationProps {
 }
 
 export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
+  const navigate = useNavigate();
+  const [owner, setOwner] = useState<OwnerProfile | null>(null);
+
+  // Fetch owner profile
+  useEffect(() => {
+    const fetchOwner = async () => {
+      if (!pet.user_id) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .eq('id', pet.user_id)
+        .maybeSingle();
+      
+      if (data) {
+        setOwner(data);
+      }
+    };
+
+    fetchOwner();
+  }, [pet.user_id]);
+
   // Format age display
   const getAgeDisplay = () => {
     if (pet.age_years && pet.age_years > 0) {
@@ -45,6 +77,13 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
       'extra_large': 'ענק',
     };
     return sizes[pet.size || ''] || pet.size || 'לא צוין';
+  };
+
+  // Handle send message to owner
+  const handleMessageOwner = () => {
+    if (owner?.id) {
+      navigate(`/messages?userId=${owner.id}`);
+    }
   };
 
   const petTypeHe = pet.type === 'dog' ? 'כלב' : 'חתול';
@@ -96,12 +135,12 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
       </div>
       
       {/* Pet Details Grid */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {/* Age */}
         <div className="flex flex-col items-center p-2 rounded-lg bg-muted/30">
           <Calendar className="w-4 h-4 text-muted-foreground mb-1" />
           <span className="text-[10px] text-muted-foreground">גיל</span>
-          <span className="text-xs font-semibold text-foreground">{getAgeDisplay()}</span>
+          <span className="text-xs font-semibold text-foreground text-center leading-tight">{getAgeDisplay()}</span>
         </div>
         
         {/* Size */}
@@ -119,6 +158,22 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
             {pet.weight ? `${pet.weight} ק"ג` : 'לא צוין'}
           </span>
         </div>
+
+        {/* Owner - Clickable to send message */}
+        <button
+          onClick={handleMessageOwner}
+          disabled={!owner}
+          className="flex flex-col items-center p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <div className="relative">
+            <User className="w-4 h-4 text-primary mb-1" />
+            <MessageCircle className="w-2.5 h-2.5 text-primary absolute -bottom-0.5 -left-1" />
+          </div>
+          <span className="text-[10px] text-primary">בעלים</span>
+          <span className="text-xs font-semibold text-primary truncate max-w-full">
+            {owner?.full_name?.split(' ')[0] || 'אני'}
+          </span>
+        </button>
       </div>
     </motion.div>
   );
