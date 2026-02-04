@@ -85,7 +85,7 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
   const energyInfo = (
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-2">
-        <Zap className="w-4 h-4 text-yellow-600" />
+        <Zap className="w-4 h-4 text-primary" />
         <span className="font-semibold text-foreground">רמת אנרגיה</span>
       </div>
       <p className="text-sm text-muted-foreground">
