@@ -558,18 +558,7 @@ const Profile = () => {
                   </motion.div>}
 
                 {/* Search Bar - Quick Search */}
-                <motion.div className="px-4 pb-3" initial={{
-              opacity: 0,
-              y: -10
-            }} animate={{
-              opacity: 1,
-              y: 0
-            }}>
-                  <div className="relative">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    
-                  </div>
-                </motion.div>
+                
 
                 {/* Quick Filter Chips */}
                 <motion.div className="px-4 pb-4 flex gap-2 overflow-x-auto no-scrollbar" initial={{
