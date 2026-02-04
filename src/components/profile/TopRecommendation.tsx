@@ -320,8 +320,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           )}
         </div>
         
-        {/* Pet Details Grid */}
-        <div className="grid grid-cols-4 gap-2">
+        {/* Pet Details Grid - 3 columns with trait buttons */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
           {/* Age - Clickable */}
           <button
             onClick={() => openEditModal('age')}
@@ -363,21 +363,56 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             <span className="text-[10px] text-muted-foreground">משקל</span>
             <span className="text-xs font-semibold text-foreground">{getWeightDisplay()}</span>
           </button>
+        </div>
 
-          {/* Owner - Clickable to send message */}
-          <button
-            onClick={handleMessageOwner}
-            disabled={!owner}
-            className="flex flex-col items-center p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="relative">
-              <User className="w-4 h-4 text-primary mb-1" />
-              <MessageCircle className="w-2.5 h-2.5 text-primary absolute -bottom-0.5 -left-1" />
-            </div>
-            <span className="text-[10px] text-primary">בעלים</span>
-            <span className="text-xs font-semibold text-primary truncate max-w-full">
+        {/* Owner Info */}
+        <button
+          onClick={handleMessageOwner}
+          disabled={!owner}
+          className="w-full flex items-center justify-between p-3 bg-primary/10 hover:bg-primary/20 transition-colors rounded-lg mb-4 disabled:opacity-50 disabled:cursor-not-allowed group"
+        >
+          <div>
+            <span className="text-xs text-primary block">בעלים</span>
+            <span className="text-sm font-semibold text-primary">
               {owner?.full_name?.split(' ')[0] || 'אני'}
             </span>
+          </div>
+          <MessageCircle className="w-4 h-4 text-primary" />
+        </button>
+
+        {/* Breed Traits - Energy, Grooming, Feeding */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Energy Button */}
+          <button
+            onClick={onEnergyOpen}
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-300 flex items-center justify-center mb-1">
+              <Zap className="w-4 h-4 text-background" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground text-center">אנרגיה</span>
+          </button>
+
+          {/* Grooming Button */}
+          <button
+            onClick={onGroomingOpen}
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mb-1">
+              <Scissors className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground text-center">טיפוח</span>
+          </button>
+
+          {/* Feeding Button */}
+          <button
+            onClick={onFeedingOpen}
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center mb-1">
+              <Utensils className="w-4 h-4 text-accent" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground text-center">האכלה</span>
           </button>
         </div>
       </motion.div>
