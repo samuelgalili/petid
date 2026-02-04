@@ -9,11 +9,19 @@ interface Pet {
   breed?: string;
 }
 
-
 interface GroomingProductsSheetProps {
   pet: Pet;
   isOpen: boolean;
   onClose: () => void;
+}
+
+// Product interface for internal fetching
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string;
+  category?: string;
 }
 
 export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProductsSheetProps) => {
