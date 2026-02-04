@@ -1,14 +1,12 @@
 /**
  * EnergySheet - Activity recommendations based on exercise needs
- * Shows recommended activity minutes and 3 products: toy, thinking game, feeding game
+ * ✅ Uses unified ProductRecommendationSheet
  */
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Zap, ShoppingCart, Loader2 } from "lucide-react";
-import { ServiceBottomSheet } from "./ServiceBottomSheet";
+import { Zap } from "lucide-react";
+import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 
 interface Pet {
   id: string;
