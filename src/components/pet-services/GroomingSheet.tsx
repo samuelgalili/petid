@@ -197,26 +197,23 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
                 ))}
               </div>
 
-              {/* Date Selection - Wheel Picker */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">בחר תאריך</h3>
-                
-                {/* Selected Date Display */}
-                <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-muted/50 border border-border/50">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">
-                    {format(selectedDate, 'PPP', { locale: he })}
+              {/* Date Selection - Clean Minimal */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-medium text-muted-foreground">בחר תאריך</h3>
+                  <span className="text-sm font-semibold text-foreground">
+                    {format(selectedDate, 'd בMMMM yyyy', { locale: he })}
                   </span>
                 </div>
 
-                {/* Wheel Date Picker */}
-                <div className="flex justify-center py-4 bg-muted/30 rounded-2xl">
+                {/* Wheel Date Picker - Minimal style */}
+                <div className="flex justify-center py-2 rounded-xl border border-border/30 bg-muted/20">
                   <DateWheelPicker
                     value={selectedDate}
                     onChange={setSelectedDate}
                     minYear={new Date().getFullYear()}
                     maxYear={new Date().getFullYear() + 2}
-                    size="md"
+                    size="sm"
                     locale="he-IL"
                   />
                 </div>
