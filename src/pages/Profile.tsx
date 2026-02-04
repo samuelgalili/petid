@@ -62,7 +62,10 @@ import {
   ToysSheet,
   DocumentsSheet,
   DogWalkerSheet,
-  ProductsSheet
+  ProductsSheet,
+  EnergySheet,
+  GroomingProductsSheet,
+  FeedingSheet
 } from "@/components/pet-services";
 
 
@@ -105,6 +108,9 @@ const Profile = () => {
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
   const [activeHub, setActiveHub] = useState<string | null>(null);
   const [showPetShop, setShowPetShop] = useState(false);
+  const [energySheetOpen, setEnergySheetOpen] = useState(false);
+  const [groomingSheetOpen, setGroomingSheetOpen] = useState(false);
+  const [feedingSheetOpen, setFeedingSheetOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -598,7 +604,10 @@ const Profile = () => {
                     {/* Top Recommendation */}
                     <TopRecommendation 
                       pet={selectedPet} 
-                      onViewPolicy={() => setActiveSheet('insurance')} 
+                      onViewPolicy={() => setActiveSheet('insurance')}
+                      onEnergyOpen={() => setEnergySheetOpen(true)}
+                      onGroomingOpen={() => setGroomingSheetOpen(true)}
+                      onFeedingOpen={() => setFeedingSheetOpen(true)}
                     />
                     
                     {/* Essentials */}
@@ -841,7 +850,22 @@ const Profile = () => {
           pet={selectedPet} 
         />
         
-        {/* Pet Shop View - Full screen shop for selected pet */}
+        {/* Breed Trait Sheets */}
+        <EnergySheet 
+          isOpen={energySheetOpen}
+          onClose={() => setEnergySheetOpen(false)}
+          pet={selectedPet}
+        />
+        <GroomingProductsSheet 
+          isOpen={groomingSheetOpen}
+          onClose={() => setGroomingSheetOpen(false)}
+          pet={selectedPet}
+        />
+        <FeedingSheet 
+          isOpen={feedingSheetOpen}
+          onClose={() => setFeedingSheetOpen(false)}
+          pet={selectedPet}
+        />
         <AnimatePresence>
           {showPetShop && selectedPet && (
             <PetShopView 
