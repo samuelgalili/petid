@@ -611,6 +611,9 @@ const Profile = () => {
                       onFeedingOpen={() => setFeedingSheetOpen(true)}
                     />
                     
+                    {/* Breed Stats Card - Shows detailed breed information */}
+                    <BreedStatsCard pet={selectedPet} />
+                    
                     {/* Essentials */}
                     <PetEssentials 
                       pet={selectedPet} 
