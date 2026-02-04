@@ -42,6 +42,9 @@ interface BreedInfo {
 interface TopRecommendationProps {
   pet: Pet;
   onViewPolicy: () => void;
+  onEnergyOpen?: () => void;
+  onGroomingOpen?: () => void;
+  onFeedingOpen?: () => void;
 }
 
 export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
