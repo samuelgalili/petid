@@ -591,10 +591,7 @@ const Profile = () => {
               }, {
                 label: 'אחרונים',
                 icon: Clock
-              }].map((filter, idx) => <button key={idx} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${filter.active ? 'bg-foreground text-background' : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}>
-                      {filter.icon && <filter.icon className="w-3 h-3" />}
-                      {filter.label}
-                    </button>)}
+              }].map((filter, idx) => {})}
                 </motion.div>
 
                 {/* Service Categories - Row Layout */}
