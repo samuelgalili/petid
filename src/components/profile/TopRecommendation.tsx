@@ -189,9 +189,18 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
         setBirthDate(new Date());
       }
     } else if (field === 'size') {
-      setEditValue(pet.size || '');
+      // Set size from pet data or breed default
+      setSizeValue(pet.size || breedInfo?.size_category || 'medium');
     } else if (field === 'weight') {
-      setEditValue(String(pet.weight || ''));
+      // Set weight from pet data or parse from breed range
+      if (pet.weight) {
+        setWeightValue(pet.weight);
+      } else if (breedInfo?.weight_range_kg) {
+        const avgWeight = parseInt(breedInfo.weight_range_kg.split('-')[0]) || 10;
+        setWeightValue(avgWeight);
+      } else {
+        setWeightValue(10);
+      }
     }
     setEditModalOpen(true);
   };
@@ -209,10 +218,9 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
         const formattedDate = birthDate.toISOString().split('T')[0];
         updateData = { birth_date: formattedDate };
       } else if (editField === 'size') {
-        updateData = { size: editValue || null };
+        updateData = { size: sizeValue || null };
       } else if (editField === 'weight') {
-        const weightVal = parseFloat(editValue);
-        updateData = { weight: isNaN(weightVal) ? null : weightVal };
+        updateData = { weight: weightValue || null };
       }
 
       const { error } = await supabase
