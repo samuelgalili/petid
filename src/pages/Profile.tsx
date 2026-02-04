@@ -850,7 +850,22 @@ const Profile = () => {
           pet={selectedPet} 
         />
         
-        {/* Pet Shop View - Full screen shop for selected pet */}
+        {/* Breed Trait Sheets */}
+        <EnergySheet 
+          isOpen={energySheetOpen}
+          onClose={() => setEnergySheetOpen(false)}
+          pet={selectedPet}
+        />
+        <GroomingProductsSheet 
+          isOpen={groomingSheetOpen}
+          onClose={() => setGroomingSheetOpen(false)}
+          pet={selectedPet}
+        />
+        <FeedingSheet 
+          isOpen={feedingSheetOpen}
+          onClose={() => setFeedingSheetOpen(false)}
+          pet={selectedPet}
+        />
         <AnimatePresence>
           {showPetShop && selectedPet && (
             <PetShopView 
