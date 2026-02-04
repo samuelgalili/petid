@@ -633,71 +633,115 @@ const Profile = () => {
                   </motion.div>
                 )}
 
+                {/* Search Bar - Quick Search */}
+                <motion.div 
+                  className="px-4 pb-3"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="חיפוש שירותים..." 
+                      className="pr-10 h-10 bg-muted/30 border-0 rounded-xl text-sm placeholder:text-muted-foreground/60"
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Quick Filter Chips */}
+                <motion.div 
+                  className="px-4 pb-4 flex gap-2 overflow-x-auto no-scrollbar"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {[
+                    { label: 'הכל', active: true },
+                    { label: 'קרוב אלי', icon: MapPin },
+                    { label: 'מומלצים', icon: Star },
+                    { label: 'אחרונים', icon: Clock },
+                  ].map((filter, idx) => (
+                    <button
+                      key={idx}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                        filter.active 
+                          ? 'bg-foreground text-background' 
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {filter.icon && <filter.icon className="w-3 h-3" />}
+                      {filter.label}
+                    </button>
+                  ))}
+                </motion.div>
+
                 {/* Service Categories - Row Layout */}
                 <AnimatePresence mode="wait">
                   {!activeHub ? (
-                    /* Services as Rows - Like reference image */
+                    /* Services as Rows - Minimal Professional Style */
                     <motion.div
                       key="services"
-                      className="py-2 px-4 space-y-3"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
+                      className="px-4 space-y-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
                     >
-                      {/* Service Rows - Enhanced Bank App Style */}
+                      {/* Service Rows - Minimalist Design with Icons */}
                       {[
-                        { id: 'insurance', label: 'ביטוח', subtitle: 'כיסוי מלא לחיית המחמד', emoji: '🛡️' },
-                        { id: 'boarding', label: 'פנסיון', subtitle: 'טיפול מסביב לשעון', emoji: '🏠' },
-                        { id: 'grooming', label: 'טיפוח', subtitle: 'מראה מושלם ובריא', emoji: '✂️' },
-                        { id: 'training', label: 'אילוף', subtitle: 'מאלפים מוסמכים ומנוסים', emoji: '🎓' },
-                        { id: 'health', label: 'בריאות', subtitle: 'מעקב וטיפול רפואי', emoji: '💊' },
-                        { id: 'dog_walker', label: 'דוג ווקר', subtitle: 'טיולים יומיים מקצועיים', emoji: '🐕' },
-                      ].map((service, index) => (
-                        <motion.button
-                          key={service.id}
-                          onClick={() => handleCategoryClick(service.id)}
-                          className="w-full flex items-center gap-3 p-3 bg-card rounded-2xl shadow-md border border-border/30 overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all active:scale-[0.98]"
-                          initial={{ opacity: 0, x: 30 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05, duration: 0.25 }}
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          {/* Emoji Icon - Larger with background */}
-                          <div className="w-14 h-14 rounded-xl bg-muted/50 flex items-center justify-center flex-shrink-0">
-                            <span className="text-3xl">{service.emoji}</span>
-                          </div>
-                          
-                          {/* Title - Dark Navy Pill with better contrast */}
-                          <div className="bg-foreground text-background px-4 py-2.5 rounded-xl flex-shrink-0 shadow-sm">
-                            <span className="font-bold text-sm">{service.label}</span>
-                          </div>
-                          
-                          {/* Subtitle - Better visibility */}
-                          <div className="flex-1 text-right px-2">
-                            <span className="text-sm text-muted-foreground leading-tight">
-                              {service.subtitle}
-                            </span>
-                          </div>
-                          
-                          {/* Arrow Button - Larger and more prominent */}
-                          <div className="w-11 h-11 rounded-full bg-primary shadow-md flex items-center justify-center flex-shrink-0">
-                            <ChevronLeft className="w-5 h-5 text-primary-foreground" />
-                          </div>
-                        </motion.button>
-                      ))}
+                        { id: 'insurance', label: 'ביטוח', subtitle: 'כיסוי מלא לחיית המחמד', icon: Shield, badge: 2 },
+                        { id: 'boarding', label: 'פנסיון', subtitle: 'טיפול מסביב לשעון', icon: Building2 },
+                        { id: 'grooming', label: 'טיפוח', subtitle: 'מראה מושלם ובריא', icon: Scissors },
+                        { id: 'training', label: 'אילוף', subtitle: 'מאלפים מוסמכים ומנוסים', icon: GraduationCap },
+                        { id: 'health', label: 'בריאות', subtitle: 'מעקב וטיפול רפואי', icon: Stethoscope, badge: 1 },
+                        { id: 'dog_walker', label: 'דוג ווקר', subtitle: 'טיולים יומיים', icon: Footprints },
+                      ].map((service, index) => {
+                        const ServiceIcon = service.icon;
+                        return (
+                          <motion.button
+                            key={service.id}
+                            onClick={() => handleCategoryClick(service.id)}
+                            className="w-full flex items-center gap-3 p-3 bg-card/50 hover:bg-card rounded-xl border border-border/20 hover:border-border/40 transition-all group"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.03 }}
+                          >
+                            {/* Icon - Clean minimal */}
+                            <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/10 transition-colors">
+                              <ServiceIcon className="w-5 h-5 text-foreground/70 group-hover:text-primary transition-colors" />
+                            </div>
+                            
+                            {/* Content */}
+                            <div className="flex-1 text-right min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-foreground">{service.label}</span>
+                                {service.badge && (
+                                  <span className="w-4 h-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                                    {service.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground line-clamp-1">
+                                {service.subtitle}
+                              </span>
+                            </div>
+                            
+                            {/* Arrow - Subtle */}
+                            <ChevronLeft className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground transition-colors flex-shrink-0" />
+                          </motion.button>
+                        );
+                      })}
 
-                      {/* More Services Button */}
+                      {/* More Services - Minimal */}
                       <motion.button
                         onClick={() => setActiveHub('care')}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-muted/30 rounded-2xl border border-dashed border-border/50 hover:bg-muted/50 transition-all text-muted-foreground"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        whileTap={{ scale: 0.98 }}
+                        className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground transition-colors"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
                       >
                         <Plus className="w-4 h-4" />
-                        <span className="text-sm font-medium">עוד שירותים</span>
+                        <span className="text-xs font-medium">עוד שירותים</span>
                       </motion.button>
                     </motion.div>
                   ) : (
