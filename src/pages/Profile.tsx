@@ -29,8 +29,14 @@ import {
   ShoppingBag,
   Truck,
   Handshake,
-  Footprints
+  Footprints,
+  Search,
+  Star,
+  Clock,
+  MapPin,
+  Bell
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
