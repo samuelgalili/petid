@@ -82,23 +82,29 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
     return 'from-green-400 to-emerald-300';
   };
 
+  const energyInfo = (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Zap className="w-4 h-4 text-primary" />
+        <span className="font-semibold text-foreground">רמת אנרגיה</span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {getEnergyLevel()}
+      </p>
+      <p className="text-xs text-muted-foreground mt-2">
+        לחיות מחמד עם רמת אנרגיה גבוהה נדרשים צעצועים בעלי אתגר וגירויים שונים כדי למנוע שעמום.
+      </p>
+    </div>
+  );
+
   return (
     <ServiceBottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="פריקת אנרגיה"
+      title="צעצועים מומלצים"
+      infoContent={energyInfo}
     >
       <div className="space-y-4">
-        {/* Energy Level Info */}
-        <div className={`bg-gradient-to-r ${getEnergyColor()} bg-opacity-20 p-4 rounded-xl`}>
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-5 h-5" />
-            <span className="font-semibold text-foreground">צעצועים מומלצים</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            רמה: {getEnergyLevel()}
-          </p>
-        </div>
 
         {/* Products Grid */}
         {loading ? (
