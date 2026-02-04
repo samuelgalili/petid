@@ -96,22 +96,50 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     fetchBreedInfo();
   }, [pet.breed]);
 
-  // Check if using AI data
-  const isAgeFromBreed = !pet.age_years && !pet.age_months && breedInfo?.life_expectancy_years;
+  // Check if using AI data - use birth_date for age calculation
+  const hasUserBirthDate = !!pet.birth_date;
+  const isAgeFromBreed = !hasUserBirthDate && breedInfo?.life_expectancy_years;
   const isSizeFromBreed = !pet.size && breedInfo?.size_category;
   const isWeightFromBreed = !pet.weight && breedInfo?.weight_range_kg;
 
+  // Calculate age from birth_date
+  const calculateAge = (birthDateStr: string) => {
+    const birth = new Date(birthDateStr);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (now.getDate() < birth.getDate()) {
+      months--;
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+    }
+    return { years, months };
+  };
+
   // Format age display
   const getAgeDisplay = () => {
-    if (pet.age_years && pet.age_years > 0) {
-      const years = pet.age_years === 1 ? 'שנה' : 'שנים';
-      if (pet.age_months && pet.age_months > 0) {
-        return `${pet.age_years} ${years} ו-${pet.age_months} חודשים`;
+    if (pet.birth_date) {
+      const { years, months } = calculateAge(pet.birth_date);
+      const yearsText = years === 1 ? 'שנה' : 'שנים';
+      const monthsText = months === 1 ? 'חודש' : 'חודשים';
+      
+      if (years > 0 && months > 0) {
+        return `${years} ${yearsText} ו-${months} ${monthsText}`;
       }
-      return `${pet.age_years} ${years}`;
-    }
-    if (pet.age_months && pet.age_months > 0) {
-      return `${pet.age_months} חודשים`;
+      if (years > 0) {
+        return `${years} ${yearsText}`;
+      }
+      if (months > 0) {
+        return `${months} ${monthsText}`;
+      }
+      return 'פחות מחודש';
     }
     if (breedInfo?.life_expectancy_years) {
       return `~${breedInfo.life_expectancy_years.split('-')[0]} שנים`;
