@@ -13,3 +13,5 @@ export { ProductsSheet } from './ProductsSheet';
 export { EnergySheet } from './EnergySheet';
 export { GroomingProductsSheet } from './GroomingProductsSheet';
 export { FeedingSheet } from './FeedingSheet';
+export { FurProductsSheet } from './FurProductsSheet';
+export { MemorialSheet } from './MemorialSheet';
