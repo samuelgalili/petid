@@ -382,11 +382,19 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         
         {/* Pet Details Grid - 3 columns with trait buttons */}
         <div className="grid grid-cols-3 gap-2 mb-4">
-          {/* Age - Clickable */}
+          {/* Age - Opens Insurance Sheet when user has confirmed age */}
           <button
-            onClick={() => openEditModal('age')}
-            disabled={!isOwner}
-            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+            onClick={() => {
+              if (!hasUserBirthDate && isOwner) {
+                // First time - let user set birth date
+                openEditModal('age');
+              } else if (hasUserBirthDate) {
+                // Age is confirmed - show insurance recommendation
+                navigate(`/pet/${pet.id}/insurance`);
+              }
+            }}
+            disabled={!isOwner && !hasUserBirthDate}
+            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${(isOwner || hasUserBirthDate) ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
           >
             {isAgeFromBreed && (
               <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
@@ -394,27 +402,33 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             <Calendar className="w-4 h-4 text-muted-foreground mb-1" />
             <span className="text-[10px] text-muted-foreground">גיל</span>
             <span className="text-xs font-semibold text-foreground text-center leading-tight">{getAgeDisplay()}</span>
+            {hasUserBirthDate && (
+              <span className="text-[8px] text-primary mt-0.5">לביטוח</span>
+            )}
           </button>
           
-          {/* Size - Clickable */}
-          <button
-            onClick={() => openEditModal('size')}
-            disabled={!isOwner}
-            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
-          >
+          {/* Size - Auto from breed, display only */}
+          <div className="flex flex-col items-center p-2 rounded-lg bg-muted/30 relative">
             {isSizeFromBreed && (
               <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
             )}
             <Ruler className="w-4 h-4 text-muted-foreground mb-1" />
             <span className="text-[10px] text-muted-foreground">גודל</span>
             <span className="text-xs font-semibold text-foreground">{getSizeDisplay()}</span>
-          </button>
+          </div>
           
-          {/* Weight - Clickable */}
+          {/* Weight - Opens Feeding Sheet with 3 recommendations */}
           <button
-            onClick={() => openEditModal('weight')}
-            disabled={!isOwner}
-            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+            onClick={() => {
+              if (!pet.weight && isOwner) {
+                // First time - let user set weight
+                openEditModal('weight');
+              } else {
+                // Weight exists - open feeding recommendations
+                onFeedingOpen?.();
+              }
+            }}
+            className="flex flex-col items-center p-2 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer relative"
           >
             {isWeightFromBreed && (
               <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
@@ -422,6 +436,9 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             <Weight className="w-4 h-4 text-muted-foreground mb-1" />
             <span className="text-[10px] text-muted-foreground">משקל</span>
             <span className="text-xs font-semibold text-foreground">{getWeightDisplay()}</span>
+            {(pet.weight || breedInfo?.weight_range_kg) && (
+              <span className="text-[8px] text-primary mt-0.5">להמלצות מזון</span>
+            )}
           </button>
         </div>
 
