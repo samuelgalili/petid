@@ -639,54 +639,55 @@ const Profile = () => {
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {/* Service Rows */}
+                      {/* Service Rows - Bank App Style */}
                       {[
-                        { id: 'insurance', label: 'ביטוח', icon: Shield, subtitle: 'הגנה מלאה', emoji: '🛡️' },
-                        { id: 'boarding', label: 'פנסיון', icon: Building2, subtitle: 'טיפול מקצועי', emoji: '🏠' },
-                        { id: 'grooming', label: 'טיפוח', icon: Scissors, subtitle: 'מראה מושלם', emoji: '✂️' },
-                        { id: 'training', label: 'אילוף', icon: GraduationCap, subtitle: 'אימון מקצועי', emoji: '🎓' },
-                        { id: 'health', label: 'בריאות', icon: Stethoscope, subtitle: 'מעקב רפואי', emoji: '💊' },
-                        { id: 'dog_walker', label: 'דוג ווקר', icon: Footprints, subtitle: 'טיולים יומיים', emoji: '🐕‍🦺' },
-                      ].map((service, index) => {
-                        const ServiceIcon = service.icon;
-                        return (
-                          <motion.button
-                            key={service.id}
-                            onClick={() => handleCategoryClick(service.id)}
-                            className="w-full flex items-center gap-3 p-3 bg-muted/30 rounded-2xl border border-border/30 hover:bg-muted/50 transition-all active:scale-[0.98]"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05, duration: 0.2 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            {/* Icon */}
-                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-2xl">{service.emoji}</span>
-                            </div>
-                            
-                            {/* Title Section - Dark Background */}
-                            <div className="flex-1 flex items-center">
-                              <div className="bg-foreground/90 text-background px-4 py-2 rounded-lg">
-                                <span className="font-bold text-sm">{service.label}</span>
-                              </div>
-                              <span className="text-xs text-muted-foreground mr-3">
-                                {service.subtitle}
-                              </span>
-                            </div>
-                            
-                            {/* Arrow */}
-                            <ChevronLeft className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                          </motion.button>
-                        );
-                      })}
+                        { id: 'insurance', label: 'ביטוח', subtitle: 'כיסוי מלא', emoji: '🛡️' },
+                        { id: 'boarding', label: 'פנסיון', subtitle: 'טיפול 24/7', emoji: '🏠' },
+                        { id: 'grooming', label: 'טיפוח', subtitle: 'מראה מושלם', emoji: '✂️' },
+                        { id: 'training', label: 'אילוף', subtitle: 'מאלפים מוסמכים', emoji: '🎓' },
+                        { id: 'health', label: 'בריאות', subtitle: 'מעקב רפואי', emoji: '💊' },
+                        { id: 'dog_walker', label: 'דוג ווקר', subtitle: 'טיולים יומיים', emoji: '🐕' },
+                      ].map((service, index) => (
+                        <motion.button
+                          key={service.id}
+                          onClick={() => handleCategoryClick(service.id)}
+                          className="w-full flex items-center gap-2 bg-background rounded-2xl shadow-sm border border-border/20 overflow-hidden hover:shadow-md transition-all active:scale-[0.99]"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.04, duration: 0.2 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {/* Emoji Icon */}
+                          <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
+                            <span className="text-2xl">{service.emoji}</span>
+                          </div>
+                          
+                          {/* Title - Dark Navy Pill */}
+                          <div className="bg-[#1a2744] text-white px-4 py-2 rounded-lg flex-shrink-0">
+                            <span className="font-bold text-sm">{service.label}</span>
+                          </div>
+                          
+                          {/* Subtitle - Light Section */}
+                          <div className="flex-1 text-right pr-2">
+                            <span className="text-xs text-muted-foreground">
+                              {service.subtitle}
+                            </span>
+                          </div>
+                          
+                          {/* Arrow Button */}
+                          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center ml-2 flex-shrink-0">
+                            <ChevronLeft className="w-5 h-5 text-primary-foreground" />
+                          </div>
+                        </motion.button>
+                      ))}
 
                       {/* More Services Button */}
                       <motion.button
                         onClick={() => setActiveHub('care')}
-                        className="w-full flex items-center justify-center gap-2 p-3 bg-muted/20 rounded-2xl border border-dashed border-border/50 hover:bg-muted/30 transition-all text-muted-foreground"
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-muted/30 rounded-2xl border border-dashed border-border/50 hover:bg-muted/50 transition-all text-muted-foreground"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.35 }}
+                        transition={{ delay: 0.3 }}
                         whileTap={{ scale: 0.98 }}
                       >
                         <Plus className="w-4 h-4" />
