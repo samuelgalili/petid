@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2 } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 
@@ -26,6 +28,12 @@ interface OwnerProfile {
   avatar_url: string | null;
 }
 
+interface BreedInfo {
+  size_category?: string;
+  weight_range_kg?: string;
+  life_expectancy_years?: string;
+}
+
 interface TopRecommendationProps {
   pet: Pet;
   onViewPolicy: () => void;
@@ -34,7 +42,11 @@ interface TopRecommendationProps {
 export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [owner, setOwner] = useState<OwnerProfile | null>(null);
+  const [breedInfo, setBreedInfo] = useState<BreedInfo | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
@@ -56,6 +68,30 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     fetchOwner();
   }, [pet.user_id]);
 
+  // Fetch breed info for defaults
+  useEffect(() => {
+    const fetchBreedInfo = async () => {
+      if (!pet.breed) return;
+      
+      const { data } = await supabase
+        .from('breed_information')
+        .select('size_category, weight_range_kg, life_expectancy_years')
+        .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
+        .maybeSingle();
+      
+      if (data) {
+        setBreedInfo(data);
+      }
+    };
+
+    fetchBreedInfo();
+  }, [pet.breed]);
+
+  // Check if using AI data
+  const isAgeFromBreed = !pet.age_years && !pet.age_months && breedInfo?.life_expectancy_years;
+  const isSizeFromBreed = !pet.size && breedInfo?.size_category;
+  const isWeightFromBreed = !pet.weight && breedInfo?.weight_range_kg;
+
   // Format age display
   const getAgeDisplay = () => {
     if (pet.age_years && pet.age_years > 0) {
@@ -68,6 +104,10 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     if (pet.age_months && pet.age_months > 0) {
       return `${pet.age_months} חודשים`;
     }
+    // Use breed default
+    if (breedInfo?.life_expectancy_years) {
+      return `~${breedInfo.life_expectancy_years.split('-')[0]} שנים`;
+    }
     return 'לא צוין';
   };
 
@@ -79,7 +119,66 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
       'large': 'גדול',
       'extra_large': 'ענק',
     };
-    return sizes[pet.size || ''] || pet.size || 'לא צוין';
+    if (pet.size) {
+      return sizes[pet.size] || pet.size;
+    }
+    // Use breed default
+    if (breedInfo?.size_category) {
+      return sizes[breedInfo.size_category] || breedInfo.size_category;
+    }
+    return 'לא צוין';
+  };
+
+  // Get weight display
+  const getWeightDisplay = () => {
+    if (pet.weight) {
+      return `${pet.weight} ק"ג`;
+    }
+    // Use breed default (average from range)
+    if (breedInfo?.weight_range_kg) {
+      const range = breedInfo.weight_range_kg;
+      return `~${range} ק"ג`;
+    }
+    return 'לא צוין';
+  };
+
+  // Handle field edit
+  const handleFieldClick = (field: string, currentValue: string) => {
+    if (!isOwner) return;
+    setEditingField(field);
+    setEditValue(currentValue);
+  };
+
+  // Save field update
+  const handleSaveField = async () => {
+    if (!editingField || !isOwner) return;
+
+    try {
+      let updateData: Record<string, any> = {};
+      
+      if (editingField === 'age') {
+        const years = parseInt(editValue) || 0;
+        updateData = { age_years: years, age_months: 0 };
+      } else if (editingField === 'size') {
+        updateData = { size: editValue };
+      } else if (editingField === 'weight') {
+        updateData = { weight: parseFloat(editValue) || null };
+      }
+
+      const { error } = await supabase
+        .from('pets')
+        .update(updateData)
+        .eq('id', pet.id);
+
+      if (error) throw error;
+
+      toast({ title: 'הנתונים עודכנו בהצלחה' });
+      setEditingField(null);
+      // Refresh page to get updated data
+      window.location.reload();
+    } catch (error) {
+      toast({ title: 'שגיאה בעדכון', variant: 'destructive' });
+    }
   };
 
   // Handle send message to owner
