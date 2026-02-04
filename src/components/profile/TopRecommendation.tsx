@@ -135,7 +135,17 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
             <Cat className="w-4 h-4 text-muted-foreground" />
           )}
         </div>
-      </div>
+
+        {/* Edit Button - Show only to owner */}
+        {isOwner && (
+          <button
+            onClick={() => navigate(`/pet/${pet.id}/edit`)}
+            className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+            title="עריכת פרטים"
+          >
+            <Edit2 className="w-4 h-4 text-primary" />
+          </button>
+        )}
       
       {/* Pet Details Grid */}
       <div className="grid grid-cols-4 gap-2">
