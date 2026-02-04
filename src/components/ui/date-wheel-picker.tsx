@@ -260,13 +260,13 @@ function WheelColumn({
     >
       {/* Top gradient fade */}
       <div 
-        className="absolute top-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-b from-background to-transparent"
-        style={{ height: itemHeight * 2 }}
+        className="absolute top-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-b from-background via-background/80 to-transparent"
+        style={{ height: itemHeight * 1.8 }}
       />
 
-      {/* Selection indicator */}
+      {/* Selection indicator - clean line style */}
       <div
-        className="absolute left-0 right-0 z-5 pointer-events-none border-y border-border bg-muted/30"
+        className="absolute left-2 right-2 z-5 pointer-events-none rounded-lg bg-muted/40"
         style={{
           height: itemHeight,
           top: centerOffset,
@@ -275,8 +275,8 @@ function WheelColumn({
 
       {/* Bottom gradient fade */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-t from-background to-transparent"
-        style={{ height: itemHeight * 2 }}
+        className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none bg-gradient-to-t from-background via-background/80 to-transparent"
+        style={{ height: itemHeight * 1.8 }}
       />
 
       <motion.div
