@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Calendar as CalendarIcon, ArrowRight, Save } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Save } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -39,7 +39,8 @@ const EditPet = () => {
     gender: "",
     is_neutered: "false"
   });
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempBirthDate, setTempBirthDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const fetchPet = async () => {
@@ -150,38 +151,65 @@ const EditPet = () => {
         {/* Birth Date */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">תאריך לידה</Label>
-          <Popover open={showCalendar} onOpenChange={setShowCalendar}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  "w-full h-12 justify-start text-right font-normal",
-                  !formData.birthDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="ml-2 h-4 w-4" />
-                {formData.birthDate ? (
-                  format(formData.birthDate, "dd/MM/yyyy", { locale: he })
-                ) : (
-                  "בחר תאריך"
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={formData.birthDate || undefined}
-                onSelect={(date) => {
-                  setFormData({ ...formData, birthDate: date || null });
-                  setShowCalendar(false);
-                }}
-                disabled={(date) => date > new Date()}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setTempBirthDate(formData.birthDate || new Date());
+              setShowDatePicker(true);
+            }}
+            className={cn(
+              "w-full h-12 justify-start text-right font-normal",
+              !formData.birthDate && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="ml-2 h-4 w-4" />
+            {formData.birthDate ? (
+              format(formData.birthDate, "dd/MM/yyyy", { locale: he })
+            ) : (
+              "בחר תאריך"
+            )}
+          </Button>
         </div>
+
+        {/* Birth Date Picker Dialog */}
+        <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
+          <DialogContent className="max-w-sm" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-center">בחר תאריך לידה</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <DateWheelPicker
+                value={tempBirthDate}
+                onChange={setTempBirthDate}
+                minYear={1990}
+                maxYear={new Date().getFullYear()}
+                locale="he-IL"
+                size="md"
+              />
+              <div className="flex gap-2 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowDatePicker(false)}
+                  className="flex-1"
+                >
+                  ביטול
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, birthDate: tempBirthDate });
+                    setShowDatePicker(false);
+                  }}
+                  className="flex-1"
+                >
+                  אישור
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Gender */}
         <div className="space-y-2">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, X } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 import { useToast } from "@/hooks/use-toast";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -18,6 +19,7 @@ interface Pet {
   name: string;
   type: 'dog' | 'cat';
   breed?: string;
+  birth_date?: string;
   age_years?: number;
   age_months?: number;
   size?: string;
@@ -52,6 +54,7 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editField, setEditField] = useState<'age' | 'size' | 'weight' | null>(null);
   const [editValue, setEditValue] = useState<string>('');
+  const [birthDate, setBirthDate] = useState<Date>(new Date());
   const [saving, setSaving] = useState(false);
   const isOwner = user?.id === pet.user_id;
 
@@ -93,22 +96,50 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     fetchBreedInfo();
   }, [pet.breed]);
 
-  // Check if using AI data
-  const isAgeFromBreed = !pet.age_years && !pet.age_months && breedInfo?.life_expectancy_years;
+  // Check if using AI data - use birth_date for age calculation
+  const hasUserBirthDate = !!pet.birth_date;
+  const isAgeFromBreed = !hasUserBirthDate && breedInfo?.life_expectancy_years;
   const isSizeFromBreed = !pet.size && breedInfo?.size_category;
   const isWeightFromBreed = !pet.weight && breedInfo?.weight_range_kg;
 
+  // Calculate age from birth_date
+  const calculateAge = (birthDateStr: string) => {
+    const birth = new Date(birthDateStr);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (now.getDate() < birth.getDate()) {
+      months--;
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+    }
+    return { years, months };
+  };
+
   // Format age display
   const getAgeDisplay = () => {
-    if (pet.age_years && pet.age_years > 0) {
-      const years = pet.age_years === 1 ? 'שנה' : 'שנים';
-      if (pet.age_months && pet.age_months > 0) {
-        return `${pet.age_years} ${years} ו-${pet.age_months} חודשים`;
+    if (pet.birth_date) {
+      const { years, months } = calculateAge(pet.birth_date);
+      const yearsText = years === 1 ? 'שנה' : 'שנים';
+      const monthsText = months === 1 ? 'חודש' : 'חודשים';
+      
+      if (years > 0 && months > 0) {
+        return `${years} ${yearsText} ו-${months} ${monthsText}`;
       }
-      return `${pet.age_years} ${years}`;
-    }
-    if (pet.age_months && pet.age_months > 0) {
-      return `${pet.age_months} חודשים`;
+      if (years > 0) {
+        return `${years} ${yearsText}`;
+      }
+      if (months > 0) {
+        return `${months} ${monthsText}`;
+      }
+      return 'פחות מחודש';
     }
     if (breedInfo?.life_expectancy_years) {
       return `~${breedInfo.life_expectancy_years.split('-')[0]} שנים`;
@@ -149,7 +180,12 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     if (!isOwner) return;
     setEditField(field);
     if (field === 'age') {
-      setEditValue(String(pet.age_years || ''));
+      // Set birthDate from pet data or default to today
+      if (pet.birth_date) {
+        setBirthDate(new Date(pet.birth_date));
+      } else {
+        setBirthDate(new Date());
+      }
     } else if (field === 'size') {
       setEditValue(pet.size || '');
     } else if (field === 'weight') {
@@ -167,8 +203,9 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
       let updateData: Record<string, any> = {};
       
       if (editField === 'age') {
-        const years = parseInt(editValue) || null;
-        updateData = { age_years: years };
+        // Save birth_date
+        const formattedDate = birthDate.toISOString().split('T')[0];
+        updateData = { birth_date: formattedDate };
       } else if (editField === 'size') {
         updateData = { size: editValue || null };
       } else if (editField === 'weight') {
@@ -342,10 +379,40 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>{getFieldLabel()}</Label>
-              
-              {editField === 'size' ? (
+            {editField === 'age' ? (
+              <div className="space-y-3">
+                <Label className="block text-center text-sm text-muted-foreground">
+                  בחר תאריך לידה
+                </Label>
+                <DateWheelPicker
+                  value={birthDate}
+                  onChange={setBirthDate}
+                  minYear={1990}
+                  maxYear={new Date().getFullYear()}
+                  locale="he-IL"
+                  size="md"
+                />
+                {birthDate && (
+                  <div className="text-center text-sm text-muted-foreground pt-2 border-t">
+                    גיל: {(() => {
+                      const now = new Date();
+                      let years = now.getFullYear() - birthDate.getFullYear();
+                      let months = now.getMonth() - birthDate.getMonth();
+                      if (months < 0) { years--; months += 12; }
+                      if (now.getDate() < birthDate.getDate()) { months--; if (months < 0) { years--; months += 12; } }
+                      const yearsText = years === 1 ? 'שנה' : 'שנים';
+                      const monthsText = months === 1 ? 'חודש' : 'חודשים';
+                      if (years > 0 && months > 0) return `${years} ${yearsText} ו-${months} ${monthsText}`;
+                      if (years > 0) return `${years} ${yearsText}`;
+                      if (months > 0) return `${months} ${monthsText}`;
+                      return 'פחות מחודש';
+                    })()}
+                  </div>
+                )}
+              </div>
+            ) : editField === 'size' ? (
+              <div className="space-y-2">
+                <Label>{getFieldLabel()}</Label>
                 <Select value={editValue} onValueChange={setEditValue}>
                   <SelectTrigger className="h-12">
                     <SelectValue placeholder="בחר גודל" />
@@ -357,19 +424,22 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
                     <SelectItem value="extra_large">ענק</SelectItem>
                   </SelectContent>
                 </Select>
-              ) : (
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{getFieldLabel()}</Label>
                 <Input
                   type="number"
-                  step={editField === 'weight' ? '0.1' : '1'}
+                  step="0.1"
                   min="0"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  placeholder={editField === 'age' ? 'הזן גיל בשנים' : 'הזן משקל'}
+                  placeholder="הזן משקל"
                   className="h-12 text-lg text-center"
                   autoFocus
                 />
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button
