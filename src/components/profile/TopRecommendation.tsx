@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -45,8 +49,10 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
   const { toast } = useToast();
   const [owner, setOwner] = useState<OwnerProfile | null>(null);
   const [breedInfo, setBreedInfo] = useState<BreedInfo | null>(null);
-  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editField, setEditField] = useState<'age' | 'size' | 'weight' | null>(null);
   const [editValue, setEditValue] = useState<string>('');
+  const [saving, setSaving] = useState(false);
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
@@ -104,7 +110,6 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     if (pet.age_months && pet.age_months > 0) {
       return `${pet.age_months} חודשים`;
     }
-    // Use breed default
     if (breedInfo?.life_expectancy_years) {
       return `~${breedInfo.life_expectancy_years.split('-')[0]} שנים`;
     }
@@ -122,7 +127,6 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     if (pet.size) {
       return sizes[pet.size] || pet.size;
     }
-    // Use breed default
     if (breedInfo?.size_category) {
       return sizes[breedInfo.size_category] || breedInfo.size_category;
     }
@@ -134,35 +138,42 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
     if (pet.weight) {
       return `${pet.weight} ק"ג`;
     }
-    // Use breed default (average from range)
     if (breedInfo?.weight_range_kg) {
-      const range = breedInfo.weight_range_kg;
-      return `~${range} ק"ג`;
+      return `~${breedInfo.weight_range_kg} ק"ג`;
     }
     return 'לא צוין';
   };
 
-  // Handle field edit
-  const handleFieldClick = (field: string, currentValue: string) => {
+  // Open edit modal
+  const openEditModal = (field: 'age' | 'size' | 'weight') => {
     if (!isOwner) return;
-    setEditingField(field);
-    setEditValue(currentValue);
+    setEditField(field);
+    if (field === 'age') {
+      setEditValue(String(pet.age_years || ''));
+    } else if (field === 'size') {
+      setEditValue(pet.size || '');
+    } else if (field === 'weight') {
+      setEditValue(String(pet.weight || ''));
+    }
+    setEditModalOpen(true);
   };
 
   // Save field update
-  const handleSaveField = async () => {
-    if (!editingField || !isOwner) return;
+  const handleSave = async () => {
+    if (!editField || !isOwner) return;
+    setSaving(true);
 
     try {
       let updateData: Record<string, any> = {};
       
-      if (editingField === 'age') {
-        const years = parseInt(editValue) || 0;
-        updateData = { age_years: years, age_months: 0 };
-      } else if (editingField === 'size') {
-        updateData = { size: editValue };
-      } else if (editingField === 'weight') {
-        updateData = { weight: parseFloat(editValue) || null };
+      if (editField === 'age') {
+        const years = parseInt(editValue) || null;
+        updateData = { age_years: years };
+      } else if (editField === 'size') {
+        updateData = { size: editValue || null };
+      } else if (editField === 'weight') {
+        const weightVal = parseFloat(editValue);
+        updateData = { weight: isNaN(weightVal) ? null : weightVal };
       }
 
       const { error } = await supabase
@@ -173,11 +184,15 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
       if (error) throw error;
 
       toast({ title: 'הנתונים עודכנו בהצלחה' });
-      setEditingField(null);
+      setEditModalOpen(false);
+      setEditField(null);
       // Refresh page to get updated data
       window.location.reload();
-    } catch (error) {
-      toast({ title: 'שגיאה בעדכון', variant: 'destructive' });
+    } catch (error: any) {
+      console.error('Update error:', error);
+      toast({ title: 'שגיאה בעדכון', description: error.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -190,165 +205,192 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
 
   const petTypeHe = pet.type === 'dog' ? 'כלב' : 'חתול';
 
+  const getFieldLabel = () => {
+    switch(editField) {
+      case 'age': return 'גיל (בשנים)';
+      case 'size': return 'גודל';
+      case 'weight': return 'משקל (ק"ג)';
+      default: return '';
+    }
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="mx-4 p-4 bg-card rounded-xl border border-border/30"
-    >
-      {/* Pet Header */}
-      <div className="flex items-center gap-3 mb-4">
-        {/* Pet Avatar */}
-        <div className="w-14 h-14 rounded-full overflow-hidden bg-muted border-2 border-border flex-shrink-0">
-          {pet.avatar_url ? (
-            <img 
-              src={pet.avatar_url} 
-              alt={pet.name} 
-              className="w-full h-full object-cover" 
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mx-4 p-4 bg-card rounded-xl border border-border/30"
+      >
+        {/* Pet Header */}
+        <div className="flex items-center gap-3 mb-4">
+          {/* Pet Avatar */}
+          <div className="w-14 h-14 rounded-full overflow-hidden bg-muted border-2 border-border flex-shrink-0">
+            {pet.avatar_url ? (
               <img 
-                src={pet.type === 'dog' ? dogIcon : catIcon} 
-                alt={petTypeHe} 
-                className="w-8 h-8 opacity-60" 
+                src={pet.avatar_url} 
+                alt={pet.name} 
+                className="w-full h-full object-cover" 
               />
-            </div>
-          )}
-        </div>
-        
-        {/* Name & Type */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-foreground text-lg">{pet.name}</h3>
-          <p className="text-xs text-muted-foreground">
-            {pet.breed || petTypeHe}
-          </p>
-        </div>
-
-        {/* Type Icon */}
-        <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
-          {pet.type === 'dog' ? (
-            <Dog className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <Cat className="w-4 h-4 text-muted-foreground" />
-          )}
-        </div>
-
-        {/* Edit Button - Show only to owner */}
-        {isOwner && (
-          <button
-            onClick={() => navigate(`/pet/${pet.id}/edit`)}
-            className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
-            title="עריכת פרטים"
-          >
-            <Edit2 className="w-4 h-4 text-primary" />
-          </button>
-        )}
-      </div>
-      
-      {/* Pet Details Grid */}
-      <div className="grid grid-cols-4 gap-2">
-        {/* Age - Editable */}
-        <button
-          onClick={() => handleFieldClick('age', String(pet.age_years || ''))}
-          disabled={!isOwner}
-          className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
-        >
-          {isAgeFromBreed && (
-            <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
-          )}
-          <Calendar className="w-4 h-4 text-muted-foreground mb-1" />
-          <span className="text-[10px] text-muted-foreground">גיל</span>
-          {editingField === 'age' ? (
-            <Input
-              type="number"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={handleSaveField}
-              onKeyDown={(e) => e.key === 'Enter' && handleSaveField()}
-              className="h-5 w-12 text-xs text-center p-0"
-              autoFocus
-            />
-          ) : (
-            <span className="text-xs font-semibold text-foreground text-center leading-tight">{getAgeDisplay()}</span>
-          )}
-        </button>
-        
-        {/* Size - Editable */}
-        <button
-          onClick={() => handleFieldClick('size', pet.size || '')}
-          disabled={!isOwner}
-          className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
-        >
-          {isSizeFromBreed && (
-            <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
-          )}
-          <Ruler className="w-4 h-4 text-muted-foreground mb-1" />
-          <span className="text-[10px] text-muted-foreground">גודל</span>
-          {editingField === 'size' ? (
-            <select
-              value={editValue}
-              onChange={(e) => {
-                setEditValue(e.target.value);
-                setTimeout(handleSaveField, 100);
-              }}
-              className="h-5 text-xs bg-background border rounded"
-              autoFocus
-            >
-              <option value="small">קטן</option>
-              <option value="medium">בינוני</option>
-              <option value="large">גדול</option>
-              <option value="extra_large">ענק</option>
-            </select>
-          ) : (
-            <span className="text-xs font-semibold text-foreground">{getSizeDisplay()}</span>
-          )}
-        </button>
-        
-        {/* Weight - Editable */}
-        <button
-          onClick={() => handleFieldClick('weight', String(pet.weight || ''))}
-          disabled={!isOwner}
-          className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
-        >
-          {isWeightFromBreed && (
-            <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
-          )}
-          <Weight className="w-4 h-4 text-muted-foreground mb-1" />
-          <span className="text-[10px] text-muted-foreground">משקל</span>
-          {editingField === 'weight' ? (
-            <Input
-              type="number"
-              step="0.1"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={handleSaveField}
-              onKeyDown={(e) => e.key === 'Enter' && handleSaveField()}
-              className="h-5 w-12 text-xs text-center p-0"
-              autoFocus
-            />
-          ) : (
-            <span className="text-xs font-semibold text-foreground">{getWeightDisplay()}</span>
-          )}
-        </button>
-
-        {/* Owner - Clickable to send message */}
-        <button
-          onClick={handleMessageOwner}
-          disabled={!owner}
-          className="flex flex-col items-center p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <div className="relative">
-            <User className="w-4 h-4 text-primary mb-1" />
-            <MessageCircle className="w-2.5 h-2.5 text-primary absolute -bottom-0.5 -left-1" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <img 
+                  src={pet.type === 'dog' ? dogIcon : catIcon} 
+                  alt={petTypeHe} 
+                  className="w-8 h-8 opacity-60" 
+                />
+              </div>
+            )}
           </div>
-          <span className="text-[10px] text-primary">בעלים</span>
-          <span className="text-xs font-semibold text-primary truncate max-w-full">
-            {owner?.full_name?.split(' ')[0] || 'אני'}
-          </span>
-        </button>
-      </div>
-    </motion.div>
+          
+          {/* Name & Type */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-foreground text-lg">{pet.name}</h3>
+            <p className="text-xs text-muted-foreground">
+              {pet.breed || petTypeHe}
+            </p>
+          </div>
+
+          {/* Type Icon */}
+          <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+            {pet.type === 'dog' ? (
+              <Dog className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <Cat className="w-4 h-4 text-muted-foreground" />
+            )}
+          </div>
+
+          {/* Edit Button - Show only to owner */}
+          {isOwner && (
+            <button
+              onClick={() => navigate(`/pet/${pet.id}/edit`)}
+              className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+              title="עריכת פרטים"
+            >
+              <Edit2 className="w-4 h-4 text-primary" />
+            </button>
+          )}
+        </div>
+        
+        {/* Pet Details Grid */}
+        <div className="grid grid-cols-4 gap-2">
+          {/* Age - Clickable */}
+          <button
+            onClick={() => openEditModal('age')}
+            disabled={!isOwner}
+            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+          >
+            {isAgeFromBreed && (
+              <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+            )}
+            <Calendar className="w-4 h-4 text-muted-foreground mb-1" />
+            <span className="text-[10px] text-muted-foreground">גיל</span>
+            <span className="text-xs font-semibold text-foreground text-center leading-tight">{getAgeDisplay()}</span>
+          </button>
+          
+          {/* Size - Clickable */}
+          <button
+            onClick={() => openEditModal('size')}
+            disabled={!isOwner}
+            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+          >
+            {isSizeFromBreed && (
+              <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+            )}
+            <Ruler className="w-4 h-4 text-muted-foreground mb-1" />
+            <span className="text-[10px] text-muted-foreground">גודל</span>
+            <span className="text-xs font-semibold text-foreground">{getSizeDisplay()}</span>
+          </button>
+          
+          {/* Weight - Clickable */}
+          <button
+            onClick={() => openEditModal('weight')}
+            disabled={!isOwner}
+            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+          >
+            {isWeightFromBreed && (
+              <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+            )}
+            <Weight className="w-4 h-4 text-muted-foreground mb-1" />
+            <span className="text-[10px] text-muted-foreground">משקל</span>
+            <span className="text-xs font-semibold text-foreground">{getWeightDisplay()}</span>
+          </button>
+
+          {/* Owner - Clickable to send message */}
+          <button
+            onClick={handleMessageOwner}
+            disabled={!owner}
+            className="flex flex-col items-center p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="relative">
+              <User className="w-4 h-4 text-primary mb-1" />
+              <MessageCircle className="w-2.5 h-2.5 text-primary absolute -bottom-0.5 -left-1" />
+            </div>
+            <span className="text-[10px] text-primary">בעלים</span>
+            <span className="text-xs font-semibold text-primary truncate max-w-full">
+              {owner?.full_name?.split(' ')[0] || 'אני'}
+            </span>
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Edit Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="max-w-sm" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-center">עדכון {getFieldLabel()}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>{getFieldLabel()}</Label>
+              
+              {editField === 'size' ? (
+                <Select value={editValue} onValueChange={setEditValue}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="בחר גודל" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">קטן</SelectItem>
+                    <SelectItem value="medium">בינוני</SelectItem>
+                    <SelectItem value="large">גדול</SelectItem>
+                    <SelectItem value="extra_large">ענק</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  type="number"
+                  step={editField === 'weight' ? '0.1' : '1'}
+                  min="0"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder={editField === 'age' ? 'הזן גיל בשנים' : 'הזן משקל'}
+                  className="h-12 text-lg text-center"
+                  autoFocus
+                />
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditModalOpen(false)}
+                className="flex-1"
+                disabled={saving}
+              >
+                ביטול
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="flex-1"
+                disabled={saving}
+              >
+                {saving ? 'שומר...' : 'שמור'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
