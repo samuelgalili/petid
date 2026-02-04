@@ -20,7 +20,7 @@ import { PetHealthScore } from "@/components/profile/PetHealthScore";
 import { TopRecommendation } from "@/components/profile/TopRecommendation";
 import { PetEssentials } from "@/components/profile/PetEssentials";
 import { BreedStatsCard } from "@/components/profile/BreedStatsCard";
-import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet } from "@/components/pet-services";
+import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, FurProductsSheet, MemorialSheet } from "@/components/pet-services";
 interface Pet {
   id: string;
   name: string;
@@ -67,6 +67,8 @@ const Profile = () => {
   const [energySheetOpen, setEnergySheetOpen] = useState(false);
   const [groomingSheetOpen, setGroomingSheetOpen] = useState(false);
   const [feedingSheetOpen, setFeedingSheetOpen] = useState(false);
+  const [furSheetOpen, setFurSheetOpen] = useState(false);
+  const [memorialSheetOpen, setMemorialSheetOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -548,7 +550,7 @@ const Profile = () => {
                     <PetHealthScore pet={selectedPet} />
                     
                     {/* Top Recommendation */}
-                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setEnergySheetOpen(true)} onGroomingOpen={() => setGroomingSheetOpen(true)} onFeedingOpen={() => setFeedingSheetOpen(true)} />
+                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setEnergySheetOpen(true)} onGroomingOpen={() => setGroomingSheetOpen(true)} onFeedingOpen={() => setFeedingSheetOpen(true)} onFurOpen={() => setFurSheetOpen(true)} onLifeExpectancyOpen={() => setMemorialSheetOpen(true)} />
                     
                     {/* Breed Stats Card - Shows detailed breed information */}
                     <BreedStatsCard pet={selectedPet} />
@@ -681,6 +683,8 @@ const Profile = () => {
         <EnergySheet isOpen={energySheetOpen} onClose={() => setEnergySheetOpen(false)} pet={selectedPet} />
         <GroomingProductsSheet isOpen={groomingSheetOpen} onClose={() => setGroomingSheetOpen(false)} pet={selectedPet} />
         <FeedingSheet isOpen={feedingSheetOpen} onClose={() => setFeedingSheetOpen(false)} pet={selectedPet} />
+        <FurProductsSheet isOpen={furSheetOpen} onClose={() => setFurSheetOpen(false)} pet={selectedPet} furLength="medium" />
+        <MemorialSheet isOpen={memorialSheetOpen} onClose={() => setMemorialSheetOpen(false)} pet={selectedPet} />
         <AnimatePresence>
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={handleClosePetShop} />}
         </AnimatePresence>

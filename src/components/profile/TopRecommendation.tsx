@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Feather, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,8 @@ interface BreedInfo {
   size_category?: string;
   weight_range_kg?: string;
   life_expectancy_years?: string;
+  exercise_needs?: string;
+  grooming_needs?: string;
 }
 
 interface TopRecommendationProps {
@@ -45,9 +47,11 @@ interface TopRecommendationProps {
   onEnergyOpen?: () => void;
   onGroomingOpen?: () => void;
   onFeedingOpen?: () => void;
+  onFurOpen?: () => void;
+  onLifeExpectancyOpen?: () => void;
 }
 
-export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeedingOpen }: TopRecommendationProps) => {
+export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeedingOpen, onFurOpen, onLifeExpectancyOpen }: TopRecommendationProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -87,7 +91,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       
       const { data } = await supabase
         .from('breed_information')
-        .select('size_category, weight_range_kg, life_expectancy_years')
+        .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs')
         .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
         .maybeSingle();
       
@@ -226,6 +230,49 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   };
 
   const recommendedGrams = getRecommendedFeedingGrams();
+
+  // Get recommended activity minutes based on exercise needs
+  const getActivityMinutes = (): number | null => {
+    const exercise = breedInfo?.exercise_needs?.toLowerCase() || '';
+    if (exercise.includes('very high') || exercise.includes('גבוהה מאוד')) return 90;
+    if (exercise.includes('high') || exercise.includes('גבוה')) return 60;
+    if (exercise.includes('moderate') || exercise.includes('medium') || exercise.includes('בינוני')) return 45;
+    if (exercise.includes('low') || exercise.includes('נמוך')) return 30;
+    return 45; // default
+  };
+
+  // Get grooming frequency level
+  const getGroomingLevel = (): 'low' | 'medium' | 'high' => {
+    const grooming = breedInfo?.grooming_needs?.toLowerCase() || '';
+    if (grooming.includes('high') || grooming.includes('daily') || grooming.includes('גבוה') || grooming.includes('יומי')) return 'high';
+    if (grooming.includes('low') || grooming.includes('minimal') || grooming.includes('נמוך')) return 'low';
+    return 'medium';
+  };
+
+  const getGroomingLevelHe = () => {
+    const levels: Record<string, string> = { low: 'נמוך', medium: 'בינוני', high: 'גבוה' };
+    return levels[getGroomingLevel()];
+  };
+
+  // Determine fur length from grooming needs
+  const getFurLength = (): 'short' | 'medium' | 'long' => {
+    const grooming = breedInfo?.grooming_needs?.toLowerCase() || '';
+    if (grooming.includes('long') || grooming.includes('ארוך') || grooming.includes('daily')) return 'long';
+    if (grooming.includes('short') || grooming.includes('קצר') || grooming.includes('minimal')) return 'short';
+    return 'medium';
+  };
+
+  const getFurLengthHe = () => {
+    const lengths: Record<string, string> = { short: 'קצר', medium: 'בינוני', long: 'ארוך' };
+    return lengths[getFurLength()];
+  };
+
+  // Get life expectancy display
+  const getLifeExpectancy = (): string | null => {
+    return breedInfo?.life_expectancy_years || null;
+  };
+
+  const activityMinutes = getActivityMinutes();
 
   // Open edit modal
   const openEditModal = (field: 'age' | 'size' | 'weight') => {
@@ -443,95 +490,73 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         </div>
 
 
-        {/* Breed Traits - Energy, Grooming, Feeding with level indicator */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* Energy Button */}
+        {/* Breed Traits - 5 buttons: Energy, Grooming, Feeding, Fur, Life Expectancy */}
+        <div className="grid grid-cols-5 gap-1.5">
+          {/* Energy Button - Shows activity minutes */}
           <button
             onClick={onEnergyOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
           >
-            {/* Mini gauge arc */}
-            <div className="relative w-10 h-5 mb-1">
-              <svg viewBox="0 0 100 50" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  strokeDashoffset="42"
-                />
-              </svg>
-            </div>
-            <Zap className="w-4 h-4 text-primary mb-0.5" />
-            <span className="text-[10px] font-semibold text-foreground text-center">אנרגיה</span>
-          </button>
-
-          {/* Grooming Button */}
-          <button
-            onClick={onGroomingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
-          >
-            {/* Mini gauge arc */}
-            <div className="relative w-10 h-5 mb-1">
-              <svg viewBox="0 0 100 50" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  strokeDashoffset="42"
-                />
-              </svg>
-            </div>
-            <Scissors className="w-4 h-4 text-primary mb-0.5" />
-            <span className="text-[10px] font-semibold text-foreground text-center">טיפוח</span>
-          </button>
-
-          {/* Feeding Button */}
-          <button
-            onClick={onFeedingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
-          >
-            {/* Show recommended grams prominently */}
-            {recommendedGrams ? (
-              <div className="flex items-baseline gap-0.5 mb-1">
-                <span className="text-lg font-bold text-primary">{recommendedGrams}</span>
-                <span className="text-[8px] text-muted-foreground">גרם/יום</span>
-              </div>
-            ) : (
-              /* Mini gauge arc when no data */
-              <div className="relative w-10 h-5 mb-1">
-                <svg viewBox="0 0 100 50" className="w-full h-full">
-                  <path
-                    d="M 10 50 A 40 40 0 0 1 90 50"
-                    fill="none"
-                    stroke="hsl(var(--muted))"
-                    strokeWidth="10"
-                    strokeLinecap="round"
-                  />
-                </svg>
+            {activityMinutes && (
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-sm font-bold text-primary">{activityMinutes}</span>
+                <span className="text-[7px] text-muted-foreground">דק׳</span>
               </div>
             )}
-            <Utensils className="w-4 h-4 text-primary mb-0.5" />
-            <span className="text-[10px] font-semibold text-foreground text-center">האכלה</span>
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">אנרגיה</span>
+          </button>
+
+          {/* Grooming Button - Shows frequency level */}
+          <button
+            onClick={onGroomingOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            <span className="text-[10px] font-bold text-primary">{getGroomingLevelHe()}</span>
+            <Scissors className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">טיפוח</span>
+          </button>
+
+          {/* Feeding Button - Shows grams */}
+          <button
+            onClick={onFeedingOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            {recommendedGrams ? (
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-sm font-bold text-primary">{recommendedGrams}</span>
+                <span className="text-[7px] text-muted-foreground">ג׳</span>
+              </div>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">—</span>
+            )}
+            <Utensils className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">האכלה</span>
+          </button>
+
+          {/* Fur Length Button - Shows short/medium/long */}
+          <button
+            onClick={onFurOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            <span className="text-[10px] font-bold text-primary">{getFurLengthHe()}</span>
+            <Feather className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">פרווה</span>
+          </button>
+
+          {/* Life Expectancy Button */}
+          <button
+            onClick={onLifeExpectancyOpen}
+            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+          >
+            {getLifeExpectancy() && (
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-[10px] font-bold text-primary">{getLifeExpectancy()?.split('-')[0]}</span>
+                <span className="text-[7px] text-muted-foreground">ש׳</span>
+              </div>
+            )}
+            <Heart className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[9px] font-medium text-foreground text-center">תוחלת</span>
           </button>
         </div>
       </motion.div>
