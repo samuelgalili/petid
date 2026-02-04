@@ -336,18 +336,18 @@ export function WeightWheelPicker({
   };
 
   return (
-    <div className={cn("flex items-center justify-center gap-2 rounded-xl bg-background/50 backdrop-blur-sm py-2 px-3", className)}>
+    <div className={cn("flex items-center justify-center gap-1 rounded-xl bg-background/50 backdrop-blur-sm py-1 px-2", className)}>
       <WheelColumn
         items={weights}
         value={selectedIndex}
         onChange={handleChange}
-        itemHeight={ITEM_HEIGHT}
-        visibleItems={VISIBLE_ITEMS}
+        itemHeight={ITEM_HEIGHT * 0.8}
+        visibleItems={3}
         disabled={disabled}
-        className="w-20"
+        className="w-16"
         ariaLabel="Select weight"
       />
-      <span className="text-muted-foreground font-medium">ק"ג</span>
+      <span className="text-xs text-muted-foreground font-medium">ק"ג</span>
     </div>
   );
 }
