@@ -387,8 +387,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             onClick={onEnergyOpen}
             className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-300 flex items-center justify-center mb-1">
-              <Zap className="w-4 h-4 text-background" />
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mb-1">
+              <Zap className="w-4 h-4 text-primary" />
             </div>
             <span className="text-[10px] font-semibold text-foreground text-center">אנרגיה</span>
           </button>
@@ -409,8 +409,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             onClick={onFeedingOpen}
             className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
           >
-            <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center mb-1">
-              <Utensils className="w-4 h-4 text-accent" />
+            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mb-1">
+              <Utensils className="w-4 h-4 text-primary" />
             </div>
             <span className="text-[10px] font-semibold text-foreground text-center">האכלה</span>
           </button>
