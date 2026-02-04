@@ -5472,6 +5472,7 @@ export type Database = {
           name: string
           next_vet_visit: string | null
           personality_tags: string[] | null
+          size: string | null
           type: string
           updated_at: string | null
           user_id: string
@@ -5504,6 +5505,7 @@ export type Database = {
           name: string
           next_vet_visit?: string | null
           personality_tags?: string[] | null
+          size?: string | null
           type: string
           updated_at?: string | null
           user_id: string
@@ -5536,6 +5538,7 @@ export type Database = {
           name?: string
           next_vet_visit?: string | null
           personality_tags?: string[] | null
+          size?: string | null
           type?: string
           updated_at?: string | null
           user_id?: string
