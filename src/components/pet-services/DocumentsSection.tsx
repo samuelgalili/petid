@@ -90,7 +90,7 @@ export const DocumentsSection = ({ petId, category, title }: DocumentsSectionPro
       reader.onload = async () => {
         const dataUrl = reader.result as string;
         
-        const { error } = await supabase
+        const { data: docData, error } = await supabase
           .from('pet_service_documents')
           .insert({
             user_id: user.id,
@@ -100,9 +100,24 @@ export const DocumentsSection = ({ petId, category, title }: DocumentsSectionPro
             document_url: dataUrl,
             document_type: file.type,
             file_size: file.size,
-          });
+          })
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Auto-extract data from document using AI
+        if (docData) {
+          // Pass text content to AI for extraction
+          // For now using the filename and metadata, in production you'd use a proper OCR service
+          // or pass the dataUrl if the LLM supports image analysis
+          await extractDataFromDocument(
+            docData.id,
+            `מסמך מסוג ${category} בשם ${file.name}.`, 
+            file.name,
+            petId
+          );
+        }
 
         queryClient.invalidateQueries({ queryKey: ['pet-documents', petId, category] });
         toast({ title: 'המסמך הועלה בהצלחה' });
