@@ -461,68 +461,47 @@ const Profile = () => {
               <motion.div 
                 key="pets-grid"
                 className="flex flex-col items-center px-4"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
               >
                 {pets.length > 0 ? (
                   <>
-                    {/* Floating Pet Bubbles */}
-                    <div className="flex flex-wrap justify-center gap-4 py-6">
+                    {/* Pet Cards - Clean minimal style */}
+                    <div className="flex flex-wrap justify-center gap-3 py-4">
                       {pets.map((pet, index) => (
                         <motion.button
                           key={pet.id}
                           onClick={() => handlePetClick(pet.id)}
-                          className="flex flex-col items-center gap-2"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ 
-                            opacity: 1, 
-                            y: 0,
-                          }}
-                          transition={{ 
-                            delay: index * 0.1,
-                            duration: 0.4
-                          }}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
+                          className="flex flex-col items-center gap-1.5 group"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
                         >
-                          {/* Pet Avatar with Gradient Ring */}
-                          <motion.div 
-                            className="w-20 h-20 rounded-full p-[3px] bg-gradient-to-br from-primary via-primary/80 to-primary/60 shadow-lg"
-                            animate={{ 
-                              y: [0, -6, 0],
-                            }}
-                            transition={{
-                              duration: 3,
-                              repeat: Infinity,
-                              delay: index * 0.5,
-                              ease: "easeInOut"
-                            }}
-                          >
-                            <div className="w-full h-full rounded-full bg-background p-[2px]">
-                              <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                                {pet.avatar_url ? (
+                          {/* Pet Avatar - Clean border, no animation */}
+                          <div className="w-16 h-16 rounded-full border-2 border-border group-hover:border-primary transition-colors">
+                            <div className="w-full h-full rounded-full overflow-hidden bg-muted">
+                              {pet.avatar_url ? (
+                                <img 
+                                  src={pet.avatar_url} 
+                                  alt={pet.name} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-muted">
                                   <img 
-                                    src={pet.avatar_url} 
-                                    alt={pet.name} 
-                                    className="w-full h-full object-cover" 
+                                    src={pet.type === 'dog' ? dogIcon : catIcon} 
+                                    alt={pet.type} 
+                                    className="w-8 h-8 opacity-60" 
                                   />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                                    <img 
-                                      src={pet.type === 'dog' ? dogIcon : catIcon} 
-                                      alt={pet.type} 
-                                      className="w-10 h-10" 
-                                    />
-                                  </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
-                          </motion.div>
+                          </div>
                           
                           {/* Pet Name */}
-                          <span className="text-sm font-medium text-foreground">
+                          <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                             {pet.name}
                           </span>
                         </motion.button>
@@ -531,33 +510,33 @@ const Profile = () => {
                       {/* Add Pet Button */}
                       <motion.button
                         onClick={() => navigate('/add-pet')}
-                        className="flex flex-col items-center gap-2"
-                        initial={{ opacity: 0, y: 20 }}
+                        className="flex flex-col items-center gap-1.5 group"
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: pets.length * 0.1, duration: 0.4 }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
+                        transition={{ delay: pets.length * 0.05 }}
                       >
-                        <div className="w-20 h-20 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center bg-muted/30">
-                          <Plus className="w-8 h-8 text-muted-foreground" />
+                        <div className="w-16 h-16 rounded-full border border-dashed border-muted-foreground/30 flex items-center justify-center group-hover:border-primary/50 transition-colors">
+                          <Plus className="w-5 h-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
                         </div>
-                        <span className="text-sm text-muted-foreground">הוסף</span>
+                        <span className="text-xs text-muted-foreground/60">הוסף</span>
                       </motion.button>
                     </div>
                     
-                    <p className="text-xs text-muted-foreground">
-                      לחץ על חיית מחמד לצפייה בהתאמות
+                    <p className="text-[10px] text-muted-foreground/60">
+                      בחר חיית מחמד לצפייה בשירותים
                     </p>
                   </>
                 ) : (
                   <motion.button 
-                    className="flex flex-col items-center gap-3 py-8"
+                    className="flex flex-col items-center gap-2 py-6"
                     onClick={() => navigate('/add-pet')}
-                    whileTap={{ scale: 0.95 }}
                   >
-                    <div className="w-20 h-20 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/20">
-                      <Plus className="w-8 h-8 text-muted-foreground" />
+                    <div className="w-16 h-16 rounded-full border border-dashed border-muted-foreground/30 flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-muted-foreground" />
                     </div>
+                    <span className="text-xs text-muted-foreground">הוסף חיית מחמד ראשונה</span>
+                  </motion.button>
+                )}
                     <span className="text-sm text-muted-foreground">הוסף חיית מחמד ראשונה</span>
                   </motion.button>
                 )}
