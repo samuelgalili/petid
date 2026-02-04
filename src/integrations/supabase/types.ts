@@ -4862,6 +4862,108 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_document_extracted_data: {
+        Row: {
+          chip_number: string | null
+          created_at: string
+          currency: string | null
+          diagnosis: string | null
+          document_id: string
+          extraction_confidence: number | null
+          id: string
+          invoice_number: string | null
+          medications: string[] | null
+          payment_method: string | null
+          pet_id: string
+          provider_address: string | null
+          provider_name: string | null
+          provider_phone: string | null
+          provider_type: string | null
+          raw_extracted_data: Json | null
+          total_cost: number | null
+          treatment_date: string | null
+          treatment_type: string | null
+          updated_at: string
+          user_id: string
+          vaccination_date: string | null
+          vaccination_expiry: string | null
+          vaccination_type: string | null
+          vet_clinic: string | null
+          vet_name: string | null
+        }
+        Insert: {
+          chip_number?: string | null
+          created_at?: string
+          currency?: string | null
+          diagnosis?: string | null
+          document_id: string
+          extraction_confidence?: number | null
+          id?: string
+          invoice_number?: string | null
+          medications?: string[] | null
+          payment_method?: string | null
+          pet_id: string
+          provider_address?: string | null
+          provider_name?: string | null
+          provider_phone?: string | null
+          provider_type?: string | null
+          raw_extracted_data?: Json | null
+          total_cost?: number | null
+          treatment_date?: string | null
+          treatment_type?: string | null
+          updated_at?: string
+          user_id: string
+          vaccination_date?: string | null
+          vaccination_expiry?: string | null
+          vaccination_type?: string | null
+          vet_clinic?: string | null
+          vet_name?: string | null
+        }
+        Update: {
+          chip_number?: string | null
+          created_at?: string
+          currency?: string | null
+          diagnosis?: string | null
+          document_id?: string
+          extraction_confidence?: number | null
+          id?: string
+          invoice_number?: string | null
+          medications?: string[] | null
+          payment_method?: string | null
+          pet_id?: string
+          provider_address?: string | null
+          provider_name?: string | null
+          provider_phone?: string | null
+          provider_type?: string | null
+          raw_extracted_data?: Json | null
+          total_cost?: number | null
+          treatment_date?: string | null
+          treatment_type?: string | null
+          updated_at?: string
+          user_id?: string
+          vaccination_date?: string | null
+          vaccination_expiry?: string | null
+          vaccination_type?: string | null
+          vet_clinic?: string | null
+          vet_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_document_extracted_data_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "pet_service_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_document_extracted_data_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_documents: {
         Row: {
           description: string | null

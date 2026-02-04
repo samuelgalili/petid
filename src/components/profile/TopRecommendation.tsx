@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 
@@ -32,7 +33,9 @@ interface TopRecommendationProps {
 
 export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [owner, setOwner] = useState<OwnerProfile | null>(null);
+  const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
   useEffect(() => {
@@ -132,6 +135,17 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
             <Cat className="w-4 h-4 text-muted-foreground" />
           )}
         </div>
+
+        {/* Edit Button - Show only to owner */}
+        {isOwner && (
+          <button
+            onClick={() => navigate(`/pet/${pet.id}/edit`)}
+            className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+            title="עריכת פרטים"
+          >
+            <Edit2 className="w-4 h-4 text-primary" />
+          </button>
+        )}
       </div>
       
       {/* Pet Details Grid */}
