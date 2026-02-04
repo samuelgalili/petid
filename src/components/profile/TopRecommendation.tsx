@@ -308,6 +308,17 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             )}
           </div>
 
+          {/* Message Owner Button */}
+          {owner && !isOwner && (
+            <button
+              onClick={handleMessageOwner}
+              className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+              title={`שליחת הודעה ל${owner.full_name?.split(' ')[0] || 'בעלים'}`}
+            >
+              <MessageCircle className="w-4 h-4 text-primary" />
+            </button>
+          )}
+
           {/* Edit Button - Show only to owner */}
           {isOwner && (
             <button
