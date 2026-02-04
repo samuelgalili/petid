@@ -33,6 +33,7 @@ const categoryLabels: Record<DocumentCategory, string> = {
 
 export const DocumentsSection = ({ petId, category, title }: DocumentsSectionProps) => {
   const { toast } = useToast();
+  const { extractDataFromDocument } = useDocumentExtraction();
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
