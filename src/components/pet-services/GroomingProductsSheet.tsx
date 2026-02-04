@@ -90,6 +90,7 @@ export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProducts
           </div>
           <p className="text-xs text-muted-foreground">
             {breedInfo?.grooming_needs || 'מוצרים לטיפוח בריא'} • {getGroomingFrequency()}
+          </p>
         </div>
 
         {/* Products Grid */}

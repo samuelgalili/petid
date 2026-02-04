@@ -116,6 +116,7 @@ export const FeedingSheet = ({ pet, isOpen, onClose }: FeedingSheetProps) => {
           </p>
           <p className="text-xs text-muted-foreground">
             {breedInfo?.dietary_notes || 'חלקו לשתי הנשמות במהלך היום'}
+          </p>
         </div>
 
         {/* Dry Food Section */}
