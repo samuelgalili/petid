@@ -630,103 +630,71 @@ const Profile = () => {
                   </motion.div>
                 )}
 
-                {/* Hub Selection or Sub-categories */}
+                {/* Service Categories - Row Layout */}
                 <AnimatePresence mode="wait">
                   {!activeHub ? (
-                    /* Services Grid - Like reference image */
+                    /* Services as Rows - Like reference image */
                     <motion.div
-                      key="hubs"
-                      className="py-2 px-4"
+                      key="services"
+                      className="py-2 px-4 space-y-3"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                     >
-                      {/* Services Grid - 2 rows x 4 columns like reference */}
-                      <div className="relative">
-                        {/* First Row */}
-                        <div className="flex items-center justify-center">
-                          {hubs.slice(0, 4).map((hub, index) => {
-                            const HubIcon = hub.icon;
-                            return (
-                              <React.Fragment key={hub.id}>
-                                <motion.button
-                                  onClick={() => setActiveHub(hub.id)}
-                                  className="flex flex-col items-center justify-center w-[72px] h-[72px] bg-muted/40 rounded-lg hover:bg-muted/60 transition-all active:scale-95"
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: index * 0.05, duration: 0.2 }}
-                                  whileTap={{ scale: 0.95 }}
-                                >
-                                  <HubIcon className="w-6 h-6 text-foreground/80 mb-1" strokeWidth={1.5} />
-                                  <span className="text-[10px] font-medium text-muted-foreground">
-                                    {hub.label}
-                                  </span>
-                                </motion.button>
-                                {index < 3 && (
-                                  <span className="text-muted-foreground/30 text-base font-light mx-1">+</span>
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </div>
-
-                        {/* Vertical Plus Signs */}
-                        <div className="flex items-center justify-center py-1.5">
-                          <div className="flex items-center" style={{ gap: '62px' }}>
-                            <span className="text-muted-foreground/30 text-base font-light">+</span>
-                            <span className="text-muted-foreground/30 text-base font-light">+</span>
-                            <span className="text-muted-foreground/30 text-base font-light">+</span>
-                          </div>
-                        </div>
-
-                        {/* Second Row - Popular services */}
-                        <div className="flex items-center justify-center">
-                          {[
-                            { id: 'insurance', label: 'ביטוח', icon: hubs[0].categories[0].icon },
-                            { id: 'grooming', label: 'טיפוח', icon: hubs[0].categories[1].icon },
-                            { id: 'boarding', label: 'פנסיון', icon: hubs[2].categories[0].icon },
-                            { id: 'training', label: 'אילוף', icon: hubs[0].categories[2].icon },
-                          ].map((service, index) => {
-                            const ServiceIcon = service.icon;
-                            return (
-                              <React.Fragment key={service.id}>
-                                <motion.button
-                                  onClick={() => handleCategoryClick(service.id)}
-                                  className="flex flex-col items-center justify-center w-[72px] h-[72px] bg-muted/40 rounded-lg hover:bg-muted/60 transition-all active:scale-95"
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: (index + 4) * 0.05, duration: 0.2 }}
-                                  whileTap={{ scale: 0.95 }}
-                                >
-                                  <ServiceIcon className="w-6 h-6 text-foreground/80 mb-1" strokeWidth={1.5} />
-                                  <span className="text-[10px] font-medium text-muted-foreground">
-                                    {service.label}
-                                  </span>
-                                </motion.button>
-                                {index < 3 && (
-                                  <span className="text-muted-foreground/30 text-base font-light mx-1">+</span>
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </div>
-
-                        {/* Shop Button - Opens Pet Shop View */}
-                        <div className="flex justify-center mt-4 pt-4 border-t border-border/30">
+                      {/* Service Rows */}
+                      {[
+                        { id: 'insurance', label: 'ביטוח', icon: Shield, subtitle: 'הגנה מלאה', emoji: '🛡️' },
+                        { id: 'boarding', label: 'פנסיון', icon: Building2, subtitle: 'טיפול מקצועי', emoji: '🏠' },
+                        { id: 'grooming', label: 'טיפוח', icon: Scissors, subtitle: 'מראה מושלם', emoji: '✂️' },
+                        { id: 'training', label: 'אילוף', icon: GraduationCap, subtitle: 'אימון מקצועי', emoji: '🎓' },
+                        { id: 'health', label: 'בריאות', icon: Stethoscope, subtitle: 'מעקב רפואי', emoji: '💊' },
+                        { id: 'dog_walker', label: 'דוג ווקר', icon: Footprints, subtitle: 'טיולים יומיים', emoji: '🐕‍🦺' },
+                      ].map((service, index) => {
+                        const ServiceIcon = service.icon;
+                        return (
                           <motion.button
-                            onClick={handleOpenPetShop}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl font-medium shadow-md hover:shadow-lg transition-all"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            whileTap={{ scale: 0.95 }}
+                            key={service.id}
+                            onClick={() => handleCategoryClick(service.id)}
+                            className="w-full flex items-center gap-3 p-3 bg-muted/30 rounded-2xl border border-border/30 hover:bg-muted/50 transition-all active:scale-[0.98]"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05, duration: 0.2 }}
+                            whileTap={{ scale: 0.98 }}
                           >
-                            <ShoppingBag className="w-5 h-5" />
-                            <span>מוצרים ל{selectedPet?.name}</span>
+                            {/* Icon */}
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-2xl">{service.emoji}</span>
+                            </div>
+                            
+                            {/* Title Section - Dark Background */}
+                            <div className="flex-1 flex items-center">
+                              <div className="bg-foreground/90 text-background px-4 py-2 rounded-lg">
+                                <span className="font-bold text-sm">{service.label}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground mr-3">
+                                {service.subtitle}
+                              </span>
+                            </div>
+                            
+                            {/* Arrow */}
+                            <ChevronLeft className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                           </motion.button>
-                        </div>
-                      </div>
+                        );
+                      })}
+
+                      {/* More Services Button */}
+                      <motion.button
+                        onClick={() => setActiveHub('care')}
+                        className="w-full flex items-center justify-center gap-2 p-3 bg-muted/20 rounded-2xl border border-dashed border-border/50 hover:bg-muted/30 transition-all text-muted-foreground"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span className="text-sm font-medium">עוד שירותים</span>
+                      </motion.button>
                     </motion.div>
                   ) : (
                     /* Sub-categories for selected hub */
