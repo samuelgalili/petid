@@ -203,8 +203,9 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
       let updateData: Record<string, any> = {};
       
       if (editField === 'age') {
-        const years = parseInt(editValue) || null;
-        updateData = { age_years: years };
+        // Save birth_date
+        const formattedDate = birthDate.toISOString().split('T')[0];
+        updateData = { birth_date: formattedDate };
       } else if (editField === 'size') {
         updateData = { size: editValue || null };
       } else if (editField === 'weight') {
