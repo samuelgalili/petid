@@ -380,38 +380,95 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           <MessageCircle className="w-4 h-4 text-primary" />
         </button>
 
-        {/* Breed Traits - Energy, Grooming, Feeding */}
+        {/* Breed Traits - Energy, Grooming, Feeding with level indicator */}
         <div className="grid grid-cols-3 gap-2">
           {/* Energy Button */}
           <button
             onClick={onEnergyOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mb-1">
-              <Zap className="w-4 h-4 text-primary" />
+            {/* Mini gauge arc */}
+            <div className="relative w-10 h-5 mb-1">
+              <svg viewBox="0 0 100 50" className="w-full h-full">
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray="126"
+                  strokeDashoffset="42"
+                />
+              </svg>
             </div>
+            <Zap className="w-4 h-4 text-primary mb-0.5" />
             <span className="text-[10px] font-semibold text-foreground text-center">אנרגיה</span>
           </button>
 
           {/* Grooming Button */}
           <button
             onClick={onGroomingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mb-1">
-              <Scissors className="w-4 h-4 text-primary" />
+            {/* Mini gauge arc */}
+            <div className="relative w-10 h-5 mb-1">
+              <svg viewBox="0 0 100 50" className="w-full h-full">
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray="126"
+                  strokeDashoffset="42"
+                />
+              </svg>
             </div>
+            <Scissors className="w-4 h-4 text-primary mb-0.5" />
             <span className="text-[10px] font-semibold text-foreground text-center">טיפוח</span>
           </button>
 
           {/* Feeding Button */}
           <button
             onClick={onFeedingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors group relative overflow-hidden"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mb-1">
-              <Utensils className="w-4 h-4 text-primary" />
+            {/* Mini gauge arc */}
+            <div className="relative w-10 h-5 mb-1">
+              <svg viewBox="0 0 100 50" className="w-full h-full">
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray="126"
+                  strokeDashoffset="63"
+                />
+              </svg>
             </div>
+            <Utensils className="w-4 h-4 text-primary mb-0.5" />
             <span className="text-[10px] font-semibold text-foreground text-center">האכלה</span>
           </button>
         </div>

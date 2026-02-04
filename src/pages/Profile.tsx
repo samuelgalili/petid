@@ -52,6 +52,7 @@ import { PetShopView } from "@/components/profile/PetShopView";
 import { PetHealthScore } from "@/components/profile/PetHealthScore";
 import { TopRecommendation } from "@/components/profile/TopRecommendation";
 import { PetEssentials } from "@/components/profile/PetEssentials";
+import { BreedStatsCard } from "@/components/profile/BreedStatsCard";
 import {
   InsuranceSheet,
   TrainingSheet,
