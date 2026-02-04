@@ -249,28 +249,89 @@ export const TopRecommendation = ({ pet }: TopRecommendationProps) => {
       
       {/* Pet Details Grid */}
       <div className="grid grid-cols-4 gap-2">
-        {/* Age */}
-        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/30">
+        {/* Age - Editable */}
+        <button
+          onClick={() => handleFieldClick('age', String(pet.age_years || ''))}
+          disabled={!isOwner}
+          className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+        >
+          {isAgeFromBreed && (
+            <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+          )}
           <Calendar className="w-4 h-4 text-muted-foreground mb-1" />
           <span className="text-[10px] text-muted-foreground">גיל</span>
-          <span className="text-xs font-semibold text-foreground text-center leading-tight">{getAgeDisplay()}</span>
-        </div>
+          {editingField === 'age' ? (
+            <Input
+              type="number"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleSaveField}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveField()}
+              className="h-5 w-12 text-xs text-center p-0"
+              autoFocus
+            />
+          ) : (
+            <span className="text-xs font-semibold text-foreground text-center leading-tight">{getAgeDisplay()}</span>
+          )}
+        </button>
         
-        {/* Size */}
-        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/30">
+        {/* Size - Editable */}
+        <button
+          onClick={() => handleFieldClick('size', pet.size || '')}
+          disabled={!isOwner}
+          className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+        >
+          {isSizeFromBreed && (
+            <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+          )}
           <Ruler className="w-4 h-4 text-muted-foreground mb-1" />
           <span className="text-[10px] text-muted-foreground">גודל</span>
-          <span className="text-xs font-semibold text-foreground">{getSizeDisplay()}</span>
-        </div>
+          {editingField === 'size' ? (
+            <select
+              value={editValue}
+              onChange={(e) => {
+                setEditValue(e.target.value);
+                setTimeout(handleSaveField, 100);
+              }}
+              className="h-5 text-xs bg-background border rounded"
+              autoFocus
+            >
+              <option value="small">קטן</option>
+              <option value="medium">בינוני</option>
+              <option value="large">גדול</option>
+              <option value="extra_large">ענק</option>
+            </select>
+          ) : (
+            <span className="text-xs font-semibold text-foreground">{getSizeDisplay()}</span>
+          )}
+        </button>
         
-        {/* Weight */}
-        <div className="flex flex-col items-center p-2 rounded-lg bg-muted/30">
+        {/* Weight - Editable */}
+        <button
+          onClick={() => handleFieldClick('weight', String(pet.weight || ''))}
+          disabled={!isOwner}
+          className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${isOwner ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+        >
+          {isWeightFromBreed && (
+            <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+          )}
           <Weight className="w-4 h-4 text-muted-foreground mb-1" />
           <span className="text-[10px] text-muted-foreground">משקל</span>
-          <span className="text-xs font-semibold text-foreground">
-            {pet.weight ? `${pet.weight} ק"ג` : 'לא צוין'}
-          </span>
-        </div>
+          {editingField === 'weight' ? (
+            <Input
+              type="number"
+              step="0.1"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleSaveField}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveField()}
+              className="h-5 w-12 text-xs text-center p-0"
+              autoFocus
+            />
+          ) : (
+            <span className="text-xs font-semibold text-foreground">{getWeightDisplay()}</span>
+          )}
+        </button>
 
         {/* Owner - Clickable to send message */}
         <button
