@@ -67,6 +67,8 @@ const Profile = () => {
   const [energySheetOpen, setEnergySheetOpen] = useState(false);
   const [groomingSheetOpen, setGroomingSheetOpen] = useState(false);
   const [feedingSheetOpen, setFeedingSheetOpen] = useState(false);
+  const [furSheetOpen, setFurSheetOpen] = useState(false);
+  const [memorialSheetOpen, setMemorialSheetOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
