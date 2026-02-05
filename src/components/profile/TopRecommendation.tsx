@@ -95,7 +95,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       
       const { data } = await supabase
         .from('breed_information')
-        .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs')
+        .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs, energy_level, grooming_freq, shedding_level, trainability')
         .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
         .maybeSingle();
       
