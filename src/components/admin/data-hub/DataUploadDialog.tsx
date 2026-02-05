@@ -118,7 +118,7 @@
  
        // Create data source record
        const { data: sourceData, error: sourceError } = await supabase
-         .from("admin_data_sources")
+         .from("admin_data_sources" as any)
          .insert({
            data_type: dataType,
            title: title.trim(),
@@ -142,7 +142,7 @@
          try {
            await supabase.functions.invoke("process-admin-data", {
              body: {
-               sourceId: sourceData.id,
+               sourceId: (sourceData as any).id,
                dataType,
                fileName,
                fileUrl,
