@@ -209,6 +209,45 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
         return;
       }
 
+      // Hebrew breed name variations mapping
+      const breedVariations: Record<string, string[]> = {
+        'שיצו': ['שי טסו', 'שיה טסו', 'shih tzu'],
+        'שי טסו': ['שיצו', 'שיה טסו', 'shih tzu'],
+        'דאקל': ['תחש', 'dachshund'],
+        'תחש': ['דאקל', 'dachshund'],
+        'גולדן': ['גולדן רטריבר', 'golden retriever'],
+        'לברדור': ['לברדור רטריבר', 'labrador retriever'],
+        'האסקי': ['סיבירי האסקי', 'siberian husky'],
+        'פודל': ['פודל', 'poodle'],
+        'יורקי': ['יורקשייר טרייר', 'yorkshire terrier'],
+        'צ\'יוואווה': ['צ\'יוואווה', 'chihuahua'],
+        'בולדוג': ['בולדוג צרפתי', 'french bulldog', 'בולדוג אנגלי'],
+        'רועה גרמני': ['רועה גרמני', 'german shepherd'],
+        'ביגל': ['ביגל', 'beagle'],
+        'בוקסר': ['בוקסר', 'boxer'],
+        'מלטז': ['מלטז', 'maltese'],
+        'שנאוצר': ['שנאוצר', 'schnauzer'],
+        'קוקר': ['קוקר ספנייל', 'cocker spaniel'],
+        'פאג': ['פאג', 'pug'],
+        'פומרניאן': ['פומרניאן', 'pomeranian'],
+      };
+
+      const breedLower = pet.breed.toLowerCase();
+      const searchTerms = [pet.breed];
+      
+      // Add variations if they exist
+      Object.entries(breedVariations).forEach(([key, values]) => {
+        if (breedLower.includes(key.toLowerCase()) || key.toLowerCase().includes(breedLower)) {
+          searchTerms.push(...values);
+        }
+      });
+
+      // Build dynamic OR filter
+      const orFilters = searchTerms.flatMap(term => [
+        `breed_name.ilike.%${term}%`,
+        `breed_name_he.ilike.%${term}%`
+      ]).join(',');
+
       const { data } = await supabase
         .from('breed_information')
         .select(`
