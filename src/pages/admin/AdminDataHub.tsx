@@ -19,8 +19,8 @@
    const fetchDataSources = useCallback(async () => {
      try {
        setLoading(true);
-       const { data, error } = await supabase
-         .from("admin_data_sources" as any)
+        const { data, error } = await supabase
+          .from("admin_data_sources")
          .select("*")
          .eq("data_type", activeTab)
          .order("created_at", { ascending: false });
@@ -53,8 +53,8 @@
          }
        }
  
-       const { error } = await supabase
-         .from("admin_data_sources" as any)
+        const { error } = await supabase
+          .from("admin_data_sources")
          .delete()
          .eq("id", id);
  
@@ -77,8 +77,8 @@
  
    const handleToggleActive = async (id: string, isActive: boolean) => {
      try {
-       const { error } = await supabase
-         .from("admin_data_sources" as any)
+        const { error } = await supabase
+          .from("admin_data_sources")
          .update({ is_active: !isActive })
          .eq("id", id);
  
