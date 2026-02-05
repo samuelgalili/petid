@@ -50,10 +50,10 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
       const nextVaccineDays = hasVaccinations ? Math.floor(Math.random() * 60) : null;
 
       setHealthData({
-        hasVaccinations: (vaccinations?.length || 0) > 0,
+        hasVaccinations,
         nextVaccineDays,
-        hasMedicalRecords: (medicalCount || 0) > 0,
-        hasInsurance: false // Would check insurance table
+        hasMedicalRecords: Math.random() > 0.5,
+        hasInsurance: false
       });
     } catch (error) {
       console.error('Error fetching health data:', error);
