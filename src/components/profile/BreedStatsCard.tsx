@@ -272,7 +272,7 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
           description_he,
           image_url
         `)
-        .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
+        .or(orFilters)
         .maybeSingle();
 
       if (data) {
