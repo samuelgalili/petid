@@ -39,6 +39,10 @@ interface BreedInfo {
   life_expectancy_years?: string;
   exercise_needs?: string;
   grooming_needs?: string;
+  energy_level?: number;
+  grooming_freq?: number;
+  shedding_level?: number;
+  trainability?: number;
 }
 
 interface TopRecommendationProps {
