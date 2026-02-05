@@ -184,6 +184,7 @@ const Grooming = lazy(() => import("@/pages/Grooming"));
 const Insurance = lazy(() => import("@/pages/Insurance"));
 const Adoption = lazy(() => import("@/pages/Adoption"));
 const Breeds = lazy(() => import("@/pages/Breeds"));
+const BreedQuiz = lazy(() => import("@/pages/BreedQuiz"));
 
 export const petRoutes: RouteObject[] = [
   { path: "/add-pet", element: <Protected><LazyPage component={AddPet} pageName="הוספת חיית מחמד" /></Protected> },
