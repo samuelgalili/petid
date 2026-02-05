@@ -185,6 +185,7 @@ const Insurance = lazy(() => import("@/pages/Insurance"));
 const Adoption = lazy(() => import("@/pages/Adoption"));
 const Breeds = lazy(() => import("@/pages/Breeds"));
 const BreedQuiz = lazy(() => import("@/pages/BreedQuiz"));
+const BreedDetect = lazy(() => import("@/pages/BreedDetect"));
 
 export const petRoutes: RouteObject[] = [
   { path: "/add-pet", element: <Protected><LazyPage component={AddPet} pageName="הוספת חיית מחמד" /></Protected> },
@@ -200,6 +201,7 @@ export const petRoutes: RouteObject[] = [
   { path: "/adoption", element: <LazyPage component={Adoption} pageName="אימוץ" /> },
   { path: "/breeds", element: <LazyPage component={Breeds} pageName="אנציקלופדיית גזעים" /> },
   { path: "/breed-quiz", element: <LazyPage component={BreedQuiz} pageName="שאלון התאמת גזע" /> },
+  { path: "/breed-detect", element: <LazyPage component={BreedDetect} pageName="זיהוי גזע" /> },
 ];
 
 // ==========================================
