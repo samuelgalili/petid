@@ -427,65 +427,119 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           )}
         </div>
         
-        {/* Pet Details Grid - 3 columns with trait buttons */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {/* Age - Opens Insurance Sheet when user has confirmed age */}
+        {/* Pet Details Grid - 3 columns with gauge cards */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {/* Age Gauge Card */}
           <button
             onClick={() => {
               if (!hasUserBirthDate && isOwner) {
-                // First time - let user set birth date
                 openEditModal('age');
               } else if (hasUserBirthDate) {
-                // Age is confirmed - show insurance recommendation
                 navigate(`/pet/${pet.id}/insurance`);
               }
             }}
             disabled={!isOwner && !hasUserBirthDate}
-            className={`flex flex-col items-center p-2 rounded-lg bg-muted/30 relative ${(isOwner || hasUserBirthDate) ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative"
           >
             {isAgeFromBreed && (
-              <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
             )}
-            <Calendar className="w-4 h-4 text-muted-foreground mb-1" />
-            <span className="text-[10px] text-muted-foreground">גיל</span>
-            <span className="text-xs font-semibold text-foreground text-center leading-tight">{getAgeDisplay()}</span>
-            {hasUserBirthDate && (
-              <span className="text-[8px] text-primary mt-0.5">לביטוח</span>
-            )}
+            <span className="text-xs font-medium text-foreground mb-2">גיל</span>
+            <div className="relative w-16 h-10 mb-1">
+              <svg viewBox="0 0 100 55" className="w-full h-full">
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray="126"
+                  strokeDashoffset={126 - (hasUserBirthDate ? 80 : 40)}
+                />
+              </svg>
+            </div>
+            <span className="text-xs text-muted-foreground text-center leading-tight">{getAgeDisplay()}</span>
           </button>
           
-          {/* Size - Auto from breed, display only */}
-          <div className="flex flex-col items-center p-2 rounded-lg bg-muted/30 relative">
+          {/* Size Gauge Card */}
+          <div className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative">
             {isSizeFromBreed && (
-              <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
             )}
-            <Ruler className="w-4 h-4 text-muted-foreground mb-1" />
-            <span className="text-[10px] text-muted-foreground">גודל</span>
-            <span className="text-xs font-semibold text-foreground">{getSizeDisplay()}</span>
+            <span className="text-xs font-medium text-foreground mb-2">גודל</span>
+            <div className="relative w-16 h-10 mb-1">
+              <svg viewBox="0 0 100 55" className="w-full h-full">
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray="126"
+                  strokeDashoffset={126 - (() => {
+                    const size = pet.size || breedInfo?.size_category || 'medium';
+                    if (size === 'small') return 32;
+                    if (size === 'medium') return 63;
+                    if (size === 'large') return 95;
+                    if (size === 'extra_large') return 126;
+                    return 63;
+                  })()}
+                />
+              </svg>
+            </div>
+            <span className="text-xs text-muted-foreground">{getSizeDisplay()}</span>
           </div>
           
-          {/* Weight - Opens Feeding Sheet with 3 recommendations */}
+          {/* Weight Gauge Card */}
           <button
             onClick={() => {
               if (!pet.weight && isOwner) {
-                // First time - let user set weight
                 openEditModal('weight');
               } else {
-                // Weight exists - open feeding recommendations
                 onFeedingOpen?.();
               }
             }}
-            className="flex flex-col items-center p-2 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer relative"
+            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative"
           >
             {isWeightFromBreed && (
-              <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute top-1 left-1" />
+              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
             )}
-            <Weight className="w-4 h-4 text-muted-foreground mb-1" />
-            <span className="text-[10px] text-muted-foreground">משקל</span>
-            <span className="text-xs font-semibold text-foreground">{getWeightDisplay()}</span>
-            {(pet.weight || breedInfo?.weight_range_kg) && (
-              <span className="text-[8px] text-primary mt-0.5">להמלצות מזון</span>
-            )}
+            <span className="text-xs font-medium text-foreground mb-2">משקל</span>
+            <div className="relative w-16 h-10 mb-1">
+              <svg viewBox="0 0 100 55" className="w-full h-full">
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--muted))"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 10 50 A 40 40 0 0 1 90 50"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray="126"
+                  strokeDashoffset={126 - Math.min((pet.weight || 10) / 50 * 126, 126)}
+                />
+              </svg>
+            </div>
+            <span className="text-xs text-muted-foreground">{getWeightDisplay()}</span>
           </button>
         </div>
 
