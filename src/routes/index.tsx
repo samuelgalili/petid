@@ -183,6 +183,7 @@ const Training = lazy(() => import("@/pages/Training"));
 const Grooming = lazy(() => import("@/pages/Grooming"));
 const Insurance = lazy(() => import("@/pages/Insurance"));
 const Adoption = lazy(() => import("@/pages/Adoption"));
+const Breeds = lazy(() => import("@/pages/Breeds"));
 
 export const petRoutes: RouteObject[] = [
   { path: "/add-pet", element: <Protected><LazyPage component={AddPet} pageName="הוספת חיית מחמד" /></Protected> },
@@ -196,6 +197,7 @@ export const petRoutes: RouteObject[] = [
   { path: "/grooming", element: <LazyPage component={Grooming} pageName="טיפוח" /> },
   { path: "/insurance", element: <LazyPage component={Insurance} pageName="ביטוח" /> },
   { path: "/adoption", element: <LazyPage component={Adoption} pageName="אימוץ" /> },
+  { path: "/breeds", element: <LazyPage component={Breeds} pageName="אנציקלופדיית גזעים" /> },
 ];
 
 // ==========================================
