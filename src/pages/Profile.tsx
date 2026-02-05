@@ -516,64 +516,43 @@ const Profile = () => {
                 {/* Collapse Handle */}
                 
                 {/* Pet Switcher - Horizontal pet bubbles for quick switching */}
-                {pets.length > 1 && (
-                  <motion.div 
-                    className="flex justify-center gap-2 py-3"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    {pets.map((pet) => (
-                      <motion.button
-                        key={pet.id}
-                        onClick={() => setSelectedPetId(pet.id)}
-                        className={`relative w-12 h-12 rounded-full transition-all ${
-                          selectedPetId === pet.id 
-                            ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' 
-                            : 'opacity-60 hover:opacity-100'
-                        }`}
-                        whileTap={{ scale: 0.95 }}
-                      >
+                {pets.length > 1 && <motion.div className="flex justify-center gap-2 py-3" initial={{
+              opacity: 0
+            }} animate={{
+              opacity: 1
+            }}>
+                    {pets.map(pet => <motion.button key={pet.id} onClick={() => setSelectedPetId(pet.id)} className={`relative w-12 h-12 rounded-full transition-all ${selectedPetId === pet.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' : 'opacity-60 hover:opacity-100'}`} whileTap={{
+                scale: 0.95
+              }}>
                         <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                          {pet.avatar_url ? (
-                            <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-muted">
-                              <img 
-                                src={pet.type === 'dog' ? dogIcon : catIcon} 
-                                alt={pet.type} 
-                                className="w-6 h-6 opacity-60" 
-                              />
-                            </div>
-                          )}
+                          {pet.avatar_url ? <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-muted">
+                              <img src={pet.type === 'dog' ? dogIcon : catIcon} alt={pet.type} className="w-6 h-6 opacity-60" />
+                            </div>}
                         </div>
-                        {selectedPetId === pet.id && (
-                          <motion.div 
-                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary"
-                            layoutId="pet-indicator"
-                          />
-                        )}
-                      </motion.button>
-                    ))}
-                  </motion.div>
-                )}
+                        {selectedPetId === pet.id && <motion.div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" layoutId="pet-indicator" />}
+                      </motion.button>)}
+                  </motion.div>}
 
                 {/* Pet name shown below switcher */}
                 <AnimatePresence>
-                  {selectedPet && !isProfileCollapsed && (
-                    <motion.div 
-                      className="text-center pb-4" 
-                      initial={{ opacity: 0, height: 0 }} 
-                      animate={{ opacity: 1, height: "auto" }} 
-                      exit={{ opacity: 0, height: 0 }} 
-                      transition={{ duration: 0.3 }}
-                    >
+                  {selectedPet && !isProfileCollapsed && <motion.div className="text-center pb-4" initial={{
+                opacity: 0,
+                height: 0
+              }} animate={{
+                opacity: 1,
+                height: "auto"
+              }} exit={{
+                opacity: 0,
+                height: 0
+              }} transition={{
+                duration: 0.3
+              }}>
                       <h3 className="font-bold text-foreground text-lg">{selectedPet.name}</h3>
                       <p className="text-xs text-muted-foreground">
                         {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
                         {selectedPet.age_years ? ` • ${selectedPet.age_years} שנים` : ''}
                       </p>
-                    </motion.div>
-                  )}
+                    </motion.div>}
                 </AnimatePresence>
 
                 {/* Health Score, Recommendation & Essentials */}
@@ -599,31 +578,7 @@ const Profile = () => {
                 
 
                 {/* Quick Filter Chips */}
-                <motion.div className="px-4 pb-4 flex gap-2 overflow-x-auto no-scrollbar" initial={{
-              opacity: 0
-            }} animate={{
-              opacity: 1
-            }} transition={{
-              delay: 0.1
-            }}>
-                  {[{
-                label: 'הכל',
-                active: true
-              }, {
-                label: 'קרוב אלי',
-                icon: MapPin
-              }, {
-                label: 'מומלצים',
-                icon: Star
-              }, {
-                label: 'אחרונים',
-                icon: Clock
-              }].map((filter, idx) => (
-                <button key={idx} className="px-4 py-2 rounded-full text-sm whitespace-nowrap bg-muted text-foreground hover:bg-primary/20 transition-colors">
-                  {filter.label}
-                </button>
-              ))}
-                </motion.div>
+                
 
                 {/* Service Categories - Row Layout */}
                 <AnimatePresence mode="wait">
