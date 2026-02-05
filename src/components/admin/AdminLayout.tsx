@@ -54,6 +54,7 @@ import {
   Upload,
   Crown
 } from "lucide-react";
+ import { Database as DatabaseIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -166,6 +167,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Bot, label: "סקראפר מוצרים", href: "/admin/scraper" },
       { icon: Upload, label: "ייבוא נתונים", href: "/admin/data-import" },
+       { icon: DatabaseIcon, label: "Data Hub", href: "/admin/data-hub" },
       { icon: Plug, label: "אינטגרציות", href: "/admin/integrations" },
       { icon: Webhook, label: "Webhooks & API", href: "/admin/webhooks" },
     ]
