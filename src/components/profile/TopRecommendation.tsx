@@ -235,31 +235,67 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
   const recommendedGrams = getRecommendedFeedingGrams();
 
-  // Get recommended activity minutes based on exercise needs
+  // Get recommended activity minutes based on energy_level (1-5 scale) or exercise_needs
   const getActivityMinutes = (): number | null => {
+    // Use energy_level from breed_information if available
+    if (breedInfo?.energy_level) {
+      const levels: Record<number, number> = { 1: 20, 2: 30, 3: 45, 4: 60, 5: 90 };
+      return levels[breedInfo.energy_level] || 45;
+    }
+    // Fallback to exercise_needs text
     const exercise = breedInfo?.exercise_needs?.toLowerCase() || '';
     if (exercise.includes('very high') || exercise.includes('גבוהה מאוד')) return 90;
     if (exercise.includes('high') || exercise.includes('גבוה')) return 60;
     if (exercise.includes('moderate') || exercise.includes('medium') || exercise.includes('בינוני')) return 45;
     if (exercise.includes('low') || exercise.includes('נמוך')) return 30;
-    return 45; // default
+    return null;
   };
 
-  // Get grooming frequency level
-  const getGroomingLevel = (): 'low' | 'medium' | 'high' => {
+  // Get energy level value (1-5) for visual display
+  const getEnergyLevel = (): number => {
+    if (breedInfo?.energy_level) return breedInfo.energy_level;
+    const mins = getActivityMinutes();
+    if (!mins) return 3;
+    if (mins >= 90) return 5;
+    if (mins >= 60) return 4;
+    if (mins >= 45) return 3;
+    if (mins >= 30) return 2;
+    return 1;
+  };
+
+  // Get grooming frequency level using grooming_freq (1-5) or grooming_needs
+  const getGroomingLevel = (): number => {
+    if (breedInfo?.grooming_freq) return breedInfo.grooming_freq;
     const grooming = breedInfo?.grooming_needs?.toLowerCase() || '';
-    if (grooming.includes('high') || grooming.includes('daily') || grooming.includes('גבוה') || grooming.includes('יומי')) return 'high';
-    if (grooming.includes('low') || grooming.includes('minimal') || grooming.includes('נמוך')) return 'low';
-    return 'medium';
+    if (grooming.includes('high') || grooming.includes('daily') || grooming.includes('גבוה') || grooming.includes('יומי')) return 5;
+    if (grooming.includes('low') || grooming.includes('minimal') || grooming.includes('נמוך')) return 1;
+    return 3;
   };
 
   const getGroomingLevelHe = () => {
-    const levels: Record<string, string> = { low: 'נמוך', medium: 'בינוני', high: 'גבוה' };
-    return levels[getGroomingLevel()];
+    const level = getGroomingLevel();
+    if (level >= 4) return 'גבוה';
+    if (level >= 2) return 'בינוני';
+    return 'נמוך';
   };
 
-  // Determine fur length from grooming needs
+  // Get shedding level (1-5)
+  const getSheddingLevel = (): number => {
+    return breedInfo?.shedding_level || 3;
+  };
+
+  const getSheddingLevelHe = () => {
+    const level = getSheddingLevel();
+    if (level >= 4) return 'רב';
+    if (level >= 2) return 'בינוני';
+    return 'מועט';
+  };
+
+  // Determine fur length from shedding level or grooming needs
   const getFurLength = (): 'short' | 'medium' | 'long' => {
+    const shedding = getSheddingLevel();
+    if (shedding >= 4) return 'long';
+    if (shedding <= 2) return 'short';
     const grooming = breedInfo?.grooming_needs?.toLowerCase() || '';
     if (grooming.includes('long') || grooming.includes('ארוך') || grooming.includes('daily')) return 'long';
     if (grooming.includes('short') || grooming.includes('קצר') || grooming.includes('minimal')) return 'short';
@@ -274,6 +310,17 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   // Get life expectancy display
   const getLifeExpectancy = (): string | null => {
     return breedInfo?.life_expectancy_years || null;
+  };
+
+  // Get life expectancy range for visual display
+  const getLifeExpectancyYears = (): { min: number; max: number } | null => {
+    const exp = breedInfo?.life_expectancy_years;
+    if (!exp) return null;
+    const match = exp.match(/(\d+)-(\d+)/);
+    if (match) return { min: parseInt(match[1]), max: parseInt(match[2]) };
+    const single = exp.match(/(\d+)/);
+    if (single) return { min: parseInt(single[1]), max: parseInt(single[1]) };
+    return null;
   };
 
   const activityMinutes = getActivityMinutes();
