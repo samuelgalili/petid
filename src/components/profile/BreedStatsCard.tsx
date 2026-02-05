@@ -39,7 +39,6 @@ interface BreedStatsCardProps {
   pet: Pet;
 }
 
-// Compact rating dots (1-5)
 const RatingDots = ({ 
   value, 
   label,
@@ -75,27 +74,6 @@ const RatingDots = ({
     </div>
   );
 };
-
-// Circular stat component
-const CircleStat = ({ 
-  value, 
-  label, 
-  suffix = '',
-  color = 'primary'
-}: { 
-  value: string | number; 
-  label: string;
-  suffix?: string;
-  color?: string;
-}) => (
-  <div className="flex flex-col items-center">
-    <div className={`w-14 h-14 rounded-full bg-${color}/10 flex items-center justify-center mb-1`}>
-      <span className={`text-lg font-bold text-${color}`}>{value}</span>
-    </div>
-    <span className="text-[10px] text-muted-foreground text-center">{label}</span>
-    {suffix && <span className="text-[9px] text-muted-foreground">{suffix}</span>}
-  </div>
-);
 
 export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
   const navigate = useNavigate();
@@ -189,10 +167,8 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
     );
   }
 
-  // Get life expectancy first number
   const lifeExpectancy = breedInfo.life_expectancy_years?.match(/\d+/)?.[0] || '12';
   
-  // Get size in Hebrew
   const sizeHe: Record<string, string> = {
     'small': 'קטן',
     'medium': 'בינוני', 
@@ -206,16 +182,12 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="mx-4 mb-4"
     >
-      {/* Main Card */}
       <div className="bg-card rounded-2xl border border-border/30 overflow-hidden">
-        {/* Header with breed image */}
         <div className="relative">
-          {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-b from-primary/20 to-transparent" />
           
           <div className="relative p-4">
             <div className="flex items-start gap-3">
-              {/* Breed/Pet Image */}
               <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted border-2 border-background shadow-lg flex-shrink-0">
                 {pet.avatar_url ? (
                   <img 
@@ -236,7 +208,6 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
                 )}
               </div>
 
-              {/* Breed Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -253,7 +224,6 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
               </div>
             </div>
 
-            {/* Quick Stats Row */}
             <div className="flex items-center justify-around mt-4 pt-3 border-t border-border/30">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1">
@@ -286,7 +256,6 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
           </div>
         </div>
 
-        {/* Expandable Details Section */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full px-4 py-2.5 flex items-center justify-center gap-2 bg-muted/30 hover:bg-muted/50 transition-colors border-t border-border/30"
@@ -301,7 +270,6 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
           )}
         </button>
 
-        {/* Expanded Content */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -312,16 +280,15 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
               className="overflow-hidden"
             >
               <div className="p-4 space-y-1 border-t border-border/30">
-                <RatingDots value={breedInfo.kids_friendly} label="ידידותי לילדים" icon={Baby} />
-                <RatingDots value={breedInfo.dog_friendly} label="ידידותי לכלבים" icon={Dog} />
-                <RatingDots value={breedInfo.stranger_openness} label="פתיחות לזרים" icon={Users} />
-                <RatingDots value={breedInfo.trainability} label="קלות אימון" icon={Brain} />
-                <RatingDots value={breedInfo.grooming_freq} label="תדירות טיפוח" icon={Scissors} />
-                <RatingDots value={breedInfo.barking_level} label="רמת נביחות" icon={Volume2} />
-                <RatingDots value={breedInfo.watchdog_nature} label="יצר שמירה" icon={Shield} />
-                <RatingDots value={breedInfo.mental_needs} label="צורך מנטלי" icon={Brain} />
+                <RatingDots value={breedInfo.kids_friendly ?? null} label="ידידותי לילדים" icon={Baby} />
+                <RatingDots value={breedInfo.dog_friendly ?? null} label="ידידותי לכלבים" icon={Dog} />
+                <RatingDots value={breedInfo.stranger_openness ?? null} label="פתיחות לזרים" icon={Users} />
+                <RatingDots value={breedInfo.trainability ?? null} label="קלות אימון" icon={Brain} />
+                <RatingDots value={breedInfo.grooming_freq ?? null} label="תדירות טיפוח" icon={Scissors} />
+                <RatingDots value={breedInfo.barking_level ?? null} label="רמת נביחות" icon={Volume2} />
+                <RatingDots value={breedInfo.watchdog_nature ?? null} label="יצר שמירה" icon={Shield} />
+                <RatingDots value={breedInfo.mental_needs ?? null} label="צורך מנטלי" icon={Brain} />
 
-                {/* Tags */}
                 <div className="flex flex-wrap gap-2 pt-3">
                   {breedInfo.good_with_children && (
                     <span className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
@@ -349,7 +316,6 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
                 </div>
               </div>
 
-              {/* Description */}
               {breedInfo.description_he && (
                 <div className="px-4 pb-4">
                   <p className="text-xs text-muted-foreground leading-relaxed bg-muted/30 p-3 rounded-xl">
@@ -358,7 +324,6 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
                 </div>
               )}
 
-              {/* Actions */}
               <div className="px-4 pb-4 flex gap-2">
                 <Button
                   variant="outline"
