@@ -267,3 +267,188 @@ export const AnimatedNumber = ({
     {value.toLocaleString()}
   </motion.span>
 );
+
+// ===========================
+// ENHANCED ANIMATION VARIANTS
+// ===========================
+
+import { Variants } from "framer-motion";
+import { tapFeedback, selectionFeedback } from "@/lib/haptics";
+
+export const fadeInUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.3, ease: "easeOut" }
+  },
+};
+
+export const fadeIn: Variants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { duration: 0.2 }
+  },
+};
+
+export const scaleIn: Variants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { type: "spring", stiffness: 300, damping: 24 }
+  },
+};
+
+export const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+export const staggerItem: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.2 }
+  },
+};
+
+// ===========================
+// HAPTIC-ENABLED COMPONENTS
+// ===========================
+
+interface TapScaleProps extends HTMLMotionProps<"button"> {
+  children: ReactNode;
+  scale?: number;
+  haptic?: boolean;
+}
+
+export const TapScale = forwardRef<HTMLButtonElement, TapScaleProps>(
+  ({ children, scale = 0.95, haptic = true, onClick, className, ...props }, ref) => (
+    <motion.button
+      ref={ref}
+      whileTap={{ scale }}
+      onClick={(e) => {
+        if (haptic) tapFeedback();
+        onClick?.(e);
+      }}
+      className={cn("touch-manipulation", className)}
+      {...props}
+    >
+      {children}
+    </motion.button>
+  )
+);
+TapScale.displayName = "TapScale";
+
+interface PressableCardProps extends HTMLMotionProps<"div"> {
+  children: ReactNode;
+  haptic?: boolean;
+}
+
+export const PressableCard = forwardRef<HTMLDivElement, PressableCardProps>(
+  ({ children, haptic = true, onClick, className, ...props }, ref) => (
+    <motion.div
+      ref={ref}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={(e) => {
+        if (haptic) tapFeedback();
+        onClick?.(e as any);
+      }}
+      className={cn("cursor-pointer touch-manipulation", className)}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  )
+);
+PressableCard.displayName = "PressableCard";
+
+// Animated list with stagger
+interface AnimatedListProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export const AnimatedList = ({ children, className }: AnimatedListProps) => (
+  <motion.div
+    variants={staggerContainer}
+    initial="hidden"
+    animate="visible"
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
+
+export const AnimatedListItem = ({ 
+  children, 
+  className 
+}: { 
+  children: ReactNode; 
+  className?: string 
+}) => (
+  <motion.div variants={staggerItem} className={className}>
+    {children}
+  </motion.div>
+);
+
+// Page transition wrapper
+export const PageTransition = ({ children, className }: { children: ReactNode; className?: string }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.2 }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
+
+// Shake animation for errors
+export const ShakeOnError = ({ 
+  children, 
+  shake = false,
+  className 
+}: { 
+  children: ReactNode; 
+  shake?: boolean;
+  className?: string 
+}) => (
+  <motion.div
+    animate={shake ? { x: [-10, 10, -10, 10, 0] } : {}}
+    transition={{ duration: 0.4 }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
+
+// Swipe indicator for sheets
+export const SwipeIndicator = ({ direction = "up" }: { direction?: "up" | "down" | "left" | "right" }) => {
+  const directionMap = {
+    up: { y: [0, -5, 0] },
+    down: { y: [0, 5, 0] },
+    left: { x: [0, -5, 0] },
+    right: { x: [0, 5, 0] },
+  };
+
+  return (
+    <motion.div
+      className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto"
+      animate={directionMap[direction]}
+      transition={{ duration: 1.5, repeat: Infinity }}
+    />
+  );
+};
