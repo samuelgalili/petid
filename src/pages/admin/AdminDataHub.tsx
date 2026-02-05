@@ -1,4 +1,5 @@
- import { useState, useEffect } from "react";
+ import { useState, useEffect, useCallback } from "react";
+ import { Database } from "lucide-react";
  import { useToast } from "@/hooks/use-toast";
  import { supabase } from "@/integrations/supabase/client";
  import { AdminLayout } from "@/components/admin";
@@ -15,21 +16,17 @@
    const [loading, setLoading] = useState(true);
    const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
  
-   useEffect(() => {
-     fetchDataSources();
-   }, [activeTab]);
- 
-   const fetchDataSources = async () => {
+   const fetchDataSources = useCallback(async () => {
      try {
        setLoading(true);
        const { data, error } = await supabase
-         .from("admin_data_sources")
+         .from("admin_data_sources" as any)
          .select("*")
          .eq("data_type", activeTab)
          .order("created_at", { ascending: false });
  
        if (error) throw error;
-       setDataSources(data || []);
+       setDataSources((data as DataSource[]) || []);
      } catch (error: any) {
        console.error("Error fetching data sources:", error);
        toast({
@@ -40,7 +37,11 @@
      } finally {
        setLoading(false);
      }
-   };
+   }, [activeTab, toast]);
+ 
+   useEffect(() => {
+     fetchDataSources();
+   }, [fetchDataSources]);
  
    const handleDeleteSource = async (id: string, fileUrl?: string) => {
      try {
@@ -53,7 +54,7 @@
        }
  
        const { error } = await supabase
-         .from("admin_data_sources")
+         .from("admin_data_sources" as any)
          .delete()
          .eq("id", id);
  
@@ -77,7 +78,7 @@
    const handleToggleActive = async (id: string, isActive: boolean) => {
      try {
        const { error } = await supabase
-         .from("admin_data_sources")
+         .from("admin_data_sources" as any)
          .update({ is_active: !isActive })
          .eq("id", id);
  
@@ -89,10 +90,7 @@
    };
  
    return (
-     <AdminLayout
-       title="Data Hub"
-       subtitle="ניהול נתונים מרכזי למערכת"
-     >
+     <AdminLayout title="Data Hub" icon={Database}>
        <div className="space-y-6">
          <DataHubHeader onUpload={() => setUploadDialogOpen(true)} />
          

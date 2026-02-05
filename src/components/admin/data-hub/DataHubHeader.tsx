@@ -9,13 +9,13 @@
    return (
      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
        <div className="flex items-center gap-3">
-         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
-           <Database className="w-6 h-6 text-white" />
+         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+           <Database className="w-6 h-6 text-primary-foreground" />
          </div>
          <div>
            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
              מאגר נתונים מרכזי
-             <Sparkles className="w-4 h-4 text-amber-500" />
+             <Sparkles className="w-4 h-4 text-accent" />
            </h2>
            <p className="text-sm text-muted-foreground">
              העלה קבצים והמערכת תלמד מהם לשיפור ההמלצות

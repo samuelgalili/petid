@@ -256,8 +256,8 @@
            </div>
  
            {/* AI Processing Note */}
-           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-             <Sparkles className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+           <div className="flex items-start gap-2 p-3 rounded-lg bg-accent/10 border border-accent/20">
+             <Sparkles className="w-5 h-5 text-accent shrink-0 mt-0.5" />
              <p className="text-sm text-muted-foreground">
                המערכת תעבד את הקובץ ותחלץ נתונים רלוונטיים באופן אוטומטי לשימוש בהמלצות ובתצוגות
              </p>
