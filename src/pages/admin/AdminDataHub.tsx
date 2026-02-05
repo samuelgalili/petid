@@ -26,7 +26,7 @@
          .order("created_at", { ascending: false });
  
        if (error) throw error;
-       setDataSources((data as DataSource[]) || []);
+       setDataSources((data as unknown as DataSource[]) || []);
      } catch (error: any) {
        console.error("Error fetching data sources:", error);
        toast({
