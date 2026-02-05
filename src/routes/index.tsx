@@ -318,6 +318,7 @@ const AdminTimeTracking = lazy(() => import("@/pages/admin/AdminTimeTracking"));
 const AdminDataImport = lazy(() => import("@/pages/admin/AdminDataImport"));
 const AdminAIService = lazy(() => import("@/pages/admin/AdminAIService"));
 const AIControlRoom = lazy(() => import("@/pages/admin/AIControlRoom"));
+ const AdminDataHub = lazy(() => import("@/pages/admin/AdminDataHub"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
