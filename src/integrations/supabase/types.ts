@@ -1038,16 +1038,22 @@ export type Database = {
       }
       breed_information: {
         Row: {
+          affection_family: number | null
           apartment_friendly: boolean | null
+          barking_level: number | null
           breed_name: string
           breed_name_he: string | null
           created_at: string
           description: string | null
           description_he: string | null
           dietary_notes: string | null
+          dog_friendly: number | null
+          drooling_level: number | null
+          energy_level: number | null
           exercise_needs: string | null
           good_with_children: boolean | null
           good_with_other_pets: boolean | null
+          grooming_freq: number | null
           grooming_needs: string | null
           health_issues: string[] | null
           health_issues_he: string[] | null
@@ -1055,28 +1061,41 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
+          kids_friendly: number | null
           life_expectancy_years: string | null
+          mental_needs: number | null
           origin_country: string | null
           pet_type: string
+          playfulness: number | null
+          shedding_level: number | null
           size_category: string | null
           source_references: string[] | null
+          stranger_openness: number | null
           temperament: string[] | null
           temperament_he: string[] | null
+          trainability: number | null
           training_difficulty: string | null
           updated_at: string
+          watchdog_nature: number | null
           weight_range_kg: string | null
         }
         Insert: {
+          affection_family?: number | null
           apartment_friendly?: boolean | null
+          barking_level?: number | null
           breed_name: string
           breed_name_he?: string | null
           created_at?: string
           description?: string | null
           description_he?: string | null
           dietary_notes?: string | null
+          dog_friendly?: number | null
+          drooling_level?: number | null
+          energy_level?: number | null
           exercise_needs?: string | null
           good_with_children?: boolean | null
           good_with_other_pets?: boolean | null
+          grooming_freq?: number | null
           grooming_needs?: string | null
           health_issues?: string[] | null
           health_issues_he?: string[] | null
@@ -1084,28 +1103,41 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          kids_friendly?: number | null
           life_expectancy_years?: string | null
+          mental_needs?: number | null
           origin_country?: string | null
           pet_type?: string
+          playfulness?: number | null
+          shedding_level?: number | null
           size_category?: string | null
           source_references?: string[] | null
+          stranger_openness?: number | null
           temperament?: string[] | null
           temperament_he?: string[] | null
+          trainability?: number | null
           training_difficulty?: string | null
           updated_at?: string
+          watchdog_nature?: number | null
           weight_range_kg?: string | null
         }
         Update: {
+          affection_family?: number | null
           apartment_friendly?: boolean | null
+          barking_level?: number | null
           breed_name?: string
           breed_name_he?: string | null
           created_at?: string
           description?: string | null
           description_he?: string | null
           dietary_notes?: string | null
+          dog_friendly?: number | null
+          drooling_level?: number | null
+          energy_level?: number | null
           exercise_needs?: string | null
           good_with_children?: boolean | null
           good_with_other_pets?: boolean | null
+          grooming_freq?: number | null
           grooming_needs?: string | null
           health_issues?: string[] | null
           health_issues_he?: string[] | null
@@ -1113,15 +1145,22 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          kids_friendly?: number | null
           life_expectancy_years?: string | null
+          mental_needs?: number | null
           origin_country?: string | null
           pet_type?: string
+          playfulness?: number | null
+          shedding_level?: number | null
           size_category?: string | null
           source_references?: string[] | null
+          stranger_openness?: number | null
           temperament?: string[] | null
           temperament_he?: string[] | null
+          trainability?: number | null
           training_difficulty?: string | null
           updated_at?: string
+          watchdog_nature?: number | null
           weight_range_kg?: string | null
         }
         Relationships: []
