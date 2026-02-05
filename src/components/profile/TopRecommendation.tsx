@@ -440,10 +440,15 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           )}
         </div>
         
-        {/* Pet Details Grid - 3 columns with gauge cards */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        {/* Pet Details Grid - 3 columns with animated gauge cards */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
           {/* Age Gauge Card */}
-          <button
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               if (!hasUserBirthDate && isOwner) {
                 openEditModal('age');
@@ -452,73 +457,101 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               }
             }}
             disabled={!isOwner && !hasUserBirthDate}
-            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative"
+            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
+            aria-label={`גיל: ${getAgeDisplay()}`}
           >
             {isAgeFromBreed && (
-              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
+              </motion.div>
             )}
-            <span className="text-xs font-medium text-foreground mb-2">גיל</span>
-            <div className="relative w-16 h-10 mb-1">
+            <span className="text-sm font-semibold text-foreground mb-2">גיל</span>
+            <div className="relative w-18 h-11 mb-1">
               <svg viewBox="0 0 100 55" className="w-full h-full">
                 <path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                 />
-                <path
+                <motion.path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--primary))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray="126"
-                  strokeDashoffset={126 - (hasUserBirthDate ? 80 : 40)}
+                  initial={{ strokeDashoffset: 126 }}
+                  animate={{ strokeDashoffset: 126 - (hasUserBirthDate ? 80 : 40) }}
+                  transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
                 />
               </svg>
             </div>
-            <span className="text-xs text-muted-foreground text-center leading-tight">{getAgeDisplay()}</span>
-          </button>
+            <span className="text-sm text-muted-foreground text-center leading-tight font-medium">{getAgeDisplay()}</span>
+          </motion.button>
           
           {/* Size Gauge Card */}
-          <div className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300 cursor-default"
+            role="img"
+            aria-label={`גודל: ${getSizeDisplay()}`}
+          >
             {isSizeFromBreed && (
-              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
+              </motion.div>
             )}
-            <span className="text-xs font-medium text-foreground mb-2">גודל</span>
-            <div className="relative w-16 h-10 mb-1">
+            <span className="text-sm font-semibold text-foreground mb-2">גודל</span>
+            <div className="relative w-18 h-11 mb-1">
               <svg viewBox="0 0 100 55" className="w-full h-full">
                 <path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                 />
-                <path
+                <motion.path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--primary))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray="126"
-                  strokeDashoffset={126 - (() => {
+                  initial={{ strokeDashoffset: 126 }}
+                  animate={{ strokeDashoffset: 126 - (() => {
                     const size = pet.size || breedInfo?.size_category || 'medium';
                     if (size === 'small') return 32;
                     if (size === 'medium') return 63;
                     if (size === 'large') return 95;
                     if (size === 'extra_large') return 126;
                     return 63;
-                  })()}
+                  })() }}
+                  transition={{ delay: 0.4, duration: 1, ease: "easeOut" }}
                 />
               </svg>
             </div>
-            <span className="text-xs text-muted-foreground">{getSizeDisplay()}</span>
-          </div>
+            <span className="text-sm text-muted-foreground font-medium">{getSizeDisplay()}</span>
+          </motion.div>
           
           {/* Weight Gauge Card */}
-          <button
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               if (!pet.weight && isOwner) {
                 openEditModal('weight');
@@ -526,34 +559,42 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 onFeedingOpen?.();
               }
             }}
-            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative"
+            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
+            aria-label={`משקל: ${getWeightDisplay()}`}
           >
             {isWeightFromBreed && (
-              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
+              </motion.div>
             )}
-            <span className="text-xs font-medium text-foreground mb-2">משקל</span>
-            <div className="relative w-16 h-10 mb-1">
+            <span className="text-sm font-semibold text-foreground mb-2">משקל</span>
+            <div className="relative w-18 h-11 mb-1">
               <svg viewBox="0 0 100 55" className="w-full h-full">
                 <path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                 />
-                <path
+                <motion.path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--primary))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray="126"
-                  strokeDashoffset={126 - Math.min((pet.weight || 10) / 50 * 126, 126)}
+                  initial={{ strokeDashoffset: 126 }}
+                  animate={{ strokeDashoffset: 126 - Math.min((pet.weight || 10) / 50 * 126, 126) }}
+                  transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
                 />
               </svg>
             </div>
-            <span className="text-xs text-muted-foreground">{getWeightDisplay()}</span>
-          </button>
+            <span className="text-sm text-muted-foreground font-medium">{getWeightDisplay()}</span>
+          </motion.button>
         </div>
 
 
