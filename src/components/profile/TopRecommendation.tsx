@@ -649,88 +649,157 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         </div>
 
 
-        {/* Breed Traits - 5 buttons with improved styling */}
-        <div className="grid grid-cols-5 gap-2">
+        {/* Breed Traits - Enhanced visual design */}
+        <div className="grid grid-cols-5 gap-1.5">
           {/* Energy Button */}
           <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onEnergyOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`אנרגיה: ${activityMinutes || 0} דקות`}
           >
+            {/* Level indicator dots */}
+            <div className="flex gap-0.5 mb-1.5">
+              {[1, 2, 3, 4, 5].map((dot) => (
+                <motion.div
+                  key={dot}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: dot * 0.05 }}
+                  className={`w-1.5 h-1.5 rounded-full ${dot <= getEnergyLevel() ? 'bg-primary' : 'bg-muted-foreground/20'}`}
+                />
+              ))}
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
+              <Zap className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground">אנרגיה</span>
             {activityMinutes && (
-              <div className="flex items-baseline gap-0.5">
-                <span className="text-sm font-bold text-primary">{activityMinutes}</span>
-                <span className="text-[8px] text-muted-foreground">דק׳</span>
-              </div>
+              <span className="text-[9px] text-primary font-bold">{activityMinutes} דק׳</span>
             )}
-            <Zap className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">אנרגיה</span>
           </motion.button>
 
           {/* Grooming Button */}
           <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onGroomingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`טיפוח: ${getGroomingLevelHe()}`}
           >
-            <span className="text-xs font-bold text-primary">{getGroomingLevelHe()}</span>
-            <Scissors className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">טיפוח</span>
+            {/* Level indicator dots */}
+            <div className="flex gap-0.5 mb-1.5">
+              {[1, 2, 3, 4, 5].map((dot) => (
+                <motion.div
+                  key={dot}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: dot * 0.05 }}
+                  className={`w-1.5 h-1.5 rounded-full ${dot <= getGroomingLevel() ? 'bg-primary' : 'bg-muted-foreground/20'}`}
+                />
+              ))}
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
+              <Scissors className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground">טיפוח</span>
+            <span className="text-[9px] text-primary font-bold">{getGroomingLevelHe()}</span>
           </motion.button>
 
           {/* Feeding Button */}
           <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onFeedingOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`האכלה: ${recommendedGrams || 0} גרם`}
           >
+            {/* Mini progress bar */}
+            <div className="w-full h-1 bg-muted-foreground/10 rounded-full mb-1.5 overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: recommendedGrams ? `${Math.min((recommendedGrams / 500) * 100, 100)}%` : '50%' }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="h-full bg-primary rounded-full"
+              />
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
+              <Utensils className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground">האכלה</span>
             {recommendedGrams ? (
-              <div className="flex items-baseline gap-0.5">
-                <span className="text-sm font-bold text-primary">{recommendedGrams}</span>
-                <span className="text-[8px] text-muted-foreground">ג׳</span>
-              </div>
+              <span className="text-[9px] text-primary font-bold">{recommendedGrams}ג׳</span>
             ) : (
-              <span className="text-xs text-muted-foreground">—</span>
+              <span className="text-[9px] text-muted-foreground">—</span>
             )}
-            <Utensils className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">האכלה</span>
           </motion.button>
 
-          {/* Fur Length Button */}
+          {/* Shedding/Fur Button */}
           <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onFurOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
-            aria-label={`פרווה: ${getFurLengthHe()}`}
+            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            aria-label={`נשירה: ${getSheddingLevelHe()}`}
           >
-            <span className="text-xs font-bold text-primary">{getFurLengthHe()}</span>
-            <Feather className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">פרווה</span>
+            {/* Level indicator dots */}
+            <div className="flex gap-0.5 mb-1.5">
+              {[1, 2, 3, 4, 5].map((dot) => (
+                <motion.div
+                  key={dot}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: dot * 0.05 }}
+                  className={`w-1.5 h-1.5 rounded-full ${dot <= getSheddingLevel() ? 'bg-primary' : 'bg-muted-foreground/20'}`}
+                />
+              ))}
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
+              <Feather className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground">נשירה</span>
+            <span className="text-[9px] text-primary font-bold">{getSheddingLevelHe()}</span>
           </motion.button>
 
           {/* Life Expectancy Button */}
           <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={onLifeExpectancyOpen}
-            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`תוחלת חיים: ${getLifeExpectancy() || ''}`}
           >
+            {/* Mini arc indicator */}
+            <div className="relative w-6 h-3 mb-1">
+              <svg viewBox="0 0 36 18" className="w-full h-full">
+                <path
+                  d="M 2 16 A 14 14 0 0 1 34 16"
+                  fill="none"
+                  stroke="hsl(var(--muted-foreground) / 0.2)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+                <motion.path
+                  d="M 2 16 A 14 14 0 0 1 34 16"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray="50"
+                  initial={{ strokeDashoffset: 50 }}
+                  animate={{ strokeDashoffset: getLifeExpectancyYears() ? 50 - (getLifeExpectancyYears()!.min / 20 * 50) : 25 }}
+                  transition={{ delay: 0.3, duration: 0.6 }}
+                />
+              </svg>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
+              <Heart className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground">תוחלת</span>
             {getLifeExpectancy() && (
-              <div className="flex items-baseline gap-0.5">
-                <span className="text-xs font-bold text-primary">{getLifeExpectancy()?.split('-')[0]}</span>
-                <span className="text-[8px] text-muted-foreground">ש׳</span>
-              </div>
+              <span className="text-[9px] text-primary font-bold">{getLifeExpectancy()} ש׳</span>
             )}
-            <Heart className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">תוחלת</span>
           </motion.button>
         </div>
       </motion.div>
