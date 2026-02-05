@@ -201,6 +201,7 @@ export const petRoutes: RouteObject[] = [
   { path: "/adoption", element: <LazyPage component={Adoption} pageName="אימוץ" /> },
   { path: "/breeds", element: <LazyPage component={Breeds} pageName="אנציקלופדיית גזעים" /> },
   { path: "/breed-quiz", element: <LazyPage component={BreedQuiz} pageName="שאלון התאמת גזע" /> },
+  { path: "/breed-detect", element: <LazyPage component={BreedDetect} pageName="זיהוי גזע" /> },
 ];
 
 // ==========================================
