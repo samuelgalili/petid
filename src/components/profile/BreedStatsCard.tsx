@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, Star, Sparkles } from "lucide-react";
+import { Heart, Star, Sparkles, Baby, Users, Dog, Zap, Brain, Scissors, Volume2, Shield, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Pet {
@@ -10,52 +10,88 @@ interface Pet {
 }
 
 interface BreedInfo {
+  breed_name_he?: string;
   size_category?: string;
   life_expectancy_years?: string;
-  exercise_needs?: string;
-  grooming_needs?: string;
-  temperament_he?: string[];
-  training_difficulty?: string;
+  affection_family?: number;
+  kids_friendly?: number;
+  dog_friendly?: number;
+  energy_level?: number;
+  trainability?: number;
+  grooming_freq?: number;
+  barking_level?: number;
+  watchdog_nature?: number;
+  shedding_level?: number;
+  stranger_openness?: number;
+  mental_needs?: number;
+  apartment_friendly?: boolean;
   good_with_children?: boolean;
   good_with_other_pets?: boolean;
-  apartment_friendly?: boolean;
+  temperament_he?: string[];
+  description_he?: string;
 }
 
 interface BreedStatsCardProps {
   pet: Pet;
 }
 
-// Semi-circle gauge component
+// Numeric rating bar component (1-5 scale)
+const RatingBar = ({ 
+  value, 
+  label,
+  icon: Icon
+}: { 
+  value: number | null; 
+  label: string;
+  icon: React.ElementType;
+}) => {
+  if (value === null || value === undefined) return null;
+  
+  const percentage = (value / 5) * 100;
+  
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+      <span className="text-xs text-muted-foreground w-16 shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <motion.div 
+          className="h-full bg-primary rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      </div>
+      <span className="text-xs font-medium w-4 text-right">{value}</span>
+    </div>
+  );
+};
+
+// Semi-circle gauge component for main stats
 const GaugeIndicator = ({ 
   value, 
-  label 
+  label,
+  maxValue = 5
 }: { 
-  value: 'low' | 'medium' | 'high'; 
+  value: number | null; 
   label: string;
+  maxValue?: number;
 }) => {
-  const getRotation = () => {
-    switch (value) {
-      case 'low': return -60;
-      case 'medium': return 0;
-      case 'high': return 60;
-      default: return 0;
-    }
-  };
-
+  if (value === null || value === undefined) return null;
+  
+  const normalizedValue = value / maxValue;
+  const strokeDashoffset = 126 - (normalizedValue * 126);
+  const rotation = -60 + (normalizedValue * 120);
+  
   const getValueText = () => {
-    switch (value) {
-      case 'low': return 'נמוך';
-      case 'medium': return 'בינוני';
-      case 'high': return 'גבוה';
-      default: return 'בינוני';
-    }
+    if (value <= 2) return 'נמוך';
+    if (value >= 4) return 'גבוה';
+    return 'בינוני';
   };
 
   return (
     <div className="flex flex-col items-center p-3 bg-card rounded-xl border border-border/30">
       <span className="text-xs font-semibold text-foreground mb-2">{label}</span>
       <div className="relative w-16 h-8 mb-1">
-        {/* Gauge arc background */}
         <svg viewBox="0 0 100 50" className="w-full h-full">
           <path
             d="M 10 50 A 40 40 0 0 1 90 50"
@@ -71,60 +107,16 @@ const GaugeIndicator = ({
             strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray="126"
-            strokeDashoffset={126 - (value === 'low' ? 42 : value === 'medium' ? 84 : 126)}
+            strokeDashoffset={strokeDashoffset}
           />
         </svg>
-        {/* Needle */}
         <div 
           className="absolute bottom-0 left-1/2 w-0.5 h-6 bg-primary origin-bottom transition-transform duration-500"
-          style={{ transform: `translateX(-50%) rotate(${getRotation()}deg)` }}
+          style={{ transform: `translateX(-50%) rotate(${rotation}deg)` }}
         />
         <div className="absolute bottom-0 left-1/2 w-2 h-2 bg-primary rounded-full transform -translate-x-1/2" />
       </div>
       <span className="text-[10px] text-muted-foreground">{getValueText()}</span>
-    </div>
-  );
-};
-
-// Slider indicator component
-const SliderIndicator = ({
-  value,
-  label,
-  leftLabel,
-  rightLabel,
-}: {
-  value: 'low' | 'medium' | 'high';
-  label: string;
-  leftLabel: string;
-  rightLabel: string;
-}) => {
-  const getPosition = () => {
-    switch (value) {
-      case 'low': return '15%';
-      case 'medium': return '50%';
-      case 'high': return '85%';
-      default: return '50%';
-    }
-  };
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between items-center">
-        <span className="text-xs font-semibold text-foreground">{label}</span>
-      </div>
-      <div className="relative">
-        <div className="h-1 bg-muted rounded-full" />
-        <motion.div 
-          className="absolute top-1/2 w-3 h-3 bg-primary rounded-full transform -translate-y-1/2 -translate-x-1/2"
-          initial={{ left: '50%' }}
-          animate={{ left: getPosition() }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        />
-      </div>
-      <div className="flex justify-between">
-        <span className="text-[9px] text-muted-foreground">{leftLabel}</span>
-        <span className="text-[9px] text-muted-foreground">{rightLabel}</span>
-      </div>
     </div>
   );
 };
@@ -142,7 +134,27 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
 
       const { data } = await supabase
         .from('breed_information')
-        .select('size_category, life_expectancy_years, exercise_needs, grooming_needs, temperament_he, training_difficulty, good_with_children, good_with_other_pets, apartment_friendly')
+        .select(`
+          breed_name_he,
+          size_category,
+          life_expectancy_years,
+          affection_family,
+          kids_friendly,
+          dog_friendly,
+          energy_level,
+          trainability,
+          grooming_freq,
+          barking_level,
+          watchdog_nature,
+          shedding_level,
+          stranger_openness,
+          mental_needs,
+          apartment_friendly,
+          good_with_children,
+          good_with_other_pets,
+          temperament_he,
+          description_he
+        `)
         .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
         .maybeSingle();
 
@@ -157,34 +169,8 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
 
   if (loading || !breedInfo) return null;
 
-  // Parse exercise_needs to level
-  const parseLevel = (value?: string): 'low' | 'medium' | 'high' => {
-    if (!value) return 'medium';
-    const lower = value.toLowerCase();
-    if (lower.includes('low') || lower.includes('נמוך')) return 'low';
-    if (lower.includes('high') || lower.includes('גבוה')) return 'high';
-    return 'medium';
-  };
-
-  // Parse size to level
-  const parseSize = (value?: string): 'low' | 'medium' | 'high' => {
-    if (!value) return 'medium';
-    const lower = value.toLowerCase();
-    if (lower.includes('small') || lower === 'small') return 'low';
-    if (lower.includes('large') || lower.includes('extra')) return 'high';
-    return 'medium';
-  };
-
-  const exerciseLevel = parseLevel(breedInfo.exercise_needs);
-  const groomingLevel = parseLevel(breedInfo.grooming_needs);
-  const sizeLevel = parseSize(breedInfo.size_category);
-  const trainingLevel = parseLevel(breedInfo.training_difficulty);
-
-  // Get life expectancy number
+  // Get life expectancy first number
   const lifeExpectancy = breedInfo.life_expectancy_years?.match(/\d+/)?.[0] || '12';
-
-  // Get temperament
-  const temperament = breedInfo.temperament_he?.[0] || 'חברותי';
 
   return (
     <motion.div
@@ -196,18 +182,20 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4 text-primary" />
         <h3 className="text-sm font-bold text-foreground">נתוני הגזע</h3>
+        {breedInfo.breed_name_he && (
+          <span className="text-xs text-muted-foreground">• {breedInfo.breed_name_he}</span>
+        )}
       </div>
 
-      {/* Gauges Row - Stats */}
+      {/* Main Gauges Row */}
       <div className="grid grid-cols-3 gap-2 mb-3">
-        <GaugeIndicator value={groomingLevel} label="טיפוח" />
-        <GaugeIndicator value={exerciseLevel} label="אנרגיה" />
-        <GaugeIndicator value={trainingLevel} label="אילוף" />
+        <GaugeIndicator value={breedInfo.grooming_freq} label="טיפוח" />
+        <GaugeIndicator value={breedInfo.energy_level} label="אנרגיה" />
+        <GaugeIndicator value={breedInfo.trainability} label="אילוף" />
       </div>
 
       {/* Info Cards Row */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        {/* Life Expectancy */}
         <div className="flex flex-col items-center p-3 bg-card rounded-xl border border-border/30">
           <span className="text-xs font-semibold text-foreground mb-2">תוחלת חיים</span>
           <Heart className="w-6 h-6 text-primary mb-1" />
@@ -215,42 +203,29 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
           <span className="text-[9px] text-muted-foreground">שנים</span>
         </div>
 
-        {/* Popularity (mock) */}
         <div className="flex flex-col items-center p-3 bg-card rounded-xl border border-border/30">
-          <span className="text-xs font-semibold text-foreground mb-2">פופולריות</span>
+          <span className="text-xs font-semibold text-foreground mb-2">אהבה למשפחה</span>
           <Star className="w-6 h-6 text-primary mb-1" />
-          <span className="text-lg font-bold text-foreground">54</span>
-          <span className="text-[9px] text-muted-foreground">מתוך 100</span>
+          <span className="text-lg font-bold text-foreground">{breedInfo.affection_family || 3}</span>
+          <span className="text-[9px] text-muted-foreground">מתוך 5</span>
         </div>
       </div>
 
-      {/* Traits Section */}
-      <div className="bg-card rounded-xl border border-border/30 p-4 space-y-4">
-        <h4 className="text-xs font-bold text-foreground">מאפיינים</h4>
+      {/* Detailed Ratings Section */}
+      <div className="bg-card rounded-xl border border-border/30 p-4 space-y-3">
+        <h4 className="text-xs font-bold text-foreground mb-3">מאפיינים מפורטים</h4>
         
-        <SliderIndicator 
-          value={sizeLevel} 
-          label="גודל" 
-          leftLabel="קטן" 
-          rightLabel="גדול" 
-        />
-        
-        <SliderIndicator 
-          value={exerciseLevel} 
-          label="רמת פעילות" 
-          leftLabel="רובץ ספות" 
-          rightLabel="ספורטיבי" 
-        />
-        
-        <SliderIndicator 
-          value={groomingLevel} 
-          label="צורכי טיפוח" 
-          leftLabel="מינימלי" 
-          rightLabel="אינטנסיבי" 
-        />
+        <RatingBar value={breedInfo.kids_friendly} label="ילדים" icon={Baby} />
+        <RatingBar value={breedInfo.dog_friendly} label="כלבים" icon={Dog} />
+        <RatingBar value={breedInfo.stranger_openness} label="זרים" icon={Users} />
+        <RatingBar value={breedInfo.energy_level} label="אנרגיה" icon={Zap} />
+        <RatingBar value={breedInfo.mental_needs} label="מנטלי" icon={Brain} />
+        <RatingBar value={breedInfo.grooming_freq} label="טיפוח" icon={Scissors} />
+        <RatingBar value={breedInfo.barking_level} label="נביחות" icon={Volume2} />
+        <RatingBar value={breedInfo.watchdog_nature} label="שמירה" icon={Shield} />
 
         {/* Boolean traits */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-border/30">
+        <div className="flex flex-wrap gap-2 pt-3 border-t border-border/30">
           {breedInfo.good_with_children && (
             <span className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full">
               טוב עם ילדים
@@ -258,16 +233,26 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
           )}
           {breedInfo.good_with_other_pets && (
             <span className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full">
-              טוב עם חיות אחרות
+              טוב עם חיות
             </span>
           )}
           {breedInfo.apartment_friendly && (
-            <span className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full">
+            <span className="text-[10px] px-2 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
+              <Home className="w-3 h-3" />
               מתאים לדירה
             </span>
           )}
         </div>
       </div>
+
+      {/* Description */}
+      {breedInfo.description_he && (
+        <div className="mt-3 p-3 bg-muted/30 rounded-xl">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {breedInfo.description_he}
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 };
