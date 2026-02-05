@@ -598,74 +598,89 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         </div>
 
 
-        {/* Breed Traits - 5 buttons: Energy, Grooming, Feeding, Fur, Life Expectancy */}
-        <div className="grid grid-cols-5 gap-1.5">
-          {/* Energy Button - Shows activity minutes */}
-          <button
+        {/* Breed Traits - 5 buttons with improved styling */}
+        <div className="grid grid-cols-5 gap-2">
+          {/* Energy Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onEnergyOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`אנרגיה: ${activityMinutes || 0} דקות`}
           >
             {activityMinutes && (
               <div className="flex items-baseline gap-0.5">
                 <span className="text-sm font-bold text-primary">{activityMinutes}</span>
-                <span className="text-[7px] text-muted-foreground">דק׳</span>
+                <span className="text-[8px] text-muted-foreground">דק׳</span>
               </div>
             )}
-            <Zap className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">אנרגיה</span>
-          </button>
+            <Zap className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">אנרגיה</span>
+          </motion.button>
 
-          {/* Grooming Button - Shows frequency level */}
-          <button
+          {/* Grooming Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onGroomingOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`טיפוח: ${getGroomingLevelHe()}`}
           >
-            <span className="text-[10px] font-bold text-primary">{getGroomingLevelHe()}</span>
-            <Scissors className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">טיפוח</span>
-          </button>
+            <span className="text-xs font-bold text-primary">{getGroomingLevelHe()}</span>
+            <Scissors className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">טיפוח</span>
+          </motion.button>
 
-          {/* Feeding Button - Shows grams */}
-          <button
+          {/* Feeding Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onFeedingOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`האכלה: ${recommendedGrams || 0} גרם`}
           >
             {recommendedGrams ? (
               <div className="flex items-baseline gap-0.5">
                 <span className="text-sm font-bold text-primary">{recommendedGrams}</span>
-                <span className="text-[7px] text-muted-foreground">ג׳</span>
+                <span className="text-[8px] text-muted-foreground">ג׳</span>
               </div>
             ) : (
-              <span className="text-[10px] text-muted-foreground">—</span>
+              <span className="text-xs text-muted-foreground">—</span>
             )}
-            <Utensils className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">האכלה</span>
-          </button>
+            <Utensils className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">האכלה</span>
+          </motion.button>
 
-          {/* Fur Length Button - Shows short/medium/long */}
-          <button
+          {/* Fur Length Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onFurOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`פרווה: ${getFurLengthHe()}`}
           >
-            <span className="text-[10px] font-bold text-primary">{getFurLengthHe()}</span>
-            <Feather className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">פרווה</span>
-          </button>
+            <span className="text-xs font-bold text-primary">{getFurLengthHe()}</span>
+            <Feather className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">פרווה</span>
+          </motion.button>
 
           {/* Life Expectancy Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onLifeExpectancyOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`תוחלת חיים: ${getLifeExpectancy() || ''}`}
           >
             {getLifeExpectancy() && (
               <div className="flex items-baseline gap-0.5">
-                <span className="text-[10px] font-bold text-primary">{getLifeExpectancy()?.split('-')[0]}</span>
-                <span className="text-[7px] text-muted-foreground">ש׳</span>
+                <span className="text-xs font-bold text-primary">{getLifeExpectancy()?.split('-')[0]}</span>
+                <span className="text-[8px] text-muted-foreground">ש׳</span>
               </div>
             )}
-            <Heart className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">תוחלת</span>
-          </button>
+            <Heart className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">תוחלת</span>
+          </motion.button>
         </div>
       </motion.div>
 
