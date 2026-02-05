@@ -324,19 +324,19 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 pt-3">
                   {breedInfo.good_with_children && (
-                    <span className="text-[10px] px-2.5 py-1 bg-green-500/10 text-green-600 rounded-full flex items-center gap-1">
+                    <span className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
                       <Baby className="w-3 h-3" />
                       טוב עם ילדים
                     </span>
                   )}
                   {breedInfo.good_with_other_pets && (
-                    <span className="text-[10px] px-2.5 py-1 bg-blue-500/10 text-blue-600 rounded-full flex items-center gap-1">
+                    <span className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
                       <Dog className="w-3 h-3" />
                       טוב עם חיות
                     </span>
                   )}
                   {breedInfo.apartment_friendly && (
-                    <span className="text-[10px] px-2.5 py-1 bg-purple-500/10 text-purple-600 rounded-full flex items-center gap-1">
+                    <span className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
                       <Home className="w-3 h-3" />
                       מתאים לדירה
                     </span>
