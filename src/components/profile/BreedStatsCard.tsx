@@ -39,152 +39,183 @@ interface BreedStatsCardProps {
   pet: Pet;
 }
 
-// Semi-circle gauge component
+// Animated Semi-circle gauge component with hover effects
 const SemiCircleGauge = ({ 
   value, 
   maxValue = 5,
   label,
-  valueLabel
+  valueLabel,
+  delay = 0
 }: { 
   value: number;
   maxValue?: number;
   label: string;
   valueLabel: string;
+  delay?: number;
 }) => {
   const percentage = (value / maxValue) * 100;
-  const angle = (percentage / 100) * 180;
-  
-  // SVG arc calculation
-  const radius = 40;
-  const strokeWidth = 8;
-  const centerX = 50;
-  const centerY = 50;
-  
-  // Calculate arc end point
-  const endAngle = (180 - angle) * (Math.PI / 180);
-  const endX = centerX + radius * Math.cos(endAngle);
-  const endY = centerY - radius * Math.sin(endAngle);
-  
-  // Create arc path
-  const largeArcFlag = angle > 180 ? 1 : 0;
-  const arcPath = `M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`;
-  const backgroundArcPath = `M ${centerX - radius} ${centerY} A ${radius} ${radius} 0 0 1 ${centerX + radius} ${centerY}`;
-  
-  // Needle calculation
-  const needleAngle = (180 - angle) * (Math.PI / 180);
-  const needleLength = radius - 5;
-  const needleX = centerX + needleLength * Math.cos(needleAngle);
-  const needleY = centerY - needleLength * Math.sin(needleAngle);
+  const strokeDashoffset = 126 - (percentage / 100) * 126;
 
   return (
-    <div className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20">
-      <span className="text-sm font-medium text-foreground mb-2">{label}</span>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4, ease: "easeOut" }}
+      whileHover={{ scale: 1.03, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-300"
+      role="img"
+      aria-label={`${label}: ${valueLabel}`}
+    >
+      <span className="text-sm font-semibold text-foreground mb-2">{label}</span>
       
-      <div className="relative w-24 h-14">
+      <div className="relative w-20 h-12">
         <svg viewBox="0 0 100 55" className="w-full h-full">
           {/* Background arc */}
           <path
-            d={backgroundArcPath}
+            d="M 10 50 A 40 40 0 0 1 90 50"
             fill="none"
             stroke="hsl(var(--muted))"
-            strokeWidth={strokeWidth}
+            strokeWidth="10"
             strokeLinecap="round"
           />
           
-          {/* Value arc */}
+          {/* Animated value arc */}
           <motion.path
-            d={arcPath}
+            d="M 10 50 A 40 40 0 0 1 90 50"
             fill="none"
             stroke="hsl(var(--primary))"
-            strokeWidth={strokeWidth}
+            strokeWidth="10"
             strokeLinecap="round"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            strokeDasharray="126"
+            initial={{ strokeDashoffset: 126 }}
+            animate={{ strokeDashoffset }}
+            transition={{ delay: delay + 0.2, duration: 1, ease: "easeOut" }}
           />
           
-          {/* Needle */}
-          <motion.g
-            initial={{ rotate: -180 }}
-            animate={{ rotate: -180 + angle }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            style={{ transformOrigin: `${centerX}px ${centerY}px` }}
-          >
-            <line
-              x1={centerX}
-              y1={centerY}
-              x2={centerX}
-              y2={centerY - needleLength + 5}
-              stroke="hsl(var(--primary))"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <circle
-              cx={centerX}
-              cy={centerY}
-              r="4"
-              fill="hsl(var(--primary))"
-            />
-          </motion.g>
+          {/* Center indicator dot */}
+          <motion.circle
+            cx="50"
+            cy="50"
+            r="4"
+            fill="hsl(var(--primary))"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: delay + 0.8, duration: 0.3, ease: "backOut" }}
+          />
         </svg>
       </div>
       
-      <span className="text-sm text-muted-foreground mt-1">{valueLabel}</span>
-    </div>
+      <motion.span 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: delay + 0.5 }}
+        className="text-sm font-medium text-muted-foreground mt-1"
+      >
+        {valueLabel}
+      </motion.span>
+    </motion.div>
   );
 };
 
-// Icon stat card component
+// Icon stat card with animations
 const IconStatCard = ({ 
   icon: Icon,
   label,
   value,
-  subValue
+  subValue,
+  delay = 0
 }: { 
   icon: React.ElementType;
   label: string;
   value: string | number;
   subValue?: string;
+  delay?: number;
 }) => (
-  <div className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20">
-    <span className="text-sm font-medium text-foreground mb-3">{label}</span>
-    <Icon className="w-10 h-10 text-primary mb-2" strokeWidth={1.5} />
-    <span className="text-lg font-bold text-foreground">{value}</span>
-    {subValue && <span className="text-xs text-muted-foreground">{subValue}</span>}
-  </div>
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.4, ease: "easeOut" }}
+    whileHover={{ scale: 1.03, y: -2 }}
+    whileTap={{ scale: 0.98 }}
+    className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-300"
+    role="img"
+    aria-label={`${label}: ${value}${subValue ? ` ${subValue}` : ''}`}
+  >
+    <span className="text-sm font-semibold text-foreground mb-3">{label}</span>
+    <motion.div
+      initial={{ scale: 0, rotate: -180 }}
+      animate={{ scale: 1, rotate: 0 }}
+      transition={{ delay: delay + 0.2, duration: 0.5, ease: "backOut" }}
+    >
+      <Icon className="w-10 h-10 text-primary mb-2" strokeWidth={1.5} />
+    </motion.div>
+    <motion.span 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: delay + 0.4 }}
+      className="text-xl font-bold text-foreground"
+    >
+      {value}
+    </motion.span>
+    {subValue && (
+      <motion.span 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: delay + 0.5 }}
+        className="text-xs text-muted-foreground"
+      >
+        {subValue}
+      </motion.span>
+    )}
+  </motion.div>
 );
 
-// Rating dots for expanded section
+// Rating dots for expanded section with stagger animation
 const RatingDots = ({ 
   value, 
   label,
-  icon: Icon
+  icon: Icon,
+  index = 0
 }: { 
   value: number | null; 
   label: string;
   icon: React.ElementType;
+  index?: number;
 }) => {
   if (value === null || value === undefined) return null;
   
   return (
-    <div className="flex items-center justify-between py-2 border-b border-border/10 last:border-0">
-      <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-foreground">{label}</span>
+    <motion.div 
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      className="flex items-center justify-between py-3 border-b border-border/10 last:border-0 hover:bg-muted/30 rounded-lg px-2 -mx-2 transition-colors"
+      role="img"
+      aria-label={`${label}: ${value} מתוך 5`}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          <Icon className="w-4 h-4 text-primary" />
+        </div>
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         {[1, 2, 3, 4, 5].map((dot) => (
-          <div
+          <motion.div
             key={dot}
-            className={`w-2.5 h-2.5 rounded-full ${
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: index * 0.05 + dot * 0.05, duration: 0.2, ease: "backOut" }}
+            className={`w-3 h-3 rounded-full transition-colors ${
               dot <= value 
-                ? 'bg-primary' 
+                ? 'bg-primary shadow-sm shadow-primary/30' 
                 : 'bg-muted'
             }`}
           />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -235,14 +266,12 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
       const breedLower = pet.breed.toLowerCase();
       const searchTerms = [pet.breed];
       
-      // Add variations if they exist
       Object.entries(breedVariations).forEach(([key, values]) => {
         if (breedLower.includes(key.toLowerCase()) || key.toLowerCase().includes(breedLower)) {
           searchTerms.push(...values);
         }
       });
 
-      // Build dynamic OR filter
       const orFilters = searchTerms.flatMap(term => [
         `breed_name.ilike.%${term}%`,
         `breed_name_he.ilike.%${term}%`
@@ -286,12 +315,12 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
 
   if (loading) {
     return (
-      <div className="mx-4 mb-4 p-4 bg-muted/30 rounded-2xl">
+      <div className="mx-4 mb-4 p-4 bg-muted/30 rounded-2xl" role="status" aria-label="טוען נתונים">
         <div className="animate-pulse space-y-4">
-          <div className="h-4 w-32 bg-muted rounded" />
+          <div className="h-5 w-32 bg-muted rounded-lg" />
           <div className="grid grid-cols-3 gap-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-28 bg-muted rounded-2xl" />
+              <div key={i} className="h-32 bg-muted rounded-2xl" />
             ))}
           </div>
         </div>
@@ -304,22 +333,27 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-4 mb-4 p-4 bg-card rounded-2xl border border-border/30"
+        className="mx-4 mb-4 p-6 bg-card rounded-2xl border border-border/30"
       >
         <div className="text-center py-4">
-          <div className="w-12 h-12 mx-auto mb-3 bg-muted rounded-full flex items-center justify-center">
-            <Search className="w-6 h-6 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground mb-3">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="w-14 h-14 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center"
+          >
+            <Search className="w-7 h-7 text-muted-foreground" />
+          </motion.div>
+          <p className="text-base text-muted-foreground mb-4 font-medium">
             לא נמצא מידע על הגזע
           </p>
           <Button
             variant="outline"
-            size="sm"
+            size="lg"
             onClick={() => navigate('/breed-detect')}
-            className="gap-2"
+            className="gap-2 hover:scale-105 transition-transform"
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="w-5 h-5" />
             זהה גזע מתמונה
           </Button>
         </div>
@@ -343,31 +377,43 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
       className="mx-4 mb-4 space-y-4"
       dir="rtl"
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 px-1">
-        <Sparkles className="w-4 h-4 text-amber-500" />
-        <span className="text-sm font-medium text-amber-600">נתוני גזע</span>
-        <span className="text-sm text-foreground font-bold">
+      {/* Header with animation */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-center gap-2 px-1"
+      >
+        <motion.div
+          animate={{ rotate: [0, 15, -15, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+        >
+          <Sparkles className="w-5 h-5 text-amber-500" />
+        </motion.div>
+        <span className="text-sm font-semibold text-amber-600">נתוני גזע</span>
+        <span className="text-base text-foreground font-bold">
           {breedInfo.breed_name_he || pet.breed}
         </span>
-      </div>
+      </motion.div>
 
-      {/* Top row - 3 gauge cards */}
+      {/* Top row - 3 gauge cards with stagger */}
       <div className="grid grid-cols-3 gap-3">
         <SemiCircleGauge 
           value={breedInfo.shedding_level || 3} 
           label="נשירת שיער" 
           valueLabel={getLevelLabel(breedInfo.shedding_level)}
+          delay={0}
         />
         <SemiCircleGauge 
           value={breedInfo.grooming_freq || 3} 
           label="טיפוח" 
           valueLabel={getLevelLabel(breedInfo.grooming_freq)}
+          delay={0.1}
         />
         <SemiCircleGauge 
           value={breedInfo.energy_level || 3} 
           label="אנרגיה" 
           valueLabel={getLevelLabel(breedInfo.energy_level)}
+          delay={0.2}
         />
       </div>
 
@@ -378,101 +424,133 @@ export const BreedStatsCard = ({ pet }: BreedStatsCardProps) => {
           label="ידידותיות למשפחה"
           value={`${(breedInfo.affection_family || 3) * 20}`}
           subValue="מתוך 100"
+          delay={0.3}
         />
         <IconStatCard
           icon={Heart}
           label="תוחלת חיים ממוצעת"
           value={lifeExpectancy}
+          delay={0.4}
         />
       </div>
 
-      {/* Expandable Details Section */}
-      <button
+      {/* Expandable Details Button */}
+      <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-2.5 flex items-center justify-center gap-2 bg-card hover:bg-muted/50 transition-colors rounded-2xl border border-border/20"
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        className="w-full px-4 py-3 flex items-center justify-center gap-2 bg-card hover:bg-muted/50 transition-all duration-300 rounded-2xl border border-border/20 hover:border-primary/30 hover:shadow-sm"
+        aria-expanded={isExpanded}
+        aria-controls="breed-details"
       >
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-sm font-medium text-muted-foreground">
           {isExpanded ? 'הסתר פרטים' : 'הצג את כל המאפיינים'}
         </span>
-        {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        )}
-      </button>
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+        </motion.div>
+      </motion.button>
 
       {/* Expanded Content */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
+            id="breed-details"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
             <div className="bg-card rounded-2xl border border-border/20 p-4 space-y-1">
-              <RatingDots value={breedInfo.kids_friendly ?? null} label="ידידותי לילדים" icon={Baby} />
-              <RatingDots value={breedInfo.dog_friendly ?? null} label="ידידותי לכלבים" icon={Dog} />
-              <RatingDots value={breedInfo.stranger_openness ?? null} label="פתיחות לזרים" icon={Users} />
-              <RatingDots value={breedInfo.trainability ?? null} label="קלות אימון" icon={Brain} />
-              <RatingDots value={breedInfo.barking_level ?? null} label="רמת נביחות" icon={Volume2} />
-              <RatingDots value={breedInfo.watchdog_nature ?? null} label="יצר שמירה" icon={Shield} />
-              <RatingDots value={breedInfo.mental_needs ?? null} label="צורך מנטלי" icon={Brain} />
+              <RatingDots value={breedInfo.kids_friendly ?? null} label="ידידותי לילדים" icon={Baby} index={0} />
+              <RatingDots value={breedInfo.dog_friendly ?? null} label="ידידותי לכלבים" icon={Dog} index={1} />
+              <RatingDots value={breedInfo.stranger_openness ?? null} label="פתיחות לזרים" icon={Users} index={2} />
+              <RatingDots value={breedInfo.trainability ?? null} label="קלות אימון" icon={Brain} index={3} />
+              <RatingDots value={breedInfo.barking_level ?? null} label="רמת נביחות" icon={Volume2} index={4} />
+              <RatingDots value={breedInfo.watchdog_nature ?? null} label="יצר שמירה" icon={Shield} index={5} />
+              <RatingDots value={breedInfo.mental_needs ?? null} label="צורך מנטלי" icon={Brain} index={6} />
 
-              <div className="flex flex-wrap gap-2 pt-3">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="flex flex-wrap gap-2 pt-4"
+              >
                 {breedInfo.good_with_children && (
-                  <span className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
-                    <Baby className="w-3 h-3" />
+                  <motion.span 
+                    whileHover={{ scale: 1.05 }}
+                    className="text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-full flex items-center gap-1.5 font-medium"
+                  >
+                    <Baby className="w-3.5 h-3.5" />
                     טוב עם ילדים
-                  </span>
+                  </motion.span>
                 )}
                 {breedInfo.good_with_other_pets && (
-                  <span className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
-                    <Dog className="w-3 h-3" />
+                  <motion.span 
+                    whileHover={{ scale: 1.05 }}
+                    className="text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-full flex items-center gap-1.5 font-medium"
+                  >
+                    <Dog className="w-3.5 h-3.5" />
                     טוב עם חיות
-                  </span>
+                  </motion.span>
                 )}
                 {breedInfo.apartment_friendly && (
-                  <span className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary rounded-full flex items-center gap-1">
-                    <Home className="w-3 h-3" />
+                  <motion.span 
+                    whileHover={{ scale: 1.05 }}
+                    className="text-xs px-3 py-1.5 bg-primary/10 text-primary rounded-full flex items-center gap-1.5 font-medium"
+                  >
+                    <Home className="w-3.5 h-3.5" />
                     מתאים לדירה
-                  </span>
+                  </motion.span>
                 )}
                 {breedInfo.size_category && (
-                  <span className="text-[10px] px-2.5 py-1 bg-muted text-muted-foreground rounded-full">
+                  <span className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-full font-medium">
                     גודל: {sizeHe[breedInfo.size_category] || breedInfo.size_category}
                   </span>
                 )}
-              </div>
+              </motion.div>
             </div>
 
             {breedInfo.description_he && (
-              <div className="mt-3">
-                <p className="text-xs text-muted-foreground leading-relaxed bg-card p-3 rounded-2xl border border-border/20">
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-3"
+              >
+                <p className="text-sm text-muted-foreground leading-relaxed bg-card p-4 rounded-2xl border border-border/20">
                   {breedInfo.description_he}
                 </p>
-              </div>
+              </motion.div>
             )}
 
-            <div className="mt-3 flex gap-2">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-3 flex gap-3"
+            >
               <Button
                 variant="outline"
-                size="sm"
-                className="flex-1"
+                size="lg"
+                className="flex-1 hover:scale-[1.02] transition-transform"
                 onClick={() => navigate(`/breeds?search=${encodeURIComponent(pet.breed || '')}`)}
               >
                 לאנציקלופדיה
               </Button>
               <Button
                 variant="outline"
-                size="sm"
-                className="flex-1"
+                size="lg"
+                className="flex-1 hover:scale-[1.02] transition-transform"
                 onClick={() => navigate('/breed-quiz')}
               >
                 שאלון התאמה
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -363,13 +363,17 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="mx-4 p-4 bg-card rounded-xl border border-border/30"
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="mx-4 p-5 bg-card rounded-2xl border border-border/30 shadow-sm"
+        dir="rtl"
       >
-        {/* Pet Header */}
-        <div className="flex items-center gap-3 mb-4">
-          {/* Pet Avatar */}
-          <div className="w-14 h-14 rounded-full overflow-hidden bg-muted border-2 border-border flex-shrink-0">
+        {/* Pet Header with improved spacing */}
+        <div className="flex items-center gap-4 mb-5">
+          {/* Pet Avatar with animation */}
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className="w-16 h-16 rounded-2xl overflow-hidden bg-muted border-2 border-primary/20 flex-shrink-0 shadow-md"
+          >
             {pet.avatar_url ? (
               <img 
                 src={pet.avatar_url} 
@@ -377,60 +381,74 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 className="w-full h-full object-cover" 
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="w-full h-full flex items-center justify-center bg-primary/5">
                 <img 
                   src={pet.type === 'dog' ? dogIcon : catIcon} 
                   alt={petTypeHe} 
-                  className="w-8 h-8 opacity-60" 
+                  className="w-10 h-10 opacity-70" 
                 />
               </div>
             )}
-          </div>
+          </motion.div>
           
-          {/* Name & Type */}
+          {/* Name & Type with better typography */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground text-lg">{pet.name}</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="font-bold text-foreground text-xl leading-tight">{pet.name}</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
               {pet.breed || petTypeHe}
             </p>
           </div>
 
-          {/* Type Icon */}
-          <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+          {/* Type Icon with better styling */}
+          <motion.div 
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center"
+          >
             {pet.type === 'dog' ? (
-              <Dog className="w-4 h-4 text-muted-foreground" />
+              <Dog className="w-5 h-5 text-muted-foreground" />
             ) : (
-              <Cat className="w-4 h-4 text-muted-foreground" />
+              <Cat className="w-5 h-5 text-muted-foreground" />
             )}
-          </div>
+          </motion.div>
 
           {/* Message Owner Button */}
           {owner && !isOwner && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleMessageOwner}
-              className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+              className="w-10 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
               title={`שליחת הודעה ל${owner.full_name?.split(' ')[0] || 'בעלים'}`}
+              aria-label="שליחת הודעה לבעלים"
             >
-              <MessageCircle className="w-4 h-4 text-primary" />
-            </button>
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </motion.button>
           )}
 
           {/* Edit Button - Show only to owner */}
           {isOwner && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate(`/pet/${pet.id}/edit`)}
-              className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+              className="w-10 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
               title="עריכת פרטים"
+              aria-label="עריכת פרטי חיית המחמד"
             >
-              <Edit2 className="w-4 h-4 text-primary" />
-            </button>
+              <Edit2 className="w-5 h-5 text-primary" />
+            </motion.button>
           )}
         </div>
         
-        {/* Pet Details Grid - 3 columns with gauge cards */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        {/* Pet Details Grid - 3 columns with animated gauge cards */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
           {/* Age Gauge Card */}
-          <button
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               if (!hasUserBirthDate && isOwner) {
                 openEditModal('age');
@@ -439,73 +457,101 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               }
             }}
             disabled={!isOwner && !hasUserBirthDate}
-            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative"
+            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
+            aria-label={`גיל: ${getAgeDisplay()}`}
           >
             {isAgeFromBreed && (
-              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
+              </motion.div>
             )}
-            <span className="text-xs font-medium text-foreground mb-2">גיל</span>
-            <div className="relative w-16 h-10 mb-1">
+            <span className="text-sm font-semibold text-foreground mb-2">גיל</span>
+            <div className="relative w-18 h-11 mb-1">
               <svg viewBox="0 0 100 55" className="w-full h-full">
                 <path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                 />
-                <path
+                <motion.path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--primary))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray="126"
-                  strokeDashoffset={126 - (hasUserBirthDate ? 80 : 40)}
+                  initial={{ strokeDashoffset: 126 }}
+                  animate={{ strokeDashoffset: 126 - (hasUserBirthDate ? 80 : 40) }}
+                  transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
                 />
               </svg>
             </div>
-            <span className="text-xs text-muted-foreground text-center leading-tight">{getAgeDisplay()}</span>
-          </button>
+            <span className="text-sm text-muted-foreground text-center leading-tight font-medium">{getAgeDisplay()}</span>
+          </motion.button>
           
           {/* Size Gauge Card */}
-          <div className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300 cursor-default"
+            role="img"
+            aria-label={`גודל: ${getSizeDisplay()}`}
+          >
             {isSizeFromBreed && (
-              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
+              </motion.div>
             )}
-            <span className="text-xs font-medium text-foreground mb-2">גודל</span>
-            <div className="relative w-16 h-10 mb-1">
+            <span className="text-sm font-semibold text-foreground mb-2">גודל</span>
+            <div className="relative w-18 h-11 mb-1">
               <svg viewBox="0 0 100 55" className="w-full h-full">
                 <path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                 />
-                <path
+                <motion.path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--primary))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray="126"
-                  strokeDashoffset={126 - (() => {
+                  initial={{ strokeDashoffset: 126 }}
+                  animate={{ strokeDashoffset: 126 - (() => {
                     const size = pet.size || breedInfo?.size_category || 'medium';
                     if (size === 'small') return 32;
                     if (size === 'medium') return 63;
                     if (size === 'large') return 95;
                     if (size === 'extra_large') return 126;
                     return 63;
-                  })()}
+                  })() }}
+                  transition={{ delay: 0.4, duration: 1, ease: "easeOut" }}
                 />
               </svg>
             </div>
-            <span className="text-xs text-muted-foreground">{getSizeDisplay()}</span>
-          </div>
+            <span className="text-sm text-muted-foreground font-medium">{getSizeDisplay()}</span>
+          </motion.div>
           
           {/* Weight Gauge Card */}
-          <button
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               if (!pet.weight && isOwner) {
                 openEditModal('weight');
@@ -513,105 +559,128 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 onFeedingOpen?.();
               }
             }}
-            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative"
+            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
+            aria-label={`משקל: ${getWeightDisplay()}`}
           >
             {isWeightFromBreed && (
-              <Sparkles className="w-3 h-3 text-amber-500 absolute top-2 left-2" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
+              </motion.div>
             )}
-            <span className="text-xs font-medium text-foreground mb-2">משקל</span>
-            <div className="relative w-16 h-10 mb-1">
+            <span className="text-sm font-semibold text-foreground mb-2">משקל</span>
+            <div className="relative w-18 h-11 mb-1">
               <svg viewBox="0 0 100 55" className="w-full h-full">
                 <path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                 />
-                <path
+                <motion.path
                   d="M 10 50 A 40 40 0 0 1 90 50"
                   fill="none"
                   stroke="hsl(var(--primary))"
-                  strokeWidth="8"
+                  strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray="126"
-                  strokeDashoffset={126 - Math.min((pet.weight || 10) / 50 * 126, 126)}
+                  initial={{ strokeDashoffset: 126 }}
+                  animate={{ strokeDashoffset: 126 - Math.min((pet.weight || 10) / 50 * 126, 126) }}
+                  transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
                 />
               </svg>
             </div>
-            <span className="text-xs text-muted-foreground">{getWeightDisplay()}</span>
-          </button>
+            <span className="text-sm text-muted-foreground font-medium">{getWeightDisplay()}</span>
+          </motion.button>
         </div>
 
 
-        {/* Breed Traits - 5 buttons: Energy, Grooming, Feeding, Fur, Life Expectancy */}
-        <div className="grid grid-cols-5 gap-1.5">
-          {/* Energy Button - Shows activity minutes */}
-          <button
+        {/* Breed Traits - 5 buttons with improved styling */}
+        <div className="grid grid-cols-5 gap-2">
+          {/* Energy Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onEnergyOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`אנרגיה: ${activityMinutes || 0} דקות`}
           >
             {activityMinutes && (
               <div className="flex items-baseline gap-0.5">
                 <span className="text-sm font-bold text-primary">{activityMinutes}</span>
-                <span className="text-[7px] text-muted-foreground">דק׳</span>
+                <span className="text-[8px] text-muted-foreground">דק׳</span>
               </div>
             )}
-            <Zap className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">אנרגיה</span>
-          </button>
+            <Zap className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">אנרגיה</span>
+          </motion.button>
 
-          {/* Grooming Button - Shows frequency level */}
-          <button
+          {/* Grooming Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onGroomingOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`טיפוח: ${getGroomingLevelHe()}`}
           >
-            <span className="text-[10px] font-bold text-primary">{getGroomingLevelHe()}</span>
-            <Scissors className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">טיפוח</span>
-          </button>
+            <span className="text-xs font-bold text-primary">{getGroomingLevelHe()}</span>
+            <Scissors className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">טיפוח</span>
+          </motion.button>
 
-          {/* Feeding Button - Shows grams */}
-          <button
+          {/* Feeding Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onFeedingOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`האכלה: ${recommendedGrams || 0} גרם`}
           >
             {recommendedGrams ? (
               <div className="flex items-baseline gap-0.5">
                 <span className="text-sm font-bold text-primary">{recommendedGrams}</span>
-                <span className="text-[7px] text-muted-foreground">ג׳</span>
+                <span className="text-[8px] text-muted-foreground">ג׳</span>
               </div>
             ) : (
-              <span className="text-[10px] text-muted-foreground">—</span>
+              <span className="text-xs text-muted-foreground">—</span>
             )}
-            <Utensils className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">האכלה</span>
-          </button>
+            <Utensils className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">האכלה</span>
+          </motion.button>
 
-          {/* Fur Length Button - Shows short/medium/long */}
-          <button
+          {/* Fur Length Button */}
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onFurOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`פרווה: ${getFurLengthHe()}`}
           >
-            <span className="text-[10px] font-bold text-primary">{getFurLengthHe()}</span>
-            <Feather className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">פרווה</span>
-          </button>
+            <span className="text-xs font-bold text-primary">{getFurLengthHe()}</span>
+            <Feather className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">פרווה</span>
+          </motion.button>
 
           {/* Life Expectancy Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onLifeExpectancyOpen}
-            className="flex flex-col items-center p-2 bg-muted/30 hover:bg-muted/50 rounded-lg border border-border/20 transition-colors"
+            className="flex flex-col items-center p-3 bg-muted/30 hover:bg-primary/10 rounded-xl border border-border/20 hover:border-primary/30 transition-all duration-300"
+            aria-label={`תוחלת חיים: ${getLifeExpectancy() || ''}`}
           >
             {getLifeExpectancy() && (
               <div className="flex items-baseline gap-0.5">
-                <span className="text-[10px] font-bold text-primary">{getLifeExpectancy()?.split('-')[0]}</span>
-                <span className="text-[7px] text-muted-foreground">ש׳</span>
+                <span className="text-xs font-bold text-primary">{getLifeExpectancy()?.split('-')[0]}</span>
+                <span className="text-[8px] text-muted-foreground">ש׳</span>
               </div>
             )}
-            <Heart className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[9px] font-medium text-foreground text-center">תוחלת</span>
-          </button>
+            <Heart className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-semibold text-foreground text-center mt-0.5">תוחלת</span>
+          </motion.button>
         </div>
       </motion.div>
 
