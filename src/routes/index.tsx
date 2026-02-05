@@ -377,6 +377,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/data-import", element: <AdminPage component={AdminDataImport} pageName="ייבוא נתונים" /> },
   { path: "/admin/ai-service", element: <AdminPage component={AdminAIService} pageName="שירות AI" /> },
   { path: "/admin/control-room", element: <AdminPage component={AIControlRoom} pageName="חדר בקרה" /> },
+   { path: "/admin/data-hub", element: <AdminPage component={AdminDataHub} pageName="Data Hub" /> },
 ];
 
 // ==========================================
