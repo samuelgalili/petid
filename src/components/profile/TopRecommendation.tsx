@@ -363,13 +363,17 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="mx-4 p-4 bg-card rounded-xl border border-border/30"
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="mx-4 p-5 bg-card rounded-2xl border border-border/30 shadow-sm"
+        dir="rtl"
       >
-        {/* Pet Header */}
-        <div className="flex items-center gap-3 mb-4">
-          {/* Pet Avatar */}
-          <div className="w-14 h-14 rounded-full overflow-hidden bg-muted border-2 border-border flex-shrink-0">
+        {/* Pet Header with improved spacing */}
+        <div className="flex items-center gap-4 mb-5">
+          {/* Pet Avatar with animation */}
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            className="w-16 h-16 rounded-2xl overflow-hidden bg-muted border-2 border-primary/20 flex-shrink-0 shadow-md"
+          >
             {pet.avatar_url ? (
               <img 
                 src={pet.avatar_url} 
@@ -377,53 +381,62 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 className="w-full h-full object-cover" 
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="w-full h-full flex items-center justify-center bg-primary/5">
                 <img 
                   src={pet.type === 'dog' ? dogIcon : catIcon} 
                   alt={petTypeHe} 
-                  className="w-8 h-8 opacity-60" 
+                  className="w-10 h-10 opacity-70" 
                 />
               </div>
             )}
-          </div>
+          </motion.div>
           
-          {/* Name & Type */}
+          {/* Name & Type with better typography */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground text-lg">{pet.name}</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="font-bold text-foreground text-xl leading-tight">{pet.name}</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
               {pet.breed || petTypeHe}
             </p>
           </div>
 
-          {/* Type Icon */}
-          <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+          {/* Type Icon with better styling */}
+          <motion.div 
+            whileHover={{ scale: 1.1, rotate: 5 }}
+            className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center"
+          >
             {pet.type === 'dog' ? (
-              <Dog className="w-4 h-4 text-muted-foreground" />
+              <Dog className="w-5 h-5 text-muted-foreground" />
             ) : (
-              <Cat className="w-4 h-4 text-muted-foreground" />
+              <Cat className="w-5 h-5 text-muted-foreground" />
             )}
-          </div>
+          </motion.div>
 
           {/* Message Owner Button */}
           {owner && !isOwner && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleMessageOwner}
-              className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+              className="w-10 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
               title={`שליחת הודעה ל${owner.full_name?.split(' ')[0] || 'בעלים'}`}
+              aria-label="שליחת הודעה לבעלים"
             >
-              <MessageCircle className="w-4 h-4 text-primary" />
-            </button>
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </motion.button>
           )}
 
           {/* Edit Button - Show only to owner */}
           {isOwner && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate(`/pet/${pet.id}/edit`)}
-              className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+              className="w-10 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
               title="עריכת פרטים"
+              aria-label="עריכת פרטי חיית המחמד"
             >
-              <Edit2 className="w-4 h-4 text-primary" />
-            </button>
+              <Edit2 className="w-5 h-5 text-primary" />
+            </motion.button>
           )}
         </div>
         
