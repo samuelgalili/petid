@@ -127,6 +127,57 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_data_sources: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          data_type: Database["public"]["Enums"]["admin_data_type"]
+          description: string | null
+          extracted_data: Json | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          is_active: boolean | null
+          is_processed: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          data_type: Database["public"]["Enums"]["admin_data_type"]
+          description?: string | null
+          extracted_data?: Json | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_processed?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          data_type?: Database["public"]["Enums"]["admin_data_type"]
+          description?: string | null
+          extracted_data?: Json | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_processed?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       admin_tasks: {
         Row: {
           assigned_to: string | null
@@ -9132,6 +9183,7 @@ export type Database = {
       }
     }
     Enums: {
+      admin_data_type: "breeds" | "insurance" | "dog_parks" | "research"
       app_role: "admin" | "user" | "moderator" | "business" | "org"
       business_type:
         | "vet"
@@ -9279,6 +9331,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_data_type: ["breeds", "insurance", "dog_parks", "research"],
       app_role: ["admin", "user", "moderator", "business", "org"],
       business_type: [
         "vet",
