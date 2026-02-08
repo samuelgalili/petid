@@ -93,25 +93,53 @@ Deno.serve(async (req) => {
     console.log(`Scraped ${scrapedContent.length} chars from ${url}. Title: ${metadata.title}`);
 
     // Step 2: Extract structured data with AI using Lovable AI Gateway
-    const extractionPrompt = `You are extracting a full article/research paper from a web page.
-Return a JSON object with:
+    const extractionPrompts: Record<string, string> = {
+      articles: `You are extracting a full article/research paper. Return JSON:
 {
-  "title": "article title",
-  "title_he": "כותרת המאמר בעברית (translate if needed)",
-  "authors": ["author1", "author2"],
-  "publication_date": "publication date if found",
-  "source_name": "journal or website name",
-  "summary": "comprehensive summary in 3-5 sentences",
-  "summary_he": "סיכום מקיף ב-3-5 משפטים בעברית",
-  "full_content": "THE COMPLETE article text, preserving all paragraphs and sections. Include everything.",
-  "key_findings": ["finding1", "finding2", "finding3"],
-  "key_findings_he": ["ממצא1", "ממצא2", "ממצא3"],
-  "topics": ["topic1", "topic2"],
-  "relevance_to_pets": "how this relates to pet care",
-  "category": "articles"
+  "title": "article title", "title_he": "כותרת בעברית",
+  "authors": ["author1"], "publication_date": "date",
+  "source_name": "journal name", "summary": "3-5 sentence summary",
+  "summary_he": "סיכום בעברית", "full_content": "THE COMPLETE article text - do NOT truncate",
+  "key_findings": ["finding1"], "key_findings_he": ["ממצא1"],
+  "topics": ["topic1"], "relevance_to_pets": "relevance", "category": "articles"
 }
+IMPORTANT: Include the FULL article content in "full_content".`,
+      breeds: `Extract breed information. Return JSON:
+{
+  "breeds": [{"name": "breed name", "name_he": "שם הגזע", "type": "dog/cat",
+    "origin": "country", "size": "small/medium/large", "temperament": ["trait1"],
+    "temperament_he": ["תכונה1"], "lifespan": "10-12 years",
+    "health_issues": ["issue1"], "health_issues_he": ["בעיה1"],
+    "description": "full description", "description_he": "תיאור מלא",
+    "care_notes": "care info", "care_notes_he": "הנחיות טיפול"}],
+  "category": "breeds"
+}`,
+      insurance: `Extract pet insurance information. Return JSON:
+{
+  "providers": [{"name": "company", "name_he": "שם חברה",
+    "plans": [{"name": "plan", "monthly_cost": "price", "coverage": ["item1"]}],
+    "contact": "phone/website", "summary_he": "סיכום בעברית"}],
+  "full_content": "complete page text", "category": "insurance"
+}`,
+      dog_parks: `Extract dog park information. Return JSON:
+{
+  "parks": [{"name": "park name", "name_he": "שם הגינה",
+    "city": "city", "address": "address",
+    "amenities": ["amenity1"], "hours": "hours", "description_he": "תיאור בעברית"}],
+  "full_content": "complete page text", "category": "dog_parks"
+}`,
+      research: `Extract research/study information. Return JSON:
+{
+  "title": "study title", "title_he": "כותרת בעברית",
+  "authors": ["author1"], "year": "year", "source_name": "journal",
+  "summary": "3-5 sentence summary", "summary_he": "סיכום בעברית",
+  "full_content": "THE COMPLETE text", "key_findings": ["finding1"],
+  "key_findings_he": ["ממצא1"], "relevance_to_pets": "relevance", "category": "research"
+}
+IMPORTANT: Include the FULL content.`,
+    };
 
-IMPORTANT: Include the FULL article content in "full_content" field - do not summarize or truncate it.`;
+    const extractionPrompt = extractionPrompts[dataType] || extractionPrompts.articles;
 
     let extractedData: Record<string, unknown> = {};
     let isProcessed = false;
