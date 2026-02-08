@@ -10,12 +10,15 @@ import {
   TrendingUp,
   Database,
   Loader2,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { DATA_CATEGORIES } from "@/types/admin-data";
+import { DATA_CATEGORIES, DataSourceType } from "@/types/admin-data";
+import { CategoryUploadButton } from "./CategoryUploadButton";
+import { CategoryDataViewer } from "./CategoryDataViewer";
 
 interface CategoryHealth {
   category: string;
@@ -35,6 +38,8 @@ export const DataHealthDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerCategory, setViewerCategory] = useState<{ id: DataSourceType; label: string; icon: string } | null>(null);
 
   const fetchHealth = async () => {
     try {
@@ -232,6 +237,26 @@ export const DataHealthDashboard = () => {
                   {cat.failedSources} נכשלו
                 </Badge>
               )}
+              <div className="flex gap-2 pt-1 border-t">
+                <CategoryUploadButton
+                  category={cat.category as DataSourceType}
+                  categoryLabel={cat.label}
+                  categoryIcon={cat.icon}
+                  onSuccess={fetchHealth}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-xs h-7"
+                  onClick={() => {
+                    setViewerCategory({ id: cat.category as DataSourceType, label: cat.label, icon: cat.icon });
+                    setViewerOpen(true);
+                  }}
+                >
+                  <Eye className="w-3 h-3" />
+                  צפה
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -268,6 +293,17 @@ export const DataHealthDashboard = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {viewerCategory && (
+        <CategoryDataViewer
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          category={viewerCategory.id}
+          categoryLabel={viewerCategory.label}
+          categoryIcon={viewerCategory.icon}
+          onDataChanged={fetchHealth}
+        />
       )}
     </div>
   );
