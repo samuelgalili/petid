@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { url, dataType, sourceId }: ScrapeRequest = await req.json();
@@ -35,6 +36,13 @@ Deno.serve(async (req) => {
     if (!firecrawlKey) {
       return new Response(
         JSON.stringify({ success: false, error: "Firecrawl is not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!lovableApiKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: "LOVABLE_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -64,7 +72,6 @@ Deno.serve(async (req) => {
 
     if (!scrapeResponse.ok || !scrapeData.success) {
       console.error("Firecrawl error:", scrapeData);
-      // Update source as failed
       await supabase
         .from("admin_data_sources")
         .update({
@@ -85,99 +92,59 @@ Deno.serve(async (req) => {
 
     console.log(`Scraped ${scrapedContent.length} chars from ${url}. Title: ${metadata.title}`);
 
-    // Step 2: Extract structured data with AI
-    const extractionPrompts: Record<string, string> = {
-      research: `Extract research and study information from this web page content. Return a JSON object with:
-        {
-          "studies": [
-            {
-              "title": "study title",
-              "authors": ["author1", "author2"],
-              "year": "publication year",
-              "topic": "main topic",
-              "summary": "brief summary of findings (2-3 sentences)",
-              "key_findings": ["finding1", "finding2", "finding3"],
-              "relevance": "how this applies to pet care",
-              "source": "journal or publication name",
-              "source_url": "original URL"
-            }
-          ],
-          "page_title": "title of the scraped page",
-          "page_summary": "brief summary of the entire page"
-        }`,
-      breeds: `Extract breed information from this web page. Return a JSON object with:
-        {
-          "breeds": [
-            {
-              "name": "breed name in English",
-              "name_he": "שם הגזע בעברית",
-              "type": "dog or cat",
-              "origin": "country of origin",
-              "size": "small/medium/large",
-              "temperament": ["trait1", "trait2"],
-              "lifespan": "10-12 years",
-              "health_issues": ["issue1", "issue2"],
-              "care_notes": "care instructions"
-            }
-          ]
-        }`,
-      insurance: `Extract pet insurance information from this web page. Return a JSON object with:
-        {
-          "providers": [
-            {
-              "name": "company name",
-              "plans": [{ "name": "plan name", "monthly_cost": "price", "coverage": ["coverage1"] }],
-              "contact": "phone or website"
-            }
-          ]
-        }`,
-      dog_parks: `Extract dog park information from this web page. Return a JSON object with:
-        {
-          "parks": [
-            {
-              "name": "park name",
-              "city": "city",
-              "address": "address",
-              "amenities": ["amenity1"],
-              "hours": "operating hours"
-            }
-          ]
-        }`,
-    };
+    // Step 2: Extract structured data with AI using Lovable AI Gateway
+    const extractionPrompt = `You are extracting a full article/research paper from a web page.
+Return a JSON object with:
+{
+  "title": "article title",
+  "title_he": "כותרת המאמר בעברית (translate if needed)",
+  "authors": ["author1", "author2"],
+  "publication_date": "publication date if found",
+  "source_name": "journal or website name",
+  "summary": "comprehensive summary in 3-5 sentences",
+  "summary_he": "סיכום מקיף ב-3-5 משפטים בעברית",
+  "full_content": "THE COMPLETE article text, preserving all paragraphs and sections. Include everything.",
+  "key_findings": ["finding1", "finding2", "finding3"],
+  "key_findings_he": ["ממצא1", "ממצא2", "ממצא3"],
+  "topics": ["topic1", "topic2"],
+  "relevance_to_pets": "how this relates to pet care",
+  "category": "articles"
+}
 
-    const prompt = extractionPrompts[dataType] || extractionPrompts.research;
+IMPORTANT: Include the FULL article content in "full_content" field - do not summarize or truncate it.`;
 
     let extractedData: Record<string, unknown> = {};
     let isProcessed = false;
 
     try {
-      const aiResponse = await fetch(
-        `${supabaseUrl}/functions/v1/lovable-ai`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              {
-                role: "system",
-                content: `You are a data extraction assistant specializing in pet-related research and veterinary studies. Extract structured information and return valid JSON only. Always include Hebrew translations where possible. ${prompt}`,
-              },
-              {
-                role: "user",
-                content: `Extract relevant information from this web page:\n\nURL: ${formattedUrl}\nPage Title: ${metadata.title || "Unknown"}\n\nContent:\n${scrapedContent.substring(0, 15000)}`,
-              },
-            ],
-          }),
-        }
-      );
+      console.log("Calling Lovable AI Gateway for extraction...");
+      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${lovableApiKey}`,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: extractionPrompt,
+            },
+            {
+              role: "user",
+              content: `Extract the full article from this web page:\n\nURL: ${formattedUrl}\nPage Title: ${metadata.title || "Unknown"}\n\nContent:\n${scrapedContent.substring(0, 30000)}`,
+            },
+          ],
+        }),
+      });
+
+      console.log(`AI response status: ${aiResponse.status}`);
 
       if (aiResponse.ok) {
         const aiResult = await aiResponse.json();
         const content = aiResult.choices?.[0]?.message?.content || "";
+        console.log(`AI response content length: ${content.length}`);
 
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -185,13 +152,32 @@ Deno.serve(async (req) => {
           extractedData.source_url = formattedUrl;
           extractedData.scraped_at = new Date().toISOString();
           extractedData.page_metadata = metadata;
+          extractedData.raw_content_length = scrapedContent.length;
           isProcessed = true;
+          console.log("AI extraction successful, keys:", Object.keys(extractedData).join(", "));
+        } else {
+          console.error("No JSON found in AI response. Content preview:", content.substring(0, 200));
+          extractedData = {
+            raw_content: scrapedContent,
+            source_url: formattedUrl,
+            page_metadata: metadata,
+            ai_error: "Could not parse structured data from AI response",
+          };
         }
+      } else {
+        const errorText = await aiResponse.text();
+        console.error(`AI Gateway error (${aiResponse.status}):`, errorText);
+        extractedData = {
+          raw_content: scrapedContent,
+          source_url: formattedUrl,
+          page_metadata: metadata,
+          ai_error: `AI Gateway returned ${aiResponse.status}`,
+        };
       }
     } catch (aiError) {
       console.error("AI extraction error:", aiError);
       extractedData = {
-        raw_content: scrapedContent.substring(0, 5000),
+        raw_content: scrapedContent,
         source_url: formattedUrl,
         page_metadata: metadata,
         ai_error: "Failed to extract structured data",
@@ -204,6 +190,7 @@ Deno.serve(async (req) => {
       .update({
         extracted_data: extractedData,
         is_processed: isProcessed,
+        title: (extractedData.title as string) || metadata.title || url,
         updated_at: new Date().toISOString(),
       })
       .eq("id", sourceId);
@@ -213,14 +200,14 @@ Deno.serve(async (req) => {
       throw updateError;
     }
 
-    console.log(`Source ${sourceId} processed. Extracted keys: ${Object.keys(extractedData).join(", ")}`);
+    console.log(`Source ${sourceId} processed successfully. isProcessed: ${isProcessed}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         sourceId,
         isProcessed,
-        pageTitle: metadata.title,
+        pageTitle: (extractedData.title as string) || metadata.title,
         extractedKeys: Object.keys(extractedData),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

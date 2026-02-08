@@ -91,10 +91,12 @@
        const { data: userData } = await supabase.auth.getUser();
 
        // Create data source record first
-       const { data: sourceData, error: sourceError } = await supabase
-         .from("admin_data_sources" as any)
-         .insert({
-           data_type: dataType,
+        const effectiveDataType = "articles";
+        
+        const { data: sourceData, error: sourceError } = await supabase
+          .from("admin_data_sources" as any)
+          .insert({
+            data_type: effectiveDataType,
            title: title.trim() || urlInput.trim(),
            description: description.trim() || `נמשך מ: ${urlInput.trim()}`,
            file_url: urlInput.trim(),
@@ -115,10 +117,10 @@
        const { data: scrapeData, error: scrapeError } = await supabase.functions.invoke(
          "scrape-research-url",
          {
-           body: {
-             url: urlInput.trim(),
-             dataType,
-             sourceId: (sourceData as any).id,
+            body: {
+              url: urlInput.trim(),
+              dataType: "articles",
+              sourceId: (sourceData as any).id,
            },
          }
        );

@@ -9222,7 +9222,12 @@ export type Database = {
       }
     }
     Enums: {
-      admin_data_type: "breeds" | "insurance" | "dog_parks" | "research"
+      admin_data_type:
+        | "breeds"
+        | "insurance"
+        | "dog_parks"
+        | "research"
+        | "articles"
       app_role: "admin" | "user" | "moderator" | "business" | "org"
       business_type:
         | "vet"
@@ -9370,7 +9375,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      admin_data_type: ["breeds", "insurance", "dog_parks", "research"],
+      admin_data_type: [
+        "breeds",
+        "insurance",
+        "dog_parks",
+        "research",
+        "articles",
+      ],
       app_role: ["admin", "user", "moderator", "business", "org"],
       business_type: [
         "vet",

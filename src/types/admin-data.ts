@@ -1,4 +1,4 @@
- export type DataSourceType = "breeds" | "insurance" | "dog_parks" | "research";
+ export type DataSourceType = "breeds" | "insurance" | "dog_parks" | "research" | "articles";
  
  export interface DataSource {
    id: string;
@@ -52,12 +52,20 @@
      description: "מיקומים ופרטי גינות כלבים",
      color: "bg-green-500",
    },
-   {
-     id: "research",
-     label: "Research",
-     labelHe: "מחקרים",
-     icon: "📊",
-     description: "מחקרים ומאמרים וטרינריים",
-     color: "bg-purple-500",
-   },
- ];
+    {
+      id: "research",
+      label: "Research",
+      labelHe: "מחקרים",
+      icon: "📊",
+      description: "מחקרים ומאמרים וטרינריים",
+      color: "bg-purple-500",
+    },
+    {
+      id: "articles",
+      label: "Articles",
+      labelHe: "מאמרים",
+      icon: "📰",
+      description: "מאמרים מקצועיים שנמשכו מקישורים",
+      color: "bg-indigo-500",
+    },
+  ];
