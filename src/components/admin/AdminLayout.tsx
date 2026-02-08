@@ -234,20 +234,20 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   })).filter(group => group.items.length > 0);
 
   const NavContent = ({ collapsed = false }: { collapsed?: boolean }) => (
-    <div className="flex flex-col h-full bg-gradient-to-b from-card to-card/95">
+    <div className="flex flex-col h-full bg-card">
       {/* Logo */}
       <div className={cn(
-        "flex items-center border-b border-border/50 h-16 shrink-0 bg-gradient-to-l from-primary/5 to-transparent",
-        collapsed ? "justify-center px-2" : "px-4 gap-3"
+        "flex items-center border-b border-border/30 h-16 shrink-0",
+        collapsed ? "justify-center px-2" : "px-5 gap-3"
       )}>
         <Link to="/admin/dashboard" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/25 group-hover:shadow-primary/40 transition-shadow">
-            <Shield className="w-5 h-5 text-primary-foreground" />
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Shield className="w-4.5 h-4.5 text-primary-foreground" />
           </div>
           {!collapsed && (
             <div>
-              <span className="font-bold text-lg bg-gradient-to-l from-primary to-foreground bg-clip-text text-transparent">PetID</span>
-              <span className="text-xs text-muted-foreground block -mt-0.5">ניהול מערכת</span>
+              <span className="font-bold text-base text-foreground tracking-tight">PetID</span>
+              <span className="text-[10px] text-muted-foreground block leading-none">ניהול מערכת</span>
             </div>
           )}
         </Link>
@@ -255,29 +255,28 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
 
       {/* Search */}
       {!collapsed && (
-        <div className="p-3 border-b border-border/50">
+        <div className="px-4 py-3">
           <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60" />
             <Input
-              placeholder="חיפוש מהיר..."
+              placeholder="חיפוש..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-9 h-9 bg-muted/30 border-border/50 text-sm focus:bg-muted/50 transition-colors"
+              className="pr-9 h-8 bg-muted/40 border-0 text-xs placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/30 rounded-lg"
             />
           </div>
         </div>
       )}
 
       {/* Nav Items */}
-      <ScrollArea className="flex-1 py-3">
-        <nav className={cn("space-y-1", collapsed ? "px-2" : "px-3")}>
+      <ScrollArea className="flex-1 py-1">
+        <nav className={cn("space-y-0.5", collapsed ? "px-2" : "px-3")}>
           {filteredGroups.map((group) => {
             const isGroupOpen = openGroups.includes(group.label);
             
             if (collapsed) {
-              // Collapsed mode - show only icons with tooltip
               return (
-                <div key={group.label} className="space-y-1 py-1">
+                <div key={group.label} className="space-y-0.5 py-1">
                   {group.items.map((item) => {
                     const isActive = location.pathname === item.href;
                     const ItemIcon = item.icon;
@@ -290,21 +289,21 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                             <Link
                               to={item.href}
                               className={cn(
-                                "flex items-center justify-center w-10 h-10 rounded-xl transition-all relative mx-auto",
+                                "flex items-center justify-center w-9 h-9 rounded-lg transition-all relative mx-auto",
                                 isActive
-                                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25"
+                                  ? "bg-primary text-primary-foreground shadow-sm"
                                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
                               )}
                             >
-                              <ItemIcon className="w-5 h-5" />
+                              <ItemIcon className="w-4 h-4" />
                               {showBadge && (
-                                <span className="absolute -top-1 -left-1 min-w-4 h-4 bg-destructive text-destructive-foreground text-[10px] rounded-full flex items-center justify-center px-1 animate-pulse">
+                                <span className="absolute -top-0.5 -left-0.5 min-w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[9px] rounded-full flex items-center justify-center px-0.5">
                                   {pendingReports}
                                 </span>
                               )}
                             </Link>
                           </TooltipTrigger>
-                          <TooltipContent side="left" className="font-medium">
+                          <TooltipContent side="left" className="text-xs font-medium">
                             {item.label}
                           </TooltipContent>
                         </Tooltip>
@@ -321,14 +320,14 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 open={isGroupOpen}
                 onOpenChange={() => toggleGroup(group.label)}
               >
-                <CollapsibleTrigger className="flex flex-row-reverse items-center justify-between w-full px-3 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors rounded-lg hover:bg-muted/50">
+                <CollapsibleTrigger className="flex flex-row-reverse items-center justify-between w-full px-2 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest hover:text-muted-foreground transition-colors rounded-md">
                   <span>{group.label}</span>
                   <ChevronDown className={cn(
-                    "w-4 h-4 transition-transform duration-200",
+                    "w-3 h-3 transition-transform duration-200",
                     isGroupOpen && "rotate-180"
                   )} />
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-0.5 mt-1">
+                <CollapsibleContent className="space-y-px mt-0.5 mb-1">
                   {group.items.map((item) => {
                     const isActive = location.pathname === item.href;
                     const ItemIcon = item.icon;
@@ -340,26 +339,24 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                         to={item.href}
                         onClick={() => setIsOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all relative group",
+                          "flex items-center gap-2.5 px-2.5 py-[7px] rounded-lg text-[13px] transition-all relative group",
                           isActive
-                            ? "bg-gradient-to-l from-primary/15 to-primary/5 text-primary font-medium border border-primary/20"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                         )}
                       >
-                        <div className={cn(
-                          "p-1.5 rounded-lg transition-colors",
-                          isActive ? "bg-primary/15" : "bg-transparent group-hover:bg-muted"
-                        )}>
-                          <ItemIcon className="w-4 h-4 shrink-0" />
-                        </div>
+                        <ItemIcon className={cn(
+                          "w-4 h-4 shrink-0 transition-colors",
+                          isActive ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground"
+                        )} />
                         <span className="truncate">{item.label}</span>
                         {showBadge && (
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 min-w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center px-1 animate-pulse">
+                          <span className="mr-auto min-w-4 h-4 bg-destructive text-destructive-foreground text-[10px] rounded-full flex items-center justify-center px-1">
                             {pendingReports}
                           </span>
                         )}
                         {isActive && (
-                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-full" />
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-full" />
                         )}
                       </Link>
                     );
@@ -373,7 +370,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
 
       {/* User Section */}
       <div className={cn(
-        "border-t border-border/50 shrink-0 bg-gradient-to-t from-muted/30 to-transparent",
+        "border-t border-border/30 shrink-0",
         collapsed ? "p-2" : "p-3"
       )}>
         {collapsed ? (
@@ -383,10 +380,10 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-10 h-10 mx-auto rounded-xl"
+                  className="w-9 h-9 mx-auto rounded-lg"
                   onClick={handleSignOut}
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left">התנתק</TooltipContent>
@@ -394,34 +391,34 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
           </TooltipProvider>
         ) : (
           <>
-            <div className="flex items-center gap-3 mb-3 p-2.5 rounded-xl bg-gradient-to-l from-muted/50 to-muted/30 border border-border/50">
-              <Avatar className="w-10 h-10 border-2 border-primary/20">
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary text-sm font-bold">
+            <div className="flex items-center gap-2.5 mb-2.5 p-2 rounded-lg bg-muted/40">
+              <Avatar className="w-8 h-8">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                   {user?.email?.charAt(0).toUpperCase() || 'מ'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">מנהל מערכת</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <p className="text-xs font-semibold truncate">מנהל מערכת</p>
+                <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex-1 justify-start gap-2 h-9 bg-background/50"
+                className="flex-1 justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => navigate("/")}
               >
-                <Home className="w-4 h-4" />
+                <Home className="w-3.5 h-3.5" />
                 לאפליקציה
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
                 onClick={handleSignOut}
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
               </Button>
             </div>
           </>
@@ -431,9 +428,9 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20" dir="rtl">
+    <div className="min-h-screen bg-muted/30" dir="rtl">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/50">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/30">
         <div className="flex items-center justify-between px-4 h-14">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
@@ -441,16 +438,16 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="p-0 w-72 border-l border-border/50">
+            <SheetContent side="right" className="p-0 w-64 border-l border-border/30">
               <NavContent />
             </SheetContent>
           </Sheet>
-          <h1 className="font-bold text-base flex items-center gap-2 truncate">
-            {Icon && <Icon className="w-5 h-5 shrink-0 text-primary" />}
+          <h1 className="font-bold text-sm flex items-center gap-2 truncate">
+            {Icon && <Icon className="w-4 h-4 shrink-0 text-primary" />}
             <span className="truncate">{title}</span>
           </h1>
           <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0">
-            <X className="w-5 h-5" />
+            <Home className="w-4 h-4" />
           </Button>
         </div>
       </header>
@@ -458,22 +455,22 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
       <div className="flex min-h-screen">
         {/* Desktop Sidebar */}
         <aside className={cn(
-          "hidden lg:flex flex-col fixed top-0 right-0 h-screen border-l border-border/50 bg-card/95 backdrop-blur-md z-50 transition-all duration-300",
-          isCollapsed ? "w-16" : "w-64"
+          "hidden lg:flex flex-col fixed top-0 right-0 h-screen border-l border-border/30 bg-card z-50 transition-all duration-300",
+          isCollapsed ? "w-14" : "w-60"
         )}>
           <NavContent collapsed={isCollapsed} />
           
           {/* Collapse Toggle */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="absolute left-0 top-20 -translate-x-1/2 w-7 h-7 rounded-full bg-card border border-border/50 shadow-lg hover:bg-muted hover:scale-110 transition-all"
+            className="absolute left-0 top-20 -translate-x-1/2 w-6 h-6 rounded-full bg-card border border-border/30 shadow-sm hover:bg-muted transition-all"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? (
-              <PanelLeft className="w-3.5 h-3.5" />
+              <PanelLeft className="w-3 h-3" />
             ) : (
-              <PanelLeftClose className="w-3.5 h-3.5" />
+              <PanelLeftClose className="w-3 h-3" />
             )}
           </Button>
         </aside>
@@ -481,16 +478,16 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         {/* Main Content */}
         <main className={cn(
           "flex-1 min-h-screen transition-all duration-300",
-          "lg:mr-64",
-          isCollapsed && "lg:mr-16",
+          "lg:mr-60",
+          isCollapsed && "lg:mr-14",
           "pt-14 lg:pt-0"
         )}>
           {/* Desktop Header */}
-          <header className="hidden lg:flex items-center justify-between px-6 h-16 border-b border-border/50 bg-card/80 backdrop-blur-md sticky top-0 z-40">
-            <div className="flex items-center gap-3">
+          <header className="hidden lg:flex items-center justify-between px-6 h-14 border-b border-border/30 bg-card/80 backdrop-blur-sm sticky top-0 z-40">
+            <div className="flex items-center gap-2.5">
               {Icon && (
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-primary" />
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-primary" />
                 </div>
               )}
               <div>
@@ -501,7 +498,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                     </Link>
                     {breadcrumbs.map((crumb, i) => (
                       <div key={i} className="flex items-center gap-1">
-                        <ChevronRight className="w-4 h-4 text-muted-foreground rotate-180" />
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground rotate-180" />
                         {crumb.href ? (
                           <Link to={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
                             {crumb.label}
@@ -513,14 +510,14 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                     ))}
                   </nav>
                 ) : (
-                  <h1 className="font-bold text-lg">{title}</h1>
+                  <h1 className="font-semibold text-base">{title}</h1>
                 )}
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/home")}>
-                <Home className="w-5 h-5" />
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => navigate("/home")}>
+                <Home className="w-4 h-4" />
               </Button>
             </div>
           </header>
