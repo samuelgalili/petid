@@ -5,3 +5,6 @@ export * from "./DataUploadDialog";
 export * from "./BreedsList";
 export * from "./DataAlertsBell";
 export * from "./DataHealthDashboard";
+export * from "./CategoryUploadButton";
+export * from "./CategoryUploadDialog";
+export * from "./CategoryDataViewer";
