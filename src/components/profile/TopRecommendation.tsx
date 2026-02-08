@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Feather, Heart } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -729,7 +729,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             </div>
             <span className="text-[10px] font-semibold text-foreground">האכלה</span>
             {recommendedGrams ? (
-              <span className="text-[9px] text-primary font-bold">{recommendedGrams}ג׳</span>
+              <span className="text-[9px] text-primary font-bold">{recommendedGrams} גרם/יום</span>
             ) : (
               <span className="text-[9px] text-muted-foreground">—</span>
             )}
@@ -756,7 +756,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               ))}
             </div>
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
-              <Feather className="w-4 h-4 text-primary" />
+              <Wind className="w-4 h-4 text-primary" />
             </div>
             <span className="text-[10px] font-semibold text-foreground">נשירה</span>
             <span className="text-[9px] text-primary font-bold">{getSheddingLevelHe()}</span>
