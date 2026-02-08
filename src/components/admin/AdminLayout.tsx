@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { 
@@ -189,10 +189,29 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try { return localStorage.getItem('admin_sidebar_collapsed') === 'true'; } catch { return false; }
+  });
   const [pendingReports, setPendingReports] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [openGroups, setOpenGroups] = useState<string[]>(["ראשי"]);
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('admin_sidebar_open_groups');
+      return saved ? JSON.parse(saved) : ["ראשי"];
+    } catch { return ["ראשי"]; }
+  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeItemRef = useRef<HTMLAnchorElement>(null);
+
+  // Persist collapsed state
+  useEffect(() => {
+    localStorage.setItem('admin_sidebar_collapsed', String(isCollapsed));
+  }, [isCollapsed]);
+
+  // Persist open groups
+  useEffect(() => {
+    localStorage.setItem('admin_sidebar_open_groups', JSON.stringify(openGroups));
+  }, [openGroups]);
 
   useEffect(() => {
     fetchPendingCounts();
@@ -203,6 +222,14 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
     if (currentGroup && !openGroups.includes(currentGroup.label)) {
       setOpenGroups(prev => [...prev, currentGroup.label]);
     }
+  }, [location.pathname]);
+
+  // Scroll active item into view after render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      activeItemRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 100);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   const fetchPendingCounts = async () => {
@@ -336,6 +363,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                     return (
                       <Link
                         key={item.href}
+                        ref={isActive ? activeItemRef : undefined}
                         to={item.href}
                         onClick={() => setIsOpen(false)}
                         className={cn(
