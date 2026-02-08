@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,6 +67,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const [sizeValue, setSizeValue] = useState<string>('');
   const [weightValue, setWeightValue] = useState<number>(10);
   const [saving, setSaving] = useState(false);
+  const [recentPurchases, setRecentPurchases] = useState<Array<{id: string; product_name: string; product_image: string | null; quantity: number; price: number; created_at: string}>>([]);
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
@@ -106,6 +107,36 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
     fetchBreedInfo();
   }, [pet.breed]);
+
+  // Fetch recent purchases
+  useEffect(() => {
+    const fetchRecentPurchases = async () => {
+      if (!user?.id) return;
+      
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('order_date', { ascending: false })
+        .limit(5);
+      
+      if (!orders || orders.length === 0) return;
+      
+      const orderIds = orders.map(o => o.id);
+      const { data: items } = await supabase
+        .from('order_items')
+        .select('id, product_name, product_image, quantity, price, created_at')
+        .in('order_id', orderIds)
+        .order('created_at', { ascending: false })
+        .limit(6);
+      
+      if (items) {
+        setRecentPurchases(items);
+      }
+    };
+
+    fetchRecentPurchases();
+  }, [user?.id]);
 
   // Check if using AI data - use birth_date for age calculation
   const hasUserBirthDate = !!pet.birth_date;
@@ -648,6 +679,55 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           </motion.button>
         </div>
 
+
+        {/* Recent Purchases */}
+        {recentPurchases.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-3"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold text-foreground">רכישות אחרונות</span>
+              </div>
+              <button 
+                onClick={() => navigate('/orders')}
+                className="text-[10px] text-primary font-medium hover:underline"
+              >
+                הכל →
+              </button>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {recentPurchases.map((item) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex-shrink-0 w-20 flex flex-col items-center p-2 bg-card rounded-xl border border-border/20 hover:border-primary/30 transition-all"
+                >
+                  {item.product_image ? (
+                    <img 
+                      src={item.product_image} 
+                      alt={item.product_name}
+                      className="w-12 h-12 rounded-lg object-cover mb-1.5"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-muted/30 flex items-center justify-center mb-1.5">
+                      <Package className="w-5 h-5 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <span className="text-[9px] font-medium text-foreground text-center line-clamp-2 leading-tight">
+                    {item.product_name}
+                  </span>
+                  <span className="text-[8px] text-primary font-bold mt-0.5">₪{item.price}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Breed Traits - Enhanced visual design */}
         <div className="grid grid-cols-5 gap-1.5">
