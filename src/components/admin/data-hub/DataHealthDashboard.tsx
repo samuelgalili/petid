@@ -11,6 +11,7 @@ import {
   Database,
   Loader2,
   Eye,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +31,12 @@ interface CategoryHealth {
   failedSources: number;
   avgQuality: number;
   lastUpdate: string | null;
+  domainRecords: number;
 }
+
+const DOMAIN_TABLE_MAP: Record<string, string> = {
+  breeds: "breed_information",
+};
 
 export const DataHealthDashboard = () => {
   const { toast } = useToast();
@@ -65,6 +71,16 @@ export const DataHealthDashboard = () => {
           new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
         )[0];
 
+        // Fetch domain record count
+        let domainRecords = 0;
+        const domainTable = DOMAIN_TABLE_MAP[cat.id];
+        if (domainTable) {
+          const { count } = await supabase
+            .from(domainTable as any)
+            .select("*", { count: "exact", head: true });
+          domainRecords = count || 0;
+        }
+
         categories.push({
           category: cat.id,
           label: cat.labelHe,
@@ -75,12 +91,12 @@ export const DataHealthDashboard = () => {
           failedSources: failed.length,
           avgQuality: Math.round(avgQ * 10) / 10,
           lastUpdate: lastItem?.updated_at || null,
+          domainRecords,
         });
       }
 
       setHealth(categories);
 
-      // Fetch recent sync logs
       const { data: logs } = await supabase
         .from("admin_data_sync_log" as any)
         .select("*")
@@ -104,55 +120,41 @@ export const DataHealthDashboard = () => {
       const { data, error } = await supabase.functions.invoke("sync-data-sources", {
         body: { syncAll: true },
       });
-
       if (error) throw error;
-
-      toast({
-        title: "סנכרון הושלם ✅",
-        description: `${data?.synced || 0} מקורות סונכרנו`,
-      });
+      toast({ title: "סנכרון הושלם ✅", description: `${data?.synced || 0} מקורות סונכרנו` });
       fetchHealth();
     } catch (err: any) {
-      toast({
-        title: "שגיאה בסנכרון",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בסנכרון", description: err.message, variant: "destructive" });
     } finally {
       setSyncing(false);
     }
   };
 
   const getHealthColor = (cat: CategoryHealth) => {
-    if (cat.totalSources === 0) return "text-muted-foreground";
+    if (cat.totalSources === 0 && cat.domainRecords === 0) return "text-muted-foreground";
     if (cat.failedSources > 0) return "text-destructive";
-    if (cat.processedSources === cat.totalSources && cat.syncedSources === cat.totalSources)
+    if (cat.domainRecords > 0 || (cat.processedSources === cat.totalSources && cat.totalSources > 0))
       return "text-green-600";
     return "text-yellow-500";
   };
 
   const getHealthIcon = (cat: CategoryHealth) => {
-    if (cat.totalSources === 0) return <Database className="w-4 h-4 text-muted-foreground" />;
+    if (cat.totalSources === 0 && cat.domainRecords === 0) return <Database className="w-4 h-4 text-muted-foreground" />;
     if (cat.failedSources > 0) return <XCircle className="w-4 h-4 text-destructive" />;
-    if (cat.processedSources === cat.totalSources) return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+    if (cat.domainRecords > 0 || cat.processedSources === cat.totalSources) return <CheckCircle2 className="w-4 h-4 text-green-600" />;
     return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
   };
 
   const getOverallScore = () => {
     if (health.length === 0) return 0;
-    const total = health.reduce((sum, h) => sum + h.totalSources, 0);
-    const processed = health.reduce((sum, h) => sum + h.processedSources, 0);
-    if (total === 0) return 0;
-    return Math.round((processed / total) * 100);
+    const withData = health.filter(h => h.totalSources > 0 || h.domainRecords > 0).length;
+    return Math.round((withData / health.length) * 100);
   };
 
   const formatDate = (date: string | null) => {
     if (!date) return "—";
     return new Date(date).toLocaleDateString("he-IL", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
+      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
     });
   };
 
@@ -165,6 +167,7 @@ export const DataHealthDashboard = () => {
   }
 
   const overallScore = getOverallScore();
+  const totalRecords = health.reduce((s, h) => s + h.domainRecords, 0);
 
   return (
     <div className="space-y-4" dir="rtl">
@@ -177,17 +180,13 @@ export const DataHealthDashboard = () => {
           <div>
             <h3 className="font-semibold text-foreground">בריאות המערכת</h3>
             <p className="text-xs text-muted-foreground">
-              {overallScore}% מהמקורות מעובדים
+              {totalRecords > 0 && <span className="font-medium text-foreground">{totalRecords} רשומות</span>}
+              {totalRecords > 0 && " · "}
+              {overallScore}% קטגוריות פעילות
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSyncAll}
-          disabled={syncing}
-          className="gap-2"
-        >
+        <Button variant="outline" size="sm" onClick={handleSyncAll} disabled={syncing} className="gap-2">
           <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
           {syncing ? "מסנכרן..." : "סנכרן הכל"}
         </Button>
@@ -198,7 +197,7 @@ export const DataHealthDashboard = () => {
       {/* Category Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {health.map((cat) => (
-          <Card key={cat.category} className="overflow-hidden">
+          <Card key={cat.category} className="overflow-hidden group hover:shadow-md transition-shadow">
             <CardHeader className="p-3 pb-2">
               <CardTitle className="text-sm flex items-center justify-between">
                 <span className="flex items-center gap-2">
@@ -208,7 +207,16 @@ export const DataHealthDashboard = () => {
                 {getHealthIcon(cat)}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3 pt-0 space-y-2">
+            <CardContent className="p-3 pt-0 space-y-2.5">
+              {/* Domain record count - prominent display */}
+              {cat.domainRecords > 0 && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5">
+                  <Database className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs text-muted-foreground">רשומות במערכת</span>
+                  <span className="mr-auto text-sm font-bold text-foreground">{cat.domainRecords}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="text-muted-foreground">מקורות</span>
@@ -232,12 +240,14 @@ export const DataHealthDashboard = () => {
                   <p className="font-semibold text-[10px]">{formatDate(cat.lastUpdate)}</p>
                 </div>
               </div>
+
               {cat.failedSources > 0 && (
                 <Badge variant="destructive" className="text-[10px]">
                   {cat.failedSources} נכשלו
                 </Badge>
               )}
-              <div className="flex gap-2 pt-1 border-t">
+
+              <div className="flex gap-2 pt-1.5 border-t">
                 <CategoryUploadButton
                   category={cat.category as DataSourceType}
                   categoryLabel={cat.label}
@@ -254,7 +264,7 @@ export const DataHealthDashboard = () => {
                   }}
                 >
                   <Eye className="w-3 h-3" />
-                  צפה
+                  צפה ({cat.domainRecords || cat.totalSources})
                 </Button>
               </div>
             </CardContent>
@@ -284,7 +294,7 @@ export const DataHealthDashboard = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">
-                      +{log.records_created} /{" "}↑{log.records_updated}
+                      +{log.records_created} / ↑{log.records_updated}
                     </span>
                     <span className="text-muted-foreground">{formatDate(log.created_at)}</span>
                   </div>
