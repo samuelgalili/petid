@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.scrape-research-url]
 verify_jwt = false
+
+[functions.sync-data-sources]
+verify_jwt = false
