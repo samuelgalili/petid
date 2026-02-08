@@ -300,7 +300,7 @@ export const CategoryUploadDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { resetForm(); } onOpenChange(v); }}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col" dir="rtl">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden" dir="rtl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-2xl">{categoryIcon}</span>
@@ -402,8 +402,8 @@ export const CategoryUploadDialog = ({
         )}
 
         {step === "preview" && previewData && (
-          <div className="flex flex-col flex-1 min-h-0">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex items-center gap-2 mb-3 shrink-0">
               <Badge variant="outline" className="gap-1">
                 <Eye className="w-3 h-3" />
                 תצוגה מקדימה
@@ -411,7 +411,7 @@ export const CategoryUploadDialog = ({
               {title && <span className="text-sm font-medium truncate">{title}</span>}
             </div>
 
-            <ScrollArea className="flex-1 max-h-[45vh]">
+            <ScrollArea className="flex-1 min-h-0">
               <div className="space-y-2 pe-3">
                 {Object.entries(previewData)
                   .filter(([key]) => !["scraped_at", "page_metadata", "raw_content_length", "raw_content", "ai_error"].includes(key))
