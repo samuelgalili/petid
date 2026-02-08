@@ -127,6 +127,54 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_data_alerts: {
+        Row: {
+          alert_type: string
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_read: boolean | null
+          is_resolved: boolean | null
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          alert_type: string
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_read?: boolean | null
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          alert_type?: string
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_read?: boolean | null
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       admin_data_sources: {
         Row: {
           created_at: string | null
@@ -141,6 +189,9 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_processed: boolean | null
+          last_synced_at: string | null
+          quality_score: number | null
+          sync_status: string | null
           title: string
           updated_at: string | null
         }
@@ -157,6 +208,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_processed?: boolean | null
+          last_synced_at?: string | null
+          quality_score?: number | null
+          sync_status?: string | null
           title: string
           updated_at?: string | null
         }
@@ -173,10 +227,66 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_processed?: boolean | null
+          last_synced_at?: string | null
+          quality_score?: number | null
+          sync_status?: string | null
           title?: string
           updated_at?: string | null
         }
         Relationships: []
+      }
+      admin_data_sync_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_details: Json | null
+          id: string
+          records_created: number | null
+          records_failed: number | null
+          records_updated: number | null
+          source_id: string | null
+          started_at: string | null
+          status: string
+          sync_type: string
+          target_table: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          id?: string
+          records_created?: number | null
+          records_failed?: number | null
+          records_updated?: number | null
+          source_id?: string | null
+          started_at?: string | null
+          status?: string
+          sync_type: string
+          target_table: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          id?: string
+          records_created?: number | null
+          records_failed?: number | null
+          records_updated?: number | null
+          source_id?: string | null
+          started_at?: string | null
+          status?: string
+          sync_type?: string
+          target_table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_data_sync_log_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "admin_data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admin_tasks: {
         Row: {

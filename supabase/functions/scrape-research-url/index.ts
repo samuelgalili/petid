@@ -228,6 +228,21 @@ IMPORTANT: Include the FULL content.`,
       throw updateError;
     }
 
+    // Step 4: Auto-trigger sync to knowledge base
+    if (isProcessed) {
+      console.log("Auto-triggering sync for source:", sourceId);
+      EdgeRuntime.waitUntil(
+        fetch(`${supabaseUrl}/functions/v1/sync-data-sources`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({ sourceId }),
+        }).catch((err) => console.error("Auto-sync trigger failed:", err))
+      );
+    }
+
     console.log(`Source ${sourceId} processed successfully. isProcessed: ${isProcessed}`);
 
     return new Response(

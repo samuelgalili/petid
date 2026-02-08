@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Database, Dog } from "lucide-react";
+import { Database, Dog, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin";
@@ -8,6 +8,8 @@ import { DataHubTabs } from "@/components/admin/data-hub/DataHubTabs";
 import { DataSourceList } from "@/components/admin/data-hub/DataSourceList";
 import { DataUploadDialog } from "@/components/admin/data-hub/DataUploadDialog";
 import { BreedsList } from "@/components/admin/data-hub/BreedsList";
+import { DataAlertsBell } from "@/components/admin/data-hub/DataAlertsBell";
+import { DataHealthDashboard } from "@/components/admin/data-hub/DataHealthDashboard";
 import { DataSourceType, DataSource } from "@/types/admin-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -17,13 +19,13 @@ const AdminDataHub = () => {
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"data" | "sources">("data");
+  const [viewMode, setViewMode] = useState<"health" | "data" | "sources">("health");
 
   const fetchDataSources = useCallback(async () => {
     try {
       setLoading(true);
-       const { data, error } = await supabase
-         .from("admin_data_sources")
+      const { data, error } = await supabase
+        .from("admin_data_sources")
         .select("*")
         .eq("data_type", activeTab)
         .order("created_at", { ascending: false });
@@ -48,7 +50,6 @@ const AdminDataHub = () => {
 
   const handleDeleteSource = async (id: string, fileUrl?: string) => {
     try {
-      // Delete file from storage if exists
       if (fileUrl) {
         const path = fileUrl.split("/").pop();
         if (path) {
@@ -56,8 +57,8 @@ const AdminDataHub = () => {
         }
       }
 
-       const { error } = await supabase
-         .from("admin_data_sources")
+      const { error } = await supabase
+        .from("admin_data_sources")
         .delete()
         .eq("id", id);
 
@@ -80,8 +81,8 @@ const AdminDataHub = () => {
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
-       const { error } = await supabase
-         .from("admin_data_sources")
+      const { error } = await supabase
+        .from("admin_data_sources")
         .update({ is_active: !isActive })
         .eq("id", id);
 
@@ -95,20 +96,30 @@ const AdminDataHub = () => {
   return (
     <AdminLayout title="Data Hub" icon={Database}>
       <div className="space-y-6">
-        <DataHubHeader onUpload={() => setUploadDialogOpen(true)} />
-        
-        {/* View Mode Toggle */}
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "data" | "sources")} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+        <div className="flex items-center justify-between">
+          <DataHubHeader onUpload={() => setUploadDialogOpen(true)} />
+          <DataAlertsBell />
+        </div>
+
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "health" | "data" | "sources")} className="w-full">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="health" className="gap-2">
+              <Activity className="w-4 h-4" />
+              בריאות
+            </TabsTrigger>
             <TabsTrigger value="data" className="gap-2">
               <Dog className="w-4 h-4" />
-              נתונים במערכת
+              נתונים
             </TabsTrigger>
             <TabsTrigger value="sources" className="gap-2">
               <Database className="w-4 h-4" />
-              מקורות קבצים
+              מקורות
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="health" className="mt-4">
+            <DataHealthDashboard />
+          </TabsContent>
 
           <TabsContent value="data" className="mt-4">
             {activeTab === "breeds" && <BreedsList />}
