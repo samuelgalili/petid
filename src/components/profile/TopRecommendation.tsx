@@ -917,18 +917,17 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           />
         </div>
 
-        {/* Breed Traits + Mood + QR - Enhanced visual design */}
-        <div className="grid grid-cols-7 gap-1.5">
+        {/* Breed Traits + Mood + QR - Spacious layout */}
+        <div className="grid grid-cols-4 gap-2.5 mb-1">
           {/* Energy Button */}
           <motion.button
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onEnergyOpen}
-            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`אנרגיה: ${activityMinutes || 0} דקות`}
           >
-            {/* Level indicator dots */}
-            <div className="flex gap-0.5 mb-1.5">
+            <div className="flex gap-0.5 mb-2">
               {[1, 2, 3, 4, 5].map((dot) => (
                 <motion.div
                   key={dot}
@@ -939,12 +938,12 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 />
               ))}
             </div>
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
-              <Zap className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
+              <Zap className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-[10px] font-semibold text-foreground">אנרגיה</span>
+            <span className="text-xs font-semibold text-foreground">אנרגיה</span>
             {activityMinutes && (
-              <span className="text-[9px] text-primary font-bold">{activityMinutes} דק׳</span>
+              <span className="text-[10px] text-primary font-bold mt-0.5">{activityMinutes} דק׳</span>
             )}
           </motion.button>
 
@@ -953,11 +952,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onGroomingOpen}
-            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`טיפוח: ${getGroomingLevelHe()}`}
           >
-            {/* Level indicator dots */}
-            <div className="flex gap-0.5 mb-1.5">
+            <div className="flex gap-0.5 mb-2">
               {[1, 2, 3, 4, 5].map((dot) => (
                 <motion.div
                   key={dot}
@@ -968,11 +966,11 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 />
               ))}
             </div>
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
-              <Scissors className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
+              <Scissors className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-[10px] font-semibold text-foreground">טיפוח</span>
-            <span className="text-[9px] text-primary font-bold">{getGroomingLevelHe()}</span>
+            <span className="text-xs font-semibold text-foreground">טיפוח</span>
+            <span className="text-[10px] text-primary font-bold mt-0.5">{getGroomingLevelHe()}</span>
           </motion.button>
 
           {/* Feeding Button */}
@@ -980,11 +978,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onFeedingOpen}
-            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`האכלה: ${recommendedGrams || 0} גרם`}
           >
-            {/* Mini progress bar */}
-            <div className="w-full h-1 bg-muted-foreground/10 rounded-full mb-1.5 overflow-hidden">
+            <div className="w-full h-1.5 bg-muted-foreground/10 rounded-full mb-2 overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: feedingGuideline ? `${Math.min((feedingGuideline.max / 500) * 100, 100)}%` : recommendedGrams ? `${Math.min((recommendedGrams / 500) * 100, 100)}%` : '50%' }}
@@ -992,16 +989,16 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 className="h-full bg-primary rounded-full"
               />
             </div>
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
-              <Utensils className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
+              <Utensils className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-[10px] font-semibold text-foreground">האכלה</span>
+            <span className="text-xs font-semibold text-foreground">האכלה</span>
             {feedingGuideline ? (
-              <span className="text-[9px] text-primary font-bold">{feedingGuideline.min}-{feedingGuideline.max} גרם</span>
+              <span className="text-[10px] text-primary font-bold mt-0.5">{feedingGuideline.min}-{feedingGuideline.max} גרם</span>
             ) : recommendedGrams ? (
-              <span className="text-[9px] text-primary font-bold">~{recommendedGrams} גרם/יום</span>
+              <span className="text-[10px] text-primary font-bold mt-0.5">~{recommendedGrams} גרם</span>
             ) : (
-              <span className="text-[9px] text-muted-foreground">—</span>
+              <span className="text-[10px] text-muted-foreground mt-0.5">—</span>
             )}
           </motion.button>
 
@@ -1010,11 +1007,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onFurOpen}
-            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`נשירה: ${getSheddingLevelHe()}`}
           >
-            {/* Level indicator dots */}
-            <div className="flex gap-0.5 mb-1.5">
+            <div className="flex gap-0.5 mb-2">
               {[1, 2, 3, 4, 5].map((dot) => (
                 <motion.div
                   key={dot}
@@ -1025,23 +1021,25 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 />
               ))}
             </div>
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
-              <Wind className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
+              <Wind className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-[10px] font-semibold text-foreground">נשירה</span>
-            <span className="text-[9px] text-primary font-bold">{getSheddingLevelHe()}</span>
+            <span className="text-xs font-semibold text-foreground">נשירה</span>
+            <span className="text-[10px] text-primary font-bold mt-0.5">{getSheddingLevelHe()}</span>
           </motion.button>
+        </div>
 
+        {/* Second row: Life Expectancy + Mood + QR */}
+        <div className="grid grid-cols-3 gap-2.5">
           {/* Life Expectancy Button */}
           <motion.button
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onLifeExpectancyOpen}
-            className="relative flex flex-col items-center p-2.5 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
             aria-label={`תוחלת חיים: ${getLifeExpectancy() || ''}`}
           >
-            {/* Mini arc indicator */}
-            <div className="relative w-6 h-3 mb-1">
+            <div className="relative w-8 h-4 mb-1.5">
               <svg viewBox="0 0 36 18" className="w-full h-full">
                 <path
                   d="M 2 16 A 14 14 0 0 1 34 16"
@@ -1063,12 +1061,12 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 />
               </svg>
             </div>
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mb-1 group-hover:bg-primary/20 transition-colors">
-              <Heart className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
+              <Heart className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-[10px] font-semibold text-foreground">תוחלת</span>
+            <span className="text-xs font-semibold text-foreground">תוחלת חיים</span>
             {getLifeExpectancy() && (
-              <span className="text-[9px] text-primary font-bold">{getLifeExpectancy()} ש׳</span>
+              <span className="text-[10px] text-primary font-bold mt-0.5">{getLifeExpectancy()} שנים</span>
             )}
           </motion.button>
 
