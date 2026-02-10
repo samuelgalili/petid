@@ -482,6 +482,74 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     }
   };
 
+  // #5 Health status color
+  const getHealthDotColor = () => {
+    if (pet.birth_date && pet.weight && pet.size) return 'bg-green-500';
+    if (pet.birth_date || pet.weight) return 'bg-amber-500';
+    return 'bg-red-400';
+  };
+
+  // #14 Profile completion
+  const profileCompletion = useMemo(() => {
+    let score = 0;
+    const total = 6;
+    if (pet.name) score++;
+    if (pet.breed) score++;
+    if (pet.birth_date) score++;
+    if (pet.size) score++;
+    if (pet.weight) score++;
+    if (pet.avatar_url) score++;
+    return Math.round((score / total) * 100);
+  }, [pet]);
+
+  // #17 Daily tip based on breed
+  const dailyTip = useMemo(() => {
+    const tips: Record<string, string[]> = {
+      high_energy: [
+        'מומלץ לספק לפחות שעה של פעילות יומית',
+        'משחקי חשיבה עוזרים לפרוק אנרגיה מנטלית',
+        'ריצה או הליכה מהירה מתאימים לגזע זה',
+      ],
+      high_grooming: [
+        'מומלץ להבריש את הפרווה לפחות 3 פעמים בשבוע',
+        'רחצה כל 4-6 שבועות שומרת על בריאות העור',
+        'בדיקת אוזניים שבועית מונעת זיהומים',
+      ],
+      general: [
+        'מים נקיים וזמינים תמיד - חיוני לבריאות',
+        'ביקור וטרינר שנתי מומלץ גם כשהכל תקין',
+        'אימון בסיסי מחזק את הקשר בין הבעלים לחיה',
+      ],
+    };
+    const energyLevel = breedInfo?.energy_level || 3;
+    const groomingLevel = breedInfo?.grooming_freq || 3;
+    
+    let category = 'general';
+    if (energyLevel >= 4) category = 'high_energy';
+    else if (groomingLevel >= 4) category = 'high_grooming';
+    
+    const dayIndex = new Date().getDate() % tips[category].length;
+    return tips[category][dayIndex];
+  }, [breedInfo]);
+
+  // #11 Share to WhatsApp
+  const handleShare = async () => {
+    const text = `🐾 הכירו את ${pet.name}!\n${pet.breed ? `גזע: ${pet.breed}\n` : ''}${getAgeDisplay() !== 'לא צוין' ? `גיל: ${getAgeDisplay()}\n` : ''}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${pet.name} - PetID`, text });
+      } catch {}
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  };
+
+  // #19 Food suitability (simplified)
+  const getFoodScore = (): number | null => {
+    if (!feedingGuideline) return null;
+    return Math.min(95, 70 + Math.floor(Math.random() * 25)); // Placeholder until real data
+  };
+
   return (
     <>
       <motion.div
