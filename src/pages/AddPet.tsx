@@ -22,6 +22,18 @@ import catIcon from "@/assets/cat-official.png";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 
+const MEDICAL_CONDITIONS = [
+  { value: "gastrointestinal", label: "בעיות עיכול / גסטרו", emoji: "🤢", categoryEn: "Gastrointestinal" },
+  { value: "urinary", label: "בעיות בדרכי השתן (קריסטלים/אבנים)", emoji: "💧", categoryEn: "Urinary / Struvite" },
+  { value: "allergies", label: "אלרגיות מזון או עור", emoji: "🤧", categoryEn: "Hypoallergenic" },
+  { value: "diabetic", label: "סוכרת", emoji: "💉", categoryEn: "Diabetic" },
+  { value: "renal", label: "בעיות כליה", emoji: "🫘", categoryEn: "Renal" },
+  { value: "obesity", label: "עודף משקל", emoji: "⚖️", categoryEn: "Obesity / Metabolic" },
+  { value: "dermatosis", label: "בעיות עור ופרווה", emoji: "🐾", categoryEn: "Dermatosis" },
+  { value: "hairball", label: "כדורי פרווה", emoji: "🧶", categoryEn: "Hairball", catOnly: true },
+  { value: "other", label: "אחר", emoji: "📝" },
+];
+
 const PERSONALITY_TAGS_DOG = [
   { value: "playful", label: "שובב", emoji: "🎾" },
   { value: "calm", label: "רגוע", emoji: "😌" },
