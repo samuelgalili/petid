@@ -1105,8 +1105,8 @@ const Feed = () => {
   if (showOnboarding) {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
-  return <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden" dir="rtl">
-    <div className="h-full overflow-y-auto pb-[70px]">
+  return <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden overscroll-x-none" dir="rtl" style={{ touchAction: 'pan-y' }}>
+    <div className="h-full overflow-y-auto overflow-x-hidden pb-[70px] overscroll-x-none">
       {/* PetID-style Header - Modern, Clean */}
       <motion.div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-card/98 backdrop-blur-xl border-b border-border/40 shadow-sm" : "bg-transparent"}`} initial={{
       y: -20,
