@@ -593,7 +593,7 @@ const AddPet = () => {
                     whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       setPetType("dog");
-                      nextStep();
+                      forceNextStep();
                     }} 
                     className={cn(
                       "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
