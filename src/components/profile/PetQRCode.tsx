@@ -80,7 +80,7 @@ export const PetQRCode = ({ petId, petName, petAvatar }: PetQRCodeProps) => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className="flex flex-col items-center gap-1 p-2.5 bg-gradient-to-b from-background to-muted/20 rounded-2xl border border-border/30 hover:border-primary/40 transition-all shadow-sm hover:shadow-md min-w-[60px]"
+        className="flex flex-col items-center justify-center gap-1 p-3 bg-gradient-to-b from-background to-muted/20 rounded-2xl border border-border/30 hover:border-primary/40 transition-all shadow-sm hover:shadow-md w-full h-full"
         title="QR Code אישי"
       >
         <QrCode className="w-5 h-5 text-primary" />
