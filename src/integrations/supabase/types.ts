@@ -2707,6 +2707,30 @@ export type Database = {
           },
         ]
       }
+      dietary_categories: {
+        Row: {
+          category_name_en: string | null
+          category_name_he: string | null
+          description_he: string | null
+          id: number
+          target_condition_he: string | null
+        }
+        Insert: {
+          category_name_en?: string | null
+          category_name_he?: string | null
+          description_he?: string | null
+          id?: number
+          target_condition_he?: string | null
+        }
+        Update: {
+          category_name_en?: string | null
+          category_name_he?: string | null
+          description_he?: string | null
+          id?: number
+          target_condition_he?: string | null
+        }
+        Relationships: []
+      }
       dog_parks: {
         Row: {
           address: string
