@@ -59,13 +59,16 @@ serve(async (req) => {
     // Parse the JSON response from AI
     let detectedBreed = "Unknown Breed";
     let confidenceScore = 0;
+    let detectedAnimalType = petType; // default to what user selected
     
     try {
       const parsed = JSON.parse(aiResponse);
       detectedBreed = parsed.breed || "Unknown Breed";
       confidenceScore = parsed.confidence || 0;
+      if (parsed.animal_type && (parsed.animal_type === 'dog' || parsed.animal_type === 'cat')) {
+        detectedAnimalType = parsed.animal_type;
+      }
     } catch (e) {
-      // Fallback: if AI didn't return valid JSON, treat the response as the breed name
       detectedBreed = aiResponse;
       confidenceScore = 50;
     }
