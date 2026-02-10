@@ -51,7 +51,10 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content?.trim() || "{}";
+    let aiResponse = data.choices?.[0]?.message?.content?.trim() || "{}";
+    
+    // Strip markdown code blocks if present
+    aiResponse = aiResponse.replace(/```(?:json)?\s*/gi, '').replace(/```\s*/g, '').trim();
     
     // Parse the JSON response from AI
     let detectedBreed = "Unknown Breed";
@@ -64,7 +67,7 @@ serve(async (req) => {
     } catch (e) {
       // Fallback: if AI didn't return valid JSON, treat the response as the breed name
       detectedBreed = aiResponse;
-      confidenceScore = 50; // Default medium confidence if format is wrong
+      confidenceScore = 50;
     }
     
     // Determine if we consider this "confident" (>70%)
