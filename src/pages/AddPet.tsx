@@ -1176,6 +1176,31 @@ const AddPet = () => {
           )}
         </div>
       </div>
+
+      {/* Type Mismatch Dialog */}
+      <AlertDialog open={!!typeMismatch} onOpenChange={(open) => !open && handleTypeMismatchKeep()}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">
+              {petType === 'dog' ? '🐱' : '🐕'} רגע, זיהינו משהו אחר
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right text-base">
+              {petType === 'dog' 
+                ? `בחרת להוסיף כלב, אבל נראה לנו שזה חתול (${typeMismatch?.breed}). רוצה לתקן?`
+                : `בחרת להוסיף חתול, אבל נראה לנו שזה כלב (${typeMismatch?.breed}). רוצה לתקן?`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2 sm:flex-row-reverse">
+            <AlertDialogAction onClick={handleTypeMismatchSwitch}>
+              {typeMismatch?.detectedType === 'cat' ? 'כן, זה חתול 🐱' : 'כן, זה כלב 🐕'}
+            </AlertDialogAction>
+            <AlertDialogCancel onClick={handleTypeMismatchKeep}>
+              {petType === 'dog' ? 'לא, זה כלב' : 'לא, זה חתול'}
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
