@@ -165,6 +165,26 @@ const AddPet = () => {
     localStorage.setItem('hasSeenSwipeTutorial', 'true');
   };
 
+  const matchBreedInDB = async (detectedBreed: string, type: string) => {
+    try {
+      // Try exact match first
+      let { data } = await supabase
+        .from("breed_information")
+        .select("breed_name, breed_name_he")
+        .eq("pet_type", type)
+        .or(`breed_name.ilike.%${detectedBreed}%,breed_name_he.ilike.%${detectedBreed}%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        return data.breed_name_he || data.breed_name;
+      }
+      return detectedBreed;
+    } catch {
+      return detectedBreed;
+    }
+  };
+
   const detectBreed = async (base64Image: string) => {
     if (!petType) return;
     
@@ -185,8 +205,10 @@ const AddPet = () => {
       const data = await response.json();
       
       if (data.breed && data.breed !== "Unknown Breed") {
-        setFormData(prev => ({ ...prev, breed: data.breed }));
+        const matchedBreed = await matchBreedInDB(data.breed, petType);
+        setFormData(prev => ({ ...prev, breed: matchedBreed }));
         setBreedConfidence(data.confidence || null);
+        setBreedSource('ai');
       }
     } catch (error) {
       console.error('Error detecting breed:', error);
@@ -207,6 +229,27 @@ const AddPet = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCameraCapture = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        setImageFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setImagePreview(result);
+          detectBreed(result);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
   };
 
   const toggleTag = (tag: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
