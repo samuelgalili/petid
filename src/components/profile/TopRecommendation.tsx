@@ -907,15 +907,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         </div>
 
 
-        {/* Food Tag + Mood + QR Code row */}
-        <div className="mb-4">
-          <PetFoodTag 
-            petId={pet.id} 
-            currentFood={(pet as any).current_food || null} 
-            isOwner={isOwner} 
-            breedName={pet.breed}
-          />
-        </div>
+
 
         {/* Breed Traits + Mood + QR - Spacious layout */}
         <div className="grid grid-cols-4 gap-2.5 mb-1">
