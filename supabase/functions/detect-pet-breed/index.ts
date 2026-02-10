@@ -80,7 +80,8 @@ serve(async (req) => {
       JSON.stringify({ 
         breed: detectedBreed,
         confident: isConfident,
-        confidence: confidenceScore
+        confidence: confidenceScore,
+        detectedType: detectedAnimalType
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
