@@ -1010,7 +1010,7 @@ const AddPet = () => {
                         type="button"
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        onClick={() => setActivities([activity.value])}
+                        onClick={() => toggleTag(activity.value, setActivities)}
                         className={cn(
                           "w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3",
                           activities.includes(activity.value)
