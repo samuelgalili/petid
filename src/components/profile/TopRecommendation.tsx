@@ -1071,6 +1071,20 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               <span className="text-[9px] text-primary font-bold">{getLifeExpectancy()} ש׳</span>
             )}
           </motion.button>
+
+          {/* Mood Meter */}
+          <PetMoodMeter 
+            petId={pet.id} 
+            currentMood={(pet as any).current_mood || null} 
+            isOwner={isOwner} 
+          />
+
+          {/* QR Code */}
+          <PetQRCode 
+            petId={pet.id} 
+            petName={pet.name} 
+            petAvatar={pet.avatar_url} 
+          />
         </div>
 
         {/* Recent Purchases */}
