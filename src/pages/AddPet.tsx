@@ -293,9 +293,10 @@ const AddPet = () => {
       
       setTimeout(() => navigate("/"), 1500);
     } catch (error: any) {
+      console.error('AddPet submit error:', error);
       toast({
         title: "שגיאה",
-        description: error.message,
+        description: error.message || "שגיאה בשמירת חיית המחמד",
         variant: "destructive"
       });
     } finally {
