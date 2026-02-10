@@ -81,6 +81,8 @@ const AddPet = () => {
   const [personalityTags, setPersonalityTags] = useState<string[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [healthNotes, setHealthNotes] = useState("");
+  const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
+  const [otherConditionText, setOtherConditionText] = useState("");
   
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
