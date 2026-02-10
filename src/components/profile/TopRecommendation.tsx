@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3 } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -990,7 +990,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               />
             </div>
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
-              <Utensils className="w-5 h-5 text-primary" />
+              {pet.type === 'dog' ? <Bone className="w-5 h-5 text-primary" /> : <Fish className="w-5 h-5 text-primary" />}
             </div>
             <span className="text-xs font-semibold text-foreground">האכלה</span>
             {feedingGuideline ? (
