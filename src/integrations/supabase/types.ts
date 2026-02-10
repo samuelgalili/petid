@@ -6250,6 +6250,53 @@ export type Database = {
           },
         ]
       }
+      product_feeding_guidelines: {
+        Row: {
+          age_group: string | null
+          created_at: string
+          grams_per_day_max: number
+          grams_per_day_min: number
+          id: string
+          notes: string | null
+          product_id: string
+          updated_at: string
+          weight_max_kg: number
+          weight_min_kg: number
+        }
+        Insert: {
+          age_group?: string | null
+          created_at?: string
+          grams_per_day_max: number
+          grams_per_day_min: number
+          id?: string
+          notes?: string | null
+          product_id: string
+          updated_at?: string
+          weight_max_kg: number
+          weight_min_kg: number
+        }
+        Update: {
+          age_group?: string | null
+          created_at?: string
+          grams_per_day_max?: number
+          grams_per_day_min?: number
+          id?: string
+          notes?: string | null
+          product_id?: string
+          updated_at?: string
+          weight_max_kg?: number
+          weight_min_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_feeding_guidelines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_guides: {
         Row: {
           business_id: string

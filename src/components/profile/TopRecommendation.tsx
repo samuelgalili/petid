@@ -68,6 +68,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const [weightValue, setWeightValue] = useState<number>(10);
   const [saving, setSaving] = useState(false);
   const [recentPurchases, setRecentPurchases] = useState<Array<{id: string; product_name: string; product_image: string | null; quantity: number; price: number; created_at: string}>>([]);
+  const [feedingGuideline, setFeedingGuideline] = useState<{min: number; max: number} | null>(null);
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
@@ -137,6 +138,47 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
     fetchRecentPurchases();
   }, [user?.id]);
+
+  // Fetch manufacturer feeding guidelines based on pet weight and age
+  useEffect(() => {
+    const fetchFeedingGuidelines = async () => {
+      // Get pet weight
+      let weightKg: number | null = pet.weight || null;
+      if (!weightKg && breedInfo?.weight_range_kg) {
+        const match = breedInfo.weight_range_kg.match(/(\d+)-(\d+)/);
+        if (match) weightKg = (parseInt(match[1]) + parseInt(match[2])) / 2;
+      }
+      if (!weightKg) return;
+
+      // Determine age group
+      let ageGroup = 'adult';
+      if (pet.birth_date) {
+        const { years, months } = calculateAge(pet.birth_date);
+        const ageYears = years + months / 12;
+        if (ageYears < 0.5) ageGroup = 'puppy';
+        else if (ageYears < 1.5) ageGroup = 'junior';
+        else if (ageYears > 7) ageGroup = 'senior';
+      }
+
+      // Query guidelines that match this pet's weight range
+      const { data } = await supabase
+        .from('product_feeding_guidelines')
+        .select('grams_per_day_min, grams_per_day_max')
+        .lte('weight_min_kg', weightKg)
+        .gte('weight_max_kg', weightKg)
+        .eq('age_group', ageGroup)
+        .limit(5);
+
+      if (data && data.length > 0) {
+        // Aggregate min/max across all matching products
+        const minGrams = Math.min(...data.map(d => d.grams_per_day_min));
+        const maxGrams = Math.max(...data.map(d => d.grams_per_day_max));
+        setFeedingGuideline({ min: minGrams, max: maxGrams });
+      }
+    };
+
+    fetchFeedingGuidelines();
+  }, [pet.weight, pet.birth_date, breedInfo?.weight_range_kg]);
 
   // Check if using AI data - use birth_date for age calculation
   const hasUserBirthDate = !!pet.birth_date;
@@ -750,7 +792,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             <div className="w-full h-1 bg-muted-foreground/10 rounded-full mb-1.5 overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
-                animate={{ width: recommendedGrams ? `${Math.min((recommendedGrams / 500) * 100, 100)}%` : '50%' }}
+                animate={{ width: feedingGuideline ? `${Math.min((feedingGuideline.max / 500) * 100, 100)}%` : recommendedGrams ? `${Math.min((recommendedGrams / 500) * 100, 100)}%` : '50%' }}
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="h-full bg-primary rounded-full"
               />
@@ -759,8 +801,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               <Utensils className="w-4 h-4 text-primary" />
             </div>
             <span className="text-[10px] font-semibold text-foreground">האכלה</span>
-            {recommendedGrams ? (
-              <span className="text-[9px] text-primary font-bold">{recommendedGrams} גרם/יום</span>
+            {feedingGuideline ? (
+              <span className="text-[9px] text-primary font-bold">{feedingGuideline.min}-{feedingGuideline.max} גרם</span>
+            ) : recommendedGrams ? (
+              <span className="text-[9px] text-primary font-bold">~{recommendedGrams} גרם/יום</span>
             ) : (
               <span className="text-[9px] text-muted-foreground">—</span>
             )}
