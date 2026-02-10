@@ -907,8 +907,18 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         </div>
 
 
-        {/* Breed Traits - Enhanced visual design */}
-        <div className="grid grid-cols-5 gap-1.5">
+        {/* Food Tag + Mood + QR Code row */}
+        <div className="mb-4">
+          <PetFoodTag 
+            petId={pet.id} 
+            currentFood={(pet as any).current_food || null} 
+            isOwner={isOwner} 
+            breedName={pet.breed}
+          />
+        </div>
+
+        {/* Breed Traits + Mood + QR - Enhanced visual design */}
+        <div className="grid grid-cols-7 gap-1.5">
           {/* Energy Button */}
           <motion.button
             whileHover={{ scale: 1.03, y: -1 }}
