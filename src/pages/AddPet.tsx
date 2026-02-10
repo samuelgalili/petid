@@ -197,7 +197,7 @@ const AddPet = () => {
 
       return () => clearTimeout(saveTimer);
     }
-  }, [formData, currentStep, petType, imagePreview, personalityTags, activities, healthNotes, breedConfidence]);
+  }, [formData, currentStep, petType, imagePreview, personalityTags, activities, healthNotes, medicalConditions, otherConditionText, breedConfidence]);
 
   const dismissTutorial = () => {
     setShowTutorial(false);
