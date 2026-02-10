@@ -578,11 +578,20 @@ const Profile = () => {
             }} animate={{
               opacity: 1
             }} className="mb-4">
+                    {/* Weather Alert */}
+                    <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
+                    
                     {/* Health Score */}
                     <PetHealthScore pet={selectedPet} />
                     
                     {/* Top Recommendation */}
                     <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setEnergySheetOpen(true)} onGroomingOpen={() => setGroomingSheetOpen(true)} onFeedingOpen={() => setFeedingSheetOpen(true)} />
+                    
+                    {/* Photo Gallery */}
+                    <PetPhotoGallery petId={selectedPet.id} petAvatar={selectedPet.avatar_url} petName={selectedPet.name} />
+                    
+                    {/* Mini Calendar */}
+                    <PetMiniCalendar petId={selectedPet.id} petName={selectedPet.name} isOwner={true} />
                     
                     {/* Breed Stats Card - Shows detailed breed information */}
                     <BreedStatsCard pet={selectedPet} />
