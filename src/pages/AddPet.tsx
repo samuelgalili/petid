@@ -948,7 +948,7 @@ const AddPet = () => {
                   בחר תגיות שמתארות את {formData.name || "חיית המחמד"}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {PERSONALITY_TAGS.map(tag => (
+                  {(petType === 'cat' ? PERSONALITY_TAGS_CAT : PERSONALITY_TAGS_DOG).map(tag => (
                     <motion.button
                       key={tag.value}
                       type="button"
