@@ -1175,7 +1175,7 @@ const AddPet = () => {
                       <span className="text-muted-foreground text-sm block mb-2">אישיות</span>
                       <div className="flex flex-wrap gap-2">
                         {personalityTags.map(t => {
-                          const tag = PERSONALITY_TAGS.find(pt => pt.value === t);
+                          const tag = (petType === 'cat' ? PERSONALITY_TAGS_CAT : PERSONALITY_TAGS_DOG).find(pt => pt.value === t);
                           return (
                             <span 
                               key={t}
