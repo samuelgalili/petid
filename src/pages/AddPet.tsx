@@ -22,8 +22,19 @@ import catIcon from "@/assets/cat-official.png";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 
-const PERSONALITY_TAGS = [
+const PERSONALITY_TAGS_DOG = [
   { value: "playful", label: "שובב", emoji: "🎾" },
+  { value: "calm", label: "רגוע", emoji: "😌" },
+  { value: "friendly", label: "חברותי", emoji: "🤗" },
+  { value: "shy", label: "ביישן", emoji: "🙈" },
+  { value: "energetic", label: "אנרגטי", emoji: "⚡" },
+  { value: "sleepy", label: "אוהב לישון", emoji: "😴" },
+  { value: "protective", label: "שמרני", emoji: "🛡️" },
+  { value: "curious", label: "סקרן", emoji: "🔍" },
+];
+
+const PERSONALITY_TAGS_CAT = [
+  { value: "playful", label: "שובב", emoji: "🧶" },
   { value: "calm", label: "רגוע", emoji: "😌" },
   { value: "friendly", label: "חברותי", emoji: "🤗" },
   { value: "shy", label: "ביישן", emoji: "🙈" },
@@ -937,7 +948,7 @@ const AddPet = () => {
                   בחר תגיות שמתארות את {formData.name || "חיית המחמד"}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {PERSONALITY_TAGS.map(tag => (
+                  {(petType === 'cat' ? PERSONALITY_TAGS_CAT : PERSONALITY_TAGS_DOG).map(tag => (
                     <motion.button
                       key={tag.value}
                       type="button"
@@ -1164,7 +1175,7 @@ const AddPet = () => {
                       <span className="text-muted-foreground text-sm block mb-2">אישיות</span>
                       <div className="flex flex-wrap gap-2">
                         {personalityTags.map(t => {
-                          const tag = PERSONALITY_TAGS.find(pt => pt.value === t);
+                          const tag = (petType === 'cat' ? PERSONALITY_TAGS_CAT : PERSONALITY_TAGS_DOG).find(pt => pt.value === t);
                           return (
                             <span 
                               key={t}
