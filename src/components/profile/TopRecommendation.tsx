@@ -565,76 +565,186 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       >
         {/* Pet Header with improved spacing */}
         <div className="flex items-center gap-4 mb-5">
-          {/* Pet Avatar with animation */}
+          {/* Pet Avatar with animated ring (#3) */}
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="w-16 h-16 rounded-2xl overflow-hidden bg-muted border-2 border-primary/20 flex-shrink-0 shadow-md"
+            className="relative w-16 h-16 flex-shrink-0"
           >
-            {pet.avatar_url ? (
-              <img 
-                src={pet.avatar_url} 
-                alt={pet.name} 
-                className="w-full h-full object-cover" 
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary/5">
-                <img 
-                  src={pet.type === 'dog' ? dogIcon : catIcon} 
-                  alt={petTypeHe} 
-                  className="w-10 h-10 opacity-70" 
-                />
+            {/* Animated gradient ring */}
+            <motion.div
+              className="absolute inset-0 rounded-2xl"
+              style={{
+                background: pet.type === 'dog' 
+                  ? 'linear-gradient(135deg, hsl(var(--primary)), hsl(210,80%,60%), hsl(var(--primary)))' 
+                  : 'linear-gradient(135deg, hsl(270,60%,60%), hsl(var(--primary)), hsl(270,60%,60%))',
+                padding: '2.5px',
+              }}
+              animate={{ 
+                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            >
+              <div className="w-full h-full rounded-[14px] overflow-hidden bg-card">
+                {pet.avatar_url ? (
+                  <img 
+                    src={pet.avatar_url} 
+                    alt={pet.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                    <img 
+                      src={pet.type === 'dog' ? dogIcon : catIcon} 
+                      alt={petTypeHe} 
+                      className="w-10 h-10 opacity-70" 
+                    />
+                  </div>
+                )}
               </div>
-            )}
+            </motion.div>
+            
+            {/* Health status dot (#5) */}
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: "spring" }}
+              className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${getHealthDotColor()} border-2 border-card shadow-sm`}
+            />
           </motion.div>
           
-          {/* Name & Type with better typography */}
+          {/* Name, Breed Badge & Status */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground text-xl leading-tight">{pet.name}</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {pet.breed || petTypeHe}
-            </p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-foreground text-xl leading-tight">{pet.name}</h3>
+              {/* #13 Updated tag */}
+              {profileCompletion === 100 && (
+                <motion.span 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-500/15 text-green-600 rounded-full text-[9px] font-bold"
+                >
+                  <CheckCircle2 className="w-2.5 h-2.5" />
+                  מעודכן
+                </motion.span>
+              )}
+            </div>
+            
+            {/* #8 Breed badge */}
+            {pet.breed && (
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-primary/8 rounded-full"
+              >
+                <img 
+                  src={pet.type === 'dog' ? dogIcon : catIcon} 
+                  alt="" 
+                  className="w-3 h-3 opacity-60" 
+                />
+                <span className="text-xs text-primary font-medium">{pet.breed}</span>
+              </motion.div>
+            )}
+            {!pet.breed && (
+              <p className="text-sm text-muted-foreground mt-0.5">{petTypeHe}</p>
+            )}
+
+            {/* #6 Next event countdown */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-wrap gap-1 mt-1.5"
+            >
+              {/* #16 Insurance tag */}
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full text-[9px] font-medium">
+                <Shield className="w-2.5 h-2.5" />
+                ללא ביטוח
+              </span>
+            </motion.div>
           </div>
 
-          {/* Type Icon with better styling */}
-          <motion.div 
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center"
-          >
-            {pet.type === 'dog' ? (
-              <Dog className="w-5 h-5 text-muted-foreground" />
-            ) : (
-              <Cat className="w-5 h-5 text-muted-foreground" />
-            )}
-          </motion.div>
-
-          {/* Message Owner Button */}
-          {owner && !isOwner && (
+          {/* Action buttons */}
+          <div className="flex flex-col gap-1.5">
+            {/* #11 Share button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleMessageOwner}
-              className="w-10 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
-              title={`שליחת הודעה ל${owner.full_name?.split(' ')[0] || 'בעלים'}`}
-              aria-label="שליחת הודעה לבעלים"
+              onClick={handleShare}
+              className="w-9 h-9 rounded-xl bg-muted/50 hover:bg-primary/10 transition-colors flex items-center justify-center"
+              title="שיתוף"
+              aria-label="שיתוף חיית המחמד"
             >
-              <MessageCircle className="w-5 h-5 text-primary" />
+              <Share2 className="w-4 h-4 text-muted-foreground" />
             </motion.button>
-          )}
 
-          {/* Edit Button - Show only to owner */}
-          {isOwner && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate(`/pet/${pet.id}/edit`)}
-              className="w-10 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
-              title="עריכת פרטים"
-              aria-label="עריכת פרטי חיית המחמד"
-            >
-              <Edit2 className="w-5 h-5 text-primary" />
-            </motion.button>
-          )}
+            {/* Message Owner / Edit */}
+            {owner && !isOwner ? (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleMessageOwner}
+                className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+                title={`שליחת הודעה ל${owner.full_name?.split(' ')[0] || 'בעלים'}`}
+              >
+                <MessageCircle className="w-4 h-4 text-primary" />
+              </motion.button>
+            ) : isOwner ? (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate(`/pet/${pet.id}/edit`)}
+                className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
+                title="עריכת פרטים"
+              >
+                <Edit2 className="w-4 h-4 text-primary" />
+              </motion.button>
+            ) : null}
+          </div>
         </div>
+
+        {/* #14 Profile Completion Bar */}
+        {profileCompletion < 100 && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mb-4 px-1"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-medium text-muted-foreground">השלמת פרופיל</span>
+              <span className="text-[10px] font-bold text-primary">{profileCompletion}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${profileCompletion}%` }}
+                transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
+                className="h-full bg-gradient-to-l from-primary to-primary/70 rounded-full"
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {/* #17 Daily Tip */}
+        {breedInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mb-4 p-3 bg-amber-500/8 rounded-xl border border-amber-500/15"
+          >
+            <div className="flex items-start gap-2">
+              <div className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-amber-600 block mb-0.5">טיפ יומי</span>
+                <span className="text-xs text-foreground/80 leading-relaxed">{dailyTip}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
         
         {/* Pet Details Grid - 3 columns with animated gauge cards */}
         <div className="grid grid-cols-3 gap-3 mb-5">
