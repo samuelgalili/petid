@@ -792,7 +792,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             <div className="w-full h-1 bg-muted-foreground/10 rounded-full mb-1.5 overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
-                animate={{ width: recommendedGrams ? `${Math.min((recommendedGrams / 500) * 100, 100)}%` : '50%' }}
+                animate={{ width: feedingGuideline ? `${Math.min((feedingGuideline.max / 500) * 100, 100)}%` : recommendedGrams ? `${Math.min((recommendedGrams / 500) * 100, 100)}%` : '50%' }}
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="h-full bg-primary rounded-full"
               />
