@@ -386,6 +386,14 @@ const AddPet = () => {
   const prevStep = () => {
     if (currentStep > (isOnboarding ? 0 : 1)) {
       setSlideDirection('right');
+      const goingToStep = currentStep - 1;
+      // Reset image and breed when going back to pet type selection
+      if (goingToStep === 1) {
+        setImagePreview(null);
+        setFormData(prev => ({ ...prev, breed: '', avatar_url: '' }));
+        setBreedSource(null);
+        setBreedConfidence(null);
+      }
       setCurrentStep(prev => prev - 1);
       setShowValidationError(false);
     }
