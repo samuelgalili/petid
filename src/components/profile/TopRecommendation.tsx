@@ -1062,12 +1062,50 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             )}
           </motion.button>
 
-          {/* Mood Meter */}
-          <PetMoodMeter 
-            petId={pet.id} 
-            currentMood={(pet as any).current_mood || null} 
-            isOwner={isOwner} 
-          />
+          {/* Food & Recent Purchases - Combined */}
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 rounded-2xl border border-border/30 transition-all duration-300 shadow-sm"
+          >
+            {/* Food image or icon */}
+            {(() => {
+              const foodPurchase = recentPurchases.find(p => 
+                p.product_name?.toLowerCase().includes('food') || 
+                p.product_name?.includes('מזון') ||
+                p.product_name?.includes('אוכל')
+              );
+              const foodImage = foodPurchase?.product_image;
+              const currentFood = (pet as any).current_food;
+
+              return (
+                <>
+                  <div className="w-12 h-12 rounded-xl overflow-hidden mb-1.5 bg-muted/30 flex items-center justify-center">
+                    {foodImage ? (
+                      <img src={foodImage} alt="מזון" className="w-full h-full object-cover" />
+                    ) : currentFood ? (
+                      <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                        {pet.type === 'dog' ? <Bone className="w-6 h-6 text-primary" /> : <Fish className="w-6 h-6 text-primary" />}
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-muted/50 flex items-center justify-center">
+                        <Package className="w-5 h-5 text-muted-foreground/40" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-foreground text-center">מזון</span>
+                  <span className="text-[10px] text-primary font-bold mt-0.5 text-center truncate max-w-full px-1">
+                    {currentFood || (foodPurchase ? foodPurchase.product_name : 'הגדר מזון')}
+                  </span>
+                  {recentPurchases.length > 0 && (
+                    <span className="text-[9px] text-muted-foreground mt-0.5">
+                      {recentPurchases.length} רכישות
+                    </span>
+                  )}
+                </>
+              );
+            })()}
+          </motion.div>
 
           {/* QR Code */}
           <PetQRCode 
@@ -1076,55 +1114,6 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             petAvatar={pet.avatar_url} 
           />
         </div>
-
-        {/* Recent Purchases */}
-        {recentPurchases.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-3"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-semibold text-foreground">רכישות אחרונות</span>
-              </div>
-              <button 
-                onClick={() => navigate('/orders')}
-                className="text-[10px] text-primary font-medium hover:underline"
-              >
-                הכל →
-              </button>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {recentPurchases.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex-shrink-0 w-20 flex flex-col items-center p-2 bg-card rounded-xl border border-border/20 hover:border-primary/30 transition-all"
-                >
-                  {item.product_image ? (
-                    <img 
-                      src={item.product_image} 
-                      alt={item.product_name}
-                      className="w-12 h-12 rounded-lg object-cover mb-1.5"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-muted/30 flex items-center justify-center mb-1.5">
-                      <Package className="w-5 h-5 text-muted-foreground/50" />
-                    </div>
-                  )}
-                  <span className="text-[9px] font-medium text-foreground text-center line-clamp-2 leading-tight">
-                    {item.product_name}
-                  </span>
-                  <span className="text-[8px] text-primary font-bold mt-0.5">₪{item.price}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
       </motion.div>
 
       {/* Edit Modal */}
