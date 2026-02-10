@@ -83,7 +83,7 @@ export const PetQRCode = ({ petId, petName, petAvatar }: PetQRCodeProps) => {
         className="flex flex-col items-center justify-center gap-1 p-3 bg-gradient-to-b from-background to-muted/20 rounded-2xl border border-border/30 hover:border-primary/40 transition-all shadow-sm hover:shadow-md w-full h-full"
         title="QR Code אישי"
       >
-        <QrCode className="w-5 h-5 text-primary" />
+        <QrCode className="w-8 h-8 text-primary" />
         <span className="text-[9px] font-semibold text-foreground">QR Code</span>
       </motion.button>
 
