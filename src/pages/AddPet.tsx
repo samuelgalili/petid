@@ -435,6 +435,7 @@ const AddPet = () => {
         setFormData(prev => ({ ...prev, breed: '', avatar_url: '' }));
         setBreedSource(null);
         setBreedConfidence(null);
+        setActivities([]);
       }
       setCurrentStep(prev => prev - 1);
       setShowValidationError(false);
