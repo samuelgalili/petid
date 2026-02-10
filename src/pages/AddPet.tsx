@@ -149,6 +149,8 @@ const AddPet = () => {
           if (draft.personalityTags) setPersonalityTags(draft.personalityTags);
           if (draft.activities) setActivities(draft.activities);
           if (draft.healthNotes) setHealthNotes(draft.healthNotes);
+          if (draft.medicalConditions) setMedicalConditions(draft.medicalConditions);
+          if (draft.otherConditionText) setOtherConditionText(draft.otherConditionText);
           
           toast({
             title: "טיוטה שוחזרה",
