@@ -765,7 +765,7 @@ const AddPet = () => {
                     <Label htmlFor="breed">גזע</Label>
                     {breedSource === 'ai' && (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        <Sparkles className="w-3 h-3 text-warning" />
                         זוהה אוטומטית
                       </span>
                     )}
