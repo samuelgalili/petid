@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Check, Heart, MapPin } from "lucide-react";
+import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Check, Heart, MapPin, ImagePlus } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { useGame } from "@/contexts/GameContext";
