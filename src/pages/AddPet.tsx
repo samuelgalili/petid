@@ -325,6 +325,14 @@ const AddPet = () => {
     }
   };
 
+  const forceNextStep = () => {
+    if (currentStep < TOTAL_STEPS) {
+      setSlideDirection('left');
+      setCurrentStep(prev => prev + 1);
+      setShowValidationError(false);
+    }
+  };
+
   const prevStep = () => {
     if (currentStep > (isOnboarding ? 0 : 1)) {
       setSlideDirection('right');
@@ -566,7 +574,7 @@ const AddPet = () => {
                     whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       setPetType("cat");
-                      nextStep();
+                      forceNextStep();
                     }} 
                     className={cn(
                       "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
@@ -585,7 +593,7 @@ const AddPet = () => {
                     whileTap={{ scale: 0.97 }}
                     onClick={() => {
                       setPetType("dog");
-                      nextStep();
+                      forceNextStep();
                     }} 
                     className={cn(
                       "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
