@@ -12,9 +12,7 @@ import { SizeWheelPicker, WeightWheelPicker } from "@/components/ui/wheel-picker
 import { useToast } from "@/hooks/use-toast";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
-import { PetMoodMeter } from "@/components/profile/PetMoodMeter";
 import { PetQRCode } from "@/components/profile/PetQRCode";
-import { PetFoodTag } from "@/components/profile/PetFoodTag";
 
 interface Pet {
   id: string;
