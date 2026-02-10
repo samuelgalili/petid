@@ -68,6 +68,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const [weightValue, setWeightValue] = useState<number>(10);
   const [saving, setSaving] = useState(false);
   const [recentPurchases, setRecentPurchases] = useState<Array<{id: string; product_name: string; product_image: string | null; quantity: number; price: number; created_at: string}>>([]);
+  const [feedingGuideline, setFeedingGuideline] = useState<{min: number; max: number} | null>(null);
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
