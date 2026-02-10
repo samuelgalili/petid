@@ -5214,6 +5214,44 @@ export type Database = {
           },
         ]
       }
+      pet_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string | null
+          id: string
+          pet_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          event_type?: string | null
+          id?: string
+          pet_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string | null
+          id?: string
+          pet_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_events_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_grooming_bookings: {
         Row: {
           admin_notes: string | null
@@ -5658,6 +5696,8 @@ export type Database = {
           breed: string | null
           breed_confidence: number | null
           created_at: string | null
+          current_food: string | null
+          current_mood: string | null
           favorite_activities: string[] | null
           gender: string | null
           has_insurance: boolean | null
@@ -5669,6 +5709,7 @@ export type Database = {
           is_neutered: boolean | null
           last_vet_visit: string | null
           mood_score: number | null
+          mood_updated_at: string | null
           name: string
           next_vet_visit: string | null
           personality_tags: string[] | null
@@ -5691,6 +5732,8 @@ export type Database = {
           breed?: string | null
           breed_confidence?: number | null
           created_at?: string | null
+          current_food?: string | null
+          current_mood?: string | null
           favorite_activities?: string[] | null
           gender?: string | null
           has_insurance?: boolean | null
@@ -5702,6 +5745,7 @@ export type Database = {
           is_neutered?: boolean | null
           last_vet_visit?: string | null
           mood_score?: number | null
+          mood_updated_at?: string | null
           name: string
           next_vet_visit?: string | null
           personality_tags?: string[] | null
@@ -5724,6 +5768,8 @@ export type Database = {
           breed?: string | null
           breed_confidence?: number | null
           created_at?: string | null
+          current_food?: string | null
+          current_mood?: string | null
           favorite_activities?: string[] | null
           gender?: string | null
           has_insurance?: boolean | null
@@ -5735,6 +5781,7 @@ export type Database = {
           is_neutered?: boolean | null
           last_vet_visit?: string | null
           mood_score?: number | null
+          mood_updated_at?: string | null
           name?: string
           next_vet_visit?: string | null
           personality_tags?: string[] | null
