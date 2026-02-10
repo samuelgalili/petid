@@ -22,6 +22,18 @@ import catIcon from "@/assets/cat-official.png";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 
+const MEDICAL_CONDITIONS = [
+  { value: "gastrointestinal", label: "בעיות עיכול / גסטרו", emoji: "🤢", categoryEn: "Gastrointestinal" },
+  { value: "urinary", label: "בעיות בדרכי השתן (קריסטלים/אבנים)", emoji: "💧", categoryEn: "Urinary / Struvite" },
+  { value: "allergies", label: "אלרגיות מזון או עור", emoji: "🤧", categoryEn: "Hypoallergenic" },
+  { value: "diabetic", label: "סוכרת", emoji: "💉", categoryEn: "Diabetic" },
+  { value: "renal", label: "בעיות כליה", emoji: "🫘", categoryEn: "Renal" },
+  { value: "obesity", label: "עודף משקל", emoji: "⚖️", categoryEn: "Obesity / Metabolic" },
+  { value: "dermatosis", label: "בעיות עור ופרווה", emoji: "🐾", categoryEn: "Dermatosis" },
+  { value: "hairball", label: "כדורי פרווה", emoji: "🧶", categoryEn: "Hairball", catOnly: true },
+  { value: "other", label: "אחר", emoji: "📝" },
+];
+
 const PERSONALITY_TAGS_DOG = [
   { value: "playful", label: "שובב", emoji: "🎾" },
   { value: "calm", label: "רגוע", emoji: "😌" },
@@ -81,6 +93,8 @@ const AddPet = () => {
   const [personalityTags, setPersonalityTags] = useState<string[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
   const [healthNotes, setHealthNotes] = useState("");
+  const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
+  const [otherConditionText, setOtherConditionText] = useState("");
   
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
@@ -135,6 +149,8 @@ const AddPet = () => {
           if (draft.personalityTags) setPersonalityTags(draft.personalityTags);
           if (draft.activities) setActivities(draft.activities);
           if (draft.healthNotes) setHealthNotes(draft.healthNotes);
+          if (draft.medicalConditions) setMedicalConditions(draft.medicalConditions);
+          if (draft.otherConditionText) setOtherConditionText(draft.otherConditionText);
           
           toast({
             title: "טיוטה שוחזרה",
@@ -167,6 +183,8 @@ const AddPet = () => {
         personalityTags,
         activities,
         healthNotes,
+        medicalConditions,
+        otherConditionText,
         breedConfidence,
         timestamp: new Date().toISOString()
       };
@@ -179,7 +197,7 @@ const AddPet = () => {
 
       return () => clearTimeout(saveTimer);
     }
-  }, [formData, currentStep, petType, imagePreview, personalityTags, activities, healthNotes, breedConfidence]);
+  }, [formData, currentStep, petType, imagePreview, personalityTags, activities, healthNotes, medicalConditions, otherConditionText, breedConfidence]);
 
   const dismissTutorial = () => {
     setShowTutorial(false);
@@ -347,7 +365,8 @@ const AddPet = () => {
         avatar_url: avatarUrl,
         personality_tags: personalityTags.length > 0 ? personalityTags : null,
         favorite_activities: activities.length > 0 ? activities : null,
-        health_notes: healthNotes || null
+        medical_conditions: medicalConditions.length > 0 ? medicalConditions : null,
+        health_notes: otherConditionText || healthNotes || null
       }).select().single();
       
       if (insertError) throw insertError;
@@ -1089,15 +1108,69 @@ const AddPet = () => {
                     אופציונלי
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>רגישויות או בעיות רפואיות</Label>
-                  <Textarea
-                    value={healthNotes}
-                    onChange={(e) => setHealthNotes(e.target.value)}
-                    placeholder="למשל: רגיש למזון מסוים, בעיות עור..."
-                    rows={4}
-                    className="rounded-xl resize-none"
-                  />
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">
+                    האם {formData.name || 'חיית המחמד'} סובל/ת מרגישות או בעיה רפואית?
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {MEDICAL_CONDITIONS
+                      .filter(c => c.value !== 'hairball' || petType === 'cat')
+                      .map((condition) => {
+                        const isSelected = medicalConditions.includes(condition.value);
+                        return (
+                          <motion.button
+                            key={condition.value}
+                            type="button"
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              setMedicalConditions(prev =>
+                                prev.includes(condition.value)
+                                  ? prev.filter(v => v !== condition.value)
+                                  : [...prev, condition.value]
+                              );
+                              if (condition.value === 'other' && !medicalConditions.includes('other')) {
+                                // opening other
+                              } else if (condition.value === 'other' && medicalConditions.includes('other')) {
+                                setOtherConditionText('');
+                              }
+                            }}
+                            className={cn(
+                              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border',
+                              isSelected
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                            )}
+                          >
+                            <span>{condition.emoji}</span>
+                            <span>{condition.label}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5" />}
+                          </motion.button>
+                        );
+                      })}
+                  </div>
+
+                  {medicalConditions.includes('other') && (
+                    <Textarea
+                      value={otherConditionText}
+                      onChange={(e) => setOtherConditionText(e.target.value)}
+                      placeholder="פרט/י את הבעיה הרפואית..."
+                      rows={2}
+                      className="rounded-xl resize-none"
+                    />
+                  )}
+
+                  {medicalConditions.length > 0 && !medicalConditions.every(c => c === 'other') && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl p-3 bg-primary/5 border border-primary/20 text-sm text-foreground"
+                    >
+                      <p className="font-medium mb-1">💡 שימי לב</p>
+                      <p className="text-muted-foreground">
+                        ב-PetID תוכל/י למצוא מידע על תזונה רפואית מותאמת לבעיות שציינת.
+                      </p>
+                    </motion.div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 pt-4">

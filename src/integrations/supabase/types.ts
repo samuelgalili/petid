@@ -5732,6 +5732,7 @@ export type Database = {
           insurance_policy_number: string | null
           is_neutered: boolean | null
           last_vet_visit: string | null
+          medical_conditions: string[] | null
           mood_score: number | null
           mood_updated_at: string | null
           name: string
@@ -5768,6 +5769,7 @@ export type Database = {
           insurance_policy_number?: string | null
           is_neutered?: boolean | null
           last_vet_visit?: string | null
+          medical_conditions?: string[] | null
           mood_score?: number | null
           mood_updated_at?: string | null
           name: string
@@ -5804,6 +5806,7 @@ export type Database = {
           insurance_policy_number?: string | null
           is_neutered?: boolean | null
           last_vet_visit?: string | null
+          medical_conditions?: string[] | null
           mood_score?: number | null
           mood_updated_at?: string | null
           name?: string
