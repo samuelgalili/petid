@@ -448,27 +448,41 @@ const Profile = () => {
           }}>
                 {pets.length > 0 ? <>
                     {/* Pet Cards - Clean minimal style */}
-                    <div className="flex flex-wrap justify-center gap-3 py-4">
-                      {pets.map((pet, index) => <motion.button key={pet.id} onClick={() => handlePetClick(pet.id)} className="flex flex-col items-center gap-1.5 group" initial={{
+                    <div className="flex flex-wrap justify-center gap-4 py-4">
+                      {pets.map((pet, index) => <motion.button key={pet.id} onClick={() => handlePetClick(pet.id)} className="flex flex-col items-center gap-2 group" initial={{
                   opacity: 0,
-                  y: 10
+                  y: 20,
+                  scale: 0.8
                 }} animate={{
                   opacity: 1,
-                  y: 0
+                  y: 0,
+                  scale: 1
                 }} transition={{
-                  delay: index * 0.05
-                }}>
-                          {/* Pet Avatar - Clean border, no animation */}
-                          <div className="w-16 h-16 rounded-full border-2 border-border group-hover:border-primary transition-colors">
-                            <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                              {pet.avatar_url ? <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-muted">
-                                  <img src={pet.type === 'dog' ? dogIcon : catIcon} alt={pet.type} className="w-8 h-8 opacity-60" />
-                                </div>}
+                  delay: index * 0.08,
+                  type: "spring",
+                  damping: 15,
+                  stiffness: 200
+                }}
+                whileHover={{ scale: 1.08, y: -4 }}
+                whileTap={{ scale: 0.95 }}
+                >
+                          {/* Pet Avatar with gradient ring (#3) */}
+                          <div className={`w-18 h-18 rounded-full p-[2.5px] ${
+                            pet.type === 'dog' 
+                              ? 'bg-gradient-to-br from-primary via-primary/60 to-[hsl(210,80%,60%)]' 
+                              : 'bg-gradient-to-br from-[hsl(270,60%,60%)] via-primary/60 to-primary'
+                          } group-hover:shadow-lg group-hover:shadow-primary/20 transition-shadow`}>
+                            <div className="w-full h-full rounded-full overflow-hidden bg-card p-[1px]">
+                              <div className="w-full h-full rounded-full overflow-hidden bg-muted">
+                                {pet.avatar_url ? <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-muted">
+                                    <img src={pet.type === 'dog' ? dogIcon : catIcon} alt={pet.type} className="w-8 h-8 opacity-60" />
+                                  </div>}
+                              </div>
                             </div>
                           </div>
                           
                           {/* Pet Name */}
-                          <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                          <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
                             {pet.name}
                           </span>
                         </motion.button>)}
