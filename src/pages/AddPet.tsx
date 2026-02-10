@@ -984,35 +984,72 @@ const AddPet = () => {
                 className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
               >
                 <p className="text-muted-foreground text-center text-sm">
-                  מה {formData.name || "חיית המחמד"} אוהב/ת לעשות?
+                  {petType === 'cat' 
+                    ? `מה רמת הפעילות של ${formData.name || "החתול"}?`
+                    : `מה ${formData.name || "חיית המחמד"} אוהב/ת לעשות?`
+                  }
                 </p>
-                <div className="space-y-3">
-                  {ACTIVITIES.map(activity => (
-                    <motion.button
-                      key={activity.value}
-                      type="button"
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      onClick={() => toggleTag(activity.value, setActivities)}
-                      className={cn(
-                        "w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3",
-                        activities.includes(activity.value)
-                          ? "border-transparent shadow-[var(--shadow-shop)]"
-                          : "border-border hover:border-primary/50 bg-card"
-                      )}
-                      style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
-                    >
-                      <div className="text-2xl">{activity.emoji}</div>
-                      <div className={cn(
-                        "text-lg font-medium",
-                        activities.includes(activity.value) ? "text-white" : "text-foreground"
-                      )}>{activity.label}</div>
-                      {activities.includes(activity.value) && (
-                        <Check className="w-5 h-5 text-white mr-auto" />
-                      )}
-                    </motion.button>
-                  ))}
-                </div>
+
+                {petType === 'cat' ? (
+                  <div className="space-y-3">
+                    {CAT_ACTIVITIES.map(activity => (
+                      <motion.button
+                        key={activity.value}
+                        type="button"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => setActivities([activity.value])}
+                        className={cn(
+                          "w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3",
+                          activities.includes(activity.value)
+                            ? "border-transparent shadow-[var(--shadow-shop)]"
+                            : "border-border hover:border-primary/50 bg-card"
+                        )}
+                        style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                          {activity.score}
+                        </div>
+                        <div className="text-2xl">{activity.emoji}</div>
+                        <div className={cn(
+                          "text-base font-medium",
+                          activities.includes(activity.value) ? "text-white" : "text-foreground"
+                        )}>{activity.label}</div>
+                        {activities.includes(activity.value) && (
+                          <Check className="w-5 h-5 text-white mr-auto" />
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {DOG_ACTIVITIES.map(activity => (
+                      <motion.button
+                        key={activity.value}
+                        type="button"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => toggleTag(activity.value, setActivities)}
+                        className={cn(
+                          "w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3",
+                          activities.includes(activity.value)
+                            ? "border-transparent shadow-[var(--shadow-shop)]"
+                            : "border-border hover:border-primary/50 bg-card"
+                        )}
+                        style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
+                      >
+                        <div className="text-2xl">{activity.emoji}</div>
+                        <div className={cn(
+                          "text-lg font-medium",
+                          activities.includes(activity.value) ? "text-white" : "text-foreground"
+                        )}>{activity.label}</div>
+                        {activities.includes(activity.value) && (
+                          <Check className="w-5 h-5 text-white mr-auto" />
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-4">
                   <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
