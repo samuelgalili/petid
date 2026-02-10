@@ -75,6 +75,7 @@ const AddPet = () => {
   const [showValidationError, setShowValidationError] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [typeMismatch, setTypeMismatch] = useState<{ detectedType: string; breed: string; confidence: number } | null>(null);
 
   const minSwipeDistance = 50;
   
