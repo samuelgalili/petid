@@ -33,13 +33,21 @@ const PERSONALITY_TAGS = [
   { value: "curious", label: "סקרן", emoji: "🔍" },
 ];
 
-const ACTIVITIES = [
+const DOG_ACTIVITIES = [
   { value: "walks", label: "טיולים", emoji: "🚶" },
   { value: "beach", label: "חוף ים", emoji: "🏖️" },
   { value: "parks", label: "גינות כלבים", emoji: "🌳" },
   { value: "fetch", label: "משחקי כדור", emoji: "🎾" },
   { value: "training", label: "אילוף", emoji: "🎓" },
   { value: "cuddles", label: "חיבוקים", emoji: "🤗" },
+];
+
+const CAT_ACTIVITIES = [
+  { value: "couch_potato", label: "בטטת כורסה", emoji: "🛋️", score: 1 },
+  { value: "chill", label: "נינוח ומחושב", emoji: "🧘", score: 2 },
+  { value: "plays_sometimes", label: "משחק כשבא לו", emoji: "🧶", score: 3 },
+  { value: "adventurer", label: "חובב הרפתקאות", emoji: "🧗", score: 4 },
+  { value: "zoomies_champ", label: "אלוף הזומנז", emoji: "⚡", score: 5 },
 ];
 
 const TOTAL_STEPS = 7;
