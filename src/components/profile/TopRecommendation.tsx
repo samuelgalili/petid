@@ -139,6 +139,47 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     fetchRecentPurchases();
   }, [user?.id]);
 
+  // Fetch manufacturer feeding guidelines based on pet weight and age
+  useEffect(() => {
+    const fetchFeedingGuidelines = async () => {
+      // Get pet weight
+      let weightKg: number | null = pet.weight || null;
+      if (!weightKg && breedInfo?.weight_range_kg) {
+        const match = breedInfo.weight_range_kg.match(/(\d+)-(\d+)/);
+        if (match) weightKg = (parseInt(match[1]) + parseInt(match[2])) / 2;
+      }
+      if (!weightKg) return;
+
+      // Determine age group
+      let ageGroup = 'adult';
+      if (pet.birth_date) {
+        const { years, months } = calculateAge(pet.birth_date);
+        const ageYears = years + months / 12;
+        if (ageYears < 0.5) ageGroup = 'puppy';
+        else if (ageYears < 1.5) ageGroup = 'junior';
+        else if (ageYears > 7) ageGroup = 'senior';
+      }
+
+      // Query guidelines that match this pet's weight range
+      const { data } = await supabase
+        .from('product_feeding_guidelines')
+        .select('grams_per_day_min, grams_per_day_max')
+        .lte('weight_min_kg', weightKg)
+        .gte('weight_max_kg', weightKg)
+        .eq('age_group', ageGroup)
+        .limit(5);
+
+      if (data && data.length > 0) {
+        // Aggregate min/max across all matching products
+        const minGrams = Math.min(...data.map(d => d.grams_per_day_min));
+        const maxGrams = Math.max(...data.map(d => d.grams_per_day_max));
+        setFeedingGuideline({ min: minGrams, max: maxGrams });
+      }
+    };
+
+    fetchFeedingGuidelines();
+  }, [pet.weight, pet.birth_date, breedInfo?.weight_range_kg]);
+
   // Check if using AI data - use birth_date for age calculation
   const hasUserBirthDate = !!pet.birth_date;
   const isAgeFromBreed = !hasUserBirthDate && breedInfo?.life_expectancy_years;
