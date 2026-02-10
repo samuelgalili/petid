@@ -64,6 +64,7 @@ const AddPet = () => {
   
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
+  const [breedSource, setBreedSource] = useState<'ai' | 'user' | null>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
