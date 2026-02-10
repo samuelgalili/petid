@@ -22,8 +22,19 @@ import catIcon from "@/assets/cat-official.png";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 
-const PERSONALITY_TAGS = [
+const PERSONALITY_TAGS_DOG = [
   { value: "playful", label: "שובב", emoji: "🎾" },
+  { value: "calm", label: "רגוע", emoji: "😌" },
+  { value: "friendly", label: "חברותי", emoji: "🤗" },
+  { value: "shy", label: "ביישן", emoji: "🙈" },
+  { value: "energetic", label: "אנרגטי", emoji: "⚡" },
+  { value: "sleepy", label: "אוהב לישון", emoji: "😴" },
+  { value: "protective", label: "שמרני", emoji: "🛡️" },
+  { value: "curious", label: "סקרן", emoji: "🔍" },
+];
+
+const PERSONALITY_TAGS_CAT = [
+  { value: "playful", label: "שובב", emoji: "🧶" },
   { value: "calm", label: "רגוע", emoji: "😌" },
   { value: "friendly", label: "חברותי", emoji: "🤗" },
   { value: "shy", label: "ביישן", emoji: "🙈" },
