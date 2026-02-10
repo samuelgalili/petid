@@ -801,8 +801,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               <Utensils className="w-4 h-4 text-primary" />
             </div>
             <span className="text-[10px] font-semibold text-foreground">האכלה</span>
-            {recommendedGrams ? (
-              <span className="text-[9px] text-primary font-bold">{recommendedGrams} גרם/יום</span>
+            {feedingGuideline ? (
+              <span className="text-[9px] text-primary font-bold">{feedingGuideline.min}-{feedingGuideline.max} גרם</span>
+            ) : recommendedGrams ? (
+              <span className="text-[9px] text-primary font-bold">~{recommendedGrams} גרם/יום</span>
             ) : (
               <span className="text-[9px] text-muted-foreground">—</span>
             )}
