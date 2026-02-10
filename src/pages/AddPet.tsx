@@ -314,14 +314,22 @@ const AddPet = () => {
     return true;
   };
 
-  const nextStep = (force = false) => {
-    if ((force || canProceed()) && currentStep < TOTAL_STEPS) {
+  const nextStep = () => {
+    if (canProceed() && currentStep < TOTAL_STEPS) {
       setSlideDirection('left');
       setCurrentStep(prev => prev + 1);
       setShowValidationError(false);
-    } else if (!force && !canProceed()) {
+    } else if (!canProceed()) {
       setShowValidationError(true);
       setTimeout(() => setShowValidationError(false), 2000);
+    }
+  };
+
+  const forceNextStep = () => {
+    if (currentStep < TOTAL_STEPS) {
+      setSlideDirection('left');
+      setCurrentStep(prev => prev + 1);
+      setShowValidationError(false);
     }
   };
 
