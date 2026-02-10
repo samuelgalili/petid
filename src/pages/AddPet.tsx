@@ -183,6 +183,8 @@ const AddPet = () => {
         personalityTags,
         activities,
         healthNotes,
+        medicalConditions,
+        otherConditionText,
         breedConfidence,
         timestamp: new Date().toISOString()
       };
