@@ -207,6 +207,16 @@ const AddPet = () => {
       const data = await response.json();
       
       if (data.breed && data.breed !== "Unknown Breed") {
+        // Check if detected animal type mismatches user selection
+        if (data.detectedType && data.detectedType !== petType) {
+          setTypeMismatch({
+            detectedType: data.detectedType,
+            breed: data.breed,
+            confidence: data.confidence || 0
+          });
+          return; // Wait for user decision
+        }
+        
         const matchedBreed = await matchBreedInDB(data.breed, petType);
         setFormData(prev => ({ ...prev, breed: matchedBreed }));
         setBreedConfidence(data.confidence || null);
@@ -217,6 +227,28 @@ const AddPet = () => {
     } finally {
       setBreedDetecting(false);
     }
+  };
+
+  const handleTypeMismatchSwitch = async () => {
+    if (!typeMismatch) return;
+    const newType = typeMismatch.detectedType as 'dog' | 'cat';
+    setPetType(newType);
+    const matchedBreed = await matchBreedInDB(typeMismatch.breed, newType);
+    setFormData(prev => ({ ...prev, breed: matchedBreed }));
+    setBreedConfidence(typeMismatch.confidence);
+    setBreedSource('ai');
+    setTypeMismatch(null);
+    setBreedDetecting(false);
+  };
+
+  const handleTypeMismatchKeep = async () => {
+    if (!typeMismatch) return;
+    // User insists on their original selection - clear breed since it doesn't match
+    setFormData(prev => ({ ...prev, breed: '' }));
+    setBreedConfidence(null);
+    setBreedSource(null);
+    setTypeMismatch(null);
+    setBreedDetecting(false);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
