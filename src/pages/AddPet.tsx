@@ -314,12 +314,12 @@ const AddPet = () => {
     return true;
   };
 
-  const nextStep = () => {
-    if (canProceed() && currentStep < TOTAL_STEPS) {
+  const nextStep = (force = false) => {
+    if ((force || canProceed()) && currentStep < TOTAL_STEPS) {
       setSlideDirection('left');
       setCurrentStep(prev => prev + 1);
       setShowValidationError(false);
-    } else if (!canProceed()) {
+    } else if (!force && !canProceed()) {
       setShowValidationError(true);
       setTimeout(() => setShowValidationError(false), 2000);
     }
