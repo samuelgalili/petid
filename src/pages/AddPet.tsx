@@ -1019,9 +1019,6 @@ const AddPet = () => {
                         )}
                         style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
                       >
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                          {activity.score}
-                        </div>
                         <div className="text-2xl">{activity.emoji}</div>
                         <div className={cn(
                           "text-base font-medium",
