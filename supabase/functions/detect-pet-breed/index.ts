@@ -30,7 +30,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Analyze this ${petType} image and identify the breed. You must respond with a JSON object in this exact format: {"breed": "breed name", "confidence": 85}. The breed should be the specific breed name (e.g., "Golden Retriever", "Persian", "Mixed Breed"). The confidence should be a number from 0-100 indicating how certain you are of the breed identification. If you cannot determine the breed, use "Unknown Breed" with a low confidence score.`
+                text: `Analyze this image of a pet. You must respond with a JSON object in this exact format: {"breed": "breed name", "confidence": 85, "animal_type": "dog"}. The "animal_type" must be either "dog" or "cat" based on what you actually see in the image (regardless of any prior assumption). The breed should be the specific breed name (e.g., "Golden Retriever", "Persian", "Mixed Breed"). The confidence should be a number from 0-100 indicating how certain you are of the breed identification. If you cannot determine the breed, use "Unknown Breed" with a low confidence score.`
               },
               {
                 type: "image_url",
@@ -41,7 +41,7 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 50,
+        max_tokens: 80,
         temperature: 0.3
       })
     });
@@ -59,13 +59,16 @@ serve(async (req) => {
     // Parse the JSON response from AI
     let detectedBreed = "Unknown Breed";
     let confidenceScore = 0;
+    let detectedAnimalType = petType; // default to what user selected
     
     try {
       const parsed = JSON.parse(aiResponse);
       detectedBreed = parsed.breed || "Unknown Breed";
       confidenceScore = parsed.confidence || 0;
+      if (parsed.animal_type && (parsed.animal_type === 'dog' || parsed.animal_type === 'cat')) {
+        detectedAnimalType = parsed.animal_type;
+      }
     } catch (e) {
-      // Fallback: if AI didn't return valid JSON, treat the response as the breed name
       detectedBreed = aiResponse;
       confidenceScore = 50;
     }
@@ -77,7 +80,8 @@ serve(async (req) => {
       JSON.stringify({ 
         breed: detectedBreed,
         confident: isConfident,
-        confidence: confidenceScore
+        confidence: confidenceScore,
+        detectedType: detectedAnimalType
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

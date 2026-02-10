@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,6 +75,7 @@ const AddPet = () => {
   const [showValidationError, setShowValidationError] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [typeMismatch, setTypeMismatch] = useState<{ detectedType: string; breed: string; confidence: number } | null>(null);
 
   const minSwipeDistance = 50;
   
@@ -205,6 +207,16 @@ const AddPet = () => {
       const data = await response.json();
       
       if (data.breed && data.breed !== "Unknown Breed") {
+        // Check if detected animal type mismatches user selection
+        if (data.detectedType && data.detectedType !== petType) {
+          setTypeMismatch({
+            detectedType: data.detectedType,
+            breed: data.breed,
+            confidence: data.confidence || 0
+          });
+          return; // Wait for user decision
+        }
+        
         const matchedBreed = await matchBreedInDB(data.breed, petType);
         setFormData(prev => ({ ...prev, breed: matchedBreed }));
         setBreedConfidence(data.confidence || null);
@@ -215,6 +227,28 @@ const AddPet = () => {
     } finally {
       setBreedDetecting(false);
     }
+  };
+
+  const handleTypeMismatchSwitch = async () => {
+    if (!typeMismatch) return;
+    const newType = typeMismatch.detectedType as 'dog' | 'cat';
+    setPetType(newType);
+    const matchedBreed = await matchBreedInDB(typeMismatch.breed, newType);
+    setFormData(prev => ({ ...prev, breed: matchedBreed }));
+    setBreedConfidence(typeMismatch.confidence);
+    setBreedSource('ai');
+    setTypeMismatch(null);
+    setBreedDetecting(false);
+  };
+
+  const handleTypeMismatchKeep = async () => {
+    if (!typeMismatch) return;
+    // User insists on their original selection - clear breed since it doesn't match
+    setFormData(prev => ({ ...prev, breed: '' }));
+    setBreedConfidence(null);
+    setBreedSource(null);
+    setTypeMismatch(null);
+    setBreedDetecting(false);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1142,6 +1176,31 @@ const AddPet = () => {
           )}
         </div>
       </div>
+
+      {/* Type Mismatch Dialog */}
+      <AlertDialog open={!!typeMismatch} onOpenChange={(open) => !open && handleTypeMismatchKeep()}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">
+              {petType === 'dog' ? '🐱' : '🐕'} רגע, זיהינו משהו אחר
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right text-base">
+              {petType === 'dog' 
+                ? `בחרת להוסיף כלב, אבל נראה לנו שזה חתול (${typeMismatch?.breed}). רוצה לתקן?`
+                : `בחרת להוסיף חתול, אבל נראה לנו שזה כלב (${typeMismatch?.breed}). רוצה לתקן?`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2 sm:flex-row-reverse">
+            <AlertDialogAction onClick={handleTypeMismatchSwitch}>
+              {typeMismatch?.detectedType === 'cat' ? 'כן, זה חתול 🐱' : 'כן, זה כלב 🐕'}
+            </AlertDialogAction>
+            <AlertDialogCancel onClick={handleTypeMismatchKeep}>
+              {petType === 'dog' ? 'לא, זה כלב' : 'לא, זה חתול'}
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
