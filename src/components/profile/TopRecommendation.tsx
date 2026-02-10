@@ -553,10 +553,14 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="mx-4 p-5 bg-card rounded-2xl border border-border/30 shadow-sm"
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.5, type: "spring", damping: 20 }}
+        className={`mx-4 p-5 rounded-2xl border border-border/30 shadow-sm ${
+          pet.type === 'dog' 
+            ? 'bg-gradient-to-br from-card via-card to-[hsl(210,60%,96%)]' 
+            : 'bg-gradient-to-br from-card via-card to-[hsl(270,40%,96%)]'
+        }`}
         dir="rtl"
       >
         {/* Pet Header with improved spacing */}
