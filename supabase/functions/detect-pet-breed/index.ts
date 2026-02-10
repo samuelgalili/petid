@@ -30,7 +30,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Analyze this ${petType} image and identify the breed. You must respond with a JSON object in this exact format: {"breed": "breed name", "confidence": 85}. The breed should be the specific breed name (e.g., "Golden Retriever", "Persian", "Mixed Breed"). The confidence should be a number from 0-100 indicating how certain you are of the breed identification. If you cannot determine the breed, use "Unknown Breed" with a low confidence score.`
+                text: `Analyze this image of a pet. You must respond with a JSON object in this exact format: {"breed": "breed name", "confidence": 85, "animal_type": "dog"}. The "animal_type" must be either "dog" or "cat" based on what you actually see in the image (regardless of any prior assumption). The breed should be the specific breed name (e.g., "Golden Retriever", "Persian", "Mixed Breed"). The confidence should be a number from 0-100 indicating how certain you are of the breed identification. If you cannot determine the breed, use "Unknown Breed" with a low confidence score.`
               },
               {
                 type: "image_url",
@@ -41,7 +41,7 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 50,
+        max_tokens: 80,
         temperature: 0.3
       })
     });
