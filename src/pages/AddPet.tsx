@@ -96,30 +96,35 @@ const AddPet = () => {
       setShowTutorial(true);
     }
 
-    // Load saved draft
+    // Load saved draft - only restore if we were past pet type selection
     const savedDraft = localStorage.getItem('addPetDraft');
     if (savedDraft && !isOnboarding) {
       try {
         const draft = JSON.parse(savedDraft);
-        if (draft.formData) {
+        // Only restore if draft had meaningful progress (past step 1)
+        if (draft.currentStep && draft.currentStep > 1 && draft.formData?.name) {
           setFormData({
             ...draft.formData,
             birthDate: draft.formData.birthDate ? new Date(draft.formData.birthDate) : null
           });
+          setCurrentStep(draft.currentStep);
+          if (draft.petType) setPetType(draft.petType);
+          if (draft.imagePreview) setImagePreview(draft.imagePreview);
+          if (draft.personalityTags) setPersonalityTags(draft.personalityTags);
+          if (draft.activities) setActivities(draft.activities);
+          if (draft.healthNotes) setHealthNotes(draft.healthNotes);
+          
+          toast({
+            title: "טיוטה שוחזרה",
+            description: "ההתקדמות הקודמת שלך שוחזרה"
+          });
+        } else {
+          // Clear stale draft that has no real progress
+          localStorage.removeItem('addPetDraft');
         }
-        if (draft.currentStep) setCurrentStep(draft.currentStep);
-        if (draft.petType) setPetType(draft.petType);
-        if (draft.imagePreview) setImagePreview(draft.imagePreview);
-        if (draft.personalityTags) setPersonalityTags(draft.personalityTags);
-        if (draft.activities) setActivities(draft.activities);
-        if (draft.healthNotes) setHealthNotes(draft.healthNotes);
-        
-        toast({
-          title: "טיוטה שוחזרה",
-          description: "ההתקדמות הקודמת שלך שוחזרה"
-        });
       } catch (e) {
         console.error('Error loading draft:', e);
+        localStorage.removeItem('addPetDraft');
       }
     }
   }, [navigate, isGuest, toast, isOnboarding, setPetType]);
