@@ -670,52 +670,78 @@ const AddPet = () => {
                 className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
               >
                 {/* Image Upload */}
-                <div className="text-center">
-                  <Label className="block mb-3 font-semibold">תמונת פרופיל</Label>
-                  <label className="cursor-pointer inline-block">
-                    <div className="relative">
-                      <div 
-                        className="w-32 h-32 mx-auto rounded-full border-3 border-dashed hover:border-solid transition-all flex items-center justify-center overflow-hidden"
-                        style={{ 
-                          borderColor: imagePreview ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                          background: imagePreview ? 'transparent' : 'hsl(var(--muted))'
-                        }}
-                      >
-                        {imagePreview ? (
-                          <img src={imagePreview} alt="תצוגה מקדימה" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex flex-col items-center gap-1">
-                            <Camera className="w-10 h-10 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">העלה תמונה</span>
-                          </div>
-                        )}
-                      </div>
-                      {breedDetecting && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full mx-auto w-32 h-32">
-                          <div className="text-center">
-                            <Loader2 className="w-8 h-8 text-white animate-spin mx-auto" />
-                            <span className="text-xs text-white mt-1 block">מזהה גזע...</span>
-                          </div>
+                <div className="text-center space-y-3">
+                  <Label className="block font-semibold">תמונת פרופיל</Label>
+                  
+                  {/* Preview circle */}
+                  <div className="relative w-32 h-32 mx-auto">
+                    <div 
+                      className="w-32 h-32 rounded-full border-3 border-dashed transition-all flex items-center justify-center overflow-hidden"
+                      style={{ 
+                        borderColor: imagePreview ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                        background: imagePreview ? 'transparent' : 'hsl(var(--muted))'
+                      }}
+                    >
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="תצוגה מקדימה" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Camera className="w-10 h-10 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">צלם או העלה</span>
                         </div>
                       )}
                     </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-                  </label>
-                  {breedConfidence !== null && formData.breed && (
+                    {breedDetecting && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                        <div className="text-center">
+                          <Loader2 className="w-8 h-8 text-white animate-spin mx-auto" />
+                          <span className="text-xs text-white mt-1 block">מזהה גזע...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Camera + Gallery buttons */}
+                  <div className="flex gap-3 justify-center">
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleCameraCapture}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium shadow-sm"
+                    >
+                      <Camera className="w-4 h-4" />
+                      צלם
+                    </motion.button>
+                    <label>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted text-foreground text-sm font-medium cursor-pointer"
+                      >
+                        <ImagePlus className="w-4 h-4" />
+                        גלריה
+                      </motion.div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* AI breed detection badge */}
+                  {breedConfidence !== null && formData.breed && breedSource === 'ai' && (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm"
                       style={{ background: 'var(--gradient-primary)' }}
                     >
                       <Sparkles className="w-4 h-4 text-white" />
                       <span className="text-white font-medium">
-                        {formData.breed} ({Math.round(breedConfidence * 100)}%)
+                        זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
                       </span>
                     </motion.div>
                   )}
@@ -735,11 +761,22 @@ const AddPet = () => {
 
                 {/* Breed */}
                 <div className="space-y-2">
-                  <Label htmlFor="breed">גזע</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="breed">גזע</Label>
+                    {breedSource === 'ai' && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        זוהה אוטומטית
+                      </span>
+                    )}
+                  </div>
                   <Input
                     id="breed"
                     value={formData.breed}
-                    onChange={(e) => setFormData(prev => ({ ...prev, breed: e.target.value }))}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, breed: e.target.value }));
+                      setBreedSource('user');
+                    }}
                     placeholder={breedDetecting ? "מזהה גזע..." : "מה הגזע?"}
                     disabled={breedDetecting}
                     className="h-12 rounded-xl"
