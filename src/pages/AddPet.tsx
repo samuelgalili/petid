@@ -361,7 +361,8 @@ const AddPet = () => {
         avatar_url: avatarUrl,
         personality_tags: personalityTags.length > 0 ? personalityTags : null,
         favorite_activities: activities.length > 0 ? activities : null,
-        health_notes: healthNotes || null
+        medical_conditions: medicalConditions.length > 0 ? medicalConditions : null,
+        health_notes: otherConditionText || healthNotes || null
       }).select().single();
       
       if (insertError) throw insertError;
