@@ -73,19 +73,12 @@ const Profile = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-collapse profile section after 30 seconds
+  // Collapse profile section when a pet is selected (expanded)
   useEffect(() => {
-    if (!loading && !isProfileCollapsed) {
-      collapseTimerRef.current = setTimeout(() => {
-        setIsProfileCollapsed(true);
-      }, 3000); // 3 seconds
+    if (isExpanded && !isProfileCollapsed) {
+      setIsProfileCollapsed(true);
     }
-    return () => {
-      if (collapseTimerRef.current) {
-        clearTimeout(collapseTimerRef.current);
-      }
-    };
-  }, [loading, isProfileCollapsed]);
+  }, [isExpanded]);
 
   // Reset timer when user expands profile
   const handleExpandProfile = () => {
