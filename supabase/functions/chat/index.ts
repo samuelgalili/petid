@@ -250,9 +250,62 @@ serve(async (req) => {
     if (!activePet) activePet = pickPetFromMessage(lastUserMsg, pets);
     if (!activePet && pets.length === 1) activePet = pets[0];
 
-    const petCard = activePet
-      ? `\n[ACTIVE_PET]\nname: ${activePet.name}\ntype: ${activePet.type === 'dog' ? 'כלב' : activePet.type === 'cat' ? 'חתול' : activePet.type}\nbreed: ${activePet.breed ?? "לא ידוע"}\nage: ${activePet.age ?? "לא ידוע"}\ngender: ${activePet.gender === 'male' ? 'זכר' : activePet.gender === 'female' ? 'נקבה' : activePet.gender ?? "לא ידוע"}\nhealth_notes: ${activePet.health_notes ?? "אין"}\n[/ACTIVE_PET]`
-      : "\n[ACTIVE_PET]\nnone\n[/ACTIVE_PET]";
+    // ============= Enrich Pet Data from DB =============
+    let petCard = "\n[ACTIVE_PET]\nnone\n[/ACTIVE_PET]";
+    
+    if (activePet?.id) {
+      const { data: fullPet } = await supabase
+        .from("pets")
+        .select("name, type, breed, age, gender, birth_date, weight, weight_unit, size, health_notes, medical_conditions, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, vet_name, vet_clinic, is_neutered, current_food")
+        .eq("id", activePet.id)
+        .maybeSingle();
+      
+      if (fullPet) {
+        // Calculate age from birth_date if available
+        let ageDisplay = fullPet.age ? `${fullPet.age}` : "לא ידוע";
+        if (fullPet.birth_date) {
+          const birth = new Date(fullPet.birth_date);
+          const now = new Date();
+          const diffMs = now.getTime() - birth.getTime();
+          const ageYears = Math.floor(diffMs / (365.25 * 24 * 60 * 60 * 1000));
+          const ageMonths = Math.floor((diffMs % (365.25 * 24 * 60 * 60 * 1000)) / (30.44 * 24 * 60 * 60 * 1000));
+          ageDisplay = ageYears > 0 ? `${ageYears} שנים ו-${ageMonths} חודשים` : `${ageMonths} חודשים`;
+        }
+
+        const medConditions = fullPet.medical_conditions?.length 
+          ? fullPet.medical_conditions.join(", ") 
+          : "אין ידועים";
+
+        petCard = `
+[ACTIVE_PET]
+name: ${fullPet.name}
+type: ${fullPet.type === 'dog' ? 'כלב' : fullPet.type === 'cat' ? 'חתול' : fullPet.type}
+breed: ${fullPet.breed ?? "לא ידוע"}
+age: ${ageDisplay}
+birth_date: ${fullPet.birth_date ?? "לא ידוע"}
+gender: ${fullPet.gender === 'male' ? 'זכר' : fullPet.gender === 'female' ? 'נקבה' : fullPet.gender ?? "לא ידוע"}
+weight: ${fullPet.weight ? `${fullPet.weight} ${fullPet.weight_unit || 'ק"ג'}` : "לא ידוע"}
+size: ${fullPet.size ?? "לא ידוע"}
+is_neutered: ${fullPet.is_neutered === true ? 'כן' : fullPet.is_neutered === false ? 'לא' : 'לא ידוע'}
+health_notes: ${fullPet.health_notes ?? "אין"}
+medical_conditions: ${medConditions}
+current_food: ${fullPet.current_food ?? "לא ידוע"}
+has_insurance: ${fullPet.has_insurance === true ? 'כן' : fullPet.has_insurance === false ? 'לא' : 'לא ידוע'}
+insurance_company: ${fullPet.insurance_company ?? "אין"}
+insurance_expiry: ${fullPet.insurance_expiry_date ?? "לא ידוע"}
+last_vet_visit: ${fullPet.last_vet_visit ?? "לא ידוע"}
+next_vet_visit: ${fullPet.next_vet_visit ?? "לא ידוע"}
+vet_name: ${fullPet.vet_name ?? "לא ידוע"}
+vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
+[/ACTIVE_PET]`;
+
+        // Update activePet with DB data for downstream use
+        activePet.breed = fullPet.breed || activePet.breed;
+        activePet.type = fullPet.type || activePet.type;
+      }
+    } else if (activePet) {
+      petCard = `\n[ACTIVE_PET]\nname: ${activePet.name}\ntype: ${activePet.type === 'dog' ? 'כלב' : activePet.type === 'cat' ? 'חתול' : activePet.type}\nbreed: ${activePet.breed ?? "לא ידוע"}\nage: ${activePet.age ?? "לא ידוע"}\ngender: ${activePet.gender === 'male' ? 'זכר' : activePet.gender === 'female' ? 'נקבה' : activePet.gender ?? "לא ידוע"}\nhealth_notes: ${activePet.health_notes ?? "אין"}\n[/ACTIVE_PET]`;
+    }
 
     const userName = userContext?.userName ? `\nשם הלקוח: ${userContext.userName}` : '';
 
@@ -343,6 +396,14 @@ ${userName}${petCard}${breedContext}${productContext}
 • אל תדחוף פעולות, דחיפות, או מכירות.
 • מילים אסורות: "חובה", "הכי טוב", "מבצע", "תמהרו". מילים מותרות: "מומלץ", "לא נדרש", "לא מתאים", "עדיף לחכות".
 • אם יש ספק רפואי, מידע סותר, או סיכון לחיה — עצור. הסבר בנחת ובקש הבהרה.
+
+=== שימוש בנתוני החיה ===
+• הנתונים ב-ACTIVE_PET מגיעים ישירות מהמערכת — השתמש בהם!
+• אם יש גיל (age), גזע (breed), משקל (weight), מצבים רפואיים (medical_conditions) — אל תשאל שוב. השתמש ישירות.
+• אם שדה מסוים מציג "לא ידוע" — רק אז שאל את המשתמש.
+• דוגמה: אם breed=גולדן רטריבר ו-age=3 שנים — אמור "אני רואה ש[שם] הוא גולדן רטריבר בן 3, בוא נמשיך!" ואל תשאל.
+• אם has_insurance=כן — ציין שיש ביטוח קיים ושאל אם רוצה לשדרג/להחליף.
+• אם medical_conditions לא ריק — התייחס למצבים הרפואיים בהמלצות שלך.
 
 === סגנון שיחה ===
 • עברית חמה, קצרה ומקצועית
