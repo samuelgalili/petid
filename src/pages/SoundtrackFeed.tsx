@@ -874,7 +874,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       {isVideo && index === currentIndex &&
       <button
         onClick={(e) => {e.stopPropagation();setMuted(!muted);}}
-        className="absolute top-16 left-4 z-20 p-2 rounded-full bg-black/30 backdrop-blur-sm">
+        className="absolute top-16 left-4 z-50 p-2 rounded-full bg-black/30 backdrop-blur-sm">
 
           {muted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
         </button>
