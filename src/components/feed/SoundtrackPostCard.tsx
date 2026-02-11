@@ -426,7 +426,7 @@ export const SoundtrackPostCard = ({
 
       {/* Gallery indicator dots */}
       {hasMultipleImages && (
-        <div className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
+        <div className="absolute bottom-[100px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
           {allImages.map((_, i) => (
             <div
               key={i}
