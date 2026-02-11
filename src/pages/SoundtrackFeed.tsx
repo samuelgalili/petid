@@ -649,8 +649,8 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       transition={{ delay: index * 0.05 }}
       onClick={handleDoubleTap}>
 
-      {/* Full-bleed media */}
-      <div className="absolute inset-0 bg-black">
+      {/* Full-bleed media - z-0 */}
+      <div className="absolute inset-0 z-0 bg-black">
         {allImages.length > 0 ?
         <div
           className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex"
@@ -680,14 +680,14 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         }
       </div>
 
-      {/* Bottom gradient for text readability */}
+      {/* Bottom gradient for text readability - z-10 */}
       <div
-        className="absolute inset-x-0 bottom-0 pointer-events-none"
+        className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
         style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
 
-      {/* Top gradient */}
+      {/* Top gradient - z-10 */}
       <div
-        className="absolute inset-x-0 top-0 pointer-events-none"
+        className="absolute inset-x-0 top-0 z-10 pointer-events-none"
         style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)' }} />
 
 
@@ -695,7 +695,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       <AnimatePresence>
         {showHeartBurst &&
         <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
           initial={{ scale: 0, opacity: 1 }}
           animate={{ scale: 1.2, opacity: 0 }}
           exit={{ opacity: 0 }}
@@ -708,8 +708,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
       {/* ===== RIGHT SIDEBAR (Action Column) ===== */}
       <motion.div
-        className="absolute z-20 flex flex-col items-center gap-6"
-        style={{ right: '16px', top: '50%', transform: 'translateY(-50%)' }}
+        className="absolute bottom-[120px] right-4 z-50 flex flex-col items-center gap-6"
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2, staggerChildren: 0.05 }}>
@@ -800,7 +799,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       </motion.div>
 
       {/* ===== BOTTOM-LEFT Information Overlay ===== */}
-      <div className="absolute z-20" style={{ left: '16px', bottom: '16px', right: '80px' }}>
+      <div className="absolute bottom-[120px] left-4 z-50 max-w-[75%] flex flex-col gap-1">
         {/* Status Badge (glassmorphism) */}
         {(isProductPost || isCtaPost || isChallengePost) &&
         <div
@@ -858,7 +857,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
       {/* Gallery indicator dots */}
       {hasMultipleImages &&
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+      <div className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
           {allImages.map((_, i) =>
         <div
           key={i}
@@ -875,7 +874,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       {isVideo && index === currentIndex &&
       <button
         onClick={(e) => {e.stopPropagation();setMuted(!muted);}}
-        className="absolute top-16 left-4 z-20 p-2 rounded-full bg-black/30 backdrop-blur-sm">
+        className="absolute top-16 left-4 z-50 p-2 rounded-full bg-black/30 backdrop-blur-sm">
 
           {muted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
         </button>
