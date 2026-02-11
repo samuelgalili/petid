@@ -129,6 +129,7 @@ const Chat = () => {
     { id: "delivery", label: "משלוחים", icon: "📦" },
     { id: "breed", label: "מידע על הגזע", icon: "🐕" },
     { id: "rehoming", label: "למסירה", icon: "🏠" },
+    { id: "adoption", label: "אימוץ", icon: "🐾" },
   ];
 
   const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
