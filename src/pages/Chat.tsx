@@ -340,6 +340,21 @@ const Chat = () => {
         setMessages(prev => [...prev, insuranceMsg]);
       }, 2000);
     }
+    if (actions.includes("SHOW_INSURANCE_CALLBACK")) {
+      // Show callback form for pets with health issues
+      const callbackMsg: Message = {
+        role: "assistant",
+        content: "נציג מקצועי יבדוק את המקרה ויחזור אליך:",
+        insuranceCallback: {
+          petName: selectedPet?.name || "החיה שלך",
+          petType: selectedPet?.type || "dog",
+          breed: selectedPet?.breed || null,
+          ageYears: null,
+          petId: selectedPet?.id || null,
+        },
+      };
+      setMessages(prev => [...prev, callbackMsg]);
+    }
   };
 
   // Handle action button clicks
