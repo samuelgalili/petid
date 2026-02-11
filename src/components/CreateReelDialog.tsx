@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Video, Upload, X, Loader2 } from 'lucide-react';
 import { ReelProductTagger } from '@/components/shop/ReelProductTagger';
+import { getVideoDimensions, validateVideoResolution, validateFileSize, MEDIA_SPECS } from '@/utils/mediaValidation';
 
 interface CreateReelDialogProps {
   open: boolean;
@@ -85,20 +86,30 @@ const CreateReelDialog: React.FC<CreateReelDialogProps> = ({ open, onOpenChange 
     }
   });
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate video file
     if (!file.type.startsWith('video/')) {
       toast.error('יש לבחור קובץ וידאו');
       return;
     }
 
-    // 50MB limit
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error('גודל הקובץ מקסימלי: 50MB');
+    const sizeCheck = validateFileSize(file, MEDIA_SPECS.video.maxFileSizeMB);
+    if (!sizeCheck.valid) {
+      toast.error(sizeCheck.error);
       return;
+    }
+
+    try {
+      const dims = await getVideoDimensions(file);
+      const resCheck = validateVideoResolution(dims);
+      if (!resCheck.valid) {
+        toast.error(resCheck.error);
+        return;
+      }
+    } catch {
+      // If we can't read dimensions, allow upload anyway
     }
 
     setVideoFile(file);
