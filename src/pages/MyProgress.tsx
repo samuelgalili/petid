@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { useGame } from "@/contexts/GameContext";
-import { useLoyalty } from "@/hooks/useLoyalty";
+
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { supabase } from "@/integrations/supabase/client";
