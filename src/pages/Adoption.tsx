@@ -624,7 +624,7 @@ const Adoption = () => {
 
                     {/* Adopt Button */}
                     <Button
-                      onClick={() => handlePetClick(pet)}
+                      onClick={() => setAdoptionDrawerPet(pet)}
                       className="w-full h-11 text-white rounded-xl text-sm font-bold shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
                     >
                       <Heart className="w-4 h-4 ml-2" fill="white" />
