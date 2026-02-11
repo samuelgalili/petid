@@ -426,10 +426,12 @@ ${userName}${petCard}${breedContext}${productContext}
 === 9 מסלולי שיחה ===
 
 🛡️ 1. ביטוח (Libra Insurance)
-שלב 1: אמת גזע וגיל — "מה הגזע של [שם]? בן כמה?" (אם חסר מידע ב-ACTIVE_PET)
-שלב 2: שאל 2 שאלות בריאות — "האם [שם] עבר ניתוחים בעבר?" ו-"יש מצבים רפואיים ידועים?"
-שלב 3: אמור "מעולה! מחשב הצעה מותאמת..." ואז הוסף [ACTION:SHOW_INSURANCE_PLANS]
+שלב 1: אמת גזע וגיל — "מה הגזע של [שם]? בן כמה?" (אם חסר מידע ב-ACTIVE_PET). אם הנתונים קיימים — דלג ישירות לשלב 2.
+שלב 2: שאל על מצב בריאותי — "האם [שם] בריא/ה או שיש בעיה רפואית כלשהי?"
+  • אם המשתמש אומר שהחיה בריאה → אמור "מעולה! מחשב הצעה מותאמת..." ואז הוסף [ACTION:SHOW_INSURANCE_PLANS]
+  • אם המשתמש מדווח על בעיה רפואית → אמור "הבנתי, במקרים כאלה נציג מקצועי מ-Libra יבדוק את המקרה באופן אישי ויחזור אליך טלפונית. השאר מספר טלפון ונעביר את הפרטים." ואז הוסף [ACTION:SHOW_INSURANCE_CALLBACK]
 ⚠️ חשוב: אל תציג מחירים בטקסט. המערכת תציג כרטיסי תוכניות אוטומטית.
+⚠️ אם medical_conditions ב-ACTIVE_PET מכיל מצבים — התייחס אליהם כבעיה רפואית ועבור ישירות לנתיב הלא-בריא (callback).
 
 ✂️ 2. טיפוח
 בחירת שירות (תספורת/רחצה/ציפורניים/חבילה) → בחירת מועד [ACTION:SHOW_CALENDAR] → שעה → סיכום ומחיר → [ACTION:CONFIRM_BOOKING]
@@ -459,9 +461,8 @@ ${breedContext ? "השתמש בנתוני BREED_DATA שמצורפים למעלה
 === תגיות פעולה ===
 הוסף תגית כשנדרשת פעולה מהמערכת:
 [ACTION:SHOW_CALENDAR] | [ACTION:CONFIRM_BOOKING] | [ACTION:SHOW_INSURANCE_PLANS]
-[ACTION:SCHEDULE_TRAINING] | [ACTION:UPLOAD_DOCUMENT] | [ACTION:SHOW_BOARDING_OPTIONS]
-[ACTION:ORDER_STATUS] | [ACTION:UPLOAD_PHOTO] | [ACTION:ESCALATE]
-[ACTION:ORDER_STATUS] | [ACTION:UPLOAD_PHOTO] | [ACTION:ESCALATE]
+[ACTION:SHOW_INSURANCE_CALLBACK] | [ACTION:SCHEDULE_TRAINING] | [ACTION:UPLOAD_DOCUMENT]
+[ACTION:SHOW_BOARDING_OPTIONS] | [ACTION:ORDER_STATUS] | [ACTION:UPLOAD_PHOTO] | [ACTION:ESCALATE]
 
 === הסלמה ===
 "לא עובד", "חיוב כפול", "אני עצבני", קללות

@@ -10,6 +10,7 @@ import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
 import { ChatProductCards } from "@/components/chat/ChatProductCards";
 import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
+import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
 
 interface Product {
   id: string;
@@ -32,6 +33,14 @@ interface Message {
     petId?: string | null;
     healthAnswer1?: string;
     healthAnswer2?: string;
+  };
+  insuranceCallback?: {
+    petName: string;
+    petType: string;
+    breed: string | null;
+    ageYears: number | null;
+    petId?: string | null;
+    healthIssue?: string;
   };
 }
 
@@ -332,6 +341,21 @@ const Chat = () => {
         setMessages(prev => [...prev, insuranceMsg]);
       }, 2000);
     }
+    if (actions.includes("SHOW_INSURANCE_CALLBACK")) {
+      // Show callback form for pets with health issues
+      const callbackMsg: Message = {
+        role: "assistant",
+        content: "נציג מקצועי יבדוק את המקרה ויחזור אליך:",
+        insuranceCallback: {
+          petName: selectedPet?.name || "החיה שלך",
+          petType: selectedPet?.type || "dog",
+          breed: selectedPet?.breed || null,
+          ageYears: null,
+          petId: selectedPet?.id || null,
+        },
+      };
+      setMessages(prev => [...prev, callbackMsg]);
+    }
   };
 
   // Handle action button clicks
@@ -540,6 +564,11 @@ const Chat = () => {
                     {/* Insurance Plan Cards */}
                     {message.role === "assistant" && message.insuranceData && (
                       <InsurancePlanCards {...message.insuranceData} />
+                    )}
+
+                    {/* Insurance Callback Form */}
+                    {message.role === "assistant" && message.insuranceCallback && (
+                      <InsuranceCallbackForm {...message.insuranceCallback} />
                     )}
                   </div>
                 </div>
