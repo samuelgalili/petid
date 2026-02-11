@@ -15,3 +15,4 @@ export { NewPostToast } from './NewPostToast';
 export { DailyStreak } from './DailyStreak';
 export { FeedOnboarding } from './FeedOnboarding';
 export { SocialProofLabel } from './SocialProofLabel';
+export { SoundtrackPostCard } from './SoundtrackPostCard';
