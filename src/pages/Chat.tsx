@@ -33,6 +33,14 @@ interface Message {
     healthAnswer1?: string;
     healthAnswer2?: string;
   };
+  insuranceCallback?: {
+    petName: string;
+    petType: string;
+    breed: string | null;
+    ageYears: number | null;
+    petId?: string | null;
+    healthIssue?: string;
+  };
 }
 
 interface Pet {
