@@ -138,7 +138,8 @@ export const InsurancePlanCards = ({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-3 mt-2 w-full min-w-0"
+      className="space-y-3 mt-2"
+      style={{ width: '85vw', maxWidth: '400px' }}
     >
       {/* Libra branding header */}
       <div className="flex items-center gap-2 px-1">
@@ -150,7 +151,17 @@ export const InsurancePlanCards = ({
       </div>
 
       {/* Plan cards - horizontal scroll */}
-      <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+      <div
+        className="flex gap-2.5 pb-2"
+        style={{
+          overflowX: 'auto',
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          touchAction: 'pan-x',
+        }}
+      >
         {LIBRA_PLANS.map((plan, idx) => {
           const isSelected = selectedPlan === plan.id;
           return (
@@ -161,21 +172,25 @@ export const InsurancePlanCards = ({
               transition={{ delay: idx * 0.1 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedPlan(plan.id)}
-              className={`relative flex-shrink-0 w-[70%] min-w-[200px] snap-center text-right rounded-2xl border-2 p-4 transition-all ${
+              style={{
+                flexShrink: 0,
+                width: '65%',
+                minWidth: '180px',
+                scrollSnapAlign: 'start',
+                ...(isSelected
+                  ? {
+                      borderColor: `hsl(${LIBRA_BLUE})`,
+                      backgroundColor: `hsl(${LIBRA_BLUE} / 0.05)`,
+                    }
+                  : {}),
+              }}
+              className={`relative text-right rounded-2xl border-2 p-3.5 transition-all ${
                 isSelected
                   ? "shadow-md"
                   : plan.highlight
                   ? "border-border/60 bg-card"
                   : "border-border/40 bg-card/80"
               }`}
-              style={
-                isSelected
-                  ? {
-                      borderColor: `hsl(${LIBRA_BLUE})`,
-                      backgroundColor: `hsl(${LIBRA_BLUE} / 0.05)`,
-                    }
-                  : undefined
-              }
             >
               {/* Badge */}
               {plan.badge && (
@@ -192,15 +207,15 @@ export const InsurancePlanCards = ({
               )}
 
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <Shield
-                    className="w-5 h-5"
+                    className="w-4 h-4"
                     style={{ color: isSelected ? `hsl(${LIBRA_BLUE})` : undefined }}
                   />
-                  <span className="font-bold text-foreground">{plan.name}</span>
+                  <span className="font-bold text-sm text-foreground">{plan.name}</span>
                 </div>
                 <div className="text-left">
-                  <span className="text-lg font-bold" style={{ color: `hsl(${LIBRA_BLUE})` }}>
+                  <span className="text-base font-bold" style={{ color: `hsl(${LIBRA_BLUE})` }}>
                     ₪{plan.price}
                   </span>
                   <span className="text-[10px] text-muted-foreground">/חודש</span>
@@ -209,7 +224,7 @@ export const InsurancePlanCards = ({
 
               <ul className="space-y-1">
                 {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <li key={i} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                     <Check className="w-3 h-3 flex-shrink-0" style={{ color: `hsl(${LIBRA_BLUE})` }} />
                     {f}
                   </li>
@@ -218,6 +233,21 @@ export const InsurancePlanCards = ({
             </motion.button>
           );
         })}
+      </div>
+
+      {/* Scroll hint dots */}
+      <div className="flex justify-center gap-1.5">
+        {LIBRA_PLANS.map((plan) => (
+          <div
+            key={plan.id}
+            className="w-1.5 h-1.5 rounded-full transition-colors"
+            style={{
+              backgroundColor: selectedPlan === plan.id
+                ? `hsl(${LIBRA_BLUE})`
+                : `hsl(${LIBRA_BLUE} / 0.2)`,
+            }}
+          />
+        ))}
       </div>
 
       {/* Phone capture - shows after plan selection */}
