@@ -525,13 +525,6 @@ const UserProfile = () => {
               </div>
             )}
 
-            {/* Points badge for own profile */}
-            {isOwnProfile && (profile.points || 0) > 0 && (
-              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full">
-                <Crown className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">{profile.points} נקודות</span>
-              </div>
-            )}
           </div>
 
           {/* Action Buttons */}

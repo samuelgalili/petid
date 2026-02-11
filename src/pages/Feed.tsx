@@ -1246,44 +1246,6 @@ const Feed = () => {
       delay: 0.1,
       duration: 0.4
     }}>
-        {/* Rewards Bar - PetID styled */}
-        <motion.div initial={{
-        opacity: 0,
-        y: -10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} className="px-4 py-3 cursor-pointer bg-card border-b border-border/30" onClick={() => navigate('/rewards')}>
-          {/* Header */}
-          
-          {/* Points Progress */}
-          <motion.div className="space-y-2" dir="rtl" initial={{
-          opacity: 0,
-          x: -20
-        }} animate={{
-          opacity: 1,
-          x: 0
-        }} transition={{
-          delay: 0.3,
-          duration: 0.4
-        }}>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">⭐ נקודות פעילות</span>
-              <span className="text-primary font-semibold">{totalPoints} נק׳</span>
-            </div>
-            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500" initial={{
-              width: 0
-            }} animate={{
-              width: [`0%`, `100%`, `${Math.min(totalPoints / 1000 * 100, 100)}%`]
-            }} transition={{
-              duration: 3,
-              times: [0, 0.6, 1],
-              ease: "easeInOut"
-            }} />
-            </div>
-          </motion.div>
-        </motion.div>
 
 
         {/* Business Directory Quick Access */}

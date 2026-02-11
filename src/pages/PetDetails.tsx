@@ -793,8 +793,6 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="px-4 pt-4 space-y-6" dir="rtl">
-          {/* נקודות ותגמולים */}
-          <PointsRewardsCard petName={pet.name} />
           
           {/* קרוסלות מוצרים מומלצים לפי גזע וגיל */}
           <PetProductCarousels 

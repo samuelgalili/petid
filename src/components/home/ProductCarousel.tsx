@@ -163,12 +163,12 @@ export const ProductCarousel = () => {
           />
 
           <PromoCard
-            title="הטבות מועדון"
+            title="מבצעים חמים"
             subtitle="בלעדי לחברים"
             bgColor="red"
             index={1}
             icon={<Gift className="w-8 h-8 text-white" />}
-            onClick={() => navigate('/rewards')}
+            onClick={() => navigate('/shop')}
           />
 
           {/* Fourth row - 2 more products */}
