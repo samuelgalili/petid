@@ -42,7 +42,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
   };
 
   return (
-    <article className="bg-white">
+    <article className="bg-card rounded-2xl shadow-card mx-2 my-1 overflow-hidden border border-border/20 dark:border-border/10 relative before:absolute before:inset-0 before:rounded-2xl before:pointer-events-none before:bg-gradient-to-br before:from-warning-light/5 before:to-transparent">
       {/* Header - Instagram style */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
@@ -69,7 +69,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         <img
           src={pet.image_url || "/placeholder.svg"}
           alt={pet.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
         />
         
         {/* Subtle gradient at bottom */}
@@ -130,19 +130,23 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
       </div>
 
       {/* CTA Button - Instagram style */}
-      <button
+      <motion.button
         onClick={() => navigate('/adoption')}
-        className="w-full bg-gradient-to-r from-amber-500 to-amber-400 active:opacity-80 transition-opacity flex items-center justify-between px-4 py-3.5"
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        className="w-full bg-gradient-to-r from-amber-500 via-amber-400 to-orange-400 active:opacity-80 transition-all flex items-center justify-between px-4 py-3.5 rounded-b-2xl"
       >
-        <PawPrint className="w-5 h-5 text-white" />
+        <motion.div animate={{ rotate: [0, -10, 10, -5, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}>
+          <PawPrint className="w-5 h-5 text-primary-foreground" />
+        </motion.div>
         <div className="flex items-center gap-2">
-          <span className="text-white text-[15px] font-semibold">לאימוץ</span>
-          <ChevronLeft className="w-5 h-5 text-white" />
+          <span className="text-primary-foreground text-[15px] font-semibold">לאימוץ</span>
+          <motion.div animate={{ x: [0, -4, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+            <ChevronLeft className="w-5 h-5 text-primary-foreground" />
+          </motion.div>
         </div>
-      </button>
+      </motion.button>
 
-      {/* Post Divider */}
-      <div className="h-[1px] bg-neutral-100" />
     </article>
   );
 };

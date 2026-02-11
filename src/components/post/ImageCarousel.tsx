@@ -35,7 +35,7 @@ export const ImageCarousel = ({
         <OptimizedImage
           src={images[0]}
           alt={alt}
-          className="w-full aspect-square"
+          className="w-full aspect-square rounded-xl overflow-hidden"
           objectFit="cover"
           sizes="(max-width: 768px) 100vw, 672px"
         />
@@ -117,9 +117,9 @@ export const ImageCarousel = ({
           <OptimizedImage
             src={images[currentIndex]}
             alt={`${alt} - ${currentIndex + 1}`}
-            className="w-full aspect-square"
-            objectFit="cover"
-            sizes="(max-width: 768px) 100vw, 672px"
+          className="w-full aspect-square rounded-xl overflow-hidden"
+          objectFit="cover"
+          sizes="(max-width: 768px) 100vw, 672px"
           />
         </motion.div>
       </AnimatePresence>

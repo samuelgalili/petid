@@ -304,7 +304,7 @@ export const PostCard = ({
 
   return (
     <article 
-      className="bg-white"
+      className="bg-card rounded-2xl shadow-card mx-2 my-1 overflow-hidden border border-border/20 dark:border-border/10"
     >
       {/* Post Header - Instagram style */}
       <div className="flex items-center justify-between px-4 py-2.5">
@@ -313,9 +313,9 @@ export const PostCard = ({
             className="cursor-pointer focus:outline-none"
             onClick={() => navigate(`/user/${post.user.id}`)}
           >
-            <Avatar className="w-9 h-9 rounded-lg">
-              <AvatarImage src={post.user.avatar_url} className="object-cover rounded-lg" />
-              <AvatarFallback className="bg-neutral-100 text-neutral-800 text-xs font-medium rounded-lg">
+            <Avatar className="w-9 h-9 rounded-xl ring-1 ring-border/30">
+              <AvatarImage src={post.user.avatar_url} className="object-cover rounded-xl" />
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium rounded-xl">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
@@ -325,10 +325,10 @@ export const PostCard = ({
               className="cursor-pointer focus:outline-none"
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
-              <span className="font-semibold text-neutral-900 text-[14px] leading-none">{post.user.full_name || "משתמש"}</span>
+              <span className="font-semibold text-card-foreground text-[14px] leading-none">{post.user.full_name || "משתמש"}</span>
             </button>
-            <span className="text-neutral-400 text-[14px]">•</span>
-            <span className="text-neutral-500 text-[14px]">{getTimeAgo(post.created_at)}</span>
+            <span className="text-muted-foreground text-[14px]">•</span>
+            <span className="text-muted-foreground text-[14px]">{getTimeAgo(post.created_at)}</span>
           </div>
         </div>
         
@@ -440,20 +440,20 @@ export const PostCard = ({
               className="active:opacity-50 transition-opacity focus:outline-none"
             >
               <motion.div
-                animate={isLicking ? { scale: [1, 1.15, 1] } : {}}
-                transition={{ duration: 0.25 }}
+                animate={isLicking ? { scale: [1, 1.3, 0.9, 1.1, 1], rotate: [0, -10, 10, -5, 0] } : {}}
+                transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 <Heart 
-                  className={`w-[26px] h-[26px] ${
+                  className={`w-[26px] h-[26px] transition-colors ${
                     post.is_liked 
-                      ? 'fill-[#ED4956] text-[#ED4956]' 
-                      : 'text-neutral-900'
+                      ? 'fill-petid-heart text-petid-heart' 
+                      : 'text-card-foreground'
                   }`}
                   strokeWidth={1.5}
                 />
               </motion.div>
             </button>
-            <span className="text-[15px] text-neutral-900 font-normal tabular-nums">
+            <span className="text-[15px] text-card-foreground font-normal tabular-nums">
               {post.likes_count > 0 ? post.likes_count.toLocaleString('he-IL') : '0'}
             </span>
           </div>
@@ -461,12 +461,12 @@ export const PostCard = ({
           {/* Comment button with count */}
           <div className="flex items-center gap-1.5">
             <button 
-              className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
+              className="text-card-foreground active:opacity-50 transition-opacity focus:outline-none"
               onClick={() => navigate(`/post/${post.id}`)}
             >
               <MessageCircle className="w-[26px] h-[26px]" strokeWidth={1.5} />
             </button>
-            <span className="text-[15px] text-neutral-900 font-normal tabular-nums">
+            <span className="text-[15px] text-card-foreground font-normal tabular-nums">
               {post.comments_count > 0 ? post.comments_count.toLocaleString('he-IL') : '0'}
             </span>
           </div>
@@ -476,7 +476,7 @@ export const PostCard = ({
           
           {/* Share button */}
           <button 
-            className="text-neutral-900 active:opacity-50 transition-opacity focus:outline-none"
+            className="text-card-foreground active:opacity-50 transition-opacity focus:outline-none"
             onClick={handleShare}
           >
             <Send className="w-[26px] h-[26px]" strokeWidth={1.5} />
@@ -529,7 +529,7 @@ export const PostCard = ({
       </div>
 
       {/* Add comment section */}
-      <div className="flex items-center gap-3 px-4 py-3 border-t border-neutral-100">
+      <div className="flex items-center gap-3 px-4 py-3 border-t border-border/30">
         <Avatar className="w-7 h-7 flex-shrink-0">
           <AvatarImage src={currentUserAvatar} className="object-cover" />
           <AvatarFallback className="bg-neutral-100 text-neutral-600 text-[10px] font-medium">
@@ -560,9 +560,6 @@ export const PostCard = ({
           )}
         </AnimatePresence>
       </div>
-
-      {/* Post Divider */}
-      <div className="h-[1px] bg-neutral-100" />
 
       {/* Report Dialog */}
       <ReportDialog
