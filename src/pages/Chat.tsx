@@ -11,6 +11,7 @@ import { ChatActionButton, extractActionTags, cleanActionTags } from "@/componen
 import { ChatProductCards } from "@/components/chat/ChatProductCards";
 import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
 import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
+import KineticDotsLoader from "@/components/ui/kinetic-dots-loader";
 
 interface Product {
   id: string;
