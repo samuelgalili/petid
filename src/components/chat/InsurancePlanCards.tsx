@@ -100,7 +100,6 @@ const PlanFlipCard = ({
       >
         {/* FRONT — Price & Name */}
         <div
-          onClick={() => setIsFlipped(true)}
           style={{
             position: 'absolute',
             width: '100%',
