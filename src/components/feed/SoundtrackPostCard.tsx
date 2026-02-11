@@ -10,6 +10,8 @@ import {
   Check,
   ShoppingCart,
   Plus,
+  Music,
+  Disc3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
