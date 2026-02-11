@@ -565,6 +565,11 @@ const Chat = () => {
                     {message.role === "assistant" && message.insuranceData && (
                       <InsurancePlanCards {...message.insuranceData} />
                     )}
+
+                    {/* Insurance Callback Form */}
+                    {message.role === "assistant" && message.insuranceCallback && (
+                      <InsuranceCallbackForm {...message.insuranceCallback} />
+                    )}
                   </div>
                 </div>
               </motion.div>
