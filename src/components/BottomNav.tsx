@@ -187,20 +187,17 @@ const BottomNav = () => {
             label="חנות"
           />
 
-          {/* Messages with notification badge */}
-          <button 
-            onClick={() => handleNavClick("/messages")} 
-            className="flex flex-col items-center justify-center flex-1 py-2 active:opacity-50 transition-opacity"
-            aria-label="הודעות"
-          >
-            <motion.div whileTap={{ scale: 0.92 }} className="flex flex-col items-center gap-0.5">
+          {/* Notifications */}
+          <NavItem 
+            onClick={() => handleNavClick("/notifications")}
+            icon={
               <div className="relative">
-                <MessageCircle 
+                <Bell 
                   className={cn(
                     "w-6 h-6",
-                    isActive("/messages") ? "text-foreground" : "text-muted-foreground"
+                    isActive("/notifications") ? "text-foreground" : "text-muted-foreground"
                   )}
-                  strokeWidth={isActive("/messages") ? 2 : 1.5}
+                  strokeWidth={isActive("/notifications") ? 2 : 1.5}
                 />
                 <AnimatePresence mode="wait">
                   {unreadCount > 0 && (
@@ -217,14 +214,10 @@ const BottomNav = () => {
                   )}
                 </AnimatePresence>
               </div>
-              <span className={cn(
-                "text-[10px] font-medium transition-colors",
-                isActive("/messages") ? "text-foreground" : "text-muted-foreground"
-              )}>
-                הודעות
-              </span>
-            </motion.div>
-          </button>
+            }
+            isActive={isActive("/notifications")}
+            label="התראות"
+          />
         </div>
         
         {/* Safe area for notched devices - iOS safe area */}
