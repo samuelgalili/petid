@@ -12,6 +12,7 @@ import { ChatProductCards } from "@/components/chat/ChatProductCards";
 import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
 import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
 import KineticDotsLoader from "@/components/ui/kinetic-dots-loader";
+import { GroomingServicePicker } from "@/components/chat/GroomingServicePicker";
 
 interface Product {
   id: string;
