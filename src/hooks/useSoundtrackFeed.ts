@@ -37,6 +37,9 @@ export interface FeedPost {
   product_weight?: string;
   product_sizes?: string[];
   product_colors?: string[];
+  music_url?: string | null;
+  music_title?: string | null;
+  music_artist?: string | null;
 }
 
 export function useSoundtrackFeed() {
@@ -57,7 +60,7 @@ export function useSoundtrackFeed() {
     try {
       let postsQuery = supabase
         .from("posts")
-        .select("id, user_id, image_url, media_urls, video_url, caption, created_at")
+        .select("id, user_id, image_url, media_urls, video_url, caption, created_at, music_url, music_title, music_artist")
         .order("created_at", { ascending: false })
         .limit(20);
 

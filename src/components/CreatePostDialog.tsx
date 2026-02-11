@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MusicPicker, type SelectedMusic } from "@/components/MusicPicker";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
   const [showCollabInvite, setShowCollabInvite] = useState(false);
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState<SelectedMusic | null>(null);
   
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +109,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     setAltText("");
     setCollaborators([]);
     setScheduleDate(undefined);
+    setSelectedMusic(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
@@ -194,6 +197,10 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         location_id: location?.id || null,
         pet_id: selectedPets.length > 0 ? selectedPets[0] : null,
         alt_text: altText || null,
+        music_id: selectedMusic?.id || null,
+        music_url: selectedMusic?.audio_url || null,
+        music_title: selectedMusic?.title || null,
+        music_artist: selectedMusic?.artist || null,
       };
 
       if (mediaType === "video") {
@@ -437,6 +444,9 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
               הוסף
             </Button>
           </div>
+
+          {/* Music */}
+          <MusicPicker selectedMusic={selectedMusic} onSelect={setSelectedMusic} />
 
           {/* Schedule */}
           <div className="flex items-center justify-between p-3 rounded-xl border border-border">
