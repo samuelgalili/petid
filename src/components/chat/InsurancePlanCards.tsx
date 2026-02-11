@@ -150,7 +150,7 @@ export const InsurancePlanCards = ({
       </div>
 
       {/* Plan cards - vertical */}
-      <div className="flex flex-col gap-2.5">
+      <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
         {LIBRA_PLANS.map((plan, idx) => {
           const isSelected = selectedPlan === plan.id;
           return (
@@ -161,7 +161,7 @@ export const InsurancePlanCards = ({
               transition={{ delay: idx * 0.1 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedPlan(plan.id)}
-              className={`relative w-full text-right rounded-2xl border-2 p-4 transition-all ${
+              className={`relative flex-shrink-0 w-[75%] snap-center text-right rounded-2xl border-2 p-4 transition-all ${
                 isSelected
                   ? "shadow-md"
                   : plan.highlight
