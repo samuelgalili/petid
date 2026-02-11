@@ -3,3 +3,8 @@ export { FeedViewSwitcher, type FeedViewMode } from './FeedViewSwitcher';
 export { FeedGridView } from './FeedGridView';
 export { FeedVideoView } from './FeedVideoView';
 export { FeedMasonryView } from './FeedMasonryView';
+export { BackToTopButton } from './BackToTopButton';
+export { ProgressiveImage } from './ProgressiveImage';
+export { QuickReactions, FloatingEmoji } from './QuickReactions';
+export { FeedSettings, type FeedTextSize, type FeedDensity } from './FeedSettings';
+export { QuickShareSheet } from './QuickShareSheet';

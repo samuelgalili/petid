@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search, Settings2 } from "lucide-react";
 import petidIcon from "@/assets/petid-icon.png";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { useLoyalty } from "@/hooks/useLoyalty";
@@ -37,7 +37,10 @@ import { BusinessFeedBanner } from "@/components/business/BusinessFeedBanner";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { SkeletonFeed } from "@/components/ui/enhanced-skeleton";
-import { FeedTabs, FeedViewSwitcher, FeedGridView, FeedVideoView, FeedMasonryView, type FeedTab, type FeedViewMode } from "@/components/feed";
+import { FeedTabs, FeedViewSwitcher, FeedGridView, FeedVideoView, FeedMasonryView, BackToTopButton, FeedSettings, QuickShareSheet, type FeedTab, type FeedViewMode, type FeedTextSize, type FeedDensity } from "@/components/feed";
+import { useScrollPosition } from "@/hooks/useScrollPosition";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/PullToRefresh";
 import { useFeedPersonalization } from "@/hooks/useFeedPersonalization";
 import { useLocation } from "@/hooks/useLocation";
 import { useEngagement } from "@/hooks/useEngagement";
@@ -315,9 +318,21 @@ const Feed = () => {
   
   const [isPetsSheetOpen, setIsPetsSheetOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [feedTextSize, setFeedTextSize] = useState<FeedTextSize>("normal");
+  const [feedDensity, setFeedDensity] = useState<FeedDensity>("normal");
+  const [showFeedSettings, setShowFeedSettings] = useState(false);
+  const [sharePostId, setSharePostId] = useState<string | null>(null);
+  const [shareCaption, setShareCaption] = useState<string>("");
   const observerTarget = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const POSTS_PER_PAGE = 10;
+
+  // Scroll position memory
+  useScrollPosition("main-feed");
+
+  // Pull to refresh - defined after fetch functions are available
+  // (moved to after fetch declarations below)
 
   // Fetch shop products from database
   const fetchShopProducts = useCallback(async () => {
@@ -507,6 +522,7 @@ const Feed = () => {
       console.error("Error fetching suggested posts:", error);
     }
   }, [user]);
+
   const handleCreatePost = () => {
     if (!checkAuth("כדי לפרסם פוסט, יש להתחבר")) return;
     setCreatePostOpen(true);
@@ -644,6 +660,24 @@ const Feed = () => {
     }
   }, [user, POSTS_PER_PAGE]);
 
+  // Pull to refresh - must be after all fetch function declarations
+  const handleRefresh = useCallback(async () => {
+    setPage(0);
+    setHasMore(true);
+    await Promise.all([
+      fetchPosts(0, false),
+      fetchAdoptionPets(),
+      fetchSuggestedPosts(),
+      fetchChallenges(),
+      fetchShopProducts(),
+    ]);
+  }, [fetchPosts, fetchAdoptionPets, fetchSuggestedPosts, fetchChallenges, fetchShopProducts]);
+
+  const { pullDistance, isRefreshing, progress, shouldTrigger, handlers: pullHandlers } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
+
+
   // Fetch user avatar and pets
   useEffect(() => {
     const fetchUserData = async () => {
@@ -739,12 +773,14 @@ const Feed = () => {
       toast.error("שגיאה בהעברת חיית המחמד לארכיון");
     }
   };
-  // Scroll detection for hiding stories
+  // Scroll detection for hiding stories and back-to-top
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
+      const y = window.scrollY;
+      setIsScrolled(y > 100);
+      setShowBackToTop(y > 600);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   useEffect(() => {
@@ -1105,8 +1141,10 @@ const Feed = () => {
   if (showOnboarding) {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
-  return <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden overscroll-x-none" dir="rtl" style={{ touchAction: 'pan-y' }}>
-    <div className="h-full overflow-y-auto overflow-x-hidden pb-[70px] overscroll-x-none">
+  return <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden overscroll-x-none" dir="rtl" style={{ touchAction: 'pan-y' }} {...pullHandlers}>
+    {/* Pull to refresh indicator */}
+    <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} progress={progress} shouldTrigger={shouldTrigger} />
+    <div className="h-full overflow-y-auto overflow-x-hidden pb-[70px] overscroll-x-none" style={{ transform: `translateY(${pullDistance}px)`, transition: isRefreshing ? 'none' : pullDistance === 0 ? 'transform 0.3s ease' : 'none' }}>
       {/* PetID-style Header - Modern, Clean */}
       <motion.div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-card/98 backdrop-blur-xl border-b border-border/40 shadow-sm" : "bg-transparent"}`} initial={{
       y: -20,
@@ -1148,16 +1186,25 @@ const Feed = () => {
             <span className="text-sm text-muted-foreground">Search</span>
           </div>
 
-          {/* Left side (in RTL) - Heart Icon */}
-          <motion.button 
-            type="button"
-            onClick={handleNavigateToNotifications} 
-            className="shrink-0" 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }}
-          >
-            <Heart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
-          </motion.button>
+          {/* Left side (in RTL) - Heart + Settings */}
+          <div className="flex items-center gap-2 shrink-0">
+            <motion.button 
+              type="button"
+              onClick={() => setShowFeedSettings(true)} 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings2 className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </motion.button>
+            <motion.button 
+              type="button"
+              onClick={handleNavigateToNotifications} 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+            >
+              <Heart className="w-6 h-6 text-foreground" strokeWidth={1.5} />
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
@@ -1258,7 +1305,7 @@ const Feed = () => {
       </AnimatePresence>
 
       {/* Feed */}
-      <div className="max-w-lg mx-auto">
+      <div className={`max-w-lg mx-auto ${feedTextSize === 'small' ? 'text-xs' : feedTextSize === 'large' ? 'text-base' : 'text-sm'} ${feedDensity === 'compact' ? 'space-y-0' : feedDensity === 'comfortable' ? 'space-y-4' : 'space-y-1'}`}>
         {loading ? <SkeletonFeed /> : mixedFeed.length === 0 ?
       // Enhanced Empty state - Beautiful and inviting
       <motion.div initial={{
@@ -1465,6 +1512,27 @@ const Feed = () => {
 
       {/* My Pets Sheet */}
       <MyPetsSheet open={isPetsSheetOpen} onOpenChange={setIsPetsSheetOpen} pets={pets} newlyAddedPetIds={newlyAddedPetIds} onPetLongPressStart={handlePetLongPressStart} onPetLongPressEnd={handlePetLongPressEnd} />
+
+      {/* Back to top button */}
+      <BackToTopButton visible={showBackToTop} />
+
+      {/* Feed Settings */}
+      <FeedSettings 
+        open={showFeedSettings}
+        onClose={() => setShowFeedSettings(false)}
+        textSize={feedTextSize}
+        onTextSizeChange={setFeedTextSize}
+        density={feedDensity}
+        onDensityChange={setFeedDensity}
+      />
+
+      {/* Quick Share Sheet */}
+      <QuickShareSheet 
+        open={!!sharePostId}
+        onClose={() => setSharePostId(null)}
+        postId={sharePostId || ""}
+        caption={shareCaption}
+      />
       </div>
       <BottomNav />
     </div>;
