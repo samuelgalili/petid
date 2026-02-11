@@ -22,6 +22,8 @@ import { SoundtrackPostCard } from "@/components/feed/SoundtrackPostCard";
 import { useSoundtrackFeed } from "@/hooks/useSoundtrackFeed";
 
 const SoundtrackFeed = () => {
+  const navigate = useNavigate();
+  const { unreadCount } = useRealtimeNotifications();
   const {
     posts,
     loading,
