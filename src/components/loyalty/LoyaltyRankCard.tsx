@@ -25,7 +25,7 @@ export const LoyaltyRankCard = ({ className, compact = false }: LoyaltyRankCardP
   if (compact) {
     return (
       <motion.div
-      onClick={() => navigate('/my-progress')}
+      onClick={() => navigate('/')}
         className={cn(
           "flex items-center gap-2.5 p-2.5 rounded-xl bg-card border border-border cursor-pointer",
           className
