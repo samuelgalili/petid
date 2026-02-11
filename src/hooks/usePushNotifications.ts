@@ -75,7 +75,7 @@ export function usePushNotifications() {
         return;
       }
 
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await (registration as any).pushManager.getSubscription();
       setIsSubscribed(!!subscription);
     } catch (error) {
       console.error('[Push] Error checking subscription:', error);
