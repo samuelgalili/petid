@@ -294,7 +294,7 @@ export const SoundtrackPostCard = ({
         >
           <Bookmark
             className={cn(
-              "w-8 h-8 drop-shadow-lg",
+              "w-7 h-7 drop-shadow-lg",
               post.is_saved ? "fill-yellow-400 text-yellow-400" : "text-white"
             )}
             strokeWidth={1.5}
