@@ -60,7 +60,7 @@ export const CategoryRecommendations = ({
       features: ['טיפולי חירום', 'ניתוחים', 'תרופות'],
       icon: Shield,
       iconBg: 'bg-success/10',
-      route: '/insurance',
+      route: '/chat',
       badge: 'מומלץ'
     },
     {
@@ -72,7 +72,7 @@ export const CategoryRecommendations = ({
       features: ['תאונות', 'אשפוז'],
       icon: Shield,
       iconBg: 'bg-success/10',
-      route: '/insurance',
+      route: '/chat',
     },
     // אילוף
     {
@@ -85,7 +85,7 @@ export const CategoryRecommendations = ({
       features: ['8 שיעורים', 'מאלף מוסמך', 'תעודה'],
       icon: GraduationCap,
       iconBg: 'bg-primary/10',
-      route: '/training',
+      route: '/chat',
       badge: 'הכי נמכר'
     },
     {
@@ -97,7 +97,7 @@ export const CategoryRecommendations = ({
       features: ['12 שיעורים', 'הליכה ברצועה'],
       icon: GraduationCap,
       iconBg: 'bg-primary/10',
-      route: '/training',
+      route: '/chat',
     },
     // פנסיון
     {
