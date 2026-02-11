@@ -60,7 +60,7 @@ export const CategoryRecommendations = ({
       features: ['טיפולי חירום', 'ניתוחים', 'תרופות'],
       icon: Shield,
       iconBg: 'bg-success/10',
-      route: '/insurance',
+      route: '/chat',
       badge: 'מומלץ'
     },
     {
