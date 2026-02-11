@@ -231,7 +231,7 @@ export function usePushNotifications() {
         return true;
       }
 
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await (registration as any).pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();
 
