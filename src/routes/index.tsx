@@ -164,7 +164,7 @@ export const shopRoutes: RouteObject[] = [
   { path: "/checkout", element: <Protected><LazyPage component={Checkout} pageName="תשלום" /></Protected> },
   { path: "/order-confirmation", element: <Protected><LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /></Protected> },
   { path: "/order-history", element: <Protected><LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /></Protected> },
-  { path: "/deals", element: <Protected><LazyPage component={Deals} pageName="מבצעים" /></Protected> },
+  { path: "/deals", element: <Navigate to="/shop" replace /> },
   { path: "/payment-success", element: <LazyPage component={PaymentSuccess} pageName="תשלום הצליח" /> },
   { path: "/payment-failed", element: <LazyPage component={PaymentFailed} pageName="תשלום נכשל" /> },
 ];
