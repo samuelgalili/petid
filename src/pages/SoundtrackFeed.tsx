@@ -912,6 +912,9 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
             {post.caption}
           </p>
         }
+
+        {/* Social proof - friends who liked */}
+        <SocialProofLabel postId={post.id} userId={userId} />
       </div>
 
       {/* Gallery indicator dots */}
