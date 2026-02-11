@@ -282,7 +282,7 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
-        {/* Share count */}
+        {/* Share */}
         <motion.button
           onClick={(e) => {
             e.stopPropagation();
@@ -291,28 +291,10 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <Send className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
           <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
             {formatCount(Math.max(Math.floor(post.likes_count * 0.3), 0))}
           </span>
-        </motion.button>
-
-        {/* Bookmark */}
-        <motion.button
-          onClick={(e) => {
-            e.stopPropagation();
-            onSave(post.id);
-          }}
-          whileTap={{ scale: 0.85 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <Bookmark
-            className={cn(
-              "w-7 h-7 drop-shadow-lg",
-              post.is_saved ? "fill-yellow-400 text-yellow-400" : "text-white"
-            )}
-            strokeWidth={1.5}
-          />
         </motion.button>
 
         {/* Spinning disc — avatar inside, TikTok style */}
