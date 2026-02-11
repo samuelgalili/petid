@@ -111,7 +111,7 @@ const SoundtrackFeed = () => {
     onRefresh: handleRefresh,
   });
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPostsInner = useCallback(async () => {
     setLoading(true);
     try {
       let postsQuery = supabase.
