@@ -81,8 +81,10 @@ const SoundtrackFeed = () => {
         animate={{ y: 0, opacity: 1 }}
       >
         <div className="flex items-center justify-between h-10 relative pointer-events-auto px-3">
-          {/* Left: empty for balance */}
-          <div className="w-10" />
+          {/* Left: DailyStreak */}
+          <div className="w-10">
+            <DailyStreak />
+          </div>
 
           {/* Right: Heart/Notifications */}
           <button
