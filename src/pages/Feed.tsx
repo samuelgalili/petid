@@ -142,7 +142,7 @@ const FEED_ADS: FeedAd[] = [{
   subtitle: "הנחות בלעדיות לחברי המועדון",
   image: "https://images.unsplash.com/photo-1544568100-847a948585b9?w=600&h=400&fit=crop",
   cta: "הצטרף חינם",
-  link: "/rewards",
+  link: "/shop",
   gradient: "from-amber-500 to-orange-400",
   badge: "20% הנחה"
 }];
