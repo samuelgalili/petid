@@ -185,15 +185,33 @@ const Chat = () => {
 
     if (!resp.ok || !resp.body) {
       setIsTyping(false);
-      if (resp.status === 429) {
-        throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
-      }
-      if (resp.status === 402) {
-        throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
-      }
+      if (resp.status === 429) throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
+      if (resp.status === 402) throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
       throw new Error("שגיאה בתקשורת עם השרת");
     }
 
+    const contentType = resp.headers.get("content-type") || "";
+    
+    // Handle non-streaming JSON response (product intents)
+    if (contentType.includes("application/json")) {
+      setIsTyping(false);
+      const json = await resp.json();
+      const content = json.content || json.role === "assistant" ? json.content : "";
+      
+      // Extract products from header
+      let products: Product[] = [];
+      const productsHeader = resp.headers.get("X-Products-Data");
+      if (productsHeader) {
+        try { products = JSON.parse(decodeURIComponent(productsHeader)); } catch {}
+      }
+      
+      const assistantMessage: Message = { role: "assistant", content, products };
+      setMessages(prev => [...prev, assistantMessage]);
+      handleActionTags(content);
+      return;
+    }
+
+    // Streaming response
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let textBuffer = "";
