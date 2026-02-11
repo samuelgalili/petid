@@ -213,7 +213,7 @@ export const SoundtrackPostCard = ({
 
       {/* RIGHT SIDEBAR */}
       <motion.div
-        className="absolute bottom-[120px] right-4 z-50 flex flex-col items-center gap-6"
+        className="absolute bottom-[80px] right-3 z-50 flex flex-col items-center gap-5"
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
