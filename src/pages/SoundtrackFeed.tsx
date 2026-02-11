@@ -680,14 +680,14 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         }
       </div>
 
-      {/* Bottom gradient for text readability */}
+      {/* Bottom gradient for text readability - z-10 */}
       <div
-        className="absolute inset-x-0 bottom-0 pointer-events-none"
+        className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
         style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
 
-      {/* Top gradient */}
+      {/* Top gradient - z-10 */}
       <div
-        className="absolute inset-x-0 top-0 pointer-events-none"
+        className="absolute inset-x-0 top-0 z-10 pointer-events-none"
         style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)' }} />
 
 
