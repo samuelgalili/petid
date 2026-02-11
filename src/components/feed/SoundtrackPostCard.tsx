@@ -258,12 +258,12 @@ export const SoundtrackPostCard = ({
         >
           <Heart
             className={cn(
-              "w-8 h-8 drop-shadow-lg",
+              "w-7 h-7 drop-shadow-lg",
               post.is_liked ? "fill-red-500 text-red-500" : "text-white"
             )}
             strokeWidth={1.5}
           />
-          <span className="text-white text-sm font-medium drop-shadow-lg">
+          <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
             {formatCount(post.likes_count)}
           </span>
         </motion.button>
