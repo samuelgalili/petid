@@ -65,7 +65,7 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
       {/* Link Button - Bottom Left Corner - Enhanced Accessibility */}
       <div className="mt-3 text-left">
         <motion.button
-          onClick={() => navigate('/rewards')}
+          onClick={() => navigate('/shop')}
           whileHover={{ x: -2 }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.15 }}
