@@ -330,9 +330,28 @@ const SoundtrackFeed = () => {
     }
   }, [activeTab, user]);
 
+  const fetchPosts = fetchPostsInner;
+
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  // Realtime listener for new posts
+  useEffect(() => {
+    const channel = supabase
+      .channel("feed-new-posts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, () => {
+        setNewPostCount((c) => c + 1);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const handleNewPostTap = () => {
+    setNewPostCount(0);
+    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    fetchPosts();
+  };
 
   const handleLike = async (postId: string) => {
     if (!user) {
