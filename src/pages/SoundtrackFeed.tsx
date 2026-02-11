@@ -649,8 +649,8 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       transition={{ delay: index * 0.05 }}
       onClick={handleDoubleTap}>
 
-      {/* Full-bleed media */}
-      <div className="absolute inset-0 bg-black">
+      {/* Full-bleed media - z-0 */}
+      <div className="absolute inset-0 z-0 bg-black">
         {allImages.length > 0 ?
         <div
           className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex"
