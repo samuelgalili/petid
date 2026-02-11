@@ -4,13 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart,
   MessageCircle,
-  Bookmark,
-  Share2,
   User,
   Check,
   ShoppingCart,
   Plus,
   Music,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
