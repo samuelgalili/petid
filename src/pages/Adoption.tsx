@@ -64,6 +64,7 @@ const Adoption = () => {
   const [likedPets, setLikedPets] = useState<Set<string>>(new Set());
   const [savedPets, setSavedPets] = useState<Set<string>>(new Set());
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
+  const [adoptionDrawerPet, setAdoptionDrawerPet] = useState<AdoptionPet | null>(null);
   const lastTapRef = useRef<{ [key: string]: number }>({});
   const { toast } = useToast();
   const { user } = useAuth();
