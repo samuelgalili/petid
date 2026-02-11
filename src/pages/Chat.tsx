@@ -345,7 +345,6 @@ const Chat = () => {
       }, 2000);
     }
     if (actions.includes("SHOW_INSURANCE_CALLBACK")) {
-      // Show callback form for pets with health issues
       const callbackMsg: Message = {
         role: "assistant",
         content: "נציג מקצועי יבדוק את המקרה ויחזור אליך:",
@@ -358,6 +357,17 @@ const Chat = () => {
         },
       };
       setMessages(prev => [...prev, callbackMsg]);
+    }
+    if (actions.includes("SHOW_GROOMING_SERVICES")) {
+      // Add grooming picker as part of the last message
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg?.role === "assistant") {
+          updated[updated.length - 1] = { ...lastMsg, showGroomingPicker: true };
+        }
+        return updated;
+      });
     }
   };
 
