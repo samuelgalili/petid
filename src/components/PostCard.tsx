@@ -3,7 +3,8 @@ import { MessageCircle, Share2, Bookmark, MoreVertical, Flag, ShoppingBag, Link2
 import pawHeartIcon from "@/assets/paw-heart-icon.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { haptic } from "@/lib/haptics";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -222,6 +223,7 @@ export const PostCard = ({
 
   const handleLike = () => {
     if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
+    haptic("light");
     setIsLicking(true);
     if (!post.is_liked) playLikeSound();
     onLike(post.id);
@@ -230,6 +232,7 @@ export const PostCard = ({
 
   const handleDoubleTap = () => {
     if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
+    haptic("success");
     setIsLicking(true);
     if (!post.is_liked) playLikeSound();
     onDoubleTap(post.id);
@@ -238,6 +241,7 @@ export const PostCard = ({
 
   const handleSave = () => {
     if (!checkAuth("כדי לשמור פוסטים, יש להתחבר")) return;
+    haptic("light");
     setIsSaveAnimating(true);
     onSave(post.id);
     setTimeout(() => setIsSaveAnimating(false), 600);
@@ -245,10 +249,12 @@ export const PostCard = ({
 
   const handleFollow = () => {
     if (!checkAuth("כדי לעקוב אחרי משתמשים, יש להתחבר")) return;
+    haptic("selection");
     toggleFollow();
   };
 
   const handleShare = async () => {
+    haptic("light");
     const shareUrl = `${window.location.origin}/post/${post.id}`;
     
     if (navigator.share) {
@@ -431,10 +437,21 @@ export const PostCard = ({
 
       {/* Post Actions - Instagram style */}
       <div className="px-3 pt-2.5 pb-1">
-        {/* Icons with counts inline */}
-        <div className="flex items-center gap-5">
+        {/* Icons with counts inline — improved sizes, shadows, haptic */}
+        <motion.div 
+          className="flex items-center gap-5"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: { transition: { staggerChildren: 0.06 } }
+          }}
+        >
           {/* Like button with count */}
-          <div className="flex items-center gap-1.5">
+          <motion.div 
+            className="flex items-center gap-1.5"
+            variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+          >
             <button 
               onClick={handleLike}
               className="active:opacity-50 transition-opacity focus:outline-none"
@@ -444,7 +461,7 @@ export const PostCard = ({
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 <Heart 
-                  className={`w-[26px] h-[26px] transition-colors ${
+                  className={`w-7 h-7 transition-colors drop-shadow-sm ${
                     post.is_liked 
                       ? 'fill-petid-heart text-petid-heart' 
                       : 'text-card-foreground'
@@ -453,35 +470,46 @@ export const PostCard = ({
                 />
               </motion.div>
             </button>
-            <span className="text-[15px] text-card-foreground font-normal tabular-nums">
-              {post.likes_count > 0 ? post.likes_count.toLocaleString('he-IL') : '0'}
+            <span className="text-[14px] text-card-foreground font-semibold tabular-nums">
+              {post.likes_count >= 1000 
+                ? `${(post.likes_count / 1000).toFixed(1)}k` 
+                : post.likes_count > 0 ? post.likes_count.toLocaleString('he-IL') : '0'}
             </span>
-          </div>
+          </motion.div>
           
           {/* Comment button with count */}
-          <div className="flex items-center gap-1.5">
+          <motion.div 
+            className="flex items-center gap-1.5"
+            variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+          >
             <button 
               className="text-card-foreground active:opacity-50 transition-opacity focus:outline-none"
-              onClick={() => navigate(`/post/${post.id}`)}
+              onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
             >
-              <MessageCircle className="w-[26px] h-[26px]" strokeWidth={1.5} />
+              <MessageCircle className="w-7 h-7 drop-shadow-sm" strokeWidth={1.5} />
             </button>
-            <span className="text-[15px] text-card-foreground font-normal tabular-nums">
-              {post.comments_count > 0 ? post.comments_count.toLocaleString('he-IL') : '0'}
+            <span className="text-[14px] text-card-foreground font-semibold tabular-nums">
+              {post.comments_count >= 1000 
+                ? `${(post.comments_count / 1000).toFixed(1)}k` 
+                : post.comments_count > 0 ? post.comments_count.toLocaleString('he-IL') : '0'}
             </span>
-          </div>
+          </motion.div>
           
           {/* Repost button */}
-          <RepostButton postId={post.id} />
+          <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}>
+            <RepostButton postId={post.id} />
+          </motion.div>
           
           {/* Share button */}
-          <button 
-            className="text-card-foreground active:opacity-50 transition-opacity focus:outline-none"
-            onClick={handleShare}
-          >
-            <Send className="w-[26px] h-[26px]" strokeWidth={1.5} />
-          </button>
-        </div>
+          <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}>
+            <button 
+              className="text-card-foreground active:opacity-50 transition-opacity focus:outline-none"
+              onClick={handleShare}
+            >
+              <Send className="w-7 h-7 drop-shadow-sm" strokeWidth={1.5} />
+            </button>
+          </motion.div>
+        </motion.div>
 
         {/* Location tag */}
         {post.location_name && (
