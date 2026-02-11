@@ -24,6 +24,15 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   products?: Product[];
+  insuranceData?: {
+    petName: string;
+    petType: string;
+    breed: string | null;
+    ageYears: number | null;
+    petId?: string | null;
+    healthAnswer1?: string;
+    healthAnswer2?: string;
+  };
 }
 
 interface Pet {
