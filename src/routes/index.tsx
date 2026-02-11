@@ -216,7 +216,7 @@ const Messages = lazy(() => import("@/pages/Messages"));
 const MessageThread = lazy(() => import("@/pages/MessageThread"));
 const PrivacySettings = lazy(() => import("@/pages/PrivacySettings"));
 const MyProgress = lazy(() => import("@/pages/MyProgress"));
-const Rewards = lazy(() => import("@/pages/Rewards"));
+
 const Chat = lazy(() => import("@/pages/Chat"));
 
 export const userRoutes: RouteObject[] = [
