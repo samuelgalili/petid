@@ -9,6 +9,7 @@ import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
 import { ChatProductCards } from "@/components/chat/ChatProductCards";
+import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
 
 interface Product {
   id: string;
