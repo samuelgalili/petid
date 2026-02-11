@@ -283,7 +283,7 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
-        {/* Share — in TikTok, share comes right after comments (no bookmark) */}
+        {/* Share count */}
         <motion.button
           onClick={(e) => {
             e.stopPropagation();
@@ -294,11 +294,11 @@ export const SoundtrackPostCard = ({
         >
           <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
           <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
-            {formatCount(post.comments_count > 0 ? Math.floor(post.comments_count * 0.5) : 0)}
+            {formatCount(Math.max(Math.floor(post.likes_count * 0.3), 0))}
           </span>
         </motion.button>
 
-        {/* Bookmark — TikTok has this after share */}
+        {/* Bookmark */}
         <motion.button
           onClick={(e) => {
             e.stopPropagation();
