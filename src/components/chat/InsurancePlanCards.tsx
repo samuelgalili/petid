@@ -242,6 +242,19 @@ export const InsurancePlanCards = ({
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Auto-fill phone from user profile
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.phone) setPhone(data.phone);
+      });
+  }, [user?.id]);
+
   const PHONE_REGEX = /^0[2-9]\d{7,8}$/;
 
   const handleSubmitLead = async () => {
