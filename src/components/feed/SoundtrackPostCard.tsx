@@ -60,6 +60,34 @@ export const SoundtrackPostCard = ({
   const { addToCart } = useCart();
   const { triggerFly } = useFlyingCart();
   const productImageRef = useRef<HTMLImageElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Auto-play music when this post is the current visible post
+  const isActive = index === currentIndex;
+  useEffect(() => {
+    if (!post.music_url) return;
+    
+    if (isActive && !muted) {
+      if (!audioRef.current || audioRef.current.src !== post.music_url) {
+        audioRef.current?.pause();
+        audioRef.current = new Audio(post.music_url);
+        audioRef.current.loop = true;
+        audioRef.current.volume = 0.5;
+      }
+      audioRef.current.play().catch(() => {});
+    } else {
+      audioRef.current?.pause();
+    }
+    
+    return () => { audioRef.current?.pause(); };
+  }, [isActive, muted, post.music_url]);
+
+  // Update volume when muted changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = muted;
+    }
+  }, [muted]);
 
   const allImages =
     post.media_urls && post.media_urls.length > 0
