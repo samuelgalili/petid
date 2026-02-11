@@ -4206,6 +4206,45 @@ export type Database = {
         }
         Relationships: []
       }
+      music_library: {
+        Row: {
+          artist: string
+          audio_url: string
+          category: string | null
+          cover_image_url: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          is_active: boolean | null
+          title: string
+          use_count: number | null
+        }
+        Insert: {
+          artist?: string
+          audio_url: string
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          use_count?: number | null
+        }
+        Update: {
+          artist?: string
+          audio_url?: string
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          use_count?: number | null
+        }
+        Relationships: []
+      }
       music_tracks: {
         Row: {
           artist: string
@@ -6198,6 +6237,10 @@ export type Database = {
           location_name: string | null
           media_type: string | null
           media_urls: string[] | null
+          music_artist: string | null
+          music_id: string | null
+          music_title: string | null
+          music_url: string | null
           pet_id: string | null
           removal_reason: string | null
           removed_at: string | null
@@ -6222,6 +6265,10 @@ export type Database = {
           location_name?: string | null
           media_type?: string | null
           media_urls?: string[] | null
+          music_artist?: string | null
+          music_id?: string | null
+          music_title?: string | null
+          music_url?: string | null
           pet_id?: string | null
           removal_reason?: string | null
           removed_at?: string | null
@@ -6246,6 +6293,10 @@ export type Database = {
           location_name?: string | null
           media_type?: string | null
           media_urls?: string[] | null
+          music_artist?: string | null
+          music_id?: string | null
+          music_title?: string | null
+          music_url?: string | null
           pet_id?: string | null
           removal_reason?: string | null
           removed_at?: string | null
@@ -6262,6 +6313,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_music_id_fkey"
+            columns: ["music_id"]
+            isOneToOne: false
+            referencedRelation: "music_library"
             referencedColumns: ["id"]
           },
           {
