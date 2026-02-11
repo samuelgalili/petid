@@ -459,17 +459,33 @@ const Chat = () => {
                     </div>
                   )}
                   
-                  {/* Message Bubble - Enhanced */}
-                  <div
-                    className={`px-4 py-3 font-heebo shadow-sm ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                        : "bg-card border border-border/40 text-foreground rounded-2xl rounded-bl-md"
-                    }`}
-                  >
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                      {cleanMessageContent(message.content)}
-                    </p>
+                  {/* Message Bubble */}
+                  <div className="flex flex-col gap-2">
+                    <div
+                      className={`px-4 py-3 shadow-sm ${
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                          : "bg-card border border-border/40 text-foreground rounded-2xl rounded-bl-md"
+                      }`}
+                    >
+                      <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+                        {cleanActionTags(message.content)}
+                      </p>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    {message.role === "assistant" && extractActionTags(message.content).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {extractActionTags(message.content).map((tag, i) => (
+                          <ChatActionButton key={i} actionTag={tag} onAction={handleActionClick} />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Product Cards */}
+                    {message.role === "assistant" && message.products && message.products.length > 0 && (
+                      <ChatProductCards products={message.products} />
+                    )}
                   </div>
                 </div>
               </motion.div>
