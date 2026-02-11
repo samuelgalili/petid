@@ -241,6 +241,7 @@ export const InsurancePlanCards = ({
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { user } = useAuth();
