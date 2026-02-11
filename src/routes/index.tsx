@@ -228,7 +228,7 @@ export const userRoutes: RouteObject[] = [
   { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
   { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
   { path: "/my-progress", element: <Protected><LazyPage component={MyProgress} pageName="ההתקדמות שלי" /></Protected> },
-  { path: "/rewards", element: <Protected><LazyPage component={Rewards} pageName="תגמולים" /></Protected> },
+  { path: "/rewards", element: <Navigate to="/" replace /> },
   { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
   // Legacy redirects
   { path: "/tracker", element: <Navigate to="/my-progress" replace /> },
