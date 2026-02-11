@@ -161,7 +161,7 @@ export const InsurancePlanCards = ({
               transition={{ delay: idx * 0.1 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedPlan(plan.id)}
-              className={`relative w-full text-right rounded-2xl border-2 p-4 transition-all ${
+              className={`relative flex-shrink-0 w-[75%] snap-center text-right rounded-2xl border-2 p-4 transition-all ${
                 isSelected
                   ? "shadow-md"
                   : plan.highlight
