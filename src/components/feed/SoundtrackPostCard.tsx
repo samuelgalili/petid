@@ -211,9 +211,10 @@ export const SoundtrackPostCard = ({
         )}
       </AnimatePresence>
 
-      {/* RIGHT SIDEBAR */}
+      {/* RIGHT SIDEBAR — TikTok: centered vertically from ~40% to bottom */}
       <motion.div
-        className="absolute bottom-[80px] right-3 z-50 flex flex-col items-center gap-5"
+        className="absolute right-3 z-50 flex flex-col items-center gap-5"
+        style={{ bottom: '160px' }}
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
