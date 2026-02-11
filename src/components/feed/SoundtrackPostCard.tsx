@@ -320,7 +320,7 @@ export const SoundtrackPostCard = ({
       </motion.div>
 
       {/* BOTTOM-LEFT info — positioned ~60px above navbar */}
-      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '70px' }}>
+      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '54px' }}>
         {/* Status badges */}
         {(isProductPost || isCtaPost || isChallengePost) && (
           <div
