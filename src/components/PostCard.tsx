@@ -309,91 +309,83 @@ export const PostCard = ({
   };
 
   return (
-    <article 
-      className="bg-card rounded-2xl shadow-card mx-2 my-1 border border-border/20 dark:border-border/10"
-    >
-      {/* Post Header - Instagram style */}
-      <div className="flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-3">
-          <button 
-            className="cursor-pointer focus:outline-none"
-            onClick={() => navigate(`/user/${post.user.id}`)}
-          >
-            <Avatar className="w-9 h-9 rounded-xl ring-1 ring-border/30">
-              <AvatarImage src={post.user.avatar_url} className="object-cover rounded-xl" />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium rounded-xl">
+    <article className="relative w-full aspect-[9/16] max-w-[calc((100vh-180px)*9/16)] mx-auto rounded-2xl overflow-hidden my-1">
+      {/* Full-bleed image */}
+      <div className="absolute inset-0 bg-black" onClick={handleDoubleTap}>
+        <ImageCarousel
+          images={allImages}
+          alt={post.caption || "פוסט"}
+          onDoubleClick={handleDoubleTap}
+        >
+          <HeartBurstAnimation isVisible={showDoubleTapAnimation} />
+          {post.product_tags && post.product_tags.length > 0 && (
+            <ProductTagOverlay
+              tags={post.product_tags}
+              showTags={showProductTags}
+              onToggleTags={() => setShowProductTags(!showProductTags)}
+            />
+          )}
+        </ImageCarousel>
+      </div>
+
+      {/* Top gradient */}
+      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none z-[5]" />
+      {/* Bottom gradient */}
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-[5]" />
+
+      {/* Header overlay — avatar + name + menu */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <button onClick={() => navigate(`/user/${post.user.id}`)} className="focus:outline-none">
+            <Avatar className="w-10 h-10 ring-2 ring-white/40">
+              <AvatarImage src={post.user.avatar_url} className="object-cover" />
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
                 {post.user.full_name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
           </button>
-          <div className="flex items-center gap-1">
-            <button 
-              className="cursor-pointer focus:outline-none"
-              onClick={() => navigate(`/user/${post.user.id}`)}
-            >
-              <span className="font-semibold text-card-foreground text-[14px] leading-none">{post.user.full_name || "משתמש"}</span>
+          <div className="flex flex-col">
+            <button onClick={() => navigate(`/user/${post.user.id}`)} className="focus:outline-none">
+              <span className="font-bold text-white text-[14px] drop-shadow-md">{post.user.full_name || "משתמש"}</span>
             </button>
-            <span className="text-muted-foreground text-[14px]">•</span>
-            <span className="text-muted-foreground text-[14px]">{getTimeAgo(post.created_at)}</span>
+            <span className="text-white/60 text-[11px] drop-shadow-sm">{getTimeAgo(post.created_at)}</span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-3">
           {currentUserId !== post.user_id && !isFollowing && (
             <button
-              className="text-[14px] font-semibold text-[#0095F6] active:opacity-60 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleFollow();
-              }}
+              className="text-[13px] font-semibold text-white bg-white/20 backdrop-blur-sm rounded-full px-3 py-1"
+              onClick={(e) => { e.stopPropagation(); handleFollow(); }}
             >
-              Follow
+              עקוב
             </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-card-foreground p-1 -m-1 focus:outline-none" aria-label="אפשרויות פוסט">
-                <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
+              <button className="text-white p-1 focus:outline-none" aria-label="אפשרויות פוסט">
+                <MoreVertical className="w-5 h-5 drop-shadow-md" strokeWidth={2} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">
               <DropdownMenuItem
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
-                  toast.success("הקישור הועתק");
-                }}
+                onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`); toast.success("הקישור הועתק"); }}
                 className="text-card-foreground"
               >
                 <Link2 className="w-4 h-4 ml-2" />
                 העתק קישור
               </DropdownMenuItem>
-              
-              {/* Share to Story option */}
-              <ShareToStoryButton 
-                postId={post.id} 
-                imageUrl={post.image_url} 
-                caption={post.caption}
-              />
-              
+              <ShareToStoryButton postId={post.id} imageUrl={post.image_url} caption={post.caption} />
               {!isOwner && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    toast.success("הפוסט הוסתר");
-                  }}
-                  className="text-card-foreground"
-                >
+                <DropdownMenuItem onClick={() => toast.success("הפוסט הוסתר")} className="text-card-foreground">
                   <EyeOff className="w-4 h-4 ml-2" />
                   הסתר פוסט
                 </DropdownMenuItem>
               )}
               {!isOwner && (
                 <DropdownMenuItem
-                  onClick={() => {
-                    if (checkAuth("כדי לדווח, יש להתחבר")) {
-                      setShowReportDialog(true);
-                    }
-                  }}
-                   className="text-destructive focus:text-destructive"
+                  onClick={() => { if (checkAuth("כדי לדווח, יש להתחבר")) setShowReportDialog(true); }}
+                  className="text-destructive focus:text-destructive"
                 >
                   <Flag className="w-4 h-4 ml-2" />
                   דווח
@@ -402,10 +394,7 @@ export const PostCard = ({
               {isOwner && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="text-destructive focus:text-destructive"
-                  >
+                  <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-4 h-4 ml-2" />
                     מחק פוסט
                   </DropdownMenuItem>
@@ -416,179 +405,91 @@ export const PostCard = ({
         </div>
       </div>
 
-      {/* Post Image with Carousel Support + Right Side Action Buttons */}
-      <div className="relative">
-        <ImageCarousel
-          images={allImages}
-          alt={post.caption || "פוסט"}
-          onDoubleClick={handleDoubleTap}
+      {/* Right side action buttons — TikTok style */}
+      <motion.div
+        className="absolute right-2 bottom-36 flex flex-col items-center gap-5 z-10"
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }}
+      >
+        {/* Like */}
+        <motion.button
+          variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+          whileTap={{ scale: 0.8 }}
+          onClick={handleLike}
+          className="flex flex-col items-center gap-0.5"
         >
-          {/* Heart Burst Animation */}
-          <HeartBurstAnimation isVisible={showDoubleTapAnimation} />
-
-          {/* Product Tags Overlay */}
-          {post.product_tags && post.product_tags.length > 0 && (
-            <ProductTagOverlay 
-              tags={post.product_tags}
-              showTags={showProductTags}
-              onToggleTags={() => setShowProductTags(!showProductTags)}
+          <motion.div
+            animate={isLicking ? { scale: [1, 1.3, 0.9, 1.1, 1] } : {}}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            <Heart
+              className={`w-8 h-8 drop-shadow-lg ${post.is_liked ? 'fill-rose-500 text-rose-500' : 'text-white'}`}
+              strokeWidth={1.5}
             />
-          )}
-        </ImageCarousel>
+          </motion.div>
+          <span className="text-white text-[12px] font-bold drop-shadow-md tabular-nums">
+            {post.likes_count >= 1000 ? `${(post.likes_count / 1000).toFixed(1)}k` : post.likes_count > 0 ? post.likes_count : ''}
+          </span>
+        </motion.button>
 
-        {/* Bottom action bar — frosted glass overlay on image */}
-        <div className="absolute bottom-3 left-3 right-3 z-10">
-          <div className="flex items-center justify-between bg-black/30 backdrop-blur-md rounded-full px-4 py-2.5" dir="rtl">
-            {/* Right side: Like, Comment, Bookmark, Share */}
-            <div className="flex items-center gap-4">
-              {/* Like */}
-              <motion.button
-                whileTap={{ scale: 0.8 }}
-                onClick={handleLike}
-                className="flex items-center gap-1"
-              >
-                <motion.div
-                  animate={isLicking ? { scale: [1, 1.3, 0.9, 1.1, 1] } : {}}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                >
-                  <Heart
-                    className={`w-6 h-6 ${
-                      post.is_liked
-                        ? 'fill-rose-500 text-rose-500'
-                        : 'text-white'
-                    }`}
-                    strokeWidth={1.5}
-                  />
-                </motion.div>
-                {post.likes_count > 0 && (
-                  <span className="text-white text-[13px] font-semibold tabular-nums">
-                    {post.likes_count >= 1000 ? `${(post.likes_count / 1000).toFixed(1)}k` : post.likes_count}
-                  </span>
-                )}
-              </motion.button>
+        {/* Comment */}
+        <motion.button
+          variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+          whileTap={{ scale: 0.8 }}
+          onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
+          className="flex flex-col items-center gap-0.5"
+        >
+          <MessageCircle className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white text-[12px] font-bold drop-shadow-md tabular-nums">
+            {post.comments_count >= 1000 ? `${(post.comments_count / 1000).toFixed(1)}k` : post.comments_count > 0 ? post.comments_count : ''}
+          </span>
+        </motion.button>
 
-              {/* Comment */}
-              <motion.button
-                whileTap={{ scale: 0.8 }}
-                onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
-                className="flex items-center gap-1"
-              >
-                <MessageCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
-                {post.comments_count > 0 && (
-                  <span className="text-white text-[13px] font-semibold tabular-nums">
-                    {post.comments_count >= 1000 ? `${(post.comments_count / 1000).toFixed(1)}k` : post.comments_count}
-                  </span>
-                )}
-              </motion.button>
+        {/* Bookmark */}
+        <motion.button
+          variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+          whileTap={{ scale: 0.8 }}
+          onClick={handleSave}
+        >
+          <motion.div animate={isSaveAnimating ? { scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.3 }}>
+            <Bookmark className={`w-8 h-8 drop-shadow-lg ${post.is_saved ? 'fill-white text-white' : 'text-white'}`} strokeWidth={1.5} />
+          </motion.div>
+        </motion.button>
 
-              {/* Bookmark */}
-              <motion.button
-                whileTap={{ scale: 0.8 }}
-                onClick={handleSave}
-              >
-                <motion.div
-                  animate={isSaveAnimating ? { scale: [1, 1.3, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Bookmark
-                    className={`w-6 h-6 ${
-                      post.is_saved ? 'fill-white text-white' : 'text-white'
-                    }`}
-                    strokeWidth={1.5}
-                  />
-                </motion.div>
-              </motion.button>
+        {/* Share */}
+        <motion.button
+          variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+          whileTap={{ scale: 0.8 }}
+          onClick={handleShare}
+        >
+          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+        </motion.button>
+      </motion.div>
 
-              {/* Share */}
-              <motion.button
-                whileTap={{ scale: 0.8 }}
-                onClick={handleShare}
-              >
-                <Share2 className="w-6 h-6 text-white" strokeWidth={1.5} />
-              </motion.button>
-            </div>
-          </div>
+      {/* Bottom info — username, caption, location */}
+      <div className="absolute bottom-4 left-3 right-14 z-10 text-white" dir="rtl">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-extrabold text-[15px] drop-shadow-md">@{post.user.full_name || "משתמש"}</span>
         </div>
-      </div>
-
-      {/* Post info below image */}
-      <div className="px-3 pt-2.5 pb-1">
-        {/* Location tag */}
-        {post.location_name && (
-          <LocationTag locationName={post.location_name} className="mb-1" />
-        )}
-
-        {/* Views counter */}
-        {(post.views_count || 0) > 0 && (
-          <ViewsCounter count={post.views_count || 0} className="mb-1" />
-        )}
-
-        {/* Username + Caption with clickable hashtags/mentions */}
         {post.caption && (
-          <div className="mb-1.5">
-            <button
-              className="font-semibold text-[14px] text-neutral-900 cursor-pointer focus:outline-none ml-1"
-              onClick={() => navigate(`/user/${post.user.id}`)}
-            >
-              {post.user.full_name || "משתמש"}
-            </button>
-            <RichCaption 
-              caption={post.caption} 
-              className="text-neutral-900 text-[14px] leading-[1.4]"
-              maxLength={150}
-            />
-          </div>
+          <p className="text-[13px] line-clamp-2 drop-shadow-sm mb-1.5">
+            {post.caption}
+          </p>
         )}
-
-        {/* Comments preview */}
-        <CommentsPreviewSection postId={post.id} commentsCount={post.comments_count} />
+        {post.location_name && (
+          <span className="text-[11px] text-white/70 drop-shadow-sm">📍 {post.location_name}</span>
+        )}
         {isAdoptionPost && currentUserId !== post.user_id && (
           <motion.button
             onClick={() => navigate(`/messages/thread/${post.user_id}`)}
-            className="w-full bg-gradient-to-l from-petid-blue to-petid-gold text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 mb-3 shadow-lg"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="mt-2 bg-rose-500 text-white font-semibold py-2 px-4 rounded-full flex items-center gap-2 text-sm"
+            whileTap={{ scale: 0.95 }}
           >
-            <Mail className="w-5 h-5" />
+            <Mail className="w-4 h-4" />
             <span>שלח הודעה למוסר</span>
-            <Home className="w-4 h-4" />
           </motion.button>
         )}
-      </div>
-
-      {/* Add comment section */}
-      <div className="flex items-center gap-3 px-4 py-3 border-t border-border/30">
-        <Avatar className="w-7 h-7 flex-shrink-0">
-          <AvatarImage src={currentUserAvatar} className="object-cover" />
-          <AvatarFallback className="bg-neutral-100 text-neutral-600 text-[10px] font-medium">
-            U
-          </AvatarFallback>
-        </Avatar>
-        <input
-          type="text"
-          placeholder="הוסף תגובה..."
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleComment()}
-          onFocus={() => !isAuthenticated && checkAuth("כדי להגיב על פוסטים, יש להתחבר")}
-          className="flex-1 bg-transparent text-[14px] text-neutral-900 placeholder-neutral-400 outline-none"
-          readOnly={!isAuthenticated}
-        />
-        <AnimatePresence>
-          {commentText.trim() && (
-            <motion.button 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={handleComment}
-              className="text-[#0095F6] text-[14px] font-semibold"
-            >
-              פרסם
-            </motion.button>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Report Dialog */}
