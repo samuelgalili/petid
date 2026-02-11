@@ -460,8 +460,8 @@ const Chat = () => {
                     onClick={() => handlePetSelect(pet)}
                     className="flex flex-col items-center gap-2"
                   >
-                    {/* Pet Avatar Circle with Gradient Border */}
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2.5px] shadow-lg">
+                    {/* Pet Avatar Circle */}
+                    <div className="w-16 h-16 rounded-full bg-primary p-[2.5px] shadow-sm">
                       <div className="w-full h-full rounded-full overflow-hidden bg-card">
                         {pet.avatar_url ? (
                           <img 
