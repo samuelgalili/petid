@@ -419,10 +419,8 @@ const Chat = () => {
                 <div className={`flex items-end gap-2.5 max-w-[85%] ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar - Enhanced */}
                   {message.role === "assistant" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2px] shadow-md">
-                      <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                        <Sparkles className="w-3.5 h-3.5 text-petid-gold" />
-                      </div>
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
                     </div>
                   )}
                   
