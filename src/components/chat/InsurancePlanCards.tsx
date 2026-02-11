@@ -71,9 +71,9 @@ const PlanFlipCard = ({
       animate={{ opacity: 1, x: 0 }}
       style={{
         flexShrink: 0,
-        width: '68%',
-        minWidth: '190px',
-        maxWidth: '240px',
+        width: '55%',
+        minWidth: '160px',
+        maxWidth: '200px',
         scrollSnapAlign: 'center',
         perspective: '800px',
         height: '195px',
