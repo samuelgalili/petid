@@ -378,19 +378,14 @@ const Chat = () => {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center h-full py-8"
               >
-                {/* AI Profile Card - Enhanced */}
+                {/* AI Profile Card */}
                 <div className="relative mb-6">
-                  <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[3px] shadow-xl">
-                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                      <Sparkles className="w-10 h-10 text-petid-gold" />
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500 rounded-full shadow-lg">
-                    <span className="text-[10px] text-white font-bold">AI</span>
+                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-10 h-10 text-primary" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-foreground font-heebo mb-1">PetID AI</h2>
-                <p className="text-sm text-muted-foreground font-heebo mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
+                <h2 className="text-2xl font-bold text-foreground mb-1">PetID AI</h2>
+                <p className="text-sm text-muted-foreground mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
                 
                 {/* Example Questions Grid - Enhanced */}
                 <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
