@@ -188,7 +188,7 @@ const Adoption = () => {
       return;
     }
     setShowPetDetails(false);
-    setShowAdoptionForm(true);
+    setAdoptionDrawerPet(selectedPet);
   };
 
   const handleSharePet = async (pet: AdoptionPet) => {
