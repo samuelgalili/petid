@@ -383,6 +383,88 @@
   }
 }
 
+/* ===========================
+ * DARK MODE GLOBAL OVERRIDES
+ * Catch hardcoded Tailwind bg-white / bg-gray-* / text-gray-* / text-black
+ * and remap them to semantic dark tokens.
+ * =========================== */
+.dark .bg-white {
+  background-color: hsl(210 15% 10%) !important;
+}
+.dark .bg-white\/80, .dark .bg-white\/90, .dark .bg-white\/95 {
+  background-color: hsl(210 15% 10% / 0.9) !important;
+}
+.dark .bg-white\/20, .dark .bg-white\/10 {
+  background-color: hsl(0 0% 100% / 0.1) !important;
+}
+.dark .bg-gray-50, .dark .bg-gray-100 {
+  background-color: hsl(210 10% 14%) !important;
+}
+.dark .bg-gray-200 {
+  background-color: hsl(210 10% 18%) !important;
+}
+.dark .text-gray-900, .dark .text-gray-800 {
+  color: hsl(0 0% 95%) !important;
+}
+.dark .text-gray-700, .dark .text-gray-600 {
+  color: hsl(0 0% 80%) !important;
+}
+.dark .text-gray-500 {
+  color: hsl(0 0% 65%) !important;
+}
+.dark .text-gray-400 {
+  color: hsl(0 0% 55%) !important;
+}
+.dark .text-gray-300 {
+  color: hsl(0 0% 45%) !important;
+}
+.dark .text-black {
+  color: hsl(0 0% 95%) !important;
+}
+.dark .border-gray-100, .dark .border-gray-200 {
+  border-color: hsl(210 10% 22%) !important;
+}
+.dark .border-gray-300 {
+  border-color: hsl(210 10% 25%) !important;
+}
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: hsl(210 10% 22%) !important;
+}
+.dark .shadow-sm, .dark .shadow-md, .dark .shadow-lg {
+  --tw-shadow-color: rgba(0, 0, 0, 0.4);
+}
+.dark .placeholder\:text-gray-500::placeholder {
+  color: hsl(0 0% 50%) !important;
+}
+.dark .focus\:bg-white:focus {
+  background-color: hsl(210 15% 12%) !important;
+}
+.dark .from-gray-50 {
+  --tw-gradient-from: hsl(210 10% 14%) !important;
+}
+.dark .to-white {
+  --tw-gradient-to: hsl(210 15% 10%) !important;
+}
+.dark .from-white {
+  --tw-gradient-from: hsl(210 15% 10%) !important;
+}
+.dark .ring-gray-100, .dark .ring-gray-200 {
+  --tw-ring-color: hsl(210 10% 22%) !important;
+}
+.dark .hover\:bg-white:hover {
+  background-color: hsl(210 15% 12%) !important;
+}
+.dark .bg-gray-300 {
+  background-color: hsl(210 10% 22%) !important;
+}
+.dark .bg-gray-400 {
+  background-color: hsl(210 10% 25%) !important;
+}
+.dark .bg-gray-500 {
+  background-color: hsl(210 10% 30%) !important;
+}
+
 @layer base {
   * {
     @apply border-border;
