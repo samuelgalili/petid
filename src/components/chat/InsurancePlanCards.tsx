@@ -138,7 +138,7 @@ export const InsurancePlanCards = ({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-3 mt-2"
+      className="space-y-3 mt-2 w-full min-w-0"
     >
       {/* Libra branding header */}
       <div className="flex items-center gap-2 px-1">
