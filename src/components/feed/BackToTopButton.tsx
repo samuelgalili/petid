@@ -19,7 +19,7 @@ export const BackToTopButton = ({ visible }: BackToTopButtonProps) => {
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           whileTap={{ scale: 0.9 }}
           onClick={scrollToTop}
-          className="fixed bottom-24 left-4 z-40 w-10 h-10 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-lg flex items-center justify-center text-foreground hover:bg-card transition-colors"
+          className="fixed bottom-24 left-4 z-40 w-11 h-11 rounded-2xl bg-card/90 backdrop-blur-xl border border-border/30 shadow-elevated flex items-center justify-center text-foreground hover:bg-card hover:shadow-2xl transition-all"
           aria-label="חזור למעלה"
         >
           <ChevronUp className="w-5 h-5" strokeWidth={2} />

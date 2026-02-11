@@ -1141,12 +1141,21 @@ const Feed = () => {
   if (showOnboarding) {
     return <OnboardingFlow onComplete={completeOnboarding} />;
   }
+  // Time-of-day gradient for header
+  const getTimeGradient = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "from-amber-50/80 to-sky-50/80 dark:from-amber-950/30 dark:to-sky-950/30"; // Morning
+    if (hour >= 12 && hour < 17) return "from-sky-50/80 to-blue-50/80 dark:from-sky-950/30 dark:to-blue-950/30"; // Afternoon
+    if (hour >= 17 && hour < 21) return "from-orange-50/80 to-rose-50/80 dark:from-orange-950/30 dark:to-rose-950/30"; // Evening
+    return "from-indigo-50/80 to-slate-50/80 dark:from-indigo-950/30 dark:to-slate-950/30"; // Night
+  };
+
   return <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden overscroll-x-none" dir="rtl" style={{ touchAction: 'pan-y' }} {...pullHandlers}>
     {/* Pull to refresh indicator */}
     <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} progress={progress} shouldTrigger={shouldTrigger} />
     <div className="h-full overflow-y-auto overflow-x-hidden pb-[70px] overscroll-x-none" style={{ transform: `translateY(${pullDistance}px)`, transition: isRefreshing ? 'none' : pullDistance === 0 ? 'transform 0.3s ease' : 'none' }}>
       {/* PetID-style Header - Modern, Clean */}
-      <motion.div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-card/98 backdrop-blur-xl border-b border-border/40 shadow-sm" : "bg-transparent"}`} initial={{
+      <motion.div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? `bg-card/95 backdrop-blur-2xl border-b border-border/30 shadow-md bg-gradient-to-r ${getTimeGradient()}` : "bg-transparent"}`} initial={{
       y: -20,
       opacity: 0
     }} animate={{

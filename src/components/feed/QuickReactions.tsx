@@ -36,9 +36,9 @@ export const QuickReactions = ({ postId, onReact, visible, onClose }: QuickReact
               key={emoji}
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.04 }}
-              whileHover={{ scale: 1.3, y: -4 }}
-              whileTap={{ scale: 0.9 }}
+              transition={{ delay: i * 0.04, type: "spring", stiffness: 400, damping: 15 }}
+              whileHover={{ scale: 1.4, y: -6, rotate: [0, -10, 10, 0] }}
+              whileTap={{ scale: 0.8 }}
               onClick={() => handleReact(emoji)}
               className={`text-xl p-1 rounded-full transition-colors ${
                 selectedEmoji === emoji ? "bg-primary/20" : "hover:bg-muted"

@@ -42,7 +42,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
   };
 
   return (
-    <article className="bg-white">
+    <article className="bg-card rounded-2xl shadow-card mx-2 my-1 overflow-hidden border border-border/20 dark:border-border/10">
       {/* Header - Instagram style */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
@@ -69,7 +69,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         <img
           src={product.image}
           alt={product.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
         />
         
         {/* Sale badge */}
@@ -96,22 +96,28 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
       </div>
 
       {/* CTA Button - Between image and actions */}
-      <button
+      <motion.button
         onClick={handleAddToCart}
-        className={`w-full transition-colors flex items-center justify-between px-4 py-3.5 active:opacity-80 ${
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        className={`w-full transition-all flex items-center justify-between px-4 py-3.5 active:opacity-80 ${
           showAdded 
-            ? 'bg-emerald-500' 
-            : 'bg-[#0095F6]'
+            ? 'bg-success' 
+            : 'bg-primary'
         }`}
       >
-        <ShoppingBag className="w-5 h-5 text-white" />
+        <motion.div animate={showAdded ? { scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.3 }}>
+          <ShoppingBag className="w-5 h-5 text-primary-foreground" />
+        </motion.div>
         <div className="flex items-center gap-2">
-          <span className="text-white text-[15px] font-semibold">
+          <span className="text-primary-foreground text-[15px] font-semibold">
             {showAdded ? "נוסף לסל ✓" : "לרכישה"}
           </span>
-          <ChevronLeft className="w-5 h-5 text-white" />
+          <motion.div animate={{ x: [0, -4, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+            <ChevronLeft className="w-5 h-5 text-primary-foreground" />
+          </motion.div>
         </div>
-      </button>
+      </motion.button>
 
       {/* Actions - Instagram style */}
       <div className="px-4 pt-3">
@@ -157,8 +163,6 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
         </div>
       </div>
 
-      {/* Post Divider */}
-      <div className="h-[1px] bg-neutral-100" />
     </article>
   );
 };
