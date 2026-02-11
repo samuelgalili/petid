@@ -337,7 +337,7 @@ export const SoundtrackPostCard = ({
 
       {/* Product info — top-right, vertical */}
       {(isProductPost || isCtaPost || isChallengePost) && (
-        <div className="absolute top-16 right-3 z-50 flex flex-col items-end gap-1.5">
+        <div className="absolute top-16 left-3 z-50 flex flex-col items-start gap-1.5">
           <div
             className="px-3 py-1 rounded-full text-white text-sm font-medium"
             style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
