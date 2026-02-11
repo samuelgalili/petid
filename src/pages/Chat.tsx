@@ -9,6 +9,7 @@ import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
 import { ChatProductCards } from "@/components/chat/ChatProductCards";
+import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
 
 interface Product {
   id: string;
@@ -23,6 +24,15 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   products?: Product[];
+  insuranceData?: {
+    petName: string;
+    petType: string;
+    breed: string | null;
+    ageYears: number | null;
+    petId?: string | null;
+    healthAnswer1?: string;
+    healthAnswer2?: string;
+  };
 }
 
 interface Pet {
@@ -51,6 +61,7 @@ const Chat = () => {
   const [showPetSelection, setShowPetSelection] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showInsuranceLoading, setShowInsuranceLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [pendingDateContext, setPendingDateContext] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -301,6 +312,26 @@ const Chat = () => {
       setPendingDateContext("grooming");
       setShowDatePicker(true);
     }
+    if (actions.includes("SHOW_INSURANCE_PLANS")) {
+      // Show loading animation then insurance cards
+      setShowInsuranceLoading(true);
+      setTimeout(() => {
+        setShowInsuranceLoading(false);
+        // Add insurance cards as a message
+        const insuranceMsg: Message = {
+          role: "assistant",
+          content: "הנה התוכניות שמתאימות:",
+          insuranceData: {
+            petName: selectedPet?.name || "החיה שלך",
+            petType: selectedPet?.type || "dog",
+            breed: selectedPet?.breed || null,
+            ageYears: null,
+            petId: selectedPet?.id || null,
+          },
+        };
+        setMessages(prev => [...prev, insuranceMsg]);
+      }, 2000);
+    }
   };
 
   // Handle action button clicks
@@ -505,6 +536,11 @@ const Chat = () => {
                     {message.role === "assistant" && message.products && message.products.length > 0 && (
                       <ChatProductCards products={message.products} />
                     )}
+
+                    {/* Insurance Plan Cards */}
+                    {message.role === "assistant" && message.insuranceData && (
+                      <InsurancePlanCards {...message.insuranceData} />
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -598,8 +634,21 @@ const Chat = () => {
               </motion.div>
             )}
 
+            {/* Insurance Loading Animation */}
+            {showInsuranceLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-end mb-3"
+              >
+                <div className="bg-card border border-border/40 rounded-2xl rounded-bl-md px-4 py-2 max-w-[85%]">
+                  <InsuranceLoadingAnimation />
+                </div>
+              </motion.div>
+            )}
+
             {/* Typing Indicator */}
-            {isTyping && (
+            {isTyping && !showInsuranceLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

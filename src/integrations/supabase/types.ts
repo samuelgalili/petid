@@ -3341,6 +3341,60 @@ export type Database = {
           },
         ]
       }
+      insurance_leads: {
+        Row: {
+          age_years: number | null
+          breed: string | null
+          created_at: string
+          health_answer_1: string | null
+          health_answer_2: string | null
+          id: string
+          notes: string | null
+          pet_id: string | null
+          pet_name: string
+          pet_type: string
+          phone: string
+          selected_plan: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_years?: number | null
+          breed?: string | null
+          created_at?: string
+          health_answer_1?: string | null
+          health_answer_2?: string | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          pet_name: string
+          pet_type?: string
+          phone: string
+          selected_plan?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_years?: number | null
+          breed?: string | null
+          created_at?: string
+          health_answer_1?: string | null
+          health_answer_2?: string | null
+          id?: string
+          notes?: string | null
+          pet_id?: string | null
+          pet_name?: string
+          pet_type?: string
+          phone?: string
+          selected_plan?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       knowledge_base: {
         Row: {
           category: string
