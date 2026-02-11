@@ -130,6 +130,19 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         <p className="font-semibold text-[18px] drop-shadow-md mb-1">🐾 {pet.name}</p>
         {pet.description && <p className="text-[16px] leading-snug line-clamp-2 drop-shadow-sm">{pet.description}</p>}
       </div>
+      {/* Adoption Chat Drawer */}
+      <AdoptionChatDrawer
+        pet={{
+          id: pet.id,
+          name: pet.name,
+          breed: pet.breed,
+          image_url: pet.image_url,
+          organization_name: null,
+          organization_phone: null,
+        }}
+        isOpen={showDrawer}
+        onClose={() => setShowDrawer(false)}
+      />
     </article>
   );
 };

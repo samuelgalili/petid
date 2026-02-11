@@ -994,6 +994,15 @@ const Adoption = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Adoption Chat Drawer */}
+      {adoptionDrawerPet && (
+        <AdoptionChatDrawer
+          pet={adoptionDrawerPet}
+          isOpen={!!adoptionDrawerPet}
+          onClose={() => setAdoptionDrawerPet(null)}
+        />
+      )}
+
       <BottomNav />
     </div>
   );
