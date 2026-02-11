@@ -175,10 +175,6 @@ const PlanFlipCard = ({
 
         {/* BACK — Features */}
         <div
-          onClick={() => {
-            setIsFlipped(false);
-            onSelect();
-          }}
           style={{
             position: 'absolute',
             width: '100%',
