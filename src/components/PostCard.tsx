@@ -249,8 +249,8 @@ export const PostCard = ({
 
       {/* RIGHT SIDEBAR — Vertically centered */}
       <motion.div
-        className="absolute flex flex-col items-center z-10"
-        style={{ right: '16px', top: '50%', transform: 'translateY(-50%)', gap: '24px' }}
+       className="absolute flex flex-col items-center z-10"
+        style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', gap: '16px' }}
         initial="hidden"
         animate="visible"
       >
