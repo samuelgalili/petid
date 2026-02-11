@@ -91,8 +91,6 @@ const ProfilePage = lazy(() => import("@/pages/Profile"));
 export const feedRoutes: RouteObject[] = [
   // Home = Profile page (primary landing)
   { path: "/", element: <Protected><LazyPage component={ProfilePage} pageName="בית" /></Protected> },
-  { path: "/home", element: <Navigate to="/" replace /> },
-  { path: "/profile", element: <Navigate to="/" replace /> },
   // Feed = Soundtrack-style feed
   { path: "/feed", element: <LazyPage component={SoundtrackFeed} pageName="פיד" /> },
   // Legacy feed route redirect
@@ -157,14 +155,14 @@ const PaymentFailed = lazy(() => import("@/pages/PaymentFailed"));
 export const shopRoutes: RouteObject[] = [
   { path: "/shop", element: <LazyPage component={Shop} pageName="החנות" /> },
   { path: "/shop/explore", element: <LazyPage component={ShopExplore} pageName="גילוי מוצרים" /> },
-  { path: "/shop/checkout", element: <Navigate to="/checkout" replace /> },
+  
   { path: "/product/:id", element: <LazyPage component={ProductDetail} pageName="פרטי מוצר" /> },
   { path: "/cart", element: <Protected><LazyPage component={Cart} pageName="עגלת קניות" /></Protected> },
   { path: "/favorites", element: <Protected><LazyPage component={Favorites} pageName="מועדפים" /></Protected> },
   { path: "/checkout", element: <Protected><LazyPage component={Checkout} pageName="תשלום" /></Protected> },
   { path: "/order-confirmation", element: <Protected><LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /></Protected> },
   { path: "/order-history", element: <Protected><LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /></Protected> },
-  { path: "/deals", element: <Navigate to="/shop" replace /> },
+  
   { path: "/payment-success", element: <LazyPage component={PaymentSuccess} pageName="תשלום הצליח" /> },
   { path: "/payment-failed", element: <LazyPage component={PaymentFailed} pageName="תשלום נכשל" /> },
 ];
@@ -225,8 +223,6 @@ export const userRoutes: RouteObject[] = [
   { path: "/messages", element: <Protected><LazyPage component={Messages} pageName="הודעות" /></Protected> },
   { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
   { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
-  { path: "/my-progress", element: <Navigate to="/" replace /> },
-  { path: "/rewards", element: <Navigate to="/" replace /> },
   { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
 ];
 
@@ -330,8 +326,6 @@ const AdminPage = ({ component: Component, pageName }: { component: ComponentTyp
 
 export const adminRoutes: RouteObject[] = [
   // Default admin route - redirects to new system
-  { path: "/admin", element: <Navigate to="/admin/growo" replace /> },
-  { path: "/admin/dashboard", element: <Navigate to="/admin/growo" replace /> },
   
   // Main admin pages
   { path: "/admin/growo", element: <AdminPage component={AdminGrowo} pageName="לוח בקרה" /> },
@@ -371,7 +365,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/webhooks", element: <AdminPage component={AdminWebhooks} pageName="Webhooks" /> },
   { path: "/admin/blog", element: <AdminPage component={AdminBlog} pageName="בלוג" /> },
   { path: "/admin/stories", element: <AdminPage component={AdminStories} pageName="סטוריז" /> },
-  { path: "/admin/loyalty", element: <Navigate to="/admin/growo" replace /> },
+  
   { path: "/admin/notification-rules", element: <AdminPage component={AdminNotificationRules} pageName="כללי התראות" /> },
   { path: "/admin/automations", element: <AdminPage component={AdminAutomations} pageName="אוטומציות" /> },
   { path: "/admin/time-tracking", element: <AdminPage component={AdminTimeTracking} pageName="מעקב זמן" /> },
