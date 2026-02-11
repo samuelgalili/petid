@@ -407,7 +407,7 @@ const ChatInputBar = ({
                   whileTap={{ scale: 0.9 }}
                   onClick={onSend}
                   disabled={isLoading}
-                  className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-petid-blue via-petid-teal to-petid-gold rounded-full text-white disabled:opacity-50 shadow-lg"
+                  className="w-10 h-10 flex items-center justify-center bg-primary rounded-full text-primary-foreground disabled:opacity-50 shadow-sm"
                 >
                   <Send className="w-4 h-4" />
                 </motion.button>
