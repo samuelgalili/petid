@@ -110,6 +110,7 @@ const Chat = () => {
     { id: "insurance", label: "ביטוח", icon: "🛡️" },
     { id: "grooming", label: "טיפוח", icon: "✂️" },
     { id: "training", label: "אילוף", icon: "🎓" },
+    { id: "dog_parks", label: "גינות כלבים", icon: "🌳" },
     { id: "documents", label: "מסמכים", icon: "📂" },
     { id: "boarding", label: "פנסיון", icon: "🏨" },
     { id: "delivery", label: "משלוחים", icon: "📦" },
