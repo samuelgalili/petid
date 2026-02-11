@@ -344,7 +344,7 @@ export const PostCard = ({
           whileTap={{ scale: 0.9 }}
           onClick={() => navigate(`/post/${post.id}`)}
           className="relative rounded-xl flex items-center justify-center"
-          style={{ width: '64px', height: '44px', backgroundColor: '#FF8C42', boxShadow: '0 4px 12px rgba(255,140,66,0.4)' }}
+          style={{ width: '56px', height: '38px', backgroundColor: '#FF8C42', boxShadow: '0 4px 12px rgba(255,140,66,0.4)' }}
         >
           <motion.div
             className="absolute inset-0 rounded-xl"
