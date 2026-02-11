@@ -228,10 +228,6 @@ export const userRoutes: RouteObject[] = [
   { path: "/my-progress", element: <Navigate to="/" replace /> },
   { path: "/rewards", element: <Navigate to="/" replace /> },
   { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
-  // Legacy redirects
-  { path: "/tracker", element: <Navigate to="/" replace /> },
-  { path: "/tasks", element: <Navigate to="/" replace /> },
-  { path: "/achievements", element: <Navigate to="/" replace /> },
 ];
 
 // ==========================================
