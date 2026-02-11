@@ -3,9 +3,12 @@
  * Refactored: logic in useSoundtrackFeed, card in SoundtrackPostCard
  */
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import BottomNav from "@/components/BottomNav";
 import {
   FeedPullToRefresh,

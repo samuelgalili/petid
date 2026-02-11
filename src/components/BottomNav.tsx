@@ -187,36 +187,20 @@ const BottomNav = () => {
             label="חנות"
           />
 
-          {/* Notifications */}
+          {/* Messages */}
           <NavItem 
-            onClick={() => handleNavClick("/notifications")}
+            onClick={() => handleNavClick("/messages")}
             icon={
-              <div className="relative">
-                <Bell 
-                  className={cn(
-                    "w-6 h-6",
-                    isActive("/notifications") ? "text-foreground" : "text-muted-foreground"
-                  )}
-                  strokeWidth={isActive("/notifications") ? 2 : 1.5}
-                />
-                <AnimatePresence mode="wait">
-                  {unreadCount > 0 && (
-                    <motion.span 
-                      key={unreadCount}
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                      className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#FF3B30] text-white rounded-full text-[10px] font-bold flex items-center justify-center"
-                    >
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </div>
+              <MessageCircle 
+                className={cn(
+                  "w-6 h-6",
+                  isActive("/messages") ? "text-foreground" : "text-muted-foreground"
+                )}
+                strokeWidth={isActive("/messages") ? 2 : 1.5}
+              />
             }
-            isActive={isActive("/notifications")}
-            label="התראות"
+            isActive={isActive("/messages")}
+            label="הודעות"
           />
         </div>
         
