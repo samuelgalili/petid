@@ -97,7 +97,7 @@ export const CategoryRecommendations = ({
       features: ['12 שיעורים', 'הליכה ברצועה'],
       icon: GraduationCap,
       iconBg: 'bg-primary/10',
-      route: '/training',
+      route: '/chat',
     },
     // פנסיון
     {
