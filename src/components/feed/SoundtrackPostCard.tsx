@@ -317,20 +317,20 @@ export const SoundtrackPostCard = ({
           />
         </motion.button>
 
-        {/* Share */}
-        <motion.button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleShare();
-          }}
-          whileTap={{ scale: 0.85 }}
-          className="flex flex-col items-center gap-1"
+        {/* Spinning disc — TikTok style, at bottom of sidebar */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          className="relative rounded-full overflow-hidden"
+          style={{ width: "36px", height: "36px", border: "2px solid rgba(255,255,255,0.3)" }}
         >
-          <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
-          <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
-            שתף
-          </span>
-        </motion.button>
+          <img
+            src={post.user_profile?.avatar_url || ""}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle at center, rgba(0,0,0,0.4) 20%, transparent 50%)" }} />
+        </motion.div>
 
         {/* CTA */}
         {hasPromotion && (
