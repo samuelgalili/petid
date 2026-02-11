@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Send, Bookmark, Users, Trophy, ChevronLeft } from "lucide-react";
-import { PostOptionsMenu } from "@/components/post/PostOptionsMenu";
+import { Heart, MessageCircle, Share2, Users, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { haptic } from "@/lib/haptics";
 
 // Challenge theme images
 import morningWalkImg from "@/assets/challenges/morning-walk.jpg";
@@ -34,19 +32,25 @@ interface ChallengePostCardProps {
   onJoinChange?: () => void;
 }
 
-// Map hashtags to default images
 const getDefaultImage = (hashtag: string): string => {
-  const hashtagLower = hashtag.toLowerCase();
-  if (hashtagLower.includes('טיול') || hashtagLower.includes('בוקר') || hashtagLower.includes('הליכה')) {
-    return morningWalkImg;
-  }
-  if (hashtagLower.includes('פינה') || hashtagLower.includes('נעימה') || hashtagLower.includes('מנוחה') || hashtagLower.includes('שינה')) {
-    return cozyCornerImg;
-  }
-  if (hashtagLower.includes('חיוך') || hashtagLower.includes('שמח') || hashtagLower.includes('יפה')) {
-    return happySmileImg;
-  }
+  const h = hashtag.toLowerCase();
+  if (h.includes('טיול') || h.includes('בוקר') || h.includes('הליכה')) return morningWalkImg;
+  if (h.includes('פינה') || h.includes('נעימה') || h.includes('מנוחה') || h.includes('שינה')) return cozyCornerImg;
   return happySmileImg;
+};
+
+const formatCount = (count: number): string => {
+  if (!count) return '0';
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
+  return count.toString();
+};
+
+const sidebarStagger = {
+  hidden: { opacity: 0, x: 20 },
+  visible: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { delay: 0.2 + i * 0.07, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] as const },
+  }),
 };
 
 export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }: ChallengePostCardProps) => {
@@ -56,163 +60,100 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
   const [isJoined, setIsJoined] = useState(challenge.is_joined || false);
   const [participantCount, setParticipantCount] = useState(challenge.participant_count);
   const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
 
   const handleJoinChallenge = async () => {
-    if (!user) {
-      toast.error("יש להתחבר כדי להשתתף באתגר");
-      return;
-    }
-
+    if (!user) { toast.error("יש להתחבר כדי להשתתף באתגר"); return; }
     setIsJoining(true);
     try {
       if (isJoined) {
-        await supabase
-          .from("challenge_participants")
-          .delete()
-          .eq("challenge_id", challenge.id)
-          .eq("user_id", user.id);
-
-        setIsJoined(false);
-        setParticipantCount(prev => Math.max(0, prev - 1));
+        await supabase.from("challenge_participants").delete().eq("challenge_id", challenge.id).eq("user_id", user.id);
+        setIsJoined(false); setParticipantCount(prev => Math.max(0, prev - 1));
         toast.success("יצאת מהאתגר");
       } else {
-        await supabase
-          .from("challenge_participants")
-          .insert({
-            challenge_id: challenge.id,
-            user_id: user.id
-          });
-
-        setIsJoined(true);
-        setParticipantCount(prev => prev + 1);
+        await supabase.from("challenge_participants").insert({ challenge_id: challenge.id, user_id: user.id });
+        setIsJoined(true); setParticipantCount(prev => prev + 1);
         toast.success("הצטרפת לאתגר! 🎉");
       }
-      
       onJoinChange?.();
-    } catch (error) {
-      toast.error("שגיאה בעדכון האתגר");
-    } finally {
-      setIsJoining(false);
-    }
+    } catch { toast.error("שגיאה בעדכון האתגר"); }
+    finally { setIsJoining(false); }
+  };
+
+  const handleShare = async () => {
+    haptic("light");
+    const url = `${window.location.origin}/challenge/${challenge.id}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: challenge.title_he, url }); } catch { /* cancelled */ }
+    } else { navigator.clipboard.writeText(url); toast.success("הקישור הועתק"); }
   };
 
   const challengeImage = challenge.cover_image_url || getDefaultImage(challenge.hashtag);
 
   return (
-    <article className="bg-white">
-      {/* Header - Instagram style */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Avatar className="w-8 h-8 ring-[1.5px] ring-purple-500 ring-offset-[1.5px] ring-offset-white">
-            <AvatarImage src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-challenge" />
-            <AvatarFallback className="bg-gradient-to-tr from-purple-500 to-pink-500 text-white text-xs">
-              🏆
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-neutral-900 text-[14px]">Petid אתגרים</span>
-            <Badge className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0 h-4 border-0 font-medium">
-              אתגר
-            </Badge>
+    <article className="relative w-full aspect-[9/16] max-w-[calc((100vh-180px)*9/16)] mx-auto rounded-2xl overflow-hidden my-1">
+      {/* Full-bleed image */}
+      <div className="absolute inset-0 bg-black">
+        <img src={challengeImage} alt={challenge.title_he} className="w-full h-full object-cover" />
+      </div>
+
+      {/* Gradients */}
+      <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-[5]" />
+      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/30 to-transparent pointer-events-none z-[5]" />
+
+      {/* Top badges */}
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+        <span className="bg-white/95 backdrop-blur-sm text-neutral-900 text-[12px] font-semibold px-2.5 py-1 rounded-full shadow-sm">#{challenge.hashtag}</span>
+      </div>
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/95 backdrop-blur-sm text-neutral-900 text-[12px] font-semibold px-2.5 py-1 rounded-full shadow-sm">
+        <Users className="w-3.5 h-3.5" /> {formatCount(participantCount)}
+      </div>
+
+      {/* RIGHT SIDEBAR */}
+      <motion.div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-10" initial="hidden" animate="visible">
+        {/* Challenge Avatar */}
+        <motion.div custom={0} variants={sidebarStagger} className="relative mb-1">
+          <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden shadow-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <Trophy className="w-6 h-6 text-white" />
           </div>
-        </div>
-        <PostOptionsMenu
-          copyLink={`${window.location.origin}/challenge/${challenge.id}`}
-          hideLabel="הסתר אתגר"
-          hideToast="האתגר הוסתר"
-        />
-      </div>
+        </motion.div>
 
-      {/* Image - Instagram style square */}
-      <div className="relative aspect-square">
-        <img
-          src={challengeImage}
-          alt={challenge.title_he}
-          className="w-full h-full object-cover"
-        />
-        
-        {/* Hashtag badge */}
-        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-neutral-900 text-[12px] font-semibold px-2.5 py-1 rounded-full shadow-sm">
-          #{challenge.hashtag}
-        </div>
-        
-        {/* Participants badge */}
-        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm text-neutral-900 text-[12px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
-          <Users className="w-3.5 h-3.5" />
-          {participantCount}
-        </div>
-        
-        {/* Subtle gradient at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/55 to-transparent h-32 pointer-events-none" />
-        
-        {/* Challenge info overlay */}
-        <div className="absolute bottom-4 left-4 right-4 text-white">
-          <h3 className="text-xl font-bold tracking-tight mb-1">{challenge.title_he}</h3>
-          {challenge.description_he && (
-            <p className="text-[14px] opacity-95 line-clamp-2">{challenge.description_he}</p>
-          )}
-        </div>
-      </div>
+        {/* Like */}
+        <motion.button custom={1} variants={sidebarStagger} whileTap={{ scale: 0.8 }} onClick={() => { haptic("light"); setIsLiked(!isLiked); }} className="flex flex-col items-center gap-1">
+          <Heart className={`w-8 h-8 drop-shadow-lg ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-white'}`} strokeWidth={1.5} />
+          <span className="text-white text-[14px] font-semibold drop-shadow-md">אהבתי</span>
+        </motion.button>
 
-      {/* Actions - Instagram style */}
-      <div className="px-4 pt-3">
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsLiked(!isLiked)}
-              className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
-            >
-              <Heart className={`w-7 h-7 ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-neutral-900'}`} strokeWidth={1.25} />
-            </button>
-            <button className="p-0.5 active:opacity-50 transition-opacity focus:outline-none">
-              <MessageCircle className="w-7 h-7 text-neutral-900" strokeWidth={1.25} />
-            </button>
-            <button className="p-0.5 active:opacity-50 transition-opacity focus:outline-none">
-              <Send className="w-7 h-7 text-neutral-900" strokeWidth={1.25} />
-            </button>
-          </div>
-          <button
-            onClick={() => setIsSaved(!isSaved)}
-            className="p-0.5 active:opacity-50 transition-opacity focus:outline-none"
-          >
-            <Bookmark className={`w-7 h-7 ${isSaved ? 'fill-neutral-900' : ''} text-neutral-900`} strokeWidth={1.25} />
-          </button>
-        </div>
+        {/* Comment */}
+        <motion.button custom={2} variants={sidebarStagger} whileTap={{ scale: 0.8 }} onClick={() => navigate(`/challenge/${challenge.id}`)} className="flex flex-col items-center gap-1">
+          <MessageCircle className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white text-[14px] font-semibold drop-shadow-md">פרטים</span>
+        </motion.button>
 
-        {/* Participants count */}
-        <p className="text-[14px] text-neutral-900 font-semibold mb-1.5 tabular-nums">
-          {participantCount} משתתפים
-        </p>
+        {/* Share */}
+        <motion.button custom={3} variants={sidebarStagger} whileTap={{ scale: 0.8 }} onClick={handleShare} className="flex flex-col items-center gap-1">
+          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white text-[14px] font-semibold drop-shadow-md">שתף</span>
+        </motion.button>
 
-        {/* Caption */}
-        <p className="text-neutral-900 text-[14px] leading-[1.35] mb-2">
-          <span className="font-bold">Petid אתגרים</span>{" "}
-          🏆 הצטרפו לאתגר #{challenge.hashtag} ושתפו תמונות!
-        </p>
-      </div>
+        {/* CTA — Join */}
+        <motion.button custom={4} variants={sidebarStagger} whileTap={{ scale: 0.9 }} onClick={handleJoinChallenge} disabled={isJoining} className="relative rounded-xl w-16 h-11 flex items-center justify-center shadow-xl" style={{ backgroundColor: isJoined ? '#22c55e' : '#FF8C42' }}>
+          <motion.div className="absolute inset-0 rounded-xl" style={{ backgroundColor: isJoined ? '#22c55e' : '#FF8C42' }} animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+          <span className="text-white text-[11px] font-bold relative z-10">{isJoining ? "..." : isJoined ? "✓" : "הצטרף"}</span>
+        </motion.button>
+      </motion.div>
 
-      {/* CTA Button - Instagram style */}
-      <button
-        onClick={handleJoinChallenge}
-        disabled={isJoining}
-        className={`w-full transition-colors flex items-center justify-between px-4 py-3.5 active:opacity-80 ${
-          isJoined 
-            ? 'bg-emerald-500' 
-            : 'bg-gradient-to-r from-purple-500 to-pink-500'
-        }`}
-      >
-        <Trophy className="w-5 h-5 text-white" />
-        <div className="flex items-center gap-2">
-          <span className="text-white text-[15px] font-semibold">
-            {isJoining ? "..." : isJoined ? "משתתף/ת ✓" : "להצטרפות"}
+      {/* BOTTOM-LEFT INFO */}
+      <div className="absolute bottom-7 left-4 right-20 z-10 text-white" dir="rtl">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="bg-purple-500/80 rounded-full px-3 py-1 text-[12px] font-bold">אתגר</span>
+          <span className="bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[14px] font-medium">
+            {formatCount(participantCount)} משתתפים
           </span>
-          <ChevronLeft className="w-5 h-5 text-white" />
         </div>
-      </button>
 
-      {/* Post Divider */}
-      <div className="h-[1px] bg-neutral-100" />
+        <p className="font-semibold text-[18px] drop-shadow-md mb-1">🏆 {challenge.title_he}</p>
+        {challenge.description_he && <p className="text-[16px] leading-snug line-clamp-2 drop-shadow-sm">{challenge.description_he}</p>}
+      </div>
     </article>
   );
 };

@@ -1,10 +1,9 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Send, Bookmark, Megaphone, ChevronLeft } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Heart, MessageCircle, Share2, Megaphone } from "lucide-react";
 import { useState } from "react";
-import { PostOptionsMenu } from "@/components/post/PostOptionsMenu";
+import { haptic } from "@/lib/haptics";
+import { toast } from "sonner";
 
 interface FeedAd {
   id: string;
@@ -22,120 +21,86 @@ interface AdPostCardProps {
   ad: FeedAd;
 }
 
+const sidebarStagger = {
+  hidden: { opacity: 0, x: 20 },
+  visible: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { delay: 0.2 + i * 0.07, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] as const },
+  }),
+};
+
 export const AdPostCard = ({ ad }: AdPostCardProps) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+
+  const handleShare = async () => {
+    haptic("light");
+    const url = `${window.location.origin}${ad.link}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: ad.title, url }); } catch { /* cancelled */ }
+    } else { navigator.clipboard.writeText(url); toast.success("הקישור הועתק"); }
+  };
 
   return (
-    <motion.article
-      className="bg-card border-b border-border"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Header - Instagram style */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2.5">
-          <Avatar className="w-8 h-8">
-            <AvatarImage src="https://api.dicebear.com/7.x/bottts/svg?seed=petid-ads" />
-            <AvatarFallback className="bg-gradient-to-tr from-blue-500 to-cyan-400 text-white text-xs">
-              📢
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-[#262626] text-sm">Petid</p>
-              <Badge className="bg-[#8E8E8E]/20 text-[#8E8E8E] text-[10px] px-1.5 py-0 h-4 border-0">
-                ממומן
-              </Badge>
-            </div>
-          </div>
-        </div>
-        <PostOptionsMenu
-          copyLink={`${window.location.origin}${ad.link}`}
-          hideLabel="הסתר מודעה"
-          hideToast="המודעה הוסתרה"
-          reportLabel="דווח על מודעה"
-        />
+    <article className="relative w-full aspect-[9/16] max-w-[calc((100vh-180px)*9/16)] mx-auto rounded-2xl overflow-hidden my-1">
+      {/* Full-bleed image */}
+      <div className="absolute inset-0 bg-black">
+        <img src={ad.image} alt={ad.title} className="w-full h-full object-cover" />
       </div>
 
-      {/* Image - supports portrait (9:16), landscape (16:9), square (1:1) */}
-      <div className={`relative ${
-        ad.format === 'portrait' ? 'aspect-[9/16]' : 
-        ad.format === 'landscape' ? 'aspect-video' : 
-        'aspect-square'
-      }`}>
-        <img
-          src={ad.image}
-          alt={ad.title}
-          className="w-full h-full object-cover"
-        />
-        
-        {/* Badge */}
-        {ad.badge && (
-          <div className={`absolute top-3 left-3 bg-gradient-to-r ${ad.gradient} text-white text-xs font-semibold px-2.5 py-1 rounded-full`}>
-            {ad.badge}
-          </div>
-        )}
-        
-        {/* Subtle gradient at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent h-28 pointer-events-none" />
-        
-        {/* Ad info overlay */}
-        <div className="absolute bottom-3 left-3 right-3 text-white">
-          <h3 className="text-xl font-bold mb-1">{ad.title}</h3>
-          <p className="text-sm opacity-90">{ad.subtitle}</p>
+      {/* Gradients */}
+      <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-[5]" />
+      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/30 to-transparent pointer-events-none z-[5]" />
+
+      {/* Badge */}
+      {ad.badge && (
+        <div className={`absolute top-3 left-3 z-10 bg-gradient-to-r ${ad.gradient} text-white text-xs font-semibold px-2.5 py-1 rounded-full`}>
+          {ad.badge}
         </div>
+      )}
+      <div className="absolute top-3 right-3 z-10">
+        <span className="bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-white text-[11px] font-medium">ממומן</span>
       </div>
 
-      {/* Actions - Instagram style */}
-      <div className="px-3 pt-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <motion.button
-              onClick={() => setIsLiked(!isLiked)}
-              whileTap={{ scale: 0.8 }}
-              className="p-1"
-            >
-              <Heart className={`w-6 h-6 ${isLiked ? 'fill-[#ED4956] text-[#ED4956]' : 'text-[#262626]'}`} strokeWidth={1.5} />
-            </motion.button>
-            <button className="p-1">
-              <MessageCircle className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
-            </button>
-            <button className="p-1">
-              <Send className="w-6 h-6 text-[#262626]" strokeWidth={1.5} />
-            </button>
+      {/* RIGHT SIDEBAR */}
+      <motion.div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-10" initial="hidden" animate="visible">
+        {/* Ad Avatar */}
+        <motion.div custom={0} variants={sidebarStagger} className="relative mb-1">
+          <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden shadow-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
+            <Megaphone className="w-6 h-6 text-white" />
           </div>
-          <motion.button
-            onClick={() => setIsSaved(!isSaved)}
-            whileTap={{ scale: 0.8 }}
-            className="p-1"
-          >
-            <Bookmark className={`w-6 h-6 ${isSaved ? 'fill-[#262626]' : ''} text-[#262626]`} strokeWidth={1.5} />
-          </motion.button>
-        </div>
+        </motion.div>
 
-        {/* Caption */}
-        <div className="space-y-1 pb-2">
-          <p className="text-[#262626] text-sm">
-            <span className="font-semibold">Petid</span>{" "}
-            {ad.subtitle}
-          </p>
-        </div>
+        {/* Like */}
+        <motion.button custom={1} variants={sidebarStagger} whileTap={{ scale: 0.8 }} onClick={() => { haptic("light"); setIsLiked(!isLiked); }} className="flex flex-col items-center gap-1">
+          <Heart className={`w-8 h-8 drop-shadow-lg ${isLiked ? 'fill-rose-500 text-rose-500' : 'text-white'}`} strokeWidth={1.5} />
+          <span className="text-white text-[14px] font-semibold drop-shadow-md">אהבתי</span>
+        </motion.button>
+
+        {/* Comment */}
+        <motion.button custom={2} variants={sidebarStagger} whileTap={{ scale: 0.8 }} onClick={() => navigate(ad.link)} className="flex flex-col items-center gap-1">
+          <MessageCircle className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white text-[14px] font-semibold drop-shadow-md">פרטים</span>
+        </motion.button>
+
+        {/* Share */}
+        <motion.button custom={3} variants={sidebarStagger} whileTap={{ scale: 0.8 }} onClick={handleShare} className="flex flex-col items-center gap-1">
+          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white text-[14px] font-semibold drop-shadow-md">שתף</span>
+        </motion.button>
+
+        {/* CTA */}
+        <motion.button custom={4} variants={sidebarStagger} whileTap={{ scale: 0.9 }} onClick={() => navigate(ad.link)} className="relative rounded-xl w-16 h-11 flex items-center justify-center shadow-xl" style={{ backgroundColor: '#FF8C42' }}>
+          <motion.div className="absolute inset-0 rounded-xl" style={{ backgroundColor: '#FF8C42' }} animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+          <span className="text-white text-[10px] font-bold relative z-10">{ad.cta}</span>
+        </motion.button>
+      </motion.div>
+
+      {/* BOTTOM-LEFT INFO */}
+      <div className="absolute bottom-7 left-4 right-20 z-10 text-white" dir="rtl">
+        <p className="font-semibold text-[18px] drop-shadow-md mb-1">{ad.title}</p>
+        <p className="text-[16px] leading-snug line-clamp-2 drop-shadow-sm">{ad.subtitle}</p>
       </div>
-
-      {/* CTA Button - Instagram style */}
-      <button
-        onClick={() => navigate(ad.link)}
-        className="w-full bg-[#0095F6] hover:bg-[#1877F2] transition-colors flex items-center justify-between px-4 py-3"
-      >
-        <Megaphone className="w-5 h-5 text-white" />
-        <div className="flex items-center gap-2">
-          <span className="text-white text-[15px] font-semibold">{ad.cta}</span>
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </div>
-      </button>
-    </motion.article>
+    </article>
   );
 };
