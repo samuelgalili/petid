@@ -406,6 +406,22 @@ export const SoundtrackPostCard = ({
 
         {/* Social proof */}
         <SocialProofLabel postId={post.id} userId={userId} />
+
+        {/* Music / Sound bar — TikTok style */}
+        <div className="flex items-center gap-1.5 mt-2">
+          <Music className="w-3 h-3 text-white/90" />
+          <div className="overflow-hidden max-w-[180px]">
+            <p className="text-white/90 whitespace-nowrap animate-marquee" style={{ fontSize: "12px" }}>
+              ♫ PetID · Original Sound
+            </p>
+          </div>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          >
+            <Disc3 className="w-6 h-6 text-white/80" />
+          </motion.div>
+        </div>
       </div>
 
       {/* Gallery indicator dots */}
