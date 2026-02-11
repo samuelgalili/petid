@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Check, Phone, Loader2, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -241,6 +241,19 @@ export const InsurancePlanCards = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Auto-fill phone from user profile
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.phone) setPhone(data.phone);
+      });
+  }, [user?.id]);
 
   const PHONE_REGEX = /^0[2-9]\d{7,8}$/;
 

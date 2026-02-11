@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Shield, Phone, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,18 @@ export const InsuranceCallbackForm = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.phone) setPhone(data.phone);
+      });
+  }, [user?.id]);
 
   const PHONE_REGEX = /^0[2-9]\d{7,8}$/;
 
