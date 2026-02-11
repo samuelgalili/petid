@@ -297,25 +297,6 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
-        {/* Spinning disc — avatar inside, TikTok style */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          className="relative rounded-full overflow-hidden bg-neutral-800"
-          style={{ width: "36px", height: "36px", border: "3px solid rgba(60,60,60,0.8)" }}
-        >
-          {post.user_profile?.avatar_url ? (
-            <img
-              src={post.user_profile.avatar_url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Music className="w-4 h-4 text-white/60" />
-            </div>
-          )}
-        </motion.div>
 
         {/* CTA */}
         {hasPromotion && (
