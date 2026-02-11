@@ -263,7 +263,7 @@ export const PostCard = ({
           className="relative"
           style={{ marginBottom: '0px' }}
         >
-          <div className="rounded-full overflow-hidden" style={{ width: '48px', height: '48px', border: '2px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+          <div className="rounded-full overflow-hidden" style={{ width: '44px', height: '44px', border: '2px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
             {post.user.avatar_url ? (
               <img src={post.user.avatar_url} alt="" className="w-full h-full object-cover" />
             ) : (
