@@ -66,7 +66,9 @@ const PlanFlipCard = ({
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
       style={{
         flexShrink: 0,
         width: '68%',
@@ -77,21 +79,27 @@ const PlanFlipCard = ({
         height: '195px',
       }}
     >
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
+      <div
+        onClick={() => {
+          if (isFlipped) {
+            setIsFlipped(false);
+            onSelect();
+          } else {
+            setIsFlipped(true);
+          }
+        }}
         style={{
           width: '100%',
           height: '100%',
           position: 'relative',
           transformStyle: 'preserve-3d',
-          transition: 'transform 0.5s ease',
+          transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          cursor: 'pointer',
         }}
       >
         {/* FRONT — Price & Name */}
         <div
-          onClick={() => setIsFlipped(true)}
           style={{
             position: 'absolute',
             width: '100%',
@@ -167,10 +175,6 @@ const PlanFlipCard = ({
 
         {/* BACK — Features */}
         <div
-          onClick={() => {
-            setIsFlipped(false);
-            onSelect();
-          }}
           style={{
             position: 'absolute',
             width: '100%',
@@ -220,8 +224,8 @@ const PlanFlipCard = ({
             בחר תוכנית
           </div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 };
 
