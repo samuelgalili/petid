@@ -404,7 +404,7 @@ export const SoundtrackPostCard = ({
         animate={{ rotate: 360 }}
         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
         className="absolute z-50 rounded-full overflow-hidden bg-neutral-800"
-        style={{ width: "36px", height: "36px", border: "4px solid rgba(50,50,50,0.9)", bottom: '72px', right: '12px' }}
+        style={{ width: "36px", height: "36px", border: "4px solid rgba(50,50,50,0.9)", bottom: '56px', right: '12px' }}
       >
         {post.user_profile?.avatar_url ? (
           <img src={post.user_profile.avatar_url} alt="" className="w-full h-full object-cover" />
