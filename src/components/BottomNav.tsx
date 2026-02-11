@@ -187,20 +187,27 @@ const BottomNav = () => {
             label="חנות"
           />
 
-          {/* Messages */}
+          {/* Upload Content */}
           <NavItem 
-            onClick={() => handleNavClick("/messages")}
+            onClick={() => handleNavClick("/create-post")}
             icon={
-              <MessageCircle 
-                className={cn(
-                  "w-6 h-6",
-                  isActive("/messages") ? "text-foreground" : "text-muted-foreground"
-                )}
-                strokeWidth={isActive("/messages") ? 2 : 1.5}
-              />
+              <div className={cn(
+                "w-7 h-7 rounded-full flex items-center justify-center border-2",
+                isActive("/create-post") 
+                  ? "border-foreground bg-foreground" 
+                  : "border-muted-foreground"
+              )}>
+                <Plus 
+                  className={cn(
+                    "w-4 h-4",
+                    isActive("/create-post") ? "text-background" : "text-muted-foreground"
+                  )}
+                  strokeWidth={2.5}
+                />
+              </div>
             }
-            isActive={isActive("/messages")}
-            label="הודעות"
+            isActive={isActive("/create-post")}
+            label="העלאה"
           />
         </div>
         
