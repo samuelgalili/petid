@@ -12,8 +12,8 @@ const CARDCOM_WEBHOOK_SECRET = Deno.env.get('CARDCOM_WEBHOOK_SECRET');
 // Verify webhook signature using HMAC-SHA256
 async function verifyWebhookSignature(payload: string, signature: string | null): Promise<boolean> {
   if (!CARDCOM_WEBHOOK_SECRET) {
-    console.warn('CARDCOM_WEBHOOK_SECRET not set, skipping signature verification');
-    return true; // Allow in development
+    console.error('CARDCOM_WEBHOOK_SECRET not configured - rejecting webhook');
+    return false;
   }
 
   if (!signature) {
