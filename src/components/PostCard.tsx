@@ -416,30 +416,29 @@ export const PostCard = ({
         </div>
       </div>
 
-      {/* Post Image with Carousel Support */}
-      <ImageCarousel
-        images={allImages}
-        alt={post.caption || "פוסט"}
-        onDoubleClick={handleDoubleTap}
-      >
-        {/* Heart Burst Animation */}
-        <HeartBurstAnimation isVisible={showDoubleTapAnimation} />
+      {/* Post Image with Carousel Support + Right Side Action Buttons */}
+      <div className="relative">
+        <ImageCarousel
+          images={allImages}
+          alt={post.caption || "פוסט"}
+          onDoubleClick={handleDoubleTap}
+        >
+          {/* Heart Burst Animation */}
+          <HeartBurstAnimation isVisible={showDoubleTapAnimation} />
 
-        {/* Product Tags Overlay */}
-        {post.product_tags && post.product_tags.length > 0 && (
-          <ProductTagOverlay 
-            tags={post.product_tags}
-            showTags={showProductTags}
-            onToggleTags={() => setShowProductTags(!showProductTags)}
-          />
-        )}
-      </ImageCarousel>
+          {/* Product Tags Overlay */}
+          {post.product_tags && post.product_tags.length > 0 && (
+            <ProductTagOverlay 
+              tags={post.product_tags}
+              showTags={showProductTags}
+              onToggleTags={() => setShowProductTags(!showProductTags)}
+            />
+          )}
+        </ImageCarousel>
 
-      {/* Post Actions - Instagram style */}
-      <div className="px-3 pt-2.5 pb-1">
-        {/* Icons with counts inline — improved sizes, shadows, haptic */}
-        <motion.div 
-          className="flex items-center gap-5"
+        {/* Right side action buttons — TikTok style, overlaid on image */}
+        <motion.div
+          className="absolute right-2 bottom-4 flex flex-col items-center gap-5 z-10"
           initial="hidden"
           animate="visible"
           variants={{
@@ -447,70 +446,85 @@ export const PostCard = ({
             visible: { transition: { staggerChildren: 0.06 } }
           }}
         >
-          {/* Like button with count */}
-          <motion.div 
-            className="flex items-center gap-1.5"
-            variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+          {/* Like */}
+          <motion.button
+            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+            whileTap={{ scale: 0.8 }}
+            onClick={handleLike}
+            className="flex flex-col items-center gap-0.5"
           >
-            <button 
-              onClick={handleLike}
-              className="active:opacity-50 transition-opacity focus:outline-none"
+            <motion.div
+              animate={isLicking ? { scale: [1, 1.3, 0.9, 1.1, 1], rotate: [0, -10, 10, -5, 0] } : {}}
+              transition={{ duration: 0.4, ease: "easeOut" }}
             >
-              <motion.div
-                animate={isLicking ? { scale: [1, 1.3, 0.9, 1.1, 1], rotate: [0, -10, 10, -5, 0] } : {}}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-              >
-                <Heart 
-                  className={`w-7 h-7 transition-colors drop-shadow-sm ${
-                    post.is_liked 
-                      ? 'fill-petid-heart text-petid-heart' 
-                      : 'text-card-foreground'
-                  }`}
-                  strokeWidth={1.5}
-                />
-              </motion.div>
-            </button>
-            <span className="text-[14px] text-card-foreground font-semibold tabular-nums">
-              {post.likes_count >= 1000 
-                ? `${(post.likes_count / 1000).toFixed(1)}k` 
-                : post.likes_count > 0 ? post.likes_count.toLocaleString('he-IL') : '0'}
+              <Heart
+                className={`w-7 h-7 drop-shadow-lg ${
+                  post.is_liked
+                    ? 'fill-rose-500 text-rose-500'
+                    : 'text-white'
+                }`}
+                strokeWidth={1.5}
+              />
+            </motion.div>
+            <span className="text-white text-[12px] font-bold drop-shadow-md tabular-nums">
+              {post.likes_count >= 1000
+                ? `${(post.likes_count / 1000).toFixed(1)}k`
+                : post.likes_count > 0 ? post.likes_count : ''}
             </span>
-          </motion.div>
-          
-          {/* Comment button with count */}
-          <motion.div 
-            className="flex items-center gap-1.5"
-            variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
+          </motion.button>
+
+          {/* Comment */}
+          <motion.button
+            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+            whileTap={{ scale: 0.8 }}
+            onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
+            className="flex flex-col items-center gap-0.5"
           >
-            <button 
-              className="text-card-foreground active:opacity-50 transition-opacity focus:outline-none"
-              onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
-            >
-              <MessageCircle className="w-7 h-7 drop-shadow-sm" strokeWidth={1.5} />
-            </button>
-            <span className="text-[14px] text-card-foreground font-semibold tabular-nums">
-              {post.comments_count >= 1000 
-                ? `${(post.comments_count / 1000).toFixed(1)}k` 
-                : post.comments_count > 0 ? post.comments_count.toLocaleString('he-IL') : '0'}
+            <MessageCircle className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
+            <span className="text-white text-[12px] font-bold drop-shadow-md tabular-nums">
+              {post.comments_count >= 1000
+                ? `${(post.comments_count / 1000).toFixed(1)}k`
+                : post.comments_count > 0 ? post.comments_count : ''}
             </span>
-          </motion.div>
-          
-          {/* Repost button */}
-          <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}>
-            <RepostButton postId={post.id} />
-          </motion.div>
-          
-          {/* Share button */}
-          <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}>
-            <button 
-              className="text-card-foreground active:opacity-50 transition-opacity focus:outline-none"
-              onClick={handleShare}
+          </motion.button>
+
+          {/* Save/Bookmark */}
+          <motion.button
+            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+            whileTap={{ scale: 0.8 }}
+            onClick={handleSave}
+            className="flex flex-col items-center"
+          >
+            <motion.div
+              animate={isSaveAnimating ? { scale: [1, 1.3, 1] } : {}}
+              transition={{ duration: 0.3 }}
             >
-              <Send className="w-7 h-7 drop-shadow-sm" strokeWidth={1.5} />
-            </button>
-          </motion.div>
+              <Bookmark
+                className={`w-7 h-7 drop-shadow-lg ${
+                  post.is_saved ? 'fill-white text-white' : 'text-white'
+                }`}
+                strokeWidth={1.5}
+              />
+            </motion.div>
+          </motion.button>
+
+          {/* Share */}
+          <motion.button
+            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
+            whileTap={{ scale: 0.8 }}
+            onClick={handleShare}
+            className="flex flex-col items-center"
+          >
+            <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
+          </motion.button>
         </motion.div>
 
+        {/* Bottom gradient for button visibility */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/50 to-transparent pointer-events-none rounded-b-2xl" />
+      </div>
+
+      {/* Post info below image */}
+      <div className="px-3 pt-2.5 pb-1">
         {/* Location tag */}
         {post.location_name && (
           <LocationTag locationName={post.location_name} className="mb-1" />
