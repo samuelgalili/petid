@@ -64,6 +64,7 @@ const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [userAvatar, setUserAvatar] = useState<string>("");
+  const [showUploadMenu, setShowUploadMenu] = useState(false);
   const { unreadCount } = useRealtimeNotifications();
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
