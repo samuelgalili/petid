@@ -538,10 +538,8 @@ const Chat = () => {
                 className="flex justify-end mb-3"
               >
                 <div className="flex items-end gap-2 flex-row-reverse">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-instagram p-[1.5px]">
-                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                      <span className="text-xs">🐾</span>
-                    </div>
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-3 h-3 text-primary" />
                   </div>
                   <div className="px-4 py-3 bg-secondary rounded-3xl rounded-bl-lg">
                     <div className="flex gap-1">
