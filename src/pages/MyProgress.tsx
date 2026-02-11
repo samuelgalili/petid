@@ -32,7 +32,8 @@ const MyProgress = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { achievements, badges, loading: gameLoading } = useGame();
-  const { stats, awardPoints } = useLoyalty();
+  const stats = { totalPoints: 0 };
+  const awardPoints = async (_action: string) => {};
   const [activeTab, setActiveTab] = useState("overview");
   const [streak, setStreak] = useState(0);
   const [proofDialogOpen, setProofDialogOpen] = useState(false);
