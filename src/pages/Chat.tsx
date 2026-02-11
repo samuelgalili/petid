@@ -7,9 +7,22 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
+import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
+import { ChatProductCards } from "@/components/chat/ChatProductCards";
+
+interface Product {
+  id: string;
+  name: string;
+  price?: number | null;
+  sale_price?: number | null;
+  image_url?: string | null;
+  category?: string | null;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
+  products?: Product[];
 }
 
 interface Pet {
