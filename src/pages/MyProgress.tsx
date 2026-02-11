@@ -155,15 +155,6 @@ const MyProgress = () => {
             </button>
             <h1 className="text-lg font-semibold text-foreground">ההתקדמות שלי</h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/rewards')}
-            className="gap-1.5 text-primary"
-          >
-            <Gift className="w-4 h-4" />
-            פרסים
-          </Button>
         </div>
       </motion.div>
 
