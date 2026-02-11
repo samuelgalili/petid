@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
@@ -46,6 +46,16 @@ import { playAddToCartSound } from "@/lib/sounds";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { CommentsSheet } from "@/components/CommentsSheet";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import {
+  FeedPullToRefresh,
+  FeedSkeletonList,
+  FeedProgressBar,
+  NewPostToast,
+  DailyStreak,
+  FeedOnboarding,
+  SocialProofLabel,
+} from "@/components/feed";
 
 interface FeedPost {
   id: string;
@@ -91,8 +101,17 @@ const SoundtrackFeed = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [newPostCount, setNewPostCount] = useState(0);
 
-  const fetchPosts = useCallback(async () => {
+  // Pull-to-refresh
+  const handleRefresh = useCallback(async () => {
+    await fetchPostsInner();
+  }, []);
+  const { pullDistance, isRefreshing, progress, shouldTrigger, handlers: pullHandlers } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
+
+  const fetchPostsInner = useCallback(async () => {
     setLoading(true);
     try {
       let postsQuery = supabase.
@@ -311,9 +330,28 @@ const SoundtrackFeed = () => {
     }
   }, [activeTab, user]);
 
+  const fetchPosts = fetchPostsInner;
+
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  // Realtime listener for new posts
+  useEffect(() => {
+    const channel = supabase
+      .channel("feed-new-posts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, () => {
+        setNewPostCount((c) => c + 1);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const handleNewPostTap = () => {
+    setNewPostCount(0);
+    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    fetchPosts();
+  };
 
   const handleLike = async (postId: string) => {
     if (!user) {
@@ -415,14 +453,34 @@ const SoundtrackFeed = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-      </div>);
-
+      <div className="h-screen bg-background overflow-hidden" dir="rtl">
+        <div className="h-full pb-[70px] overflow-hidden">
+          <FeedSkeletonList />
+        </div>
+        <BottomNav />
+      </div>
+    );
   }
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      {/* Progress bar */}
+      <FeedProgressBar current={currentIndex} total={posts.length} />
+
+      {/* Pull-to-refresh indicator */}
+      <FeedPullToRefresh
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        progress={progress}
+        shouldTrigger={shouldTrigger}
+      />
+
+      {/* New post toast */}
+      <NewPostToast visible={newPostCount > 0} count={newPostCount} onTap={handleNewPostTap} />
+
+      {/* Onboarding tooltips (first-time only) */}
+      <FeedOnboarding />
+
       {/* Header with Tabs - at top */}
       <motion.header
         className="absolute top-0 left-0 right-0 z-50 pointer-events-none pt-2"
@@ -430,13 +488,10 @@ const SoundtrackFeed = () => {
         animate={{ y: 0, opacity: 1 }}>
 
         <div className="flex items-center justify-center h-10 relative pointer-events-auto">
-          
-
-
-
-
-
-
+          {/* Daily Streak badge */}
+          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+            <DailyStreak />
+          </div>
 
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "discover" | "following")}>
             <TabsList className="bg-transparent gap-8">
@@ -469,12 +524,13 @@ const SoundtrackFeed = () => {
         </div>
       </motion.header>
 
-      {/* Feed Cards - with gaps to show next post peek */}
+      {/* Feed Cards */}
       <div
         ref={containerRef}
         className="h-full pb-[70px] overflow-y-auto snap-y snap-mandatory scroll-smooth"
         onScroll={handleScroll}
-        style={{ scrollSnapType: 'y mandatory', scrollPaddingTop: '8px' }}>
+        style={{ scrollSnapType: 'y mandatory', scrollPaddingTop: '8px' }}
+        {...pullHandlers}>
 
         {posts.length === 0 ?
         <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
@@ -664,12 +720,15 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           }}>
 
             {allImages.map((img, imgIndex) =>
-          <img
+          <motion.img
             key={imgIndex}
             ref={imgIndex === 0 ? productImageRef : undefined}
             src={img}
             alt=""
-            className="w-full h-full object-cover flex-shrink-0 snap-center" />
+            className="w-full h-full object-cover flex-shrink-0 snap-center"
+            style={{ scale: 1.05 }}
+            whileInView={{ y: [10, -10] }}
+            transition={{ duration: 8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }} />
 
           )}
           </div> :
@@ -853,6 +912,9 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
             {post.caption}
           </p>
         }
+
+        {/* Social proof - friends who liked */}
+        <SocialProofLabel postId={post.id} userId={userId} />
       </div>
 
       {/* Gallery indicator dots */}
