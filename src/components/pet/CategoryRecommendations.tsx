@@ -72,7 +72,7 @@ export const CategoryRecommendations = ({
       features: ['תאונות', 'אשפוז'],
       icon: Shield,
       iconBg: 'bg-success/10',
-      route: '/insurance',
+      route: '/chat',
     },
     // אילוף
     {
