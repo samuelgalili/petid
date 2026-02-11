@@ -708,8 +708,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
       {/* ===== RIGHT SIDEBAR (Action Column) ===== */}
       <motion.div
-        className="absolute z-20 flex flex-col items-center gap-6"
-        style={{ right: '16px', top: '50%', transform: 'translateY(-50%)' }}
+        className="absolute bottom-[120px] right-4 z-50 flex flex-col items-center gap-6"
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2, staggerChildren: 0.05 }}>
