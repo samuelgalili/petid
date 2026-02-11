@@ -436,91 +436,79 @@ export const PostCard = ({
           )}
         </ImageCarousel>
 
-        {/* Right side action buttons — TikTok style, overlaid on image */}
-        <motion.div
-          className="absolute right-2 bottom-4 flex flex-col items-center gap-5 z-10"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.06 } }
-          }}
-        >
-          {/* Like */}
-          <motion.button
-            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
-            whileTap={{ scale: 0.8 }}
-            onClick={handleLike}
-            className="flex flex-col items-center gap-0.5"
-          >
-            <motion.div
-              animate={isLicking ? { scale: [1, 1.3, 0.9, 1.1, 1], rotate: [0, -10, 10, -5, 0] } : {}}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            >
-              <Heart
-                className={`w-7 h-7 drop-shadow-lg ${
-                  post.is_liked
-                    ? 'fill-rose-500 text-rose-500'
-                    : 'text-white'
-                }`}
-                strokeWidth={1.5}
-              />
-            </motion.div>
-            <span className="text-white text-[12px] font-bold drop-shadow-md tabular-nums">
-              {post.likes_count >= 1000
-                ? `${(post.likes_count / 1000).toFixed(1)}k`
-                : post.likes_count > 0 ? post.likes_count : ''}
-            </span>
-          </motion.button>
+        {/* Bottom action bar — frosted glass overlay on image */}
+        <div className="absolute bottom-3 left-3 right-3 z-10">
+          <div className="flex items-center justify-between bg-black/30 backdrop-blur-md rounded-full px-4 py-2.5" dir="rtl">
+            {/* Right side: Like, Comment, Bookmark, Share */}
+            <div className="flex items-center gap-4">
+              {/* Like */}
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={handleLike}
+                className="flex items-center gap-1"
+              >
+                <motion.div
+                  animate={isLicking ? { scale: [1, 1.3, 0.9, 1.1, 1] } : {}}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
+                  <Heart
+                    className={`w-6 h-6 ${
+                      post.is_liked
+                        ? 'fill-rose-500 text-rose-500'
+                        : 'text-white'
+                    }`}
+                    strokeWidth={1.5}
+                  />
+                </motion.div>
+                {post.likes_count > 0 && (
+                  <span className="text-white text-[13px] font-semibold tabular-nums">
+                    {post.likes_count >= 1000 ? `${(post.likes_count / 1000).toFixed(1)}k` : post.likes_count}
+                  </span>
+                )}
+              </motion.button>
 
-          {/* Comment */}
-          <motion.button
-            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
-            whileTap={{ scale: 0.8 }}
-            onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
-            className="flex flex-col items-center gap-0.5"
-          >
-            <MessageCircle className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
-            <span className="text-white text-[12px] font-bold drop-shadow-md tabular-nums">
-              {post.comments_count >= 1000
-                ? `${(post.comments_count / 1000).toFixed(1)}k`
-                : post.comments_count > 0 ? post.comments_count : ''}
-            </span>
-          </motion.button>
+              {/* Comment */}
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
+                className="flex items-center gap-1"
+              >
+                <MessageCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
+                {post.comments_count > 0 && (
+                  <span className="text-white text-[13px] font-semibold tabular-nums">
+                    {post.comments_count >= 1000 ? `${(post.comments_count / 1000).toFixed(1)}k` : post.comments_count}
+                  </span>
+                )}
+              </motion.button>
 
-          {/* Save/Bookmark */}
-          <motion.button
-            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
-            whileTap={{ scale: 0.8 }}
-            onClick={handleSave}
-            className="flex flex-col items-center"
-          >
-            <motion.div
-              animate={isSaveAnimating ? { scale: [1, 1.3, 1] } : {}}
-              transition={{ duration: 0.3 }}
-            >
-              <Bookmark
-                className={`w-7 h-7 drop-shadow-lg ${
-                  post.is_saved ? 'fill-white text-white' : 'text-white'
-                }`}
-                strokeWidth={1.5}
-              />
-            </motion.div>
-          </motion.button>
+              {/* Bookmark */}
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={handleSave}
+              >
+                <motion.div
+                  animate={isSaveAnimating ? { scale: [1, 1.3, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Bookmark
+                    className={`w-6 h-6 ${
+                      post.is_saved ? 'fill-white text-white' : 'text-white'
+                    }`}
+                    strokeWidth={1.5}
+                  />
+                </motion.div>
+              </motion.button>
 
-          {/* Share */}
-          <motion.button
-            variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
-            whileTap={{ scale: 0.8 }}
-            onClick={handleShare}
-            className="flex flex-col items-center"
-          >
-            <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
-          </motion.button>
-        </motion.div>
-
-        {/* Bottom gradient for button visibility */}
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/50 to-transparent pointer-events-none rounded-b-2xl" />
+              {/* Share */}
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={handleShare}
+              >
+                <Share2 className="w-6 h-6 text-white" strokeWidth={1.5} />
+              </motion.button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Post info below image */}
