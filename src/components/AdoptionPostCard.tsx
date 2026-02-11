@@ -54,6 +54,7 @@ const getAgeString = (years: number | null, months: number | null) => {
 export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
 
   const handleShare = async () => {
     haptic("light");
