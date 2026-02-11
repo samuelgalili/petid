@@ -857,7 +857,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
 
       {/* Gallery indicator dots */}
       {hasMultipleImages &&
-      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+      <div className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
           {allImages.map((_, i) =>
         <div
           key={i}
