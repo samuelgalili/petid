@@ -335,45 +335,43 @@ export const SoundtrackPostCard = ({
         )}
       </motion.div>
 
-      {/* BOTTOM-LEFT info — positioned ~60px above navbar */}
-      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '16px' }}>
-        {/* Status badges */}
-        {(isProductPost || isCtaPost || isChallengePost) && (
+      {/* Product info — top-right, vertical */}
+      {(isProductPost || isCtaPost || isChallengePost) && (
+        <div className="absolute top-16 right-3 z-50 flex flex-col items-end gap-1.5">
           <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-2 text-white text-sm font-medium"
+            className="px-3 py-1 rounded-full text-white text-sm font-medium"
             style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
           >
             {isProductPost && post.product_price && <span>₪{post.product_price}</span>}
             {isChallengePost && <span>🏆 אתגר</span>}
             {isCtaPost && <span>🐾 {post.cta_text || "אימוץ"}</span>}
           </div>
-        )}
+          {isProductPost && (post.product_weight || post.product_sizes) && (
+            <>
+              {post.product_weight && (
+                <span
+                  className="px-2 py-0.5 rounded-full text-white text-xs"
+                  style={{ backgroundColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
+                >
+                  {post.product_weight}
+                </span>
+              )}
+              {post.product_sizes?.map((s) => (
+                <span
+                  key={s}
+                  className="px-2 py-0.5 rounded-full text-white text-xs"
+                  style={{ backgroundColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
+                >
+                  {s}
+                </span>
+              ))}
+            </>
+          )}
+        </div>
+      )}
 
-        {/* Product variant pills */}
-        {isProductPost && (post.product_weight || post.product_sizes) && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {post.product_weight && (
-              <span
-                className="px-2 py-0.5 rounded-full text-white text-xs"
-                style={{ backgroundColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
-              >
-                {post.product_weight}
-              </span>
-            )}
-            {post.product_sizes?.map((s) => (
-              <span
-                key={s}
-                className="px-2 py-0.5 rounded-full text-white text-xs"
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.15)",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-        )}
+      {/* BOTTOM-LEFT info */}
+      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '16px' }}>
 
         {/* Username */}
         <div className="flex items-center gap-1.5 mb-1">
