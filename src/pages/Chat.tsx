@@ -43,6 +43,7 @@ interface Message {
     petId?: string | null;
     healthIssue?: string;
   };
+  showGroomingPicker?: boolean;
 }
 
 interface Pet {
