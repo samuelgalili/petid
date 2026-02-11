@@ -435,7 +435,7 @@ export const SoundtrackPostCard = ({
           <Music className="w-4 h-4 text-white flex-shrink-0" />
           <div className="overflow-hidden max-w-[200px]">
             <p className="text-white whitespace-nowrap animate-marquee" style={{ fontSize: "14px" }}>
-              ♫ PetID · Original Sound &nbsp;&nbsp;&nbsp; ♫ PetID · Original Sound
+              ♫ {post.music_title ? `${post.music_title} — ${post.music_artist || "PetID"}` : "PetID · Original Sound"} &nbsp;&nbsp;&nbsp; ♫ {post.music_title ? `${post.music_title} — ${post.music_artist || "PetID"}` : "PetID · Original Sound"}
             </p>
           </div>
         </div>
