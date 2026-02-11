@@ -105,6 +105,55 @@ const BottomNav = () => {
 
   return (
     <>
+      {/* Upload Menu Overlay */}
+      <AnimatePresence>
+        {showUploadMenu && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-[9998]"
+              onClick={() => setShowUploadMenu(false)}
+            />
+            {/* Menu */}
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-[70px] left-1/2 -translate-x-1/2 z-[9999] w-[200px] bg-background rounded-2xl border border-border shadow-xl overflow-hidden"
+              dir="rtl"
+            >
+              <button
+                onClick={() => { setShowUploadMenu(false); navigate('/create-story'); }}
+                className="flex items-center gap-3 w-full px-4 py-3.5 hover:bg-muted/60 transition-colors"
+              >
+                <Camera className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-sm font-medium text-foreground">סטורי</span>
+              </button>
+              <div className="h-px bg-border mx-3" />
+              <button
+                onClick={() => { setShowUploadMenu(false); navigate('/create-post'); }}
+                className="flex items-center gap-3 w-full px-4 py-3.5 hover:bg-muted/60 transition-colors"
+              >
+                <ImagePlus className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-sm font-medium text-foreground">פוסט</span>
+              </button>
+              <div className="h-px bg-border mx-3" />
+              <button
+                onClick={() => { setShowUploadMenu(false); navigate('/scan-document'); }}
+                className="flex items-center gap-3 w-full px-4 py-3.5 hover:bg-muted/60 transition-colors"
+              >
+                <FileText className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <span className="text-sm font-medium text-foreground">מסמך</span>
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Instagram-style bottom nav - height: 56px */}
       <nav 
         className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border pb-[env(safe-area-inset-bottom)]" 
@@ -150,24 +199,24 @@ const BottomNav = () => {
 
           {/* 3. Upload (+) - Center */}
           <NavItem 
-            onClick={() => handleNavClick("/create-post")}
+            onClick={() => setShowUploadMenu(prev => !prev)}
             icon={
               <div className={cn(
-                "w-7 h-7 rounded-full flex items-center justify-center border-2",
-                isActive("/create-post") 
-                  ? "border-foreground bg-foreground" 
+                "w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all",
+                showUploadMenu
+                  ? "border-foreground bg-foreground rotate-45" 
                   : "border-muted-foreground"
               )}>
                 <Plus 
                   className={cn(
-                    "w-4 h-4",
-                    isActive("/create-post") ? "text-background" : "text-muted-foreground"
+                    "w-4 h-4 transition-colors",
+                    showUploadMenu ? "text-background" : "text-muted-foreground"
                   )}
                   strokeWidth={2.5}
                 />
               </div>
             }
-            isActive={isActive("/create-post")}
+            isActive={showUploadMenu}
             label="העלאה"
           />
 
