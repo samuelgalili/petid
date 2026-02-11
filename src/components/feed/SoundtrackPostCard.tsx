@@ -399,7 +399,7 @@ export const SoundtrackPostCard = ({
 
         {/* Caption */}
         {post.caption && (
-          <p className="text-white drop-shadow-lg line-clamp-2" style={{ fontSize: "16px" }}>
+          <p className="text-white drop-shadow-lg line-clamp-2" style={{ fontSize: "13px", lineHeight: 1.4 }}>
             {post.caption}
           </p>
         )}
