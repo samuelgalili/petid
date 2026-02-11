@@ -536,6 +536,11 @@ const Chat = () => {
                     {message.role === "assistant" && message.products && message.products.length > 0 && (
                       <ChatProductCards products={message.products} />
                     )}
+
+                    {/* Insurance Plan Cards */}
+                    {message.role === "assistant" && message.insuranceData && (
+                      <InsurancePlanCards {...message.insuranceData} />
+                    )}
                   </div>
                 </div>
               </motion.div>
