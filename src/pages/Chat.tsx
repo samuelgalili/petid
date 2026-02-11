@@ -430,8 +430,8 @@ const Chat = () => {
                   <div
                     className={`px-4 py-3 font-heebo shadow-sm ${
                       message.role === "user"
-                        ? "bg-gradient-to-br from-petid-blue to-petid-blue/90 text-white rounded-2xl rounded-br-md"
-                        : "bg-card border border-border/50 text-foreground rounded-2xl rounded-bl-md"
+                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                        : "bg-card border border-border/40 text-foreground rounded-2xl rounded-bl-md"
                     }`}
                   >
                     <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
