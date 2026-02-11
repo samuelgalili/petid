@@ -389,14 +389,29 @@ export const SoundtrackPostCard = ({
         {/* Social proof */}
         <SocialProofLabel postId={post.id} userId={userId} />
 
-        {/* Music / Sound bar — TikTok style: music note + scrolling text, disc is in sidebar */}
+        {/* Music / Sound bar — TikTok style */}
         <div className="flex items-center gap-1.5 mt-2">
           <Music className="w-3.5 h-3.5 text-white/90 flex-shrink-0" />
-          <div className="overflow-hidden max-w-[200px]">
+          <div className="overflow-hidden flex-1 max-w-[180px]">
             <p className="text-white/90 whitespace-nowrap animate-marquee" style={{ fontSize: "13px" }}>
               ♫ PetID · Original Sound &nbsp;&nbsp;&nbsp; ♫ PetID · Original Sound
             </p>
           </div>
+          {/* Spinning disc */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            className="relative rounded-full overflow-hidden bg-neutral-800 flex-shrink-0"
+            style={{ width: "32px", height: "32px", border: "3px solid rgba(60,60,60,0.8)" }}
+          >
+            {post.user_profile?.avatar_url ? (
+              <img src={post.user_profile.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Music className="w-3 h-3 text-white/60" />
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
 
