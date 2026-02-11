@@ -152,7 +152,7 @@ const OrderHistory = lazy(() => import("@/pages/OrderHistory"));
 const Favorites = lazy(() => import("@/pages/Favorites"));
 const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 const PaymentFailed = lazy(() => import("@/pages/PaymentFailed"));
-const Deals = lazy(() => import("@/pages/Deals"));
+
 
 export const shopRoutes: RouteObject[] = [
   { path: "/shop", element: <LazyPage component={Shop} pageName="החנות" /> },
