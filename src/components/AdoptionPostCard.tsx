@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { haptic } from "@/lib/haptics";
 import { toast } from "sonner";
+import { AdoptionChatDrawer } from "@/components/adoption/AdoptionChatDrawer";
 
 interface AdoptionPet {
   id: string;
