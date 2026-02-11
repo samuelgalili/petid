@@ -91,7 +91,7 @@ const MyProgress = () => {
       t.id === taskId ? { ...t, completed: true } : t
     ));
 
-    await awardPoints(task.points.toString(), 'task_completion');
+    await awardPoints(task.points.toString());
     
     confetti({
       particleCount: 80,
