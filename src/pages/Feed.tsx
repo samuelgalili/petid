@@ -124,7 +124,7 @@ const FEED_ADS: FeedAd[] = [{
   subtitle: "הגן על חבר הפרווה שלך עם כיסוי מלא",
   image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop",
   cta: "קבל הצעה",
-  link: "/insurance",
+  link: "/chat",
   gradient: "from-blue-500 to-cyan-400",
   badge: "פופולרי"
 }, {
