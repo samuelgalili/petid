@@ -138,7 +138,7 @@ export const InsurancePlanCards = ({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-3 mt-2"
+      className="space-y-3 mt-2 w-full min-w-0"
     >
       {/* Libra branding header */}
       <div className="flex items-center gap-2 px-1">
@@ -149,8 +149,8 @@ export const InsurancePlanCards = ({
         <span className="text-[10px] text-muted-foreground">• תוכניות ל{petName}</span>
       </div>
 
-      {/* Plan cards - vertical */}
-      <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+      {/* Plan cards - horizontal scroll */}
+      <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
         {LIBRA_PLANS.map((plan, idx) => {
           const isSelected = selectedPlan === plan.id;
           return (
@@ -161,7 +161,7 @@ export const InsurancePlanCards = ({
               transition={{ delay: idx * 0.1 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedPlan(plan.id)}
-              className={`relative flex-shrink-0 w-[75%] snap-center text-right rounded-2xl border-2 p-4 transition-all ${
+              className={`relative flex-shrink-0 w-[70%] min-w-[200px] snap-center text-right rounded-2xl border-2 p-4 transition-all ${
                 isSelected
                   ? "shadow-md"
                   : plan.highlight
