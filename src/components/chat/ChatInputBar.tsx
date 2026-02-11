@@ -407,7 +407,7 @@ const ChatInputBar = ({
                   whileTap={{ scale: 0.9 }}
                   onClick={onSend}
                   disabled={isLoading}
-                  className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-petid-blue via-petid-teal to-petid-gold rounded-full text-white disabled:opacity-50 shadow-lg"
+                  className="w-10 h-10 flex items-center justify-center bg-primary rounded-full text-primary-foreground disabled:opacity-50 shadow-sm"
                 >
                   <Send className="w-4 h-4" />
                 </motion.button>
@@ -420,7 +420,7 @@ const ChatInputBar = ({
                   whileHover={{ scale: 1.1, rotate: 15 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleSparkleClick}
-                  className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-petid-gold/20 to-petid-gold/10 hover:from-petid-gold/30 hover:to-petid-gold/20 rounded-full text-petid-gold transition-colors"
+                  className="w-10 h-10 flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-full text-primary transition-colors"
                 >
                   <Sparkles className="w-5 h-5" />
                 </motion.button>
