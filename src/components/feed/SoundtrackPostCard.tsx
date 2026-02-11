@@ -212,7 +212,7 @@ export const SoundtrackPostCard = ({
       {/* RIGHT SIDEBAR — TikTok: starts around middle, ends near bottom */}
       <motion.div
         className="absolute right-3 z-50 flex flex-col items-center gap-5"
-        style={{ bottom: '100px' }}
+        style={{ bottom: '140px' }}
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
