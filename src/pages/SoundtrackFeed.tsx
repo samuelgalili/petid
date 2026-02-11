@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
@@ -46,6 +46,16 @@ import { playAddToCartSound } from "@/lib/sounds";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { CommentsSheet } from "@/components/CommentsSheet";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import {
+  FeedPullToRefresh,
+  FeedSkeletonList,
+  FeedProgressBar,
+  NewPostToast,
+  DailyStreak,
+  FeedOnboarding,
+  SocialProofLabel,
+} from "@/components/feed";
 
 interface FeedPost {
   id: string;
