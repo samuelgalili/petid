@@ -85,7 +85,7 @@ export const CategoryRecommendations = ({
       features: ['8 שיעורים', 'מאלף מוסמך', 'תעודה'],
       icon: GraduationCap,
       iconBg: 'bg-primary/10',
-      route: '/training',
+      route: '/chat',
       badge: 'הכי נמכר'
     },
     {
