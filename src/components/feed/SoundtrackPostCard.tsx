@@ -368,53 +368,67 @@ export const SoundtrackPostCard = ({
 
       {/* Product info — top-right, vertical */}
       {(isProductPost || isCtaPost || isChallengePost) && (
-        <div className="absolute top-16 left-0 z-50 flex flex-col items-start gap-1.5" dir="ltr">
-          {/* Weight / Challenge / CTA label */}
-          {isProductPost && post.product_weight && (
-            <span
-              className="px-2 py-0.5 rounded-full text-white text-xs"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
+        <div className="absolute top-16 left-0 z-50 flex flex-col items-start gap-2" dir="ltr">
+          {/* Price — prominent top badge */}
+          {isProductPost && post.product_price && (
+            <div
+              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-bold flex items-center gap-1.5 shadow-lg"
+              style={{ 
+                background: "linear-gradient(135deg, rgba(255,59,92,0.85), rgba(255,59,92,0.65))",
+                backdropFilter: "blur(16px)",
+                fontSize: "15px"
+              }}
             >
-              {post.product_weight}
-            </span>
+              <ShoppingCart className="w-3.5 h-3.5" />
+              ₪{post.product_price}
+            </div>
           )}
           {isChallengePost && (
             <div
-              className="px-3 py-1 rounded-full text-white text-sm font-medium"
-              style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
+              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-semibold flex items-center gap-1.5 shadow-lg"
+              style={{ 
+                background: "linear-gradient(135deg, rgba(255,175,43,0.85), rgba(255,140,0,0.7))",
+                backdropFilter: "blur(16px)",
+                fontSize: "14px"
+              }}
             >
-              🏆 אתגר
+              <Trophy className="w-3.5 h-3.5" />
+              אתגר
             </div>
           )}
           {isCtaPost && (
             <div
-              className="px-3 py-1 rounded-full text-white text-sm font-medium"
-              style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
+              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-semibold flex items-center gap-1.5 shadow-lg"
+              style={{ 
+                background: "linear-gradient(135deg, rgba(76,175,80,0.85), rgba(56,142,60,0.7))",
+                backdropFilter: "blur(16px)",
+                fontSize: "14px"
+              }}
             >
-              🐾 {post.cta_text || "אימוץ"}
+              <PawPrint className="w-3.5 h-3.5" />
+              {post.cta_text || "אימוץ"}
             </div>
           )}
-          {/* Sizes */}
-          {isProductPost && post.product_sizes && (
-            <div className="flex flex-wrap gap-1">
-              {post.product_sizes.map((s) => (
+          {/* Weight + Sizes row */}
+          {isProductPost && (post.product_weight || post.product_sizes) && (
+            <div className="flex items-center gap-1 pl-1">
+              {post.product_weight && (
+                <span
+                  className="px-2.5 py-1 rounded-full text-white/90 text-[11px] font-medium"
+                  style={{ backgroundColor: "rgba(255,255,255,0.18)", backdropFilter: "blur(10px)" }}
+                >
+                  {post.product_weight}
+                </span>
+              )}
+              {post.product_sizes?.map((s) => (
                 <span
                   key={s}
-                  className="px-2 py-0.5 rounded-full text-white text-xs"
-                  style={{ backgroundColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
+                  className="px-2 py-1 rounded-full text-white/80 text-[11px] font-medium"
+                  style={{ backgroundColor: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}
                 >
                   {s}
                 </span>
               ))}
-            </div>
-          )}
-          {/* Price — bottom */}
-          {isProductPost && post.product_price && (
-            <div
-              className="pl-0 pr-3 py-1 rounded-r-full text-white text-sm font-bold"
-              style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
-            >
-              ₪{post.product_price}
             </div>
           )}
         </div>
