@@ -219,9 +219,9 @@ export const SoundtrackPostCard = ({
         transition={{ delay: 0.2 }}
       >
         {/* Avatar */}
-        <div className="relative mb-2">
+        <div className="relative mb-1">
           <Avatar
-            className="w-12 h-12 cursor-pointer border-2 border-white"
+            className="w-11 h-11 cursor-pointer border-2 border-white"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/user/${post.user_id}`);
