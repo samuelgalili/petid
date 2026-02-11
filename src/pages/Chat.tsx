@@ -634,8 +634,21 @@ const Chat = () => {
               </motion.div>
             )}
 
+            {/* Insurance Loading Animation */}
+            {showInsuranceLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-end mb-3"
+              >
+                <div className="bg-card border border-border/40 rounded-2xl rounded-bl-md px-4 py-2 max-w-[85%]">
+                  <InsuranceLoadingAnimation />
+                </div>
+              </motion.div>
+            )}
+
             {/* Typing Indicator */}
-            {isTyping && (
+            {isTyping && !showInsuranceLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
