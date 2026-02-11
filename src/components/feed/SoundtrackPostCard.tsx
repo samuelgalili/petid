@@ -310,7 +310,10 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
+            שתף
+          </span>
         </motion.button>
 
         {/* CTA */}
