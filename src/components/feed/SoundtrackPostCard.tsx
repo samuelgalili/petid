@@ -212,7 +212,7 @@ export const SoundtrackPostCard = ({
       {/* RIGHT SIDEBAR — aligned so avatar sits at ~50% screen height */}
       <motion.div
         className="absolute right-3 z-50 flex flex-col items-center gap-4"
-        style={{ bottom: '100px' }}
+        style={{ bottom: '80px' }}
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -297,6 +297,22 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
+        {/* Spinning disc — below share with gap-4 (16px) */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          className="rounded-full overflow-hidden bg-neutral-800"
+          style={{ width: "36px", height: "36px", border: "4px solid rgba(50,50,50,0.9)" }}
+        >
+          {post.user_profile?.avatar_url ? (
+            <img src={post.user_profile.avatar_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Music className="w-3.5 h-3.5 text-white/60" />
+            </div>
+          )}
+        </motion.div>
+
         {/* CTA */}
         {hasPromotion && (
           <motion.button
@@ -320,7 +336,7 @@ export const SoundtrackPostCard = ({
       </motion.div>
 
       {/* BOTTOM-LEFT info — positioned ~60px above navbar */}
-      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '54px' }}>
+      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '16px' }}>
         {/* Status badges */}
         {(isProductPost || isCtaPost || isChallengePost) && (
           <div
@@ -399,21 +415,6 @@ export const SoundtrackPostCard = ({
         </div>
       </div>
 
-      {/* Spinning disc — absolute bottom-right, aligned with music bar */}
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        className="absolute z-50 rounded-full overflow-hidden bg-neutral-800"
-        style={{ width: "36px", height: "36px", border: "4px solid rgba(50,50,50,0.9)", bottom: '56px', right: '12px' }}
-      >
-        {post.user_profile?.avatar_url ? (
-          <img src={post.user_profile.avatar_url} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Music className="w-3.5 h-3.5 text-white/60" />
-          </div>
-        )}
-      </motion.div>
 
       {/* Gallery indicator dots */}
       {hasMultipleImages && (
