@@ -365,7 +365,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/webhooks", element: <AdminPage component={AdminWebhooks} pageName="Webhooks" /> },
   { path: "/admin/blog", element: <AdminPage component={AdminBlog} pageName="בלוג" /> },
   { path: "/admin/stories", element: <AdminPage component={AdminStories} pageName="סטוריז" /> },
-  { path: "/admin/loyalty", element: <Navigate to="/admin/growo" replace /> },
+  
   { path: "/admin/notification-rules", element: <AdminPage component={AdminNotificationRules} pageName="כללי התראות" /> },
   { path: "/admin/automations", element: <AdminPage component={AdminAutomations} pageName="אוטומציות" /> },
   { path: "/admin/time-tracking", element: <AdminPage component={AdminTimeTracking} pageName="מעקב זמן" /> },
