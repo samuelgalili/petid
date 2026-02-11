@@ -109,6 +109,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     setAltText("");
     setCollaborators([]);
     setScheduleDate(undefined);
+    setSelectedMusic(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
