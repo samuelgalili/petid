@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles, Heart } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
@@ -337,8 +337,8 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-20" dir="rtl">
-      {/* Modern Glassmorphism Header */}
-      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
+      {/* Clean Header */}
+      <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-4 py-3">
           <button 
             onClick={() => navigate(-1)}
@@ -348,27 +348,22 @@ const Chat = () => {
           </button>
           
           <div className="flex items-center gap-3">
-            {/* AI Avatar with animated gradient ring */}
             <div className="relative">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2.5px] animate-pulse-slow">
-                <div className="w-full h-full rounded-full bg-card flex items-center justify-center shadow-inner">
-                  <Sparkles className="w-5 h-5 text-petid-gold" />
-                </div>
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary" />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-card shadow-lg" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-card" />
             </div>
             <div className="text-right">
-              <h1 className="text-base font-bold text-foreground font-heebo">PetID AI</h1>
-              <p className="text-xs text-emerald-500 font-heebo flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              <h1 className="text-base font-bold text-foreground">PetID AI</h1>
+              <p className="text-xs text-success flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                 פעיל עכשיו
               </p>
             </div>
           </div>
           
-          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-petid-blue/10 to-petid-gold/10">
-            <Heart className="w-5 h-5 text-petid-gold" />
-          </div>
+          <div className="w-10 h-10" />
         </div>
       </div>
 
@@ -383,19 +378,14 @@ const Chat = () => {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center h-full py-8"
               >
-                {/* AI Profile Card - Enhanced */}
+                {/* AI Profile Card */}
                 <div className="relative mb-6">
-                  <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[3px] shadow-xl">
-                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                      <Sparkles className="w-10 h-10 text-petid-gold" />
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500 rounded-full shadow-lg">
-                    <span className="text-[10px] text-white font-bold">AI</span>
+                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-10 h-10 text-primary" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-foreground font-heebo mb-1">PetID AI</h2>
-                <p className="text-sm text-muted-foreground font-heebo mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
+                <h2 className="text-2xl font-bold text-foreground mb-1">PetID AI</h2>
+                <p className="text-sm text-muted-foreground mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
                 
                 {/* Example Questions Grid - Enhanced */}
                 <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
@@ -440,8 +430,8 @@ const Chat = () => {
                   <div
                     className={`px-4 py-3 font-heebo shadow-sm ${
                       message.role === "user"
-                        ? "bg-gradient-to-br from-petid-blue to-petid-blue/90 text-white rounded-2xl rounded-br-md"
-                        : "bg-card border border-border/50 text-foreground rounded-2xl rounded-bl-md"
+                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                        : "bg-card border border-border/40 text-foreground rounded-2xl rounded-bl-md"
                     }`}
                   >
                     <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
@@ -470,8 +460,8 @@ const Chat = () => {
                     onClick={() => handlePetSelect(pet)}
                     className="flex flex-col items-center gap-2"
                   >
-                    {/* Pet Avatar Circle with Gradient Border */}
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2.5px] shadow-lg">
+                    {/* Pet Avatar Circle */}
+                    <div className="w-16 h-16 rounded-full bg-primary p-[2.5px] shadow-sm">
                       <div className="w-full h-full rounded-full overflow-hidden bg-card">
                         {pet.avatar_url ? (
                           <img 
@@ -548,25 +538,23 @@ const Chat = () => {
                 className="flex justify-end mb-3"
               >
                 <div className="flex items-end gap-2 flex-row-reverse">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-instagram p-[1.5px]">
-                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                      <span className="text-xs">🐾</span>
-                    </div>
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-3 h-3 text-primary" />
                   </div>
-                  <div className="px-4 py-3 bg-secondary rounded-3xl rounded-bl-lg">
+                  <div className="px-4 py-3 bg-card border border-border/40 rounded-3xl rounded-bl-lg">
                     <div className="flex gap-1">
                       <motion.div
-                        className="w-2 h-2 bg-muted rounded-full"
+                        className="w-2 h-2 bg-primary/40 rounded-full"
                         animate={{ y: [0, -5, 0] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
                       />
                       <motion.div
-                        className="w-2 h-2 bg-muted rounded-full"
+                        className="w-2 h-2 bg-primary/40 rounded-full"
                         animate={{ y: [0, -5, 0] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
                       />
                       <motion.div
-                        className="w-2 h-2 bg-muted rounded-full"
+                        className="w-2 h-2 bg-primary/40 rounded-full"
                         animate={{ y: [0, -5, 0] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
                       />
