@@ -4,13 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart,
   MessageCircle,
-  Bookmark,
-  Share2,
   User,
   Check,
   ShoppingCart,
   Plus,
   Music,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -183,15 +182,15 @@ export const SoundtrackPostCard = ({
       <div
         className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
         style={{
-          height: "25%",
-          background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)",
+          height: "20%",
+          background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 100%)",
         }}
       />
       <div
         className="absolute inset-x-0 top-0 z-10 pointer-events-none"
         style={{
-          height: "80px",
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%)",
+          height: "60px",
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 100%)",
         }}
       />
 
@@ -213,7 +212,7 @@ export const SoundtrackPostCard = ({
       {/* RIGHT SIDEBAR — TikTok: starts around middle, ends near bottom */}
       <motion.div
         className="absolute right-3 z-50 flex flex-col items-center gap-5"
-        style={{ bottom: '100px' }}
+        style={{ bottom: '140px' }}
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -283,7 +282,7 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
-        {/* Share count */}
+        {/* Share */}
         <motion.button
           onClick={(e) => {
             e.stopPropagation();
@@ -292,49 +291,12 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <Send className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
           <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
             {formatCount(Math.max(Math.floor(post.likes_count * 0.3), 0))}
           </span>
         </motion.button>
 
-        {/* Bookmark */}
-        <motion.button
-          onClick={(e) => {
-            e.stopPropagation();
-            onSave(post.id);
-          }}
-          whileTap={{ scale: 0.85 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <Bookmark
-            className={cn(
-              "w-7 h-7 drop-shadow-lg",
-              post.is_saved ? "fill-yellow-400 text-yellow-400" : "text-white"
-            )}
-            strokeWidth={1.5}
-          />
-        </motion.button>
-
-        {/* Spinning disc — avatar inside, TikTok style */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          className="relative rounded-full overflow-hidden bg-neutral-800"
-          style={{ width: "36px", height: "36px", border: "3px solid rgba(60,60,60,0.8)" }}
-        >
-          {post.user_profile?.avatar_url ? (
-            <img
-              src={post.user_profile.avatar_url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Music className="w-4 h-4 text-white/60" />
-            </div>
-          )}
-        </motion.div>
 
         {/* CTA */}
         {hasPromotion && (
@@ -427,14 +389,29 @@ export const SoundtrackPostCard = ({
         {/* Social proof */}
         <SocialProofLabel postId={post.id} userId={userId} />
 
-        {/* Music / Sound bar — TikTok style: music note + scrolling text, disc is in sidebar */}
+        {/* Music / Sound bar — TikTok style */}
         <div className="flex items-center gap-1.5 mt-2">
           <Music className="w-3.5 h-3.5 text-white/90 flex-shrink-0" />
-          <div className="overflow-hidden max-w-[200px]">
+          <div className="overflow-hidden flex-1 max-w-[180px]">
             <p className="text-white/90 whitespace-nowrap animate-marquee" style={{ fontSize: "13px" }}>
               ♫ PetID · Original Sound &nbsp;&nbsp;&nbsp; ♫ PetID · Original Sound
             </p>
           </div>
+          {/* Spinning disc */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            className="relative rounded-full overflow-hidden bg-neutral-800 flex-shrink-0"
+            style={{ width: "32px", height: "32px", border: "3px solid rgba(60,60,60,0.8)" }}
+          >
+            {post.user_profile?.avatar_url ? (
+              <img src={post.user_profile.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Music className="w-3 h-3 text-white/60" />
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
 
