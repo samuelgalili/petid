@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
+import { PostOptionsMenu } from "@/components/post/PostOptionsMenu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -109,9 +110,9 @@ export const SuggestedPostCard = ({ post, onFollow }: SuggestedPostCardProps) =>
             <p className="text-[11px] text-neutral-400">מומלץ עבורך</p>
           </div>
         </div>
-        <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
-          <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
-        </button>
+        <PostOptionsMenu
+          copyLink={`${window.location.origin}/post/${post.id}`}
+        />
       </div>
 
       {/* Image - Instagram style square */}

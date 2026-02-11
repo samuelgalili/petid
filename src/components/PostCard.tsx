@@ -346,8 +346,8 @@ export const PostCard = ({
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-card-foreground focus:outline-none">
-                <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+              <button className="text-card-foreground p-1 -m-1 focus:outline-none" aria-label="אפשרויות פוסט">
+                <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">

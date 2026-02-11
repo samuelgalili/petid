@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, PawPrint, ChevronLeft } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, PawPrint, ChevronLeft } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { PostOptionsMenu } from "@/components/post/PostOptionsMenu";
 
 interface AdoptionPet {
   id: string;
@@ -42,7 +43,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
   };
 
   return (
-    <article className="bg-card rounded-2xl shadow-card mx-2 my-1 overflow-hidden border border-border/20 dark:border-border/10 relative before:absolute before:inset-0 before:rounded-2xl before:pointer-events-none before:bg-gradient-to-br before:from-warning-light/5 before:to-transparent">
+    <article className="bg-card rounded-2xl shadow-card mx-2 my-1 border border-border/20 dark:border-border/10 relative before:absolute before:inset-0 before:rounded-2xl before:pointer-events-none before:bg-gradient-to-br before:from-warning-light/5 before:to-transparent">
       {/* Header - Instagram style */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
@@ -59,9 +60,11 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
             </Badge>
           </div>
         </div>
-        <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
-          <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
-        </button>
+        <PostOptionsMenu
+          copyLink={`${window.location.origin}/adoption/${pet.id}`}
+          hideLabel="הסתר מודעת אימוץ"
+          hideToast="מודעת האימוץ הוסתרה"
+        />
       </div>
 
       {/* Image - Instagram style square */}
