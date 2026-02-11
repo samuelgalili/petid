@@ -298,11 +298,11 @@ export const PostCard = ({
           >
             <Heart
               className={post.is_liked ? 'fill-rose-500 text-rose-500' : 'text-white'}
-              style={{ width: '32px', height: '32px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
+              style={{ width: '28px', height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
               strokeWidth={1.5}
             />
           </motion.div>
-          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
+          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '12px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
             {formatCount(post.likes_count)}
           </span>
         </motion.button>
@@ -314,10 +314,10 @@ export const PostCard = ({
           whileTap={{ scale: 0.8 }}
           onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
           className="flex flex-col items-center"
-          style={{ gap: '4px' }}
+          style={{ gap: '2px' }}
         >
-          <MessageCircle className="text-white" style={{ width: '32px', height: '32px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
-          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
+          <MessageCircle className="text-white" style={{ width: '28px', height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
+          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '12px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
             {formatCount(post.comments_count)}
           </span>
         </motion.button>
@@ -329,10 +329,10 @@ export const PostCard = ({
           whileTap={{ scale: 0.8 }}
           onClick={handleShare}
           className="flex flex-col items-center"
-          style={{ gap: '4px' }}
+          style={{ gap: '2px' }}
         >
-          <Share2 className="text-white" style={{ width: '32px', height: '32px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
-          <span className="text-white font-semibold" style={{ fontSize: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
+          <Share2 className="text-white" style={{ width: '28px', height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
+          <span className="text-white font-semibold" style={{ fontSize: '12px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
             שתף
           </span>
         </motion.button>
