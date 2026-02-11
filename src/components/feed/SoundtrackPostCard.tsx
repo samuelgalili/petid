@@ -180,12 +180,12 @@ export const SoundtrackPostCard = ({
         )}
       </div>
 
-      {/* Gradients — matched to TikTok: lighter, shorter */}
+      {/* Bottom gradient — TikTok: very subtle, ~25% height */}
       <div
         className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
         style={{
-          height: "35%",
-          background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)",
+          height: "25%",
+          background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)",
         }}
       />
       <div
