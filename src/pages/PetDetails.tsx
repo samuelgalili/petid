@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, AnimatedTabsTrigger } from "@/components/u
 import { PET_CARD, ACTIONS, REMINDERS } from "@/lib/brandVoice";
 import { BreedInfoCard } from "@/components/pet/BreedInfoCard";
 import { RecommendedProducts } from "@/components/pet/RecommendedProducts";
-import { PointsRewardsCard } from "@/components/pet/PointsRewardsCard";
+
 import { CategoryRecommendations } from "@/components/pet/CategoryRecommendations";
 import { PetProductCarousels } from "@/components/pet/PetProductCarousels";
 import {
