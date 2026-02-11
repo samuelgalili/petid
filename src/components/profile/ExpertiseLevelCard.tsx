@@ -39,7 +39,7 @@ export const ExpertiseLevelCard = ({ points, className = "" }: ExpertiseLevelCar
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
-      onClick={() => navigate('/my-progress')}
+      onClick={() => navigate('/')}
     >
       {/* Gradient Background */}
       <div className={`absolute inset-0 bg-gradient-to-br ${currentLevel.color} opacity-10`} />

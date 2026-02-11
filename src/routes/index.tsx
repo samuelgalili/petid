@@ -225,13 +225,13 @@ export const userRoutes: RouteObject[] = [
   { path: "/messages", element: <Protected><LazyPage component={Messages} pageName="הודעות" /></Protected> },
   { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
   { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
-  { path: "/my-progress", element: <Protected><LazyPage component={MyProgress} pageName="ההתקדמות שלי" /></Protected> },
+  { path: "/my-progress", element: <Navigate to="/" replace /> },
   { path: "/rewards", element: <Navigate to="/" replace /> },
   { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
   // Legacy redirects
-  { path: "/tracker", element: <Navigate to="/my-progress" replace /> },
-  { path: "/tasks", element: <Navigate to="/my-progress" replace /> },
-  { path: "/achievements", element: <Navigate to="/my-progress" replace /> },
+  { path: "/tracker", element: <Navigate to="/" replace /> },
+  { path: "/tasks", element: <Navigate to="/" replace /> },
+  { path: "/achievements", element: <Navigate to="/" replace /> },
 ];
 
 // ==========================================
