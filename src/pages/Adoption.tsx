@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppHeader } from "@/components/AppHeader";
 import catDogSilhouette from "@/assets/adoption/cat-dog-silhouette.png";
 import { SEO } from "@/components/SEO";
+import { AdoptionChatDrawer } from "@/components/adoption/AdoptionChatDrawer";
 
 interface AdoptionPet {
   id: string;
@@ -63,6 +64,7 @@ const Adoption = () => {
   const [likedPets, setLikedPets] = useState<Set<string>>(new Set());
   const [savedPets, setSavedPets] = useState<Set<string>>(new Set());
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
+  const [adoptionDrawerPet, setAdoptionDrawerPet] = useState<AdoptionPet | null>(null);
   const lastTapRef = useRef<{ [key: string]: number }>({});
   const { toast } = useToast();
   const { user } = useAuth();
@@ -186,7 +188,7 @@ const Adoption = () => {
       return;
     }
     setShowPetDetails(false);
-    setShowAdoptionForm(true);
+    setAdoptionDrawerPet(selectedPet);
   };
 
   const handleSharePet = async (pet: AdoptionPet) => {
@@ -622,7 +624,7 @@ const Adoption = () => {
 
                     {/* Adopt Button */}
                     <Button
-                      onClick={() => handlePetClick(pet)}
+                      onClick={() => setAdoptionDrawerPet(pet)}
                       className="w-full h-11 text-white rounded-xl text-sm font-bold shadow-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
                     >
                       <Heart className="w-4 h-4 ml-2" fill="white" />
@@ -991,6 +993,15 @@ const Adoption = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Adoption Chat Drawer */}
+      {adoptionDrawerPet && (
+        <AdoptionChatDrawer
+          pet={adoptionDrawerPet}
+          isOpen={!!adoptionDrawerPet}
+          onClose={() => setAdoptionDrawerPet(null)}
+        />
+      )}
 
       <BottomNav />
     </div>

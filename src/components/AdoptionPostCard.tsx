@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { haptic } from "@/lib/haptics";
 import { toast } from "sonner";
+import { AdoptionChatDrawer } from "@/components/adoption/AdoptionChatDrawer";
 
 interface AdoptionPet {
   id: string;
@@ -53,6 +54,7 @@ const getAgeString = (years: number | null, months: number | null) => {
 export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => {
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
 
   const handleShare = async () => {
     haptic("light");
@@ -101,7 +103,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         </motion.button>
 
         {/* CTA — Adoption */}
-        <motion.button custom={4} variants={sidebarStagger} whileTap={{ scale: 0.9 }} onClick={() => navigate('/adoption')} className="relative rounded-xl w-16 h-11 flex items-center justify-center shadow-xl" style={{ backgroundColor: '#FF8C42' }}>
+        <motion.button custom={4} variants={sidebarStagger} whileTap={{ scale: 0.9 }} onClick={() => { haptic("light"); setShowDrawer(true); }} className="relative rounded-xl w-16 h-11 flex items-center justify-center shadow-xl" style={{ backgroundColor: '#FF8C42' }}>
           <motion.div className="absolute inset-0 rounded-xl" style={{ backgroundColor: '#FF8C42' }} animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
           <span className="text-white text-[11px] font-bold relative z-10">אמץ</span>
         </motion.button>
@@ -128,6 +130,19 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         <p className="font-semibold text-[18px] drop-shadow-md mb-1">🐾 {pet.name}</p>
         {pet.description && <p className="text-[16px] leading-snug line-clamp-2 drop-shadow-sm">{pet.description}</p>}
       </div>
+      {/* Adoption Chat Drawer */}
+      <AdoptionChatDrawer
+        pet={{
+          id: pet.id,
+          name: pet.name,
+          breed: pet.breed,
+          image_url: pet.image_url,
+          organization_name: null,
+          organization_phone: null,
+        }}
+        isOpen={showDrawer}
+        onClose={() => setShowDrawer(false)}
+      />
     </article>
   );
 };
