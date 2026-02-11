@@ -149,8 +149,8 @@ export const InsurancePlanCards = ({
         <span className="text-[10px] text-muted-foreground">• תוכניות ל{petName}</span>
       </div>
 
-      {/* Plan cards - vertical */}
-      <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+      {/* Plan cards - horizontal scroll */}
+      <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
         {LIBRA_PLANS.map((plan, idx) => {
           const isSelected = selectedPlan === plan.id;
           return (
