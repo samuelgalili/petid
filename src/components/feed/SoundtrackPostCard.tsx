@@ -368,26 +368,36 @@ export const SoundtrackPostCard = ({
 
       {/* Product info — top-right, vertical */}
       {(isProductPost || isCtaPost || isChallengePost) && (
-        <div className="absolute top-16 left-3 z-50 flex flex-row flex-wrap items-center gap-1.5">
-          <div
-            className="px-3 py-1 rounded-full text-white text-sm font-medium"
-            style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
-          >
-            {isProductPost && post.product_price && <span>₪{post.product_price}</span>}
-            {isChallengePost && <span>🏆 אתגר</span>}
-            {isCtaPost && <span>🐾 {post.cta_text || "אימוץ"}</span>}
-          </div>
-          {isProductPost && (post.product_weight || post.product_sizes) && (
-            <>
-              {post.product_weight && (
-                <span
-                  className="px-2 py-0.5 rounded-full text-white text-xs"
-                  style={{ backgroundColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
-                >
-                  {post.product_weight}
-                </span>
-              )}
-              {post.product_sizes?.map((s) => (
+        <div className="absolute top-16 left-3 z-50 flex flex-col items-start gap-1.5">
+          {/* Weight / Challenge / CTA label */}
+          {isProductPost && post.product_weight && (
+            <span
+              className="px-2 py-0.5 rounded-full text-white text-xs"
+              style={{ backgroundColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}
+            >
+              {post.product_weight}
+            </span>
+          )}
+          {isChallengePost && (
+            <div
+              className="px-3 py-1 rounded-full text-white text-sm font-medium"
+              style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
+            >
+              🏆 אתגר
+            </div>
+          )}
+          {isCtaPost && (
+            <div
+              className="px-3 py-1 rounded-full text-white text-sm font-medium"
+              style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
+            >
+              🐾 {post.cta_text || "אימוץ"}
+            </div>
+          )}
+          {/* Sizes */}
+          {isProductPost && post.product_sizes && (
+            <div className="flex flex-wrap gap-1">
+              {post.product_sizes.map((s) => (
                 <span
                   key={s}
                   className="px-2 py-0.5 rounded-full text-white text-xs"
@@ -396,7 +406,16 @@ export const SoundtrackPostCard = ({
                   {s}
                 </span>
               ))}
-            </>
+            </div>
+          )}
+          {/* Price — bottom */}
+          {isProductPost && post.product_price && (
+            <div
+              className="px-3 py-1 rounded-full text-white text-sm font-bold"
+              style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
+            >
+              ₪{post.product_price}
+            </div>
           )}
         </div>
       )}
