@@ -415,7 +415,7 @@ export const SoundtrackPostCard = ({
               navigate(`/user/${post.user_id}`);
             }}
           >
-            @{post.user_profile?.full_name || "משתמש"}
+            {post.user_profile?.full_name || "משתמש"}
           </span>
           {post.user_profile?.is_verified && (
             <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
