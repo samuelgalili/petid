@@ -720,12 +720,15 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
           }}>
 
             {allImages.map((img, imgIndex) =>
-          <img
+          <motion.img
             key={imgIndex}
             ref={imgIndex === 0 ? productImageRef : undefined}
             src={img}
             alt=""
-            className="w-full h-full object-cover flex-shrink-0 snap-center" />
+            className="w-full h-full object-cover flex-shrink-0 snap-center"
+            style={{ scale: 1.05 }}
+            whileInView={{ y: [10, -10] }}
+            transition={{ duration: 8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }} />
 
           )}
           </div> :
