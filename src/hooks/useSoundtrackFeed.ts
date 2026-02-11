@@ -37,6 +37,9 @@ export interface FeedPost {
   product_weight?: string;
   product_sizes?: string[];
   product_colors?: string[];
+  music_url?: string | null;
+  music_title?: string | null;
+  music_artist?: string | null;
 }
 
 export function useSoundtrackFeed() {
