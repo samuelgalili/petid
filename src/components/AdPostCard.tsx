@@ -15,6 +15,7 @@ interface FeedAd {
   link: string;
   gradient: string;
   badge?: string;
+  format?: 'portrait' | 'landscape' | 'square';
 }
 
 interface AdPostCardProps {
@@ -59,8 +60,12 @@ export const AdPostCard = ({ ad }: AdPostCardProps) => {
         />
       </div>
 
-      {/* Image - Instagram style square */}
-      <div className="relative aspect-square">
+      {/* Image - supports portrait (9:16), landscape (16:9), square (1:1) */}
+      <div className={`relative ${
+        ad.format === 'portrait' ? 'aspect-[9/16]' : 
+        ad.format === 'landscape' ? 'aspect-video' : 
+        'aspect-square'
+      }`}>
         <img
           src={ad.image}
           alt={ad.title}

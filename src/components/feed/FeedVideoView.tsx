@@ -76,11 +76,11 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
   }
 
   return (
-    <div className="snap-y snap-mandatory h-[calc(100vh-180px)] overflow-y-auto scrollbar-hide">
+    <div className="snap-y snap-mandatory h-[calc(100vh-180px)] overflow-y-auto scrollbar-hide flex flex-col items-center">
       {visualItems.map((item, index) => (
         <motion.div
           key={`${item.type}-${item.data.id}`}
-          className="snap-start h-[calc(100vh-180px)] relative"
+          className="snap-start w-full max-w-[calc((100vh-180px)*9/16)] aspect-[9/16] relative mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: index * 0.1 }}
