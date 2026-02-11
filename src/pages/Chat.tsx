@@ -11,6 +11,7 @@ import { ChatActionButton, extractActionTags, cleanActionTags } from "@/componen
 import { ChatProductCards } from "@/components/chat/ChatProductCards";
 import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
 import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
+import KineticDotsLoader from "@/components/ui/kinetic-dots-loader";
 
 interface Product {
   id: string;
@@ -687,24 +688,8 @@ const Chat = () => {
                   <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
                     <Sparkles className="w-3 h-3 text-primary" />
                   </div>
-                  <div className="px-4 py-3 bg-card border border-border/40 rounded-3xl rounded-bl-lg">
-                    <div className="flex gap-1">
-                      <motion.div
-                        className="w-2 h-2 bg-primary/40 rounded-full"
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                      />
-                      <motion.div
-                        className="w-2 h-2 bg-primary/40 rounded-full"
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                      />
-                      <motion.div
-                        className="w-2 h-2 bg-primary/40 rounded-full"
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                      />
-                    </div>
+                  <div className="px-3 py-2 bg-card border border-border/40 rounded-3xl rounded-bl-lg">
+                    <KineticDotsLoader />
                   </div>
                 </div>
               </motion.div>
