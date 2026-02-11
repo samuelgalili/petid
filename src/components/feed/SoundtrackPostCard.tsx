@@ -368,7 +368,7 @@ export const SoundtrackPostCard = ({
 
       {/* Product info — top-right, vertical */}
       {(isProductPost || isCtaPost || isChallengePost) && (
-        <div className="absolute top-16 left-0 z-50 flex flex-col items-start gap-1.5 px-2">
+        <div className="absolute top-16 left-0 z-50 flex flex-col items-start gap-1.5">
           {/* Weight / Challenge / CTA label */}
           {isProductPost && post.product_weight && (
             <span
