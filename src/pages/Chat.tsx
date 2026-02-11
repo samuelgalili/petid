@@ -337,8 +337,8 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-20" dir="rtl">
-      {/* Modern Glassmorphism Header */}
-      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
+      {/* Clean Header */}
+      <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-4 py-3">
           <button 
             onClick={() => navigate(-1)}
@@ -348,27 +348,22 @@ const Chat = () => {
           </button>
           
           <div className="flex items-center gap-3">
-            {/* AI Avatar with animated gradient ring */}
             <div className="relative">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-teal p-[2.5px] animate-pulse-slow">
-                <div className="w-full h-full rounded-full bg-card flex items-center justify-center shadow-inner">
-                  <Sparkles className="w-5 h-5 text-petid-gold" />
-                </div>
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary" />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-card shadow-lg" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-card" />
             </div>
             <div className="text-right">
-              <h1 className="text-base font-bold text-foreground font-heebo">PetID AI</h1>
-              <p className="text-xs text-emerald-500 font-heebo flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              <h1 className="text-base font-bold text-foreground">PetID AI</h1>
+              <p className="text-xs text-success flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                 פעיל עכשיו
               </p>
             </div>
           </div>
           
-          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-petid-blue/10 to-petid-gold/10">
-            <Heart className="w-5 h-5 text-petid-gold" />
-          </div>
+          <div className="w-10 h-10" />
         </div>
       </div>
 
