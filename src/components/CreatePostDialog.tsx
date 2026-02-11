@@ -445,6 +445,9 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
             </Button>
           </div>
 
+          {/* Music */}
+          <MusicPicker selectedMusic={selectedMusic} onSelect={setSelectedMusic} />
+
           {/* Schedule */}
           <div className="flex items-center justify-between p-3 rounded-xl border border-border">
             <div className="flex items-center gap-2">
