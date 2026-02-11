@@ -101,6 +101,15 @@ const SoundtrackFeed = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [newPostCount, setNewPostCount] = useState(0);
+
+  // Pull-to-refresh
+  const handleRefresh = useCallback(async () => {
+    await fetchPostsInner();
+  }, []);
+  const { pullDistance, isRefreshing, progress, shouldTrigger, handlers: pullHandlers } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
