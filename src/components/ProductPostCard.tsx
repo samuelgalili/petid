@@ -1,11 +1,17 @@
 import { motion } from "framer-motion";
-import { ShoppingBag, Heart, MessageCircle, Send, Bookmark, MoreVertical, Tag, ChevronLeft } from "lucide-react";
+import { ShoppingBag, Heart, MessageCircle, Send, Bookmark, MoreVertical, Tag, ChevronLeft, Link2, Flag, EyeOff } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Product {
   id: string;
@@ -59,9 +65,35 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
             </Badge>
           </div>
         </div>
-        <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
-          <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="text-card-foreground p-1 -m-1 focus:outline-none">
+              <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">
+            <DropdownMenuItem
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/product/${product.id}`);
+                toast.success("הקישור הועתק");
+              }}
+            >
+              <Link2 className="w-4 h-4 ml-2" />
+              העתק קישור
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.success("הפוסט הוסתר")}>
+              <EyeOff className="w-4 h-4 ml-2" />
+              הסתר פוסט
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => toast.info("הדיווח נשלח, תודה!")}
+              className="text-destructive focus:text-destructive"
+            >
+              <Flag className="w-4 h-4 ml-2" />
+              דווח
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Image - Instagram style square */}

@@ -1,9 +1,16 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Megaphone, ChevronLeft } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Megaphone, ChevronLeft, Link2, Flag, EyeOff } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface FeedAd {
   id: string;
@@ -50,9 +57,35 @@ export const AdPostCard = ({ ad }: AdPostCardProps) => {
             </div>
           </div>
         </div>
-        <button className="text-[#262626]">
-          <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="text-card-foreground focus:outline-none">
+              <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">
+            <DropdownMenuItem
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}${ad.link}`);
+                toast.success("הקישור הועתק");
+              }}
+            >
+              <Link2 className="w-4 h-4 ml-2" />
+              העתק קישור
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.success("המודעה הוסתרה")}>
+              <EyeOff className="w-4 h-4 ml-2" />
+              הסתר מודעה
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => toast.info("הדיווח נשלח, תודה!")}
+              className="text-destructive focus:text-destructive"
+            >
+              <Flag className="w-4 h-4 ml-2" />
+              דווח על מודעה
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Image - Instagram style square */}
