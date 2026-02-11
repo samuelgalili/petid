@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search, Settings2 } from "lucide-react";
 import petidIcon from "@/assets/petid-icon.png";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
-import { useLoyalty } from "@/hooks/useLoyalty";
+
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef, memo } from "react";
@@ -142,7 +142,7 @@ const FEED_ADS: FeedAd[] = [{
   subtitle: "הנחות בלעדיות לחברי המועדון",
   image: "https://images.unsplash.com/photo-1544568100-847a948585b9?w=600&h=400&fit=crop",
   cta: "הצטרף חינם",
-  link: "/rewards",
+  link: "/shop",
   gradient: "from-amber-500 to-orange-400",
   badge: "20% הנחה"
 }];
@@ -259,11 +259,7 @@ const Feed = () => {
   const {
     setCartIconPosition
   } = useFlyingCart();
-  const {
-    stats
-  } = useLoyalty();
   const { unreadCount: notificationCount } = useNotificationsBadge();
-  const totalPoints = stats?.totalPoints || 0;
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
@@ -1250,44 +1246,6 @@ const Feed = () => {
       delay: 0.1,
       duration: 0.4
     }}>
-        {/* Rewards Bar - PetID styled */}
-        <motion.div initial={{
-        opacity: 0,
-        y: -10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} className="px-4 py-3 cursor-pointer bg-card border-b border-border/30" onClick={() => navigate('/rewards')}>
-          {/* Header */}
-          
-          {/* Points Progress */}
-          <motion.div className="space-y-2" dir="rtl" initial={{
-          opacity: 0,
-          x: -20
-        }} animate={{
-          opacity: 1,
-          x: 0
-        }} transition={{
-          delay: 0.3,
-          duration: 0.4
-        }}>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">⭐ נקודות פעילות</span>
-              <span className="text-primary font-semibold">{totalPoints} נק׳</span>
-            </div>
-            <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-              <motion.div className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500" initial={{
-              width: 0
-            }} animate={{
-              width: [`0%`, `100%`, `${Math.min(totalPoints / 1000 * 100, 100)}%`]
-            }} transition={{
-              duration: 3,
-              times: [0, 0.6, 1],
-              ease: "easeInOut"
-            }} />
-            </div>
-          </motion.div>
-        </motion.div>
 
 
         {/* Business Directory Quick Access */}

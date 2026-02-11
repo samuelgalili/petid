@@ -26,7 +26,7 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
       <div className="flex flex-row-reverse items-center gap-[14px]">
         {/* Gift Icon - Right Side - Playful & Accessible */}
         <motion.button
-          onClick={() => navigate('/rewards')}
+          onClick={() => navigate('/shop')}
           whileHover={{ scale: 1.05, rotate: [0, -2, 2, -2, 0] }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.2 }}
@@ -65,7 +65,7 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
       {/* Link Button - Bottom Left Corner - Enhanced Accessibility */}
       <div className="mt-3 text-left">
         <motion.button
-          onClick={() => navigate('/rewards')}
+          onClick={() => navigate('/shop')}
           whileHover={{ x: -2 }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.15 }}

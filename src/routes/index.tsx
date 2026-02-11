@@ -216,7 +216,7 @@ const Messages = lazy(() => import("@/pages/Messages"));
 const MessageThread = lazy(() => import("@/pages/MessageThread"));
 const PrivacySettings = lazy(() => import("@/pages/PrivacySettings"));
 const MyProgress = lazy(() => import("@/pages/MyProgress"));
-const Rewards = lazy(() => import("@/pages/Rewards"));
+
 const Chat = lazy(() => import("@/pages/Chat"));
 
 export const userRoutes: RouteObject[] = [
@@ -228,7 +228,7 @@ export const userRoutes: RouteObject[] = [
   { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
   { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
   { path: "/my-progress", element: <Protected><LazyPage component={MyProgress} pageName="ההתקדמות שלי" /></Protected> },
-  { path: "/rewards", element: <Protected><LazyPage component={Rewards} pageName="תגמולים" /></Protected> },
+  { path: "/rewards", element: <Navigate to="/" replace /> },
   { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
   // Legacy redirects
   { path: "/tracker", element: <Navigate to="/my-progress" replace /> },
@@ -318,7 +318,7 @@ const AdminPricing = lazy(() => import("@/pages/admin/AdminPricing"));
 const AdminWebhooks = lazy(() => import("@/pages/admin/AdminWebhooks"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const AdminStories = lazy(() => import("@/pages/admin/AdminStories"));
-const AdminLoyalty = lazy(() => import("@/pages/admin/AdminLoyalty"));
+
 const AdminNotificationRules = lazy(() => import("@/pages/admin/AdminNotificationRules"));
 const AdminAutomations = lazy(() => import("@/pages/admin/AdminAutomations"));
 const AdminTimeTracking = lazy(() => import("@/pages/admin/AdminTimeTracking"));
@@ -377,7 +377,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/webhooks", element: <AdminPage component={AdminWebhooks} pageName="Webhooks" /> },
   { path: "/admin/blog", element: <AdminPage component={AdminBlog} pageName="בלוג" /> },
   { path: "/admin/stories", element: <AdminPage component={AdminStories} pageName="סטוריז" /> },
-  { path: "/admin/loyalty", element: <AdminPage component={AdminLoyalty} pageName="נאמנות" /> },
+  { path: "/admin/loyalty", element: <Navigate to="/admin/growo" replace /> },
   { path: "/admin/notification-rules", element: <AdminPage component={AdminNotificationRules} pageName="כללי התראות" /> },
   { path: "/admin/automations", element: <AdminPage component={AdminAutomations} pageName="אוטומציות" /> },
   { path: "/admin/time-tracking", element: <AdminPage component={AdminTimeTracking} pageName="מעקב זמן" /> },

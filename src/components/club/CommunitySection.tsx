@@ -47,15 +47,6 @@ export const CommunitySection = ({
           <Heart className="w-5 h-5 text-primary" />
           קהילה ומועדון
         </h2>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate("/rewards")}
-          className="text-primary text-xs gap-1"
-        >
-          לפרסים
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
       </div>
 
       {/* Loyalty Status - Gentle */}

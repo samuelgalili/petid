@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
 import { useGame } from "@/contexts/GameContext";
-import { useLoyalty } from "@/hooks/useLoyalty";
+
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +32,8 @@ const MyProgress = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { achievements, badges, loading: gameLoading } = useGame();
-  const { stats, awardPoints } = useLoyalty();
+  const stats = { totalPoints: 0 };
+  const awardPoints = async (_action: string) => {};
   const [activeTab, setActiveTab] = useState("overview");
   const [streak, setStreak] = useState(0);
   const [proofDialogOpen, setProofDialogOpen] = useState(false);
@@ -90,7 +91,7 @@ const MyProgress = () => {
       t.id === taskId ? { ...t, completed: true } : t
     ));
 
-    await awardPoints(task.points.toString(), 'task_completion');
+    await awardPoints(task.points.toString());
     
     confetti({
       particleCount: 80,
@@ -154,15 +155,6 @@ const MyProgress = () => {
             </button>
             <h1 className="text-lg font-semibold text-foreground">ההתקדמות שלי</h1>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/rewards')}
-            className="gap-1.5 text-primary"
-          >
-            <Gift className="w-4 h-4" />
-            פרסים
-          </Button>
         </div>
       </motion.div>
 
@@ -273,10 +265,10 @@ const MyProgress = () => {
               <Button 
                 variant="outline" 
                 className="h-auto py-4 flex flex-col gap-2"
-                onClick={() => navigate('/rewards')}
+                onClick={() => setActiveTab('tasks')}
               >
-                <Gift className="w-5 h-5 text-primary" />
-                <span className="text-sm">מימוש פרסים</span>
+                <Zap className="w-5 h-5 text-primary" />
+                <span className="text-sm">צבירת נקודות</span>
               </Button>
               <Button 
                 variant="outline" 

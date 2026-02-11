@@ -249,11 +249,6 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                 label="ההזמנות שלי"
                 onClick={() => handleNavigation("/order-history")}
               />
-              <MenuItem
-                icon={Star}
-                label="תגמולים ונקודות"
-                onClick={() => handleNavigation("/rewards")}
-              />
 
               <Divider />
 
