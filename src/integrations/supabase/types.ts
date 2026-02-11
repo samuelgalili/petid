@@ -2935,6 +2935,71 @@ export type Database = {
         }
         Relationships: []
       }
+      feed_poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_index: number
+          poll_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_index: number
+          poll_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_index?: number
+          poll_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "feed_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_polls: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          options: Json
+          poll_type: string
+          question: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          options?: Json
+          poll_type?: string
+          question: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          options?: Json
+          poll_type?: string
+          question?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       financial_records: {
         Row: {
           amount: number
@@ -5970,6 +6035,48 @@ export type Database = {
         }
         Relationships: []
       }
+      post_pet_tags: {
+        Row: {
+          created_at: string
+          id: string
+          pet_id: string
+          position_x: number | null
+          position_y: number | null
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pet_id: string
+          position_x?: number | null
+          position_y?: number | null
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pet_id?: string
+          position_x?: number | null
+          position_y?: number | null
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_pet_tags_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_pet_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_product_tags: {
         Row: {
           created_at: string
@@ -6008,6 +6115,38 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
