@@ -695,7 +695,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       <AnimatePresence>
         {showHeartBurst &&
         <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
           initial={{ scale: 0, opacity: 1 }}
           animate={{ scale: 1.2, opacity: 0 }}
           exit={{ opacity: 0 }}
