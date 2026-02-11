@@ -119,7 +119,7 @@ export const ProductCarousel = () => {
             bgColor="yellow"
             index={0}
             icon={<Tag className="w-8 h-8 text-neutral-dark" />}
-            onClick={() => navigate('/deals')}
+            onClick={() => navigate('/shop')}
           />
 
           {/* Second row - 2 products */}

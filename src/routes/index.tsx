@@ -152,7 +152,7 @@ const OrderHistory = lazy(() => import("@/pages/OrderHistory"));
 const Favorites = lazy(() => import("@/pages/Favorites"));
 const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 const PaymentFailed = lazy(() => import("@/pages/PaymentFailed"));
-const Deals = lazy(() => import("@/pages/Deals"));
+
 
 export const shopRoutes: RouteObject[] = [
   { path: "/shop", element: <LazyPage component={Shop} pageName="החנות" /> },
@@ -164,7 +164,7 @@ export const shopRoutes: RouteObject[] = [
   { path: "/checkout", element: <Protected><LazyPage component={Checkout} pageName="תשלום" /></Protected> },
   { path: "/order-confirmation", element: <Protected><LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /></Protected> },
   { path: "/order-history", element: <Protected><LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /></Protected> },
-  { path: "/deals", element: <Protected><LazyPage component={Deals} pageName="מבצעים" /></Protected> },
+  { path: "/deals", element: <Navigate to="/shop" replace /> },
   { path: "/payment-success", element: <LazyPage component={PaymentSuccess} pageName="תשלום הצליח" /> },
   { path: "/payment-failed", element: <LazyPage component={PaymentFailed} pageName="תשלום נכשל" /> },
 ];
