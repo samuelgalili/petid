@@ -453,14 +453,34 @@ const SoundtrackFeed = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-      </div>);
-
+      <div className="h-screen bg-background overflow-hidden" dir="rtl">
+        <div className="h-full pb-[70px] overflow-hidden">
+          <FeedSkeletonList />
+        </div>
+        <BottomNav />
+      </div>
+    );
   }
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      {/* Progress bar */}
+      <FeedProgressBar current={currentIndex} total={posts.length} />
+
+      {/* Pull-to-refresh indicator */}
+      <FeedPullToRefresh
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        progress={progress}
+        shouldTrigger={shouldTrigger}
+      />
+
+      {/* New post toast */}
+      <NewPostToast visible={newPostCount > 0} count={newPostCount} onTap={handleNewPostTap} />
+
+      {/* Onboarding tooltips (first-time only) */}
+      <FeedOnboarding />
+
       {/* Header with Tabs - at top */}
       <motion.header
         className="absolute top-0 left-0 right-0 z-50 pointer-events-none pt-2"
@@ -468,11 +488,77 @@ const SoundtrackFeed = () => {
         animate={{ y: 0, opacity: 1 }}>
 
         <div className="flex items-center justify-center h-10 relative pointer-events-auto">
-          
+          {/* Daily Streak badge */}
+          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+            <DailyStreak />
+          </div>
 
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "discover" | "following")}>
+            <TabsList className="bg-transparent gap-8">
+              <TabsTrigger
+                value="following"
+                className={cn(
+                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
+                  "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                  activeTab === "following" ?
+                  "text-white drop-shadow-md border-b-2 border-white rounded-none" :
+                  "text-white/60"
+                )}>
 
+                עוקבים
+              </TabsTrigger>
+              <TabsTrigger
+                value="discover"
+                className={cn(
+                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
+                  "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                  activeTab === "discover" ?
+                  "text-white drop-shadow-md border-b-2 border-white rounded-none" :
+                  "text-white/60"
+                )}>
 
+                גלה
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </motion.header>
 
+      {/* Feed Cards */}
+      <div
+        ref={containerRef}
+        className="h-full pb-[70px] overflow-y-auto snap-y snap-mandatory scroll-smooth"
+        onScroll={handleScroll}
+        style={{ scrollSnapType: 'y mandatory', scrollPaddingTop: '8px' }}
+        {...pullHandlers}>
+
+        {posts.length === 0 ?
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+            <p className="text-lg">אין פוסטים להצגה</p>
+            <p className="text-sm mt-2">
+              {activeTab === "following" ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם" : "בקרוב יופיעו כאן פוסטים"}
+            </p>
+          </div> :
+
+        posts.map((post, index) =>
+        <PostCard
+          key={post.id}
+          post={post}
+          index={index}
+          currentIndex={currentIndex}
+          muted={muted}
+          setMuted={setMuted}
+          onLike={handleLike}
+          onSave={handleSave}
+          onFollow={handleFollow}
+          userId={user?.id} />
+
+        )
+        }
+      </div>
+
+      <BottomNav />
+    </div>);
 
 
 
