@@ -583,6 +583,21 @@ const Chat = () => {
                     {message.role === "assistant" && message.insuranceCallback && (
                       <InsuranceCallbackForm {...message.insuranceCallback} />
                     )}
+
+                    {/* Grooming Service Picker */}
+                    {message.role === "assistant" && message.showGroomingPicker && (
+                      <GroomingServicePicker
+                        petName={selectedPet?.name || "החיה שלך"}
+                        onSelect={(service) => {
+                          // Remove picker from message
+                          setMessages(prev => prev.map((m, i) => 
+                            i === messages.indexOf(message) ? { ...m, showGroomingPicker: false } : m
+                          ));
+                          // Send as user message
+                          sendMessage(`בחרתי: ${service}`);
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               </motion.div>
