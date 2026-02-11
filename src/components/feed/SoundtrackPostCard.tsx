@@ -211,8 +211,8 @@ export const SoundtrackPostCard = ({
 
       {/* RIGHT SIDEBAR — aligned so avatar sits at ~50% screen height */}
       <motion.div
-        className="absolute right-3 z-50 flex flex-col items-center gap-6"
-        style={{ bottom: '160px' }}
+        className="absolute right-3 z-50 flex flex-col items-center gap-4"
+        style={{ bottom: '100px' }}
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
