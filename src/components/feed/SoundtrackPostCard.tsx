@@ -381,8 +381,8 @@ export const SoundtrackPostCard = ({
         {/* Username */}
         <div className="flex items-center gap-1.5 mb-1">
           <span
-            className="text-white font-semibold cursor-pointer drop-shadow-lg"
-            style={{ fontSize: "18px" }}
+            className="text-white font-bold cursor-pointer drop-shadow-lg"
+            style={{ fontSize: "15px" }}
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/user/${post.user_id}`);
