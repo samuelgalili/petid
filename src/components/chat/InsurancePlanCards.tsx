@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Check, Phone, Loader2, ChevronLeft } from "lucide-react";
+import { Shield, Check, Phone, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -241,6 +241,7 @@ export const InsurancePlanCards = ({
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { user } = useAuth();
@@ -372,7 +373,7 @@ export const InsurancePlanCards = ({
         ))}
       </div>
 
-      {/* Phone capture after selection */}
+      {/* Phone confirmation after selection */}
       <AnimatePresence>
         {selectedPlan && (
           <motion.div
@@ -382,23 +383,47 @@ export const InsurancePlanCards = ({
             className="space-y-2.5 overflow-hidden"
           >
             <p className="text-xs text-muted-foreground px-1">
-              השאר מספר טלפון ונציג Libra יחזור אליך עם הצעה אישית:
+              נציג Libra יחזור אליך למספר הזה:
             </p>
-            <div>
-              <div className="relative">
-                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={phone}
-                  onChange={(e) => { setPhone(e.target.value); setPhoneError(null); }}
-                  placeholder="050-1234567"
-                  className={`h-11 pr-10 rounded-xl ${phoneError ? "border-destructive" : "border-border/50"}`}
-                  type="tel"
-                  maxLength={11}
-                  dir="ltr"
-                />
+
+            {/* Phone display / edit */}
+            {!isEditing && phone ? (
+              <div
+                className="flex items-center justify-between rounded-xl px-3 py-2.5"
+                style={{ border: `1.5px solid hsl(${LIBRA_BLUE} / 0.3)`, background: `hsl(${LIBRA_BLUE} / 0.04)` }}
+              >
+                <div className="flex items-center gap-2" dir="ltr">
+                  <Phone className="w-4 h-4" style={{ color: `hsl(${LIBRA_BLUE})` }} />
+                  <span className="text-sm font-semibold text-foreground tracking-wide">{phone}</span>
+                </div>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Pencil className="w-3 h-3" />
+                  שנה
+                </button>
               </div>
-              {phoneError && <p className="text-xs text-destructive mt-1 pr-1">{phoneError}</p>}
-            </div>
+            ) : (
+              <div>
+                <div className="relative">
+                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={phone}
+                    onChange={(e) => { setPhone(e.target.value); setPhoneError(null); }}
+                    onBlur={() => { if (phone.trim()) setIsEditing(false); }}
+                    placeholder="050-1234567"
+                    autoFocus={isEditing}
+                    className={`h-11 pr-10 rounded-xl ${phoneError ? "border-destructive" : "border-border/50"}`}
+                    type="tel"
+                    maxLength={11}
+                    dir="ltr"
+                  />
+                </div>
+                {phoneError && <p className="text-xs text-destructive mt-1 pr-1">{phoneError}</p>}
+              </div>
+            )}
+
             <Button
               onClick={handleSubmitLead}
               disabled={isSubmitting || !phone.trim()}
@@ -410,7 +435,7 @@ export const InsurancePlanCards = ({
               ) : (
                 <>
                   <Shield className="w-4 h-4" />
-                  שלח פנייה
+                  אשר ושלח פנייה
                 </>
               )}
             </Button>
