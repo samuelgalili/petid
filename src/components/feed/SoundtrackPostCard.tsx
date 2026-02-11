@@ -245,6 +245,27 @@ export const SoundtrackPostCard = ({
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
+        {/* CTA — top of sidebar, above avatar */}
+        {hasPromotion && (
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              isProductPost ? handleAddToCart() : handleCtaClick();
+            }}
+            whileTap={{ scale: 0.9 }}
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+            className="rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg"
+            style={{ width: "64px", height: "44px", backgroundColor: "#FF8C42" }}
+          >
+            {isProductPost ? (
+              <ShoppingCart className="w-5 h-5" />
+            ) : (
+              <span>{isChallengePost ? "🏆" : "🐾"}</span>
+            )}
+          </motion.button>
+        )}
+
         {/* Avatar */}
         <div className="relative mb-1">
           <Avatar
@@ -325,7 +346,7 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
-        {/* Spinning disc — below share with gap-4 (16px) */}
+        {/* Spinning disc */}
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
@@ -340,27 +361,6 @@ export const SoundtrackPostCard = ({
             </div>
           )}
         </motion.div>
-
-        {/* CTA */}
-        {hasPromotion && (
-          <motion.button
-            onClick={(e) => {
-              e.stopPropagation();
-              isProductPost ? handleAddToCart() : handleCtaClick();
-            }}
-            whileTap={{ scale: 0.9 }}
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-            className="rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg"
-            style={{ width: "64px", height: "44px", backgroundColor: "#FF8C42" }}
-          >
-            {isProductPost ? (
-              <ShoppingCart className="w-5 h-5" />
-            ) : (
-              <span>{isChallengePost ? "🏆" : "🐾"}</span>
-            )}
-          </motion.button>
-        )}
       </motion.div>
 
       {/* Product info — top-right, vertical */}
