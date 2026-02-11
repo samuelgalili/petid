@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppHeader } from "@/components/AppHeader";
 import catDogSilhouette from "@/assets/adoption/cat-dog-silhouette.png";
 import { SEO } from "@/components/SEO";
+import { AdoptionChatDrawer } from "@/components/adoption/AdoptionChatDrawer";
 
 interface AdoptionPet {
   id: string;
