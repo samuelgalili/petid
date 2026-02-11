@@ -3,9 +3,12 @@
  * Refactored: logic in useSoundtrackFeed, card in SoundtrackPostCard
  */
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import BottomNav from "@/components/BottomNav";
 import {
   FeedPullToRefresh,
@@ -19,6 +22,8 @@ import { SoundtrackPostCard } from "@/components/feed/SoundtrackPostCard";
 import { useSoundtrackFeed } from "@/hooks/useSoundtrackFeed";
 
 const SoundtrackFeed = () => {
+  const navigate = useNavigate();
+  const { unreadCount } = useRealtimeNotifications();
   const {
     posts,
     loading,
@@ -75,10 +80,34 @@ const SoundtrackFeed = () => {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <div className="flex items-center justify-center h-10 relative pointer-events-auto">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+        <div className="flex items-center justify-between h-10 relative pointer-events-auto px-3">
+          {/* Left: DailyStreak */}
+          <div className="w-10">
             <DailyStreak />
           </div>
+
+          {/* Right: Heart/Notifications */}
+          <button
+            onClick={() => navigate('/notifications')}
+            className="relative w-10 h-10 flex items-center justify-center"
+            aria-label="התראות"
+          >
+            <Heart className="w-[26px] h-[26px] text-white drop-shadow-md" strokeWidth={1.5} />
+            <AnimatePresence mode="wait">
+              {unreadCount > 0 && (
+                <motion.span
+                  key={unreadCount}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                  className="absolute top-0.5 right-0 w-5 h-5 bg-[#FF3B30] text-white rounded-full text-[10px] font-bold flex items-center justify-center"
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
 
           <Tabs
             value={activeTab}
