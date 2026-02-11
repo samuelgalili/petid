@@ -133,7 +133,7 @@ const FEED_ADS: FeedAd[] = [{
   subtitle: "הפוך את הכלב שלך לחבר מושלם",
   image: "https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=600&h=400&fit=crop",
   cta: "התחל עכשיו",
-  link: "/training",
+  link: "/chat",
   gradient: "from-purple-500 to-pink-400",
   badge: "חדש"
 }, {
