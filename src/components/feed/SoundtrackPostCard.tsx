@@ -211,8 +211,8 @@ export const SoundtrackPostCard = ({
 
       {/* RIGHT SIDEBAR — aligned so avatar sits at ~50% screen height */}
       <motion.div
-        className="absolute right-3 z-50 flex flex-col items-center gap-6"
-        style={{ bottom: '160px' }}
+        className="absolute right-3 z-50 flex flex-col items-center gap-4"
+        style={{ bottom: '100px' }}
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -320,7 +320,7 @@ export const SoundtrackPostCard = ({
       </motion.div>
 
       {/* BOTTOM-LEFT info — positioned ~60px above navbar */}
-      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '70px' }}>
+      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '54px' }}>
         {/* Status badges */}
         {(isProductPost || isCtaPost || isChallengePost) && (
           <div
@@ -404,7 +404,7 @@ export const SoundtrackPostCard = ({
         animate={{ rotate: 360 }}
         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
         className="absolute z-50 rounded-full overflow-hidden bg-neutral-800"
-        style={{ width: "36px", height: "36px", border: "4px solid rgba(50,50,50,0.9)", bottom: '72px', right: '12px' }}
+        style={{ width: "36px", height: "36px", border: "4px solid rgba(50,50,50,0.9)", bottom: '56px', right: '12px' }}
       >
         {post.user_profile?.avatar_url ? (
           <img src={post.user_profile.avatar_url} alt="" className="w-full h-full object-cover" />
