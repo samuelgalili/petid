@@ -1,4 +1,4 @@
-import { Home, MessageCircle, ShoppingBag, User, Newspaper, Sparkles, Bell } from "lucide-react";
+import { Home, MessageCircle, ShoppingBag, User, Newspaper, Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
