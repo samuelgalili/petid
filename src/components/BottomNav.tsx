@@ -227,8 +227,8 @@ const BottomNav = () => {
               <div className={cn(
                 "w-6 h-6 rounded-full flex items-center justify-center",
                 isActive("/chat") 
-                  ? "bg-gradient-to-tr from-petid-blue via-petid-gold to-petid-blue" 
-                  : "bg-muted"
+                  ? "bg-primary" 
+                  : "bg-primary/10"
               )}>
                 <Sparkles 
                   className={cn(
