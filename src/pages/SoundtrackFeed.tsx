@@ -799,7 +799,7 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       </motion.div>
 
       {/* ===== BOTTOM-LEFT Information Overlay ===== */}
-      <div className="absolute z-20" style={{ left: '16px', bottom: '16px', right: '80px' }}>
+      <div className="absolute bottom-[120px] left-4 z-50 max-w-[75%] flex flex-col gap-1">
         {/* Status Badge (glassmorphism) */}
         {(isProductPost || isCtaPost || isChallengePost) &&
         <div
