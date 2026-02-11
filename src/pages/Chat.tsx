@@ -277,9 +277,48 @@ const Chat = () => {
 
   // Handle ACTION tags from AI responses
   const handleActionTags = (content: string) => {
-    if (content.includes("[ACTION:SHOW_CALENDAR]")) {
+    const actions = extractActionTags(content);
+    if (actions.includes("SHOW_CALENDAR")) {
       setPendingDateContext("grooming");
       setShowDatePicker(true);
+    }
+  };
+
+  // Handle action button clicks
+  const handleActionClick = (actionTag: string) => {
+    switch (actionTag) {
+      case "SHOW_CALENDAR":
+        setShowDatePicker(true);
+        break;
+      case "UPLOAD_DOCUMENT":
+        navigate("/scan-document");
+        break;
+      case "UPLOAD_PHOTO":
+        navigate("/create-post");
+        break;
+      case "ESCALATE":
+        toast({ title: "מעביר לנציג אנושי", description: "נציג יחזור אליך בהקדם" });
+        break;
+      default:
+        // Send as user message to continue flow
+        sendMessage(`אני רוצה ${actionTag}`);
+        break;
+    }
+  };
+
+  // Utility to send a message programmatically
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || isLoading) return;
+    const userMessage: Message = { role: "user", content };
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+    try {
+      await streamChat([...messages, userMessage]);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({ title: "שגיאה", description: error instanceof Error ? error.message : "משהו השתבש", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -287,28 +326,11 @@ const Chat = () => {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setShowDatePicker(false);
-    
-    const formattedDate = date.toLocaleDateString('he-IL', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-    
-    // Send the selected date as a user message
+    const formattedDate = date.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const userMessage: Message = { role: "user", content: `בחרתי את ${formattedDate}` };
     setMessages(prev => [...prev, userMessage]);
-    
-    // Continue the conversation
     streamChat([...messages, userMessage]);
     setPendingDateContext(null);
-  };
-
-  // Strip ACTION tags from display
-  const cleanMessageContent = (content: string): string => {
-    return content
-      .replace(/\[ACTION:[^\]]+\]/g, "")
-      .trim();
   };
 
   const handleSend = async () => {
