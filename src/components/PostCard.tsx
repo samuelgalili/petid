@@ -1,8 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Share2, Heart, MoreVertical, Flag, Link2, EyeOff, Trash2, User } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState } from "react";
 import { haptic } from "@/lib/haptics";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
@@ -79,7 +78,6 @@ interface PostCardProps {
   getTimeAgo: (dateString: string) => string;
 }
 
-/** Format large numbers like TikTok (67.3k, 1.2M) */
 const formatCount = (count: number): string => {
   if (!count) return '0';
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
@@ -87,7 +85,6 @@ const formatCount = (count: number): string => {
   return count.toString();
 };
 
-/** Stagger animation for sidebar actions */
 const sidebarStagger = {
   hidden: { opacity: 0, x: 20 },
   visible: (i: number) => ({
@@ -119,7 +116,6 @@ export const PostCard = ({
   const [deleting, setDeleting] = useState(false);
 
   const isOwner = currentUserId === post.user_id;
-  const isAdoptionPost = post.caption?.includes('#למסירה') || post.caption?.includes('#אימוץ');
 
   const allImages = post.media_urls?.length
     ? post.media_urls
@@ -197,8 +193,11 @@ export const PostCard = ({
   };
 
   return (
-    <article className="relative w-full aspect-[9/16] max-w-[calc((100vh-180px)*9/16)] mx-auto rounded-2xl overflow-hidden my-1">
-      {/* ── Full-bleed media ── */}
+    <article
+      className="relative w-full rounded-2xl overflow-hidden my-1"
+      style={{ aspectRatio: '9/16', maxWidth: 'calc((100vh - 180px) * 9 / 16)', margin: '4px auto' }}
+    >
+      {/* Full-bleed media */}
       <div className="absolute inset-0 bg-black" onClick={handleDoubleTap}>
         <ImageCarousel images={allImages} alt={post.caption || "פוסט"} onDoubleClick={handleDoubleTap}>
           <HeartBurstAnimation isVisible={showDoubleTapAnimation} />
@@ -208,17 +207,17 @@ export const PostCard = ({
         </ImageCarousel>
       </div>
 
-      {/* Bottom gradient — spec: linear-gradient to top, black/70 0% → transparent 40% */}
-      <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none z-[5]" />
-      {/* Top subtle gradient for menu readability */}
-      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/30 to-transparent pointer-events-none z-[5]" />
+      {/* Bottom gradient */}
+      <div className="absolute inset-x-0 bottom-0 pointer-events-none z-[5]" style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)' }} />
+      {/* Top gradient */}
+      <div className="absolute inset-x-0 top-0 pointer-events-none z-[5]" style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)' }} />
 
-      {/* ── Owner-only menu — top-right ── */}
+      {/* Owner menu — top-right */}
       <div className="absolute top-3 right-3 z-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="text-white p-1.5 rounded-full bg-black/20 backdrop-blur-sm focus:outline-none" aria-label="אפשרויות">
-              <MoreVertical className="w-5 h-5 drop-shadow-md" strokeWidth={2} />
+            <button className="text-white p-1.5 rounded-full backdrop-blur-sm focus:outline-none" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }} aria-label="אפשרויות">
+              <MoreVertical className="w-5 h-5" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} strokeWidth={2} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">
@@ -248,150 +247,148 @@ export const PostCard = ({
         </DropdownMenu>
       </div>
 
-      {/* ══════════════════════════════════════════════
-          RIGHT SIDEBAR — Vertically centered, right-4
-          Profile Avatar → Like → Comment → Share → CTA
-         ══════════════════════════════════════════════ */}
+      {/* RIGHT SIDEBAR — Vertically centered */}
       <motion.div
-        className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-6 z-10"
+        className="absolute flex flex-col items-center z-10"
+        style={{ right: '16px', top: '50%', transform: 'translateY(-50%)', gap: '24px' }}
         initial="hidden"
         animate="visible"
       >
-        {/* ── Profile Avatar (48px, 2px white border, + badge) ── */}
+        {/* Profile Avatar */}
         <motion.button
           custom={0}
           variants={sidebarStagger}
           whileTap={{ scale: 0.9 }}
           onClick={() => navigate(`/user/${post.user.id}`)}
-          className="relative mb-1"
+          className="relative"
+          style={{ marginBottom: '4px' }}
         >
-          <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden shadow-lg">
+          <div className="rounded-full overflow-hidden" style={{ width: '48px', height: '48px', border: '2px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
             {post.user.avatar_url ? (
               <img src={post.user.avatar_url} alt="" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-neutral-700">
-                <User className="w-5 h-5 text-white/70" />
+              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#525252' }}>
+                <User className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.7)' }} />
               </div>
             )}
           </div>
-          {/* + badge — 16px, #FF8C42 */}
           {!isOwner && !isFollowing && (
             <button
               onClick={(e) => { e.stopPropagation(); handleFollow(); }}
-              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-lg"
-              style={{ backgroundColor: '#FF8C42' }}
+              className="absolute rounded-full flex items-center justify-center text-white font-bold"
+              style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', width: '16px', height: '16px', fontSize: '10px', backgroundColor: '#FF8C42', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
             >
               +
             </button>
           )}
         </motion.button>
 
-        {/* ── Like (Heart) — 32px, label 14px ── */}
+        {/* Like */}
         <motion.button
           custom={1}
           variants={sidebarStagger}
           whileTap={{ scale: 0.8 }}
           onClick={handleLike}
-          className="flex flex-col items-center gap-1"
+          className="flex flex-col items-center"
+          style={{ gap: '4px' }}
         >
           <motion.div
             animate={isLicking ? { scale: [1, 1.4, 0.9, 1.1, 1] } : {}}
             transition={{ duration: 0.4, ease: "easeOut" }}
           >
             <Heart
-              className={`w-8 h-8 drop-shadow-lg ${post.is_liked ? 'fill-rose-500 text-rose-500' : 'text-white'}`}
+              className={post.is_liked ? 'fill-rose-500 text-rose-500' : 'text-white'}
+              style={{ width: '32px', height: '32px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
               strokeWidth={1.5}
             />
           </motion.div>
-          <span className="text-white text-[14px] font-semibold drop-shadow-md tabular-nums">
+          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
             {formatCount(post.likes_count)}
           </span>
         </motion.button>
 
-        {/* ── Comments — 32px, label 14px ── */}
+        {/* Comments */}
         <motion.button
           custom={2}
           variants={sidebarStagger}
           whileTap={{ scale: 0.8 }}
           onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
-          className="flex flex-col items-center gap-1"
+          className="flex flex-col items-center"
+          style={{ gap: '4px' }}
         >
-          <MessageCircle className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
-          <span className="text-white text-[14px] font-semibold drop-shadow-md tabular-nums">
+          <MessageCircle className="text-white" style={{ width: '32px', height: '32px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
+          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
             {formatCount(post.comments_count)}
           </span>
         </motion.button>
 
-        {/* ── Share — 32px, label 14px ── */}
+        {/* Share */}
         <motion.button
           custom={3}
           variants={sidebarStagger}
           whileTap={{ scale: 0.8 }}
           onClick={handleShare}
-          className="flex flex-col items-center gap-1"
+          className="flex flex-col items-center"
+          style={{ gap: '4px' }}
         >
-          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
-          <span className="text-white text-[14px] font-semibold drop-shadow-md tabular-nums">
+          <Share2 className="text-white" style={{ width: '32px', height: '32px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
+          <span className="text-white font-semibold" style={{ fontSize: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
             שתף
           </span>
         </motion.button>
 
-        {/* ── Main CTA Button — 64x44px, #FF8C42, pulsing ── */}
+        {/* CTA Button */}
         <motion.button
           custom={4}
           variants={sidebarStagger}
           whileTap={{ scale: 0.9 }}
           onClick={() => navigate(`/post/${post.id}`)}
-          className="relative rounded-xl w-16 h-11 flex items-center justify-center shadow-xl"
-          style={{ backgroundColor: '#FF8C42' }}
+          className="relative rounded-xl flex items-center justify-center"
+          style={{ width: '64px', height: '44px', backgroundColor: '#FF8C42', boxShadow: '0 4px 12px rgba(255,140,66,0.4)' }}
         >
-          {/* Pulse ring */}
           <motion.div
             className="absolute inset-0 rounded-xl"
             style={{ backgroundColor: '#FF8C42' }}
             animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           />
-          <span className="text-white text-[11px] font-bold relative z-10">פרטים</span>
+          <span className="text-white font-bold relative z-10" style={{ fontSize: '11px' }}>פרטים</span>
         </motion.button>
       </motion.div>
 
-      {/* ══════════════════════════════════════════════
-          BOTTOM-LEFT INFORMATION OVERLAY
-          Status badge → @username → Caption
-         ══════════════════════════════════════════════ */}
-      <div className="absolute bottom-7 left-4 right-20 z-10 text-white" dir="rtl">
-        {/* Status badge — glassmorphism pill */}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
+      {/* BOTTOM-LEFT INFO */}
+      <div className="absolute z-10 text-white" dir="rtl" style={{ bottom: '28px', left: '16px', right: '80px' }}>
+        {/* Status badges */}
+        <div className="flex items-center flex-wrap" style={{ gap: '8px', marginBottom: '8px' }}>
           {post.location_name && (
-            <span className="bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[14px] font-medium drop-shadow-sm">
+            <span className="rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '4px 12px', fontSize: '14px', fontWeight: 500 }}>
               📍 {post.location_name}
             </span>
           )}
           {post.views_count && post.views_count > 0 && (
-            <span className="bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[14px] font-medium drop-shadow-sm">
+            <span className="rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '4px 12px', fontSize: '14px', fontWeight: 500 }}>
               👁 {formatCount(post.views_count)}
             </span>
           )}
-          <span className="bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[14px] font-medium drop-shadow-sm">
+          <span className="rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '4px 12px', fontSize: '14px', fontWeight: 500 }}>
             {getTimeAgo(post.created_at)}
           </span>
         </div>
 
-        {/* @username — 18px Semi-bold */}
-        <p className="font-semibold text-[18px] drop-shadow-md mb-1">
+        {/* Username */}
+        <p className="font-semibold" style={{ fontSize: '18px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))', marginBottom: '4px' }}>
           @{post.user.full_name || "משתמש"}
         </p>
 
-        {/* Caption — 16px, max 2 lines */}
+        {/* Caption */}
         {post.caption && (
-          <p className="text-[16px] leading-snug line-clamp-2 drop-shadow-sm">
+          <p className="line-clamp-2" style={{ fontSize: '16px', lineHeight: 1.4, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}>
             {post.caption}
           </p>
         )}
       </div>
 
-      {/* ── Dialogs ── */}
+      {/* Dialogs */}
       <ReportDialog
         open={showReportDialog}
         onOpenChange={setShowReportDialog}
