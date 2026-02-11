@@ -312,6 +312,26 @@ const Chat = () => {
       setPendingDateContext("grooming");
       setShowDatePicker(true);
     }
+    if (actions.includes("SHOW_INSURANCE_PLANS")) {
+      // Show loading animation then insurance cards
+      setShowInsuranceLoading(true);
+      setTimeout(() => {
+        setShowInsuranceLoading(false);
+        // Add insurance cards as a message
+        const insuranceMsg: Message = {
+          role: "assistant",
+          content: "הנה התוכניות שמתאימות:",
+          insuranceData: {
+            petName: selectedPet?.name || "החיה שלך",
+            petType: selectedPet?.type || "dog",
+            breed: selectedPet?.breed || null,
+            ageYears: null,
+            petId: selectedPet?.id || null,
+          },
+        };
+        setMessages(prev => [...prev, insuranceMsg]);
+      }, 2000);
+    }
   };
 
   // Handle action button clicks
