@@ -365,7 +365,10 @@ const Profile = () => {
             </AnimatePresence>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/messages')} className="p-2 relative">
+              <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </button>
             {isAdmin ? <button onClick={() => navigate('/admin/dashboard')} className="p-2">
                 <Shield className="w-5 h-5 text-primary" />
               </button> : <button onClick={() => navigate('/edit-profile')} className="p-2">
