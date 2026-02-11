@@ -155,7 +155,7 @@ const PaymentFailed = lazy(() => import("@/pages/PaymentFailed"));
 export const shopRoutes: RouteObject[] = [
   { path: "/shop", element: <LazyPage component={Shop} pageName="החנות" /> },
   { path: "/shop/explore", element: <LazyPage component={ShopExplore} pageName="גילוי מוצרים" /> },
-  { path: "/shop/checkout", element: <Navigate to="/checkout" replace /> },
+  
   { path: "/product/:id", element: <LazyPage component={ProductDetail} pageName="פרטי מוצר" /> },
   { path: "/cart", element: <Protected><LazyPage component={Cart} pageName="עגלת קניות" /></Protected> },
   { path: "/favorites", element: <Protected><LazyPage component={Favorites} pageName="מועדפים" /></Protected> },
