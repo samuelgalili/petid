@@ -10,6 +10,8 @@ import {
   Check,
   ShoppingCart,
   Plus,
+  Music,
+  Disc3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -178,19 +180,19 @@ export const SoundtrackPostCard = ({
         )}
       </div>
 
-      {/* Gradients */}
+      {/* Gradients — matched to TikTok: lighter, shorter */}
       <div
         className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
         style={{
-          height: "45%",
-          background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
+          height: "35%",
+          background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)",
         }}
       />
       <div
         className="absolute inset-x-0 top-0 z-10 pointer-events-none"
         style={{
           height: "80px",
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)",
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%)",
         }}
       />
 
@@ -211,15 +213,15 @@ export const SoundtrackPostCard = ({
 
       {/* RIGHT SIDEBAR */}
       <motion.div
-        className="absolute bottom-[120px] right-4 z-50 flex flex-col items-center gap-6"
+        className="absolute bottom-[80px] right-3 z-50 flex flex-col items-center gap-5"
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
         {/* Avatar */}
-        <div className="relative mb-2">
+        <div className="relative mb-1">
           <Avatar
-            className="w-12 h-12 cursor-pointer border-2 border-white"
+            className="w-11 h-11 cursor-pointer border-2 border-white"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/user/${post.user_id}`);
@@ -227,7 +229,7 @@ export const SoundtrackPostCard = ({
           >
             <AvatarImage src={post.user_profile?.avatar_url || ""} className="object-cover" />
             <AvatarFallback className="bg-white/20">
-              <User className="w-6 h-6 text-white" />
+              <User className="w-5 h-5 text-white" />
             </AvatarFallback>
           </Avatar>
           {!post.is_following && post.user_id !== userId && (
@@ -256,12 +258,12 @@ export const SoundtrackPostCard = ({
         >
           <Heart
             className={cn(
-              "w-8 h-8 drop-shadow-lg",
+              "w-7 h-7 drop-shadow-lg",
               post.is_liked ? "fill-red-500 text-red-500" : "text-white"
             )}
             strokeWidth={1.5}
           />
-          <span className="text-white text-sm font-medium drop-shadow-lg">
+          <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
             {formatCount(post.likes_count)}
           </span>
         </motion.button>
@@ -275,8 +277,8 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <MessageCircle className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
-          <span className="text-white text-sm font-medium drop-shadow-lg">
+          <MessageCircle className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
             {formatCount(post.comments_count)}
           </span>
         </motion.button>
@@ -292,7 +294,7 @@ export const SoundtrackPostCard = ({
         >
           <Bookmark
             className={cn(
-              "w-8 h-8 drop-shadow-lg",
+              "w-7 h-7 drop-shadow-lg",
               post.is_saved ? "fill-yellow-400 text-yellow-400" : "text-white"
             )}
             strokeWidth={1.5}
@@ -308,7 +310,10 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <Share2 className="w-7 h-7 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white font-medium drop-shadow-lg" style={{ fontSize: "12px" }}>
+            שתף
+          </span>
         </motion.button>
 
         {/* CTA */}
@@ -334,7 +339,7 @@ export const SoundtrackPostCard = ({
       </motion.div>
 
       {/* BOTTOM-LEFT info */}
-      <div className="absolute bottom-[24px] left-4 z-50 max-w-[75%] flex flex-col gap-1">
+      <div className="absolute bottom-[16px] left-3 z-50 max-w-[72%] flex flex-col gap-0.5">
         {/* Status badges */}
         {(isProductPost || isCtaPost || isChallengePost) && (
           <div
@@ -376,8 +381,8 @@ export const SoundtrackPostCard = ({
         {/* Username */}
         <div className="flex items-center gap-1.5 mb-1">
           <span
-            className="text-white font-semibold cursor-pointer drop-shadow-lg"
-            style={{ fontSize: "18px" }}
+            className="text-white font-bold cursor-pointer drop-shadow-lg"
+            style={{ fontSize: "15px" }}
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/user/${post.user_id}`);
@@ -394,18 +399,34 @@ export const SoundtrackPostCard = ({
 
         {/* Caption */}
         {post.caption && (
-          <p className="text-white drop-shadow-lg line-clamp-2" style={{ fontSize: "16px" }}>
+          <p className="text-white drop-shadow-lg line-clamp-2" style={{ fontSize: "13px", lineHeight: 1.4 }}>
             {post.caption}
           </p>
         )}
 
         {/* Social proof */}
         <SocialProofLabel postId={post.id} userId={userId} />
+
+        {/* Music / Sound bar — TikTok style */}
+        <div className="flex items-center gap-1.5 mt-2">
+          <Music className="w-3 h-3 text-white/90" />
+          <div className="overflow-hidden max-w-[180px]">
+            <p className="text-white/90 whitespace-nowrap animate-marquee" style={{ fontSize: "12px" }}>
+              ♫ PetID · Original Sound
+            </p>
+          </div>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          >
+            <Disc3 className="w-6 h-6 text-white/80" />
+          </motion.div>
+        </div>
       </div>
 
       {/* Gallery indicator dots */}
       {hasMultipleImages && (
-        <div className="absolute bottom-[130px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
+        <div className="absolute bottom-[100px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
           {allImages.map((_, i) => (
             <div
               key={i}
