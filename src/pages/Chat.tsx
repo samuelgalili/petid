@@ -12,6 +12,7 @@ import { ChatProductCards } from "@/components/chat/ChatProductCards";
 import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
 import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
 import KineticDotsLoader from "@/components/ui/kinetic-dots-loader";
+import { GroomingServicePicker } from "@/components/chat/GroomingServicePicker";
 
 interface Product {
   id: string;
@@ -43,6 +44,7 @@ interface Message {
     petId?: string | null;
     healthIssue?: string;
   };
+  showGroomingPicker?: boolean;
 }
 
 interface Pet {
@@ -343,7 +345,6 @@ const Chat = () => {
       }, 2000);
     }
     if (actions.includes("SHOW_INSURANCE_CALLBACK")) {
-      // Show callback form for pets with health issues
       const callbackMsg: Message = {
         role: "assistant",
         content: "נציג מקצועי יבדוק את המקרה ויחזור אליך:",
@@ -356,6 +357,17 @@ const Chat = () => {
         },
       };
       setMessages(prev => [...prev, callbackMsg]);
+    }
+    if (actions.includes("SHOW_GROOMING_SERVICES")) {
+      // Add grooming picker as part of the last message
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg?.role === "assistant") {
+          updated[updated.length - 1] = { ...lastMsg, showGroomingPicker: true };
+        }
+        return updated;
+      });
     }
   };
 
@@ -526,7 +538,7 @@ const Chat = () => {
                 transition={{ duration: 0.2 }}
                 className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
               >
-                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
+                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar - Enhanced */}
                   {message.role === "assistant" && (
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -570,6 +582,21 @@ const Chat = () => {
                     {/* Insurance Callback Form */}
                     {message.role === "assistant" && message.insuranceCallback && (
                       <InsuranceCallbackForm {...message.insuranceCallback} />
+                    )}
+
+                    {/* Grooming Service Picker */}
+                    {message.role === "assistant" && message.showGroomingPicker && (
+                      <GroomingServicePicker
+                        petName={selectedPet?.name || "החיה שלך"}
+                        onSelect={(service) => {
+                          // Remove picker from message
+                          setMessages(prev => prev.map((m, i) => 
+                            i === messages.indexOf(message) ? { ...m, showGroomingPicker: false } : m
+                          ));
+                          // Send as user message
+                          sendMessage(`בחרתי: ${service}`);
+                        }}
+                      />
                     )}
                   </div>
                 </div>
