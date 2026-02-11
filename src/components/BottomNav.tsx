@@ -111,7 +111,7 @@ const BottomNav = () => {
         aria-label="ניווט ראשי"
       >
         <div className="flex justify-around items-center w-full max-w-lg mx-auto h-[56px]">
-          {/* Home = User Profile */}
+          {/* 1. Home */}
           <NavItem 
             onClick={() => handleNavClick("/")}
             icon={
@@ -131,7 +131,7 @@ const BottomNav = () => {
             label="בית"
           />
 
-          {/* Feed - Soundtrack Style */}
+          {/* 2. Feed */}
           <NavItem 
             onClick={() => handleNavClick("/feed")}
             icon={
@@ -147,8 +147,30 @@ const BottomNav = () => {
             label="פיד"
           />
 
+          {/* 3. Upload (+) - Center */}
+          <NavItem 
+            onClick={() => handleNavClick("/create-post")}
+            icon={
+              <div className={cn(
+                "w-7 h-7 rounded-full flex items-center justify-center border-2",
+                isActive("/create-post") 
+                  ? "border-foreground bg-foreground" 
+                  : "border-muted-foreground"
+              )}>
+                <Plus 
+                  className={cn(
+                    "w-4 h-4",
+                    isActive("/create-post") ? "text-background" : "text-muted-foreground"
+                  )}
+                  strokeWidth={2.5}
+                />
+              </div>
+            }
+            isActive={isActive("/create-post")}
+            label="העלאה"
+          />
 
-          {/* AI Chat */}
+          {/* 4. AI Chat */}
           <NavItem 
             onClick={() => handleNavClick("/chat")}
             icon={
@@ -171,7 +193,7 @@ const BottomNav = () => {
             label="צ'אט AI"
           />
 
-          {/* Shop */}
+          {/* 5. Shop */}
           <NavItem 
             onClick={() => handleNavClick("/shop")}
             icon={
@@ -185,29 +207,6 @@ const BottomNav = () => {
             }
             isActive={isActive("/shop")}
             label="חנות"
-          />
-
-          {/* Upload Content */}
-          <NavItem 
-            onClick={() => handleNavClick("/create-post")}
-            icon={
-              <div className={cn(
-                "w-7 h-7 rounded-full flex items-center justify-center border-2",
-                isActive("/create-post") 
-                  ? "border-foreground bg-foreground" 
-                  : "border-muted-foreground"
-              )}>
-                <Plus 
-                  className={cn(
-                    "w-4 h-4",
-                    isActive("/create-post") ? "text-background" : "text-muted-foreground"
-                  )}
-                  strokeWidth={2.5}
-                />
-              </div>
-            }
-            isActive={isActive("/create-post")}
-            label="העלאה"
           />
         </div>
         
