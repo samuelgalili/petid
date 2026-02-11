@@ -261,7 +261,7 @@ export const PostCard = ({
           whileTap={{ scale: 0.9 }}
           onClick={() => navigate(`/user/${post.user.id}`)}
           className="relative"
-          style={{ marginBottom: '4px' }}
+          style={{ marginBottom: '0px' }}
         >
           <div className="rounded-full overflow-hidden" style={{ width: '48px', height: '48px', border: '2px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
             {post.user.avatar_url ? (
