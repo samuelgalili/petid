@@ -259,11 +259,7 @@ const Feed = () => {
   const {
     setCartIconPosition
   } = useFlyingCart();
-  const {
-    stats
-  } = useLoyalty();
   const { unreadCount: notificationCount } = useNotificationsBadge();
-  const totalPoints = stats?.totalPoints || 0;
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
