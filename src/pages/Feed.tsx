@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Share2, Bookmark, Camera, Plus, TrendingUp, Loader2, ShoppingCart, Gift, ChevronLeft, Store, Stethoscope, Scissors, GraduationCap, Image, Video, Search, Settings2 } from "lucide-react";
 import petidIcon from "@/assets/petid-icon.png";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
-import { useLoyalty } from "@/hooks/useLoyalty";
+
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo, useRef, memo } from "react";
