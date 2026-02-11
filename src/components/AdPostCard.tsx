@@ -34,7 +34,7 @@ export const AdPostCard = ({ ad }: AdPostCardProps) => {
 
   return (
     <motion.article
-      className="bg-white border-b border-[#DBDBDB]"
+      className="bg-card border-b border-border"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}

@@ -48,7 +48,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
   };
 
   return (
-    <article className="bg-card rounded-2xl shadow-card mx-2 my-1 overflow-hidden border border-border/20 dark:border-border/10">
+    <article className="bg-card rounded-2xl shadow-card mx-2 my-1 border border-border/20 dark:border-border/10">
       {/* Header - Instagram style */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">

@@ -304,7 +304,7 @@ export const PostCard = ({
 
   return (
     <article 
-      className="bg-card rounded-2xl shadow-card mx-2 my-1 overflow-hidden border border-border/20 dark:border-border/10"
+      className="bg-card rounded-2xl shadow-card mx-2 my-1 border border-border/20 dark:border-border/10"
     >
       {/* Post Header - Instagram style */}
       <div className="flex items-center justify-between px-4 py-2.5">
@@ -346,17 +346,17 @@ export const PostCard = ({
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-neutral-900 focus:outline-none">
+              <button className="text-card-foreground focus:outline-none">
                 <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white z-50 border-[#DBDBDB] min-w-[180px]">
+            <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">
               <DropdownMenuItem
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
                   toast.success("הקישור הועתק");
                 }}
-                className="text-[#262626]"
+                className="text-card-foreground"
               >
                 <Link2 className="w-4 h-4 ml-2" />
                 העתק קישור
@@ -374,7 +374,7 @@ export const PostCard = ({
                   onClick={() => {
                     toast.success("הפוסט הוסתר");
                   }}
-                  className="text-[#262626]"
+                  className="text-card-foreground"
                 >
                   <EyeOff className="w-4 h-4 ml-2" />
                   הסתר פוסט
@@ -387,7 +387,7 @@ export const PostCard = ({
                       setShowReportDialog(true);
                     }
                   }}
-                  className="text-[#ED4956] focus:text-[#ED4956]"
+                   className="text-destructive focus:text-destructive"
                 >
                   <Flag className="w-4 h-4 ml-2" />
                   דווח
@@ -398,7 +398,7 @@ export const PostCard = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setShowDeleteDialog(true)}
-                    className="text-[#ED4956] focus:text-[#ED4956]"
+                    className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="w-4 h-4 ml-2" />
                     מחק פוסט
