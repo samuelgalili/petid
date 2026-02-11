@@ -61,6 +61,7 @@ const Chat = () => {
   const [showPetSelection, setShowPetSelection] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showInsuranceLoading, setShowInsuranceLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [pendingDateContext, setPendingDateContext] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
