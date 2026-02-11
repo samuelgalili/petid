@@ -197,6 +197,10 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         location_id: location?.id || null,
         pet_id: selectedPets.length > 0 ? selectedPets[0] : null,
         alt_text: altText || null,
+        music_id: selectedMusic?.id || null,
+        music_url: selectedMusic?.audio_url || null,
+        music_title: selectedMusic?.title || null,
+        music_artist: selectedMusic?.artist || null,
       };
 
       if (mediaType === "video") {
