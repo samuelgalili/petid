@@ -318,7 +318,7 @@ const AdminPricing = lazy(() => import("@/pages/admin/AdminPricing"));
 const AdminWebhooks = lazy(() => import("@/pages/admin/AdminWebhooks"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const AdminStories = lazy(() => import("@/pages/admin/AdminStories"));
-const AdminLoyalty = lazy(() => import("@/pages/admin/AdminLoyalty"));
+
 const AdminNotificationRules = lazy(() => import("@/pages/admin/AdminNotificationRules"));
 const AdminAutomations = lazy(() => import("@/pages/admin/AdminAutomations"));
 const AdminTimeTracking = lazy(() => import("@/pages/admin/AdminTimeTracking"));
