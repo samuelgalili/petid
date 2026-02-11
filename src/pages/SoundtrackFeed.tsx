@@ -13,11 +13,11 @@ import BottomNav from "@/components/BottomNav";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Heart, 
-  MessageCircle, 
-  Bookmark, 
-  Share2, 
+import {
+  Heart,
+  MessageCircle,
+  Bookmark,
+  Share2,
   MoreHorizontal,
   Play,
   User,
@@ -37,8 +37,8 @@ import {
   Weight,
   Ruler,
   Palette,
-  Info
-} from "lucide-react";
+  Info } from
+"lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -95,19 +95,19 @@ const SoundtrackFeed = () => {
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      let postsQuery = supabase
-        .from("posts")
-        .select(`id, user_id, image_url, caption, created_at`)
-        .order("created_at", { ascending: false })
-        .limit(20);
+      let postsQuery = supabase.
+      from("posts").
+      select(`id, user_id, image_url, caption, created_at`).
+      order("created_at", { ascending: false }).
+      limit(20);
 
       if (activeTab === "following" && user) {
-        const { data: following } = await supabase
-          .from("user_follows")
-          .select("following_id")
-          .eq("follower_id", user.id);
-        
-        const followingIds = following?.map(f => f.following_id) || [];
+        const { data: following } = await supabase.
+        from("user_follows").
+        select("following_id").
+        eq("follower_id", user.id);
+
+        const followingIds = following?.map((f) => f.following_id) || [];
         if (followingIds.length > 0) {
           postsQuery = postsQuery.in("user_id", followingIds);
         }
@@ -117,11 +117,11 @@ const SoundtrackFeed = () => {
       if (error) throw error;
 
       if (postsData && postsData.length > 0) {
-        const userIds = [...new Set(postsData.map(p => p.user_id))];
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", userIds);
+        const userIds = [...new Set(postsData.map((p) => p.user_id))];
+        const { data: profiles } = await supabase.
+        from("profiles").
+        select("id, full_name, avatar_url").
+        in("id", userIds);
 
         let likedPostIds: string[] = [];
         let savedPostIds: string[] = [];
@@ -129,38 +129,38 @@ const SoundtrackFeed = () => {
 
         if (user) {
           const [likesRes, savesRes, followsRes] = await Promise.all([
-            supabase.from("post_likes").select("post_id").eq("user_id", user.id),
-            supabase.from("saved_posts").select("post_id").eq("user_id", user.id),
-            supabase.from("user_follows").select("following_id").eq("follower_id", user.id)
-          ]);
-          
-          likedPostIds = likesRes.data?.map(l => l.post_id) || [];
-          savedPostIds = savesRes.data?.map(s => s.post_id) || [];
-          followingIds = followsRes.data?.map(f => f.following_id) || [];
+          supabase.from("post_likes").select("post_id").eq("user_id", user.id),
+          supabase.from("saved_posts").select("post_id").eq("user_id", user.id),
+          supabase.from("user_follows").select("following_id").eq("follower_id", user.id)]
+          );
+
+          likedPostIds = likesRes.data?.map((l) => l.post_id) || [];
+          savedPostIds = savesRes.data?.map((s) => s.post_id) || [];
+          followingIds = followsRes.data?.map((f) => f.following_id) || [];
         }
 
         // Count likes and comments for each post
-        const postIds = postsData.map(p => p.id);
+        const postIds = postsData.map((p) => p.id);
         const [likesCount, commentsCount] = await Promise.all([
-          supabase.from("post_likes").select("post_id").in("post_id", postIds),
-          supabase.from("post_comments").select("post_id").in("post_id", postIds)
-        ]);
+        supabase.from("post_likes").select("post_id").in("post_id", postIds),
+        supabase.from("post_comments").select("post_id").in("post_id", postIds)]
+        );
 
         const likesMap: Record<string, number> = {};
         const commentsMap: Record<string, number> = {};
-        likesCount.data?.forEach(l => { likesMap[l.post_id] = (likesMap[l.post_id] || 0) + 1; });
-        commentsCount.data?.forEach(c => { commentsMap[c.post_id] = (commentsMap[c.post_id] || 0) + 1; });
+        likesCount.data?.forEach((l) => {likesMap[l.post_id] = (likesMap[l.post_id] || 0) + 1;});
+        commentsCount.data?.forEach((c) => {commentsMap[c.post_id] = (commentsMap[c.post_id] || 0) + 1;});
 
-        const enrichedPosts: FeedPost[] = postsData.map(post => {
+        const enrichedPosts: FeedPost[] = postsData.map((post) => {
           // Determine media type
           const hasVideo = !!(post as any).video_url;
           const mediaUrls = (post as any).media_urls as string[] | null;
           const hasMultipleImages = mediaUrls && mediaUrls.length > 1;
-          
+
           let mediaType: 'image' | 'gallery' | 'video' = 'image';
-          if (hasVideo) mediaType = 'video';
-          else if (hasMultipleImages) mediaType = 'gallery';
-          
+          if (hasVideo) mediaType = 'video';else
+          if (hasMultipleImages) mediaType = 'gallery';
+
           return {
             id: post.id,
             user_id: post.user_id,
@@ -171,7 +171,7 @@ const SoundtrackFeed = () => {
             created_at: post.created_at,
             likes_count: likesMap[post.id] || 0,
             comments_count: commentsMap[post.id] || 0,
-            user_profile: profiles?.find(p => p.id === post.user_id) || undefined,
+            user_profile: profiles?.find((p) => p.id === post.user_id) || undefined,
             is_liked: likedPostIds.includes(post.id),
             is_saved: savedPostIds.includes(post.id),
             is_following: followingIds.includes(post.user_id),
@@ -256,11 +256,11 @@ const SoundtrackFeed = () => {
           user_id: 'petid-featured',
           image_url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
           media_urls: [
-            'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
-            'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800',
-            'https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?w=800',
-            'https://images.unsplash.com/photo-1588943211346-0908a1fb0b01?w=800'
-          ],
+          'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
+          'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800',
+          'https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?w=800',
+          'https://images.unsplash.com/photo-1588943211346-0908a1fb0b01?w=800'],
+
           caption: '📸 הרגעים הכי יפים של השבוע! גלריית חיות מחמד מהקהילה שלנו 🐾',
           created_at: new Date().toISOString(),
           likes_count: 523,
@@ -321,16 +321,16 @@ const SoundtrackFeed = () => {
       return;
     }
 
-    const post = posts.find(p => p.id === postId);
+    const post = posts.find((p) => p.id === postId);
     if (!post) return;
 
     const isLiked = post.is_liked;
 
     // Optimistic update
-    setPosts(prev => prev.map(p => 
-      p.id === postId 
-        ? { ...p, is_liked: !isLiked, likes_count: p.likes_count + (isLiked ? -1 : 1) }
-        : p
+    setPosts((prev) => prev.map((p) =>
+    p.id === postId ?
+    { ...p, is_liked: !isLiked, likes_count: p.likes_count + (isLiked ? -1 : 1) } :
+    p
     ));
 
     try {
@@ -341,10 +341,10 @@ const SoundtrackFeed = () => {
       }
     } catch (error) {
       // Revert on error
-      setPosts(prev => prev.map(p => 
-        p.id === postId 
-          ? { ...p, is_liked: isLiked, likes_count: p.likes_count + (isLiked ? 1 : -1) }
-          : p
+      setPosts((prev) => prev.map((p) =>
+      p.id === postId ?
+      { ...p, is_liked: isLiked, likes_count: p.likes_count + (isLiked ? 1 : -1) } :
+      p
       ));
     }
   };
@@ -355,13 +355,13 @@ const SoundtrackFeed = () => {
       return;
     }
 
-    const post = posts.find(p => p.id === postId);
+    const post = posts.find((p) => p.id === postId);
     if (!post) return;
 
     const isSaved = post.is_saved;
 
-    setPosts(prev => prev.map(p => 
-      p.id === postId ? { ...p, is_saved: !isSaved } : p
+    setPosts((prev) => prev.map((p) =>
+    p.id === postId ? { ...p, is_saved: !isSaved } : p
     ));
 
     try {
@@ -372,8 +372,8 @@ const SoundtrackFeed = () => {
       }
       toast.success(isSaved ? "הוסר מהשמורים" : "נשמר!");
     } catch (error) {
-      setPosts(prev => prev.map(p => 
-        p.id === postId ? { ...p, is_saved: isSaved } : p
+      setPosts((prev) => prev.map((p) =>
+      p.id === postId ? { ...p, is_saved: isSaved } : p
       ));
     }
   };
@@ -384,10 +384,10 @@ const SoundtrackFeed = () => {
       return;
     }
 
-    const isFollowing = posts.find(p => p.user_id === userId)?.is_following;
+    const isFollowing = posts.find((p) => p.user_id === userId)?.is_following;
 
-    setPosts(prev => prev.map(p => 
-      p.user_id === userId ? { ...p, is_following: !isFollowing } : p
+    setPosts((prev) => prev.map((p) =>
+    p.user_id === userId ? { ...p, is_following: !isFollowing } : p
     ));
 
     try {
@@ -397,8 +397,8 @@ const SoundtrackFeed = () => {
         await supabase.from("user_follows").insert({ follower_id: user.id, following_id: userId });
       }
     } catch (error) {
-      setPosts(prev => prev.map(p => 
-        p.user_id === userId ? { ...p, is_following: isFollowing } : p
+      setPosts((prev) => prev.map((p) =>
+      p.user_id === userId ? { ...p, is_following: isFollowing } : p
       ));
     }
   };
@@ -417,51 +417,51 @@ const SoundtrackFeed = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
       {/* Header with Tabs - at top */}
-      <motion.header 
+      <motion.header
         className="absolute top-0 left-0 right-0 z-50 pointer-events-none pt-2"
         initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-      >
+        animate={{ y: 0, opacity: 1 }}>
+
         <div className="flex items-center justify-center h-10 relative pointer-events-auto">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-white"
-          >
-            <MoreHorizontal className="w-5 h-5 drop-shadow-md" />
-          </Button>
+          
+
+
+
+
+
+
 
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "discover" | "following")}>
             <TabsList className="bg-transparent gap-8">
-              <TabsTrigger 
-                value="following" 
+              <TabsTrigger
+                value="following"
                 className={cn(
                   "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
                   "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                  activeTab === "following" 
-                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none" 
-                    : "text-white/60"
-                )}
-              >
+                  activeTab === "following" ?
+                  "text-white drop-shadow-md border-b-2 border-white rounded-none" :
+                  "text-white/60"
+                )}>
+
                 עוקבים
               </TabsTrigger>
-              <TabsTrigger 
-                value="discover" 
+              <TabsTrigger
+                value="discover"
                 className={cn(
                   "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
                   "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                  activeTab === "discover" 
-                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none" 
-                    : "text-white/60"
-                )}
-              >
+                  activeTab === "discover" ?
+                  "text-white drop-shadow-md border-b-2 border-white rounded-none" :
+                  "text-white/60"
+                )}>
+
                 גלה
               </TabsTrigger>
             </TabsList>
@@ -470,40 +470,40 @@ const SoundtrackFeed = () => {
       </motion.header>
 
       {/* Feed Cards - with gaps to show next post peek */}
-      <div 
+      <div
         ref={containerRef}
         className="h-full pb-[70px] overflow-y-auto snap-y snap-mandatory scroll-smooth"
         onScroll={handleScroll}
-        style={{ scrollSnapType: 'y mandatory', scrollPaddingTop: '8px' }}
-      >
-        {posts.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+        style={{ scrollSnapType: 'y mandatory', scrollPaddingTop: '8px' }}>
+
+        {posts.length === 0 ?
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
             <p className="text-lg">אין פוסטים להצגה</p>
             <p className="text-sm mt-2">
               {activeTab === "following" ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם" : "בקרוב יופיעו כאן פוסטים"}
             </p>
-          </div>
-        ) : (
-          posts.map((post, index) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              index={index}
-              currentIndex={currentIndex}
-              muted={muted}
-              setMuted={setMuted}
-              onLike={handleLike}
-              onSave={handleSave}
-              onFollow={handleFollow}
-              userId={user?.id}
-            />
-          ))
-        )}
+          </div> :
+
+        posts.map((post, index) =>
+        <PostCard
+          key={post.id}
+          post={post}
+          index={index}
+          currentIndex={currentIndex}
+          muted={muted}
+          setMuted={setMuted}
+          onLike={handleLike}
+          onSave={handleSave}
+          onFollow={handleFollow}
+          userId={user?.id} />
+
+        )
+        }
       </div>
 
       <BottomNav />
-    </div>
-  );
+    </div>);
+
 };
 
 // Separate PostCard component for cleaner code
@@ -527,24 +527,24 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
   const { addToCart } = useCart();
   const { triggerFly } = useFlyingCart();
   const productImageRef = useRef<HTMLImageElement>(null);
-  
+
   // Get all images for gallery
-  const allImages = post.media_urls && post.media_urls.length > 0 
-    ? post.media_urls 
-    : post.image_url 
-      ? [post.image_url] 
-      : [];
-  
+  const allImages = post.media_urls && post.media_urls.length > 0 ?
+  post.media_urls :
+  post.image_url ?
+  [post.image_url] :
+  [];
+
   const hasMultipleImages = allImages.length > 1;
   const isVideo = post.media_type === 'video';
   const isProductPost = post.post_type === 'product';
   const isChallengePost = post.post_type === 'challenge';
   const isCtaPost = post.post_type === 'cta';
   const hasPromotion = isProductPost || isChallengePost || isCtaPost;
-  
+
   const handleAddToCart = () => {
     if (!post.product_id || addedToCart) return;
-    
+
     // Trigger flying animation
     if (productImageRef.current) {
       const rect = productImageRef.current.getBoundingClientRect();
@@ -552,33 +552,33 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       const centerY = rect.top + rect.height / 2;
       triggerFly(allImages[0] || '', centerX, centerY);
     }
-    
+
     addToCart({
       id: post.product_id,
       name: post.product_name || 'מוצר',
       price: post.product_price || 0,
       image: allImages[0] || '',
-      quantity: 1,
+      quantity: 1
     });
-    
+
     // Play sound
     playAddToCartSound();
-    
+
     // Confetti effect
     confetti({
       particleCount: 60,
       spread: 55,
       origin: { y: 0.8 },
-      colors: ['#FBD66A', '#F4C542', '#FFD748', '#37B679'],
+      colors: ['#FBD66A', '#F4C542', '#FFD748', '#37B679']
     });
-    
+
     setAddedToCart(true);
     toast.success("נוסף לעגלה! 🛒");
-    
+
     // Reset after 2 seconds
     setTimeout(() => setAddedToCart(false), 2000);
   };
-  
+
   const handleCtaClick = () => {
     if (isChallengePost && post.challenge_id) {
       navigate(`/challenges/${post.challenge_id}`);
@@ -588,16 +588,16 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       navigate(`/shop/product/${post.product_id}`);
     }
   };
-  
+
   const nextImage = () => {
     if (currentImageIndex < allImages.length - 1) {
-      setCurrentImageIndex(prev => prev + 1);
+      setCurrentImageIndex((prev) => prev + 1);
     }
   };
-  
+
   const prevImage = () => {
     if (currentImageIndex > 0) {
-      setCurrentImageIndex(prev => prev - 1);
+      setCurrentImageIndex((prev) => prev - 1);
     }
   };
 
@@ -634,11 +634,11 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
   };
 
   // CTA label
-  const ctaLabel = isProductPost 
-    ? (post.product_price ? `₪${post.product_price}` : 'קנה עכשיו')
-    : isChallengePost ? 'הצטרף' 
-    : isCtaPost ? (post.cta_text || 'לאימוץ') 
-    : '';
+  const ctaLabel = isProductPost ?
+  post.product_price ? `₪${post.product_price}` : 'קנה עכשיו' :
+  isChallengePost ? 'הצטרף' :
+  isCtaPost ? post.cta_text || 'לאימוץ' :
+  '';
 
   return (
     <motion.div
@@ -647,63 +647,63 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: index * 0.05 }}
-      onClick={handleDoubleTap}
-    >
+      onClick={handleDoubleTap}>
+
       {/* Full-bleed media */}
       <div className="absolute inset-0 bg-black">
-        {allImages.length > 0 ? (
-          <div 
-            className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex"
-            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none' }}
-            onScroll={(e) => {
-              const container = e.currentTarget;
-              const newIdx = Math.round(container.scrollLeft / container.offsetWidth);
-              if (newIdx !== currentImageIndex && newIdx >= 0 && newIdx < allImages.length) {
-                setCurrentImageIndex(newIdx);
-              }
-            }}
-          >
-            {allImages.map((img, imgIndex) => (
-              <img 
-                key={imgIndex}
-                ref={imgIndex === 0 ? productImageRef : undefined}
-                src={img} 
-                alt="" 
-                className="w-full h-full object-cover flex-shrink-0 snap-center"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
+        {allImages.length > 0 ?
+        <div
+          className="relative w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex"
+          style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none' }}
+          onScroll={(e) => {
+            const container = e.currentTarget;
+            const newIdx = Math.round(container.scrollLeft / container.offsetWidth);
+            if (newIdx !== currentImageIndex && newIdx >= 0 && newIdx < allImages.length) {
+              setCurrentImageIndex(newIdx);
+            }
+          }}>
+
+            {allImages.map((img, imgIndex) =>
+          <img
+            key={imgIndex}
+            ref={imgIndex === 0 ? productImageRef : undefined}
+            src={img}
+            alt=""
+            className="w-full h-full object-cover flex-shrink-0 snap-center" />
+
+          )}
+          </div> :
+
+        <div className="w-full h-full flex items-center justify-center">
             <p className="text-lg text-white/70 px-8 text-center">{post.caption || "פוסט ללא תמונה"}</p>
           </div>
-        )}
+        }
       </div>
 
       {/* Bottom gradient for text readability */}
-      <div 
+      <div
         className="absolute inset-x-0 bottom-0 pointer-events-none"
-        style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
-      />
+        style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
+
       {/* Top gradient */}
-      <div 
+      <div
         className="absolute inset-x-0 top-0 pointer-events-none"
-        style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)' }}
-      />
+        style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%)' }} />
+
 
       {/* Double-tap heart burst */}
       <AnimatePresence>
-        {showHeartBurst && (
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
-            initial={{ scale: 0, opacity: 1 }}
-            animate={{ scale: 1.2, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-          >
+        {showHeartBurst &&
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+          initial={{ scale: 0, opacity: 1 }}
+          animate={{ scale: 1.2, opacity: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}>
+
             <Heart className="w-24 h-24 text-red-500 fill-red-500 drop-shadow-2xl" />
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
       {/* ===== RIGHT SIDEBAR (Action Column) ===== */}
@@ -712,189 +712,189 @@ const PostCard = ({ post, index, currentIndex, muted, setMuted, onLike, onSave, 
         style={{ right: '16px', top: '50%', transform: 'translateY(-50%)' }}
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.2, staggerChildren: 0.05 }}
-      >
+        transition={{ delay: 0.2, staggerChildren: 0.05 }}>
+
         {/* Profile Avatar with (+) badge */}
         <div className="relative mb-2">
-          <Avatar 
+          <Avatar
             className="w-12 h-12 cursor-pointer border-2 border-white"
-            onClick={(e) => { e.stopPropagation(); navigate(`/user/${post.user_id}`); }}
-          >
+            onClick={(e) => {e.stopPropagation();navigate(`/user/${post.user_id}`);}}>
+
             <AvatarImage src={post.user_profile?.avatar_url || ""} className="object-cover" />
             <AvatarFallback className="bg-white/20">
               <User className="w-6 h-6 text-white" />
             </AvatarFallback>
           </Avatar>
-          {!post.is_following && post.user_id !== userId && (
-            <motion.button
-              onClick={(e) => { e.stopPropagation(); onFollow(post.user_id); }}
-              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: '#FF8C42' }}
-              whileTap={{ scale: 0.85 }}
-            >
+          {!post.is_following && post.user_id !== userId &&
+          <motion.button
+            onClick={(e) => {e.stopPropagation();onFollow(post.user_id);}}
+            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: '#FF8C42' }}
+            whileTap={{ scale: 0.85 }}>
+
               <Plus className="w-3 h-3 text-white" strokeWidth={3} />
             </motion.button>
-          )}
+          }
         </div>
 
         {/* Like */}
         <motion.button
-          onClick={(e) => { e.stopPropagation(); onLike(post.id); }}
+          onClick={(e) => {e.stopPropagation();onLike(post.id);}}
           whileTap={{ scale: 0.85 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <Heart 
-            className={cn("w-8 h-8 drop-shadow-lg", post.is_liked ? "fill-red-500 text-red-500" : "text-white")} 
-            strokeWidth={1.5}
-          />
+          className="flex flex-col items-center gap-1">
+
+          <Heart
+            className={cn("w-8 h-8 drop-shadow-lg", post.is_liked ? "fill-red-500 text-red-500" : "text-white")}
+            strokeWidth={1.5} />
+
           <span className="text-white text-sm font-medium drop-shadow-lg">{formatCount(post.likes_count)}</span>
         </motion.button>
 
         {/* Comments */}
         <motion.button
-          onClick={(e) => { e.stopPropagation(); setShowComments(true); }}
+          onClick={(e) => {e.stopPropagation();setShowComments(true);}}
           whileTap={{ scale: 0.85 }}
-          className="flex flex-col items-center gap-1"
-        >
+          className="flex flex-col items-center gap-1">
+
           <MessageCircle className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
           <span className="text-white text-sm font-medium drop-shadow-lg">{formatCount(post.comments_count)}</span>
         </motion.button>
 
         {/* Bookmark */}
         <motion.button
-          onClick={(e) => { e.stopPropagation(); onSave(post.id); }}
+          onClick={(e) => {e.stopPropagation();onSave(post.id);}}
           whileTap={{ scale: 0.85 }}
-          className="flex flex-col items-center gap-1"
-        >
-          <Bookmark 
-            className={cn("w-8 h-8 drop-shadow-lg", post.is_saved ? "fill-yellow-400 text-yellow-400" : "text-white")} 
-            strokeWidth={1.5}
-          />
+          className="flex flex-col items-center gap-1">
+
+          <Bookmark
+            className={cn("w-8 h-8 drop-shadow-lg", post.is_saved ? "fill-yellow-400 text-yellow-400" : "text-white")}
+            strokeWidth={1.5} />
+
         </motion.button>
 
         {/* Share */}
         <motion.button
-          onClick={(e) => { e.stopPropagation(); handleShare(); }}
+          onClick={(e) => {e.stopPropagation();handleShare();}}
           whileTap={{ scale: 0.85 }}
-          className="flex flex-col items-center gap-1"
-        >
+          className="flex flex-col items-center gap-1">
+
           <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
         </motion.button>
 
         {/* Main CTA Button (Pulsing) */}
-        {hasPromotion && (
-          <motion.button
-            onClick={(e) => { e.stopPropagation(); isProductPost ? handleAddToCart() : handleCtaClick(); }}
-            whileTap={{ scale: 0.9 }}
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-            className="rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg"
-            style={{ 
-              width: '64px', height: '44px', 
-              backgroundColor: '#FF8C42',
-            }}
-          >
+        {hasPromotion &&
+        <motion.button
+          onClick={(e) => {e.stopPropagation();isProductPost ? handleAddToCart() : handleCtaClick();}}
+          whileTap={{ scale: 0.9 }}
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+          className="rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg"
+          style={{
+            width: '64px', height: '44px',
+            backgroundColor: '#FF8C42'
+          }}>
+
             {isProductPost ? <ShoppingCart className="w-5 h-5" /> : <span>{isChallengePost ? '🏆' : '🐾'}</span>}
           </motion.button>
-        )}
+        }
       </motion.div>
 
       {/* ===== BOTTOM-LEFT Information Overlay ===== */}
       <div className="absolute z-20" style={{ left: '16px', bottom: '16px', right: '80px' }}>
         {/* Status Badge (glassmorphism) */}
-        {(isProductPost || isCtaPost || isChallengePost) && (
-          <div 
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-2 text-white text-sm font-medium"
-            style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)' }}
-          >
+        {(isProductPost || isCtaPost || isChallengePost) &&
+        <div
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-2 text-white text-sm font-medium"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)' }}>
+
             {isProductPost && post.product_price && <span>₪{post.product_price}</span>}
             {isChallengePost && <span>🏆 אתגר</span>}
             {isCtaPost && <span>🐾 {post.cta_text || 'אימוץ'}</span>}
           </div>
-        )}
+        }
 
         {/* Product variant pills */}
-        {isProductPost && (post.product_weight || post.product_sizes) && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {post.product_weight && (
-              <span className="px-2 py-0.5 rounded-full text-white text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+        {isProductPost && (post.product_weight || post.product_sizes) &&
+        <div className="flex flex-wrap gap-1.5 mb-2">
+            {post.product_weight &&
+          <span className="px-2 py-0.5 rounded-full text-white text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
                 {post.product_weight}
               </span>
-            )}
-            {post.product_sizes?.map(s => (
-              <span key={s} className="px-2 py-0.5 rounded-full text-white text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+          }
+            {post.product_sizes?.map((s) =>
+          <span key={s} className="px-2 py-0.5 rounded-full text-white text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
                 {s}
               </span>
-            ))}
+          )}
           </div>
-        )}
+        }
 
         {/* Username */}
         <div className="flex items-center gap-1.5 mb-1">
-          <span 
+          <span
             className="text-white font-semibold cursor-pointer drop-shadow-lg"
             style={{ fontSize: '18px' }}
-            onClick={(e) => { e.stopPropagation(); navigate(`/user/${post.user_id}`); }}
-          >
+            onClick={(e) => {e.stopPropagation();navigate(`/user/${post.user_id}`);}}>
+
             @{post.user_profile?.full_name || "משתמש"}
           </span>
-          {post.user_profile?.is_verified && (
-            <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+          {post.user_profile?.is_verified &&
+          <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
               <Check className="w-2.5 h-2.5 text-white" />
             </span>
-          )}
+          }
         </div>
 
         {/* Caption - max 2 lines */}
-        {post.caption && (
-          <p 
-            className="text-white drop-shadow-lg line-clamp-2"
-            style={{ fontSize: '16px' }}
-          >
+        {post.caption &&
+        <p
+          className="text-white drop-shadow-lg line-clamp-2"
+          style={{ fontSize: '16px' }}>
+
             {post.caption}
           </p>
-        )}
+        }
       </div>
 
       {/* Gallery indicator dots */}
-      {hasMultipleImages && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
-          {allImages.map((_, i) => (
-            <div 
-              key={i} 
-              className={cn(
-                "h-1 rounded-full transition-all duration-300",
-                i === currentImageIndex ? "w-5 bg-white" : "w-1.5 bg-white/50"
-              )}
-            />
-          ))}
+      {hasMultipleImages &&
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+          {allImages.map((_, i) =>
+        <div
+          key={i}
+          className={cn(
+            "h-1 rounded-full transition-all duration-300",
+            i === currentImageIndex ? "w-5 bg-white" : "w-1.5 bg-white/50"
+          )} />
+
+        )}
         </div>
-      )}
+      }
 
       {/* Video mute toggle */}
-      {isVideo && index === currentIndex && (
-        <button 
-          onClick={(e) => { e.stopPropagation(); setMuted(!muted); }}
-          className="absolute top-16 left-4 z-20 p-2 rounded-full bg-black/30 backdrop-blur-sm"
-        >
+      {isVideo && index === currentIndex &&
+      <button
+        onClick={(e) => {e.stopPropagation();setMuted(!muted);}}
+        className="absolute top-16 left-4 z-20 p-2 rounded-full bg-black/30 backdrop-blur-sm">
+
           {muted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
         </button>
-      )}
+      }
 
       {/* Comments Sheet */}
-      <CommentsSheet 
+      <CommentsSheet
         isOpen={showComments}
         onClose={() => setShowComments(false)}
         postId={post.id}
         postAuthor={{
           name: post.user_profile?.full_name || "משתמש",
-          avatar_url: post.user_profile?.avatar_url || "",
+          avatar_url: post.user_profile?.avatar_url || ""
         }}
         commentsCount={post.comments_count}
-        reactionsCount={post.likes_count}
-      />
-    </motion.div>
-  );
+        reactionsCount={post.likes_count} />
+
+    </motion.div>);
+
 };
 
 export default SoundtrackFeed;
