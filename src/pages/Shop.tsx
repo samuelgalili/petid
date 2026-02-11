@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2, Flag, AlertTriangle } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2, Flag, AlertTriangle, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -387,33 +387,42 @@ const Shop = () => {
               <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
               <h1 className="text-lg font-semibold text-foreground">חנות</h1>
             </div>
-            <motion.button 
-              ref={cartIconRef}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigate('/cart')}
-              className={`p-2.5 relative rounded-xl bg-muted hover:bg-muted/80 transition-colors ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
-              onAnimationComplete={() => {
-                if (cartIconRef.current) {
-                  const rect = cartIconRef.current.getBoundingClientRect();
-                  setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                }
-              }}
-            >
-              <ShoppingBag className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-              <AnimatePresence>
-                {getTotalItems() > 0 && (
-                  <motion.span 
-                    className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    transition={{ type: "spring", stiffness: 500 }}
-                  >
-                    {getTotalItems()}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
+            <div className="flex items-center gap-1">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => navigate('/messages')}
+                className="p-2.5 rounded-xl hover:bg-muted/80 transition-colors"
+              >
+                <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+              </motion.button>
+              <motion.button 
+                ref={cartIconRef}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => navigate('/cart')}
+                className={`p-2.5 relative rounded-xl bg-muted hover:bg-muted/80 transition-colors ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
+                onAnimationComplete={() => {
+                  if (cartIconRef.current) {
+                    const rect = cartIconRef.current.getBoundingClientRect();
+                    setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                  }
+                }}
+              >
+                <ShoppingBag className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <AnimatePresence>
+                  {getTotalItems() > 0 && (
+                    <motion.span 
+                      className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{ type: "spring", stiffness: 500 }}
+                    >
+                      {getTotalItems()}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            </div>
           </div>
           
           {/* Search Bar */}
