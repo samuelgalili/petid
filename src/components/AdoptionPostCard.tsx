@@ -103,7 +103,7 @@ export const AdoptionPostCard = ({ pet, getTimeAgo }: AdoptionPostCardProps) => 
         </motion.button>
 
         {/* CTA — Adoption */}
-        <motion.button custom={4} variants={sidebarStagger} whileTap={{ scale: 0.9 }} onClick={() => navigate('/adoption')} className="relative rounded-xl w-16 h-11 flex items-center justify-center shadow-xl" style={{ backgroundColor: '#FF8C42' }}>
+        <motion.button custom={4} variants={sidebarStagger} whileTap={{ scale: 0.9 }} onClick={() => { haptic("light"); setShowDrawer(true); }} className="relative rounded-xl w-16 h-11 flex items-center justify-center shadow-xl" style={{ backgroundColor: '#FF8C42' }}>
           <motion.div className="absolute inset-0 rounded-xl" style={{ backgroundColor: '#FF8C42' }} animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
           <span className="text-white text-[11px] font-bold relative z-10">אמץ</span>
         </motion.button>
