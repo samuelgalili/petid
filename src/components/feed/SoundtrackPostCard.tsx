@@ -255,13 +255,15 @@ export const SoundtrackPostCard = ({
             whileTap={{ scale: 0.9 }}
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-            className="rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-lg"
-            style={{ width: "64px", height: "44px", backgroundColor: "#FF8C42" }}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
+            style={{ backgroundColor: "#FF8C42" }}
           >
             {isProductPost ? (
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-6 h-6" />
+            ) : isChallengePost ? (
+              <Trophy className="w-6 h-6" />
             ) : (
-              <span>{isChallengePost ? "🏆" : "🐾"}</span>
+              <PawPrint className="w-6 h-6" />
             )}
           </motion.button>
         )}
