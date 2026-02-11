@@ -91,8 +91,6 @@ const ProfilePage = lazy(() => import("@/pages/Profile"));
 export const feedRoutes: RouteObject[] = [
   // Home = Profile page (primary landing)
   { path: "/", element: <Protected><LazyPage component={ProfilePage} pageName="בית" /></Protected> },
-  { path: "/home", element: <Navigate to="/" replace /> },
-  { path: "/profile", element: <Navigate to="/" replace /> },
   // Feed = Soundtrack-style feed
   { path: "/feed", element: <LazyPage component={SoundtrackFeed} pageName="פיד" /> },
   // Legacy feed route redirect
