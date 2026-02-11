@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Send, Bookmark, MoreVertical, Users, Trophy, ChevronLeft } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, Users, Trophy, ChevronLeft } from "lucide-react";
+import { PostOptionsMenu } from "@/components/post/PostOptionsMenu";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,9 +117,11 @@ export const ChallengePostCard = ({ challenge, gradientIndex = 0, onJoinChange }
             </Badge>
           </div>
         </div>
-        <button className="text-neutral-900 p-1 -m-1 focus:outline-none">
-          <MoreVertical className="w-6 h-6" strokeWidth={1.25} />
-        </button>
+        <PostOptionsMenu
+          copyLink={`${window.location.origin}/challenge/${challenge.id}`}
+          hideLabel="הסתר אתגר"
+          hideToast="האתגר הוסתר"
+        />
       </div>
 
       {/* Image - Instagram style square */}
