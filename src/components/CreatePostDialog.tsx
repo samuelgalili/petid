@@ -53,6 +53,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
   const [showCollabInvite, setShowCollabInvite] = useState(false);
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState<SelectedMusic | null>(null);
   
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
