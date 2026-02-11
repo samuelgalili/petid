@@ -73,11 +73,8 @@ function normalize(s: string): string {
 function pickPetFromMessage(userText: string, pets: Pet[]): Pet | null {
   const t = normalize(userText);
   if (!t || !pets?.length) return null;
-  
-  // Search for pet name mentioned in user message
   const byName = pets.find(p => p.name && t.includes(normalize(p.name)));
   if (byName) return byName;
-  
   return null;
 }
 
@@ -85,24 +82,13 @@ function pickPetFromMessage(userText: string, pets: Pet[]): Pet | null {
 function isOrderIntent(text: string): boolean {
   const t = normalize(text);
   return (
-    t.includes("הזמנה") ||
-    t.includes("משלוח") ||
-    t.includes("סטטוס") ||
-    t.includes("מעקב") ||
-    t.includes("איפה ההזמנה") ||
-    t.includes("הזמנתי") ||
-    t.includes("מתי יגיע")
+    t.includes("הזמנה") || t.includes("משלוח") || t.includes("סטטוס") ||
+    t.includes("מעקב") || t.includes("איפה ההזמנה") || t.includes("הזמנתי") || t.includes("מתי יגיע")
   );
 }
 
 function extractOrderNumber(text: string): string | null {
-  // Match common order number patterns (e.g., ORD-12345, #12345, 12345)
-  const patterns = [
-    /(?:ord[-_]?)?(\d{4,10})/i,
-    /#(\d{4,10})/,
-    /הזמנה\s*(?:מספר)?\s*:?\s*(\d{4,10})/,
-  ];
-  
+  const patterns = [/(?:ord[-_]?)?(\d{4,10})/i, /#(\d{4,10})/, /הזמנה\s*(?:מספר)?\s*:?\s*(\d{4,10})/];
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) return match[1];
@@ -114,55 +100,31 @@ function extractOrderNumber(text: string): string | null {
 function isProductIntent(text: string): boolean {
   const t = normalize(text);
   return (
-    t.includes("מזון") ||
-    t.includes("אוכל") ||
-    t.includes("חטיף") ||
-    t.includes("צעצוע") ||
-    t.includes("מוצר") ||
-    t.includes("המלצ") ||
-    t.includes("לקנות") ||
-    t.includes("מומלץ") ||
-    t.includes("מה כדאי") ||
-    t.includes("חנות") ||
-    t.includes("קנ")
+    t.includes("מזון") || t.includes("אוכל") || t.includes("חטיף") || t.includes("צעצוע") ||
+    t.includes("מוצר") || t.includes("המלצ") || t.includes("לקנות") || t.includes("מומלץ") ||
+    t.includes("מה כדאי") || t.includes("חנות") || t.includes("קנ")
   );
 }
 
-async function searchProducts(
-  supabase: any,
-  searchTerms: string[],
-  petType?: string | null,
-  limit = 6
-): Promise<ProductRecord[]> {
+async function searchProducts(supabase: any, searchTerms: string[], petType?: string | null, limit = 6): Promise<ProductRecord[]> {
   const allItems: ProductRecord[] = [];
-  
   for (const term of searchTerms) {
-    // Search business_products
     const { data: businessProducts } = await supabase
       .from("business_products")
       .select("id, name, price, sale_price, category, pet_type, description, image_url")
       .eq("in_stock", true)
       .ilike("name", `%${term}%`)
       .limit(limit);
-    
     if (businessProducts) allItems.push(...businessProducts);
     
-    // Search scraped_products
     const { data: scrapedProducts } = await supabase
       .from("scraped_products")
       .select("id, name, price, category, pet_type, description, image_url")
       .ilike("name", `%${term}%`)
       .limit(limit);
-    
     if (scrapedProducts) allItems.push(...scrapedProducts);
   }
-  
-  // Filter by pet type if specified
-  const filtered = petType 
-    ? allItems.filter(p => !p.pet_type || p.pet_type === petType)
-    : allItems;
-  
-  // Dedupe by id
+  const filtered = petType ? allItems.filter(p => !p.pet_type || p.pet_type === petType) : allItems;
   const map = new Map(filtered.map(x => [x.id, x]));
   return [...map.values()].slice(0, limit);
 }
@@ -170,17 +132,13 @@ async function searchProducts(
 function extractSearchTerms(text: string): string[] {
   const terms: string[] = [];
   const t = normalize(text);
-  
   if (t.includes("מזון") || t.includes("אוכל")) terms.push("מזון");
   if (t.includes("חטיף")) terms.push("חטיף");
   if (t.includes("צעצוע")) terms.push("צעצוע");
   if (t.includes("קולר") || t.includes("רצועה")) terms.push("קולר", "רצועה");
   if (t.includes("מיטה") || t.includes("מזרן")) terms.push("מיטה");
   if (t.includes("שמפו") || t.includes("טיפוח")) terms.push("שמפו");
-  
-  // Default to "מזון" if no specific term found but it's a product intent
   if (terms.length === 0) terms.push("מזון");
-  
   return terms;
 }
 
@@ -199,12 +157,46 @@ function stripProductsTag(text: string): string {
 function keepOnlyValidProducts(text: string, validIds: Set<string>): string {
   const { ids, hasTag } = extractProductIds(text);
   if (!hasTag) return text;
-  
   const filtered = ids.filter(id => validIds.has(id));
   const body = stripProductsTag(text);
-  
-  if (filtered.length === 0) return body; // No valid products → remove PRODUCTS tag
+  if (filtered.length === 0) return body;
   return `${body}\n\n[PRODUCTS:${filtered.join(",")}]`;
+}
+
+// ============= Breed Data Fetcher =============
+async function fetchBreedInfo(supabase: any, breedName: string, petType: string): Promise<string> {
+  if (!breedName || breedName === "לא ידוע") return "";
+  
+  const { data } = await supabase
+    .from("breed_information")
+    .select("breed_name, breed_name_he, description_he, health_issues_he, temperament_he, life_expectancy_years, weight_range_kg, height_range_cm, energy_level, grooming_freq, trainability, exercise_needs, grooming_needs, dietary_notes, good_with_children, good_with_other_pets, apartment_friendly, shedding_level")
+    .or(`breed_name.ilike.%${breedName}%,breed_name_he.ilike.%${breedName}%`)
+    .eq("pet_type", petType === "cat" ? "cat" : "dog")
+    .limit(1)
+    .maybeSingle();
+  
+  if (!data) return "";
+  
+  return `
+[BREED_DATA]
+שם: ${data.breed_name_he || data.breed_name}
+תיאור: ${data.description_he || "לא זמין"}
+תוחלת חיים: ${data.life_expectancy_years || "לא ידוע"} שנים
+משקל: ${data.weight_range_kg || "לא ידוע"} ק"ג
+גובה: ${data.height_range_cm || "לא ידוע"} ס"מ
+אופי: ${data.temperament_he?.join(", ") || "לא ידוע"}
+בעיות בריאות נפוצות: ${data.health_issues_he?.join(", ") || "לא ידוע"}
+רמת אנרגיה: ${data.energy_level || "?"}/5
+תדירות טיפוח: ${data.grooming_freq || "?"}/5
+יכולת אילוף: ${data.trainability || "?"}/5
+נשירה: ${data.shedding_level || "?"}/5
+מתאים לילדים: ${data.good_with_children ? "כן" : data.good_with_children === false ? "לא" : "לא ידוע"}
+מתאים לחיות אחרות: ${data.good_with_other_pets ? "כן" : data.good_with_other_pets === false ? "לא" : "לא ידוע"}
+מתאים לדירה: ${data.apartment_friendly ? "כן" : data.apartment_friendly === false ? "לא" : "לא ידוע"}
+צרכי פעילות: ${data.exercise_needs || "לא ידוע"}
+טיפים לטיפוח: ${data.grooming_needs || "לא ידוע"}
+הערות תזונה: ${data.dietary_notes || "לא ידוע"}
+[/BREED_DATA]`;
 }
 
 // ============= Main Handler =============
@@ -216,16 +208,13 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    // Check content length
     const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
       return new Response(JSON.stringify({ error: "Payload too large (max 1MB)" }), {
-        status: 413,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Parse and validate input
     const rawBody = await req.json();
     const parseResult = ChatInputSchema.safeParse(rawBody);
     
@@ -233,10 +222,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         error: "Invalid input", 
         details: parseResult.error.errors.map(e => e.message).join(", ")
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const { messages, userContext, channel } = parseResult.data;
@@ -244,76 +230,51 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // ============= Pet Context Resolver =============
     const pets: Pet[] = (userContext?.pets ?? []).map(p => ({
-      id: p.id,
-      name: p.name || "חיה",
-      type: p.type || "unknown",
-      breed: p.breed,
-      age: p.age,
-      gender: p.gender,
-      health_notes: p.health_notes
+      id: p.id, name: p.name || "חיה", type: p.type || "unknown",
+      breed: p.breed, age: p.age, gender: p.gender, health_notes: p.health_notes
     }));
     
     const lastUserMsg = [...messages].reverse().find(m => m.role === "user")?.content ?? "";
     let activePet: Pet | null = null;
     
-    // First check if a pet was pre-selected by the frontend
     const selectedPetName = userContext?.selectedPetName;
     if (selectedPetName) {
       activePet = pets.find(p => p.name === selectedPetName) || null;
     }
-    
-    // If not pre-selected, try to find from message
-    if (!activePet) {
-      activePet = pickPetFromMessage(lastUserMsg, pets);
-    }
+    if (!activePet) activePet = pickPetFromMessage(lastUserMsg, pets);
+    if (!activePet && pets.length === 1) activePet = pets[0];
 
-    // If still no match:
-    if (!activePet) {
-      if (pets.length === 1) {
-        activePet = pets[0]; // Easy: only one pet
-      }
-      // Note: Don't ask for pet selection here - the frontend handles this
-    }
-
-    // Build Pet Card (short context for model)
     const petCard = activePet
-      ? `\n\n[ACTIVE_PET]
-name: ${activePet.name}
-type: ${activePet.type === 'dog' ? 'כלב' : activePet.type === 'cat' ? 'חתול' : activePet.type}
-breed: ${activePet.breed ?? "לא ידוע"}
-age: ${activePet.age ?? "לא ידוע"}
-gender: ${activePet.gender === 'male' ? 'זכר' : activePet.gender === 'female' ? 'נקבה' : activePet.gender ?? "לא ידוע"}
-health_notes: ${activePet.health_notes ?? "אין"}
-[/ACTIVE_PET]`
-      : "\n\n[ACTIVE_PET]\nnone\n[/ACTIVE_PET]";
+      ? `\n[ACTIVE_PET]\nname: ${activePet.name}\ntype: ${activePet.type === 'dog' ? 'כלב' : activePet.type === 'cat' ? 'חתול' : activePet.type}\nbreed: ${activePet.breed ?? "לא ידוע"}\nage: ${activePet.age ?? "לא ידוע"}\ngender: ${activePet.gender === 'male' ? 'זכר' : activePet.gender === 'female' ? 'נקבה' : activePet.gender ?? "לא ידוע"}\nhealth_notes: ${activePet.health_notes ?? "אין"}\n[/ACTIVE_PET]`
+      : "\n[ACTIVE_PET]\nnone\n[/ACTIVE_PET]";
 
     const userName = userContext?.userName ? `\nשם הלקוח: ${userContext.userName}` : '';
 
-    // ============= Order Intent Handler (bypasses AI for accuracy) =============
+    // ============= Fetch Breed Data if available =============
+    let breedContext = "";
+    if (activePet?.breed) {
+      breedContext = await fetchBreedInfo(supabase, activePet.breed, activePet.type);
+    }
+
+    // ============= Order Intent Handler =============
     const orderIntent = isOrderIntent(lastUserMsg);
     
     if (orderIntent) {
       const orderNumber = extractOrderNumber(lastUserMsg);
       
       if (!orderNumber) {
-        // Ask for order number
         return new Response(
-          JSON.stringify({
-            role: "assistant",
-            content: "יש לך מספר הזמנה? אם לא — שלח/י את מספר הטלפון של ההזמנה.",
-          }),
+          JSON.stringify({ role: "assistant", content: "יש לך מספר הזמנה? אם לא — שלח/י את מספר הטלפון של ההזמנה." }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
-      // Lookup order in DB
       const { data: orderData, error: orderError } = await supabase
         .rpc("get_order_status", { p_order_number: orderNumber })
         .maybeSingle();
@@ -322,36 +283,24 @@ health_notes: ${activePet.health_notes ?? "אין"}
       
       if (orderError || !order) {
         return new Response(
-          JSON.stringify({
-            role: "assistant",
-            content: "לא מצאתי הזמנה עם המספר הזה. אפשר לבדוק שוב את מספר ההזמנה או לשלוח טלפון?",
-          }),
+          JSON.stringify({ role: "assistant", content: "לא מצאתי הזמנה עם המספר הזה. אפשר לבדוק שוב את מספר ההזמנה?" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
-      // Build order status response
       const statusMap: Record<string, string> = {
-        pending: "ממתין לאישור",
-        confirmed: "אושר",
-        processing: "בהכנה",
-        shipped: "נשלח",
-        delivered: "נמסר",
-        cancelled: "בוטל",
+        pending: "ממתין לאישור", confirmed: "אושר", processing: "בהכנה",
+        shipped: "נשלח", delivered: "נמסר", cancelled: "בוטל",
       };
       
       let responseContent = `מצאתי ✅\nהזמנה: ${order.order_number}\nסטטוס: ${statusMap[order.status] || order.status}`;
-      
       if (order.tracking_number) {
         responseContent += `\nמספר מעקב: ${order.tracking_number}`;
         if (order.carrier) responseContent += ` (${order.carrier})`;
       }
-      
       if (order.estimated_delivery) {
-        const deliveryDate = new Date(order.estimated_delivery).toLocaleDateString('he-IL');
-        responseContent += `\nצפי הגעה: ${deliveryDate}`;
+        responseContent += `\nצפי הגעה: ${new Date(order.estimated_delivery).toLocaleDateString('he-IL')}`;
       }
-      
       responseContent += "\n\nרוצה עדכון משלוח או שינוי כתובת?";
       
       return new Response(
@@ -371,14 +320,9 @@ health_notes: ${activePet.health_notes ?? "אין"}
       foundProducts = await searchProducts(supabase, searchTerms, petType, 6);
 
       if (foundProducts.length) {
-        productContext = `\n\n[PRODUCT_CANDIDATES]
-${foundProducts.map(p => 
-  `- ${p.id} | ${p.name} | ₪${p.sale_price ?? p.price ?? "?"} | ${p.category ?? ""} | ${p.pet_type === 'dog' ? 'לכלבים' : p.pet_type === 'cat' ? 'לחתולים' : ''}`
-).join('\n')}
-[/PRODUCT_CANDIDATES]
-
-כשאתה ממליץ על מוצרים, השתמש רק ב-IDs מהרשימה למעלה.
-בסוף ההודעה הוסף: [PRODUCTS:id1,id2,...]`;
+        productContext = `\n\n[PRODUCT_CANDIDATES]\n${foundProducts.map(p => 
+          `- ${p.id} | ${p.name} | ₪${p.sale_price ?? p.price ?? "?"} | ${p.category ?? ""} | ${p.pet_type === 'dog' ? 'לכלבים' : p.pet_type === 'cat' ? 'לחתולים' : ''}`
+        ).join('\n')}\n[/PRODUCT_CANDIDATES]\n\nכשאתה ממליץ על מוצרים, השתמש רק ב-IDs מהרשימה למעלה.\nבסוף ההודעה הוסף: [PRODUCTS:id1,id2,...]`;
       } else {
         productContext = `\n\n[PRODUCT_CANDIDATES]\nאין מוצרים תואמים בחיפוש\n[/PRODUCT_CANDIDATES]`;
       }
@@ -387,162 +331,79 @@ ${foundProducts.map(p =>
     // ============= Build System Prompt =============
     let channelInstructions = "";
     if (isWhatsApp) {
-      channelInstructions = `
-
-=== כללים קריטיים לערוץ WhatsApp ===
-❌ אסור להחזיר [PRODUCTS:...] או מזהי UUID
-❌ אסור לכלול קודים, טוקנים או placeholders
-✅ רק טקסט נקי, אנושי וידידותי
-✅ המלץ על עד 3 מוצרים בשמותיהם בלבד
-✅ בסוף כל המלצה הוסף CTA: "רוצה לינקים? כתוב 1/2/3"`;
+      channelInstructions = `\n\n=== כללים לערוץ WhatsApp ===\n❌ אסור להחזיר [PRODUCTS:...] או מזהי UUID\n✅ רק טקסט נקי, אנושי וידידותי\n✅ המלץ על עד 3 מוצרים בשמותיהם בלבד`;
     }
 
-    const systemPrompt = `את/ה העוזר/ת החכם/ה של PetID. המטרה שלך: לנהל טיפול בחיות מחמד דרך 9 קטגוריות שירות.
-${userName}${petCard}${productContext}
+    const systemPrompt = `אתה העוזר החכם של PetID — מערכת אחריות לבעלי חיות מחמד.
+${userName}${petCard}${breedContext}${productContext}
 
-=== 🏗️ תשתית השיחה ===
+=== עקרונות ליבה ===
+• PetID היא מערכת אחריות, לא חנות. בטיחות החיה קודמת לכל.
+• אל תמליץ אם אתה לא בטוח. אם חסר מידע — שאל.
+• אל תדחוף פעולות, דחיפות, או מכירות.
+• מילים אסורות: "חובה", "הכי טוב", "מבצע", "תמהרו". מילים מותרות: "מומלץ", "לא נדרש", "לא מתאים", "עדיף לחכות".
+• אם יש ספק רפואי, מידע סותר, או סיכון לחיה — עצור. הסבר בנחת ובקש הבהרה.
 
-1. פתיחה: תמיד פתח ב: "היי {userName}, איזה כיף לראות אותך! 🐾"
+=== סגנון שיחה ===
+• עברית חמה, קצרה ומקצועית
+• שאלה אחת בכל הודעה
+• 2-5 שורות + אופציות ממוספרות
+• פנה תמיד בשם המשתמש ושם החיה
+• אמוג'י אחד לכל הודעה מקסימום
+• תמיד סיים עם אפשרויות ברורות
 
-2. בחירת חיה: אם יש יותר מחיה אחת, הצג את שמות החיות לבחירה. אם יש חיה אחת, פנה אליה ישירות: "איך אוכל לעזור היום עם {petName}?"
-
-3. כללי שיחה:
-   • שאלה אחת בלבד בכל הודעה
-   • 2-5 שורות מקסימום, ואז אופציות ממוספרות
-   • אסור להמציא מידע - אם חסר, שואלים
-   • תמיד השתמש בשם המשתמש ושם החיה
-
-=== 🚨 לוגיקת חירום (עדיפות עליונה) ===
-
-בכל שלב, אם המשתמש כותב מילים כמו: "דחוף", "נחנק", "דם", "גוסס", "לא נושם", "חירום", "קריסה"
-→ עצור הכל מיידית והחזר:
-
-"🚨 נשמע שיש מקרה חירום! אל תילחץ, {userName}.
-
-📞 התקשר עכשיו לוטרינר חירום: *3939
-
-🩺 עזרה ראשונה בסיסית:
+=== חירום ===
+מילים כמו: "דחוף", "נחנק", "דם", "גוסס", "לא נושם", "חירום"
+→ עצור הכל מיידית:
+"🚨 נשמע מצב חירום!
+📞 התקשר לוטרינר חירום: *3939
 • הישאר רגוע
 • אל תזיז את החיה אם יש חשד לפציעה
 • שמור על נתיבי נשימה פתוחים
+רוצה שאעביר לנציג אנושי?"
 
-רוצה שאעביר לנציג אנושי לסיוע מהיר?"
+=== 9 מסלולי שיחה ===
 
-=== 📋 8 מסלולי שיחה מפורטים ===
+🛡️ 1. ביטוח
+אימות גזע וגיל → שאלה על רקע רפואי → הצגת כיסוי רלוונטי לגזע → [ACTION:INSURANCE_LINK]
 
-📍 1. ביטוח (Insurance) 🛡️
-המטרה: איסוף ליד איכותי והעברה לחברת ביטוח.
+✂️ 2. טיפוח
+בחירת שירות (תספורת/רחצה/ציפורניים/חבילה) → בחירת מועד [ACTION:SHOW_CALENDAR] → שעה → סיכום ומחיר → [ACTION:CONFIRM_BOOKING]
 
-זרימה:
-א. אימות גזע וגיל מהפרופיל: "אני רואה ש{petName} הוא {breed} בן {age}."
-ב. שאלה: "האם ל{petName} יש רקע רפואי או מחלות כרוניות?" [כן/לא]
-ג. הצגת ערך: "עבור גזע {breed}, כיסוי למחלות {specificDiseases} הוא קריטי."
-ד. סיום: "מעולה! הנה לינק להשלמת הפוליסה מול חברת הביטוח: [ACTION:INSURANCE_LINK]"
-ה. תזכורת: "התשלום נשמר בנאמנות עד לקבלת הפוליסה המאושרת."
+🎓 3. אילוף
+אבחון (חינוך בסיסי/בעיות התנהגות/טריקים/חרדת נטישה) → העמקה → פורמט (בית/פנסיון/אונליין) → חבילה ומחיר → [ACTION:SCHEDULE_TRAINING]
 
-📍 2. טיפוח (Grooming) ✂️
-המטרה: סגירת תור ותשלום.
+📂 4. מסמכים
+בחירה (העלאה/צפייה בחיסונים/הורדה) → העלאה [ACTION:UPLOAD_DOCUMENT] → זיהוי סוג → אישור שמירה → תזכורת
 
-זרימה:
-א. בחירת שירות: "מה {petName} צריך היום? 1) תספורת 2) רחצה 3) ציפורניים 4) חבילה מלאה"
-ב. בחירת מועד: "איזה יום מתאים? [ACTION:SHOW_CALENDAR]"
-ג. בחירת שעה: הצג שעות פנויות
-ד. סיכום: "תור ל{petName} בתאריך {date} בשעה {time}. עלות: {price}₪"
-ה. סיום: "לאשר ולשלם? [ACTION:CONFIRM_BOOKING] הבקשה נשלחה. החיוב יתבצע רק לאחר אישור המספרה."
+🏨 5. פנסיון
+תאריכי כניסה/יציאה → סגנון (ביתי/מקצועי) → הצגת אופציות [ACTION:SHOW_BOARDING_OPTIONS] → אישור
 
-📍 3. אילוף (Training) 🎓
-המטרה: התאמת מאלף ומכירת חבילה.
+📦 6. משלוחים
+זיהוי צורך (מעקב/הזמנה חוזרת/שינוי כתובת) → מספר הזמנה → סטטוס [ACTION:ORDER_STATUS]
 
-זרימה:
-א. אבחון: "מה האתגר העיקרי עם {petName}? 1) גורים - חינוך בסיסי 2) בעיות התנהגות 3) טריקים מתקדמים 4) חרדת נטישה"
-ב. העמקה: "ספר לי קצת יותר על ההתנהגות של {petName}. מה קורה בדיוק?"
-ג. בחירת פורמט: "איזה סגנון אילוף מעדיף? 1) אילוף בבית 2) פנסיון אילוף 3) אונליין"
-ד. בחירת חבילה: "הנה החבילות המומלצות: 1) 3 מפגשים - ₪X 2) 5 מפגשים - ₪Y 3) 10 מפגשים - ₪Z"
-ה. סיום: "מעולה! בוא נתאם את המפגש הראשון. [ACTION:SCHEDULE_TRAINING]"
+🐕 7. מידע על הגזע
+${breedContext ? "השתמש בנתוני BREED_DATA שמצורפים למעלה. אל תמציא מידע." : "אם אין נתוני גזע — שאל מה שם הגזע."}
+בחירת נושא (אופי/תזונה/מחלות/אילוף) → מידע מבוסס נתונים → המלצת מוצר [PRODUCTS:uuid] → הצעת ביטוח
 
-📍 4. מסמכים (Documents) 📂
-המטרה: ניהול ארכיון רפואי ותזכורות.
+🌳 8. גינות כלבים
+שאלה על עיר/שכונה → סינון (מגודר/שתייה/הפרדה) → המלצות עם כתובות → טיפים
 
-זרימה:
-א. בחירה: "מה תרצה לעשות? 1) העלאת מסמך חדש 2) צפייה בפנקס חיסונים 3) הורדת מסמך"
-ב. בהעלאה: "מעולה! העלה את המסמך. [ACTION:UPLOAD_DOCUMENT]"
-ג. זיהוי: "זה אישור חיסון או סיכום ביקור וטרינרי?"
-ד. סיום: "המסמך נשמר בהצלחה! ✅"
-ה. תזכורת: "הגדרתי תזכורת לפני פקיעת התוקף."
+🏠 9. למסירה
+העלאת תמונה [ACTION:UPLOAD_PHOTO] → תיאור אופי → שאלון (ילדים/כלבים/חתולים) → פרסום מודעה
 
-📍 5. פנסיון (Boarding) 🏨
-המטרה: הזמנת אירוח.
+=== תגיות פעולה ===
+הוסף תגית כשנדרשת פעולה מהמערכת:
+[ACTION:SHOW_CALENDAR] | [ACTION:CONFIRM_BOOKING] | [ACTION:INSURANCE_LINK]
+[ACTION:SCHEDULE_TRAINING] | [ACTION:UPLOAD_DOCUMENT] | [ACTION:SHOW_BOARDING_OPTIONS]
+[ACTION:ORDER_STATUS] | [ACTION:UPLOAD_PHOTO] | [ACTION:ESCALATE]
 
-זרימה:
-א. תאריכים: "מתי {petName} צריך אירוח? הזן תאריך כניסה ויציאה."
-ב. סגנון: "איזה סגנון פנסיון מעדיף? 1) פנסיון ביתי (Home) 2) מקצועי (Facility)"
-ג. הצגת אופציות: "הנה הפנסיונים הפנויים בתאריכים שבחרת: [ACTION:SHOW_BOARDING_OPTIONS]"
-ד. סיום: "ההזמנה אושרה! 🎉 תקבל עדכון יומי עם תמונה של {petName} כאן בצ'אט."
-
-📍 6. משלוחים (Logistics) 📦
-המטרה: מעקב ושירות לקוחות.
-
-זרימה:
-א. זיהוי צורך: "במה אוכל לעזור? 1) איפה המשלוח שלי? 2) הזמנה חוזרת 3) שינוי כתובת"
-ב. מעקב: "יש לך מספר הזמנה? אם לא, שלח את מספר הטלפון."
-ג. הזמנה חוזרת: "ראיתי שהאוכל של {petName} עומד להיגמר. להזמין שוב את {productName} לכתובת הרשומה?"
-ד. סיום: "ההזמנה בדרך! [ACTION:ORDER_STATUS]"
-
-📍 7. מידע על הגזע (Breed Review) 🐕
-המטרה: תוכן וערך + המלצת מוצרים.
-
-זרימה:
-א. שליפת מידע: הצג מידע על {breed} מהמערכת.
-ב. בחירת נושא: "על מה תרצה ללמוד? 1) אופי והתנהגות 2) טיפים לתזונה 3) נטייה למחלות 4) צרכי אילוף"
-ג. תוכן: הצג מידע רלוונטי בהתאם לבחירה.
-ד. המלצה: "ידעת ש{breed} צריך {specificNeed}? הנה מוצר שיתאים: [PRODUCTS:uuid]"
-ה. ביטוח: "כדאי לשקול ביטוח שמכסה את המחלות הנפוצות לגזע. רוצה לשמוע עוד? 🛡️"
-
-📍 8. גינות כלבים (Dog Parks) 🌳
-המטרה: המלצה על גינות כלבים קרובות לפי מיקום.
-
-זרימה:
-א. מיקום: "באיזה עיר או שכונה אתה גר?"
-ב. סינון: "מחפש גינה עם: 1) אזור מגודר 2) שתייה לכלבים 3) הפרדה בין כלבים גדולים לקטנים 4) כל הסוגים"
-ג. המלצה: "הנה הגינות הקרובות אליך: [הצג רשימה עם כתובות ומרחק]"
-ד. טיפים: "שעות מומלצות לביקור: בוקר מוקדם או אחר הצהריים. זכור לקחת שקיות ומים!"
-
-📍 9. למסירה (Rehoming) 🏠
-המטרה: יצירת מודעה אחראית.
-
-זרימה:
-א. העלאת מידע: "בוא ניצור מודעה ל{petName}. קודם, העלה תמונה יפה. [ACTION:UPLOAD_PHOTO]"
-ב. תיאור: "ספר על האופי של {petName} בכמה מילים."
-ג. שאלון סינון: "כמה שאלות חשובות: האם {petName} מסתדר עם: 1) ילדים? 2) כלבים אחרים? 3) חתולים?"
-ד. סיום: "המודעה פורסמה בלוח האתר! ✅ שלחתי לך 'צ'ק-ליסט למסירה אחראית' במייל."
-
-=== הסלמה (כעס/תלונות) ===
-טריגרים: "לא עובד", "חיוב כפול", "אני עצבני", קללות
-תגובה: "מבין לגמרי את התסכול, {userName}. מעביר לנציג אנושי שיטפל אישית. מספר הזמנה או טלפון? [ACTION:ESCALATE]"
-
-=== תגיות פעולה (Actions) ===
-כשנדרשת פעולה מהמערכת, הוסף תגית בפורמט: [ACTION:ACTION_NAME]
-תגיות אפשריות:
-• [ACTION:INSURANCE_LINK] - לינק לביטוח
-• [ACTION:SHOW_CALENDAR] - הצג לוח שנה
-• [ACTION:CONFIRM_BOOKING] - אישור תור
-• [ACTION:SCHEDULE_TRAINING] - תיאום אילוף
-• [ACTION:UPLOAD_DOCUMENT] - העלאת מסמך
-• [ACTION:SHOW_BOARDING_OPTIONS] - הצג פנסיונים
-• [ACTION:ORDER_STATUS] - סטטוס הזמנה
-• [ACTION:UPLOAD_PHOTO] - העלאת תמונה
-• [ACTION:ESCALATE] - העברה לנציג
-• [ACTION:EMERGENCY_CALL] - חיוג חירום
-
-=== טון ===
-• אמפתי, מקצועי ואוהב חיות
-• עברית חמה ונעימה
-• מקסימום אמוג'י אחד לכל הודעה
-• תמיד סיים עם אופציות ממוספרות או כפתור פעולה
+=== הסלמה ===
+"לא עובד", "חיוב כפול", "אני עצבני", קללות
+→ "מבין את התסכול. מעביר לנציג אנושי. מספר הזמנה או טלפון? [ACTION:ESCALATE]"
 ${channelInstructions}`;
 
     // ============= AI Request =============
-    // If product intent → no stream (so we can validate PRODUCTS tag)
     const shouldStream = !productIntent || isWhatsApp;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -564,21 +425,18 @@ ${channelInstructions}`;
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "נדרש תשלום, אנא הוסף כספים לחשבון" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
       return new Response(JSON.stringify({ error: "שגיאה בשרת AI" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -587,41 +445,28 @@ ${channelInstructions}`;
       const json = await response.json();
       let text = json?.choices?.[0]?.message?.content ?? "";
       
-      // Validate PRODUCTS tag - keep only valid IDs
       const validIds = new Set(foundProducts.map(p => p.id));
       const safeText = keepOnlyValidProducts(text, validIds);
       
-      // Build response with products data header
-      const headers: Record<string, string> = { 
-        ...corsHeaders, 
-        "Content-Type": "application/json" 
-      };
+      const headers: Record<string, string> = { ...corsHeaders, "Content-Type": "application/json" };
       
-      // Extract final valid product IDs for client
       const { ids: finalProductIds } = extractProductIds(safeText);
       if (finalProductIds.length > 0) {
         const productsForClient = foundProducts.filter(p => finalProductIds.includes(p.id));
         headers["X-Products-Data"] = encodeURIComponent(JSON.stringify(productsForClient));
       }
       
-      return new Response(
-        JSON.stringify({ role: "assistant", content: safeText }),
-        { headers }
-      );
+      return new Response(JSON.stringify({ role: "assistant", content: safeText }), { headers });
     }
 
     // ============= Streaming Response =============
-    const headers: Record<string, string> = { 
-      ...corsHeaders, 
-      "Content-Type": "text/event-stream" 
-    };
-
-    return new Response(response.body, { headers });
+    return new Response(response.body, { 
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" } 
+    });
   } catch (e) {
     console.error("chat error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "שגיאה לא ידועה" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

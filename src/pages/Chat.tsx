@@ -7,9 +7,22 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
+import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
+import { ChatProductCards } from "@/components/chat/ChatProductCards";
+
+interface Product {
+  id: string;
+  name: string;
+  price?: number | null;
+  sale_price?: number | null;
+  image_url?: string | null;
+  category?: string | null;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
+  products?: Product[];
 }
 
 interface Pet {
@@ -172,15 +185,33 @@ const Chat = () => {
 
     if (!resp.ok || !resp.body) {
       setIsTyping(false);
-      if (resp.status === 429) {
-        throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
-      }
-      if (resp.status === 402) {
-        throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
-      }
+      if (resp.status === 429) throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
+      if (resp.status === 402) throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
       throw new Error("שגיאה בתקשורת עם השרת");
     }
 
+    const contentType = resp.headers.get("content-type") || "";
+    
+    // Handle non-streaming JSON response (product intents)
+    if (contentType.includes("application/json")) {
+      setIsTyping(false);
+      const json = await resp.json();
+      const content = json.content || json.role === "assistant" ? json.content : "";
+      
+      // Extract products from header
+      let products: Product[] = [];
+      const productsHeader = resp.headers.get("X-Products-Data");
+      if (productsHeader) {
+        try { products = JSON.parse(decodeURIComponent(productsHeader)); } catch {}
+      }
+      
+      const assistantMessage: Message = { role: "assistant", content, products };
+      setMessages(prev => [...prev, assistantMessage]);
+      handleActionTags(content);
+      return;
+    }
+
+    // Streaming response
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let textBuffer = "";
@@ -264,9 +295,48 @@ const Chat = () => {
 
   // Handle ACTION tags from AI responses
   const handleActionTags = (content: string) => {
-    if (content.includes("[ACTION:SHOW_CALENDAR]")) {
+    const actions = extractActionTags(content);
+    if (actions.includes("SHOW_CALENDAR")) {
       setPendingDateContext("grooming");
       setShowDatePicker(true);
+    }
+  };
+
+  // Handle action button clicks
+  const handleActionClick = (actionTag: string) => {
+    switch (actionTag) {
+      case "SHOW_CALENDAR":
+        setShowDatePicker(true);
+        break;
+      case "UPLOAD_DOCUMENT":
+        navigate("/scan-document");
+        break;
+      case "UPLOAD_PHOTO":
+        navigate("/create-post");
+        break;
+      case "ESCALATE":
+        toast({ title: "מעביר לנציג אנושי", description: "נציג יחזור אליך בהקדם" });
+        break;
+      default:
+        // Send as user message to continue flow
+        sendMessage(`אני רוצה ${actionTag}`);
+        break;
+    }
+  };
+
+  // Utility to send a message programmatically
+  const sendMessage = async (content: string) => {
+    if (!content.trim() || isLoading) return;
+    const userMessage: Message = { role: "user", content };
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+    try {
+      await streamChat([...messages, userMessage]);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({ title: "שגיאה", description: error instanceof Error ? error.message : "משהו השתבש", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -274,28 +344,11 @@ const Chat = () => {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setShowDatePicker(false);
-    
-    const formattedDate = date.toLocaleDateString('he-IL', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-    
-    // Send the selected date as a user message
+    const formattedDate = date.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const userMessage: Message = { role: "user", content: `בחרתי את ${formattedDate}` };
     setMessages(prev => [...prev, userMessage]);
-    
-    // Continue the conversation
     streamChat([...messages, userMessage]);
     setPendingDateContext(null);
-  };
-
-  // Strip ACTION tags from display
-  const cleanMessageContent = (content: string): string => {
-    return content
-      .replace(/\[ACTION:[^\]]+\]/g, "")
-      .trim();
   };
 
   const handleSend = async () => {
@@ -424,17 +477,33 @@ const Chat = () => {
                     </div>
                   )}
                   
-                  {/* Message Bubble - Enhanced */}
-                  <div
-                    className={`px-4 py-3 font-heebo shadow-sm ${
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                        : "bg-card border border-border/40 text-foreground rounded-2xl rounded-bl-md"
-                    }`}
-                  >
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                      {cleanMessageContent(message.content)}
-                    </p>
+                  {/* Message Bubble */}
+                  <div className="flex flex-col gap-2">
+                    <div
+                      className={`px-4 py-3 shadow-sm ${
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                          : "bg-card border border-border/40 text-foreground rounded-2xl rounded-bl-md"
+                      }`}
+                    >
+                      <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+                        {cleanActionTags(message.content)}
+                      </p>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    {message.role === "assistant" && extractActionTags(message.content).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {extractActionTags(message.content).map((tag, i) => (
+                          <ChatActionButton key={i} actionTag={tag} onAction={handleActionClick} />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Product Cards */}
+                    {message.role === "assistant" && message.products && message.products.length > 0 && (
+                      <ChatProductCards products={message.products} />
+                    )}
                   </div>
                 </div>
               </motion.div>
