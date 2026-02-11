@@ -254,18 +254,17 @@ export const SoundtrackPostCard = ({
               e.stopPropagation();
               isProductPost ? handleAddToCart() : handleCtaClick();
             }}
-            whileTap={{ scale: 0.9 }}
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
-            style={{ backgroundColor: "#FF8C42" }}
+            whileTap={{ scale: 0.85 }}
+            animate={{ scale: [1, 1.15, 1] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
           >
             {isProductPost ? (
-              <ShoppingCart className="w-6 h-6" />
+              <ShoppingCart className="w-7 h-7" strokeWidth={1.5} />
             ) : isChallengePost ? (
-              <Trophy className="w-6 h-6" />
+              <Trophy className="w-7 h-7" strokeWidth={1.5} />
             ) : (
-              <PawPrint className="w-6 h-6" />
+              <PawPrint className="w-7 h-7" strokeWidth={1.5} />
             )}
           </motion.button>
         )}
