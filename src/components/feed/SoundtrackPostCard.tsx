@@ -411,7 +411,7 @@ export const SoundtrackPostCard = ({
           {/* Price — bottom */}
           {isProductPost && post.product_price && (
             <div
-              className="px-3 py-1 rounded-full text-white text-sm font-bold"
+              className="px-3 py-1 rounded-r-full text-white text-sm font-bold"
               style={{ backgroundColor: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)" }}
             >
               ₪{post.product_price}
