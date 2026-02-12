@@ -278,7 +278,7 @@ const ChatContent = () => {
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-card" />
             </div>
             <div className="text-right">
-              <h1 className="text-base font-bold text-foreground">PetID AI</h1>
+              <h1 className="text-base font-bold text-foreground">PetAI</h1>
               <p className="text-xs text-success flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                 פעיל עכשיו
@@ -306,7 +306,7 @@ const ChatContent = () => {
                     <Sparkles className="w-10 h-10 text-primary" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-foreground mb-1">PetID AI</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-1">PetAI</h2>
                 <p className="text-sm text-muted-foreground mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
                 
                 <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
