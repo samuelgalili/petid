@@ -409,8 +409,8 @@ serve(async (req) => {
       
       if (!finalUrl) {
         return new Response(
-          JSON.stringify({ success: false, error: "לא נמצא מוצר עם המק״ט הזה" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ success: false, error: "לא נמצא מוצר עם המק״ט הזה. נסה להוסיף שם מוצר בשדה השם או להשתמש בקישור ישיר." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
