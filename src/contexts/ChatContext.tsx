@@ -148,7 +148,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setUserPets(pets);
         if (pets.length === 1) {
           setSelectedPet(pets[0]);
-          setShowCategories(true);
+          // Don't force categories — user can type freely
           setMessages([{
             role: "assistant",
             content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?`,
@@ -162,7 +162,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }]);
         }
       } else {
-        setShowCategories(true);
+        // No pets — user can type freely, no forced categories
         setMessages([{
           role: "assistant",
           content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`,
