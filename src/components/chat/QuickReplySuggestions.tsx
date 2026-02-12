@@ -25,7 +25,7 @@ export const QuickReplySuggestions = ({ suggestions, petAvatars, onSelect }: Qui
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-wrap gap-4 justify-center mt-3"
+        className="flex gap-4 justify-center mt-3 overflow-x-auto scrollbar-hide"
       >
         {suggestions.map((text, i) => {
           const pet = getPetAvatar(text);
