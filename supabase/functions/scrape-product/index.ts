@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import * as cheerio from "https://esm.sh/cheerio@1.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +32,7 @@ interface ScrapedProductResult {
     salePrice: number | null;
   };
   variants: ProductVariant[];
+  feedingGuide: { range: string; amount: string }[];
   debug: {
     extraction: string;
     firecrawl?: Record<string, unknown>;
@@ -46,7 +48,7 @@ function decodeValue(val: string): string {
   }
 }
 
-// Parse weight from string - SIMPLIFIED for performance
+// Parse weight from string
 function parseWeight(str: string): { weight: number; unit: string } | null {
   const match = str.match(/(\d+(?:[.,]\d+)?)\s*(ק"ג|קג|ק״ג|kg|KG|גרם|g|gr|ליטר|L|l)/i);
   if (match) {
@@ -68,12 +70,12 @@ function parsePrice(str: string): number | null {
   return null;
 }
 
-// Extract product data - OPTIMIZED for performance
+// ========= CHEERIO-BASED PRODUCT EXTRACTION =========
 function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductResult, "source"> {
-  // CRITICAL: Limit HTML size to prevent memory issues
-  const maxHtmlLength = 500000; // 500KB max
+  const maxHtmlLength = 500000;
   const truncatedHtml = html.length > maxHtmlLength ? html.substring(0, maxHtmlLength) : html;
-  
+  const $ = cheerio.load(truncatedHtml);
+
   const result: Omit<ScrapedProductResult, "source"> = {
     product: {
       title: "",
@@ -85,132 +87,190 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
       salePrice: null,
     },
     variants: [],
-    debug: { extraction: "html_parsing" },
+    feedingGuide: [],
+    debug: { extraction: "cheerio" },
   };
 
-  // ==================== TITLE (quick extraction) ====================
-  const ogTitleMatch = truncatedHtml.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
-  const h1Match = truncatedHtml.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-  const titleMatch = truncatedHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
+  // ==================== TITLE ====================
+  result.product.title =
+    $(".product_title").text().trim() ||
+    $("h1.entry-title").text().trim() ||
+    $("h1.product-name").text().trim() ||
+    $('meta[property="og:title"]').attr("content")?.trim() ||
+    $("h1").first().text().trim() ||
+    $("title").text().split("|")[0].split("–")[0].split("-")[0].trim() ||
+    "";
+
+  // Filter out widget/chat titles
+  if (result.product.title.length < 3 || 
+      result.product.title.toLowerCase().includes("joinchat") ||
+      result.product.title.toLowerCase().includes("whatsapp")) {
+    // Fallback to JSON-LD
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const data = JSON.parse($(el).html() || "");
+        if (data["@type"] === "Product" && data.name) {
+          result.product.title = data.name;
+        }
+      } catch {}
+    });
+  }
+
+  // ==================== BRAND ====================
+  result.product.brand =
+    $(".brand-link img").attr("alt")?.trim() ||
+    $(".brand-link").text().trim() ||
+    $('[class*="brand"]').first().text().trim() ||
+    null;
   
-  result.product.title = ogTitleMatch?.[1]?.trim() ||
-    h1Match?.[1]?.trim() ||
-    titleMatch?.[1]?.split("|")[0]?.split("–")[0]?.split("-")[0]?.trim() || "";
+  // Try JSON-LD for brand
+  if (!result.product.brand) {
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const data = JSON.parse($(el).html() || "");
+        if (data["@type"] === "Product" && data.brand) {
+          result.product.brand = typeof data.brand === "string" ? data.brand : data.brand.name || null;
+        }
+      } catch {}
+    });
+  }
 
-  // ==================== DESCRIPTION (quick extraction) ====================
-  const ogDescMatch = truncatedHtml.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/i);
-  const metaDescMatch = truncatedHtml.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i);
-  result.product.description = (ogDescMatch?.[1] || metaDescMatch?.[1] || "").substring(0, 500);
+  // ==================== DESCRIPTION ====================
+  result.product.description =
+    $(".woocommerce-product-details__short-description").text().trim().substring(0, 1000) ||
+    $(".short-description").text().trim().substring(0, 1000) ||
+    $("#tab-description").text().trim().substring(0, 1000) ||
+    $('meta[property="og:description"]').attr("content")?.trim() ||
+    $('meta[name="description"]').attr("content")?.trim() ||
+    null;
 
-  // ==================== IMAGES (limited extraction) ====================
+  // ==================== SKU ====================
+  const sku =
+    $(".sku").text().trim() ||
+    $('[data-sku]').attr("data-sku") ||
+    null;
+
+  // ==================== IMAGES ====================
   const imageUrls: string[] = [];
-  
-  // OG image first
-  const ogImageMatch = truncatedHtml.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
-  if (ogImageMatch?.[1]) {
-    imageUrls.push(ogImageMatch[1]);
-  }
-  
-  // WooCommerce large images (limited to 10)
-  const wooImages = truncatedHtml.match(/data-large_image="([^"]+)"/gi);
-  if (wooImages) {
-    for (let i = 0; i < Math.min(wooImages.length, 10); i++) {
-      const match = wooImages[i].match(/data-large_image="([^"]+)"/i);
-      if (match?.[1] && !imageUrls.includes(match[1])) {
-        imageUrls.push(match[1]);
-      }
+  const addImage = (imgUrl: string | undefined) => {
+    if (!imgUrl) return;
+    if (imgUrl.startsWith("//")) imgUrl = "https:" + imgUrl;
+    if (imgUrl && !imgUrl.includes("placeholder") && !imgUrl.includes("logo") && 
+        !imgUrl.includes("icon") && !imgUrl.includes("data:image") &&
+        !imgUrl.includes("avatar") && !imgUrl.includes("payment") &&
+        imgUrl.length < 500 && !imageUrls.includes(imgUrl)) {
+      imageUrls.push(imgUrl);
     }
-  }
-  
-  result.product.images = imageUrls.filter(img => 
-    img && !img.includes("placeholder") && !img.includes("logo") && !img.includes("icon")
-  ).slice(0, 10);
+  };
 
-  // ==================== PRICES (JSON-LD priority) ====================
-  const jsonLdMatch = truncatedHtml.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
-  if (jsonLdMatch) {
+  // OG image
+  addImage($('meta[property="og:image"]').attr("content"));
+  
+  // WooCommerce gallery images
+  $("[data-large_image]").each((_, el) => addImage($(el).attr("data-large_image")));
+  $("[data-zoom-image]").each((_, el) => addImage($(el).attr("data-zoom-image")));
+  
+  // Product gallery images
+  $(".woocommerce-product-gallery__image img").each((_, el) => {
+    addImage($(el).attr("data-src") || $(el).attr("src"));
+  });
+  $("img.wp-post-image").each((_, el) => addImage($(el).attr("src")));
+
+  result.product.images = imageUrls.slice(0, 20);
+
+  // ==================== PRICES ====================
+  // JSON-LD first (most reliable)
+  $('script[type="application/ld+json"]').each((_, el) => {
     try {
-      const data = JSON.parse(jsonLdMatch[1]);
-      const offers = data.offers || data.Offers;
-      if (offers) {
-        const offer = Array.isArray(offers) ? offers[0] : offers;
-        if (offer.price) result.product.basePrice = parseFloat(offer.price);
+      const data = JSON.parse($(el).html() || "");
+      if (data["@type"] === "Product" && data.offers) {
+        const offer = Array.isArray(data.offers) ? data.offers[0] : data.offers;
+        if (offer.price && !result.product.basePrice) {
+          result.product.basePrice = parseFloat(String(offer.price));
+        }
         if (offer.priceCurrency) result.product.currency = offer.priceCurrency;
       }
     } catch {}
+  });
+
+  // WooCommerce price elements
+  if (!result.product.basePrice) {
+    const priceText = $(".woocommerce-Price-amount bdi").first().text().replace(/[^\d.,]/g, "");
+    if (priceText) result.product.basePrice = parseFloat(priceText.replace(",", "."));
   }
 
-  // Fallback price extraction
-  if (!result.product.basePrice) {
-    const priceMatch = truncatedHtml.match(/class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>.*?(\d+(?:[.,]\d{1,2})?)/is);
+  // Sale / original prices
+  const salePriceText = $("ins .woocommerce-Price-amount bdi").text().replace(/[^\d.,]/g, "");
+  const originalPriceText = $("del .woocommerce-Price-amount bdi").text().replace(/[^\d.,]/g, "");
+  
+  if (salePriceText) result.product.salePrice = parseFloat(salePriceText.replace(",", "."));
+  if (originalPriceText) result.product.basePrice = parseFloat(originalPriceText.replace(",", "."));
+
+  // Fallback: any price with ₪
+  if (!result.product.basePrice && !result.product.salePrice) {
+    const priceMatch = truncatedHtml.match(/₪\s*(\d+(?:[.,]\d{1,2})?)/);
     if (priceMatch) result.product.basePrice = parseFloat(priceMatch[1].replace(",", "."));
   }
 
-  // Sale price
-  const salePriceMatch = truncatedHtml.match(/<ins[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/ins>/i);
-  const originalPriceMatch = truncatedHtml.match(/<del[^>]*>[\s\S]*?(\d+(?:[.,]\d{1,2})?)[\s\S]*?<\/del>/i);
-  if (salePriceMatch) result.product.salePrice = parseFloat(salePriceMatch[1].replace(",", "."));
-  if (originalPriceMatch && !result.product.basePrice) {
-    result.product.basePrice = parseFloat(originalPriceMatch[1].replace(",", "."));
+  if (!result.product.basePrice && result.product.salePrice) {
+    result.product.basePrice = result.product.salePrice;
+    result.product.salePrice = null;
   }
 
-  // ==================== VARIANTS - WooCommerce ONLY (most reliable) ====================
-  const variationsMatch = truncatedHtml.match(/data-product_variations='([^']+)'/i) ||
-                          truncatedHtml.match(/data-product_variations="([^"]+)"/i);
-  
-  if (variationsMatch) {
+  // ==================== FEEDING GUIDE TABLE ====================
+  $("table tr").each((_, el) => {
+    const cells = $(el).find("td");
+    if (cells.length >= 2) {
+      const range = $(cells[0]).text().trim();
+      const amount = $(cells[1]).text().trim();
+      if (range && amount && (range.includes("קילו") || range.includes("kg") || range.includes("גרם") || /\d/.test(range))) {
+        result.feedingGuide.push({ range, amount });
+      }
+    }
+  });
+
+  // ==================== VARIANTS ====================
+  // Method 1: WooCommerce data-product_variations
+  const variationsAttr = $("[data-product_variations]").attr("data-product_variations");
+  if (variationsAttr) {
     try {
-      let variationsJson = variationsMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&");
-      const variationsData = JSON.parse(variationsJson);
-      
+      const variationsData = JSON.parse(variationsAttr.replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
       if (Array.isArray(variationsData) && variationsData.length > 0) {
-        result.debug.extraction = "woocommerce_variations";
-        
-        for (const v of variationsData.slice(0, 50)) { // Limit to 50 variants
+        result.debug.extraction = "cheerio_woocommerce_variations";
+        for (const v of variationsData.slice(0, 50)) {
           const attrs = v.attributes || {};
           const variant: ProductVariant = {
             label: "",
-            price: v.display_price || null,
+            price: null,
             sale_price: null,
             sku: v.sku || null,
           };
-          
-          // Handle sale pricing
+
           if (v.display_regular_price && v.display_price && v.display_regular_price > v.display_price) {
             variant.price = v.display_regular_price;
             variant.sale_price = v.display_price;
+          } else if (v.display_price) {
+            variant.price = v.display_price;
           }
-          
-          // Build label from attributes
+
           const labelParts: string[] = [];
           for (const [key, value] of Object.entries(attrs)) {
             if (value) {
               const decodedValue = decodeValue(String(value));
               labelParts.push(decodedValue);
-              
-              // Extract weight
-              if (key.toLowerCase().includes("weight") || key.toLowerCase().includes("משקל") || 
+              if (key.toLowerCase().includes("weight") || key.toLowerCase().includes("משקל") ||
                   key.toLowerCase().includes("size") || key.toLowerCase().includes("גודל")) {
                 const parsed = parseWeight(decodedValue);
-                if (parsed) {
-                  variant.weight = parsed.weight;
-                  variant.weight_unit = parsed.unit;
-                }
+                if (parsed) { variant.weight = parsed.weight; variant.weight_unit = parsed.unit; }
               }
             }
           }
-          
+
           variant.label = labelParts.join(" - ") || `וריאנט ${result.variants.length + 1}`;
-          
-          // Try to extract weight from label if not found
           if (!variant.weight) {
             const parsed = parseWeight(variant.label);
-            if (parsed) {
-              variant.weight = parsed.weight;
-              variant.weight_unit = parsed.unit;
-            }
+            if (parsed) { variant.weight = parsed.weight; variant.weight_unit = parsed.unit; }
           }
-          
           result.variants.push(variant);
         }
       }
@@ -219,47 +279,62 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
     }
   }
 
-  // Simple select fallback (only if no WooCommerce variants found)
+  // Method 2: Select dropdowns
   if (result.variants.length === 0) {
-    const selectMatch = truncatedHtml.match(/<select[^>]*(?:id|name)="[^"]*(?:attribute|weight|size|variation)[^"]*"[^>]*>([\s\S]*?)<\/select>/i);
-    if (selectMatch) {
-      const options = selectMatch[1].matchAll(/<option[^>]*value="([^"]*)"[^>]*>([^<]*)<\/option>/gi);
-      for (const opt of options) {
-        const value = opt[1];
-        const label = opt[2]?.trim();
-        if (!value || !label || label.includes("בחר") || label === "Choose an option") continue;
-        
+    $('select[id*="attribute"], select[name*="attribute"], select[id*="weight"], select[id*="size"]').each((_, selectEl) => {
+      $(selectEl).find("option").each((_, optEl) => {
+        const value = $(optEl).attr("value");
+        const label = $(optEl).text().trim();
+        if (!value || !label || label.includes("בחר") || label === "Choose an option") return;
         const decodedLabel = decodeValue(label);
         const variant: ProductVariant = { label: decodedLabel, price: null };
         const parsed = parseWeight(decodedLabel);
-        if (parsed) {
-          variant.weight = parsed.weight;
-          variant.weight_unit = parsed.unit;
-        }
+        if (parsed) { variant.weight = parsed.weight; variant.weight_unit = parsed.unit; }
         result.variants.push(variant);
-        result.debug.extraction = "select_options";
-      }
+      });
+    });
+  }
+
+  // If no variants, try to extract weight from title
+  if (result.variants.length === 0 && result.product.title) {
+    const titleWeight = parseWeight(result.product.title);
+    if (titleWeight) {
+      result.variants.push({
+        label: `${titleWeight.weight} ${titleWeight.unit === "kg" ? 'ק"ג' : titleWeight.unit === "g" ? "גרם" : titleWeight.unit}`,
+        weight: titleWeight.weight,
+        weight_unit: titleWeight.unit,
+        price: result.product.basePrice,
+        sale_price: result.product.salePrice,
+      });
     }
   }
 
-  console.log("Extracted product:", result.product.title);
-  console.log("Found", result.product.images.length, "images");
-  console.log("Found", result.variants.length, "variants");
-  console.log("Extraction method:", result.debug.extraction);
+  // ==================== CATEGORY & PET TYPE ====================
+  let decodedUrl = url.toLowerCase();
+  try { decodedUrl = decodeURIComponent(url).toLowerCase(); } catch {}
 
+  if (decodedUrl.includes("מזון-יבש") || decodedUrl.includes("dry-food") || decodedUrl.includes("dry")) {
+    result.debug.extraction += "|category:dry-food";
+  }
+
+  if (decodedUrl.includes("כלב") || decodedUrl.includes("dog") || result.product.title.toLowerCase().includes("כלב")) {
+    // pet type detected from URL
+  }
+
+  console.log(`Extracted: "${result.product.title}", ${result.product.images.length} images, ${result.variants.length} variants, ${result.feedingGuide.length} feeding rows`);
   return result;
 }
 
 // Search for product URL by SKU using Firecrawl search
 async function searchProductBySku(
-  sku: string, 
-  query: string | undefined, 
+  sku: string,
+  query: string | undefined,
   preferredDomains: string[] | undefined,
   apiKey: string
 ): Promise<string | null> {
   const searchQuery = query ? `${sku} ${query}` : sku;
   console.log("Searching for product with query:", searchQuery);
-  
+
   try {
     const searchResponse = await fetch("https://api.firecrawl.dev/v1/search", {
       method: "POST",
@@ -277,18 +352,15 @@ async function searchProductBySku(
 
     const searchData = await searchResponse.json();
     const results = searchData.data || searchData.results || [];
-    
     if (results.length === 0) return null;
-    console.log("Found", results.length, "search results");
 
-    // Score and filter results
     let bestUrl = "";
     let bestScore = -100;
-    
+
     for (const r of results) {
-      const url = r.url || r.link || "";
+      const rUrl = r.url || r.link || "";
       const title = (r.title || "").toLowerCase();
-      const urlLower = url.toLowerCase();
+      const urlLower = rUrl.toLowerCase();
       let score = 0;
 
       if (preferredDomains) {
@@ -297,16 +369,12 @@ async function searchProductBySku(
         }
       }
       if (urlLower.includes(sku.toLowerCase()) || title.includes(sku.toLowerCase())) score += 30;
-      if (urlLower.includes("/product") || urlLower.includes("/מוצר") || urlLower.includes("/shop/")) score += 20;
-      if (urlLower.includes("/category") || urlLower.includes("/cart") || urlLower.includes("/checkout")) score -= 50;
+      if (urlLower.includes("/product") || urlLower.includes("/מוצר")) score += 20;
+      if (urlLower.includes("/category") || urlLower.includes("/cart")) score -= 50;
 
-      if (score > bestScore) {
-        bestScore = score;
-        bestUrl = url;
-      }
+      if (score > bestScore) { bestScore = score; bestUrl = rUrl; }
     }
-    
-    if (bestUrl) console.log("Best result:", bestUrl, "score:", bestScore);
+
     return bestUrl || results[0]?.url || null;
   } catch (error) {
     console.error("Search error:", error);
@@ -323,7 +391,6 @@ serve(async (req) => {
     const body = await req.json();
     const { mode, url, sku, query, preferredDomains } = body;
 
-    // Validate input
     if (!mode || (mode !== "url" && mode !== "sku")) {
       return new Response(
         JSON.stringify({ success: false, error: "Mode must be 'url' or 'sku'" }),
@@ -375,7 +442,6 @@ serve(async (req) => {
       );
     }
 
-    // Check admin role
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
@@ -390,7 +456,6 @@ serve(async (req) => {
       );
     }
 
-    // Get Firecrawl API key
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     if (!FIRECRAWL_API_KEY) {
       return new Response(
@@ -402,14 +467,11 @@ serve(async (req) => {
     let finalUrl = url;
     const inputValue = mode === "url" ? url : sku;
 
-    // For SKU mode, search for the product URL first
     if (mode === "sku") {
-      console.log("SKU mode - searching for product URL...");
       finalUrl = await searchProductBySku(sku, query, preferredDomains, FIRECRAWL_API_KEY);
-      
       if (!finalUrl) {
         return new Response(
-          JSON.stringify({ success: false, error: "לא נמצא מוצר עם המק״ט הזה. נסה להוסיף שם מוצר בשדה השם או להשתמש בקישור ישיר." }),
+          JSON.stringify({ success: false, error: "לא נמצא מוצר עם המק״ט הזה. נסה להוסיף שם מוצר או להשתמש בקישור ישיר." }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -417,63 +479,43 @@ serve(async (req) => {
 
     console.log("Scraping URL:", finalUrl);
 
-    // Helper function to scrape with timeout - single attempt, longer timeout
-    async function scrapeWithTimeout(targetUrl: string): Promise<Response | null> {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
-        
-        const response = await fetch("https://api.firecrawl.dev/v1/scrape", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            url: targetUrl,
-            formats: ["html"],
-            onlyMainContent: false,
-            timeout: 40000, // Tell Firecrawl to timeout at 40s
-            waitFor: 3000, // Wait for JS to render
-          }),
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        return response;
-      } catch (err) {
-        const error = err as Error;
-        console.error("Scrape fetch error:", error.message);
-        return null;
-      }
+    // Scrape with Firecrawl
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+    let scrapeResponse: Response | null = null;
+    try {
+      scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: finalUrl,
+          formats: ["html"],
+          onlyMainContent: false,
+          waitFor: 3000,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error("Scrape fetch error:", (err as Error).message);
     }
 
-    // Call Firecrawl to scrape the page
-    console.log("Attempting to scrape with Firecrawl...");
-    const scrapeResponse = await scrapeWithTimeout(finalUrl);
-
     if (!scrapeResponse || !scrapeResponse.ok) {
-      const errorStatus = scrapeResponse?.status || 0;
-      console.log(`Firecrawl failed with status ${errorStatus}, returning partial data from URL`);
-      
-      // Return partial data based on URL if scraping fails
-      const urlName = finalUrl.split('/').pop()?.replace(/-/g, ' ').replace(/\.[^/.]+$/, '') || "";
       return new Response(
         JSON.stringify({
           success: true,
           data: {
-            name: urlName || "מוצר לא ידוע",
-            description: "",
-            price: null,
-            image_url: "",
-            images: [],
+            source: { mode, input: inputValue, finalUrl },
+            product: { title: "מוצר לא ידוע", brand: null, description: null, images: [], currency: "ILS", basePrice: null, salePrice: null },
             variants: [],
-            brand: "",
-            sku: "",
-            url: finalUrl,
-            partial: true, // Flag indicating this is partial data
-            error_reason: `לא ניתן לסרוק את האתר (${errorStatus || 'timeout'})`
-          }
+            feedingGuide: [],
+            debug: { extraction: "failed", firecrawl: { error: scrapeResponse?.status || "timeout" } },
+          },
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -485,26 +527,24 @@ serve(async (req) => {
     if (!html) {
       return new Response(
         JSON.stringify({ success: false, error: "No content returned from URL" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Extract product data
     const productData = extractProductFromHtml(html, finalUrl);
 
-    // Build final response
-    const result: ScrapedProductResult = {
+    const resultData: ScrapedProductResult = {
       source: { mode, input: inputValue, finalUrl },
       ...productData,
     };
 
-    result.debug.firecrawl = {
+    resultData.debug.firecrawl = {
       sourceUrl: scrapeData.data?.sourceUrl || finalUrl,
       statusCode: scrapeData.data?.statusCode,
     };
 
     return new Response(
-      JSON.stringify({ success: true, data: result }),
+      JSON.stringify({ success: true, data: resultData }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
