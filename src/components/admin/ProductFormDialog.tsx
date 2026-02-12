@@ -1333,6 +1333,17 @@ export const ProductFormDialog = ({
               </div>
             </div>
 
+            {/* SKU / Barcode */}
+            <div className="col-span-2">
+              <Label>מק״ט / ברקוד</Label>
+              <Input
+                value={product.sku || ""}
+                onChange={(e) => onProductChange({ ...product, sku: e.target.value })}
+                placeholder="הזן מק״ט או ברקוד של המוצר"
+                dir="ltr"
+              />
+            </div>
+
             {/* Category */}
             <div>
               <Label>קטגוריה</Label>
