@@ -13,6 +13,8 @@ import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat
 import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
 import KineticDotsLoader from "@/components/ui/kinetic-dots-loader";
 import { GroomingServicePicker } from "@/components/chat/GroomingServicePicker";
+import { QuickReplySuggestions } from "@/components/chat/QuickReplySuggestions";
+import { MessageFeedback } from "@/components/chat/MessageFeedback";
 
 interface Product {
   id: string;
@@ -45,6 +47,7 @@ interface Message {
     healthIssue?: string;
   };
   showGroomingPicker?: boolean;
+  suggestions?: string[];
 }
 
 interface Pet {
@@ -315,6 +318,28 @@ const Chat = () => {
     
     // Check for ACTION tags in the final response
     handleActionTags(assistantContent);
+    
+    // Extract suggestions and add to last assistant message
+    const suggestions = extractSuggestions(assistantContent);
+    if (suggestions.length > 0) {
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastIdx = updated.length - 1;
+        if (updated[lastIdx]?.role === "assistant") {
+          updated[lastIdx] = { ...updated[lastIdx], suggestions };
+        }
+        return updated;
+      });
+    }
+  };
+
+  // Extract quick reply suggestions from AI response
+  const extractSuggestions = (content: string): string[] => {
+    const match = content.match(/\[SUGGESTIONS:([^\]]+)\]/);
+    if (match) {
+      return match[1].split("|").map(s => s.trim()).filter(Boolean);
+    }
+    return [];
   };
 
   // Handle ACTION tags from AI responses
@@ -597,6 +622,19 @@ const Chat = () => {
                           sendMessage(`בחרתי: ${service}`);
                         }}
                       />
+                    )}
+
+                    {/* Quick Reply Suggestions */}
+                    {message.role === "assistant" && message.suggestions && message.suggestions.length > 0 && index === messages.length - 1 && (
+                      <QuickReplySuggestions
+                        suggestions={message.suggestions}
+                        onSelect={(text) => sendMessage(text)}
+                      />
+                    )}
+
+                    {/* Message Feedback */}
+                    {message.role === "assistant" && index > 0 && !isTyping && (
+                      <MessageFeedback messageContent={message.content} messageIndex={index} />
                     )}
                   </div>
                 </div>
