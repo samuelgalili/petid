@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
@@ -24,143 +23,27 @@ import { BoardingTypePicker } from "@/components/chat/BoardingTypePicker";
 import { StoreCategoryPicker } from "@/components/chat/StoreCategoryPicker";
 import { AdoptionTraitPicker } from "@/components/chat/AdoptionTraitPicker";
 import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirementPicker";
+import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
 
-interface Product {
-  id: string;
-  name: string;
-  price?: number | null;
-  sale_price?: number | null;
-  image_url?: string | null;
-  category?: string | null;
-}
+const ChatContent = () => {
+  const {
+    messages, setMessages,
+    input, setInput,
+    isLoading, setIsLoading,
+    isTyping,
+    userPets, selectedPet, setSelectedPet,
+    showPetSelection, setShowPetSelection,
+    showCategories, setShowCategories,
+    showDatePicker, setShowDatePicker,
+    showInsuranceLoading, setShowInsuranceLoading,
+    selectedDate, setSelectedDate,
+    pendingDateContext, setPendingDateContext,
+    sendMessage, streamChat,
+  } = useChatContext();
 
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-  products?: Product[];
-  insuranceData?: {
-    petName: string;
-    petType: string;
-    breed: string | null;
-    ageYears: number | null;
-    petId?: string | null;
-    healthAnswer1?: string;
-    healthAnswer2?: string;
-  };
-  insuranceCallback?: {
-    petName: string;
-    petType: string;
-    breed: string | null;
-    ageYears: number | null;
-    petId?: string | null;
-    healthIssue?: string;
-  };
-  showGroomingPicker?: boolean;
-  showAppointmentPicker?: boolean;
-  showTrainingPicker?: boolean;
-  trainingSubOptions?: string[];
-  showDogParkPicker?: boolean;
-  showDocumentPicker?: boolean;
-  showBoardingPicker?: boolean;
-  showStorePicker?: boolean;
-  showAdoptionTraits?: boolean;
-  showAdoptionRequirements?: boolean;
-  suggestions?: string[];
-}
-
-interface Pet {
-  id: string;
-  name: string;
-  type: string;
-  breed: string | null;
-  avatar_url: string | null;
-}
-
-// Helper function to fetch pets - outside component to avoid type issues
-async function fetchUserPets(userId: string): Promise<Pet[]> {
-  // Using explicit any to avoid deep type instantiation issues with Supabase
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (supabase as any).from("pets").select("id, name, type, breed, avatar_url").eq("user_id", userId);
-  return (result.data || []) as Pet[];
-}
-
-const Chat = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [userPets, setUserPets] = useState<Pet[]>([]);
-  const [selectedPet, setSelectedPet] = useState<Pet | null>(null);
-  const [showPetSelection, setShowPetSelection] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showInsuranceLoading, setShowInsuranceLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [pendingDateContext, setPendingDateContext] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const [userName, setUserName] = useState<string | null>(null);
-
-  // Fetch user's pets on mount
-  useEffect(() => {
-    const loadPets = async () => {
-      const authResult = await supabase.auth.getUser();
-      const user = authResult.data?.user;
-      if (!user) return;
-
-      // Fetch user profile for name
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .single();
-      
-      // Extract first name only from full name
-      const fullName = profile?.full_name || "";
-      const firstName = fullName.split(" ")[0] || user.email?.split('@')[0] || "חבר";
-      setUserName(firstName);
-
-      const pets = await fetchUserPets(user.id);
-
-      if (pets && pets.length > 0) {
-        setUserPets(pets);
-        if (pets.length === 1) {
-          setSelectedPet(pets[0]);
-          setShowCategories(true);
-          setMessages([{
-            role: "assistant",
-            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?`
-          }]);
-        } else {
-          setShowPetSelection(true);
-          setMessages([{
-            role: "assistant",
-            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`
-          }]);
-        }
-      } else {
-        setShowCategories(true);
-        setMessages([{
-          role: "assistant",
-          content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`
-        }]);
-      }
-    };
-    loadPets();
-  }, []);
-
-  const handlePetSelect = (pet: Pet) => {
-    setSelectedPet(pet);
-    setShowPetSelection(false);
-    setShowCategories(true);
-    setMessages(prev => [
-      ...prev,
-      { role: "user", content: pet.name },
-      { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?` }
-    ]);
-  };
 
   // Category buttons for quick selection
   const categoryButtons = [
@@ -174,6 +57,17 @@ const Chat = () => {
     { id: "breed", label: "מידע על הגזע", icon: "🐕" },
     { id: "rehoming", label: "למסירה", icon: "🏠" },
   ];
+
+  const handlePetSelect = (pet: typeof userPets[0]) => {
+    setSelectedPet(pet);
+    setShowPetSelection(false);
+    setShowCategories(true);
+    setMessages(prev => [
+      ...prev,
+      { role: "user", content: pet.name },
+      { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?` }
+    ]);
+  };
 
   const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
     setShowCategories(false);
@@ -203,162 +97,6 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const streamChat = async (messagesToSend: Message[]) => {
-    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-    setIsTyping(true);
-    
-    // Build user context with pet data - send only selected pet or all if none selected
-    const petsToSend = selectedPet 
-      ? [{ id: selectedPet.id, name: selectedPet.name, type: selectedPet.type, breed: selectedPet.breed }]
-      : userPets.map(pet => ({ id: pet.id, name: pet.name, type: pet.type, breed: pet.breed }));
-    
-    const userContext = {
-      userName: userName,
-      pets: petsToSend,
-      selectedPetName: selectedPet?.name || null
-    };
-    
-    const resp = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({ messages: messagesToSend, userContext }),
-    });
-
-    if (!resp.ok || !resp.body) {
-      setIsTyping(false);
-      if (resp.status === 429) throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
-      if (resp.status === 402) throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
-      throw new Error("שגיאה בתקשורת עם השרת");
-    }
-
-    const contentType = resp.headers.get("content-type") || "";
-    
-    // Handle non-streaming JSON response (product intents)
-    if (contentType.includes("application/json")) {
-      setIsTyping(false);
-      const json = await resp.json();
-      const content = json.content || json.role === "assistant" ? json.content : "";
-      
-      // Extract products from header
-      let products: Product[] = [];
-      const productsHeader = resp.headers.get("X-Products-Data");
-      if (productsHeader) {
-        try { products = JSON.parse(decodeURIComponent(productsHeader)); } catch {}
-      }
-      
-      const assistantMessage: Message = { role: "assistant", content, products };
-      setMessages(prev => [...prev, assistantMessage]);
-      handleActionTags(content);
-      return;
-    }
-
-    // Streaming response
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let streamDone = false;
-    let assistantContent = "";
-
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") {
-          streamDone = true;
-          break;
-        }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            setIsTyping(false);
-            assistantContent += content;
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.role === "assistant") {
-                return prev.map((m, i) =>
-                  i === prev.length - 1 ? { ...m, content: assistantContent } : m
-                );
-              }
-              return [...prev, { role: "assistant", content: assistantContent }];
-            });
-          }
-        } catch {
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
-
-    if (textBuffer.trim()) {
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw) continue;
-        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-        if (raw.startsWith(":") || raw.trim() === "") continue;
-        if (!raw.startsWith("data: ")) continue;
-        const jsonStr = raw.slice(6).trim();
-        if (jsonStr === "[DONE]") continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            assistantContent += content;
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.role === "assistant") {
-                return prev.map((m, i) =>
-                  i === prev.length - 1 ? { ...m, content: assistantContent } : m
-                );
-              }
-              return [...prev, { role: "assistant", content: assistantContent }];
-            });
-          }
-        } catch {}
-      }
-    }
-    setIsTyping(false);
-    
-    // Check for ACTION tags in the final response
-    handleActionTags(assistantContent);
-    
-    // Extract suggestions and add to last assistant message
-    const suggestions = extractSuggestions(assistantContent);
-    if (suggestions.length > 0) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastIdx = updated.length - 1;
-        if (updated[lastIdx]?.role === "assistant") {
-          updated[lastIdx] = { ...updated[lastIdx], suggestions };
-        }
-        return updated;
-      });
-    }
-  };
-
-  // Extract quick reply suggestions from AI response
-  const extractSuggestions = (content: string): string[] => {
-    const match = content.match(/\[SUGGESTIONS:([^\]]+)\]/);
-    if (match) {
-      return match[1].split("|").map(s => s.trim()).filter(Boolean);
-    }
-    return [];
-  };
-
   // Handle ACTION tags from AI responses
   const handleActionTags = (content: string) => {
     const actions = extractActionTags(content);
@@ -367,11 +105,9 @@ const Chat = () => {
       setShowDatePicker(true);
     }
     if (actions.includes("SHOW_INSURANCE_PLANS")) {
-      // Show loading animation then insurance cards
       setShowInsuranceLoading(true);
       setTimeout(() => {
         setShowInsuranceLoading(false);
-        // Add insurance cards as a message
         const insuranceMsg: Message = {
           role: "assistant",
           content: "הנה התוכניות שמתאימות:",
@@ -400,97 +136,32 @@ const Chat = () => {
       };
       setMessages(prev => [...prev, callbackMsg]);
     }
-    if (actions.includes("SHOW_GROOMING_SERVICES")) {
-      // Add grooming picker as part of the last message
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showGroomingPicker: true };
-        }
-        return updated;
-      });
+
+    const pickerActions: Array<{ action: string; key: keyof Message }> = [
+      { action: "SHOW_GROOMING_SERVICES", key: "showGroomingPicker" },
+      { action: "SHOW_APPOINTMENT_PICKER", key: "showAppointmentPicker" },
+      { action: "SHOW_PARK_OPTIONS", key: "showDogParkPicker" },
+      { action: "SHOW_DOCUMENT_TYPES", key: "showDocumentPicker" },
+      { action: "SHOW_BOARDING_TYPES", key: "showBoardingPicker" },
+      { action: "SHOW_STORE_CATEGORIES", key: "showStorePicker" },
+      { action: "SHOW_ADOPTION_TRAITS", key: "showAdoptionTraits" },
+      { action: "SHOW_ADOPTION_REQUIREMENTS", key: "showAdoptionRequirements" },
+      { action: "SHOW_TRAINING_CATEGORIES", key: "showTrainingPicker" },
+    ];
+
+    for (const { action, key } of pickerActions) {
+      if (actions.includes(action)) {
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastMsg = updated[updated.length - 1];
+          if (lastMsg?.role === "assistant") {
+            updated[updated.length - 1] = { ...lastMsg, [key]: true };
+          }
+          return updated;
+        });
+      }
     }
-    if (actions.includes("SHOW_APPOINTMENT_PICKER")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showAppointmentPicker: true };
-        }
-        return updated;
-      });
-    }
-    if (actions.includes("SHOW_PARK_OPTIONS")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showDogParkPicker: true };
-        }
-        return updated;
-      });
-    }
-    if (actions.includes("SHOW_DOCUMENT_TYPES")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showDocumentPicker: true };
-        }
-        return updated;
-      });
-    }
-    if (actions.includes("SHOW_BOARDING_TYPES")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showBoardingPicker: true };
-        }
-        return updated;
-      });
-    }
-    if (actions.includes("SHOW_STORE_CATEGORIES")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showStorePicker: true };
-        }
-        return updated;
-      });
-    }
-    if (actions.includes("SHOW_ADOPTION_TRAITS")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showAdoptionTraits: true };
-        }
-        return updated;
-      });
-    }
-    if (actions.includes("SHOW_ADOPTION_REQUIREMENTS")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showAdoptionRequirements: true };
-        }
-        return updated;
-      });
-    }
-    if (actions.includes("SHOW_TRAINING_CATEGORIES")) {
-      setMessages(prev => {
-        const updated = [...prev];
-        const lastMsg = updated[updated.length - 1];
-        if (lastMsg?.role === "assistant") {
-          updated[updated.length - 1] = { ...lastMsg, showTrainingPicker: true };
-        }
-        return updated;
-      });
-    }
+
     // Handle dynamic training sub-options
     const subMatch = content.match(/\[ACTION:SHOW_TRAINING_OPTIONS:([^\]]+)\]/);
     if (subMatch) {
@@ -506,7 +177,16 @@ const Chat = () => {
     }
   };
 
-  // Handle action button clicks
+  // Watch for new assistant messages and process action tags
+  const lastProcessedRef = useRef<string>("");
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg?.role === "assistant" && lastMsg.content !== lastProcessedRef.current) {
+      lastProcessedRef.current = lastMsg.content;
+      handleActionTags(lastMsg.content);
+    }
+  }, [messages]);
+
   const handleActionClick = (actionTag: string) => {
     switch (actionTag) {
       case "SHOW_CALENDAR":
@@ -522,29 +202,11 @@ const Chat = () => {
         toast({ title: "מעביר לנציג אנושי", description: "נציג יחזור אליך בהקדם" });
         break;
       default:
-        // Send as user message to continue flow
         sendMessage(`אני רוצה ${actionTag}`);
         break;
     }
   };
 
-  // Utility to send a message programmatically
-  const sendMessage = async (content: string) => {
-    if (!content.trim() || isLoading) return;
-    const userMessage: Message = { role: "user", content };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-    try {
-      await streamChat([...messages, userMessage]);
-    } catch (error) {
-      console.error("Error:", error);
-      toast({ title: "שגיאה", description: error instanceof Error ? error.message : "משהו השתבש", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle date selection from picker
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setShowDatePicker(false);
@@ -635,7 +297,6 @@ const Chat = () => {
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center h-full py-8"
               >
-                {/* AI Profile Card */}
                 <div className="relative mb-6">
                   <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
                     <Sparkles className="w-10 h-10 text-primary" />
@@ -644,7 +305,6 @@ const Chat = () => {
                 <h2 className="text-2xl font-bold text-foreground mb-1">PetID AI</h2>
                 <p className="text-sm text-muted-foreground mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
                 
-                {/* Example Questions Grid - Enhanced */}
                 <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
                   {exampleQuestions.map((q, index) => (
                     <motion.button
@@ -674,14 +334,12 @@ const Chat = () => {
                 className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
               >
                 <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker || message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
-                  {/* Avatar - Enhanced */}
                   {message.role === "assistant" && (
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <Sparkles className="w-3.5 h-3.5 text-primary" />
                     </div>
                   )}
                   
-                  {/* Message Bubble */}
                   <div className="flex flex-col gap-2">
                     <div
                       className={`px-4 py-3 shadow-sm ${
@@ -724,11 +382,9 @@ const Chat = () => {
                       <GroomingServicePicker
                         petName={selectedPet?.name || "החיה שלך"}
                         onSelect={(service) => {
-                          // Remove picker from message
                           setMessages(prev => prev.map((m, i) => 
                             i === messages.indexOf(message) ? { ...m, showGroomingPicker: false } : m
                           ));
-                          // Send as user message
                           sendMessage(`בחרתי: ${service}`);
                         }}
                       />
@@ -862,7 +518,7 @@ const Chat = () => {
               </motion.div>
             ))}
 
-            {/* Pet Selection Buttons - Circle Profile Style */}
+            {/* Pet Selection Buttons */}
             {showPetSelection && userPets.length > 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -880,7 +536,6 @@ const Chat = () => {
                     onClick={() => handlePetSelect(pet)}
                     className="flex flex-col items-center gap-2"
                   >
-                    {/* Pet Avatar Circle */}
                     <div className="w-16 h-16 rounded-full bg-primary p-[2.5px] shadow-sm">
                       <div className="w-full h-full rounded-full overflow-hidden bg-card">
                         {pet.avatar_url ? (
@@ -898,14 +553,13 @@ const Chat = () => {
                         )}
                       </div>
                     </div>
-                    {/* Pet Name */}
                     <span className="text-xs font-heebo font-medium text-foreground">{pet.name}</span>
                   </motion.button>
                 ))}
               </motion.div>
             )}
 
-            {/* Category Quick Buttons - Enhanced Grid */}
+            {/* Category Quick Buttons */}
             {showCategories && !isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -933,7 +587,7 @@ const Chat = () => {
               </motion.div>
             )}
 
-            {/* Date Picker - Horizontal Style */}
+            {/* Date Picker */}
             {showDatePicker && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -984,7 +638,7 @@ const Chat = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Enhanced Input Area */}
+        {/* Input Area */}
         <ChatInputBar
           value={input}
           onChange={setInput}
@@ -1004,5 +658,11 @@ const Chat = () => {
     </div>
   );
 };
+
+const Chat = () => (
+  <ChatProvider>
+    <ChatContent />
+  </ChatProvider>
+);
 
 export default Chat;
