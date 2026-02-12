@@ -19,6 +19,7 @@ import { AppointmentPicker } from "@/components/chat/AppointmentPicker";
 import { TrainingCategoryPicker } from "@/components/chat/TrainingCategoryPicker";
 import { TrainingSubPicker } from "@/components/chat/TrainingSubPicker";
 import { DogParkPicker } from "@/components/chat/DogParkPicker";
+import { DocumentTypePicker } from "@/components/chat/DocumentTypePicker";
 
 interface Product {
   id: string;
@@ -55,6 +56,7 @@ interface Message {
   showTrainingPicker?: boolean;
   trainingSubOptions?: string[];
   showDogParkPicker?: boolean;
+  showDocumentPicker?: boolean;
   suggestions?: string[];
 }
 
@@ -422,6 +424,16 @@ const Chat = () => {
         return updated;
       });
     }
+    if (actions.includes("SHOW_DOCUMENT_TYPES")) {
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg?.role === "assistant") {
+          updated[updated.length - 1] = { ...lastMsg, showDocumentPicker: true };
+        }
+        return updated;
+      });
+    }
     if (actions.includes("SHOW_TRAINING_CATEGORIES")) {
       setMessages(prev => {
         const updated = [...prev];
@@ -614,7 +626,7 @@ const Chat = () => {
                 transition={{ duration: 0.2 }}
                 className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
               >
-                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
+                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker || message.showDocumentPicker ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar - Enhanced */}
                   {message.role === "assistant" && (
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -694,6 +706,18 @@ const Chat = () => {
                         onSelect={(option) => {
                           setMessages(prev => prev.map((m, i) =>
                             i === messages.indexOf(message) ? { ...m, showDogParkPicker: false } : m
+                          ));
+                          sendMessage(option);
+                        }}
+                      />
+                    )}
+
+                    {/* Document Type Picker */}
+                    {message.role === "assistant" && message.showDocumentPicker && (
+                      <DocumentTypePicker
+                        onSelect={(option) => {
+                          setMessages(prev => prev.map((m, i) =>
+                            i === messages.indexOf(message) ? { ...m, showDocumentPicker: false } : m
                           ));
                           sendMessage(option);
                         }}
