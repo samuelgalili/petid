@@ -65,7 +65,7 @@ export const TrainingSheet = ({ isOpen, onClose, pet }: TrainingSheetProps) => {
 
   const handleOpenChat = () => {
     onClose();
-    navigate('/training', { state: { petId: pet?.id, petName: pet?.name } });
+    navigate('/chat', { state: { petId: pet?.id, petName: pet?.name, petBreed: pet?.breed, category: 'training' } });
   };
 
   return (

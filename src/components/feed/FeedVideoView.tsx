@@ -269,7 +269,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                 } else if (item.type === 'product') {
                   navigate(`/shop/product/${item.data.id}`);
                 } else if (item.type === 'adoption') {
-                  navigate(`/adoption/${item.data.id}`);
+                  navigate(`/adoption?pet=${item.data.id}`);
                 }
               }}
               className="flex flex-col items-center gap-1"
@@ -407,7 +407,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => { haptic("light"); navigate(`/adoption/${item.data.id}`); }}
+                  onClick={() => { haptic("light"); navigate(`/adoption?pet=${item.data.id}`); }}
                   className="flex items-center justify-between w-full bg-rose-500 hover:bg-rose-600 transition-colors rounded-lg px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2">

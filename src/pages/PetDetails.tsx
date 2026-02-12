@@ -740,7 +740,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             transition={{ delay: 0.75 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/grooming', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type } })}
+            onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'grooming' } })}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
             <Scissors className="w-4 h-4" />
@@ -753,7 +753,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             transition={{ delay: 0.8 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/experiences', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
+            onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
             <MapPin className="w-4 h-4" />
@@ -766,7 +766,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             transition={{ delay: 0.85 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/insurance', { state: { petId: pet.id, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, petName: pet.name } })}
+            onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'insurance' } })}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
             <Shield className="w-4 h-4" />
@@ -946,7 +946,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
           <Button 
             className="w-full mt-4 rounded-xl"
-            onClick={() => navigate('/training')}
+            onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, category: 'training' } })}
           >
             המשך לאילוף
           </Button>
@@ -1027,7 +1027,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                 <span className="text-success">✓</span> בדיקות שנתיות
               </li>
             </ul>
-            <Button className="w-full rounded-xl" onClick={() => navigate('/insurance')}>
+            <Button className="w-full rounded-xl" onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, category: 'insurance' } })}>
               קבל הצעת מחיר
             </Button>
           </Card>
@@ -1062,7 +1062,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
                   variant="outline" 
                   size="sm" 
                   className="w-full rounded-xl"
-                  onClick={() => navigate('/grooming')}
+                  onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, category: 'grooming' } })}
                 >
                   הזמן תור
                 </Button>

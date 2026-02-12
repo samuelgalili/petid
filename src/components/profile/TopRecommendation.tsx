@@ -760,7 +760,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               if (!hasUserBirthDate && isOwner) {
                 openEditModal('age');
               } else if (hasUserBirthDate) {
-                navigate(`/pet/${pet.id}/insurance`);
+                navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, category: 'insurance' } });
               }
             }}
             disabled={!isOwner && !hasUserBirthDate}
