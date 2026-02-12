@@ -1,7 +1,8 @@
 import { useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles, Bot, Shield, Scissors, GraduationCap, TreePine, FolderOpen, Building2, Package, Dog, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import petidIcon from "@/assets/petid-icon.png";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
@@ -47,15 +48,15 @@ const ChatContent = () => {
 
   // Category buttons for quick selection
   const categoryButtons = [
-    { id: "insurance", label: "ביטוח", icon: "🛡️" },
-    { id: "grooming", label: "טיפוח", icon: "✂️" },
-    { id: "training", label: "אילוף", icon: "🎓" },
-    { id: "dog_parks", label: "גינות כלבים", icon: "🌳" },
-    { id: "documents", label: "מסמכים", icon: "📂" },
-    { id: "boarding", label: "פנסיון", icon: "🏨" },
-    { id: "delivery", label: "משלוחים", icon: "📦" },
-    { id: "breed", label: "מידע על הגזע", icon: "🐕" },
-    { id: "rehoming", label: "למסירה", icon: "🏠" },
+    { id: "insurance", label: "ביטוח", icon: "🛡️", lucide: Shield, color: "from-blue-500 to-cyan-500" },
+    { id: "grooming", label: "טיפוח", icon: "✂️", lucide: Scissors, color: "from-pink-500 to-rose-500" },
+    { id: "training", label: "אילוף", icon: "🎓", lucide: GraduationCap, color: "from-amber-500 to-orange-500" },
+    { id: "dog_parks", label: "גינות כלבים", icon: "🌳", lucide: TreePine, color: "from-emerald-500 to-green-500" },
+    { id: "documents", label: "מסמכים", icon: "📂", lucide: FolderOpen, color: "from-violet-500 to-purple-500" },
+    { id: "boarding", label: "פנסיון", icon: "🏨", lucide: Building2, color: "from-sky-500 to-blue-500" },
+    { id: "delivery", label: "משלוחים", icon: "📦", lucide: Package, color: "from-orange-500 to-red-500" },
+    { id: "breed", label: "מידע על הגזע", icon: "🐕", lucide: Dog, color: "from-teal-500 to-cyan-500" },
+    { id: "rehoming", label: "למסירה", icon: "🏠", lucide: Home, color: "from-indigo-500 to-violet-500" },
   ];
 
   const handlePetSelect = (petName: string) => {
@@ -259,34 +260,38 @@ const ChatContent = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-20" dir="rtl">
-      {/* Clean Header */}
-      <div className="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-border/40">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button 
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
-          >
-            <ChevronRight className="w-6 h-6 text-foreground" />
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
+      {/* Premium Header */}
+      <div className="sticky top-0 z-50 border-b border-border/30">
+        <div className="bg-gradient-to-l from-primary/8 via-card to-accent/8 backdrop-blur-2xl">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button 
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+            >
+              <ChevronRight className="w-6 h-6 text-foreground" />
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/60 p-[2px]">
+                  <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                    <img src={petidIcon} alt="PetAI" className="w-6 h-6 object-contain" />
+                  </div>
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card" />
               </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success rounded-full border-2 border-card" />
+              <div className="text-right">
+                <h1 className="text-base font-bold text-foreground">PetAI</h1>
+                <p className="text-xs text-green-500 flex items-center gap-1 font-medium">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  פעיל עכשיו
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <h1 className="text-base font-bold text-foreground">PetAI</h1>
-              <p className="text-xs text-success flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                פעיל עכשיו
-              </p>
-            </div>
+            
+            <div className="w-10 h-10" />
           </div>
-          
-          <div className="w-10 h-10" />
         </div>
       </div>
 
@@ -302,12 +307,29 @@ const ChatContent = () => {
                 className="flex flex-col items-center justify-center h-full py-8"
               >
                 <div className="relative mb-6">
-                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="w-10 h-10 text-primary" />
-                  </div>
+                  <motion.div 
+                    animate={{ rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 flex items-center justify-center shadow-lg shadow-primary/10"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                      <Bot className="w-10 h-10 text-primary-foreground" />
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-3 border-card flex items-center justify-center"
+                  >
+                    <Sparkles className="w-3 h-3 text-white" />
+                  </motion.div>
                 </div>
                 <h2 className="text-2xl font-bold text-foreground mb-1">PetAI</h2>
-                <p className="text-sm text-muted-foreground mb-8">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
+                <p className="text-sm text-muted-foreground mb-2">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
+                <div className="flex items-center gap-1.5 mb-8">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-xs text-green-500 font-medium">זמין 24/7</span>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
                   {exampleQuestions.map((q, index) => (
@@ -315,11 +337,11 @@ const ChatContent = () => {
                       key={index}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
+                      transition={{ delay: 0.3 + index * 0.1 }}
+                      whileHover={{ scale: 1.03, y: -2 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => setInput(q.text)}
-                      className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-card/80 rounded-2xl transition-all text-right border border-border/50 shadow-sm hover:shadow-md"
+                      className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-primary/5 rounded-2xl transition-all text-right border border-border/40 shadow-sm hover:shadow-md hover:border-primary/30"
                     >
                       <span className="text-2xl">{q.icon}</span>
                       <span className="text-sm text-foreground font-heebo font-medium">{q.text}</span>
@@ -346,10 +368,10 @@ const ChatContent = () => {
                   
                   <div className="flex flex-col gap-2">
                     <div
-                      className={`px-4 py-3 shadow-sm ${
+                      className={`px-4 py-3 ${
                         message.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                          : "bg-card border border-border/40 text-foreground rounded-2xl rounded-bl-md"
+                          ? "bg-gradient-to-l from-primary to-primary/90 text-primary-foreground rounded-2xl rounded-br-md shadow-md shadow-primary/20"
+                          : "bg-card border border-border/30 text-foreground rounded-2xl rounded-bl-md shadow-sm"
                       }`}
                     >
                       <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
@@ -537,22 +559,27 @@ const ChatContent = () => {
                 className="mb-4 px-2"
               >
                 <p className="text-xs text-muted-foreground text-center mb-3 font-heebo">במה אוכל לעזור?</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {categoryButtons.map((cat, index) => (
-                    <motion.button
-                      key={cat.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleCategorySelect(cat)}
-                      className="flex flex-col items-center gap-1.5 p-3 bg-card hover:bg-card/80 rounded-2xl transition-all border border-border/50 shadow-sm hover:shadow-md"
-                    >
-                      <span className="text-2xl">{cat.icon}</span>
-                      <span className="text-[10px] text-foreground font-heebo font-medium leading-tight text-center">{cat.label}</span>
-                    </motion.button>
-                  ))}
+                <div className="grid grid-cols-3 gap-2.5">
+                  {categoryButtons.map((cat, index) => {
+                    const IconComp = cat.lucide;
+                    return (
+                      <motion.button
+                        key={cat.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.04 }}
+                        whileHover={{ scale: 1.04, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleCategorySelect(cat)}
+                        className="flex flex-col items-center gap-2 p-3 bg-card hover:bg-card/80 rounded-2xl transition-all border border-border/30 shadow-sm hover:shadow-md"
+                      >
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center shadow-sm`}>
+                          <IconComp className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-[11px] text-foreground font-heebo font-medium leading-tight text-center">{cat.label}</span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </motion.div>
             )}
