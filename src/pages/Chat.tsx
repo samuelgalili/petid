@@ -58,15 +58,19 @@ const ChatContent = () => {
     { id: "rehoming", label: "למסירה", icon: "🏠" },
   ];
 
-  const handlePetSelect = (pet: typeof userPets[0]) => {
-    setSelectedPet(pet);
-    setShowPetSelection(false);
-    setShowCategories(true);
-    setMessages(prev => [
-      ...prev,
-      { role: "user", content: pet.name },
-      { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?` }
-    ]);
+  const handlePetSelect = (petName: string) => {
+    const pet = userPets.find(p => p.name === petName);
+    if (pet) {
+      setSelectedPet(pet);
+      setShowCategories(true);
+      setMessages(prev => [
+        ...prev,
+        { role: "user", content: pet.name },
+        { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?` }
+      ]);
+    } else {
+      sendMessage(petName);
+    }
   };
 
   const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
@@ -505,7 +509,13 @@ const ChatContent = () => {
                     {message.role === "assistant" && message.suggestions && message.suggestions.length > 0 && index === messages.length - 1 && (
                       <QuickReplySuggestions
                         suggestions={message.suggestions}
-                        onSelect={(text) => sendMessage(text)}
+                        onSelect={(text) => {
+                          if (!selectedPet && userPets.some(p => p.name === text)) {
+                            handlePetSelect(text);
+                          } else {
+                            sendMessage(text);
+                          }
+                        }}
                       />
                     )}
 
@@ -517,47 +527,6 @@ const ChatContent = () => {
                 </div>
               </motion.div>
             ))}
-
-            {/* Pet Selection Buttons */}
-            {showPetSelection && userPets.length > 1 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap gap-4 justify-center mb-4 px-4"
-              >
-                {userPets.map((pet, index) => (
-                  <motion.button
-                    key={pet.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handlePetSelect(pet)}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-primary p-[2.5px] shadow-sm">
-                      <div className="w-full h-full rounded-full overflow-hidden bg-card">
-                        {pet.avatar_url ? (
-                          <img 
-                            src={pet.avatar_url} 
-                            alt={pet.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <span className="text-2xl">
-                              {pet.type === 'dog' ? '🐕' : pet.type === 'cat' ? '🐈' : '🐾'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-xs font-heebo font-medium text-foreground">{pet.name}</span>
-                  </motion.button>
-                ))}
-              </motion.div>
-            )}
 
             {/* Category Quick Buttons */}
             {showCategories && !isLoading && (
