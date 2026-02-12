@@ -509,6 +509,7 @@ const ChatContent = () => {
                     {message.role === "assistant" && message.suggestions && message.suggestions.length > 0 && index === messages.length - 1 && (
                       <QuickReplySuggestions
                         suggestions={message.suggestions}
+                        petAvatars={!selectedPet ? userPets.map(p => ({ name: p.name, avatarUrl: p.avatar_url, type: p.type })) : undefined}
                         onSelect={(text) => {
                           if (!selectedPet && userPets.some(p => p.name === text)) {
                             handlePetSelect(text);
