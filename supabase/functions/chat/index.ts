@@ -478,8 +478,10 @@ ${userName}${petCard}${breedContext}${productContext}
 שאל: "חשוב לי לדעת — האם [שם] רגיש/ה במיוחד או מפחד/ת מהמכונה או מהמים?"
 
 שלב ד' — תיאום תור:
-אמור: "מעולה! כדי להעביר את הפנייה למספרה, באיזה תאריך ושעה יהיה לך נוח?"
-כשהמשתמש שולח תאריך ושעה — אמור:
+אמור: "מעולה! בחר/י תאריך ושעה שנוחים לך:"
+הוסף: [ACTION:SHOW_APPOINTMENT_PICKER]
+⚠️ חשוב: לא לבקש תאריך בטקסט — המערכת תציג לוח תאריכים ושעות אוטומטית.
+כשהמשתמש בוחר תאריך ושעה — אמור:
 "הפנייה הועברה למספרה ✅ נציג יחזור אליך לאישור התור בהקדם."
 הוסף: [ACTION:SUBMIT_GROOMING_LEAD]
 
@@ -510,7 +512,7 @@ ${breedContext ? "השתמש בנתוני BREED_DATA שמצורפים למעלה
 [ACTION:SHOW_CALENDAR] | [ACTION:CONFIRM_BOOKING] | [ACTION:SHOW_INSURANCE_PLANS]
 [ACTION:SHOW_INSURANCE_CALLBACK] | [ACTION:SCHEDULE_TRAINING] | [ACTION:UPLOAD_DOCUMENT]
 [ACTION:SHOW_BOARDING_OPTIONS] | [ACTION:ORDER_STATUS] | [ACTION:UPLOAD_PHOTO] | [ACTION:ESCALATE]
-[ACTION:SHOW_GROOMING_SERVICES] | [ACTION:SUBMIT_GROOMING_LEAD]
+[ACTION:SHOW_GROOMING_SERVICES] | [ACTION:SUBMIT_GROOMING_LEAD] | [ACTION:SHOW_APPOINTMENT_PICKER]
 
 === הסלמה ===
 "לא עובד", "חיוב כפול", "אני עצבני", קללות
