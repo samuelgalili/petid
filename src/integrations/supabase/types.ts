@@ -8894,6 +8894,54 @@ export type Database = {
           },
         ]
       }
+      training_leads: {
+        Row: {
+          created_at: string
+          id: string
+          issue_category: string
+          issue_detail: string | null
+          pet_age: string | null
+          pet_breed: string | null
+          pet_id: string | null
+          pet_name: string | null
+          phone_last_digits: string | null
+          severity_detail: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issue_category: string
+          issue_detail?: string | null
+          pet_age?: string | null
+          pet_breed?: string | null
+          pet_id?: string | null
+          pet_name?: string | null
+          phone_last_digits?: string | null
+          severity_detail?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issue_category?: string
+          issue_detail?: string | null
+          pet_age?: string | null
+          pet_breed?: string | null
+          pet_id?: string | null
+          pet_name?: string | null
+          phone_last_digits?: string | null
+          severity_detail?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       training_lessons: {
         Row: {
           created_at: string
