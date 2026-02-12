@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import * as cheerio from "https://esm.sh/cheerio@1.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,9 +29,7 @@ interface ScrapedProductResult {
   sku?: string;
   category?: string;
   pet_type?: string;
-  raw?: {
-    firecrawl?: Record<string, unknown>;
-  };
+  feeding_guide?: { range: string; amount: string }[];
 }
 
 // Helper to decode URL-encoded Hebrew strings
@@ -42,7 +41,7 @@ function decodeValue(val: string): string {
   }
 }
 
-// Parse weight from string like "1.5 ק"ג" or "500g"
+// Parse weight from string
 function parseWeight(str: string): { weight: number; unit: string } | null {
   const match = str.match(/(\d+(?:[.,]\d+)?)\s*(ק"ג|קג|ק״ג|kg|גרם|g|gr)\b/i);
   if (match) {
@@ -54,17 +53,10 @@ function parseWeight(str: string): { weight: number; unit: string } | null {
   return null;
 }
 
-// Parse price from string like "₪99.90" or "99.90 ש״ח"
-function parsePrice(str: string): number | null {
-  const match = str.match(/(\d+(?:[.,]\d{1,2})?)/);
-  if (match) {
-    return parseFloat(match[1].replace(",", "."));
-  }
-  return null;
-}
-
-// Extract all product data from HTML
+// Extract product data using Cheerio
 function extractProductFromHtml(html: string, url: string): ScrapedProductResult {
+  const $ = cheerio.load(html);
+
   const result: ScrapedProductResult = {
     source_url: url,
     title: "",
@@ -72,101 +64,75 @@ function extractProductFromHtml(html: string, url: string): ScrapedProductResult
     variants: [],
   };
 
-  // Extract title
-  const h1Match = html.match(/<h1[^>]*class="[^"]*product[^"]*"[^>]*>([^<]+)<\/h1>/i) ||
-                  html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  result.title = h1Match?.[1]?.trim() || titleMatch?.[1]?.split("|")[0]?.split("–")[0]?.trim() || "";
+  // ==================== TITLE ====================
+  result.title =
+    $(".product_title").text().trim() ||
+    $("h1.entry-title").text().trim() ||
+    $('meta[property="og:title"]').attr("content")?.trim() ||
+    $("h1").first().text().trim() ||
+    $("title").text().split("|")[0].split("–")[0].trim() || "";
 
-  // Extract brand
-  const brandMatch = html.match(/מותג[:\s]*<[^>]*>([^<]+)/i) ||
-                     html.match(/class="[^"]*brand[^"]*"[^>]*>([^<]+)/i) ||
-                     html.match(/"brand"\s*:\s*"([^"]+)"/i);
-  if (brandMatch) {
-    result.brand = brandMatch[1].trim();
+  // ==================== BRAND ====================
+  result.brand =
+    $(".brand-link img").attr("alt")?.trim() ||
+    $(".brand-link").text().trim() ||
+    undefined;
+
+  if (!result.brand) {
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const data = JSON.parse($(el).html() || "");
+        if (data["@type"] === "Product" && data.brand) {
+          result.brand = typeof data.brand === "string" ? data.brand : data.brand.name;
+        }
+      } catch {}
+    });
   }
 
-  // Extract description
-  const descPatterns = [
-    /class="[^"]*woocommerce-product-details__short-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-    /class="[^"]*short-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
-    /<meta[^>]+name="description"[^>]+content="([^"]+)"/i,
-  ];
-  for (const pattern of descPatterns) {
-    const match = html.match(pattern);
-    if (match && match[1]) {
-      result.description = match[1].replace(/<[^>]+>/g, "").trim().substring(0, 500);
-      break;
-    }
-  }
+  // ==================== DESCRIPTION ====================
+  result.description =
+    $(".woocommerce-product-details__short-description").text().trim().substring(0, 500) ||
+    $(".short-description").text().trim().substring(0, 500) ||
+    $("#tab-description").text().trim().substring(0, 500) ||
+    $('meta[name="description"]').attr("content")?.trim() ||
+    undefined;
 
-  // Extract images - multiple patterns
+  // ==================== IMAGES ====================
   const imageUrls: string[] = [];
-  const imagePatterns = [
-    /data-large_image="([^"]+)"/gi,
-    /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/gi,
-    /data-src="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/gi,
-    /srcset="([^"\s]+\.(?:jpg|jpeg|png|webp)[^"\s]*)[\s,]/gi,
-    /<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/gi,
-  ];
-  
-  for (const pattern of imagePatterns) {
-    const matches = html.matchAll(pattern);
-    for (const match of matches) {
-      const imgUrl = match[1];
-      if (imgUrl && 
-          !imgUrl.includes("placeholder") && 
-          !imgUrl.includes("woocommerce-placeholder") &&
-          !imgUrl.includes("data:image") &&
-          !imgUrl.includes("logo") &&
-          !imgUrl.includes("icon") &&
-          !imageUrls.includes(imgUrl)) {
-        imageUrls.push(imgUrl);
-      }
-    }
-  }
+  const addImage = (imgUrl: string | undefined) => {
+    if (!imgUrl || imgUrl.includes("placeholder") || imgUrl.includes("logo") || 
+        imgUrl.includes("icon") || imgUrl.includes("data:image") || imageUrls.includes(imgUrl)) return;
+    imageUrls.push(imgUrl);
+  };
+
+  addImage($('meta[property="og:image"]').attr("content"));
+  $("[data-large_image]").each((_, el) => addImage($(el).attr("data-large_image")));
+  $(".woocommerce-product-gallery__image img").each((_, el) => addImage($(el).attr("data-src") || $(el).attr("src")));
+  $("img.wp-post-image").each((_, el) => addImage($(el).attr("src")));
+
   result.images = imageUrls.slice(0, 10);
 
-  // Extract SKU
-  const skuMatch = html.match(/class="[^"]*sku[^"]*"[^>]*>([A-Za-z0-9\-_]+)</i) ||
-                   html.match(/מק"ט[:\s]*([A-Za-z0-9\-_]+)/i) ||
-                   html.match(/"sku"\s*:\s*"([^"]+)"/i);
-  if (skuMatch && skuMatch[1].length < 50) {
-    result.sku = skuMatch[1].trim();
-  }
+  // ==================== SKU ====================
+  const sku = $(".sku").text().trim() || $('[data-sku]').attr("data-sku");
+  if (sku && sku.length < 50) result.sku = sku;
 
-  // Determine pet type from URL
-  const urlLower = url.toLowerCase();
-  let decodedUrl = urlLower;
+  // ==================== PET TYPE & CATEGORY ====================
+  let decodedUrl = url.toLowerCase();
   try { decodedUrl = decodeURIComponent(url).toLowerCase(); } catch {}
-  
-  if (decodedUrl.includes("כלב") || urlLower.includes("dog")) {
-    result.pet_type = "dog";
-  } else if (decodedUrl.includes("חתול") || urlLower.includes("cat")) {
-    result.pet_type = "cat";
-  }
 
-  // Determine category from URL
-  if (decodedUrl.includes("מזון-יבש") || decodedUrl.includes("dry")) {
-    result.category = "dry-food";
-  } else if (decodedUrl.includes("מזון-רטוב") || decodedUrl.includes("wet")) {
-    result.category = "wet-food";
-  } else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) {
-    result.category = "treats";
-  }
+  if (decodedUrl.includes("כלב") || decodedUrl.includes("dog")) result.pet_type = "dog";
+  else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat")) result.pet_type = "cat";
 
-  // ========= VARIANTS EXTRACTION (CRITICAL) =========
-  
-  // Method 1: WooCommerce data-product_variations attribute
-  const variationsMatch = html.match(/data-product_variations='([^']+)'/i) ||
-                          html.match(/data-product_variations="([^"]+)"/i);
-  
-  if (variationsMatch) {
+  if (decodedUrl.includes("מזון-יבש") || decodedUrl.includes("dry")) result.category = "dry-food";
+  else if (decodedUrl.includes("מזון-רטוב") || decodedUrl.includes("wet")) result.category = "wet-food";
+  else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) result.category = "treats";
+
+  // ==================== VARIANTS ====================
+  const variationsAttr = $("[data-product_variations]").attr("data-product_variations");
+  if (variationsAttr) {
     try {
-      const variationsData = JSON.parse(variationsMatch[1].replace(/&quot;/g, '"'));
-      if (Array.isArray(variationsData) && variationsData.length > 0) {
-        console.log("Found WooCommerce variations:", variationsData.length);
-        
+      const variationsData = JSON.parse(variationsAttr.replace(/&quot;/g, '"'));
+      if (Array.isArray(variationsData)) {
         for (const v of variationsData) {
           const attrs = v.attributes || {};
           const variant: ProductVariant = {
@@ -176,38 +142,24 @@ function extractProductFromHtml(html: string, url: string): ScrapedProductResult
             sku: v.sku || undefined,
             image_url: v.image?.url || v.image?.src || undefined,
           };
-          
-          // Build label from all attributes
+
           const labelParts: string[] = [];
           for (const [key, value] of Object.entries(attrs)) {
             if (value) {
-              const cleanKey = key.replace("attribute_", "").replace("pa_", "");
               const decodedValue = decodeValue(String(value));
               labelParts.push(decodedValue);
-              
-              // Extract weight if this looks like a weight attribute
-              const keyLower = cleanKey.toLowerCase();
-              if (keyLower.includes("weight") || keyLower.includes("משקל") || keyLower.includes("size") || keyLower.includes("גודל")) {
+              if (key.toLowerCase().includes("weight") || key.toLowerCase().includes("משקל") ||
+                  key.toLowerCase().includes("size") || key.toLowerCase().includes("גודל")) {
                 const parsed = parseWeight(decodedValue);
-                if (parsed) {
-                  variant.weight = parsed.weight;
-                  variant.weight_unit = parsed.unit;
-                }
+                if (parsed) { variant.weight = parsed.weight; variant.weight_unit = parsed.unit; }
               }
             }
           }
-          
           variant.label = labelParts.join(" - ") || `וריאנט ${result.variants.length + 1}`;
-          
-          // Try to extract weight from label if not found
-          if (!variant.weight && variant.label) {
+          if (!variant.weight) {
             const parsed = parseWeight(variant.label);
-            if (parsed) {
-              variant.weight = parsed.weight;
-              variant.weight_unit = parsed.unit;
-            }
+            if (parsed) { variant.weight = parsed.weight; variant.weight_unit = parsed.unit; }
           }
-          
           result.variants.push(variant);
         }
       }
@@ -216,124 +168,56 @@ function extractProductFromHtml(html: string, url: string): ScrapedProductResult
     }
   }
 
-  // Method 2: Select/option dropdowns (common in many stores)
+  // Select dropdown fallback
   if (result.variants.length === 0) {
-    const selectMatches = html.matchAll(/<select[^>]*id="([^"]*)"[^>]*name="([^"]*)"[^>]*>([\s\S]*?)<\/select>/gi);
-    
-    for (const selectMatch of selectMatches) {
-      const selectId = selectMatch[1].toLowerCase();
-      const selectName = selectMatch[2].toLowerCase();
-      const optionsHtml = selectMatch[3];
-      
-      // Only process attribute/variation selects
-      if (!selectName.includes("attribute") && !selectId.includes("attribute") && 
-          !selectId.includes("weight") && !selectId.includes("משקל") &&
-          !selectId.includes("size") && !selectId.includes("גודל")) {
-        continue;
-      }
-      
-      const options = optionsHtml.matchAll(/<option[^>]*value="([^"]*)"[^>]*(?:data-price="([^"]*)")?[^>]*>([^<]*)<\/option>/gi);
-      
-      for (const opt of options) {
-        const value = opt[1];
-        const dataPrice = opt[2];
-        const label = opt[3]?.trim();
-        
-        if (!value || !label || label.includes("בחר") || label === "בחר אפשרות") {
-          continue;
-        }
-        
+    $('select[id*="attribute"], select[name*="attribute"]').each((_, selectEl) => {
+      $(selectEl).find("option").each((_, optEl) => {
+        const value = $(optEl).attr("value");
+        const label = $(optEl).text().trim();
+        if (!value || !label || label.includes("בחר") || label === "Choose an option") return;
         const decodedLabel = decodeValue(label);
-        const variant: ProductVariant = {
-          label: decodedLabel,
-          currency: "ILS",
-        };
-        
-        // Extract weight
+        const variant: ProductVariant = { label: decodedLabel, currency: "ILS" };
         const parsed = parseWeight(decodedLabel);
-        if (parsed) {
-          variant.weight = parsed.weight;
-          variant.weight_unit = parsed.unit;
-        }
-        
-        // Extract price if available
-        if (dataPrice) {
-          variant.price = parsePrice(dataPrice) ?? undefined;
-        }
-        
+        if (parsed) { variant.weight = parsed.weight; variant.weight_unit = parsed.unit; }
         result.variants.push(variant);
-      }
-    }
-  }
-
-  // Method 3: Radio buttons / swatches
-  if (result.variants.length === 0) {
-    const swatchMatches = html.matchAll(/class="[^"]*swatch[^"]*"[^>]*data-value="([^"]+)"[^>]*(?:data-price="([^"]*)")?/gi);
-    
-    for (const swatch of swatchMatches) {
-      const value = decodeValue(swatch[1]);
-      const dataPrice = swatch[2];
-      
-      if (value) {
-        const variant: ProductVariant = {
-          label: value,
-          currency: "ILS",
-        };
-        
-        const parsed = parseWeight(value);
-        if (parsed) {
-          variant.weight = parsed.weight;
-          variant.weight_unit = parsed.unit;
-        }
-        
-        if (dataPrice) {
-          variant.price = parsePrice(dataPrice) ?? undefined;
-        }
-        
-        result.variants.push(variant);
-      }
-    }
-  }
-
-  // Method 4: Look for weight patterns in product listing/table
-  if (result.variants.length === 0) {
-    // Search for weight patterns like "1.5 ק"ג - ₪89"
-    const weightPricePattern = /(\d+(?:[.,]\d+)?)\s*(ק"ג|קג|ק״ג|kg|גרם|g)\s*[-–]\s*₪?\s*(\d+(?:[.,]\d{1,2})?)/gi;
-    const matches = html.matchAll(weightPricePattern);
-    
-    for (const match of matches) {
-      const weight = parseFloat(match[1].replace(",", "."));
-      const unitRaw = match[2].toLowerCase();
-      const unit = unitRaw.includes("ק") || unitRaw === "kg" ? "kg" : "g";
-      const price = parseFloat(match[3].replace(",", "."));
-      
-      result.variants.push({
-        label: `${weight} ${unit === "kg" ? 'ק"ג' : "גרם"}`,
-        weight,
-        weight_unit: unit,
-        price,
-        currency: "ILS",
       });
-    }
+    });
   }
 
-  // Extract base price (for non-variant products or fallback)
-  const pricePatterns = [
-    /class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>.*?(\d+(?:[.,]\d{1,2})?)/is,
-    /<ins[^>]*>.*?₪\s*(\d+(?:[.,]\d{1,2})?)/is,
-    /₪\s*(\d+(?:[.,]\d{1,2})?)/i,
-  ];
-  
-  for (const pattern of pricePatterns) {
-    const match = html.match(pattern);
-    if (match) {
-      result.base_price = parseFloat(match[1].replace(",", "."));
-      result.currency = "ILS";
-      break;
-    }
+  // ==================== BASE PRICE ====================
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      const data = JSON.parse($(el).html() || "");
+      if (data["@type"] === "Product" && data.offers) {
+        const offer = Array.isArray(data.offers) ? data.offers[0] : data.offers;
+        if (offer.price && !result.base_price) {
+          result.base_price = parseFloat(String(offer.price));
+          result.currency = offer.priceCurrency || "ILS";
+        }
+      }
+    } catch {}
+  });
+
+  if (!result.base_price) {
+    const priceText = $(".woocommerce-Price-amount bdi").first().text().replace(/[^\d.,]/g, "");
+    if (priceText) { result.base_price = parseFloat(priceText.replace(",", ".")); result.currency = "ILS"; }
   }
 
-  // If no variants but we found base price and weight in title, create single variant
+  // ==================== FEEDING GUIDE ====================
+  const feedingGuide: { range: string; amount: string }[] = [];
+  $("table tr").each((_, el) => {
+    const cells = $(el).find("td");
+    if (cells.length >= 2) {
+      const range = $(cells[0]).text().trim();
+      const amount = $(cells[1]).text().trim();
+      if (range && amount && /\d/.test(range)) {
+        feedingGuide.push({ range, amount });
+      }
+    }
+  });
+  if (feedingGuide.length > 0) result.feeding_guide = feedingGuide;
+
+  // Single variant fallback from title weight
   if (result.variants.length === 0 && result.title) {
     const titleWeight = parseWeight(result.title);
     if (titleWeight && result.base_price) {
@@ -347,10 +231,7 @@ function extractProductFromHtml(html: string, url: string): ScrapedProductResult
     }
   }
 
-  console.log("Extracted product:", result.title);
-  console.log("Found", result.images.length, "images");
-  console.log("Found", result.variants.length, "variants");
-
+  console.log(`Extracted: "${result.title}", ${result.images.length} images, ${result.variants.length} variants`);
   return result;
 }
 
@@ -362,7 +243,6 @@ serve(async (req) => {
   try {
     const { url } = await req.json();
 
-    // Validate URL
     if (!url || typeof url !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "URL is required" }),
@@ -400,7 +280,6 @@ serve(async (req) => {
       );
     }
 
-    // Check admin role
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
@@ -415,7 +294,6 @@ serve(async (req) => {
       );
     }
 
-    // Get Firecrawl API key
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     if (!FIRECRAWL_API_KEY) {
       return new Response(
@@ -426,7 +304,6 @@ serve(async (req) => {
 
     console.log("Scraping URL:", url);
 
-    // Call Firecrawl to scrape the page
     const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
       headers: {
@@ -459,14 +336,10 @@ serve(async (req) => {
       );
     }
 
-    // Extract product data
     const productData = extractProductFromHtml(html, url);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        data: productData,
-      }),
+      JSON.stringify({ success: true, data: productData }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
