@@ -21,6 +21,7 @@ import { TrainingSubPicker } from "@/components/chat/TrainingSubPicker";
 import { DogParkPicker } from "@/components/chat/DogParkPicker";
 import { DocumentTypePicker } from "@/components/chat/DocumentTypePicker";
 import { BoardingTypePicker } from "@/components/chat/BoardingTypePicker";
+import { StoreCategoryPicker } from "@/components/chat/StoreCategoryPicker";
 
 interface Product {
   id: string;
@@ -59,6 +60,7 @@ interface Message {
   showDogParkPicker?: boolean;
   showDocumentPicker?: boolean;
   showBoardingPicker?: boolean;
+  showStorePicker?: boolean;
   suggestions?: string[];
 }
 
@@ -446,6 +448,16 @@ const Chat = () => {
         return updated;
       });
     }
+    if (actions.includes("SHOW_STORE_CATEGORIES")) {
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg?.role === "assistant") {
+          updated[updated.length - 1] = { ...lastMsg, showStorePicker: true };
+        }
+        return updated;
+      });
+    }
     if (actions.includes("SHOW_TRAINING_CATEGORIES")) {
       setMessages(prev => {
         const updated = [...prev];
@@ -638,7 +650,7 @@ const Chat = () => {
                 transition={{ duration: 0.2 }}
                 className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
               >
-                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
+                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker || message.showStorePicker ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar - Enhanced */}
                   {message.role === "assistant" && (
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -742,6 +754,18 @@ const Chat = () => {
                         onSelect={(option) => {
                           setMessages(prev => prev.map((m, i) =>
                             i === messages.indexOf(message) ? { ...m, showBoardingPicker: false } : m
+                          ));
+                          sendMessage(option);
+                        }}
+                      />
+                    )}
+
+                    {/* Store Category Picker */}
+                    {message.role === "assistant" && message.showStorePicker && (
+                      <StoreCategoryPicker
+                        onSelect={(option) => {
+                          setMessages(prev => prev.map((m, i) =>
+                            i === messages.indexOf(message) ? { ...m, showStorePicker: false } : m
                           ));
                           sendMessage(option);
                         }}
