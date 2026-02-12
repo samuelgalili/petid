@@ -37,10 +37,10 @@ export const ChatActionButton = ({ actionTag, onAction }: ChatActionButtonProps)
     // Default navigation for some actions
     switch (actionTag) {
       case "UPLOAD_DOCUMENT":
-        navigate("/scan-document");
+        navigate("/documents");
         break;
       case "UPLOAD_PHOTO":
-        navigate("/create-post");
+        navigate("/photos");
         break;
       default:
         break;
