@@ -451,16 +451,16 @@ serve(async (req) => {
     const searchQuery = sku || productName;
     const categoryContext = category ? `Category: ${category}` : "";
     
-    const systemPrompt = `You are a pet products expert assistant for an Israeli pet store.
+    const prompt = `You are a pet products expert assistant for an Israeli pet store.
 You help enrich product data based on SKU numbers or product names.
-Your responses should be in Hebrew. Always respond in valid JSON format.`;
+Your responses should be in Hebrew. Always respond in valid JSON format.
 
-    const userPrompt = `Enrich this pet product:
+Enrich this pet product:
 ${sku ? `SKU/מק"ט: ${sku}` : ""}
 ${productName ? `Product Name: ${productName}` : ""}
 ${categoryContext}
 
-${webSearchContext ? `Web Search Results:\n${webSearchContext}` : ""}
+${webSearchContext ? `Web Search Results:\n${webSearchContext.substring(0, 3000)}` : ""}
 
 Return a JSON object with these fields (use null if unknown):
 {
@@ -468,11 +468,13 @@ Return a JSON object with these fields (use null if unknown):
   "description": "תיאור מוצר מפורט בעברית (2-3 משפטים)",
   "petType": "dog" או "cat" או "both" או "other",
   "category": "קטגוריה - אוכל יבש/אוכל רטוב/חטיפים/צעצועים/אביזרים/טיפוח/בריאות/אחר",
-  "sizes": ["רשימת משקלים/גדלים זמינים - לדוגמה: 1.5 ק\"ג, 3 ק\"ג, 7 ק\"ג"],
-  "flavors": ["רשימת טעמים אם רלוונטי למזון/חטיפים"],
+  "sizes": ["רשימת משקלים/גדלים זמינים"],
+  "flavors": ["רשימת טעמים אם רלוונטי"],
   "suggestedPrice": מחיר בש״ח (מספר בלבד),
   "priceReason": "הסבר קצר למחיר"
-}`;
+}
+
+IMPORTANT: Return ONLY the JSON object, no markdown formatting.`;
 
     console.log("AI enrichment for:", searchQuery);
 
@@ -485,8 +487,7 @@ Return a JSON object with these fields (use null if unknown):
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: prompt },
         ],
       }),
     });
