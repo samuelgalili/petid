@@ -1712,7 +1712,7 @@ export const ProductFormDialog = ({
                 </>
               )}
             </Button>
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || !product.name?.trim() || !product.price || product.price <= 0}>
               {isSaving ? "שומר..." : "שמור"}
             </Button>
           </DialogFooter>
