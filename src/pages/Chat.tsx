@@ -63,11 +63,11 @@ const ChatContent = () => {
     const pet = userPets.find(p => p.name === petName);
     if (pet) {
       setSelectedPet(pet);
-      setShowCategories(true);
+      // Don't force category selection — user can type freely
       setMessages(prev => [
         ...prev,
         { role: "user", content: pet.name },
-        { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}?` }
+        { role: "assistant", content: `מעולה! איך אוכל לעזור היום עם ${pet.name}? אפשר לכתוב לי כל שאלה או לבחור קטגוריה 👇` }
       ]);
     } else {
       sendMessage(petName);
@@ -224,6 +224,9 @@ const ChatContent = () => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    // Hide categories when user types freely
+    setShowCategories(false);
 
     const userMessage: Message = { role: "user", content: input.trim() };
     setMessages((prev) => [...prev, userMessage]);
