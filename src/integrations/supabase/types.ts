@@ -1908,6 +1908,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_message_feedback: {
+        Row: {
+          comment: string | null
+          conversation_messages: Json
+          created_at: string
+          id: string
+          message_content: string
+          rating: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          conversation_messages?: Json
+          created_at?: string
+          id?: string
+          message_content: string
+          rating: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          conversation_messages?: Json
+          created_at?: string
+          id?: string
+          message_content?: string
+          rating?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       close_friends: {
         Row: {
           created_at: string
@@ -3143,6 +3173,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      grooming_leads: {
+        Row: {
+          created_at: string
+          fur_notes: string | null
+          id: string
+          pet_id: string | null
+          pet_name: string | null
+          preferred_date: string | null
+          preferred_time: string | null
+          sensitivity_notes: string | null
+          service_type: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fur_notes?: string | null
+          id?: string
+          pet_id?: string | null
+          pet_name?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          sensitivity_notes?: string | null
+          service_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fur_notes?: string | null
+          id?: string
+          pet_id?: string | null
+          pet_name?: string | null
+          preferred_date?: string | null
+          preferred_time?: string | null
+          sensitivity_notes?: string | null
+          service_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       grooming_salons: {
         Row: {

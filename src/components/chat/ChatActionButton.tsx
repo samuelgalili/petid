@@ -70,5 +70,5 @@ export function extractActionTags(content: string): string[] {
 
 // Clean action tags from display text
 export function cleanActionTags(content: string): string {
-  return content.replace(/\[ACTION:[^\]]+\]/g, "").replace(/\[PRODUCTS:[^\]]+\]/g, "").trim();
+  return content.replace(/\[ACTION:[^\]]+\]/g, "").replace(/\[PRODUCTS:[^\]]+\]/g, "").replace(/\[SUGGESTIONS:[^\]]+\]/g, "").trim();
 }
