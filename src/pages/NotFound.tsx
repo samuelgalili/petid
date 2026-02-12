@@ -163,7 +163,7 @@ const NotFound = () => {
             whileTap={{ scale: 0.98 }}
           >
             <button 
-              onClick={() => navigate('/home')}
+              onClick={() => navigate('/')}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-full text-lg font-bold hover:bg-primary/90 transition-colors font-jakarta select-none shadow-lg"
             >
               <Home className="w-5 h-5" strokeWidth={2} />

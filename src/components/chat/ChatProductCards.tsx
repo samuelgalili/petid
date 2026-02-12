@@ -28,7 +28,7 @@ export const ChatProductCards = ({ products }: ChatProductCardsProps) => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.1 }}
-          onClick={() => navigate(`/shop/product/${product.id}`)}
+          onClick={() => navigate(`/product/${product.id}`)}
           className="flex-shrink-0 w-36 bg-card border border-border/40 rounded-2xl overflow-hidden text-right hover:shadow-md transition-shadow"
         >
           {product.image_url ? (

@@ -29,7 +29,7 @@ const OrderConfirmation = () => {
       // Try to get from localStorage
       const savedOrder = localStorage.getItem("lastOrder");
       if (!savedOrder) {
-        navigate("/home");
+        navigate("/");
       }
     }
   }, [order, navigate]);
@@ -248,7 +248,7 @@ const OrderConfirmation = () => {
           <Button
             size="lg"
             className="w-full bg-accent hover:bg-accent-hover text-accent-foreground rounded-2xl font-bold font-jakarta shadow-xl h-14"
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/")}
           >
             <Home className="w-5 h-5 ml-2" strokeWidth={1.5} />
             המשך לקניות

@@ -171,7 +171,7 @@ const OrderHistory = () => {
           <Button
             size="lg"
             className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold font-jakarta"
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/")}
           >
             התחל לקנות
           </Button>
