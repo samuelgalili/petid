@@ -151,28 +151,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           setShowCategories(true);
           setMessages([{
             role: "assistant",
-            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾
-
-איך אוכל לעזור היום עם ${pets[0].name}?`,
+            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?`,
           }]);
         } else {
-          setShowPetSelection(true);
+          // Multiple pets — ask via chat with pet name suggestions
           setMessages([{
             role: "assistant",
-            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾
-
-אני רואה שיש לך כמה חיות מחמד.
-על מי נדבר היום?`,
+            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`,
+            suggestions: pets.map(p => p.name),
           }]);
         }
       } else {
         setShowCategories(true);
         setMessages([{
           role: "assistant",
-          content: `היי ${firstName}, איזה כיף לראות אותך! 🐾
-
-אני העוזר החכם של PetID.
-במה אוכל לעזור היום?`,
+          content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`,
         }]);
       }
     };
