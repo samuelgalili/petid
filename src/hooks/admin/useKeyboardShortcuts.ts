@@ -14,7 +14,7 @@ export const useKeyboardShortcuts = () => {
   const navigate = useNavigate();
 
   const shortcuts: Shortcut[] = [
-    { key: 'd', ctrl: true, action: () => navigate('/admin/dashboard'), description: 'דשבורד' },
+    { key: 'd', ctrl: true, action: () => navigate('/admin/growo'), description: 'דשבורד' },
     { key: 'o', ctrl: true, action: () => navigate('/admin/orders'), description: 'הזמנות' },
     { key: 'p', ctrl: true, action: () => navigate('/admin/products'), description: 'מוצרים' },
     { key: 'u', ctrl: true, action: () => navigate('/admin/users'), description: 'משתמשים' },

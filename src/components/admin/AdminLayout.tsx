@@ -544,7 +544,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
             </div>
             
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => navigate("/home")}>
+              <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => navigate("/")}>
                 <Home className="w-4 h-4" />
               </Button>
             </div>

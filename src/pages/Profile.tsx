@@ -369,7 +369,7 @@ const Profile = () => {
             <button onClick={() => navigate('/messages')} className="p-2 relative">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
-            {isAdmin ? <button onClick={() => navigate('/admin/dashboard')} className="p-2">
+            {isAdmin ? <button onClick={() => navigate('/admin/growo')} className="p-2">
                 <Shield className="w-5 h-5 text-primary" />
               </button> : <button onClick={() => navigate('/edit-profile')} className="p-2">
                 <Edit3 className="w-5 h-5 text-foreground" />

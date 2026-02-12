@@ -390,7 +390,7 @@ const AdminReports = () => {
             variant="ghost"
             size="icon"
             className="rounded-full"
-            onClick={() => navigate("/admin/dashboard")}
+            onClick={() => navigate("/admin/growo")}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>

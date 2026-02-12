@@ -267,7 +267,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                 if (item.type === 'post' || item.type === 'suggested') {
                   navigate(`/post/${item.data.id}`);
                 } else if (item.type === 'product') {
-                  navigate(`/shop/product/${item.data.id}`);
+                  navigate(`/product/${item.data.id}`);
                 } else if (item.type === 'adoption') {
                   navigate(`/adoption?pet=${item.data.id}`);
                 }
@@ -371,7 +371,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => { haptic("light"); navigate(`/shop/product/${item.data.id}`); }}
+                  onClick={() => { haptic("light"); navigate(`/product/${item.data.id}`); }}
                   className="flex items-center justify-between w-full bg-emerald-500 hover:bg-emerald-600 transition-colors rounded-lg px-3 py-2.5"
                 >
                   <div className="flex items-center gap-2">
@@ -379,7 +379,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                     <span className="text-sm font-bold">קנה עכשיו</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Info className="w-4 h-4 opacity-70" onClick={(e) => { e.stopPropagation(); navigate(`/shop/product/${item.data.id}`); }} />
+                    <Info className="w-4 h-4 opacity-70" onClick={(e) => { e.stopPropagation(); navigate(`/product/${item.data.id}`); }} />
                     <ChevronLeft className="w-4 h-4" />
                   </div>
                 </motion.button>

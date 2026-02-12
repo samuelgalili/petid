@@ -144,7 +144,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
       if (error) throw error;
       
       sonnerToast.success("חיית המחמד נמחקה בהצלחה");
-      navigate('/home');
+      navigate('/');
     } catch (error: any) {
       console.error("Error deleting pet:", error);
       sonnerToast.error("שגיאה במחיקת חיית המחמד");
@@ -175,7 +175,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             description: "החיה שחיפשת לא קיימת.",
             variant: "destructive",
           });
-          navigate('/home');
+          navigate('/');
           return;
         }
 
