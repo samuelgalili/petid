@@ -212,8 +212,16 @@ const AdminProducts = () => {
 
   const saveMutation = useMutation({
     mutationFn: async (product: Partial<ProductData>) => {
+      // Validate required fields
+      if (!product.name || !product.name.trim()) {
+        throw new Error("שם המוצר הוא שדה חובה");
+      }
+      if (!product.price || product.price <= 0) {
+        throw new Error("יש להזין מחיר תקין");
+      }
+
       const productData = {
-        name: product.name,
+        name: product.name.trim(),
         description: product.description,
         price: product.price,
         original_price: product.original_price,
@@ -265,9 +273,9 @@ const AdminProducts = () => {
       setIsDialogOpen(false);
       setEditingProduct(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Save error:", error);
-      toast({ title: "שגיאה", description: "הפעולה נכשלה", variant: "destructive" });
+      toast({ title: "שגיאה", description: error.message || "הפעולה נכשלה", variant: "destructive" });
     },
   });
 
