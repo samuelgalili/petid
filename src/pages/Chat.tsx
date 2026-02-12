@@ -16,6 +16,8 @@ import { GroomingServicePicker } from "@/components/chat/GroomingServicePicker";
 import { QuickReplySuggestions } from "@/components/chat/QuickReplySuggestions";
 import { MessageFeedback } from "@/components/chat/MessageFeedback";
 import { AppointmentPicker } from "@/components/chat/AppointmentPicker";
+import { TrainingCategoryPicker } from "@/components/chat/TrainingCategoryPicker";
+import { TrainingSubPicker } from "@/components/chat/TrainingSubPicker";
 
 interface Product {
   id: string;
@@ -49,6 +51,8 @@ interface Message {
   };
   showGroomingPicker?: boolean;
   showAppointmentPicker?: boolean;
+  showTrainingPicker?: boolean;
+  trainingSubOptions?: string[];
   suggestions?: string[];
 }
 
@@ -406,6 +410,29 @@ const Chat = () => {
         return updated;
       });
     }
+    if (actions.includes("SHOW_TRAINING_CATEGORIES")) {
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg?.role === "assistant") {
+          updated[updated.length - 1] = { ...lastMsg, showTrainingPicker: true };
+        }
+        return updated;
+      });
+    }
+    // Handle dynamic training sub-options
+    const subMatch = content.match(/\[ACTION:SHOW_TRAINING_OPTIONS:([^\]]+)\]/);
+    if (subMatch) {
+      const options = subMatch[1].split("|").map(s => s.trim());
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg?.role === "assistant") {
+          updated[updated.length - 1] = { ...lastMsg, trainingSubOptions: options };
+        }
+        return updated;
+      });
+    }
   };
 
   // Handle action button clicks
@@ -575,7 +602,7 @@ const Chat = () => {
                 transition={{ duration: 0.2 }}
                 className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
               >
-                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
+                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar - Enhanced */}
                   {message.role === "assistant" && (
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -645,6 +672,32 @@ const Chat = () => {
                           ));
                           const formatted = date.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
                           sendMessage(`בחרתי תאריך: ${formatted}, שעה: ${time}`);
+                        }}
+                      />
+                    )}
+
+                    {/* Training Category Picker */}
+                    {message.role === "assistant" && message.showTrainingPicker && (
+                      <TrainingCategoryPicker
+                        petName={selectedPet?.name || "החיה שלך"}
+                        onSelect={(category) => {
+                          setMessages(prev => prev.map((m, i) =>
+                            i === messages.indexOf(message) ? { ...m, showTrainingPicker: false } : m
+                          ));
+                          sendMessage(category);
+                        }}
+                      />
+                    )}
+
+                    {/* Training Sub-Options */}
+                    {message.role === "assistant" && message.trainingSubOptions && (
+                      <TrainingSubPicker
+                        options={message.trainingSubOptions}
+                        onSelect={(option) => {
+                          setMessages(prev => prev.map((m, i) =>
+                            i === messages.indexOf(message) ? { ...m, trainingSubOptions: undefined } : m
+                          ));
+                          sendMessage(option);
                         }}
                       />
                     )}
