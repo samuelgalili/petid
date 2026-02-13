@@ -371,45 +371,88 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
 
   // ==================== IMAGES ====================
   const imageUrls: string[] = [];
+  const seenImageBasenames = new Set<string>();
   const addImage = (imgUrl: string | undefined) => {
     if (!imgUrl) return;
     if (imgUrl.startsWith("//")) imgUrl = "https:" + imgUrl;
-    if (imgUrl && !imgUrl.includes("placeholder") && !imgUrl.includes("logo") && 
-        !imgUrl.includes("icon") && !imgUrl.includes("data:image") &&
-        imgUrl.length < 500 && !imageUrls.includes(imgUrl)) {
-      imageUrls.push(imgUrl);
-    }
+    if (!imgUrl || imgUrl.includes("placeholder") || imgUrl.includes("data:image") ||
+        imgUrl.length < 10 || imgUrl.length > 500) return;
+    // Skip site-wide assets
+    if (imgUrl.includes("/logo") || imgUrl.includes("/icon") || imgUrl.includes("/favicon") ||
+        imgUrl.includes("/banner") || imgUrl.includes("/widget") || imgUrl.includes("/whatsapp")) return;
+    // Deduplicate by basename (ignore size suffixes like -600x600)
+    const basename = imgUrl.split("/").pop()?.replace(/-\d+x\d+/, "") || imgUrl;
+    if (seenImageBasenames.has(basename) || imageUrls.includes(imgUrl)) return;
+    seenImageBasenames.add(basename);
+    imageUrls.push(imgUrl);
   };
 
-  addImage($('meta[property="og:image"]').attr("content"));
-  $("[data-large_image]").each((_, el) => addImage($(el).attr("data-large_image")));
-  $("[data-zoom-image]").each((_, el) => addImage($(el).attr("data-zoom-image")));
-  $(".woocommerce-product-gallery__image img").each((_, el) => addImage($(el).attr("data-src") || $(el).attr("src")));
-  $("img.wp-post-image").each((_, el) => addImage($(el).attr("src")));
+  // Only extract images from the product gallery section, NOT related products
+  const gallerySection = $(".woocommerce-product-gallery, .product-gallery, .product-images, .single-product-image");
+  if (gallerySection.length > 0) {
+    gallerySection.find("[data-large_image]").each((_, el) => addImage($(el).attr("data-large_image")));
+    gallerySection.find("[data-zoom-image]").each((_, el) => addImage($(el).attr("data-zoom-image")));
+    gallerySection.find(".woocommerce-product-gallery__image img").each((_, el) => addImage($(el).attr("data-src") || $(el).attr("src")));
+    gallerySection.find("img.wp-post-image").each((_, el) => addImage($(el).attr("src")));
+  }
+  
+  // Fallback: og:image if gallery had no results
+  if (imageUrls.length === 0) {
+    addImage($('meta[property="og:image"]').attr("content"));
+  }
+  // If still no images, try main product area only (not related/recommended sections)
+  if (imageUrls.length === 0) {
+    $(".summary img, .product-summary img, .entry-summary img").each((_, el) => addImage($(el).attr("src")));
+    $("img.wp-post-image").first().each((_, el) => addImage($(el).attr("src")));
+  }
 
-  product.images = imageUrls.slice(0, 20);
+  product.images = imageUrls.slice(0, 10);
 
   // ==================== PRICES ====================
+  // Priority 1: JSON-LD structured data (most reliable)
   $('script[type="application/ld+json"]').each((_, el) => {
     try {
       const data = JSON.parse($(el).html() || "");
       if (data["@type"] === "Product" && data.offers) {
         const offer = Array.isArray(data.offers) ? data.offers[0] : data.offers;
-        if (offer.price && !product.basePrice) product.basePrice = parseFloat(String(offer.price));
+        if (offer.price && !product.basePrice) {
+          const p = parseFloat(String(offer.price));
+          if (!isNaN(p) && p > 0 && p < 100000) product.basePrice = Math.round(p * 100) / 100;
+        }
         if (offer.priceCurrency) product.currency = offer.priceCurrency;
       }
     } catch {}
   });
 
+  // Priority 2: WooCommerce price elements - use .first() carefully and extract only first price match
   if (!product.basePrice) {
-    const priceText = $(".woocommerce-Price-amount bdi").first().text().replace(/[^\d.,]/g, "");
-    if (priceText) product.basePrice = parseFloat(priceText.replace(",", "."));
+    const firstPriceEl = $(".summary .woocommerce-Price-amount bdi, .entry-summary .woocommerce-Price-amount bdi").first();
+    if (firstPriceEl.length) {
+      const priceText = firstPriceEl.text().replace(/[^\d.,]/g, "").trim();
+      const match = priceText.match(/^(\d+(?:[.,]\d{1,2})?)/);
+      if (match) product.basePrice = parseFloat(match[1].replace(",", "."));
+    }
   }
 
-  const salePriceText = $("ins .woocommerce-Price-amount bdi").text().replace(/[^\d.,]/g, "");
-  const originalPriceText = $("del .woocommerce-Price-amount bdi").text().replace(/[^\d.,]/g, "");
-  if (salePriceText) product.salePrice = parseFloat(salePriceText.replace(",", "."));
-  if (originalPriceText) product.basePrice = parseFloat(originalPriceText.replace(",", "."));
+  // Sale price: look for ins (sale) and del (original) within the summary only
+  const summaryPrices = $(".summary .price, .entry-summary .price").first();
+  const salePriceEl = summaryPrices.find("ins .woocommerce-Price-amount bdi").first();
+  const originalPriceEl = summaryPrices.find("del .woocommerce-Price-amount bdi").first();
+  
+  if (salePriceEl.length) {
+    const saleText = salePriceEl.text().replace(/[^\d.,]/g, "").trim();
+    const saleMatch = saleText.match(/^(\d+(?:[.,]\d{1,2})?)/);
+    if (saleMatch) product.salePrice = parseFloat(saleMatch[1].replace(",", "."));
+  }
+  if (originalPriceEl.length) {
+    const origText = originalPriceEl.text().replace(/[^\d.,]/g, "").trim();
+    const origMatch = origText.match(/^(\d+(?:[.,]\d{1,2})?)/);
+    if (origMatch) product.basePrice = parseFloat(origMatch[1].replace(",", "."));
+  }
+
+  // Round prices to 2 decimal places
+  if (product.basePrice) product.basePrice = Math.round(product.basePrice * 100) / 100;
+  if (product.salePrice) product.salePrice = Math.round(product.salePrice * 100) / 100;
 
   if (!product.basePrice && product.salePrice) {
     product.basePrice = product.salePrice;
@@ -419,13 +462,40 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
   // ==================== CATEGORY & PET TYPE ====================
   let decodedUrl = url.toLowerCase();
   try { decodedUrl = decodeURIComponent(url).toLowerCase(); } catch {}
+  const fullText = `${decodedUrl} ${product.title.toLowerCase()} ${(product.description || "").toLowerCase()}`;
   
-  if (decodedUrl.includes("מזון-יבש") || decodedUrl.includes("dry-food") || decodedUrl.includes("dry")) product.category = "dry-food";
-  else if (decodedUrl.includes("מזון-רטוב") || decodedUrl.includes("wet-food")) product.category = "wet-food";
-  else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) product.category = "treats";
+  if (/מזון.?יבש|dry.?food|kibble/.test(fullText)) product.category = "dry-food";
+  else if (/מזון.?רטוב|wet.?food|שימורים/.test(fullText)) product.category = "wet-food";
+  else if (/חטיפ|treat|snack/.test(fullText)) product.category = "treats";
+  else if (/צעצוע|toy/.test(fullText)) product.category = "toys";
+  else if (/טיפוח|grooming|שמפו/.test(fullText)) product.category = "grooming";
+  else if (/בריאות|health|vitamin|תוסף/.test(fullText)) product.category = "health";
+  else if (/מזון|food/.test(fullText)) product.category = "food";
   
-  if (decodedUrl.includes("כלב") || decodedUrl.includes("dog") || product.title.toLowerCase().includes("כלב")) product.petType = "dog";
-  else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat") || product.title.toLowerCase().includes("חתול")) product.petType = "cat";
+  // Also check breadcrumbs for category
+  const breadcrumbs = $(".woocommerce-breadcrumb, .breadcrumb, nav[aria-label='breadcrumb']").text().toLowerCase();
+  if (!product.category && breadcrumbs) {
+    if (/מזון יבש|dry food/.test(breadcrumbs)) product.category = "dry-food";
+    else if (/מזון רטוב|wet food/.test(breadcrumbs)) product.category = "wet-food";
+    else if (/חטיפ|treats/.test(breadcrumbs)) product.category = "treats";
+  }
+  
+  // Pet type detection from URL, title, description AND breadcrumbs
+  const petText = `${fullText} ${breadcrumbs}`;
+  if (/כלב|dog|לכלבים|גור/.test(petText)) product.petType = "dog";
+  else if (/חתול|cat|לחתולים/.test(petText)) product.petType = "cat";
+  else if (/ציפור|bird|תוכי/.test(petText)) product.petType = "bird";
+  else if (/דג|fish|אקווריום/.test(petText)) product.petType = "fish";
+  
+  // SKU fallback: check JSON-LD
+  if (!product.sku) {
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const data = JSON.parse($(el).html() || "");
+        if (data["@type"] === "Product" && data.sku) product.sku = data.sku;
+      } catch {}
+    });
+  }
 
   // ==================== VARIANTS ====================
   const variationsAttr = $("[data-product_variations]").attr("data-product_variations");
