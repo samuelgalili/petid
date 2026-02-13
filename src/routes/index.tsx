@@ -316,7 +316,8 @@ const AdminTimeTracking = lazy(() => import("@/pages/admin/AdminTimeTracking"));
 const AdminDataImport = lazy(() => import("@/pages/admin/AdminDataImport"));
 const AdminAIService = lazy(() => import("@/pages/admin/AdminAIService"));
 const AIControlRoom = lazy(() => import("@/pages/admin/AIControlRoom"));
- const AdminDataHub = lazy(() => import("@/pages/admin/AdminDataHub"));
+const AdminDataHub = lazy(() => import("@/pages/admin/AdminDataHub"));
+const AdminQuickImport = lazy(() => import("@/pages/admin/AdminQuickImport"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -374,6 +375,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/ai-service", element: <AdminPage component={AdminAIService} pageName="שירות AI" /> },
   { path: "/admin/control-room", element: <AdminPage component={AIControlRoom} pageName="חדר בקרה" /> },
    { path: "/admin/data-hub", element: <AdminPage component={AdminDataHub} pageName="Data Hub" /> },
+  { path: "/admin/quick-import", element: <AdminPage component={AdminQuickImport} pageName="ייבוא מהיר" /> },
 ];
 
 // ==========================================

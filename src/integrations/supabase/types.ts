@@ -1393,6 +1393,7 @@ export type Database = {
           review_count: number | null
           sale_price: number | null
           sku: string | null
+          source_url: string | null
           suggested_price: number | null
           updated_at: string
           weight_unit: string | null
@@ -1423,6 +1424,7 @@ export type Database = {
           review_count?: number | null
           sale_price?: number | null
           sku?: string | null
+          source_url?: string | null
           suggested_price?: number | null
           updated_at?: string
           weight_unit?: string | null
@@ -1453,6 +1455,7 @@ export type Database = {
           review_count?: number | null
           sale_price?: number | null
           sku?: string | null
+          source_url?: string | null
           suggested_price?: number | null
           updated_at?: string
           weight_unit?: string | null

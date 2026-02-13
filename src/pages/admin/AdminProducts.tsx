@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, Plus, Edit, Trash2, MoreHorizontal, 
-  Upload, Download, AlertCircle, Flag, CheckCircle
+  Upload, Download, AlertCircle, Flag, CheckCircle, Globe
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
@@ -566,6 +566,10 @@ const AdminProducts = () => {
           }}>
             <Plus className="w-4 h-4 ml-2" />
             הוסף מוצר
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/admin/quick-import')}>
+            <Globe className="w-4 h-4 ml-2" />
+            ייבוא מ-URL
           </Button>
           <Button variant="outline" onClick={() => navigate('/admin/data-import')}>
             <Upload className="w-4 h-4 ml-2" />
