@@ -6,6 +6,7 @@ import {
   Upload, Download, AlertCircle, Flag, CheckCircle, Globe
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ProductImportWizard } from "@/components/admin/ProductImportWizard";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -88,6 +89,7 @@ const AdminProducts = () => {
   const [showFlagged, setShowFlagged] = useState(false);
   const [showScrapedOnly, setShowScrapedOnly] = useState(false);
   const [showManualOnly, setShowManualOnly] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
@@ -560,16 +562,9 @@ const AdminProducts = () => {
     <AdminLayout title="ניהול מוצרים" icon={Package} breadcrumbs={[{ label: "מוצרים" }]}>
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={() => {
-            setEditingProduct(emptyProduct);
-            setIsDialogOpen(true);
-          }}>
+          <Button onClick={() => setWizardOpen(true)}>
             <Plus className="w-4 h-4 ml-2" />
             הוסף מוצר
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/admin/quick-import')}>
-            <Globe className="w-4 h-4 ml-2" />
-            ייבוא מ-URL
           </Button>
           <Button variant="outline" onClick={() => navigate('/admin/data-import')}>
             <Upload className="w-4 h-4 ml-2" />
@@ -761,6 +756,13 @@ const AdminProducts = () => {
           bulkDeleteMutation.mutate(selectedProducts);
         }}
         icon={<Trash2 className="w-5 h-5 text-destructive" />}
+      />
+
+      {/* Product Import Wizard */}
+      <ProductImportWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
       />
     </AdminLayout>
   );
