@@ -14,7 +14,7 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
  *
  * Required Parameters (Legacy LowProfile.aspx):
  * - TerminalNumber: Merchant terminal ID
- * - ApiName: API username (note: some docs refer to this as "UserName")
+ * - UserName: API username
  * - ApiPassword: API password
  * - APILevel: API version ("10" for current)
  * - codepage: Character encoding ("65001" for UTF-8)
@@ -38,11 +38,13 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 // CardCom API Configuration
 const CARDCOM_TERMINAL = Deno.env.get('CARDCOM_TERMINAL_NUMBER');
-const CARDCOM_API_NAME = Deno.env.get('CARDCOM_API_NAME');
+const CARDCOM_USERNAME = Deno.env.get('CARDCOM_USERNAME') || Deno.env.get('CARDCOM_API_NAME');
 const CARDCOM_API_PASSWORD = Deno.env.get('CARDCOM_API_PASSWORD');
 
 // Legacy LowProfile endpoint - form-urlencoded request/response
 const CARDCOM_API_URL = 'https://secure.cardcom.solutions/Interface/LowProfile.aspx';
+const FUNCTION_VERSION = 'create-shop-payment@2026-02-14-debug-v1';
+const AUTH_PARAM_NAME = 'UserName';
 
 interface ShopPaymentRequest {
   items: Array<{
@@ -73,6 +75,7 @@ interface ShopPaymentRequest {
   discount_amount?: number;
   success_url: string;
   cancel_url: string;
+  client_request_id?: string;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -115,8 +118,24 @@ serve(async (req: Request): Promise<Response> => {
 
     // Parse request body
     const requestData: ShopPaymentRequest = await req.json();
+    const rawClientRequestId = requestData.client_request_id ? String(requestData.client_request_id).trim() : '';
+    const clientRequestId = rawClientRequestId || crypto.randomUUID();
+    const baseDebug = {
+      function_version: FUNCTION_VERSION,
+      client_request_id: clientRequestId,
+      cardcom_endpoint: CARDCOM_API_URL,
+      auth_param_name: AUTH_PARAM_NAME,
+      has_terminal: Boolean(CARDCOM_TERMINAL),
+      has_username: Boolean(CARDCOM_USERNAME),
+      has_password: Boolean(CARDCOM_API_PASSWORD),
+    };
     
-    console.log('Creating shop payment for user:', user.id, 'Total:', requestData.total);
+    console.log('PAYMENT_TRACE_START', JSON.stringify({
+      ...baseDebug,
+      user_id: user.id,
+      total: requestData.total,
+      payment_method: requestData.payment_method,
+    }));
 
     // Generate order number
     const orderNumber = `PID-${Date.now()}`;
@@ -183,14 +202,15 @@ serve(async (req: Request): Promise<Response> => {
           order_id: orderData.id,
           order_number: orderNumber,
           payment_method: "cash-on-delivery",
-          redirect_url: `${requestData.success_url}?order_id=${orderData.id}`
+          redirect_url: `${requestData.success_url}?order_id=${orderData.id}`,
+          debug: { ...baseDebug, stage: 'cash_on_delivery' }
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
     // Check CardCom credentials
-    if (!CARDCOM_TERMINAL || !CARDCOM_API_NAME || !CARDCOM_API_PASSWORD) {
+    if (!CARDCOM_TERMINAL || !CARDCOM_USERNAME || !CARDCOM_API_PASSWORD) {
       console.error('CardCom credentials not configured');
       // For development - allow order without real payment
       console.warn('DEV MODE: Processing without CardCom');
@@ -206,7 +226,8 @@ serve(async (req: Request): Promise<Response> => {
           order_id: orderData.id,
           order_number: orderNumber,
           dev_mode: true,
-          redirect_url: `${requestData.success_url}?order_id=${orderData.id}`
+          redirect_url: `${requestData.success_url}?order_id=${orderData.id}`,
+          debug: { ...baseDebug, stage: 'dev_mode_no_credentials' }
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
@@ -296,7 +317,13 @@ serve(async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           error: 'INVALID_AMOUNT',
-          message: 'הסכום לתשלום הוא 0. בדוק מוצרים/משלוח/קופון.' 
+          message: 'הסכום לתשלום הוא 0. בדוק מוצרים/משלוח/קופון.',
+          debug: {
+            ...baseDebug,
+            stage: 'invalid_amount',
+            sum_to_bill: sumToBill,
+            sum_from_lines: sumFromLines,
+          }
         }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
@@ -308,7 +335,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // Authentication parameters
     formData.append('TerminalNumber', CARDCOM_TERMINAL);
-    formData.append('ApiName', CARDCOM_API_NAME);
+    formData.append('UserName', CARDCOM_USERNAME);
     formData.append('ApiPassword', CARDCOM_API_PASSWORD);
 
     // Required legacy API parameters (missing these caused failures)
@@ -349,9 +376,16 @@ serve(async (req: Request): Promise<Response> => {
     console.log('CardCom: Invoice lines appended, count:', lineIndex - 1);
     
     console.log('CardCom request SumToBill:', sumToBill);
-    
-    // Log full payload for debugging
-    console.log('CARDcom_payload_full', formData.toString());
+
+    const requestParamKeys = [...new Set(Array.from(formData.keys()))];
+    console.log('CARDcom_payload_debug', JSON.stringify({
+      ...baseDebug,
+      stage: 'cardcom_request',
+      request_param_keys: requestParamKeys,
+      has_user_name_param: requestParamKeys.includes('UserName'),
+      has_api_name_param: requestParamKeys.includes('ApiName'),
+      sum_to_bill: sumToBill,
+    }));
 
     console.log('Calling CardCom API with form-urlencoded...');
 
@@ -402,7 +436,18 @@ serve(async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           error: 'שגיאה ביצירת עמוד תשלום',
-          details: cardcomData.Description || 'Unknown error'
+          details: cardcomData.Description || 'Unknown error',
+          cardcom_response_code: cardcomData.ResponseCode,
+          cardcom_operation_response: cardcomData.OperationResponse,
+          cardcom_raw_response: responseText.substring(0, 500),
+          debug: {
+            ...baseDebug,
+            stage: 'cardcom_error',
+            request_param_keys: requestParamKeys,
+            has_user_name_param: requestParamKeys.includes('UserName'),
+            has_api_name_param: requestParamKeys.includes('ApiName'),
+            sum_to_bill: sumToBill,
+          }
         }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
@@ -422,6 +467,14 @@ serve(async (req: Request): Promise<Response> => {
         order_id: orderData.id,
         order_number: orderNumber,
         payment_url: cardcomData.Url,
+        debug: {
+          ...baseDebug,
+          stage: 'cardcom_success',
+          request_param_keys: requestParamKeys,
+          has_user_name_param: requestParamKeys.includes('UserName'),
+          has_api_name_param: requestParamKeys.includes('ApiName'),
+          sum_to_bill: sumToBill,
+        }
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
@@ -430,7 +483,14 @@ serve(async (req: Request): Promise<Response> => {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in create-shop-payment:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({
+        error: errorMessage,
+        debug: {
+          function_version: FUNCTION_VERSION,
+          stage: 'exception',
+          auth_param_name: AUTH_PARAM_NAME,
+        }
+      }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

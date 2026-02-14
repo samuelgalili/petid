@@ -320,6 +320,8 @@ const Checkout = () => {
       }
 
       console.log('Starting payment request with total:', orderTotal);
+      const clientRequestId = crypto.randomUUID();
+      const clientDebugVersion = 'checkout@2026-02-14-debug-v1';
 
       // Call the edge function to create payment and order
       // Calculate shipping discount for free shipping coupons
@@ -347,19 +349,55 @@ const Checkout = () => {
         discount_amount: discount,
         success_url: `${window.location.origin}/payment-success`,
         cancel_url: `${window.location.origin}/payment-failed`,
+        client_request_id: clientRequestId,
       };
 
       console.log('PAYMENT_PAYLOAD', JSON.stringify(paymentPayload));
+      console.log('PAYMENT_TRACE_CLIENT', JSON.stringify({
+        client_debug_version: clientDebugVersion,
+        client_request_id: clientRequestId,
+        expected_auth_param_name: 'UserName',
+      }));
 
       const { data, error } = await supabase.functions.invoke('create-shop-payment', {
         body: paymentPayload
       });
 
       console.log('Payment response:', JSON.stringify(data), 'Error:', JSON.stringify(error));
+      if (data?.debug) {
+        console.log('PAYMENT_TRACE_SERVER_DEBUG', JSON.stringify(data.debug));
+      }
 
       if (error) {
-        console.error('Edge function error:', JSON.stringify(error));
-        throw new Error(error.message || error.context?.body?.error || 'שגיאה בתקשורת עם השרת');
+        console.error('Edge function error:', error);
+        let detailedMessage = error.message || 'שגיאה בתקשורת עם השרת';
+        const responseContext = (error as any)?.context;
+
+        if (responseContext instanceof Response) {
+          try {
+            const errorBody = await responseContext.clone().json();
+            const parts = [errorBody?.error, errorBody?.details].filter(Boolean);
+            if (parts.length > 0) {
+              detailedMessage = parts.join(': ');
+            }
+            if (errorBody?.debug) {
+              console.error('PAYMENT_TRACE_SERVER_DEBUG', errorBody.debug);
+            }
+            console.error('Edge function error body:', errorBody, 'status:', responseContext.status);
+          } catch {
+            try {
+              const errorText = await responseContext.clone().text();
+              if (errorText) {
+                detailedMessage = errorText;
+              }
+              console.error('Edge function error text:', errorText, 'status:', responseContext.status);
+            } catch {
+              // keep fallback message
+            }
+          }
+        }
+
+        throw new Error(detailedMessage);
       }
 
       // Check for error in response data
