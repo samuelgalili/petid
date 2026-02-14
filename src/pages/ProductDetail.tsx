@@ -495,20 +495,20 @@ const ProductDetail = () => {
     }} transition={{
       delay: 0.1
     }}>
-        <div className="bg-white rounded-3xl overflow-hidden">
+        <div className="bg-card rounded-3xl overflow-hidden">
           {/* Title & Price Section */}
-          <div className="p-5 border-b border-gray-100">
+          <div className="p-5 border-b border-border">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex-1">
-                <h1 className="text-xl font-bold text-gray-800 font-jakarta leading-tight">{product.name}</h1>
-                <p className="text-sm text-gray-500 font-jakarta mt-1">{product.subtitle}</p>
+                <h1 className="text-xl font-bold text-foreground font-jakarta leading-tight">{product.name}</h1>
+                <p className="text-sm text-muted-foreground font-jakarta mt-1">{product.subtitle}</p>
               </div>
               <div className="flex items-center gap-1 px-3 py-1.5 rounded-full" style={{
               background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box',
               border: '1.5px solid transparent'
             }}>
                 <Star className="w-4 h-4 fill-[#4ECDC4] text-[#4ECDC4]" />
-                <span className="font-bold text-gray-800 font-jakarta text-sm">{product.rating}</span>
+                <span className="font-bold text-foreground font-jakarta text-sm">{product.rating}</span>
               </div>
             </div>
             
@@ -518,19 +518,19 @@ const ProductDetail = () => {
             }}>
                 ₪{product.price}
               </span>
-              {product.originalPrice && <span className="text-base text-gray-400 line-through font-jakarta">₪{product.originalPrice}</span>}
+              {product.originalPrice && <span className="text-base text-muted-foreground line-through font-jakarta">₪{product.originalPrice}</span>}
             </div>
             
             {/* Delivery Info Pills */}
             <div className="flex items-center gap-2 mt-4 flex-wrap">
-              <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-gray-700" style={{
+              <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-foreground" style={{
               background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box',
               border: '1px solid transparent'
             }}>
                 <Truck className="w-3.5 h-3.5 text-[#4ECDC4]" />
                 <span className="font-jakarta">משלוח חינם מעל ₪199</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-gray-700" style={{
+              <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-full font-medium text-foreground" style={{
               background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8) border-box',
               border: '1px solid transparent'
             }}>
@@ -542,9 +542,9 @@ const ProductDetail = () => {
 
           {/* Variant Selectors - Only show if there are flavors */}
           {productFlavors.length > 0 && (
-            <div className="p-5 border-b border-gray-100 space-y-5">
+            <div className="p-5 border-b border-border space-y-5">
               <div>
-                <label className="text-sm font-bold mb-3 block text-gray-800 font-jakarta">טעם</label>
+                <label className="text-sm font-bold mb-3 block text-foreground font-jakarta">טעם</label>
                 <div className="flex gap-2 flex-wrap">
                   {productFlavors.map(variant => (
                     <motion.button 
@@ -552,7 +552,7 @@ const ProductDetail = () => {
                       onClick={() => setSelectedVariant(variant)} 
                       whileHover={{ scale: 1.02 }} 
                       whileTap={{ scale: 0.98 }} 
-                      className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${selectedVariant === variant ? "text-gray-800 font-bold" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`} 
+                      className={`px-4 py-2.5 rounded-xl text-sm font-jakarta transition-all duration-200 ${selectedVariant === variant ? "text-foreground font-bold" : "bg-muted text-muted-foreground hover:bg-muted/80"}`} 
                       style={selectedVariant === variant ? {
                         background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
                         border: '2px solid transparent'
@@ -568,8 +568,8 @@ const ProductDetail = () => {
           )}
 
           {/* Key Benefits */}
-          <div className="p-5 border-b border-gray-100">
-            <h3 className="text-base font-bold mb-4 text-gray-800 font-jakarta">למה חיית המחמד שלך תאהב את זה</h3>
+          <div className="p-5 border-b border-border">
+            <h3 className="text-base font-bold mb-4 text-foreground font-jakarta">למה חיית המחמד שלך תאהב את זה</h3>
             <div className="grid grid-cols-2 gap-3">
               {benefits.map((benefit, idx) => {
                 const Icon = benefit.icon;
@@ -591,8 +591,8 @@ const ProductDetail = () => {
                       <Icon className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-800 text-xs font-jakarta">{benefit.title}</h4>
-                      <p className="text-[10px] text-gray-500 font-jakarta leading-tight">{benefit.description}</p>
+                      <h4 className="font-bold text-foreground text-xs font-jakarta">{benefit.title}</h4>
+                      <p className="text-[10px] text-muted-foreground font-jakarta leading-tight">{benefit.description}</p>
                     </div>
                   </motion.div>
                 );
@@ -603,11 +603,11 @@ const ProductDetail = () => {
           {/* Product Details Accordion */}
           <div className="p-5">
             <Accordion type="single" collapsible className="w-full space-y-2">
-              <AccordionItem value="description" className="border-0 bg-gray-50 rounded-xl px-4">
-                <AccordionTrigger className="font-jakarta text-sm font-bold text-gray-800 hover:no-underline py-4">
+              <AccordionItem value="description" className="border-0 bg-muted rounded-xl px-4">
+                <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
                   תיאור מלא
                 </AccordionTrigger>
-                <AccordionContent className="text-sm text-gray-600 font-jakarta leading-relaxed pb-4">
+                <AccordionContent className="text-sm text-muted-foreground font-jakarta leading-relaxed pb-4">
                   {product.description}
                 </AccordionContent>
               </AccordionItem>
@@ -679,7 +679,7 @@ const ProductDetail = () => {
     }} transition={{
       delay: 0.5
     }}>
-        <h3 className="text-base font-bold mb-4 text-gray-800 font-jakarta mx-4">לקוחות גם קנו</h3>
+        <h3 className="text-base font-bold mb-4 text-foreground font-jakarta mx-4">לקוחות גם קנו</h3>
         <div className="flex gap-3 overflow-x-auto pb-2 px-4 hide-scrollbar">
           {relatedProducts.map((item, idx) => <motion.div key={item.id} initial={{
           opacity: 0,
@@ -696,12 +696,12 @@ const ProductDetail = () => {
         }} className="relative p-[1.5px] rounded-2xl cursor-pointer group flex-shrink-0 w-36" style={{
           background: 'linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4)'
         }} onClick={() => navigate(`/product/${item.id}`)}>
-              <div className="bg-white rounded-2xl overflow-hidden h-full transition-all group-hover:shadow-lg">
-                <div className="aspect-square bg-gradient-to-br from-gray-50 to-white overflow-hidden">
+              <div className="bg-card rounded-2xl overflow-hidden h-full transition-all group-hover:shadow-lg">
+                <div className="aspect-square bg-gradient-to-br from-muted to-card overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                 </div>
-                <div className="p-2.5 bg-white">
-                  <h4 className="font-bold text-xs text-gray-800 font-jakarta mb-1 truncate">{item.name}</h4>
+                <div className="p-2.5 bg-card">
+                  <h4 className="font-bold text-xs text-foreground font-jakarta mb-1 truncate">{item.name}</h4>
                   <p className="text-sm font-black bg-clip-text text-transparent font-jakarta" style={{
                 backgroundImage: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
               }}>
@@ -725,31 +725,31 @@ const ProductDetail = () => {
     }} transition={{
       delay: 0.6
     }}>
-        <div className="bg-white rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-5">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2" style={{
+              <div className="w-12 h-12 rounded-full bg-card shadow-md flex items-center justify-center mb-2" style={{
               boxShadow: '0 0 0 2px #4ECDC4'
             }}>
                 <Shield className="w-5 h-5 text-[#4ECDC4]" />
               </div>
-              <p className="text-xs font-bold text-gray-800 font-jakarta">תשלום מאובטח</p>
+              <p className="text-xs font-bold text-foreground font-jakarta">תשלום מאובטח</p>
             </div>
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2" style={{
+              <div className="w-12 h-12 rounded-full bg-card shadow-md flex items-center justify-center mb-2" style={{
               boxShadow: '0 0 0 2px #7DB9E8'
             }}>
                 <Truck className="w-5 h-5 text-[#7DB9E8]" />
               </div>
-              <p className="text-xs font-bold text-gray-800 font-jakarta">משלוח מהיר</p>
+              <p className="text-xs font-bold text-foreground font-jakarta">משלוח מהיר</p>
             </div>
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center mb-2" style={{
+              <div className="w-12 h-12 rounded-full bg-card shadow-md flex items-center justify-center mb-2" style={{
               boxShadow: '0 0 0 2px #1E5799'
             }}>
                 <PackageCheck className="w-5 h-5 text-[#1E5799]" />
               </div>
-              <p className="text-xs font-bold text-gray-800 font-jakarta">החזרות קלות</p>
+              <p className="text-xs font-bold text-foreground font-jakarta">החזרות קלות</p>
             </div>
           </div>
         </div>
@@ -774,28 +774,28 @@ const ProductDetail = () => {
           {/* Quantity & Total */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-gray-800 font-jakarta">כמות:</span>
+              <span className="text-sm font-bold text-foreground font-jakarta">כמות:</span>
               <div className="flex items-center rounded-xl" style={{
               background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
               border: '2px solid transparent'
             }}>
-                <Button variant="ghost" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-9 w-9 rounded-xl hover:bg-gray-100">
-                  <Minus className="w-4 h-4 text-gray-700" />
+                <Button variant="ghost" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-9 w-9 rounded-xl hover:bg-muted">
+                  <Minus className="w-4 h-4 text-foreground" />
                 </Button>
                 <motion.span key={quantity} initial={{
                 scale: 1.2
               }} animate={{
                 scale: 1
-              }} className="w-10 text-center text-base font-bold text-gray-800 font-jakarta">
+              }} className="w-10 text-center text-base font-bold text-foreground font-jakarta">
                   {quantity}
                 </motion.span>
-                <Button variant="ghost" size="icon" onClick={() => setQuantity(quantity + 1)} className="h-9 w-9 rounded-xl hover:bg-gray-100">
-                  <Plus className="w-4 h-4 text-gray-700" />
+                <Button variant="ghost" size="icon" onClick={() => setQuantity(quantity + 1)} className="h-9 w-9 rounded-xl hover:bg-muted">
+                  <Plus className="w-4 h-4 text-foreground" />
                 </Button>
               </div>
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-500 font-jakarta">סה״כ</p>
+              <p className="text-xs text-muted-foreground font-jakarta">סה״כ</p>
               <motion.p key={quantity} initial={{
               scale: 1.1
             }} animate={{
@@ -823,7 +823,7 @@ const ProductDetail = () => {
             <Button 
               variant="outline" 
               size="lg" 
-              className="flex-1 rounded-xl font-bold font-jakarta h-12 text-gray-700" 
+              className="flex-1 rounded-xl font-bold font-jakarta h-12 text-foreground" 
               style={{
                 background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
                 border: '2px solid transparent'
