@@ -581,7 +581,7 @@ const Shop = () => {
                               className="absolute top-1 right-1 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-sm"
                             >
                               <Heart 
-                                className={`w-3 h-3 ${favorites.includes(product.id) ? "fill-[#FF3040] text-[#FF3040]" : "text-gray-500"}`} 
+                                className={`w-3 h-3 ${favorites.includes(product.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} 
                                 strokeWidth={2} 
                               />
                             </button>
@@ -669,7 +669,7 @@ const Shop = () => {
                 {/* Product Image - Elevated */}
                 <motion.div 
                   ref={productImageRef}
-                  className="relative w-[100px] h-[100px] flex-shrink-0 rounded-2xl overflow-hidden bg-white shadow-lg"
+                  className="relative w-[100px] h-[100px] flex-shrink-0 rounded-2xl overflow-hidden bg-card shadow-lg"
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.25 }}
@@ -730,7 +730,7 @@ const Shop = () => {
                     }`}
                   >
                     <Heart 
-                      className={`w-5 h-5 transition-all ${favorites.includes(selectedProduct.id) ? "fill-[#FF3040] text-[#FF3040] scale-110" : "text-muted-foreground"}`} 
+                      className={`w-5 h-5 transition-all ${favorites.includes(selectedProduct.id) ? "fill-destructive text-destructive scale-110" : "text-muted-foreground"}`} 
                       strokeWidth={1.5} 
                     />
                   </button>
@@ -757,7 +757,7 @@ const Shop = () => {
                         className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                           selectedSize === flavor
                             ? "bg-primary text-primary-foreground shadow-md"
-                            : "bg-white border border-border/50 text-foreground hover:border-primary/50"
+                            : "bg-card border border-border/50 text-foreground hover:border-primary/50"
                         }`}
                       >
                         {flavor}
@@ -780,14 +780,14 @@ const Shop = () => {
                     <div className="flex items-center bg-muted/80 rounded-2xl p-1">
                       <button
                         onClick={decreaseQuantity}
-                        className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+                        className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform"
                       >
                         <Minus className="w-5 h-5 text-foreground" />
                       </button>
                       <span className="text-lg font-bold w-10 text-center">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+                        className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform"
                       >
                         <Plus className="w-5 h-5 text-foreground" />
                       </button>

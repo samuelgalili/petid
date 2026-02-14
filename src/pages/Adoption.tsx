@@ -284,7 +284,7 @@ const Adoption = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white pb-24 pt-20 px-4 flex items-center justify-center">
+      <div className="min-h-screen bg-background pb-24 pt-20 px-4 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground font-jakarta">טוען...</p>
@@ -715,20 +715,20 @@ const Adoption = () => {
 
                 {/* Health Status */}
                 <div className="flex gap-2">
-                  <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl ${selectedPet.is_vaccinated ? 'bg-green-50' : 'bg-gray-50'}`}>
-                    <Syringe className={`w-4 h-4 ${selectedPet.is_vaccinated ? 'text-green-600' : 'text-gray-400'}`} />
+                  <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl ${selectedPet.is_vaccinated ? 'bg-green-50 dark:bg-green-950/30' : 'bg-muted'}`}>
+                    <Syringe className={`w-4 h-4 ${selectedPet.is_vaccinated ? 'text-green-600' : 'text-muted-foreground'}`} />
                     <div>
-                      <p className="text-xs font-medium text-gray-800">חיסונים</p>
-                      <p className={`text-[10px] ${selectedPet.is_vaccinated ? 'text-green-600' : 'text-gray-500'}`}>
+                      <p className="text-xs font-medium text-foreground">חיסונים</p>
+                      <p className={`text-[10px] ${selectedPet.is_vaccinated ? 'text-green-600' : 'text-muted-foreground'}`}>
                         {selectedPet.is_vaccinated ? 'מחוסן ✓' : 'לא מחוסן'}
                       </p>
                     </div>
                   </div>
-                  <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl ${selectedPet.is_neutered ? 'bg-blue-50' : 'bg-gray-50'}`}>
-                    <Scissors className={`w-4 h-4 ${selectedPet.is_neutered ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <div className={`flex-1 flex items-center gap-2 p-3 rounded-xl ${selectedPet.is_neutered ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-muted'}`}>
+                    <Scissors className={`w-4 h-4 ${selectedPet.is_neutered ? 'text-blue-600' : 'text-muted-foreground'}`} />
                     <div>
-                      <p className="text-xs font-medium text-gray-800">עיקור/סירוס</p>
-                      <p className={`text-[10px] ${selectedPet.is_neutered ? 'text-blue-600' : 'text-gray-500'}`}>
+                      <p className="text-xs font-medium text-foreground">עיקור/סירוס</p>
+                      <p className={`text-[10px] ${selectedPet.is_neutered ? 'text-blue-600' : 'text-muted-foreground'}`}>
                         {selectedPet.is_neutered ? 'מסורס ✓' : 'לא מסורס'}
                       </p>
                     </div>
@@ -737,9 +737,9 @@ const Adoption = () => {
 
                 {/* Description */}
                 {selectedPet.description && (
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <h3 className="text-xs font-semibold text-gray-700 mb-2">קצת עליי</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">{selectedPet.description}</p>
+                  <div className="bg-muted rounded-xl p-3">
+                    <h3 className="text-xs font-semibold text-muted-foreground mb-2">קצת עליי</h3>
+                    <p className="text-sm text-foreground/80 leading-relaxed">{selectedPet.description}</p>
                   </div>
                 )}
 
@@ -857,7 +857,7 @@ const Adoption = () => {
 
       {/* Adoption Form Dialog */}
       <Dialog open={showAdoptionForm} onOpenChange={setShowAdoptionForm}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 border-0 rounded-2xl bg-white">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 border-0 rounded-2xl bg-card">
           {/* Header */}
           <div className="p-4 sticky top-0 z-10" style={{ background: 'linear-gradient(135deg, #1E5799, #4ECDC4)' }}>
             <div className="flex items-center gap-3">
@@ -874,59 +874,59 @@ const Adoption = () => {
           <form onSubmit={handleSubmitAdoption} className="p-4 space-y-4" dir="rtl">
             {/* Personal Info */}
             <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase">פרטים אישיים</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase">פרטים אישיים</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">שם מלא *</Label>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">שם מלא *</Label>
                   <Input
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
+                    className="h-10 text-sm border-border rounded-lg bg-muted"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">טלפון *</Label>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block">טלפון *</Label>
                   <Input
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
+                    className="h-10 text-sm border-border rounded-lg bg-muted"
                   />
                 </div>
               </div>
               <div>
-                <Label className="text-xs text-gray-600 mb-1.5 block">אימייל *</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">אימייל *</Label>
                 <Input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
+                  className="h-10 text-sm border-border rounded-lg bg-muted"
                 />
               </div>
               <div>
-                <Label className="text-xs text-gray-600 mb-1.5 block">כתובת *</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">כתובת *</Label>
                 <Input
                   required
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="h-10 text-sm border-gray-200 rounded-lg bg-gray-50"
+                  className="h-10 text-sm border-border rounded-lg bg-muted"
                 />
               </div>
             </div>
 
             {/* Experience */}
             <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase">ניסיון</h3>
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase">ניסיון</h3>
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                 <Checkbox
                   id="hasExperience"
                   checked={formData.hasExperience}
                   onCheckedChange={(checked) => setFormData({ ...formData, hasExperience: checked as boolean })}
-                  className="border-gray-300 data-[state=checked]:bg-[#DD2A7B] data-[state=checked]:border-[#DD2A7B]"
+                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                <Label htmlFor="hasExperience" className="text-sm text-gray-700 cursor-pointer">
+                <Label htmlFor="hasExperience" className="text-sm text-foreground cursor-pointer">
                   יש לי ניסיון בגידול חיות מחמד
                 </Label>
               </div>
@@ -935,18 +935,18 @@ const Adoption = () => {
                   placeholder="פרט על הניסיון שלך..."
                   value={formData.experienceDetails}
                   onChange={(e) => setFormData({ ...formData, experienceDetails: e.target.value })}
-                  className="text-sm border-gray-200 rounded-lg bg-gray-50 min-h-[60px] resize-none"
+                  className="text-sm border-border rounded-lg bg-muted min-h-[60px] resize-none"
                 />
               )}
               
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                 <Checkbox
                   id="hasOtherPets"
                   checked={formData.hasOtherPets}
                   onCheckedChange={(checked) => setFormData({ ...formData, hasOtherPets: checked as boolean })}
-                  className="border-gray-300 data-[state=checked]:bg-[#DD2A7B] data-[state=checked]:border-[#DD2A7B]"
+                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                 />
-                <Label htmlFor="hasOtherPets" className="text-sm text-gray-700 cursor-pointer">
+                <Label htmlFor="hasOtherPets" className="text-sm text-foreground cursor-pointer">
                   יש לי חיות מחמד נוספות
                 </Label>
               </div>
@@ -955,19 +955,19 @@ const Adoption = () => {
                   placeholder="פרט על חיות המחמד שלך..."
                   value={formData.otherPetsDetails}
                   onChange={(e) => setFormData({ ...formData, otherPetsDetails: e.target.value })}
-                  className="text-sm border-gray-200 rounded-lg bg-gray-50 min-h-[60px] resize-none"
+                  className="text-sm border-border rounded-lg bg-muted min-h-[60px] resize-none"
                 />
               )}
             </div>
 
             {/* Reason */}
             <div className="space-y-2 pt-2">
-              <Label className="text-xs text-gray-600">למה אתה רוצה לאמץ את {selectedPet?.name}? *</Label>
+              <Label className="text-xs text-muted-foreground">למה אתה רוצה לאמץ את {selectedPet?.name}? *</Label>
               <Textarea
                 required
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                className="text-sm border-gray-200 rounded-lg bg-gray-50 min-h-[80px] resize-none"
+                className="text-sm border-border rounded-lg bg-muted min-h-[80px] resize-none"
                 placeholder="ספר לנו..."
               />
             </div>
