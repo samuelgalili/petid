@@ -563,14 +563,14 @@ const Parks = () => {
             </motion.div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-[#262626] text-[13px] leading-tight">{park.name}</p>
+                <p className="font-semibold text-foreground text-[13px] leading-tight">{park.name}</p>
                 {park.verified && (
                   <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                     <Check className="w-2.5 h-2.5 text-white" />
                   </div>
                 )}
               </div>
-              <p className="text-gray-500 text-xs flex items-center gap-1">
+              <p className="text-muted-foreground text-xs flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
                 {park.city} • {getSizeLabel(park.size)}
               </p>
@@ -584,12 +584,12 @@ const Parks = () => {
                   setSelectedParkForCheckins(park);
                   setCheckinsDialogOpen(true);
                 }}
-                className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 rounded-full"
+                className="flex items-center gap-1 px-2.5 py-1 bg-accent rounded-full"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-emerald-600 text-xs font-semibold">{checkins.length}</span>
+                <span className="text-primary text-xs font-semibold">{checkins.length}</span>
               </motion.button>
             )}
           </div>
@@ -637,8 +637,8 @@ const Parks = () => {
                 className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg"
               >
                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-bold text-gray-900">{park.rating.toFixed(1)}</span>
-                <span className="text-gray-500 text-xs">({park.total_reviews})</span>
+                <span className="font-bold text-foreground">{park.rating.toFixed(1)}</span>
+                <span className="text-muted-foreground text-xs">({park.total_reviews})</span>
               </motion.div>
             )}
 
@@ -729,12 +729,12 @@ const Parks = () => {
             
             <motion.button 
               onClick={() => toggleSave(park.id)}
-              className="text-[#262626] p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              className="text-foreground p-1 rounded-full hover:bg-muted transition-colors duration-200"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
               <Bookmark 
-                className={`w-6 h-6 ${isSaved ? 'fill-[#262626]' : ''}`}
+                className={`w-6 h-6 ${isSaved ? 'fill-foreground' : ''}`}
                 strokeWidth={1.5}
               />
             </motion.button>
@@ -750,13 +750,13 @@ const Parks = () => {
                 }}
                 className="text-sm mb-1 flex items-center gap-1"
               >
-                <span className="font-semibold text-[#262626]">{checkins.length} כלבים</span>
-                <span className="text-emerald-600">כאן עכשיו</span>
+                <span className="font-semibold text-foreground">{checkins.length} כלבים</span>
+                <span className="text-primary">כאן עכשיו</span>
                 <span className="text-2xl">🐾</span>
               </button>
             )}
             {isLiked && (
-              <p className="text-sm font-semibold text-[#262626]">אהבת את הגינה הזו ❤️</p>
+              <p className="text-sm font-semibold text-foreground">אהבת את הגינה הזו ❤️</p>
             )}
           </div>
 
@@ -770,8 +770,8 @@ const Parks = () => {
                 }}
                 className="flex items-center gap-2 mb-2"
               >
-                <Image className="w-4 h-4 text-[#0095F6]" />
-                <span className="text-sm font-semibold text-[#262626]">{photos.length} תמונות מהגינה</span>
+                <Image className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">{photos.length} תמונות מהגינה</span>
               </button>
               <div className="flex gap-1 overflow-x-auto pb-1">
                 {photos.slice(0, 4).map((photo, idx) => (
@@ -795,9 +795,9 @@ const Parks = () => {
                       setSelectedParkForGallery(park);
                       setPhotoGalleryOpen(true);
                     }}
-                    className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors"
+                    className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-muted/80 transition-colors"
                   >
-                    <span className="text-sm font-bold text-gray-600">+{photos.length - 4}</span>
+                    <span className="text-sm font-bold text-muted-foreground">+{photos.length - 4}</span>
                   </div>
                 )}
               </div>
@@ -811,7 +811,7 @@ const Parks = () => {
                 setSelectedParkForGallery(park);
                 setPhotoGalleryOpen(true);
               }}
-              className="flex items-center gap-2 text-[#0095F6] text-sm font-semibold mb-2 hover:text-[#1877F2] transition-colors"
+              className="flex items-center gap-2 text-primary text-sm font-semibold mb-2 hover:text-primary/80 transition-colors"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -822,8 +822,8 @@ const Parks = () => {
 
           {/* Caption - Park Info */}
           <div className="mb-2">
-            <p className="text-sm text-[#262626]">
-              <span className="font-semibold">{park.city}</span>
+            <p className="text-sm text-foreground">
+              <span className="font-semibold text-foreground">{park.city}</span>
               {' '}
               {park.notes || `גינת כלבים ${getSizeLabel(park.size)} ב${park.address}`}
             </p>
@@ -831,16 +831,16 @@ const Parks = () => {
 
           {/* Hashtags - Facilities */}
           <div className="flex flex-wrap gap-1 mb-2">
-            {park.fencing && <span className="text-sm text-[#00376B]">#גדור</span>}
-            {park.water && <span className="text-sm text-[#00376B]">#מים</span>}
-            {park.shade && <span className="text-sm text-[#00376B]">#צל</span>}
-            {park.agility && <span className="text-sm text-[#00376B]">#אג׳יליטי</span>}
-            {park.lighting && <span className="text-sm text-[#00376B]">#תאורה</span>}
-            {park.parking && <span className="text-sm text-[#00376B]">#חניה</span>}
+            {park.fencing && <span className="text-sm text-primary">#גדור</span>}
+            {park.water && <span className="text-sm text-primary">#מים</span>}
+            {park.shade && <span className="text-sm text-primary">#צל</span>}
+            {park.agility && <span className="text-sm text-primary">#אג׳יליטי</span>}
+            {park.lighting && <span className="text-sm text-primary">#תאורה</span>}
+            {park.parking && <span className="text-sm text-primary">#חניה</span>}
           </div>
 
           {/* Time */}
-          <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-3">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">
             <Clock className="w-3 h-3 inline ml-1" />
             פתוח 24/7
           </p>
@@ -852,7 +852,7 @@ const Parks = () => {
                 <Button
                   onClick={handleCheckout}
                   size="sm"
-                  className="flex-1 bg-[#ED4956] hover:bg-[#DC2743] text-white rounded-lg font-semibold text-sm"
+                  className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg font-semibold text-sm"
                 >
                   <LogOut className="w-4 h-4 ml-1" />
                   צ'ק-אאוט
@@ -864,7 +864,7 @@ const Parks = () => {
                     setCheckinDialogOpen(true);
                   }}
                   size="sm"
-                  className="flex-1 bg-[#0095F6] hover:bg-[#1877F2] text-white rounded-lg font-semibold text-sm"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold text-sm"
                 >
                   <LogIn className="w-4 h-4 ml-1" />
                   צ'ק-אין
@@ -878,7 +878,7 @@ const Parks = () => {
               }}
               size="sm"
               variant="outline"
-              className="flex-1 border-gray-300 rounded-lg font-semibold text-sm hover:bg-gray-50"
+              className="flex-1 border-border rounded-lg font-semibold text-sm hover:bg-muted"
             >
               <Star className="w-4 h-4 ml-1" />
               דרג
@@ -887,7 +887,7 @@ const Parks = () => {
               onClick={() => openInMaps(park)}
               size="sm"
               variant="outline"
-              className="border-gray-300 rounded-lg font-semibold text-sm hover:bg-gray-50 px-3"
+              className="border-border rounded-lg font-semibold text-sm hover:bg-muted px-3"
             >
               <MapPin className="w-4 h-4" />
             </Button>
@@ -913,7 +913,7 @@ const Parks = () => {
       {/* Stories-style Featured Parks */}
       {featuredParks.length > 0 && !loading && (
         <div className="px-4 pt-4 pb-2">
-          <h2 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
             גינות מומלצות
           </h2>
@@ -937,10 +937,10 @@ const Parks = () => {
                       <img src={parkImage} alt={park.name} className="w-full h-full object-cover" />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-700 mt-1 font-medium truncate w-16">{park.name.split(' ')[0]}</p>
+                  <p className="text-xs text-foreground mt-1 font-medium truncate w-16">{park.name.split(' ')[0]}</p>
                   <div className="flex items-center justify-center gap-0.5">
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span className="text-[10px] text-gray-500">{park.rating?.toFixed(1)}</span>
+                    <span className="text-[10px] text-muted-foreground">{park.rating?.toFixed(1)}</span>
                   </div>
                 </motion.button>
               );
@@ -952,10 +952,10 @@ const Parks = () => {
       <div className="px-4 pt-2">
         {/* Search Bar - Instagram Style */}
         <div className="relative mb-4">
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             placeholder="חיפוש גינה, עיר או כתובת..."
-            className="pr-12 pl-4 py-6 rounded-2xl bg-gray-100 border-0 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:ring-2 focus:ring-gray-200 transition-all"
+            className="pr-12 pl-4 py-6 rounded-2xl bg-muted border-0 text-foreground placeholder:text-muted-foreground focus:bg-card focus:ring-2 focus:ring-border transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -964,7 +964,7 @@ const Parks = () => {
               onClick={() => setSearchQuery("")}
               className="absolute left-4 top-1/2 -translate-y-1/2"
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <X className="w-5 h-5 text-muted-foreground" />
             </button>
           )}
         </div>
@@ -977,8 +977,8 @@ const Parks = () => {
               onClick={() => setViewMode("list")}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 viewMode === "list" 
-                  ? "bg-gray-900 text-white" 
-                  : "bg-gray-100 text-gray-700"
+                  ? "bg-foreground text-background" 
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               <List className="w-4 h-4 inline-block ml-1" />
@@ -989,8 +989,8 @@ const Parks = () => {
               onClick={() => setViewMode("map")}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 viewMode === "map" 
-                  ? "bg-gray-900 text-white" 
-                  : "bg-gray-100 text-gray-700"
+                  ? "bg-foreground text-background" 
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               <MapIcon className="w-4 h-4 inline-block ml-1" />
@@ -1003,14 +1003,14 @@ const Parks = () => {
             onClick={() => setShowFilters(!showFilters)}
             className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-all ${
               showFilters || activeFiltersCount > 0
-                ? "bg-gray-900 text-white" 
-                : "bg-gray-100 text-gray-700"
+                ? "bg-foreground text-background" 
+                : "bg-muted text-muted-foreground"
             }`}
           >
             <Filter className="w-4 h-4" />
             סינון
             {activeFiltersCount > 0 && (
-              <span className="w-5 h-5 bg-amber-400 text-gray-900 rounded-full text-xs flex items-center justify-center font-bold">
+              <span className="w-5 h-5 bg-amber-400 text-foreground rounded-full text-xs flex items-center justify-center font-bold">
                 {activeFiltersCount}
               </span>
             )}
@@ -1026,17 +1026,17 @@ const Parks = () => {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden mb-4"
             >
-              <Card className="p-4 border-0 shadow-lg rounded-2xl bg-white">
+              <Card className="p-4 border-0 shadow-lg rounded-2xl bg-card">
                 <div className="space-y-4">
                   {/* City & Size Selects */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">עיר</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">עיר</label>
                       <Select value={selectedCity} onValueChange={setSelectedCity}>
-                        <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50">
+                         <SelectTrigger className="rounded-xl border-border bg-muted">
                           <SelectValue placeholder="בחר עיר" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white z-50">
+                         <SelectContent className="bg-popover z-50">
                           <SelectItem value="all">כל הערים</SelectItem>
                           {cities.map((city) => (
                             <SelectItem key={city} value={city}>{city}</SelectItem>
@@ -1045,12 +1045,12 @@ const Parks = () => {
                       </Select>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">גודל</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">גודל</label>
                       <Select value={selectedSize} onValueChange={setSelectedSize}>
-                        <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50">
+                        <SelectTrigger className="rounded-xl border-border bg-muted">
                           <SelectValue placeholder="בחר גודל" />
                         </SelectTrigger>
-                        <SelectContent className="bg-white z-50">
+                        <SelectContent className="bg-popover z-50">
                           <SelectItem value="all">כל הגדלים</SelectItem>
                           <SelectItem value="small">קטנה</SelectItem>
                           <SelectItem value="medium">בינונית</SelectItem>
@@ -1062,7 +1062,7 @@ const Parks = () => {
 
                   {/* Facility Toggles */}
                   <div>
-                    <label className="text-xs font-medium text-gray-500 mb-2 block">מתקנים</label>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">מתקנים</label>
                     <div className="flex flex-wrap gap-2">
                       {[
                         { key: 'fencing', label: 'גדר', state: filterFencing, setState: setFilterFencing, icon: Check, color: 'emerald' },
@@ -1076,7 +1076,7 @@ const Parks = () => {
                           className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all ${
                             filter.state
                               ? `bg-${filter.color}-100 text-${filter.color}-700 ring-2 ring-${filter.color}-200`
-                              : "bg-gray-100 text-gray-600"
+                              : "bg-muted text-muted-foreground"
                           }`}
                         >
                           <filter.icon className="w-4 h-4" />
@@ -1098,7 +1098,7 @@ const Parks = () => {
                         setFilterWater(false);
                         setFilterShade(false);
                       }}
-                      className="text-gray-500 hover:text-gray-900"
+                      className="text-muted-foreground hover:text-foreground"
                     >
                       נקה סינון
                     </Button>
@@ -1110,7 +1110,7 @@ const Parks = () => {
         </AnimatePresence>
 
         {/* Results Count */}
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           {loading ? "טוען..." : `נמצאו ${filteredParks.length} ${filteredParks.length === 1 ? "גינה" : "גינות"}`}
         </p>
       </div>
@@ -1124,7 +1124,7 @@ const Parks = () => {
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full"
             />
-            <p className="text-gray-500 mt-4">טוען גינות... 🐾</p>
+            <p className="text-muted-foreground mt-4">טוען גינות... 🐾</p>
           </div>
         ) : filteredParks.length === 0 ? (
           <div className="text-center py-20 px-6">
@@ -1135,8 +1135,8 @@ const Parks = () => {
             >
               🔍
             </motion.div>
-            <p className="text-gray-600 font-medium mb-2">לא נמצאו גינות</p>
-            <p className="text-sm text-gray-500">נסה לשנות את הסינון או החיפוש</p>
+            <p className="text-foreground font-medium mb-2">לא נמצאו גינות</p>
+            <p className="text-sm text-muted-foreground">נסה לשנות את הסינון או החיפוש</p>
           </div>
         ) : viewMode === "list" ? (
           <div className="px-4 space-y-4">
@@ -1189,11 +1189,11 @@ const Parks = () => {
                 </Map>
               </APIProvider>
             ) : (
-              <div className="flex items-center justify-center h-full bg-gray-100 p-6 rounded-t-3xl">
+              <div className="flex items-center justify-center h-full bg-muted p-6 rounded-t-3xl">
                 <div className="text-center">
-                  <MapIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 font-medium mb-2">תצוגת המפה לא זמינה</p>
-                  <p className="text-sm text-gray-500">נא להגדיר מפתח API של Google Maps</p>
+                  <MapIcon className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
+                  <p className="text-foreground font-medium mb-2">תצוגת המפה לא זמינה</p>
+                  <p className="text-sm text-muted-foreground">נא להגדיר מפתח API של Google Maps</p>
                 </div>
               </div>
             )}
@@ -1237,7 +1237,7 @@ const Parks = () => {
           </DialogHeader>
           
           <div className="py-4">
-            <p className="text-center text-gray-600 mb-4">בחר את חיית המחמד שאיתך (אופציונלי)</p>
+            <p className="text-center text-muted-foreground mb-4">בחר את חיית המחמד שאיתך (אופציונלי)</p>
             
             <div className="flex flex-wrap gap-3 justify-center mb-6">
               {userPets.map((pet) => (
@@ -1248,7 +1248,7 @@ const Parks = () => {
                   className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${
                     selectedPetForCheckin === pet.id 
                       ? 'bg-emerald-100 ring-2 ring-emerald-500' 
-                      : 'bg-gray-100 hover:bg-gray-200'
+                      : 'bg-muted hover:bg-muted/80'
                   }`}
                 >
                   <Avatar className="w-16 h-16">
@@ -1262,7 +1262,7 @@ const Parks = () => {
               ))}
               
               {userPets.length === 0 && (
-                <p className="text-gray-500 text-sm">אין לך חיות מחמד רשומות</p>
+                <p className="text-muted-foreground text-sm">אין לך חיות מחמד רשומות</p>
               )}
             </div>
 
@@ -1304,7 +1304,7 @@ const Parks = () => {
                 key={checkin.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl"
+                className="flex items-center gap-3 p-3 bg-muted rounded-2xl"
               >
                 <Avatar className="w-12 h-12">
                   <AvatarImage src={checkin.pet?.avatar_url || checkin.profile?.avatar_url || ''} />
@@ -1313,10 +1313,10 @@ const Parks = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900">
+                  <p className="font-bold text-foreground">
                     {checkin.pet?.name || checkin.profile?.full_name || 'משתמש'}
                   </p>
-                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {new Date(checkin.checked_in_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -1330,8 +1330,8 @@ const Parks = () => {
             {selectedParkForCheckins && (!parkCheckins[selectedParkForCheckins.id] || parkCheckins[selectedParkForCheckins.id].length === 0) && (
               <div className="text-center py-8">
                 <span className="text-4xl mb-2 block">🐕</span>
-                <p className="text-gray-500">אין אף אחד בגינה כרגע</p>
-                <p className="text-sm text-gray-400">היה הראשון לעשות צ'ק-אין!</p>
+                <p className="text-muted-foreground">אין אף אחד בגינה כרגע</p>
+                <p className="text-sm text-muted-foreground/70">היה הראשון לעשות צ'ק-אין!</p>
               </div>
             )}
           </div>
@@ -1343,7 +1343,7 @@ const Parks = () => {
         <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-center text-xl font-black flex items-center justify-center gap-2">
-              <Image className="w-6 h-6 text-[#0095F6]" />
+              <Image className="w-6 h-6 text-primary" />
               תמונות מ{selectedParkForGallery?.name}
             </DialogTitle>
           </DialogHeader>
@@ -1416,9 +1416,9 @@ const Parks = () => {
 
             {selectedParkForGallery && (!parkPhotos[selectedParkForGallery.id] || parkPhotos[selectedParkForGallery.id].length === 0) && (
               <div className="text-center py-12">
-                <Camera className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">אין תמונות עדיין</p>
-                <p className="text-sm text-gray-400">היה הראשון להעלות תמונה מהגינה!</p>
+                <Camera className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-muted-foreground font-medium">אין תמונות עדיין</p>
+                <p className="text-sm text-muted-foreground/70">היה הראשון להעלות תמונה מהגינה!</p>
               </div>
             )}
           </div>
