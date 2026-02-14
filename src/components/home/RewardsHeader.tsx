@@ -40,23 +40,24 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
         {/* Text Column - Left Side */}
         <div className="flex-1 text-right space-y-1 overflow-visible min-w-0">
           {/* Greeting Line - Top - Slightly Larger */}
-          <div className="text-[15px] leading-tight font-normal text-[#1A1A1A] mb-1 whitespace-nowrap overflow-visible">
+          <div className="text-[15px] leading-tight font-normal text-foreground mb-1 whitespace-nowrap overflow-visible">
             {greeting},{" "}
             <button
               onClick={onMenuOpen}
               className="hover:opacity-70 transition-opacity font-normal underline decoration-1 underline-offset-2"
+              aria-label="פתח תפריט פרופיל"
             >
               {userName}
             </button>
           </div>
           
           {/* Main Headline - Marketing Message */}
-          <h1 className="text-[0.95rem] leading-tight font-black text-[#1A1A1A] mb-1 whitespace-nowrap">
+          <h1 className="text-[0.95rem] leading-tight font-black text-foreground mb-1 whitespace-nowrap">
             קונים, צוברים, נהנים — בכל רכישה מחדש!
           </h1>
           
           {/* Small Info Line - 11px */}
-          <p className="text-[0.6875rem] leading-tight font-normal text-[#6E6E6E] mb-2">
+          <p className="text-[0.6875rem] leading-tight font-normal text-muted-foreground mb-2">
             צוברים 5% מכל קנייה ב Petid ונהנים
           </p>
         </div>

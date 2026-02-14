@@ -159,16 +159,25 @@ const Profile = () => {
 
   // Handle category click - opens bottom sheet or navigates
   const handleCategoryClick = (categoryId: string) => {
-    // Special handling for adoption - navigate to adoption page
-    if (categoryId === 'adoption') {
-      navigate('/adoption');
+    // Navigation handlers for categories that should navigate to pages
+    const navigationMap: Record<string, string> = {
+      adoption: '/adoption',
+      stories: '/create-story',
+      videos: '/reels',
+      chat: '/chat',
+      calendar: '/tracker',
+      health: '/tracker',
+      memorial: '/feed',
+      life_story: '/feed',
+      delivery: '/shop',
+    };
+    
+    if (navigationMap[categoryId]) {
+      navigate(navigationMap[categoryId]);
       return;
     }
-    // Special handling for products - open products sheet
-    if (categoryId === 'products') {
-      setActiveSheet('products');
-      return;
-    }
+    
+    // Open bottom sheet for service categories
     setActiveSheet(categoryId);
   };
 
@@ -281,10 +290,6 @@ const Profile = () => {
   }];
   const activeHubData = hubs.find(h => h.id === activeHub);
 
-  // Handle scroll - removed collapse logic to allow free scrolling
-  const handleScroll = (_e: React.UIEvent<HTMLDivElement>) => {
-    // Scrolling is now free - no auto-collapse behavior
-  };
   if (loading) {
     return <PageTransition>
         <ProfileSkeleton />
@@ -303,7 +308,7 @@ const Profile = () => {
         opacity: 1
       }}>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="p-2 -mr-2">
+            <button onClick={() => navigate(-1)} className="p-2 -mr-2" aria-label="חזרה">
               <ChevronRight className="w-6 h-6 text-foreground" />
             </button>
             
@@ -368,22 +373,22 @@ const Profile = () => {
           </div>
           
           <div className="flex items-center gap-1">
-            <button onClick={() => navigate('/messages')} className="p-2 relative">
+            <button onClick={() => navigate('/messages')} className="p-2 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
-            {isAdmin ? <button onClick={() => navigate('/admin/growo')} className="p-2">
-                <Shield className="w-5 h-5 text-primary" />
-              </button> : <button onClick={() => navigate('/edit-profile')} className="p-2">
-                <Edit3 className="w-5 h-5 text-foreground" />
+            {isAdmin ? <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
+                <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              </button> : <button onClick={() => navigate('/edit-profile')} className="p-2" aria-label="עריכת פרופיל">
+                <Edit3 className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               </button>}
-            <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2">
-              <Settings className="w-5 h-5 text-foreground" />
+            <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2" aria-label="הגדרות">
+              <Settings className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
           </div>
         </motion.div>
 
         {/* Main Content */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-[70px]" onScroll={handleScroll}>
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-[70px]">
           {/* Expanded Profile Section - hides after 30 seconds */}
           <AnimatePresence>
             {!isProfileCollapsed && <motion.div className="flex flex-col items-center px-5 pt-2 pb-4" initial={{
