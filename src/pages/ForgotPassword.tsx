@@ -380,8 +380,8 @@ const ForgotPassword = () => {
                     transition={{ delay: 0.1 }}
                     className="mb-8 text-center"
                   >
-                    <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                      <KeyRound className="h-8 w-8 text-green-500" />
+                    <div className="w-16 h-16 bg-success/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                      <KeyRound className="h-8 w-8 text-success" />
                     </div>
                     <h2 className="text-2xl font-bold font-jakarta text-foreground mb-2">סיסמה חדשה</h2>
                     <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">

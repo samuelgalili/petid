@@ -110,7 +110,7 @@ const ResetPassword = () => {
       </video>
 
       {/* Fixed Header with Back Button and Logo */}
-      <div className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm">
+      <div className="fixed top-0 left-0 right-0 z-10 bg-background/5 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
           <PetidLogo showAnimals={false} />
         </div>
@@ -131,15 +131,15 @@ const ResetPassword = () => {
               {!success ? (
                 <>
                   <div className="mb-8 text-center">
-                    <h2 className="text-3xl font-bold font-jakarta text-gray-900 mb-3">הגדרת סיסמה חדשה</h2>
-                    <p className="text-sm font-jakarta text-gray-600 leading-relaxed">
+                    <h2 className="text-3xl font-bold font-jakarta text-foreground mb-3">הגדרת סיסמה חדשה</h2>
+                    <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
                       הזן את הסיסמה החדשה שלך למטה
                     </p>
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="password" className="text-sm font-medium font-jakarta text-gray-700">
+                      <Label htmlFor="password" className="text-sm font-medium font-jakarta text-foreground/80">
                         סיסמה חדשה
                       </Label>
                       <div className="relative">
