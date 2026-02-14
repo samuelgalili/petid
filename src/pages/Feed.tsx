@@ -682,7 +682,7 @@ const Feed = () => {
         // Fetch avatar
         const {
           data: profileData
-        } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).single();
+        } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle();
         if (profileData?.avatar_url) {
           setUserAvatar(profileData.avatar_url);
         }
