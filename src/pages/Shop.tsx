@@ -144,7 +144,7 @@ const Shop = () => {
   }, [carouselApi]);
 
   // Fetch products from database - combining business_products and scraped_products
-  const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching } = useQuery({
+  const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching, isError: isProductsError } = useQuery({
     queryKey: ["shop-products-v2"],
     queryFn: async () => {
       console.log("Fetching shop products v2...");
@@ -619,8 +619,19 @@ const Shop = () => {
           </div>
         )}
 
+        {/* Error State */}
+        {isProductsError && !isLoadingProducts && (
+          <div className="py-20 text-center px-6">
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShoppingBag className="w-8 h-8 text-destructive" strokeWidth={1.5} />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">משהו השתבש</p>
+            <p className="text-xs text-muted-foreground mb-4">לא הצלחנו לטעון את המוצרים. נסה שוב מאוחר יותר.</p>
+          </div>
+        )}
+
         {/* Empty State */}
-        {!isLoadingProducts && !isFetching && filteredAndSortedProducts.length === 0 && (
+        {!isLoadingProducts && !isFetching && !isProductsError && filteredAndSortedProducts.length === 0 && (
           <div className="py-20 text-center">
             <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" strokeWidth={1} />
             <p className="text-sm font-medium text-foreground mb-1">אין מוצרים עדיין</p>
