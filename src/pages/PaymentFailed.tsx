@@ -47,7 +47,7 @@ const PaymentFailed = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-50 to-background flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-destructive/10 to-background flex items-center justify-center p-4" dir="rtl">
       <Card className="max-w-md w-full text-center border-0 shadow-xl">
         <CardHeader className="pb-4">
           <div className="flex justify-center mb-4">
@@ -73,9 +73,9 @@ const PaymentFailed = () => {
           )}
 
           {/* Common Reasons */}
-          <div className="text-right bg-amber-50 rounded-xl p-4 text-sm">
-            <p className="font-semibold mb-2 text-amber-800">סיבות נפוצות לכישלון:</p>
-            <ul className="space-y-1 text-amber-700">
+          <div className="text-right bg-muted rounded-xl p-4 text-sm">
+            <p className="font-semibold mb-2 text-foreground">סיבות נפוצות לכישלון:</p>
+            <ul className="space-y-1 text-muted-foreground">
               <li>• כרטיס אשראי לא פעיל או חסום</li>
               <li>• חריגה ממסגרת האשראי</li>
               <li>• פרטי כרטיס שגויים</li>
