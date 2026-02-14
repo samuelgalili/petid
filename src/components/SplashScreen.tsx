@@ -22,7 +22,7 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
       {!fadeOut && (
         <motion.div
           className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{ backgroundColor: '#ffffff' }}
+          style={{ backgroundColor: '#FAFAF5' }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
@@ -30,7 +30,8 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
             src={splashGif}
             alt="PetID"
             onLoad={handleLoad}
-            className="max-w-[280px] max-h-[280px] object-contain"
+            className="w-[85vw] max-w-[420px] object-contain"
+            style={{ filter: 'drop-shadow(0 0 0 transparent)' }}
           />
         </motion.div>
       )}
