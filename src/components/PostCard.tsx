@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Heart, MoreVertical, Flag, Link2, EyeOff, Trash2, User } from "lucide-react";
+import { MessageCircle, Share2, Heart, MoreVertical, Flag, Link2, EyeOff, Trash2, User, Music, Disc3 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { haptic } from "@/lib/haptics";
@@ -56,6 +56,8 @@ interface PostCardProps {
     views_count?: number;
     video_url?: string;
     media_type?: string;
+    music_title?: string;
+    music_artist?: string;
     user: {
       id: string;
       full_name: string;
@@ -90,7 +92,7 @@ const sidebarStagger = {
   visible: (i: number) => ({
     opacity: 1,
     x: 0,
-    transition: { delay: 0.2 + i * 0.07, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] as const },
+    transition: { delay: 0.15 + i * 0.06, duration: 0.25, ease: [0.25, 0.1, 0.25, 1] as const },
   }),
 };
 
@@ -192,10 +194,12 @@ export const PostCard = ({
     }
   };
 
+  const musicTitle = post.music_title || "PetID · Original Sound";
+
   return (
     <article
-      className="relative w-full rounded-2xl overflow-hidden my-1"
-      style={{ aspectRatio: '9/16', maxWidth: 'calc((100vh - 180px) * 9 / 16)', margin: '4px auto' }}
+      className="relative w-full overflow-hidden"
+      style={{ aspectRatio: '9/16', maxWidth: 'calc((100vh - 140px) * 9 / 16)', margin: '2px auto', borderRadius: '0' }}
     >
       {/* Full-bleed media */}
       <div className="absolute inset-0 bg-black" onClick={handleDoubleTap}>
@@ -207,17 +211,30 @@ export const PostCard = ({
         </ImageCarousel>
       </div>
 
-      {/* Bottom gradient */}
-      <div className="absolute inset-x-0 bottom-0 pointer-events-none z-[5]" style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, transparent 100%)' }} />
-      {/* Top gradient */}
-      <div className="absolute inset-x-0 top-0 pointer-events-none z-[5]" style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%)' }} />
+      {/* Bottom gradient — deeper, smoother */}
+      <div 
+        className="absolute inset-x-0 bottom-0 pointer-events-none z-[5]" 
+        style={{ 
+          height: '50%', 
+          background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 35%, rgba(0,0,0,0.1) 70%, transparent 100%)' 
+        }} 
+      />
+      {/* Top gradient — subtle */}
+      <div 
+        className="absolute inset-x-0 top-0 pointer-events-none z-[5]" 
+        style={{ height: '60px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%)' }} 
+      />
 
       {/* Owner menu — top-right */}
       <div className="absolute top-3 right-3 z-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="text-white p-1.5 rounded-full backdrop-blur-sm focus:outline-none" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }} aria-label="אפשרויות">
-              <MoreVertical className="w-5 h-5" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} strokeWidth={2} />
+            <button 
+              className="p-1.5 rounded-full focus:outline-none" 
+              style={{ backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }} 
+              aria-label="אפשרויות"
+            >
+              <MoreVertical className="w-5 h-5 text-white" style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))' }} strokeWidth={2} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">
@@ -247,39 +264,56 @@ export const PostCard = ({
         </DropdownMenu>
       </div>
 
-      {/* RIGHT SIDEBAR — Vertically centered */}
+      {/* ═══════════════════════════════════════════════════ */}
+      {/* RIGHT SIDEBAR — TikTok precise positioning         */}
+      {/* ═══════════════════════════════════════════════════ */}
       <motion.div
-       className="absolute flex flex-col items-center z-10"
-        style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', gap: '16px' }}
+        className="absolute flex flex-col items-center z-10"
+        style={{ right: '10px', bottom: '140px', gap: '20px' }}
         initial="hidden"
         animate="visible"
       >
-        {/* Profile Avatar */}
+        {/* Profile Avatar with follow badge */}
         <motion.button
           custom={0}
           variants={sidebarStagger}
           whileTap={{ scale: 0.9 }}
           onClick={() => navigate(`/user/${post.user.id}`)}
           className="relative"
-          style={{ marginBottom: '0px' }}
         >
-          <div className="rounded-full overflow-hidden" style={{ width: '44px', height: '44px', border: '2px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+          <div 
+            className="rounded-full overflow-hidden"
+            style={{ 
+              width: '48px', height: '48px', 
+              border: '2.5px solid white', 
+              boxShadow: '0 2px 12px rgba(0,0,0,0.4)' 
+            }}
+          >
             {post.user.avatar_url ? (
-              <img src={post.user.avatar_url} alt="" className="w-full h-full object-cover" />
+              <img src={post.user.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#525252' }}>
-                <User className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.7)' }} />
+              <div className="w-full h-full flex items-center justify-center bg-neutral-600">
+                <User className="w-5 h-5 text-white/70" />
               </div>
             )}
           </div>
           {!isOwner && !isFollowing && (
-            <button
+            <motion.button
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 400 }}
               onClick={(e) => { e.stopPropagation(); handleFollow(); }}
-              className="absolute rounded-full flex items-center justify-center text-white font-bold"
-              style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', width: '16px', height: '16px', fontSize: '10px', backgroundColor: '#FF8C42', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
+              className="absolute rounded-full flex items-center justify-center"
+              style={{ 
+                bottom: '-6px', left: '50%', transform: 'translateX(-50%)', 
+                width: '20px', height: '20px', 
+                background: 'linear-gradient(135deg, #FE2C55, #FF0050)',
+                boxShadow: '0 2px 8px rgba(254,44,85,0.5)',
+                border: '2px solid white',
+              }}
             >
-              +
-            </button>
+              <span className="text-white font-black" style={{ fontSize: '13px', lineHeight: 1 }}>+</span>
+            </motion.button>
           )}
         </motion.button>
 
@@ -287,22 +321,34 @@ export const PostCard = ({
         <motion.button
           custom={1}
           variants={sidebarStagger}
-          whileTap={{ scale: 0.8 }}
+          whileTap={{ scale: 0.75 }}
           onClick={handleLike}
           className="flex flex-col items-center"
-          style={{ gap: '4px' }}
+          style={{ gap: '2px' }}
         >
           <motion.div
-            animate={isLicking ? { scale: [1, 1.4, 0.9, 1.1, 1] } : {}}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            animate={isLicking ? { scale: [1, 1.5, 0.85, 1.15, 1], rotate: [0, -8, 8, -4, 0] } : {}}
+            transition={{ duration: 0.45, ease: "easeOut" }}
           >
             <Heart
-              className={post.is_liked ? 'fill-rose-500 text-rose-500' : 'text-white'}
-              style={{ width: '28px', height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
-              strokeWidth={1.5}
+              className={post.is_liked ? 'text-white' : 'text-white'}
+              fill={post.is_liked ? '#FE2C55' : 'none'}
+              style={{ 
+                width: '32px', height: '32px', 
+                filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))',
+                color: post.is_liked ? '#FE2C55' : 'white',
+              }}
+              strokeWidth={post.is_liked ? 0 : 1.8}
             />
           </motion.div>
-          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '12px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
+          <span 
+            className="font-semibold tabular-nums" 
+            style={{ 
+              fontSize: '12px', color: 'white',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
+              letterSpacing: '-0.02em',
+            }}
+          >
             {formatCount(post.likes_count)}
           </span>
         </motion.button>
@@ -311,13 +357,27 @@ export const PostCard = ({
         <motion.button
           custom={2}
           variants={sidebarStagger}
-          whileTap={{ scale: 0.8 }}
+          whileTap={{ scale: 0.75 }}
           onClick={() => { haptic("light"); navigate(`/post/${post.id}`); }}
           className="flex flex-col items-center"
           style={{ gap: '2px' }}
         >
-          <MessageCircle className="text-white" style={{ width: '28px', height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
-          <span className="text-white font-semibold tabular-nums" style={{ fontSize: '12px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
+          <MessageCircle 
+            className="text-white" 
+            style={{ 
+              width: '30px', height: '30px', 
+              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))' 
+            }} 
+            strokeWidth={1.8} 
+          />
+          <span 
+            className="font-semibold tabular-nums" 
+            style={{ 
+              fontSize: '12px', color: 'white',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
+              letterSpacing: '-0.02em',
+            }}
+          >
             {formatCount(post.comments_count)}
           </span>
         </motion.button>
@@ -326,66 +386,114 @@ export const PostCard = ({
         <motion.button
           custom={3}
           variants={sidebarStagger}
-          whileTap={{ scale: 0.8 }}
+          whileTap={{ scale: 0.75 }}
           onClick={handleShare}
           className="flex flex-col items-center"
           style={{ gap: '2px' }}
         >
-          <Share2 className="text-white" style={{ width: '28px', height: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} strokeWidth={1.5} />
-          <span className="text-white font-semibold" style={{ fontSize: '12px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>
+          <Share2 
+            className="text-white" 
+            style={{ 
+              width: '28px', height: '28px', 
+              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))' 
+            }} 
+            strokeWidth={1.8} 
+          />
+          <span 
+            className="font-semibold" 
+            style={{ 
+              fontSize: '12px', color: 'white',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))',
+            }}
+          >
             שתף
           </span>
         </motion.button>
 
-        {/* CTA Button */}
+        {/* Spinning Disc — TikTok music disc */}
         <motion.button
           custom={4}
           variants={sidebarStagger}
           whileTap={{ scale: 0.9 }}
           onClick={() => navigate(`/post/${post.id}`)}
-          className="relative rounded-xl flex items-center justify-center"
-          style={{ width: '56px', height: '38px', backgroundColor: '#FF8C42', boxShadow: '0 4px 12px rgba(255,140,66,0.4)' }}
+          className="relative"
         >
           <motion.div
-            className="absolute inset-0 rounded-xl"
-            style={{ backgroundColor: '#FF8C42' }}
-            animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <span className="text-white font-bold relative z-10" style={{ fontSize: '11px' }}>פרטים</span>
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            className="rounded-full overflow-hidden"
+            style={{ 
+              width: '36px', height: '36px',
+              border: '2px solid rgba(255,255,255,0.3)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, #1a1a1a, #333)',
+            }}
+          >
+            {post.user.avatar_url ? (
+              <img src={post.user.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Music className="w-4 h-4 text-white/60" />
+              </div>
+            )}
+          </motion.div>
         </motion.button>
       </motion.div>
 
-      {/* BOTTOM-LEFT INFO */}
-      <div className="absolute z-10 text-white" dir="rtl" style={{ bottom: '28px', left: '16px', right: '80px' }}>
-        {/* Status badges */}
-        <div className="flex items-center flex-wrap" style={{ gap: '8px', marginBottom: '8px' }}>
-          {post.location_name && (
-            <span className="rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '4px 12px', fontSize: '14px', fontWeight: 500 }}>
-              📍 {post.location_name}
-            </span>
-          )}
-          {post.views_count && post.views_count > 0 && (
-            <span className="rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '4px 12px', fontSize: '14px', fontWeight: 500 }}>
-              👁 {formatCount(post.views_count)}
-            </span>
-          )}
-          <span className="rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', padding: '4px 12px', fontSize: '14px', fontWeight: 500 }}>
-            {getTimeAgo(post.created_at)}
-          </span>
-        </div>
-
-        {/* Username */}
-        <p className="font-semibold" style={{ fontSize: '18px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))', marginBottom: '4px' }}>
-          @{post.user.full_name || "משתמש"}
+      {/* ═══════════════════════════════════════════════════ */}
+      {/* BOTTOM-LEFT INFO — TikTok precise                  */}
+      {/* ═══════════════════════════════════════════════════ */}
+      <div className="absolute z-10 text-white" dir="rtl" style={{ bottom: '16px', left: '12px', right: '72px' }}>
+        {/* Username — bold, clean, no @ */}
+        <p 
+          className="font-bold truncate" 
+          style={{ 
+            fontSize: '16px', 
+            lineHeight: 1.3,
+            filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))',
+            marginBottom: '6px',
+            letterSpacing: '-0.01em',
+          }}
+          onClick={() => navigate(`/user/${post.user.id}`)}
+        >
+          {post.user.full_name || "משתמש"}
         </p>
 
-        {/* Caption */}
+        {/* Caption — clean, max 2 lines */}
         {post.caption && (
-          <p className="line-clamp-2" style={{ fontSize: '16px', lineHeight: 1.4, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}>
+          <p 
+            className="line-clamp-2" 
+            style={{ 
+              fontSize: '14px', 
+              lineHeight: 1.5, 
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+              marginBottom: '10px',
+              opacity: 0.95,
+              fontWeight: 400,
+            }}
+          >
             {post.caption}
           </p>
         )}
+
+        {/* Music bar — TikTok style with marquee */}
+        <div className="flex items-center" style={{ gap: '6px' }}>
+          <Music className="shrink-0" style={{ width: '14px', height: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }} />
+          <div className="overflow-hidden flex-1" style={{ maxWidth: '200px' }}>
+            <motion.p
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
+              className="whitespace-nowrap"
+              style={{ 
+                fontSize: '13px', 
+                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+                fontWeight: 500,
+              }}
+            >
+              ♫ {musicTitle} &nbsp;&nbsp;&nbsp; ♫ {musicTitle}
+            </motion.p>
+          </div>
+        </div>
       </div>
 
       {/* Dialogs */}
@@ -403,7 +511,7 @@ export const PostCard = ({
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
             <AlertDialogCancel disabled={deleting} className="rounded-xl">ביטול</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeletePost} disabled={deleting} className="bg-red-500 hover:bg-red-600 rounded-xl">
+            <AlertDialogAction onClick={handleDeletePost} disabled={deleting} className="bg-destructive hover:bg-destructive/90 rounded-xl">
               {deleting ? "מוחק..." : "מחק"}
             </AlertDialogAction>
           </AlertDialogFooter>
