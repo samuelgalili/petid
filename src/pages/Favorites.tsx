@@ -273,7 +273,7 @@ const Favorites = () => {
                       description: `${favoriteProducts.length} מוצרים נוספו בהצלחה`,
                     });
                   }}
-                  className="w-full h-14 bg-[#FFC107] hover:bg-[#FFB300] text-gray-900 text-lg font-bold rounded-2xl shadow-lg"
+                  className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold rounded-2xl shadow-lg"
                 >
                   <ShoppingCart className="w-6 h-6 ml-2" />
                   הוסף הכל לעגלה - ₪{favoriteProducts.reduce((sum, p) => sum + p.price, 0)}
