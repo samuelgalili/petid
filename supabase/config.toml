@@ -1,12 +1,6 @@
 project_id = "xcauajpfrmalzhhiodcb"
 
-[functions.detect-pet-breed]
-verify_jwt = false
-
 [functions.chat]
-verify_jwt = false
-
-[functions.analyze-training-submission]
 verify_jwt = false
 
 [functions.send-push-notification]
