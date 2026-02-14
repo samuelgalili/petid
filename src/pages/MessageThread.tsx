@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus, ExternalLink } from "lucide-react";
+import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus, ExternalLink, Users } from "lucide-react";
+import { SharedFeedPanel } from "@/components/chat/SharedFeedPanel";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -72,6 +73,7 @@ export default function MessageThread() {
   const [userProfile, setUserProfile] = useState<{ full_name: string | null } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showSharedFeed, setShowSharedFeed] = useState(false);
   
   // Check if this is an AI chat
   const isAIChat = userId === AI_SUPPORT_ID;
@@ -585,6 +587,13 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
             </button>
           ) : (
             <div className="flex items-center gap-1">
+              <button 
+                onClick={() => setShowSharedFeed(true)}
+                className="p-2 rounded-full hover:bg-primary/10 transition-colors group"
+                title="פיד משותף"
+              >
+                <Users className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
+              </button>
               <button className="p-2 rounded-full hover:bg-muted transition-colors">
                 <Phone className="h-6 w-6 text-foreground" />
               </button>
@@ -937,6 +946,29 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
           )}
         </div>
       </div>
+
+      {/* Shared Feed Panel */}
+      {!isAIChat && userId && (
+        <SharedFeedPanel
+          isOpen={showSharedFeed}
+          onClose={() => setShowSharedFeed(false)}
+          otherUserId={userId}
+          otherUserName={otherUser?.full_name || "משתמש"}
+          onReaction={async (postId, type) => {
+            if (!user || !userId) return;
+            const reactionText = type === "like" 
+              ? `❤️ הגיב/ה בלייק על פוסט בפיד המשותף`
+              : `💬 הגיב/ה על פוסט בפיד המשותף`;
+            
+            await supabase.from("messages").insert({
+              sender_id: user.id,
+              receiver_id: userId,
+              message_text: reactionText,
+              message_type: "shared_feed_reaction",
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
