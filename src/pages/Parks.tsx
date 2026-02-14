@@ -180,7 +180,7 @@ const Parks = () => {
       .select('*')
       .eq('user_id', user.id)
       .is('checked_out_at', null)
-      .single();
+      .maybeSingle();
     
     setUserCheckin(data);
   };
