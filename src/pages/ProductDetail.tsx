@@ -292,7 +292,7 @@ const ProductDetail = () => {
       />
       <div className="h-full overflow-y-auto pb-[180px]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-border/50 overflow-visible">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50 overflow-visible">
         <div className="flex items-center justify-between px-4 py-3 overflow-visible">
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted w-10 h-10" onClick={() => navigate(-1)}>
             <ArrowRight className="w-5 h-5 text-foreground" />
