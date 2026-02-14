@@ -21,8 +21,8 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
     <AnimatePresence>
       {!fadeOut && (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{ backgroundColor: '#FAFAF5' }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-white"
+          style={{ backgroundColor: '#ffffff' }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
