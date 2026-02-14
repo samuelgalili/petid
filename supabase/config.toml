@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.sync-data-sources]
 verify_jwt = false
+
+[functions.generate-shared-feed]
+verify_jwt = false

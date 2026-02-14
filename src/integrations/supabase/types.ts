@@ -7857,6 +7857,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_feeds: {
+        Row: {
+          created_at: string
+          current_index_user1: number
+          current_index_user2: number
+          id: string
+          is_active: boolean
+          post_ids: string[]
+          updated_at: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_index_user1?: number
+          current_index_user2?: number
+          id?: string
+          is_active?: boolean
+          post_ids?: string[]
+          updated_at?: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          created_at?: string
+          current_index_user1?: number
+          current_index_user2?: number
+          id?: string
+          is_active?: boolean
+          post_ids?: string[]
+          updated_at?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           created_at: string
