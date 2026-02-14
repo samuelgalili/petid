@@ -352,6 +352,29 @@ serve(async (req: Request): Promise<Response> => {
     formData.append('SuccessRedirectUrl', `${requestData.success_url}?order_id=${orderData.id}`);
     formData.append('ErrorRedirectUrl', `${requestData.cancel_url}?order_id=${orderData.id}`);
 
+    // Invoice header details.
+    // Some terminals enforce invoice creation and reject requests without InvoiceHead fields (e.g., ResponseCode 5046).
+    const customerName = (requestData.shipping_address.fullName || '').trim() || 'Customer';
+    const customerEmail = (requestData.shipping_address.email || '').trim();
+    const customerAddress = (requestData.shipping_address.address || '').trim() || customerName;
+    const customerCity = (requestData.shipping_address.city || '').trim() || 'Unknown';
+    const customerPhone = (requestData.shipping_address.phone || '').trim();
+    const shouldSendInvoiceByEmail = customerEmail.length > 0;
+
+    formData.append('InvoiceHeadOperation', '1'); // Create invoice from provided InvoiceHead/InvoiceLines data
+    formData.append('InvoiceHead.CustName', customerName);
+    formData.append('InvoiceHead.CustAddresLine1', customerAddress);
+    formData.append('InvoiceHead.CustCity', customerCity);
+    formData.append('InvoiceHead.CoinID', '1');
+    formData.append('InvoiceHead.Language', 'he');
+    formData.append('InvoiceHead.SendByEmail', shouldSendInvoiceByEmail ? 'true' : 'false');
+    if (shouldSendInvoiceByEmail) {
+      formData.append('InvoiceHead.Email', customerEmail);
+    }
+    if (customerPhone.length > 0) {
+      formData.append('InvoiceHead.CustMobilePH', customerPhone);
+    }
+
     // Webhook for payment result notification
     formData.append('WebHookUrl', webhookUrl);
     formData.append('IndicatorUrl', webhookUrl); // Legacy API alternative webhook parameter
