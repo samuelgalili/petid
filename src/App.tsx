@@ -5,7 +5,10 @@
  * - Global providers (theme, auth, cart, etc.)
  * - Route rendering
  * - Global UI components (toasts, dialogs)
+ * - Splash screen on initial load
  */
+
+import { useState } from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -28,6 +31,7 @@ import { FlyingCartProvider } from "@/components/FlyingCartAnimation";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { LoginPromptDialog } from "@/components/LoginPromptDialog";
+import { SplashScreen } from "@/components/SplashScreen";
 import ScrollToTop from "@/components/ScrollToTop";
 import Footer from "@/components/Footer";
 
@@ -118,16 +122,25 @@ const GlobalProviders = ({ children }: { children: React.ReactNode }) => (
 /**
  * Main App Component
  */
-const App = () => (
-  <ErrorBoundary>
-    <GlobalProviders>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AnimatedRoutes />
-      </BrowserRouter>
-    </GlobalProviders>
-  </ErrorBoundary>
-);
+const App = () => {
+  const [splashDone, setSplashDone] = useState(false);
+
+  return (
+    <ErrorBoundary>
+      <GlobalProviders>
+        {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
+        {splashDone && (
+          <>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AnimatedRoutes />
+            </BrowserRouter>
+          </>
+        )}
+      </GlobalProviders>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
