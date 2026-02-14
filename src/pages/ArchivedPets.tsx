@@ -96,7 +96,6 @@ const ArchivedPets = () => {
     if (!selectedPet) return;
 
     try {
-      // Permanently delete the pet
       const { error } = await supabase
         .from('pets')
         .delete()
@@ -104,7 +103,6 @@ const ArchivedPets = () => {
 
       if (error) throw error;
 
-      // Delete avatar from storage if exists
       if (selectedPet.avatar_url) {
         const fileName = selectedPet.avatar_url.split('/').pop();
         if (fileName) {
@@ -115,8 +113,8 @@ const ArchivedPets = () => {
       }
 
       toast({
-        title: "Pet Permanently Deleted",
-        description: `${selectedPet.name} has been permanently removed`,
+        title: "החיה נמחקה לצמיתות",
+        description: `${selectedPet.name} הוסר לצמיתות מהמערכת`,
       });
 
       setShowDeleteConfirm(false);
@@ -124,7 +122,7 @@ const ArchivedPets = () => {
       fetchArchivedPets();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "שגיאה",
         description: error.message,
         variant: "destructive",
       });
@@ -132,10 +130,9 @@ const ArchivedPets = () => {
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-white">
+    <div className="min-h-screen pb-20 bg-background">
       <AppHeader title="חיות מחמד בארכיון" showBackButton={true} />
 
-      {/* Content */}
       <div className="px-4 py-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -147,20 +144,20 @@ const ArchivedPets = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 text-center"
           >
-            <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mb-4 shadow-inner">
+            <div className="w-24 h-24 bg-gradient-to-br from-muted to-muted/80 rounded-3xl flex items-center justify-center mb-4 shadow-inner">
               <span className="text-5xl">📦</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 font-jakarta mb-2">
-              No Archived Pets
+            <h2 className="text-xl font-bold text-foreground font-jakarta mb-2">
+              אין חיות בארכיון
             </h2>
-            <p className="text-gray-600 font-jakarta text-sm max-w-xs">
-              Pets you archive will appear here. You can restore them anytime.
+            <p className="text-muted-foreground font-jakarta text-sm max-w-xs">
+              חיות שתעביר לארכיון יופיעו כאן. תוכל לשחזר אותן בכל עת.
             </p>
           </motion.div>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600 font-jakarta mb-4">
-              {archivedPets.length} archived pet{archivedPets.length !== 1 ? 's' : ''}
+            <p className="text-sm text-muted-foreground font-jakarta mb-4">
+              {archivedPets.length} חיות בארכיון
             </p>
             <AnimatePresence>
               {archivedPets.map((pet, index) => (
@@ -171,10 +168,9 @@ const ArchivedPets = () => {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Card className="p-4 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                  <Card className="p-4 bg-card border border-border rounded-2xl shadow-sm">
                     <div className="flex items-center gap-4">
-                      {/* Pet Avatar */}
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden flex-shrink-0 border-2 border-gray-300">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-muted to-muted/80 overflow-hidden flex-shrink-0 border-2 border-border">
                         {pet.avatar_url ? (
                           <img
                             src={pet.avatar_url}
@@ -188,30 +184,28 @@ const ArchivedPets = () => {
                         )}
                       </div>
 
-                      {/* Pet Info */}
                       <div className="flex-1">
-                        <h3 className="font-bold text-base text-gray-900 font-jakarta">
+                        <h3 className="font-bold text-base text-foreground font-jakarta">
                           {pet.name}
                         </h3>
                         {pet.breed && (
-                          <p className="text-sm text-gray-600 font-jakarta">
+                          <p className="text-sm text-muted-foreground font-jakarta">
                             {pet.breed}
                           </p>
                         )}
-                        <p className="text-xs text-gray-500 font-jakarta mt-1">
-                          Archived {new Date(pet.archived_at).toLocaleDateString()}
+                        <p className="text-xs text-muted-foreground/70 font-jakarta mt-1">
+                          הועבר לארכיון {new Date(pet.archived_at).toLocaleDateString('he-IL')}
                         </p>
                       </div>
 
-                      {/* Action Buttons */}
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           onClick={() => handleRestorePet(pet.id, pet.name)}
-                          className="bg-[#7DD3C0] hover:bg-[#6BC4AD] text-gray-900 rounded-xl font-jakarta font-semibold shadow-sm"
+                          className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl font-jakarta font-semibold shadow-sm"
                         >
                           <RotateCcw className="w-4 h-4 mr-1" />
-                          Restore
+                          שחזר
                         </Button>
                         <Button
                           size="sm"
@@ -220,7 +214,7 @@ const ArchivedPets = () => {
                             setSelectedPet(pet);
                             setShowDeleteConfirm(true);
                           }}
-                          className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-jakarta font-semibold shadow-sm"
+                          className="rounded-xl font-jakarta font-semibold shadow-sm"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -234,26 +228,25 @@ const ArchivedPets = () => {
         )}
       </div>
 
-      {/* Permanent Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent className="rounded-3xl max-w-[90vw] w-full mx-4">
+        <AlertDialogContent className="rounded-3xl max-w-[90vw] w-full mx-4" dir="rtl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-jakarta text-xl font-bold text-gray-900">
-              Permanently Delete {selectedPet?.name}?
+            <AlertDialogTitle className="font-jakarta text-xl font-bold text-foreground">
+              למחוק את {selectedPet?.name} לצמיתות?
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-jakarta text-gray-600 text-base">
-              This action cannot be undone. {selectedPet?.name} and all associated data will be permanently deleted from the system.
+            <AlertDialogDescription className="font-jakarta text-muted-foreground text-base">
+              פעולה זו אינה ניתנת לביטול. {selectedPet?.name} וכל הנתונים המשויכים יימחקו לצמיתות מהמערכת.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto border-2">
-              Cancel
+              ביטול
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handlePermanentDelete}
-              className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white"
+              className="font-jakarta font-bold rounded-xl h-12 w-full sm:w-auto bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
-              Permanently Delete
+              מחיקה לצמיתות
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

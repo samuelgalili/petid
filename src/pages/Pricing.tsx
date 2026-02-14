@@ -170,7 +170,7 @@ const Pricing = () => {
 
   const getProductIcon = (product: Product) => {
     if (product.type === 'one_time') return <Shield className="h-8 w-8 text-primary" />;
-    if (product.billing_period === 'yearly') return <Sparkles className="h-8 w-8 text-yellow-500" />;
+    if (product.billing_period === 'yearly') return <Sparkles className="h-8 w-8 text-accent" />;
     return <Clock className="h-8 w-8 text-primary" />;
   };
 
@@ -287,7 +287,7 @@ const Pricing = () => {
                   <ul className="space-y-3">
                     {getBenefits(product).map((benefit, i) => (
                       <li key={i} className="flex items-center gap-3">
-                        <Check className="h-5 w-5 text-green-500 shrink-0" />
+                        <Check className="h-5 w-5 text-success shrink-0" />
                         <span className="text-sm">{benefit}</span>
                       </li>
                     ))}

@@ -123,7 +123,7 @@ const ConvertToBusiness = () => {
 
         <div className="max-w-lg mx-auto px-4 py-8">
           <Card className="p-6 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">כבר יש לך חשבון עסקי!</h2>
             <p className="text-muted-foreground mb-6">
               העסק שלך: {existingBusiness.business_name}
