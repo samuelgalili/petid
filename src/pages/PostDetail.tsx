@@ -357,7 +357,7 @@ const PostDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white" dir="rtl">
+      <div className="min-h-screen bg-background" dir="rtl">
         <div className="max-w-2xl mx-auto">
           <Skeleton className="w-full aspect-square" />
           <div className="p-4 space-y-4">
@@ -371,8 +371,8 @@ const PostDetail = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center" dir="rtl">
-        <p className="text-gray-500 font-jakarta">הפוסט לא נמצא</p>
+      <div className="min-h-screen bg-background flex items-center justify-center" dir="rtl">
+        <p className="text-muted-foreground font-jakarta">הפוסט לא נמצא</p>
       </div>
     );
   }
@@ -380,7 +380,7 @@ const PostDetail = () => {
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
       {/* Post Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
           <Button
             variant="ghost"
@@ -399,7 +399,7 @@ const PostDetail = () => {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-4"
+          className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden mb-4"
         >
           {/* Post Header */}
           <div className="flex items-center justify-between p-4">
@@ -408,25 +408,25 @@ const PostDetail = () => {
               onClick={() => navigate(`/user/${post.user.id}`)}
             >
               <div className="w-11 h-11 rounded-full bg-gradient-instagram p-[2px]">
-                <Avatar className="w-full h-full ring-2 ring-white">
+                <Avatar className="w-full h-full ring-2 ring-background">
                   <AvatarImage src={post.user.avatar_url} />
-                  <AvatarFallback className="bg-gradient-instagram text-white font-black text-sm">
+                  <AvatarFallback className="bg-gradient-instagram text-primary-foreground font-black text-sm">
                     {post.user.full_name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
               </div>
               <div>
-                <p className="font-black text-gray-900 font-jakarta text-[15px]">{post.user.full_name}</p>
-                <p className="text-xs text-gray-500 font-jakarta">{getTimeAgo(post.created_at)}</p>
+                <p className="font-black text-foreground font-jakarta text-[15px]">{post.user.full_name}</p>
+                <p className="text-xs text-muted-foreground font-jakarta">{getTimeAgo(post.created_at)}</p>
               </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="text-gray-600 hover:text-gray-900 p-2 transition-colors">
+                <button className="text-muted-foreground hover:text-foreground p-2 transition-colors">
                   <MoreVertical className="w-5 h-5" strokeWidth={1.5} />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="bg-white">
+              <DropdownMenuContent align="start" className="bg-popover">
                 {isOwner && (
                   <DropdownMenuItem
                     onClick={() => setShowDeleteDialog(true)}
@@ -444,7 +444,7 @@ const PostDetail = () => {
           </div>
 
           {/* Post Image */}
-          <div className="w-full aspect-square bg-gray-100 relative">
+          <div className="w-full aspect-square bg-muted relative">
             <img 
               src={post.media_urls?.[0] || post.image_url} 
               alt={post.caption || ""}
@@ -460,7 +460,7 @@ const PostDetail = () => {
                   whileTap={{ scale: 0.9 }}
                   onClick={handleLike}
                   className={`flex items-center gap-2 transition-all ${
-                    post.is_liked ? 'text-instagram-pink' : 'text-gray-700 hover:text-gray-500'
+                    post.is_liked ? 'text-instagram-pink' : 'text-foreground hover:text-muted-foreground'
                   }`}
                 >
                   <Heart className={`w-7 h-7 ${post.is_liked ? 'fill-current' : ''}`} strokeWidth={1.5} />
@@ -468,7 +468,7 @@ const PostDetail = () => {
                     <span className="font-black font-jakarta">{post.likes_count}</span>
                   )}
                 </motion.button>
-                <div className="flex items-center gap-2 text-gray-700">
+                <div className="flex items-center gap-2 text-foreground">
                   <MessageCircle className="w-7 h-7" strokeWidth={1.5} />
                   {post.comments_count > 0 && (
                     <span className="font-black font-jakarta">{post.comments_count}</span>
@@ -476,7 +476,7 @@ const PostDetail = () => {
                 </div>
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
-                  className="text-gray-700 hover:text-gray-500 transition-colors"
+                  className="text-foreground hover:text-muted-foreground transition-colors"
                 >
                   <Share2 className="w-7 h-7" strokeWidth={1.5} />
                 </motion.button>
@@ -484,7 +484,7 @@ const PostDetail = () => {
               <motion.button 
                 whileTap={{ scale: 0.9 }}
                 onClick={handleSave}
-                className={`transition-colors ${post.is_saved ? 'text-instagram-orange' : 'text-gray-700 hover:text-gray-500'}`}
+                className={`transition-colors ${post.is_saved ? 'text-instagram-orange' : 'text-foreground hover:text-muted-foreground'}`}
               >
                 <Bookmark className={`w-7 h-7 ${post.is_saved ? 'fill-current' : ''}`} strokeWidth={1.5} />
               </motion.button>
@@ -493,7 +493,7 @@ const PostDetail = () => {
             {/* Likes count */}
             {post.likes_count > 0 && (
               <div className="mb-3">
-                <p className="text-sm text-gray-900 font-jakarta">
+                <p className="text-sm text-foreground font-jakarta">
                   <span className="font-black">
                     {post.likes_count} {post.likes_count === 1 ? 'לייק' : 'לייקים'}
                   </span>
@@ -504,7 +504,7 @@ const PostDetail = () => {
             {/* Post Caption */}
             {post.caption && (
               <div className="mb-2">
-                <p className="text-gray-900 font-jakarta text-[15px]">
+                <p className="text-foreground font-jakarta text-[15px]">
                   <span 
                     className="font-black cursor-pointer hover:text-instagram-pink transition-colors"
                     onClick={() => navigate(`/user/${post.user.id}`)}
@@ -519,7 +519,7 @@ const PostDetail = () => {
             {/* View all comments link */}
             {post.comments_count > 0 && (
               <button 
-                className="text-gray-500 text-sm font-jakarta hover:text-gray-700 font-semibold transition-colors mb-2"
+                className="text-muted-foreground text-sm font-jakarta hover:text-foreground font-semibold transition-colors mb-2"
                 onClick={() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 הצג את כל {post.comments_count} התגובות
@@ -528,9 +528,9 @@ const PostDetail = () => {
           </div>
 
           {/* Comments Section */}
-          <div id="comments-section" className="border-t border-gray-100">
-            <div className="p-4 bg-gray-50/50">
-              <h3 className="font-black text-gray-900 font-jakarta text-lg">תגובות ({post.comments_count})</h3>
+          <div id="comments-section" className="border-t border-border">
+            <div className="p-4 bg-muted/50">
+              <h3 className="font-black text-foreground font-jakarta text-lg">תגובות ({post.comments_count})</h3>
             </div>
             <div className="max-h-[500px] overflow-y-auto">
               <AnimatePresence>
@@ -540,16 +540,16 @@ const PostDetail = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="p-4 border-b border-gray-100 last:border-b-0"
+                  className="p-4 border-b border-border last:border-b-0"
                 >
                   <div className="flex gap-3">
                     <div className="w-9 h-9 rounded-full bg-gradient-instagram p-[2px] flex-shrink-0">
                       <Avatar 
-                        className="w-full h-full cursor-pointer ring-2 ring-white"
+                        className="w-full h-full cursor-pointer ring-2 ring-background"
                         onClick={() => navigate(`/user/${comment.user.id}`)}
                       >
                         <AvatarImage src={comment.user.avatar_url} />
-                        <AvatarFallback className="bg-gradient-instagram text-white text-xs font-black">
+                        <AvatarFallback className="bg-gradient-instagram text-primary-foreground text-xs font-black">
                           {comment.user.full_name?.charAt(0) || "U"}
                         </AvatarFallback>
                       </Avatar>
@@ -559,7 +559,7 @@ const PostDetail = () => {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <p 
-                            className="font-black text-sm text-gray-900 font-jakarta cursor-pointer hover:text-instagram-pink transition-colors"
+                            className="font-black text-sm text-foreground font-jakarta cursor-pointer hover:text-instagram-pink transition-colors"
                             onClick={() => navigate(`/user/${comment.user.id}`)}
                           >
                             {comment.user.full_name}
@@ -595,10 +595,10 @@ const PostDetail = () => {
                               </div>
                             </div>
                           ) : (
-                            <p className="text-sm text-gray-700 font-jakarta mt-1">{comment.comment_text}</p>
+                            <p className="text-sm text-foreground/90 font-jakarta mt-1">{comment.comment_text}</p>
                           )}
                           
-                          <p className="text-xs text-gray-500 font-jakarta mt-1">
+                          <p className="text-xs text-muted-foreground font-jakarta mt-1">
                             {getTimeAgo(comment.created_at)}
                           </p>
                         </div>
@@ -639,9 +639,9 @@ const PostDetail = () => {
 
             {comments.length === 0 && (
               <div className="text-center py-12">
-                <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-jakarta font-bold">אין תגובות עדיין</p>
-                <p className="text-gray-400 font-jakarta text-sm mt-1">היה הראשון להגיב 💬</p>
+                <MessageCircle className="w-16 h-16 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground font-jakarta font-bold">אין תגובות עדיין</p>
+                <p className="text-muted-foreground/60 font-jakarta text-sm mt-1">היה הראשון להגיב 💬</p>
               </div>
             )}
           </div>
@@ -651,12 +651,12 @@ const PostDetail = () => {
 
       {/* Add Comment Input - Fixed at bottom */}
       {user && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-20 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-20 shadow-lg">
           <div className="max-w-2xl mx-auto flex gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-instagram p-[2px] flex-shrink-0">
-              <Avatar className="w-full h-full ring-2 ring-white">
+              <Avatar className="w-full h-full ring-2 ring-background">
                 <AvatarImage src={user.user_metadata?.avatar_url} />
-                <AvatarFallback className="bg-gradient-instagram text-white font-black text-sm">
+                <AvatarFallback className="bg-gradient-instagram text-primary-foreground font-black text-sm">
                   {user.user_metadata?.full_name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -666,7 +666,7 @@ const PostDetail = () => {
                 placeholder="הוסף תגובה... 💬"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[48px] max-h-[100px] resize-none rounded-full border border-gray-300 focus:border-instagram-pink font-jakarta px-4 py-3"
+                className="min-h-[48px] max-h-[100px] resize-none rounded-full border border-border focus:border-instagram-pink font-jakarta px-4 py-3"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -678,7 +678,7 @@ const PostDetail = () => {
                 onClick={handleAddComment}
                 disabled={!newComment.trim() || submitting}
                 size="icon"
-                className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-instagram hover:opacity-90 text-white shadow-md disabled:opacity-50"
+                className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-instagram hover:opacity-90 text-primary-foreground shadow-md disabled:opacity-50"
               >
                 {submitting ? (
                   <motion.div

@@ -286,7 +286,7 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white pb-14" dir="rtl">
+      <div className="min-h-screen bg-background pb-14" dir="rtl">
         <div className="h-[56px] bg-gradient-to-r from-primary/10 to-accent/10" />
         <div className="px-4 pt-4 space-y-4">
           <div className="flex items-start gap-6">
@@ -307,7 +307,7 @@ const UserProfile = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4" dir="rtl">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4" dir="rtl">
         <PawPrint className="w-16 h-16 text-muted-foreground" />
         <p className="text-muted-foreground text-lg font-medium">משתמש לא נמצא</p>
       </div>
@@ -403,10 +403,10 @@ const UserProfile = () => {
   );
 
   return (
-    <div className="h-screen bg-white overflow-hidden" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir="rtl">
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header with gradient */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-border/50">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="max-w-lg mx-auto h-[56px] flex items-center justify-between px-4">
           <button onClick={() => navigate(-1)} className="p-2 -mr-2 hover:bg-muted rounded-full transition-colors">
             <ArrowRight className="w-5 h-5 text-foreground" />
@@ -437,7 +437,7 @@ const UserProfile = () => {
             {/* Avatar with gradient ring */}
             <div className="relative flex-shrink-0">
               <div className="w-[96px] h-[96px] rounded-full p-[3px] bg-gradient-to-tr from-primary via-accent to-primary">
-                <div className="w-full h-full rounded-full overflow-hidden bg-white p-[2px]">
+                <div className="w-full h-full rounded-full overflow-hidden bg-background p-[2px]">
                   <Avatar className="w-full h-full">
                     <AvatarImage src={profile.avatar_url} className="object-cover" />
                     <AvatarFallback className="text-3xl bg-muted text-foreground font-bold">
@@ -449,7 +449,7 @@ const UserProfile = () => {
               {isOwnProfile && (
                 <button 
                   onClick={() => navigate('/edit-profile')}
-                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-3 border-white shadow-lg"
+                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-3 border-background shadow-lg"
                 >
                   <Plus className="w-4 h-4 text-primary-foreground" strokeWidth={3} />
                 </button>
@@ -603,7 +603,7 @@ const UserProfile = () => {
                   className="flex-shrink-0 text-center cursor-pointer"
                 >
                   <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-primary to-accent">
-                    <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-background">
                       {pet.avatar_url ? (
                         <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
                       ) : (
@@ -626,7 +626,7 @@ const UserProfile = () => {
         </div>
 
         {/* Content Tabs */}
-        <div className="border-t border-border/50 sticky top-[56px] bg-white z-40">
+        <div className="border-t border-border/50 sticky top-[56px] bg-background z-40">
           <div className="flex">
             <button 
               onClick={() => setActiveTab("posts")}
