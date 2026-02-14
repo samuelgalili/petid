@@ -80,10 +80,47 @@ const SoundtrackFeed = () => {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <div className="flex items-center justify-between h-10 relative pointer-events-auto px-3">
+        <div className="flex items-center justify-between h-12 relative pointer-events-auto px-4">
           {/* Left: DailyStreak */}
-          <div className="w-10">
+          <div className="w-10 flex items-center justify-center">
             <DailyStreak />
+          </div>
+
+          {/* Center: Tabs — absolutely centered */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as "discover" | "following")}
+            >
+              <TabsList className="bg-transparent gap-6 h-auto p-0">
+                <TabsTrigger
+                  value="following"
+                  className={cn(
+                    "bg-transparent border-0 shadow-none text-[15px] font-bold px-1 py-1.5 rounded-none transition-all duration-200",
+                    "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                    activeTab === "following"
+                      ? "text-white border-b-[2.5px] border-white"
+                      : "text-white/50 hover:text-white/70"
+                  )}
+                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
+                >
+                  עוקבים
+                </TabsTrigger>
+                <TabsTrigger
+                  value="discover"
+                  className={cn(
+                    "bg-transparent border-0 shadow-none text-[15px] font-bold px-1 py-1.5 rounded-none transition-all duration-200",
+                    "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                    activeTab === "discover"
+                      ? "text-white border-b-[2.5px] border-white"
+                      : "text-white/50 hover:text-white/70"
+                  )}
+                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
+                >
+                  גלה
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           {/* Right: Heart/Notifications */}
@@ -92,7 +129,7 @@ const SoundtrackFeed = () => {
             className="relative w-10 h-10 flex items-center justify-center"
             aria-label="התראות"
           >
-            <Heart className="w-[26px] h-[26px] text-white drop-shadow-md" strokeWidth={1.5} />
+            <Heart className="w-[26px] h-[26px] text-white" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.5))' }} />
             <AnimatePresence mode="wait">
               {unreadCount > 0 && (
                 <motion.span
@@ -101,45 +138,14 @@ const SoundtrackFeed = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                  className="absolute top-0.5 right-0 w-5 h-5 bg-[#FF3B30] text-white rounded-full text-[10px] font-bold flex items-center justify-center"
+                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center px-1"
+                  style={{ background: 'linear-gradient(135deg, #FF3B30, #FF1744)', boxShadow: '0 2px 6px rgba(255,59,48,0.5)' }}
                 >
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                  <span className="text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
                 </motion.span>
               )}
             </AnimatePresence>
           </button>
-
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as "discover" | "following")}
-          >
-            <TabsList className="bg-transparent gap-8">
-              <TabsTrigger
-                value="following"
-                className={cn(
-                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
-                  "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                  activeTab === "following"
-                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none"
-                    : "text-white/60"
-                )}
-              >
-                עוקבים
-              </TabsTrigger>
-              <TabsTrigger
-                value="discover"
-                className={cn(
-                  "bg-transparent border-0 shadow-none text-base font-semibold px-0 py-1.5",
-                  "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                  activeTab === "discover"
-                    ? "text-white drop-shadow-md border-b-2 border-white rounded-none"
-                    : "text-white/60"
-                )}
-              >
-                גלה
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
       </motion.header>
 
