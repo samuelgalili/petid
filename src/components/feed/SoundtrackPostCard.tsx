@@ -162,6 +162,8 @@ export const SoundtrackPostCard = ({
       navigate(post.cta_link);
     } else if (isProductPost && post.product_id) {
       navigate(`/product/${post.product_id}`);
+    } else if (isCtaPost) {
+      navigate('/adoption');
     }
   };
 
