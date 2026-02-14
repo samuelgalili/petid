@@ -4,6 +4,7 @@ import { ChevronLeft, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { LazyImage } from '@/components/common/LazyImage';
 
 interface ProductCollectionsDisplayProps {
   businessId: string;
@@ -74,10 +75,10 @@ export const ProductCollectionsDisplay = ({ businessId }: ProductCollectionsDisp
                     className="flex-shrink-0 w-32 cursor-pointer"
                   >
                     <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-                      <img
+                      <LazyImage
                         src={product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full"
                       />
                       {product.sale_price && (
                         <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">
