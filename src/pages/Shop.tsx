@@ -195,7 +195,7 @@ const Shop = () => {
       console.log("Total products to display:", allProducts.length);
       return allProducts;
     },
-    staleTime: 0, // Always refetch
+    staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
 

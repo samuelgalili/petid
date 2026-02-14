@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LazyImage } from '@/components/common/LazyImage';
 import { motion } from 'framer-motion';
 import { Heart, Star, ShoppingCart, BadgeCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -81,10 +82,10 @@ export const ProductCard = ({
         className="flex gap-3 p-3 bg-card border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
       >
         <div className="relative w-24 h-24 flex-shrink-0">
-          <img
+          <LazyImage
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover rounded-lg"
+            className="w-full h-full rounded-lg"
           />
           {hasDiscount && showDiscount && (
             <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
@@ -165,10 +166,10 @@ export const ProductCard = ({
       }`}
     >
       <div className="relative aspect-square">
-        <img
+        <LazyImage
           src={product.image_url}
           alt={product.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full"
         />
         
         {/* Wishlist button */}
