@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
@@ -291,6 +292,7 @@ const Profile = () => {
       </PageTransition>;
   }
   return <PageTransition>
+      <SEO title="הפרופיל שלי" description="נהלו את חיית המחמד שלכם - ביטוח, טיפוח, אימונים ועוד" url="/profile" type="profile" />
       <div className="h-screen bg-background overflow-hidden flex flex-col" dir="rtl">
         {/* Header with Collapsible Profile */}
         <motion.div className="flex items-center justify-between px-4 h-14 bg-background z-20" initial={{

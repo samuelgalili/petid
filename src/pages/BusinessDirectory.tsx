@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '@/components/BottomNav';
+import { SEO } from '@/components/SEO';
 
 type BusinessType = 'all' | 'vet' | 'trainer' | 'groomer' | 'shop' | 'pet_sitter' | 'shelter';
 
@@ -51,6 +52,7 @@ const BusinessDirectory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 pb-20" dir="rtl">
+      <SEO title="עסקים" description="מצאו וטרינרים, מאלפים, מספרות כלבים ועוד שירותים לחיות מחמד" url="/businesses" />
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b">
         <div className="max-w-lg mx-auto px-4 py-4">

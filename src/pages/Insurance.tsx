@@ -48,6 +48,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import BottomNav from "@/components/BottomNav";
+import { SEO } from "@/components/SEO";
 import { AppHeader } from "@/components/AppHeader";
 import { Pricing, PricingTier } from "@/components/ui/pricing-table";
 
@@ -265,6 +266,7 @@ const Insurance = () => {
 
   return (
     <div className="min-h-screen pb-20 bg-background" dir="rtl">
+      <SEO title="ביטוח" description="ביטוח בריאות לחיות מחמד - הגנה מפני הוצאות וטרינריות בלתי צפויות" url="/insurance" />
       <AppHeader 
         title="ביטוח חיות מחמד" 
         showBackButton={true}

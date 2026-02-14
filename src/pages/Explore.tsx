@@ -15,6 +15,7 @@ import { PetSearch } from "@/components/PetSearch";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
 
 // Park images
 import parkImage1 from "@/assets/parks/dog-park-1.jpg";
@@ -525,6 +526,7 @@ const Explore = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO title="גילוי" description="גלו עסקים, שירותים ומקומות ידידותיים לחיות מחמד באזור שלכם" url="/explore" />
       {/* התוכן בלבד גולל */}
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Instagram-style Header */}

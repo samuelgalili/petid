@@ -11,6 +11,7 @@ import { Plus, Minus, Trash2, ShoppingBag, Tag, X, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { SEO } from "@/components/SEO";
 
 interface Coupon {
   id: string;
@@ -186,6 +187,7 @@ const Cart = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO title="עגלת קניות" description="סיימו את הרכישה שלכם - מוצרים איכותיים לחיות מחמד" url="/cart" noIndex={true} />
       <div className="h-full overflow-y-auto pb-[70px]">
       <AppHeader title="עגלת הקניות" showBackButton={true} />
       

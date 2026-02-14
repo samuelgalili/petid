@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BottomNav from "@/components/BottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { useNavigate } from "react-router-dom";
+import { SEO } from "@/components/SEO";
 
 interface GroomingSalon {
   id: string;
@@ -221,6 +222,7 @@ const Grooming = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO title="טיפוח" description="שירותי טיפוח וספא לחיות מחמד - תספורת, רחצה, טיפול בציפורניים" url="/grooming" />
       <div className="h-full overflow-y-auto pb-[70px]">
       <AppHeader title="מספרות" showBackButton={true} />
 

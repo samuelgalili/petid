@@ -46,6 +46,7 @@ import { useLocation } from "@/hooks/useLocation";
 import { useEngagement } from "@/hooks/useEngagement";
 import { filterSafeContent, sortBySafetyScore } from "@/lib/contentSafety";
 import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
+import { SEO } from "@/components/SEO";
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -1147,6 +1148,7 @@ const Feed = () => {
   };
 
   return <div className="h-screen bg-gradient-to-b from-background to-muted/20 overflow-hidden overscroll-x-none" dir="rtl" style={{ touchAction: 'pan-y' }} {...pullHandlers}>
+    <SEO title="פיד" description="גלו תוכן מעניין מקהילת בעלי חיות המחמד בישראל" url="/feed" />
     {/* Pull to refresh indicator */}
     <PullToRefreshIndicator pullDistance={pullDistance} isRefreshing={isRefreshing} progress={progress} shouldTrigger={shouldTrigger} />
     <div className="h-full overflow-y-auto overflow-x-hidden pb-[70px] overscroll-x-none" style={{ transform: `translateY(${pullDistance}px)`, transition: isRefreshing ? 'none' : pullDistance === 0 ? 'transform 0.3s ease' : 'none' }}>

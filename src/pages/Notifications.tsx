@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
 import { he } from "date-fns/locale";
+import { timeAgo } from "@/utils/timeAgo";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SEO } from "@/components/SEO";
 
 interface NotificationItem {
   id: string;
@@ -90,9 +93,7 @@ const Notifications = () => {
     }
   };
 
-  const getTimeAgo = (date: string) => {
-    return formatDistanceToNow(new Date(date), { addSuffix: false, locale: he });
-  };
+  const getTimeAgo = (date: string) => timeAgo(date);
 
   // Group notifications by time period
   const groupNotifications = () => {
@@ -200,14 +201,29 @@ const Notifications = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-background" dir="rtl">
+        <div className="px-4 py-4 border-b">
+          <Skeleton className="h-7 w-24" />
+        </div>
+        <div className="space-y-1 p-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 py-3">
+              <Skeleton className="w-11 h-11 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+              <Skeleton className="w-10 h-10 rounded-lg" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO title="התראות" description="התראות ועדכונים על הפעילות שלכם" url="/notifications" noIndex={true} />
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Instagram-style Header */}
       <motion.div 
