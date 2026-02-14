@@ -211,18 +211,18 @@ export const PostCard = ({
         </ImageCarousel>
       </div>
 
-      {/* Bottom gradient — deeper, smoother */}
+      {/* Bottom gradient — cinematic multi-stop */}
       <div 
         className="absolute inset-x-0 bottom-0 pointer-events-none z-[5]" 
         style={{ 
-          height: '50%', 
-          background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 35%, rgba(0,0,0,0.1) 70%, transparent 100%)' 
+          height: '55%', 
+          background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 25%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.08) 75%, transparent 100%)' 
         }} 
       />
-      {/* Top gradient — subtle */}
+      {/* Top gradient — refined vignette */}
       <div 
         className="absolute inset-x-0 top-0 pointer-events-none z-[5]" 
-        style={{ height: '60px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 100%)' }} 
+        style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)' }} 
       />
 
       {/* Owner menu — top-right */}
@@ -230,11 +230,11 @@ export const PostCard = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button 
-              className="p-1.5 rounded-full focus:outline-none" 
-              style={{ backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }} 
+              className="p-2 rounded-full focus:outline-none active:scale-90 transition-transform" 
+              style={{ backgroundColor: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }} 
               aria-label="אפשרויות"
             >
-              <MoreVertical className="w-5 h-5 text-white" style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))' }} strokeWidth={2} />
+              <MoreVertical className="w-5 h-5 text-white" style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.7))' }} strokeWidth={2.2} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-card z-50 border-border min-w-[180px]">
@@ -277,16 +277,16 @@ export const PostCard = ({
         <motion.button
           custom={0}
           variants={sidebarStagger}
-          whileTap={{ scale: 0.9 }}
+          whileTap={{ scale: 0.88 }}
           onClick={() => navigate(`/user/${post.user.id}`)}
           className="relative"
         >
           <div 
             className="rounded-full overflow-hidden"
             style={{ 
-              width: '48px', height: '48px', 
+              width: '50px', height: '50px', 
               border: '2.5px solid white', 
-              boxShadow: '0 2px 12px rgba(0,0,0,0.4)' 
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.15)' 
             }}
           >
             {post.user.avatar_url ? (
@@ -327,16 +327,19 @@ export const PostCard = ({
           style={{ gap: '2px' }}
         >
           <motion.div
-            animate={isLicking ? { scale: [1, 1.5, 0.85, 1.15, 1], rotate: [0, -8, 8, -4, 0] } : {}}
-            transition={{ duration: 0.45, ease: "easeOut" }}
+            animate={isLicking ? { scale: [1, 1.6, 0.8, 1.2, 1], rotate: [0, -12, 12, -5, 0] } : {}}
+            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
           >
             <Heart
-              className={post.is_liked ? 'text-white' : 'text-white'}
+              className="text-white"
               fill={post.is_liked ? '#FE2C55' : 'none'}
               style={{ 
-                width: '32px', height: '32px', 
-                filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))',
+                width: '34px', height: '34px', 
+                filter: post.is_liked 
+                  ? 'drop-shadow(0 2px 10px rgba(254,44,85,0.6)) drop-shadow(0 1px 3px rgba(0,0,0,0.4))'
+                  : 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
                 color: post.is_liked ? '#FE2C55' : 'white',
+                transition: 'filter 0.3s ease',
               }}
               strokeWidth={post.is_liked ? 0 : 1.8}
             />
@@ -365,8 +368,8 @@ export const PostCard = ({
           <MessageCircle 
             className="text-white" 
             style={{ 
-              width: '30px', height: '30px', 
-              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))' 
+              width: '32px', height: '32px', 
+              filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' 
             }} 
             strokeWidth={1.8} 
           />
@@ -394,8 +397,8 @@ export const PostCard = ({
           <Share2 
             className="text-white" 
             style={{ 
-              width: '28px', height: '28px', 
-              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))' 
+              width: '30px', height: '30px', 
+              filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' 
             }} 
             strokeWidth={1.8} 
           />
@@ -420,13 +423,13 @@ export const PostCard = ({
         >
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
             className="rounded-full overflow-hidden"
             style={{ 
-              width: '36px', height: '36px',
-              border: '2px solid rgba(255,255,255,0.3)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-              background: 'linear-gradient(135deg, #1a1a1a, #333)',
+              width: '40px', height: '40px',
+              border: '3px solid rgba(255,255,255,0.2)',
+              boxShadow: '0 3px 12px rgba(0,0,0,0.4), inset 0 0 8px rgba(0,0,0,0.3)',
+              background: 'radial-gradient(circle at 30% 30%, #444, #1a1a1a 70%)',
             }}
           >
             {post.user.avatar_url ? (
@@ -443,21 +446,22 @@ export const PostCard = ({
       {/* ═══════════════════════════════════════════════════ */}
       {/* BOTTOM-LEFT INFO — TikTok precise                  */}
       {/* ═══════════════════════════════════════════════════ */}
-      <div className="absolute z-10 text-white" dir="rtl" style={{ bottom: '16px', left: '12px', right: '72px' }}>
+      <div className="absolute z-10 text-white" dir="rtl" style={{ bottom: '18px', left: '14px', right: '76px' }}>
         {/* Username — bold, clean, no @ */}
-        <p 
-          className="font-bold truncate" 
+        <motion.p 
+          className="font-extrabold truncate cursor-pointer" 
           style={{ 
             fontSize: '16px', 
             lineHeight: 1.3,
-            filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))',
-            marginBottom: '6px',
-            letterSpacing: '-0.01em',
+            textShadow: '0 1px 6px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.3)',
+            marginBottom: '7px',
+            letterSpacing: '-0.02em',
           }}
           onClick={() => navigate(`/user/${post.user.id}`)}
+          whileTap={{ scale: 0.97 }}
         >
           {post.user.full_name || "משתמש"}
-        </p>
+        </motion.p>
 
         {/* Caption — clean, max 2 lines */}
         {post.caption && (
@@ -465,11 +469,12 @@ export const PostCard = ({
             className="line-clamp-2" 
             style={{ 
               fontSize: '14px', 
-              lineHeight: 1.5, 
-              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
-              marginBottom: '10px',
-              opacity: 0.95,
+              lineHeight: 1.55, 
+              textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+              marginBottom: '12px',
+              opacity: 0.92,
               fontWeight: 400,
+              letterSpacing: '0.01em',
             }}
           >
             {post.caption}
@@ -477,20 +482,36 @@ export const PostCard = ({
         )}
 
         {/* Music bar — TikTok style with marquee */}
-        <div className="flex items-center" style={{ gap: '6px' }}>
-          <Music className="shrink-0" style={{ width: '14px', height: '14px', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }} />
-          <div className="overflow-hidden flex-1" style={{ maxWidth: '200px' }}>
+        <div 
+          className="flex items-center" 
+          style={{ 
+            gap: '8px', 
+            background: 'rgba(255,255,255,0.08)', 
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderRadius: '20px', 
+            padding: '5px 12px 5px 8px',
+          }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+          >
+            <Disc3 className="shrink-0" style={{ width: '16px', height: '16px', opacity: 0.9 }} />
+          </motion.div>
+          <div className="overflow-hidden flex-1" style={{ maxWidth: '180px' }}>
             <motion.p
               animate={{ x: ['0%', '-50%'] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
               className="whitespace-nowrap"
               style={{ 
-                fontSize: '13px', 
-                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+                fontSize: '12px', 
                 fontWeight: 500,
+                opacity: 0.85,
+                letterSpacing: '0.01em',
               }}
             >
-              ♫ {musicTitle} &nbsp;&nbsp;&nbsp; ♫ {musicTitle}
+              {musicTitle} &nbsp;&nbsp;•&nbsp;&nbsp; {musicTitle}
             </motion.p>
           </div>
         </div>
