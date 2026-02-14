@@ -90,25 +90,25 @@ const BreedHistory = () => {
       <div className="max-w-[640px] mx-auto mt-16 px-4">
         {/* Header */}
         <div className="text-center mb-8 animate-slide-up">
-          <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-gray-900 mb-2 tracking-tight">
-            Breed Detection History
+          <h1 className="text-3xl md:text-4xl font-jakarta font-semibold text-foreground mb-2 tracking-tight">
+            היסטוריית זיהוי גזע
           </h1>
-          <p className="text-gray-700 text-sm md:text-base font-jakarta font-normal">
-            {pet.name}'s breed detection timeline
+          <p className="text-muted-foreground text-sm md:text-base font-jakarta font-normal">
+            ציר הזמן של זיהוי הגזע של {pet.name}
           </p>
         </div>
 
         {/* History Timeline */}
         {history.length === 0 ? (
-          <Card className="p-8 bg-white border-2 border-gray-200 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-center">
-            <p className="text-gray-600 font-jakarta">No breed detection history yet</p>
+          <Card className="p-8 bg-card border-2 border-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] text-center">
+            <p className="text-muted-foreground font-jakarta">אין היסטוריית זיהוי גזע עדיין</p>
           </Card>
         ) : (
           <div className="space-y-4">
             {history.map((entry, index) => (
               <Card
                 key={entry.id}
-                className="p-5 bg-white border-2 border-gray-200 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] animate-scale-in"
+                className="p-5 bg-card border-2 border-border rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] animate-scale-in"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div className="flex gap-4">
@@ -116,12 +116,12 @@ const BreedHistory = () => {
                   {entry.avatar_url ? (
                     <img
                       src={entry.avatar_url}
-                      alt="Detection photo"
-                      className="w-20 h-20 rounded-xl object-cover border-2 border-[#FBD66A]/30"
+                      alt="תמונת זיהוי"
+                      className="w-20 h-20 rounded-xl object-cover border-2 border-primary/30"
                     />
                   ) : (
-                    <div className="w-20 h-20 rounded-xl bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                      <Image className="w-8 h-8 text-gray-400" />
+                    <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center border-2 border-border">
+                      <Image className="w-8 h-8 text-muted-foreground" />
                     </div>
                   )}
 
@@ -129,26 +129,26 @@ const BreedHistory = () => {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-bold text-lg font-jakarta text-gray-900">
-                          {entry.breed || "Unknown Breed"}
+                        <h3 className="font-bold text-lg font-jakarta text-foreground">
+                          {entry.breed || "גזע לא ידוע"}
                         </h3>
                         {entry.confidence !== null && (
                           <span
                             className={`inline-block text-xs font-semibold font-jakarta px-2 py-1 rounded-full mt-1 ${
                               entry.confidence > 80
-                                ? "bg-green-100 text-green-700"
+                                ? "bg-success/20 text-success"
                                 : entry.confidence > 60
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-orange-100 text-orange-700"
+                                ? "bg-warning/20 text-warning"
+                                : "bg-orange-500/20 text-orange-600"
                             }`}
                           >
-                            {entry.confidence}% confidence
+                            {entry.confidence}% דיוק
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-gray-500 font-jakarta">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-jakarta">
                       <Calendar className="w-3.5 h-3.5" />
                       <span>{format(new Date(entry.detected_at), "PPp")}</span>
                     </div>
