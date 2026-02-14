@@ -256,7 +256,7 @@ const Tasks = () => {
                               <Check className="w-4 h-4 text-white" strokeWidth={1.5} />
                             </div>
                           ) : (
-                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" strokeWidth={1.5} />
+                            <Circle className="w-6 h-6 text-muted-foreground/40 hover:text-accent transition-colors" strokeWidth={1.5} />
                           )}
                         </button>
 
@@ -327,7 +327,7 @@ const Tasks = () => {
                               <Check className="w-4 h-4 text-white" strokeWidth={1.5} />
                             </div>
                           ) : (
-                            <Circle className="w-6 h-6 text-gray-300 hover:text-accent transition-colors" strokeWidth={1.5} />
+                            <Circle className="w-6 h-6 text-muted-foreground/40 hover:text-accent transition-colors" strokeWidth={1.5} />
                           )}
                         </button>
 

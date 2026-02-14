@@ -335,7 +335,7 @@ const Rewards = () => {
         );
       case "used":
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600">
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-muted text-muted-foreground">
             נוצל
           </span>
         );
