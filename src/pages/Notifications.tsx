@@ -65,11 +65,14 @@ const Notifications = () => {
       .order("created_at", { ascending: false });
 
     if (error) {
+      console.error("Error fetching notifications:", error);
       toast({
         title: "שגיאה",
         description: "לא ניתן לטעון התראות",
         variant: "destructive",
       });
+      setLoading(false);
+      return;
     } else {
       setNotifications(data || []);
       // Mark all as read when viewing

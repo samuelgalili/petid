@@ -72,7 +72,7 @@ export default function Messages() {
       .from("profiles")
       .select("full_name")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
     if (data) setCurrentUserName(data.full_name || "");
   };
 
