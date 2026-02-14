@@ -86,7 +86,7 @@ const Checkout = () => {
           .from('profiles')
           .select('birthdate, first_name, last_name, full_name, email, phone, street, house_number, apartment_number, city, postal_code')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         // Check age
         if (profile?.birthdate) {

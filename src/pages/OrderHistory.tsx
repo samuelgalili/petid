@@ -143,7 +143,7 @@ const OrderHistory = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-20" dir="rtl">
+    <div className="min-h-screen bg-background pb-20" dir="rtl">
       <AppHeader title="היסטוריית הזמנות" showBackButton={true} />
 
       {/* Loading State */}
@@ -194,12 +194,12 @@ const OrderHistory = () => {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Package className="w-4 h-4 text-gray-600" />
-                        <span className="font-bold text-gray-900 font-jakarta text-sm">
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-bold text-foreground font-jakarta text-sm">
                           {order.order_number}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 font-jakarta">
+                      <p className="text-xs text-muted-foreground font-jakarta">
                         {new Date(order.order_date).toLocaleDateString("he-IL", {
                           year: "numeric",
                           month: "long",
@@ -223,7 +223,7 @@ const OrderHistory = () => {
                   <div className="space-y-2 mb-3">
                     {order.items.slice(0, 2).map((item) => (
                       <div key={item.id} className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                           <img
                             src={item.product_image}
                             alt={item.product_name}
@@ -231,21 +231,21 @@ const OrderHistory = () => {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 font-jakarta text-sm truncate">
+                          <p className="font-semibold text-foreground font-jakarta text-sm truncate">
                             {item.product_name}
                           </p>
-                          <p className="text-xs text-gray-600 font-jakarta">
+                          <p className="text-xs text-muted-foreground font-jakarta">
                             כמות: {item.quantity}
                             {item.variant && ` • ${item.variant}`}
                           </p>
                         </div>
-                        <span className="text-sm font-bold text-gray-900 font-jakarta">
+                        <span className="text-sm font-bold text-foreground font-jakarta">
                           ₪{(item.price * item.quantity).toFixed(2)}
                         </span>
                       </div>
                     ))}
                     {order.items.length > 2 && (
-                      <p className="text-xs text-gray-600 font-jakarta">
+                      <p className="text-xs text-muted-foreground font-jakarta">
                         +{order.items.length - 2} פריטים נוספים
                       </p>
                     )}
@@ -256,8 +256,8 @@ const OrderHistory = () => {
                   {/* Order Total & Actions */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-gray-600 font-jakarta">סה"כ</p>
-                      <p className="text-lg font-bold text-gray-900 font-jakarta">
+                      <p className="text-xs text-muted-foreground font-jakarta">סה"כ</p>
+                      <p className="text-lg font-bold text-foreground font-jakarta">
                         ₪{order.total.toFixed(2)}
                       </p>
                     </div>
@@ -265,14 +265,14 @@ const OrderHistory = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-2 border-gray-300 text-gray-900 hover:bg-gray-100 rounded-lg font-jakarta text-xs"
+                        className="border-2 border-border text-foreground hover:bg-muted rounded-lg font-jakarta text-xs"
                         onClick={() => setSelectedOrder(order)}
                       >
                         פרטים
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-lg font-jakarta text-xs"
+                        className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg font-jakarta text-xs"
                         onClick={() => handleReorder(order)}
                       >
                         הזמן שוב
@@ -302,39 +302,39 @@ const OrderHistory = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto"
+              className="fixed inset-x-0 bottom-0 z-50 bg-background rounded-t-3xl max-h-[90vh] overflow-y-auto"
             >
               <div className="p-4 space-y-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900 font-jakarta">פרטי הזמנה</h2>
+                  <h2 className="text-lg font-bold text-foreground font-jakarta">פרטי הזמנה</h2>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="rounded-full"
                     onClick={() => setSelectedOrder(null)}
                   >
-                    <XCircle className="w-5 h-5 text-gray-700" />
+                    <XCircle className="w-5 h-5 text-muted-foreground" />
                   </Button>
                 </div>
 
                 {/* Order Info */}
-                <Card className="p-4 bg-gray-50 border-none">
+                <Card className="p-4 bg-muted/50 border-none">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">מספר הזמנה</span>
-                      <span className="font-semibold text-gray-900 font-jakarta">
+                      <span className="text-muted-foreground font-jakarta">מספר הזמנה</span>
+                      <span className="font-semibold text-foreground font-jakarta">
                         {selectedOrder.order_number}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">תאריך הזמנה</span>
-                      <span className="font-semibold text-gray-900 font-jakarta">
+                      <span className="text-muted-foreground font-jakarta">תאריך הזמנה</span>
+                      <span className="font-semibold text-foreground font-jakarta">
                         {new Date(selectedOrder.order_date).toLocaleDateString("he-IL")}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">סטטוס</span>
+                      <span className="text-muted-foreground font-jakarta">סטטוס</span>
                       <Badge
                         className={`${getStatusColor(
                           selectedOrder.status
@@ -408,19 +408,19 @@ const OrderHistory = () => {
                 </div>
 
                 {/* Order Summary */}
-                <Card className="p-4 bg-white border border-gray-200">
+                <Card className="p-4 bg-card border border-border">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">סכום ביניים</span>
-                      <span className="font-semibold text-gray-900 font-jakarta">
+                      <span className="text-muted-foreground font-jakarta">סכום ביניים</span>
+                      <span className="font-semibold text-foreground font-jakarta">
                         ₪{selectedOrder.subtotal.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-jakarta">משלוח</span>
-                      <span className="font-semibold text-gray-900 font-jakarta">
+                      <span className="text-muted-foreground font-jakarta">משלוח</span>
+                      <span className="font-semibold text-foreground font-jakarta">
                         {selectedOrder.shipping === 0 ? (
-                          <span className="text-[#7DD3C0]">חינם</span>
+                          <span className="text-success">חינם</span>
                         ) : (
                           `₪${selectedOrder.shipping.toFixed(2)}`
                         )}
@@ -431,8 +431,8 @@ const OrderHistory = () => {
                     </div>
                     <Separator />
                     <div className="flex justify-between pt-2">
-                      <span className="font-bold text-gray-900 font-jakarta">סה"כ</span>
-                      <span className="text-xl font-bold text-gray-900 font-jakarta">
+                      <span className="font-bold text-foreground font-jakarta">סה"כ</span>
+                      <span className="text-xl font-bold text-foreground font-jakarta">
                         ₪{selectedOrder.total.toFixed(2)}
                       </span>
                     </div>
@@ -442,7 +442,7 @@ const OrderHistory = () => {
                 {/* Actions */}
                 <Button
                   size="lg"
-                  className="w-full bg-[#FBD66A] hover:bg-[#F4C542] text-gray-900 rounded-xl font-bold font-jakarta"
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl font-bold font-jakarta"
                   onClick={() => {
                     handleReorder(selectedOrder);
                     setSelectedOrder(null);
