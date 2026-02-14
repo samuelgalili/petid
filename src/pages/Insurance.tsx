@@ -280,7 +280,7 @@ const Insurance = () => {
         transition={{ duration: 0.5 }}
         className="px-4 mb-8"
       >
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-6 border border-amber-200 dark:border-amber-800">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-background via-muted/50 to-background p-6 border border-border">
           <div className="absolute top-0 left-0 w-32 h-32 bg-amber-400/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
           <div className="absolute bottom-0 right-0 w-40 h-40 bg-orange-400/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
           
