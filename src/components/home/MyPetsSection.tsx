@@ -66,7 +66,7 @@ export const MyPetsSection = ({
             transition={{ delay: 0.2 }}
             className="relative overflow-hidden"
           >
-            <div className="flex flex-col items-center justify-center py-10 text-center bg-gradient-to-br from-[#4ECDC4]/10 via-white to-[#1E5799]/10 rounded-3xl border-2 border-dashed border-[#4ECDC4]/30 backdrop-blur-sm shadow-inner">
+            <div className="flex flex-col items-center justify-center py-10 text-center bg-gradient-to-br from-primary/10 via-background to-accent/10 rounded-3xl border-2 border-dashed border-primary/30 backdrop-blur-sm shadow-inner">
               <div className="absolute top-4 left-4 w-8 h-8 bg-primary/10 rounded-full blur-xl" />
               <div className="absolute bottom-6 right-6 w-12 h-12 bg-accent/10 rounded-full blur-xl" />
               
@@ -87,10 +87,10 @@ export const MyPetsSection = ({
                 />
               </motion.button>
               
-              <h3 className="text-lg font-extrabold text-gray-900 font-jakarta mb-2">
+              <h3 className="text-lg font-extrabold text-foreground font-jakarta mb-2">
                 בואו נתחיל! 🐾
               </h3>
-              <p className="text-sm text-gray-600 font-jakarta mb-6 max-w-[240px] leading-relaxed">
+              <p className="text-sm text-muted-foreground font-jakarta mb-6 max-w-[240px] leading-relaxed">
                 הוסיפו את חיית המחמד הראשונה שלכם ותתחילו ליהנות מכל התכונות
               </p>
               <Button

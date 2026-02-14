@@ -52,7 +52,7 @@ export const PromotionalOffers = ({ offers }: PromotionalOffersProps) => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15 + index * 0.05 }}
                 onClick={() => navigate(offer.button_link)}
-                className="bg-white border border-border rounded-2xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-all group"
+                className="bg-card border border-border rounded-2xl p-4 shadow-sm cursor-pointer hover:shadow-md transition-all group"
               >
                 <div className="flex items-center justify-between gap-3">
                   {/* Left side - Icon */}
