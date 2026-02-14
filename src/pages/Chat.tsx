@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import petidIcon from "@/assets/petid-icon.png";
 import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
+import { SEO } from "@/components/SEO";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
@@ -264,6 +265,7 @@ const ChatContent = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
       {/* Premium Header */}
       <div className="sticky top-0 z-50 border-b border-border/30">
         <div className="bg-gradient-to-l from-primary/8 via-card to-accent/8 backdrop-blur-2xl">

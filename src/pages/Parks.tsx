@@ -16,6 +16,7 @@ import { APIProvider, Map, AdvancedMarker, InfoWindow } from "@vis.gl/react-goog
 import { ParkReviewDialog } from "@/components/ParkReviewDialog";
 import { ParkReviewsList } from "@/components/ParkReviewsList";
 import { AppHeader } from "@/components/AppHeader";
+import { SEO } from "@/components/SEO";
 
 // Import park images
 import parkImage1 from "@/assets/parks/dog-park-1.jpg";
@@ -902,6 +903,7 @@ const Parks = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <SEO title="גינות כלבים" description="מצאו גינות כלבים באזור שלכם - מיקום, שעות פתיחה וחוות דעת" url="/parks" />
       <AppHeader 
         title="גינות כלבים" 
         showBackButton={true}

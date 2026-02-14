@@ -14,6 +14,8 @@ import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
+import { SEO } from "@/components/SEO";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BreedInfo {
   id: string;
@@ -220,6 +222,7 @@ const Breeds = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <SEO title="אנציקלופדיית גזעים" description="מידע מקיף על גזעי כלבים וחתולים - תכונות, טמפרמנט, בריאות ועוד" url="/breeds" />
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/30">
         <div className="px-4 py-3">
@@ -298,8 +301,17 @@ const Breeds = () => {
       <div className="px-4">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-40 bg-muted/30 rounded-2xl animate-pulse" />
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-card border border-border/30 rounded-2xl p-4 space-y-3">
+                <div className="flex justify-between">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1,2,3,4].map(j => <Skeleton key={j} className="h-12 rounded-lg" />)}
+                </div>
+                <Skeleton className="h-3 w-full" />
+              </div>
             ))}
           </div>
         ) : filteredBreeds.length === 0 ? (

@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, ChevronDown, Edit, Camera, Ghost, Bot, Sparkles } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
+import { timeAgo } from "@/utils/timeAgo";
 import { ActivityStatus } from "@/components/ActivityStatus";
 import { VanishModeToggle } from "@/components/VanishModeToggle";
 import petidIcon from "@/assets/petid-icon.png";
+import { SEO } from "@/components/SEO";
 
 // AI Support ID - special identifier for AI chat
 const AI_SUPPORT_ID = "ai-support";
@@ -126,14 +129,30 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background" dir="rtl">
+        <div className="px-4 py-4 border-b flex items-center justify-between">
+          <Skeleton className="h-7 w-24" />
+          <Skeleton className="h-6 w-6 rounded-full" />
+        </div>
+        <div className="space-y-1 p-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 py-3">
+              <Skeleton className="w-14 h-14 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <Skeleton className="h-3 w-10" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO title="הודעות" description="שלחו וקבלו הודעות מחברי הקהילה" url="/messages" noIndex={true} />
       <div className="h-full overflow-y-auto pb-[70px]">
       <div className="max-w-lg mx-auto">
         {/* Instagram-style Header */}
