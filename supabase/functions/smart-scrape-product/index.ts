@@ -86,6 +86,7 @@ CATEGORY DETECTION - CRITICAL:
 - If the page contains keywords like "lickimat", "ליקימט", "lick mat", "מפית ליקוק", "משטח ליקוק", "enrichment", "העשרה", "slow feeder", "אנטי גלופ" → set category to "enrichment"
 - If the page contains keywords like "collar", "קולר", "צווארון", "רצועה", "leash", "harness", "הרנס", "toy", "צעצוע", "nylon", "ניילון", "D-ring", "buckle", "אבזם", "quick-release", "שחרור מהיר" → set category to "accessories"
 - If the page contains keywords like "מיטה", "bed", "mat", "מזרן", "כרית", "cushion", "fluffy", "פלאפי", "snuggle" → set category to "beds"
+- If the page contains keywords like "anti spill", "אנטי שפיכה", "bowl", "קערה", "splash", "מצוף", "floating", "no-mess", "שותה מבולגן", "messy drink" → set category to "bowls"
 - If the page contains keywords like "מזון", "food", "kibble" → set category to "dry-food" or "food"
 - For WET FOOD: populate product_attributes with texture (e.g. "פטה", "נתחים ברוטב", "מוס"), origin/made_in (e.g. "איטליה", "Italy"), moisture_pct if mentioned. If text mentions glucosamine/chondroitin/מפרקים, note joint_support: true. If text mentions hydration/כליות/kidney/לחות, note hydration_support: true. Also extract mixing_tip if topper/mixed feeding is mentioned.
 - For ENRICHMENT products: populate product_attributes with material (e.g. "TPR לא רעיל", "סיליקון Food Grade"), dimensions (e.g. "20x20 cm"), and boolean features: freezer_safe, microwave_safe, dishwasher_safe. Extract anxiety_uses as array (e.g. ["vet_visits", "fireworks", "boredom", "separation"]). Extract recipes as array of spreading ideas mentioned (e.g. ["יוגורט", "חמאת בוטנים", "מזון רטוב"]). Note dental/digestion benefits from licking action.
@@ -93,6 +94,7 @@ CATEGORY DETECTION - CRITICAL:
 - For muzzles specifically: map "היקף" to "circumference", "אורך" to "length", extract size_number, and add breed_recommendations as an array of breed names
 - For TREATS/SNACKS: populate product_attributes with texture (e.g. "קשה", "רך"), purpose (e.g. "פרס אילוף", "העסקה ולעיסה"), safety_tip (e.g. "מומלץ לעיסה בפיקוח"), and highlight special ingredients like "זרעי דלעת", "כבד עוף"
 - For BEDS/BEDDING products: populate product_attributes with material/texture (e.g. "בד פלאפי", "קטיפה"), diameter (e.g. "80 cm"), max_weight (e.g. "15 kg"), best_for (e.g. "כלבים קטנים עד בינוניים"), care_instructions (e.g. "כביסה עדינה במכונה"). Extract boolean features: is_washable, is_luxury_design. Note anxiety_relief if raised walls/bolsters mentioned. Note joint_support if orthopedic/senior mentioned.
+- For BOWLS/UTILITY products: populate product_attributes with capacity (e.g. "1 ליטר"), brand (e.g. "Els Pet"), material (e.g. "PP Food Grade"), mechanism (e.g. "מנגנון מצוף"), maintenance (e.g. "פירוק וניקוי קל"). Extract boolean features: non_slip, travel_safe. Note messy_drinker_friendly: true if anti-spill/splash. Extract usage_scenarios as array (e.g. ["נסיעות ברכב", "כלבים מבולגנים", "אנטי החלקה"]).
 - For food: populate product_attributes with nutritional values (protein_pct, fat_pct, fiber_pct, moisture_pct, ash_pct)
 
 RULES:
@@ -125,9 +127,10 @@ RULES:
   - In product_attributes, include: material, size, color, features (as comma-separated text), closure type, dimensions, and care_instructions (e.g. "ניקוי במטלית לחה")
   - For MUZZLE products specifically: in product_attributes also include circumference (map from "היקף"), length (map from "אורך"), size_number, and breed_recommendations as an array of Hebrew breed names the muzzle fits (e.g. ["ברניז", "באסט האונד", "רוטוויילר"])
   - benefits: Product features/advantages as [{ "title": "name", "description": "short description" }]
-- category: one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories, collars, leashes, beds, clothing, muzzles, enrichment. Use null if unclear.
+- category: one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories, collars, leashes, beds, clothing, muzzles, enrichment, bowls. Use null if unclear.
 - PRIORITY RULE: If product weight is ~400g and keywords like "Pate"/"פטה"/"Can"/"פחית"/"שימורים" appear, always set category to "wet-food" and extract hydration/moisture benefits first
 - PRIORITY RULE: If product name includes "Bed"/"מיטה"/"Mat"/"מזרן"/"Fluffy"/"פלאפי", always set category to "beds" and prioritize texture, sizing, and sleep/comfort features
+- PRIORITY RULE: If product name includes "Anti Spill"/"Bowl"/"קערה"/"Splash", always set category to "bowls" and prioritize no-mess benefits. Link to "puppy" life_stage when applicable (puppies are often messy drinkers).
 - pet_type: dog, cat, or all.
 - life_stage: puppy, kitten, adult, senior, all. Use null if unclear.
 - dog_size: small, medium, large, all. Use null if unclear.
