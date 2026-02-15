@@ -8,7 +8,8 @@ import {
   WheatOff, Beef, Sparkles, Dog, Baby, Scale, Droplets, ShieldCheck,
   Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
   Eye, Bone, Timer, Smile, Zap, CloudLightning, Stethoscope, Scissors,
-  Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home
+  Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home,
+  Car, Grip, Cog, Droplet
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -340,6 +341,78 @@ const extractBeddingFeatures = (product: any): {
   const snuggleFactor = allText.includes('bed') || allText.includes('מיטה') || allText.includes('mat') || allText.includes('fluffy') || allText.includes('פלאפי') || allText.includes('snuggle');
 
   return { texture, sleepBenefits, isWashable, washTip, sizing: { diameter, maxWeight, bestFor }, isLuxuryDesign, snuggleFactor };
+};
+
+/** Check if product is a smart utility/hygiene product (bowls, anti-spill, feeders) */
+const isUtilityProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'bowls' || cat === 'feeders' || cat === 'utility' ||
+    text.includes('anti spill') || text.includes('אנטי שפיכה') || text.includes('bowl') || text.includes('קערה') ||
+    text.includes('splash') || text.includes('שפיכה') || text.includes('מצוף') || text.includes('floating') ||
+    text.includes('no-mess') || text.includes('ללא בלגן') || text.includes('שותה מבולגן') || text.includes('messy drink');
+};
+
+/** Extract utility/hygiene features */
+const extractUtilityFeatures = (product: any): {
+  cleanHomeBadge: boolean;
+  cleanHomeDesc: string[];
+  mechanism: string | null;
+  usageScenarios: { icon: React.ReactNode; label: string }[];
+  techSpecs: { label: string; value: string }[];
+  isNoMessPriority: boolean;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Clean Home badge
+  const cleanHomeBadge = allText.includes('מים') || allText.includes('water') || allText.includes('שפיכה') || allText.includes('spill') || allText.includes('splash') || allText.includes('בלגן') || allText.includes('mess') || allText.includes('יבש') || allText.includes('dry');
+  const cleanHomeDesc: string[] = [];
+  if (allText.includes('פחות מים') || allText.includes('less water') || allText.includes('שפיכה') || allText.includes('spill')) cleanHomeDesc.push('פחות מים על הרצפה');
+  if (allText.includes('יבש') || allText.includes('dry') || allText.includes('סביבה נקיה') || allText.includes('clean')) cleanHomeDesc.push('סביבת שתייה יבשה ונקייה');
+  if (cleanHomeDesc.length === 0 && cleanHomeBadge) { cleanHomeDesc.push('פחות מים על הרצפה'); cleanHomeDesc.push('סביבת שתייה יבשה ונקייה'); }
+
+  // Mechanism
+  let mechanism = attrs.mechanism || attrs['מנגנון'] || null;
+  if (!mechanism) {
+    if (allText.includes('מצוף') || allText.includes('floating') || allText.includes('float')) mechanism = 'מנגנון מצוף (Floating Disk) – שולט בזרימת המים ומונע הרטבת הפנים';
+    else if (allText.includes('valve') || allText.includes('שסתום')) mechanism = 'שסתום בקרת זרימה – מווסת את כמות המים הזמינה';
+    else if (allText.includes('slow') || allText.includes('איטי')) mechanism = 'מנגנון האטת שתייה – מעודד שתייה מבוקרת';
+  }
+
+  // Usage scenarios
+  const usageScenarios: { icon: React.ReactNode; label: string }[] = [];
+  if (allText.includes('נסיעה') || allText.includes('רכב') || allText.includes('car') || allText.includes('travel') || allText.includes('גלישה') || allText.includes('trip'))
+    usageScenarios.push({ icon: <Car className="w-5 h-5" />, label: 'מתאים לנסיעות ברכב' });
+  if (allText.includes('מבולגן') || allText.includes('messy') || allText.includes('בלגן') || allText.includes('splash') || allText.includes('שפריץ'))
+    usageScenarios.push({ icon: <Droplet className="w-5 h-5" />, label: 'לכלבים "מבולגנים"' });
+  if (allText.includes('אנטי החלקה') || allText.includes('non-slip') || allText.includes('יציב') || allText.includes('stable') || allText.includes('גומי'))
+    usageScenarios.push({ icon: <Grip className="w-5 h-5" />, label: 'יציבות מקסימלית (אנטי החלקה)' });
+  if (usageScenarios.length === 0) {
+    usageScenarios.push({ icon: <Droplet className="w-5 h-5" />, label: 'לכלבים "מבולגנים"' });
+  }
+
+  // Tech specs
+  const techSpecs: { label: string; value: string }[] = [];
+  const capacity = attrs.capacity || attrs['נפח'] || attrs['קיבולת'] || null;
+  if (capacity) techSpecs.push({ label: 'נפח', value: String(capacity) });
+  else { const capMatch = allText.match(/(\d+(?:\.\d+)?)\s*(?:ליטר|liter|l\b)/i); if (capMatch) techSpecs.push({ label: 'נפח', value: `${capMatch[1]} ליטר` }); }
+  const brand = attrs.brand || null;
+  if (brand) techSpecs.push({ label: 'מותג', value: String(brand) });
+  const maintenance = attrs.maintenance || attrs.care_instructions || attrs['הוראות טיפול'] || null;
+  if (maintenance) techSpecs.push({ label: 'תחזוקה', value: String(maintenance) });
+  else if (allText.includes('פירוק') || allText.includes('disassemble') || allText.includes('ניקוי קל') || allText.includes('easy clean'))
+    techSpecs.push({ label: 'תחזוקה', value: 'פירוק וניקוי קל' });
+  const material = attrs.material || attrs['חומר'] || null;
+  if (material) techSpecs.push({ label: 'חומר', value: String(material) });
+
+  // No-mess priority
+  const isNoMessPriority = allText.includes('anti spill') || allText.includes('אנטי שפיכה') || allText.includes('bowl') || allText.includes('קערה') || allText.includes('splash');
+
+  return { cleanHomeBadge, cleanHomeDesc, mechanism, usageScenarios, techSpecs, isNoMessPriority };
 };
 
 /** Extract enrichment product features */
@@ -698,6 +771,8 @@ const ProductDetail = () => {
   const enrichmentFeatures = useMemo(() => product && isEnrichment ? extractEnrichmentFeatures(product) : { anxietyUses: [], materialSpecs: [], healthNote: null, recipes: [] }, [product, isEnrichment]);
   const isBedding = useMemo(() => product ? isBeddingProduct(product) : false, [product]);
   const beddingFeatures = useMemo(() => product && isBedding ? extractBeddingFeatures(product) : { texture: null, sleepBenefits: [], isWashable: false, washTip: null, sizing: { diameter: null, maxWeight: null, bestFor: null }, isLuxuryDesign: false, snuggleFactor: false }, [product, isBedding]);
+  const isUtility = useMemo(() => product ? isUtilityProduct(product) : false, [product]);
+  const utilityFeatures = useMemo(() => product && isUtility ? extractUtilityFeatures(product) : { cleanHomeBadge: false, cleanHomeDesc: [], mechanism: null, usageScenarios: [], techSpecs: [], isNoMessPriority: false }, [product, isUtility]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -1522,6 +1597,100 @@ const ProductDetail = () => {
                 <div>
                   <h3 className="text-sm font-bold text-foreground">✨ עיצוב יוקרתי</h3>
                   <p className="text-[12px] text-muted-foreground mt-0.5">עיצוב אלגנטי המשתלב בכל סגנון עיצוב הבית</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Utility: Clean Home Badge ── */}
+        {isUtility && utilityFeatures.cleanHomeBadge && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(170,60%,93%)] to-background border-[hsl(170,50%,65%)]/20 dark:from-[hsl(170,30%,15%)] dark:border-[hsl(170,40%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[hsl(170,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-6 h-6 text-[hsl(170,50%,40%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🏠 בית נקי</h3>
+                  <div className="flex flex-wrap gap-x-3 mt-1">
+                    {utilityFeatures.cleanHomeDesc.map((desc, i) => (
+                      <p key={i} className="text-[12px] text-muted-foreground flex items-center gap-1">
+                        <Check className="w-3 h-3 text-[hsl(170,50%,40%)]" /> {desc}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Utility: How it Works / Mechanism ── */}
+        {isUtility && utilityFeatures.mechanism && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-background border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Cog className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">⚙️ איך זה עובד?</h3>
+                  <p className="text-[13px] text-muted-foreground leading-[1.7]">{utilityFeatures.mechanism}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Utility: Usage Scenarios ── */}
+        {isUtility && utilityFeatures.usageScenarios.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 text-primary" />
+                מתאים במיוחד עבור
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5">
+                {utilityFeatures.usageScenarios.map((scenario, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.26 + i * 0.06 }}
+                    className="bg-gradient-to-l from-[hsl(170,50%,95%)]/60 to-transparent dark:from-[hsl(170,30%,15%)] rounded-xl p-3.5 border border-[hsl(170,40%,70%)]/15 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[hsl(170,50%,80%)]/15 flex items-center justify-center flex-shrink-0 text-[hsl(170,50%,40%)]">
+                      {scenario.icon}
+                    </div>
+                    <p className="text-[13px] font-bold text-foreground">{scenario.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Utility: Technical Specs Table ── */}
+        {isUtility && utilityFeatures.techSpecs.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="overflow-hidden">
+              <div className="p-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                  <Wrench className="w-4 h-4 text-primary" />
+                  מפרט טכני
+                </h3>
+                <div className="rounded-xl overflow-hidden border border-border">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {utilityFeatures.techSpecs.map((spec, i) => (
+                        <tr key={i} className={i > 0 ? 'border-t border-border/50' : ''}>
+                          <td className="p-3 text-muted-foreground text-xs font-medium bg-muted/30 w-1/3">{spec.label}</td>
+                          <td className="p-3 text-foreground font-semibold text-xs">{spec.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </Card>
