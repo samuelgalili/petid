@@ -10,7 +10,8 @@ import {
   Eye, Bone, Timer, Smile, Zap, CloudLightning, Stethoscope, Scissors,
   Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home,
   Car, Grip, Cog, Droplet, Sun, Wind, Pipette, Beaker, Flower2, Bug,
-  Target, CircleDot, ArrowDownToLine, Armchair, Weight
+  Target, CircleDot, ArrowDownToLine, Armchair, Weight, Lock, DoorOpen,
+  Maximize2, FoldVertical, Trash2, PawPrint, ThumbsUp, Box
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -55,7 +56,7 @@ const getNumericPrice = (price: string | number): number => {
 /** Check if product is an accessory (non-food) */
 const isAccessoryCategory = (category: string | null): boolean => {
   if (!category) return false;
-  return ['accessories', 'toys', 'grooming', 'collars', 'leashes', 'beds', 'clothing', 'muzzles', 'enrichment'].includes(category.toLowerCase());
+  return ['accessories', 'toys', 'grooming', 'collars', 'leashes', 'beds', 'clothing', 'muzzles', 'enrichment', 'crates', 'kennels', 'training'].includes(category.toLowerCase());
 };
 
 /** Check if product is a muzzle */
@@ -714,6 +715,95 @@ const extractPuppyFeatures = (product: any): {
   return { hasDHA, hasAntioxidants, topIngredient, grainStatus: { hasBarleyOatmeal, noCornWheatSoy }, hasSatisfactionGuarantee, developmentBenefits, puppyFeedingMatrix };
 };
 
+/** Check if product is a crate/kennel/training system */
+const isCrateProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'crates' || cat === 'kennels' || cat === 'training' ||
+    text.includes('crate') || text.includes('kennel') || text.includes('כלוב') ||
+    text.includes('כלוב הפלדה') || text.includes('cage') || text.includes('training crate') ||
+    text.includes('מלונה') || text.includes('divider') || text.includes('מחיצה');
+};
+
+/** Extract crate/kennel features */
+const extractCrateFeatures = (product: any): {
+  safetyBadges: { icon: React.ReactNode; label: string; description: string }[];
+  fitGuide: { maxWeight: string | null; crateSize: string | null; includesDivider: boolean };
+  lifestyleIcons: { icon: React.ReactNode; label: string; description: string }[];
+  prosFromReviews: string[];
+  bedRecommendation: string | null;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Safety badges
+  const safetyBadges: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('steel') || allText.includes('פלדה') || allText.includes('metal') || allText.includes('מתכת') || allText.includes('heavy'))
+    safetyBadges.push({ icon: <Shield className="w-5 h-5" />, label: 'שלדת פלדה עמידה', description: 'Heavy-Duty Steel – מתכת מחוזקת לעמידות מקסימלית' });
+  if (allText.includes('double door') || allText.includes('dual door') || allText.includes('דלת כפולה') || allText.includes('two door') || allText.includes('2 door') || allText.includes('גישה כפולה') || allText.includes('front and side') || allText.includes('קדמית וצדית'))
+    safetyBadges.push({ icon: <DoorOpen className="w-5 h-5" />, label: 'גישה כפולה', description: 'דלת קדמית + צדית – גישה נוחה מכל כיוון' });
+  if (allText.includes('latch') || allText.includes('נעילה') || allText.includes('lock') || allText.includes('sliding') || allText.includes('בריח') || allText.includes('secure') || allText.includes('escape'))
+    safetyBadges.push({ icon: <Lock className="w-5 h-5" />, label: 'נעילה כפולה', description: 'מנגנון נעילה כפול (Dual-Sliding Latches) למניעת בריחה' });
+  if (safetyBadges.length === 0) {
+    safetyBadges.push({ icon: <Shield className="w-5 h-5" />, label: 'מבנה עמיד', description: 'בנוי לעמידות ולשימוש יומיומי בטוח' });
+  }
+
+  // Fit guide
+  let maxWeight = attrs.max_weight || attrs['משקל מקסימלי'] || null;
+  if (!maxWeight) {
+    const wMatch = allText.match(/(?:up to|עד|max)\s*(\d+)\s*(?:lbs?|pounds?|ליברות)/i);
+    const kgMatch = allText.match(/(?:up to|עד|max)\s*(\d+)\s*(?:ק[״"]?ג|kg)/i);
+    if (wMatch) { const lbs = parseInt(wMatch[1]); maxWeight = `${lbs} lbs (כ-${Math.round(lbs * 0.453)} ק"ג)`; }
+    else if (kgMatch) maxWeight = `עד ${kgMatch[1]} ק"ג`;
+  }
+  let crateSize = attrs.crate_size || attrs['גודל כלוב'] || attrs.dimensions || null;
+  if (!crateSize) {
+    const sizeMatch = allText.match(/(\d{2,3})\s*(?:inch|אינץ|"|״)/i);
+    if (sizeMatch) { const inches = parseInt(sizeMatch[1]); crateSize = `${inches}" (כ-${Math.round(inches * 2.54)} ס"מ)`; }
+  }
+  const includesDivider = allText.includes('divider') || allText.includes('מחיצה') || allText.includes('partition') || allText.includes('panel');
+
+  // Lifestyle icons
+  const lifestyleIcons: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('fold') || allText.includes('מתקפל') || allText.includes('collapse') || allText.includes('flat') || allText.includes('portable'))
+    lifestyleIcons.push({ icon: <FoldVertical className="w-5 h-5" />, label: 'מתקפל שטוח', description: 'מתקפל שטוח לאחסון וניוד קל' });
+  if (allText.includes('tray') || allText.includes('מגש') || allText.includes('pan') || allText.includes('removable'))
+    lifestyleIcons.push({ icon: <Trash2 className="w-5 h-5" />, label: 'מגש נשלף', description: 'מגש נשלף לניקוי קל של תאונות' });
+  if (allText.includes('house training') || allText.includes('אילוף') || allText.includes('potty') || allText.includes('housebreak') || allText.includes('training'))
+    lifestyleIcons.push({ icon: <PawPrint className="w-5 h-5" />, label: 'אילוף לצרכים', description: 'אידיאלי לאילוף לצרכים בבית – מרחב מבוקר' });
+  if (lifestyleIcons.length === 0) {
+    lifestyleIcons.push({ icon: <FoldVertical className="w-5 h-5" />, label: 'מתקפל שטוח', description: 'מתקפל שטוח לאחסון וניוד קל' });
+  }
+
+  // Pros from reviews/benefits
+  const prosFromReviews: string[] = [];
+  const prosKeywords: Record<string, string> = {
+    'easy': 'הרכבה קלה ומהירה', 'קל': 'הרכבה קלה ומהירה',
+    'spacious': 'מרווח ונוח', 'מרווח': 'מרווח ונוח',
+    'quality': 'איכות גבוהה', 'איכות': 'איכות גבוהה',
+    'sturdy': 'יציב ועמיד', 'יציב': 'יציב ועמיד',
+    'value': 'תמורה מצוינת למחיר', 'מחיר': 'תמורה מצוינת למחיר',
+  };
+  for (const [kw, label] of Object.entries(prosKeywords)) {
+    if (allText.includes(kw) && !prosFromReviews.includes(label)) prosFromReviews.push(label);
+  }
+  if (prosFromReviews.length === 0) { prosFromReviews.push('הרכבה קלה ומהירה', 'מרווח ונוח', 'איכות גבוהה'); }
+
+  // Bed recommendation
+  let bedRecommendation: string | null = null;
+  if (crateSize) {
+    const sizeNum = parseInt(crateSize) || 36;
+    bedRecommendation = `מומלץ להוסיף מיטה רכה (Fluffy Bed) בגודל ${sizeNum}" ליצירת "מאורה" מושלמת ונוחה 🐾`;
+  } else {
+    bedRecommendation = 'מומלץ להוסיף מיטה רכה שתתאים למידות הכלוב ליצירת סביבה מפנקת ובטוחה 🐾';
+  }
+
+  return { safetyBadges, fitGuide: { maxWeight, crateSize, includesDivider }, lifestyleIcons, prosFromReviews, bedRecommendation };
+};
+
 /** Check if product is a deshedding/maintenance tool */
 const isDesheddingProduct = (product: any): boolean => {
   const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''}`.toLowerCase();
@@ -1088,6 +1178,8 @@ const ProductDetail = () => {
   const groomingFeatures = useMemo(() => product && isGrooming ? extractGroomingFeatures(product) : { visibleResults: [], activeIngredients: [], usageSteps: [], featureBadges: [], targetCoatType: null }, [product, isGrooming]);
   const isHygiene = useMemo(() => product ? isHygieneProduct(product) : false, [product]);
   const hygieneFeatures = useMemo(() => product && isHygiene ? extractHygieneFeatures(product) : { showScienceCorner: false, coreTechnology: null, isTreatmentSafe: false, formulaAttributes: [], scentProfile: null }, [product, isHygiene]);
+  const isCrate = useMemo(() => product ? isCrateProduct(product) : false, [product]);
+  const crateFeatures = useMemo(() => product && isCrate ? extractCrateFeatures(product) : { safetyBadges: [], fitGuide: { maxWeight: null, crateSize: null, includesDivider: false }, lifestyleIcons: [], prosFromReviews: [], bedRecommendation: null }, [product, isCrate]);
   const isDeshedding = useMemo(() => product ? isDesheddingProduct(product) : false, [product]);
   const desheddingFeatures = useMemo(() => product && isDeshedding ? extractDesheddingFeatures(product) : { efficiencyPct: null, techFeatures: [], sizeGuide: { weightRange: null, coatType: null }, proTip: null, homeHygiene: false }, [product, isDeshedding]);
   const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
@@ -2295,6 +2387,147 @@ const ProductDetail = () => {
                 <div>
                   <h3 className="text-sm font-bold text-foreground">🌸 פרופיל ריח</h3>
                   <p className="text-[13px] text-muted-foreground mt-0.5">{hygieneFeatures.scentProfile}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Crate: Safety & Security Badges ── */}
+        {isCrate && crateFeatures.safetyBadges.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-primary" />
+                בטיחות ואבטחה
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5">
+                {crateFeatures.safetyBadges.map((badge, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.22 + i * 0.06 }}
+                    className="bg-gradient-to-l from-[hsl(220,50%,95%)]/60 to-transparent dark:from-[hsl(220,30%,15%)] rounded-xl p-3.5 border border-[hsl(220,40%,70%)]/15 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[hsl(220,50%,80%)]/15 flex items-center justify-center flex-shrink-0 text-[hsl(220,60%,45%)]">
+                      {badge.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-foreground">{badge.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{badge.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Crate: Size & Capacity Fit Guide ── */}
+        {isCrate && (crateFeatures.fitGuide.maxWeight || crateFeatures.fitGuide.crateSize || crateFeatures.fitGuide.includesDivider) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-background border-primary/20">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Maximize2 className="w-4 h-4 text-primary" />
+                מדריך התאמה (Fit Guide)
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {crateFeatures.fitGuide.maxWeight && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }} className="bg-background rounded-xl p-3 border border-border/40 text-center">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <Weight className="w-4 h-4 text-primary" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium mb-0.5">משקל מקסימלי</p>
+                    <p className="text-[12px] font-bold text-foreground">{crateFeatures.fitGuide.maxWeight}</p>
+                  </motion.div>
+                )}
+                {crateFeatures.fitGuide.crateSize && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} className="bg-background rounded-xl p-3 border border-border/40 text-center">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <Box className="w-4 h-4 text-primary" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium mb-0.5">גודל כלוב</p>
+                    <p className="text-[12px] font-bold text-foreground">{crateFeatures.fitGuide.crateSize}</p>
+                  </motion.div>
+                )}
+              </div>
+              {crateFeatures.fitGuide.includesDivider && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-2.5 bg-success/8 rounded-xl p-3 border border-success/20 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-success flex-shrink-0" />
+                  <p className="text-[12px] font-bold text-foreground">כולל מחיצה פנימית – להתאמת המרחב לגורים בצמיחה</p>
+                </motion.div>
+              )}
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Crate: Usage & Lifestyle Icons ── */}
+        {isCrate && crateFeatures.lifestyleIcons.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 text-primary" />
+                שימוש וסגנון חיים
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5">
+                {crateFeatures.lifestyleIcons.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.26 + i * 0.06 }}
+                    className="bg-gradient-to-l from-[hsl(150,50%,95%)]/60 to-transparent dark:from-[hsl(150,30%,15%)] rounded-xl p-3.5 border border-[hsl(150,40%,70%)]/15 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[hsl(150,50%,80%)]/15 flex items-center justify-center flex-shrink-0 text-[hsl(150,50%,40%)]">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Crate: What Customers Love ── */}
+        {isCrate && crateFeatures.prosFromReviews.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <ThumbsUp className="w-4 h-4 text-primary" />
+                מה הלקוחות אוהבים
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {crateFeatures.prosFromReviews.map((pro, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.28 + i * 0.05 }}
+                  >
+                    <Badge variant="secondary" className="text-xs px-3 py-1.5 font-medium">👍 {pro}</Badge>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Crate: Smart Bed Recommendation ── */}
+        {isCrate && crateFeatures.bedRecommendation && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(280,50%,95%)] to-background border-[hsl(280,40%,70%)]/20 dark:from-[hsl(280,30%,15%)] dark:border-[hsl(280,40%,40%)]/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(280,50%,80%)]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Moon className="w-5 h-5 text-[hsl(280,50%,50%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">🛏️ המלצה חכמה – יצירת "מאורה"</h3>
+                  <p className="text-[13px] text-muted-foreground leading-[1.7]">{crateFeatures.bedRecommendation}</p>
                 </div>
               </div>
             </Card>
