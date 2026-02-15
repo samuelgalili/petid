@@ -15,7 +15,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { petId, userId, imageBase64, fileName } = await req.json();
+    const { petId, userId, imageBase64, fileName, saveToDb } = await req.json();
 
     if (!petId || !userId || !imageBase64) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -23,6 +23,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const shouldSave = saveToDb === true;
 
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
@@ -100,73 +102,77 @@ Weight keywords: משקל, kg, ק"ג.`
       };
     }
 
-    // Save to database
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Only save to database if explicitly requested (user confirmed)
+    if (shouldSave) {
+      // Save to database
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // If vaccines/diagnoses found, create a vet visit record
-    if (scanResult.vaccines?.length > 0 || scanResult.diagnoses?.length > 0) {
-      const visitDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
-      
-      let visitType = 'checkup';
-      if (scanResult.vaccines?.length > 0) visitType = 'vaccination';
-      if (scanResult.diagnoses?.length > 0 && visitType === 'checkup') visitType = 'treatment';
+      if (scanResult.vaccines?.length > 0 || scanResult.diagnoses?.length > 0) {
+        const visitDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
+        
+        let visitType = 'checkup';
+        if (scanResult.vaccines?.length > 0) visitType = 'vaccination';
+        if (scanResult.diagnoses?.length > 0 && visitType === 'checkup') visitType = 'treatment';
 
-      // Calculate next visit for vaccines (1 year)
-      let nextVisitDate = null;
-      if (scanResult.vaccines?.length > 0) {
-        const next = new Date(visitDate);
-        next.setFullYear(next.getFullYear() + 1);
-        nextVisitDate = next.toISOString().split('T')[0];
+        let nextVisitDate = null;
+        if (scanResult.vaccines?.length > 0) {
+          const next = new Date(visitDate);
+          next.setFullYear(next.getFullYear() + 1);
+          nextVisitDate = next.toISOString().split('T')[0];
+        }
+
+        await supabase.from("pet_vet_visits").insert({
+          pet_id: petId,
+          user_id: userId,
+          visit_date: visitDate,
+          visit_type: visitType,
+          clinic_name: scanResult.clinicName,
+          diagnosis: scanResult.diagnoses?.join('; ') || null,
+          treatment: scanResult.medications?.join('; ') || null,
+          notes: `סרוק מתמונה: ${fileName}`,
+          vaccines: scanResult.vaccines || [],
+          medications: scanResult.medications || [],
+          diagnoses: scanResult.diagnoses || [],
+          next_visit_date: nextVisitDate,
+          ai_extracted: true,
+          raw_summary: `OCR scan from ${fileName}`,
+        });
+
+        const petUpdate: Record<string, unknown> = {
+          last_vet_visit: visitDate,
+        };
+        if (nextVisitDate) petUpdate.next_vet_visit = nextVisitDate;
+        if (scanResult.weight) petUpdate.weight = scanResult.weight;
+
+        await supabase.from("pets").update(petUpdate).eq("id", petId);
+      } else if (scanResult.weight) {
+        const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase2 = createClient(supabaseUrl2, supabaseKey2);
+        await supabase2.from("pets").update({ weight: scanResult.weight }).eq("id", petId);
       }
 
-      await supabase.from("pet_vet_visits").insert({
-        pet_id: petId,
-        user_id: userId,
-        visit_date: visitDate,
-        visit_type: visitType,
-        clinic_name: scanResult.clinicName,
-        diagnosis: scanResult.diagnoses?.join('; ') || null,
-        treatment: scanResult.medications?.join('; ') || null,
-        notes: `סרוק מתמונה: ${fileName}`,
-        vaccines: scanResult.vaccines || [],
-        medications: scanResult.medications || [],
-        diagnoses: scanResult.diagnoses || [],
-        next_visit_date: nextVisitDate,
-        ai_extracted: true,
-        raw_summary: `OCR scan from ${fileName}`,
-      });
+      if (scanResult.deworming) {
+        const supabaseUrl3 = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey3 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase3 = createClient(supabaseUrl3, supabaseKey3);
+        const dewormDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
+        const reminder = new Date(dewormDate);
+        reminder.setMonth(reminder.getMonth() + 6);
 
-      // Update pet's last vet visit
-      const petUpdate: Record<string, unknown> = {
-        last_vet_visit: visitDate,
-      };
-      if (nextVisitDate) petUpdate.next_vet_visit = nextVisitDate;
-      if (scanResult.weight) petUpdate.weight = scanResult.weight;
-
-      await supabase.from("pets").update(petUpdate).eq("id", petId);
-    } else if (scanResult.weight) {
-      // Just update weight
-      await supabase.from("pets").update({ weight: scanResult.weight }).eq("id", petId);
-    }
-
-    // If deworming detected, set a 6-month reminder via next_visit_date
-    if (scanResult.deworming) {
-      const dewormDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
-      const reminder = new Date(dewormDate);
-      reminder.setMonth(reminder.getMonth() + 6);
-
-      await supabase.from("pet_vet_visits").insert({
-        pet_id: petId,
-        user_id: userId,
-        visit_date: dewormDate,
-        visit_type: 'treatment',
-        notes: 'תילוע בוצע',
-        next_visit_date: reminder.toISOString().split('T')[0],
-        ai_extracted: true,
-        raw_summary: 'Deworming detected via OCR',
-      });
+        await supabase3.from("pet_vet_visits").insert({
+          pet_id: petId,
+          user_id: userId,
+          visit_date: dewormDate,
+          visit_type: 'treatment',
+          notes: 'תילוע בוצע',
+          next_visit_date: reminder.toISOString().split('T')[0],
+          ai_extracted: true,
+          raw_summary: 'Deworming detected via OCR',
+        });
+      }
     }
 
     return new Response(JSON.stringify({ scanResult }), {

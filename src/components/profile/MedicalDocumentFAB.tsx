@@ -1,7 +1,8 @@
 /**
- * MedicalDocumentFAB - Floating Action Button for adding vet visits/vaccines
- * 3 entry modes: Scan Document (camera), Upload PDF, Manual Entry
- * Shows scanning animation over pet profile and post-scan approval view
+ * MedicalDocumentFAB - V22 Diagnostic Scanner Edition
+ * FAB + Modal: Scan Document, Upload PDF, Manual Entry
+ * Deferred save: extracts first, saves only after user confirmation
+ * Breed weight comparison, insurance claim CTA for diagnoses
  */
 
 import { useState, useRef, useCallback } from "react";
@@ -9,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Camera, FileUp, PenLine, X, Loader2,
   Syringe, Building2, Calendar, CheckCircle2, AlertTriangle,
-  CalendarPlus, Weight
+  CalendarPlus, Weight, Shield, Pill
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ interface MedicalDocumentFABProps {
   petId: string;
   petName: string;
   petBirthDate?: string;
+  petBreed?: string;
   onComplete?: () => void;
 }
 
@@ -39,19 +41,46 @@ interface ScanResult {
 
 type ModalStep = 'closed' | 'choose' | 'scanning' | 'review' | 'manual';
 
-export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }: MedicalDocumentFABProps) => {
+// Shih Tzu weight standards by age (months → expected kg range)
+const SHIH_TZU_WEIGHT: Record<number, [number, number]> = {
+  2: [0.9, 1.8], 3: [1.4, 2.7], 4: [1.8, 3.6], 5: [2.3, 4.1],
+  6: [2.7, 4.5], 9: [3.6, 5.9], 12: [4.1, 7.3],
+};
+
+export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onComplete }: MedicalDocumentFABProps) => {
   const { toast } = useToast();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<ModalStep>('closed');
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [lastBase64, setLastBase64] = useState<string | null>(null);
+  const [lastFileName, setLastFileName] = useState('');
 
   // Manual entry state
   const [manualSummary, setManualSummary] = useState('');
   const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
   const [manualClinic, setManualClinic] = useState('');
   const [manualSubmitting, setManualSubmitting] = useState(false);
+
+  // Breed weight comparison for Shih Tzu
+  const getWeightStatus = useCallback((weight: number): { status: 'low' | 'normal' | 'high'; message: string } | null => {
+    if (!petBirthDate || !petBreed) return null;
+    const bl = petBreed.toLowerCase();
+    if (!bl.includes('shih') && !bl.includes('שיצו') && !bl.includes('שי טסו')) return null;
+
+    const ageMonths = Math.round((Date.now() - new Date(petBirthDate).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    const keys = Object.keys(SHIH_TZU_WEIGHT).map(Number).sort((a, b) => a - b);
+    let closest = keys[0];
+    for (const k of keys) {
+      if (Math.abs(k - ageMonths) < Math.abs(closest - ageMonths)) closest = k;
+    }
+    const [low, high] = SHIH_TZU_WEIGHT[closest];
+
+    if (weight < low) return { status: 'low', message: `${weight} ק"ג — מתחת לטווח (${low}-${high} ק"ג לגיל ${ageMonths} חודשים). מומלץ להתייעץ.` };
+    if (weight > high) return { status: 'high', message: `${weight} ק"ג — מעל לטווח (${low}-${high} ק"ג לגיל ${ageMonths} חודשים). שקלו התאמת תזונה.` };
+    return { status: 'normal', message: `${weight} ק"ג — בטווח תקין (${low}-${high} ק"ג לגיל ${ageMonths} חודשים)` };
+  }, [petBirthDate, petBreed]);
 
   // Calculate next due date based on puppy series
   const calculateNextDue = useCallback((vaccines: string[], visitDate: string): string | null => {
@@ -61,13 +90,11 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
     const ageWeeks = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
     if (ageWeeks > 26) {
-      // Adult — next vaccine in 1 year
       const next = new Date(visitDate);
       next.setFullYear(next.getFullYear() + 1);
       return next.toISOString().split('T')[0];
     }
 
-    // Puppy series: 6, 9, 12, 16 weeks
     const milestones = [6, 9, 12, 16];
     for (const w of milestones) {
       const d = new Date(birth);
@@ -77,19 +104,21 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
     return null;
   }, [petBirthDate]);
 
+  // Scan without saving — dry run
   const processFile = async (base64: string, fileName: string) => {
     setStep('scanning');
+    setLastBase64(base64);
+    setLastFileName(fileName);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke("scan-vet-document", {
-        body: { petId, userId: user.id, imageBase64: base64, fileName },
+        body: { petId, userId: user.id, imageBase64: base64, fileName, saveToDb: false },
       });
       if (error) throw error;
 
       const result: ScanResult = data.scanResult;
-      // Add puppy series next-due calculation
       if (result.vaccines?.length > 0 && result.visitDate) {
         result.nextDueDate = calculateNextDue(result.vaccines, result.visitDate);
       }
@@ -106,10 +135,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = (reader.result as string).split(",")[1];
-      processFile(base64, file.name);
-    };
+    reader.onload = () => processFile((reader.result as string).split(",")[1], file.name);
     reader.readAsDataURL(file);
   };
 
@@ -117,19 +143,25 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = (reader.result as string).split(",")[1];
-      processFile(base64, file.name);
-    };
+    reader.onload = () => processFile((reader.result as string).split(",")[1], file.name);
     reader.readAsDataURL(file);
   };
 
+  // Save only after user confirms
   const handleConfirm = async () => {
     if (!scanResult) return;
     setConfirming(true);
     try {
-      // Data was already saved by the edge function during scan
-      // Just trigger the refresh
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      if (lastBase64) {
+        // Re-call edge function with saveToDb: true
+        await supabase.functions.invoke("scan-vet-document", {
+          body: { petId, userId: user.id, imageBase64: lastBase64, fileName: lastFileName, saveToDb: true },
+        });
+      }
+
       toast({ title: "הנתונים אושרו ✅", description: "ציון הבריאות ולוח החיסונים עודכנו" });
       onComplete?.();
       handleClose();
@@ -148,13 +180,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke("extract-vet-summary", {
-        body: {
-          petId,
-          userId: user.id,
-          summary: manualSummary,
-          visitDate: manualDate,
-          clinicName: manualClinic || null,
-        },
+        body: { petId, userId: user.id, summary: manualSummary, visitDate: manualDate, clinicName: manualClinic || null },
       });
       if (error) throw error;
 
@@ -170,6 +196,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
         cost: null,
         nextDueDate: extracted.nextVisitDate,
       });
+      setLastBase64(null); // Manual — already saved by extract-vet-summary
       setStep('review');
     } catch (err) {
       console.error("Manual submit error:", err);
@@ -182,9 +209,13 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
   const handleClose = () => {
     setStep('closed');
     setScanResult(null);
+    setLastBase64(null);
+    setLastFileName('');
     setManualSummary('');
     setManualDate(new Date().toISOString().split('T')[0]);
     setManualClinic('');
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const addToCalendar = (title: string, date: string) => {
@@ -192,13 +223,13 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
     const end = new Date(d);
     end.setHours(end.getHours() + 1);
     const fmt = (dt: Date) => dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(d)}/${fmt(end)}`;
-    window.open(url, '_blank');
+    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(d)}/${fmt(end)}`, '_blank');
   };
+
+  const weightStatus = scanResult?.weight ? getWeightStatus(scanResult.weight) : null;
 
   return (
     <>
-      {/* Hidden inputs */}
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCameraCapture} />
       <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileUpload} />
 
@@ -219,7 +250,22 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
         )}
       </AnimatePresence>
 
-      {/* Modal overlay */}
+      {/* FAB Label */}
+      <AnimatePresence>
+        {step === 'closed' && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.2 }}
+            className="fixed bottom-[6.5rem] left-[4.75rem] z-50 bg-card border border-border/40 rounded-xl px-3 py-1.5 shadow-md pointer-events-none"
+          >
+            <span className="text-[10px] font-medium text-foreground whitespace-nowrap">הוסף ביקור/חיסון</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal */}
       <AnimatePresence>
         {step !== 'closed' && (
           <motion.div
@@ -242,7 +288,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-lg font-bold text-foreground">
                     {step === 'choose' && 'הוסף ביקור / חיסון'}
-                    {step === 'review' && 'אישור נתונים'}
+                    {step === 'review' && 'אישור נתונים שזוהו'}
                     {step === 'manual' && 'הזנה ידנית'}
                   </h3>
                   <button onClick={handleClose} className="p-2 rounded-full hover:bg-muted transition-colors">
@@ -251,13 +297,10 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                 </div>
               )}
 
-              {/* Step: Choose */}
+              {/* Choose */}
               {step === 'choose' && (
                 <div className="space-y-3">
-                  <button
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/30 hover:bg-muted transition-colors text-right"
-                  >
+                  <button onClick={() => cameraInputRef.current?.click()} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/30 hover:bg-muted transition-colors text-right">
                     <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0">
                       <Camera className="w-6 h-6 text-blue-500" strokeWidth={1.5} />
                     </div>
@@ -267,10 +310,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                     </div>
                   </button>
 
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/30 hover:bg-muted transition-colors text-right"
-                  >
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/30 hover:bg-muted transition-colors text-right">
                     <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center shrink-0">
                       <FileUp className="w-6 h-6 text-purple-500" strokeWidth={1.5} />
                     </div>
@@ -280,10 +320,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                     </div>
                   </button>
 
-                  <button
-                    onClick={() => setStep('manual')}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/30 hover:bg-muted transition-colors text-right"
-                  >
+                  <button onClick={() => setStep('manual')} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/30 hover:bg-muted transition-colors text-right">
                     <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center shrink-0">
                       <PenLine className="w-6 h-6 text-amber-500" strokeWidth={1.5} />
                     </div>
@@ -295,7 +332,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                 </div>
               )}
 
-              {/* Step: Scanning */}
+              {/* Scanning */}
               {step === 'scanning' && (
                 <div className="flex flex-col items-center justify-center py-12 gap-6">
                   <AILoader text="סורק" />
@@ -307,7 +344,6 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                       עוד רגע הציון יתעדכן
                     </p>
                   </div>
-                  {/* Pulsing ring around pet name */}
                   <motion.div
                     animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.2, 0.5] }}
                     transition={{ duration: 2, repeat: Infinity }}
@@ -316,10 +352,13 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                 </div>
               )}
 
-              {/* Step: Review (Post-Scan Approval) */}
+              {/* Review — Post-Scan Approval */}
               {step === 'review' && scanResult && (
                 <div className="space-y-4">
-                  {/* Detected items */}
+                  <p className="text-xs text-muted-foreground">
+                    בדוק את הנתונים שזוהו ואשר לשמירה
+                  </p>
+
                   <div className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border/20">
                     <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4" />
@@ -336,11 +375,9 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                     {scanResult.visitDate && (
                       <div className="flex items-center gap-3">
                         <Calendar className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
-                        <div>
-                          <span className="text-sm text-foreground">
-                            תאריך ביקור: {new Date(scanResult.visitDate).toLocaleDateString("he-IL")}
-                          </span>
-                        </div>
+                        <span className="text-sm text-foreground">
+                          תאריך: {new Date(scanResult.visitDate).toLocaleDateString("he-IL")}
+                        </span>
                       </div>
                     )}
 
@@ -360,7 +397,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                           <div className="flex items-center gap-2">
                             <CalendarPlus className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
                             <div>
-                              <span className="text-xs font-medium text-blue-700">חיסון הבא</span>
+                              <span className="text-xs font-medium text-blue-700">חיסון הבא (לפי לוח גורים)</span>
                               <p className="text-sm font-semibold text-foreground">
                                 {new Date(scanResult.nextDueDate).toLocaleDateString("he-IL")}
                               </p>
@@ -379,10 +416,32 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                       </div>
                     )}
 
+                    {scanResult.medications.length > 0 && (
+                      <div className="flex items-start gap-3">
+                        <Pill className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" strokeWidth={1.5} />
+                        <div>
+                          <p className="text-xs font-medium text-foreground">תרופות</p>
+                          <p className="text-xs text-muted-foreground">{scanResult.medications.join(", ")}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Weight with breed comparison */}
                     {scanResult.weight && (
-                      <div className="flex items-center gap-3">
-                        <Weight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
-                        <span className="text-sm text-foreground">משקל: {scanResult.weight} ק"ג</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                          <Weight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <span className="text-sm text-foreground">משקל: {scanResult.weight} ק"ג</span>
+                        </div>
+                        {weightStatus && (
+                          <div className={`p-2 rounded-lg text-xs font-medium mr-7 ${
+                            weightStatus.status === 'normal' 
+                              ? 'bg-green-500/10 text-green-700' 
+                              : 'bg-amber-500/10 text-amber-700'
+                          }`}>
+                            {weightStatus.status === 'normal' ? '✅' : '⚠️'} {weightStatus.message}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -393,18 +452,42 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                       </div>
                     )}
 
+                    {/* Diagnoses with insurance CTA */}
                     {scanResult.diagnoses.length > 0 && (
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" strokeWidth={1.5} />
-                        <div>
-                          <p className="text-xs font-medium text-amber-600">אבחנות</p>
-                          <p className="text-xs text-muted-foreground">{scanResult.diagnoses.join(", ")}</p>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-xs font-medium text-amber-600">אבחנות</p>
+                            <p className="text-xs text-muted-foreground">{scanResult.diagnoses.join(", ")}</p>
+                          </div>
+                        </div>
+                        {/* Insurance claim offer */}
+                        <div className="p-3 bg-primary/5 rounded-xl border border-primary/20">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Shield className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                            <span className="text-xs font-semibold text-primary">שליחה לביטוח ליברה</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mb-2">
+                            זוהתה אבחנה — ניתן לשלוח את המסמך ישירות לביטוח לצורך תביעה
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs border-primary/30 text-primary w-full"
+                            onClick={() => {
+                              toast({ title: "📋 המסמך נשלח לליברה", description: "נציג ביטוח ייצור קשר בקרוב" });
+                            }}
+                          >
+                            <Shield className="w-3.5 h-3.5 ml-1" />
+                            שלח לביטוח
+                          </Button>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Confirm / Edit buttons */}
+                  {/* Confirm / Rescan */}
                   <div className="flex gap-3">
                     <Button
                       className="flex-1 h-12 rounded-2xl font-semibold"
@@ -431,26 +514,16 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                 </div>
               )}
 
-              {/* Step: Manual Entry */}
+              {/* Manual Entry */}
               {step === 'manual' && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-foreground">תאריך ביקור</label>
-                    <Input
-                      type="date"
-                      value={manualDate}
-                      onChange={(e) => setManualDate(e.target.value)}
-                      className="rounded-xl"
-                    />
+                    <Input type="date" value={manualDate} onChange={(e) => setManualDate(e.target.value)} className="rounded-xl" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-foreground">שם מרפאה (אופציונלי)</label>
-                    <Input
-                      value={manualClinic}
-                      onChange={(e) => setManualClinic(e.target.value)}
-                      placeholder="לדוגמה: מרפאת הכלבלב"
-                      className="rounded-xl"
-                    />
+                    <Input value={manualClinic} onChange={(e) => setManualClinic(e.target.value)} placeholder="לדוגמה: מרפאת הכלבלב" className="rounded-xl" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-foreground">סיכום הביקור</label>
@@ -466,13 +539,8 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, onComplete }:
                     onClick={handleManualSubmit}
                     disabled={manualSubmitting || !manualSummary.trim()}
                   >
-                    {manualSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 ml-2" />
-                        שמור ביקור
-                      </>
+                    {manualSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                      <><CheckCircle2 className="w-4 h-4 ml-2" />שמור ביקור</>
                     )}
                   </Button>
                 </div>

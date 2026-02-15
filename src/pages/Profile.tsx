@@ -628,7 +628,7 @@ const Profile = () => {
                     <VetVisitInput petId={selectedPet.id} petName={selectedPet.name} onVisitLogged={triggerHealthRefresh} />
                     
                     {/* Medical Document FAB (unified entry point) */}
-                    <MedicalDocumentFAB petId={selectedPet.id} petName={selectedPet.name} petBirthDate={(selectedPet as any).birth_date} onComplete={triggerHealthRefresh} />
+                    <MedicalDocumentFAB petId={selectedPet.id} petName={selectedPet.name} petBirthDate={(selectedPet as any).birth_date} petBreed={selectedPet.breed} onComplete={triggerHealthRefresh} />
                     
                     {/* Preventive Care Engine (Weight, Dental, Deworming, Emergency, Next Steps) */}
                     <PreventiveCareEngine
