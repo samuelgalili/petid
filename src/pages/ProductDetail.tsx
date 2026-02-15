@@ -215,6 +215,73 @@ const extractCarrierFeatures = (product: any): {
   return { readinessChecklist, maxWeightKg, dimensions, targetPets, isExpandable, isWashable, hasHardBottom, proTip, crossSellHints };
 };
 
+/** Check if product is specifically diabetic care (takes priority over general vet diet) */
+const isDiabeticProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'diabetic' ||
+    text.includes('diabetic') || text.includes('סוכרת') ||
+    text.includes('d/w') || text.includes('diabetes') ||
+    (text.includes('glycemic') && text.includes('low')) ||
+    (text.includes('גליקמי') && text.includes('נמוך'));
+};
+
+/** Extract diabetic care features */
+const extractDiabeticFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const allText = text + ' ' + JSON.stringify(product.product_attributes || {}).toLowerCase();
+
+  // Blood sugar regulator
+  const bloodSugar = {
+    glycemicIndex: 'נמוך',
+    carbSource: allText.includes('oat') || allText.includes('שיבולת') ? 'שיבולת שועל ודגנים מלאים' : allText.includes('spelt') || allText.includes('כוסמין') ? 'כוסמין ודגנים מלאים' : 'פחמימות איטיות שחרור',
+    mechanism: 'פחמימות איטיות שחרור מונעות קפיצות אינסולין ושומרות על רמת סוכר יציבה לאורך היום',
+  };
+
+  // Muscle vs Fat
+  const proteinMatch = allText.match(/protein[^%]*?(\d+(?:\.\d+)?)\s*%/i) || allText.match(/חלבון[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const fatMatch = allText.match(/fat[^%]*?(\d+(?:\.\d+)?)\s*%/i) || allText.match(/שומן[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const muscleFat = [
+    { label: 'חלבון איכותי', value: proteinMatch ? `${proteinMatch[1]}%` : '33%', description: 'שימור מסת שריר – חלבון גבוה לשמירה על כוח הגוף', color: 'hsl(200,60%,45%)' },
+    { label: 'שומן נמוך', value: fatMatch ? `${fatMatch[1]}%` : '10.5%', description: 'ניהול משקל מבוקר – מניעת עלייה נוספת', color: 'hsl(140,50%,40%)' },
+  ];
+
+  // Fiber satiety
+  const fiberTech = [
+    { icon: <Salad className="w-5 h-5" />, title: 'פסיליום וסיבי סלק', description: 'האטת ספיגת גלוקוז ותחושת שובע ממושכת', color: 'hsl(140,50%,40%)' },
+  ];
+  if (allText.includes('psyllium') || allText.includes('פסיליום')) {
+    fiberTech[0].title = 'Psyllium & Beet Pulp';
+  }
+
+  // Joint bonus for senior diabetic dogs
+  const hasJointSupport = allText.includes('glucosamine') || allText.includes('גלוקוזאמין') || allText.includes('chondroitin') || allText.includes('כונדרויטין');
+  const jointNote = hasJointSupport ? 'גלוקוזאמין וכונדרויטין – תמיכה במפרקים לכלבים סוכרתיים מבוגרים הסובלים מבעיות מפרקים' : null;
+
+  const feedingTip = 'לכלבים סוכרתיים: חובה לחלק את המנה ל-2 ארוחות לפחות ביום (בסמיכות להזרקת האינסולין במידה ויש) לשמירה על רמת סוכר יציבה.';
+  const vetWarning = 'מוצר רפואי ייעודי - דורש ליווי וטרינרי צמוד. אין לשנות מינון או להחליף מזון ללא ייעוץ מקצועי.';
+
+  const feedingMatrix = [
+    { weight: '2 ק"ג', grams: '40-55 גרם' },
+    { weight: '5 ק"ג', grams: '80-105 גרם' },
+    { weight: '10 ק"ג', grams: '135-175 גרם' },
+    { weight: '15 ק"ג', grams: '180-235 גרם' },
+    { weight: '20 ק"ג', grams: '225-290 גרם' },
+    { weight: '25 ק"ג', grams: '265-340 גרם' },
+    { weight: '30 ק"ג', grams: '300-390 גרם' },
+    { weight: '40 ק"ג', grams: '370-480 גרם' },
+    { weight: '50 ק"ג', grams: '435-560 גרם' },
+    { weight: '60 ק"ג', grams: '500-640 גרם' },
+  ];
+
+  const crossSellHints = [
+    'חטיפים בטוחים לסוכרתיים – ללא סוכר ודלי קלוריות',
+    'מאכיל אוטומטי – לשמירה על עקביות בזמני הארוחות',
+  ];
+
+  return { bloodSugar, muscleFat, fiberTech, jointNote, feedingTip, vetWarning, feedingMatrix, crossSellHints };
+};
+
 /** Check if product is a veterinary diet / metabolic support */
 const isVetDietProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -2074,6 +2141,8 @@ const ProductDetail = () => {
   const hypoFeatures = useMemo(() => product && isHypoallergenic ? extractHypoallergenicFeatures(product) : { daltonSize: '6000', skinBenefits: [], eliminationTimeline: '', vetWarning: '', hasRiceStarch: false, feedingMatrix: [], crossSellHints: [] }, [product, isHypoallergenic]);
   const isGastro = useMemo(() => product ? isGastroProduct(product) : false, [product]);
   const gastroFeatures = useMemo(() => product && isGastro ? extractGastroFeatures(product) : { pillars: [], symptoms: [], timeline: [], vetWarning: '', hydrationNote: '', feedingMatrix: [], crossSellHints: [] }, [product, isGastro]);
+  const isDiabetic = useMemo(() => product ? isDiabeticProduct(product) : false, [product]);
+  const diabeticFeatures = useMemo(() => product && isDiabetic ? extractDiabeticFeatures(product) : { bloodSugar: { glycemicIndex: '', carbSource: '', mechanism: '' }, muscleFat: [], fiberTech: [], jointNote: null, feedingTip: '', vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isDiabetic]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -5045,6 +5114,166 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {carrierFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Veterinary Warning ── */}
+        {isDiabetic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">🚨 מוצר רפואי ייעודי</p>
+                  <p className="text-[11px] text-foreground font-medium">{diabeticFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Blood Sugar Regulator Badge ── */}
+        {isDiabetic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(200,30%,95%)] to-background border-[hsl(200,35%,60%)]/20 dark:from-[hsl(200,20%,14%)]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+                <Gauge className="w-4 h-4 text-[hsl(200,60%,45%)]" />
+                🩸 ויסות סוכר בדם
+              </h3>
+              <div className="mt-2 rounded-lg p-3 bg-[hsl(200,50%,45%)]/8 text-center">
+                <p className="text-[10px] text-muted-foreground mb-1">מדד גליקמי</p>
+                <p className="text-[22px] font-black text-[hsl(200,60%,45%)]">{diabeticFeatures.bloodSugar.glycemicIndex}</p>
+                <p className="text-[10px] font-semibold text-[hsl(140,50%,40%)] mt-1">{diabeticFeatures.bloodSugar.carbSource}</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">{diabeticFeatures.bloodSugar.mechanism}</p>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Muscle vs Fat Dashboard ── */}
+        {isDiabetic && diabeticFeatures.muscleFat.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <TrendingDown className="w-4 h-4 text-[hsl(200,55%,45%)]" />
+                💪 שריר מול שומן
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {diabeticFeatures.muscleFat.map((m, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.05 }}
+                    className="rounded-lg p-3 text-center" style={{ backgroundColor: `${m.color}10` }}>
+                    <p className="text-[10px] text-muted-foreground mb-1">{m.label}</p>
+                    <p className="text-[20px] font-black" style={{ color: m.color }}>{m.value}</p>
+                    <p className="text-[9px] text-muted-foreground mt-1">{m.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Fiber Satiety Meter ── */}
+        {isDiabetic && diabeticFeatures.fiberTech.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Salad className="w-4 h-4 text-[hsl(140,50%,40%)]" />
+                🌿 מד שובע – סיבים תזונתיים
+              </h3>
+              <div className="space-y-2">
+                {diabeticFeatures.fiberTech.map((f, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${f.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${f.color}20`, color: f.color }}>
+                      {f.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{f.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{f.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Joint Support Bonus ── */}
+        {isDiabetic && diabeticFeatures.jointNote && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(35,35%,93%)] to-background border-[hsl(35,30%,60%)]/20 dark:from-[hsl(35,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[hsl(35,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Bone className="w-5 h-5 text-[hsl(35,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🦴 בונוס מפרקים</p>
+                  <p className="text-[11px] text-muted-foreground">{diabeticFeatures.jointNote}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Feeding & Timing Pro-Tip ── */}
+        {isDiabetic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(45,45%,92%)] to-background border-[hsl(45,40%,55%)]/20 dark:from-[hsl(45,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(45,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Timer className="w-5 h-5 text-[hsl(45,60%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">⏰ Pro-Tip: תזמון ארוחות</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{diabeticFeatures.feedingTip}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Feeding Matrix ── */}
+        {isDiabetic && diabeticFeatures.feedingMatrix.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                🧮 טבלת מינון יומי
+              </h3>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <div className="grid grid-cols-2 bg-muted/50 text-[10px] font-bold text-foreground p-2 text-center">
+                  <span>משקל</span>
+                  <span>גרמים ליום</span>
+                </div>
+                {diabeticFeatures.feedingMatrix.map((row, ri) => (
+                  <div key={ri} className={`grid grid-cols-2 text-[11px] text-center p-1.5 ${ri % 2 === 0 ? 'bg-muted/20' : 'bg-background'}`}>
+                    <span className="font-bold text-foreground">{row.weight}</span>
+                    <span className="text-[hsl(200,55%,45%)] font-semibold">{row.grams}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Diabetic: Cross-Sell ── */}
+        {isDiabetic && diabeticFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.54 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים מומלצים
+              </h3>
+              <div className="space-y-1.5">
+                {diabeticFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
