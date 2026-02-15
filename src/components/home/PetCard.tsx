@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Heart, Calendar, MapPin } from "lucide-react";
+import { Plus, Heart, Calendar, MapPin, Siren } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { memo, useMemo } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -124,6 +124,18 @@ export const PetCard = memo(({
           </motion.div>
         )}
 
+        {/* Lost Badge */}
+        {pet.is_lost && (
+          <motion.div
+            className="absolute bottom-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            <Siren className="w-3 h-3" />
+            נעדר/ת
+          </motion.div>
+        )}
+
         {/* Selected Indicator */}
         {isSelected && (
           <motion.div
@@ -178,7 +190,8 @@ export const PetCard = memo(({
     prevProps.pet.breed === nextProps.pet.breed &&
     prevProps.pet.avatar_url === nextProps.pet.avatar_url &&
     prevProps.pet.birth_date === nextProps.pet.birth_date &&
-    prevProps.pet.gender === nextProps.pet.gender
+    prevProps.pet.gender === nextProps.pet.gender &&
+    prevProps.pet.is_lost === nextProps.pet.is_lost
   );
 });
 
