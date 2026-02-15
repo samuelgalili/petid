@@ -104,6 +104,55 @@ const extractBreedRecommendations = (product: any): string[] => {
   if (typeof breeds === 'string') return breeds.split(/[,،、]\s*/);
   return [];
 };
+/** Check if product is a liquid omega supplement */
+const isOmegaLiquidProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'omega' || cat === 'liquid-supplement' ||
+    (text.includes('salmon oil') || text.includes('שמן סלמון')) ||
+    (text.includes('omega') && (text.includes('liquid') || text.includes('נוזלי') || text.includes('pump') || text.includes('משאבה') || text.includes('oil') || text.includes('שמן'))) ||
+    (text.includes('fish oil') && !text.includes('capsule'));
+};
+
+/** Extract omega liquid supplement features */
+const extractOmegaFeatures = (product: any): {
+  benefits: { icon: React.ReactNode; title: string; description: string; color: string }[];
+  servingSuggestion: string;
+  purityBadge: string | null;
+  isMultiPet: boolean;
+  lifeStageTags: string[];
+  crossSellHints: string[];
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+
+  const benefits: { icon: React.ReactNode; title: string; description: string; color: string }[] = [
+    { icon: <Sparkles className="w-5 h-5" />, title: 'פרווה ועור', description: 'פרווה מבריקה ועור רך – פתרון לנשירה וגירודים', color: 'hsl(35,70%,50%)' },
+    { icon: <Brain className="w-5 h-5" />, title: 'כוח מוחי', description: 'שיפור ריכוז וערנות – בזכות ה-DHA', color: 'hsl(270,50%,55%)' },
+    { icon: <ShieldPlus className="w-5 h-5" />, title: 'חיזוק חיסוני', description: 'חיזוק מערכת החיסון והתאוששות ממחלות', color: 'hsl(140,50%,40%)' },
+    { icon: <Activity className="w-5 h-5" />, title: 'בריאות מפרקים', description: 'הפחתת נוקשות ושיפור גמישות במפרקים', color: 'hsl(200,60%,45%)' },
+    { icon: <Eye className="w-5 h-5" />, title: 'שמירה על ראייה', description: 'שמירה על ראייה תקינה לאורך השנים', color: 'hsl(170,50%,40%)' },
+  ];
+
+  const servingSuggestion = 'פשוט להוסיף מעל המזון היבש לשיפור הטעם והתיאבון – לחצו על המשאבה ישירות על הקיבל';
+
+  let purityBadge: string | null = null;
+  if (text.includes('norwegian') || text.includes('נורווגי')) purityBadge = '99.5% שמן סלמון נורווגי טהור';
+  else if (text.includes('salmon') || text.includes('סלמון')) purityBadge = 'שמן סלמון טהור';
+  else if (text.includes('fish oil') || text.includes('שמן דגים')) purityBadge = 'שמן דגים טהור';
+
+  const isMultiPet = text.includes('cat') || text.includes('חתול') || text.includes('dogs and cats') || text.includes('כלבים וחתולים');
+
+  const lifeStageTags: string[] = [];
+  if (text.includes('puppy') || text.includes('גור') || text.includes('growth') || text.includes('גדילה')) lifeStageTags.push('חיוני לגורים בשלבי גדילה');
+  if (text.includes('senior') || text.includes('מבוגר') || text.includes('aging')) lifeStageTags.push('חיוני לחיות מבוגרות');
+  if (lifeStageTags.length === 0) { lifeStageTags.push('חיוני לגורים בשלבי גדילה'); lifeStageTags.push('חיוני לחיות מבוגרות'); }
+
+  const crossSellHints: string[] = [];
+  crossSellHints.push('שדרגו את הארוחה – הוסיפו שמן סלמון למזון היבש');
+  crossSellHints.push('תמיכה טבעית נוגדת דלקת – משלים מצוין לתוספי מפרקים');
+
+  return { benefits, servingSuggestion, purityBadge, isMultiPet, lifeStageTags, crossSellHints };
+};
 
 /** Check if product is a joint supplement */
 const isJointSupplementProduct = (product: any): boolean => {
@@ -1726,6 +1775,8 @@ const ProductDetail = () => {
   const treatFeatures = useMemo(() => product && isTreat ? extractTreatFeatures(product) : { chewDuration: 0, proteinPct: null, hasDental: false, texture: null, isChewPriority: false }, [product, isTreat]);
   const isJointSupplement = useMemo(() => product ? isJointSupplementProduct(product) : false, [product]);
   const jointFeatures = useMemo(() => product && isJointSupplement ? extractJointSupplementFeatures(product) : { ingredients: [], dosagePhases: [], mobilityBenefits: [], humanComparison: null, insuranceTip: null }, [product, isJointSupplement]);
+  const isOmegaLiquid = useMemo(() => product ? isOmegaLiquidProduct(product) : false, [product]);
+  const omegaFeatures = useMemo(() => product && isOmegaLiquid ? extractOmegaFeatures(product) : { benefits: [], servingSuggestion: '', purityBadge: null, isMultiPet: false, lifeStageTags: [], crossSellHints: [] }, [product, isOmegaLiquid]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -4465,6 +4516,109 @@ const ProductDetail = () => {
                   <p className="text-[12px] font-bold text-foreground">💡 טיפ ביטוחי – Libra</p>
                   <p className="text-[11px] text-muted-foreground">{jointFeatures.insuranceTip}</p>
                 </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Omega Liquid: Benefits Wheel ── */}
+        {isOmegaLiquid && omegaFeatures.benefits.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Droplets className="w-4 h-4 text-[hsl(200,60%,50%)]" />
+                🐟 יתרונות אומגה 3
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                {omegaFeatures.benefits.map((b, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.24 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg p-3"
+                    style={{ backgroundColor: `${b.color}10` }}
+                  >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${b.color}20`, color: b.color }}>
+                      {b.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{b.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{b.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Omega Liquid: Serving Suggestion ── */}
+        {isOmegaLiquid && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(35,50%,92%)] to-background border-[hsl(35,40%,60%)]/20 dark:from-[hsl(35,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(35,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Utensils className="w-5 h-5 text-[hsl(35,60%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🍽️ הצעת הגשה – The Topper</p>
+                  <p className="text-[11px] text-muted-foreground">{omegaFeatures.servingSuggestion}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Omega Liquid: Purity Badge ── */}
+        {isOmegaLiquid && omegaFeatures.purityBadge && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.54 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(200,50%,92%)] to-background border-[hsl(200,40%,60%)]/20 dark:from-[hsl(200,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(200,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Award className="w-5 h-5 text-[hsl(200,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🏅 טוהר מוכח</p>
+                  <p className="text-[11px] font-semibold text-primary">{omegaFeatures.purityBadge}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Omega Liquid: Multi-Pet + Life Stage Tags ── */}
+        {isOmegaLiquid && (
+          <motion.div className="mx-4 mt-3 flex flex-wrap gap-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58 }}>
+            {omegaFeatures.isMultiPet && (
+              <Badge variant="outline" className="text-[11px] border-[hsl(140,40%,50%)]/40 text-[hsl(140,40%,40%)] bg-[hsl(140,40%,90%)]/30 dark:bg-[hsl(140,25%,15%)]/40">
+                🐾 מתאים לכלבים ולחתולים כאחד
+              </Badge>
+            )}
+            {omegaFeatures.lifeStageTags.map((tag, i) => (
+              <Badge key={i} variant="outline" className="text-[11px] border-[hsl(270,40%,55%)]/30 text-[hsl(270,40%,45%)] bg-[hsl(270,40%,92%)]/30 dark:bg-[hsl(270,25%,15%)]/40">
+                {i === 0 ? '🐶' : '🦴'} {tag}
+              </Badge>
+            ))}
+          </motion.div>
+        )}
+
+        {/* ── Omega Liquid: Cross-Sell Hints ── */}
+        {isOmegaLiquid && omegaFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.62 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 טיפים לשימוש
+              </h3>
+              <div className="space-y-1.5">
+                {omegaFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
               </div>
             </Card>
           </motion.div>
