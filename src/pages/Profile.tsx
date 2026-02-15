@@ -35,6 +35,7 @@ import { BreedHealthTips } from "@/components/profile/BreedHealthTips";
 import { VetDocumentScanner } from "@/components/profile/VetDocumentScanner";
 import { PuppyVaccineScheduler } from "@/components/profile/PuppyVaccineScheduler";
 import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine";
+import { MedicalDocumentFAB } from "@/components/profile/MedicalDocumentFAB";
 interface Pet {
   id: string;
   name: string;
@@ -620,11 +621,14 @@ const Profile = () => {
                       petType={selectedPet.type}
                     />
                     
-                    {/* Vet Document Scanner (OCR) */}
+                    {/* Vet Document Scanner (OCR) - legacy inline */}
                     <VetDocumentScanner petId={selectedPet.id} petName={selectedPet.name} onScanComplete={triggerHealthRefresh} />
                     
                     {/* Vet Visit Input */}
                     <VetVisitInput petId={selectedPet.id} petName={selectedPet.name} onVisitLogged={triggerHealthRefresh} />
+                    
+                    {/* Medical Document FAB (unified entry point) */}
+                    <MedicalDocumentFAB petId={selectedPet.id} petName={selectedPet.name} petBirthDate={(selectedPet as any).birth_date} onComplete={triggerHealthRefresh} />
                     
                     {/* Preventive Care Engine (Weight, Dental, Deworming, Emergency, Next Steps) */}
                     <PreventiveCareEngine
