@@ -54,9 +54,11 @@ interface TopRecommendationProps {
   onFeedingOpen?: () => void;
   onFurOpen?: () => void;
   onLifeExpectancyOpen?: () => void;
+  onMobilityOpen?: () => void;
+  onDigestionOpen?: () => void;
 }
 
-export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeedingOpen, onFurOpen, onLifeExpectancyOpen }: TopRecommendationProps) => {
+export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeedingOpen, onFurOpen, onLifeExpectancyOpen, onMobilityOpen, onDigestionOpen }: TopRecommendationProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -1165,13 +1167,13 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             </div>
             <div className="space-y-2">
               {[
-                { label: 'אנרגיה', value: foodBars.energy, icon: Zap },
-                { label: 'שובע', value: foodBars.satiety, icon: Utensils },
-                { label: 'פרווה', value: foodBars.coat, icon: Sparkles },
-                { label: 'ניידות', value: foodBars.mobility, icon: TrendingUp },
-                { label: 'עיכול', value: foodBars.digestion, icon: Activity },
+                { label: 'אנרגיה', value: foodBars.energy, icon: Zap, onClick: onEnergyOpen },
+                { label: 'שובע', value: foodBars.satiety, icon: Utensils, onClick: onFeedingOpen },
+                { label: 'פרווה', value: foodBars.coat, icon: Sparkles, onClick: onGroomingOpen },
+                { label: 'ניידות', value: foodBars.mobility, icon: TrendingUp, onClick: onMobilityOpen },
+                { label: 'עיכול', value: foodBars.digestion, icon: Activity, onClick: onDigestionOpen },
               ].map((bar) => (
-                <div key={bar.label} className="flex items-center gap-2">
+                <button key={bar.label} onClick={bar.onClick} className="flex items-center gap-2 w-full hover:bg-muted/30 rounded-md py-0.5 transition-colors cursor-pointer">
                   <bar.icon className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
                   <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">{bar.label}</span>
                   <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -1185,7 +1187,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                     />
                   </div>
                   <span className="text-[10px] font-bold text-foreground w-7 text-left">{bar.value}%</span>
-                </div>
+                </button>
               ))}
             </div>
           </motion.div>
