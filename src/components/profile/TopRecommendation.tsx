@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish, Brain, Stethoscope, Droplets, AlertTriangle, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +70,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const [saving, setSaving] = useState(false);
   const [recentPurchases, setRecentPurchases] = useState<Array<{id: string; product_name: string; product_image: string | null; quantity: number; price: number; created_at: string}>>([]);
   const [feedingGuideline, setFeedingGuideline] = useState<{min: number; max: number} | null>(null);
+  const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
+  const [currentFood, setCurrentFood] = useState<string | null>(null);
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
@@ -91,24 +93,34 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     fetchOwner();
   }, [pet.user_id]);
 
-  // Fetch breed info for defaults
+  // Fetch breed info + medical data
   useEffect(() => {
-    const fetchBreedInfo = async () => {
-      if (!pet.breed) return;
+    const fetchBreedAndMedical = async () => {
+      // Breed info
+      if (pet.breed) {
+        const { data } = await supabase
+          .from('breed_information')
+          .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs, energy_level, grooming_freq, shedding_level, trainability')
+          .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
+          .maybeSingle();
+        if (data) setBreedInfo(data);
+      }
       
-      const { data } = await supabase
-        .from('breed_information')
-        .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs, energy_level, grooming_freq, shedding_level, trainability')
-        .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
+      // Medical conditions & current food from pet record
+      const { data: petFull } = await supabase
+        .from('pets')
+        .select('medical_conditions, current_food')
+        .eq('id', pet.id)
         .maybeSingle();
       
-      if (data) {
-        setBreedInfo(data);
+      if (petFull) {
+        setMedicalConditions((petFull as any).medical_conditions || []);
+        setCurrentFood((petFull as any).current_food || null);
       }
     };
 
-    fetchBreedInfo();
-  }, [pet.breed]);
+    fetchBreedAndMedical();
+  }, [pet.breed, pet.id]);
 
   // Fetch recent purchases
   useEffect(() => {
@@ -550,6 +562,72 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     if (!feedingGuideline) return null;
     return Math.min(95, 70 + Math.floor(Math.random() * 25)); // Placeholder until real data
   };
+
+  // AI Insights badges based on breed and medical conditions
+  const aiInsights = useMemo(() => {
+    const insights: { label: string; icon: React.ElementType; color: string }[] = [];
+    const breedLower = (pet.breed || '').toLowerCase();
+    const conditionsLower = medicalConditions.map(c => c.toLowerCase());
+
+    // Breed-based insights
+    const brachyBreeds = ['בולדוג', 'פאג', 'שי טסו', 'french bulldog', 'pug', 'shih tzu', 'frenchie', 'צרפתי'];
+    if (brachyBreeds.some(b => breedLower.includes(b))) {
+      insights.push({ label: 'מעקב נשימה פעיל', icon: Stethoscope, color: 'bg-blue-500/15 text-blue-600' });
+    }
+
+    const deepChested = ['דני גדול', 'דוברמן', 'ויימרנר', 'great dane', 'doberman', 'weimaraner'];
+    if (deepChested.some(b => breedLower.includes(b))) {
+      insights.push({ label: 'מצב מניעת נפיחות', icon: AlertTriangle, color: 'bg-amber-500/15 text-amber-600' });
+    }
+
+    const powerChewers = ['סטפי', 'פיטבול', 'אמסטף', 'staffordshire', 'pitbull', 'amstaff'];
+    if (powerChewers.some(b => breedLower.includes(b))) {
+      insights.push({ label: 'צעצועים עמידים בלבד', icon: Shield, color: 'bg-red-500/15 text-red-600' });
+    }
+
+    // Medical condition-based insights
+    if (conditionsLower.includes('diabetes') || conditionsLower.includes('סוכרת')) {
+      insights.push({ label: 'מצב דל-סוכר', icon: Activity, color: 'bg-purple-500/15 text-purple-600' });
+    }
+    if (conditionsLower.includes('kidney') || conditionsLower.includes('כליות')) {
+      insights.push({ label: 'מצב דל-זרחן', icon: Droplets, color: 'bg-teal-500/15 text-teal-600' });
+    }
+    if (conditionsLower.includes('heart') || conditionsLower.includes('לב')) {
+      insights.push({ label: 'מצב דל-נתרן', icon: Heart, color: 'bg-rose-500/15 text-rose-600' });
+    }
+    if (conditionsLower.includes('skin_issues') || conditionsLower.includes('allergies') || conditionsLower.includes('עור') || conditionsLower.includes('אלרגי')) {
+      insights.push({ label: 'מצב היפואלרגני', icon: CloudSun, color: 'bg-sky-500/15 text-sky-600' });
+    }
+    if (conditionsLower.includes('joint_issues') || conditionsLower.includes('מפרקים')) {
+      insights.push({ label: 'תמיכת מפרקים', icon: TrendingUp, color: 'bg-orange-500/15 text-orange-600' });
+    }
+
+    return insights;
+  }, [pet.breed, medicalConditions]);
+
+  // Food-ingredient-based bars for Energy, Satiety, and Coat
+  const foodBars = useMemo(() => {
+    const foodLower = (currentFood || '').toLowerCase();
+    
+    // Energy bar - affected by protein content, activity breeds
+    let energy = 50;
+    if (foodLower.includes('protein') || foodLower.includes('חלבון') || foodLower.includes('high energy') || foodLower.includes('active')) energy = 85;
+    else if (foodLower.includes('senior') || foodLower.includes('light') || foodLower.includes('diet')) energy = 35;
+    else if (breedInfo?.energy_level) energy = breedInfo.energy_level * 18;
+
+    // Satiety bar - affected by fiber content
+    let satiety = 55;
+    if (foodLower.includes('fiber') || foodLower.includes('סיבים') || foodLower.includes('satiety')) satiety = 80;
+    else if (foodLower.includes('grain free') || foodLower.includes('ללא דגנים')) satiety = 60;
+    
+    // Coat bar - affected by omega/salmon
+    let coat = 50;
+    if (foodLower.includes('salmon') || foodLower.includes('סלמון') || foodLower.includes('omega') || foodLower.includes('אומגה') || foodLower.includes('fish oil') || foodLower.includes('שמן דגים')) coat = 90;
+    else if (foodLower.includes('skin') || foodLower.includes('coat') || foodLower.includes('עור') || foodLower.includes('פרווה')) coat = 80;
+    else if (breedInfo?.shedding_level) coat = Math.max(30, 80 - breedInfo.shedding_level * 10);
+
+    return { energy: Math.min(100, energy), satiety: Math.min(100, satiety), coat: Math.min(100, coat) };
+  }, [currentFood, breedInfo]);
 
   return (
     <>
@@ -1018,6 +1096,73 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             <span className="text-[10px] text-primary font-bold mt-0.5">{getSheddingLevelHe()}</span>
           </motion.button>
         </div>
+
+        {/* AI Insights Badges */}
+        {aiInsights.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-3 mb-3"
+          >
+            <div className="flex items-center gap-1.5 mb-2">
+              <Brain className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+              <span className="text-[11px] font-bold text-foreground">תובנות AI</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {aiInsights.map((insight, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.08 }}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold ${insight.color}`}
+                >
+                  <insight.icon className="w-3 h-3" />
+                  {insight.label}
+                </motion.span>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Food-Based Visual Bars: Energy, Satiety, Coat */}
+        {currentFood && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mb-3 p-3 bg-muted/20 rounded-xl border border-border/20"
+          >
+            <div className="flex items-center gap-1.5 mb-2.5">
+              <BarChart3 className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+              <span className="text-[11px] font-bold text-foreground">ניתוח מזון נוכחי</span>
+            </div>
+            <div className="space-y-2">
+              {[
+                { label: 'אנרגיה', value: foodBars.energy, icon: Zap },
+                { label: 'שובע', value: foodBars.satiety, icon: Utensils },
+                { label: 'פרווה', value: foodBars.coat, icon: Sparkles },
+              ].map((bar) => (
+                <div key={bar.label} className="flex items-center gap-2">
+                  <bar.icon className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
+                  <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">{bar.label}</span>
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${bar.value}%` }}
+                      transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+                      className={`h-full rounded-full ${
+                        bar.value >= 75 ? 'bg-green-500' : bar.value >= 50 ? 'bg-primary' : 'bg-amber-500'
+                      }`}
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-foreground w-7 text-left">{bar.value}%</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Second row: Life Expectancy + Mood + QR */}
         <div className="grid grid-cols-3 gap-2.5">
