@@ -32,6 +32,7 @@ interface PetFullData {
 interface PetHealthScoreProps {
   pet: Pet;
   onViewDetails?: () => void;
+  refreshKey?: number;
 }
 
 // Breed-specific insurance pitches (Hebrew)
@@ -46,7 +47,7 @@ const BREED_INSURANCE_PITCHES: Record<string, { risks: string; pitch: string }> 
   'pug': { risks: 'בעיות נשימה ועיניים', pitch: 'ביטוח Libra יכסה ניתוחים ובדיקות עיניים' },
 };
 
-export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
+export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScoreProps) => {
   const navigate = useNavigate();
   const [petData, setPetData] = useState<PetFullData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,9 +55,10 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
   const [inRecovery, setInRecovery] = useState(false);
   const [showVaccineBoost, setShowVaccineBoost] = useState(false);
   const [showInsurancePitch, setShowInsurancePitch] = useState(false);
+  const [hasRecentWeight, setHasRecentWeight] = useState(false);
+  const [hasParasitePrevention, setHasParasitePrevention] = useState(false);
 
-  useEffect(() => {
-    const fetchPetData = async () => {
+  const fetchHealthData = async () => {
       try {
         const [petResult, vaccineResult] = await Promise.all([
           supabase
@@ -66,20 +68,32 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
             .maybeSingle(),
           supabase
             .from("pet_vet_visits")
-            .select("id, vaccines, visit_date, is_recovery_mode, recovery_until")
+            .select("id, vaccines, visit_date, is_recovery_mode, recovery_until, raw_summary")
             .eq("pet_id", pet.id)
             .order("visit_date", { ascending: false })
-            .limit(5),
+            .limit(20),
         ]);
 
         if (petResult.data) setPetData(petResult.data as PetFullData);
         
-        const recentVaccines = (vaccineResult.data || []).filter((v: any) => {
+        // Weight tracking: has weight been logged
+        setHasRecentWeight(!!petResult.data?.weight);
+        
+        const visits = vaccineResult.data || [];
+        
+        const recentVaccines = visits.filter((v: any) => {
           const vDate = new Date(v.visit_date);
           const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
           return monthsAgo <= 12 && (v.vaccines as string[])?.length > 0;
         });
         setVaccineCount(recentVaccines.length);
+        
+        // Parasite prevention: check for deworming in visits
+        const hasDeworming = visits.some((v: any) => {
+          const summary = ((v as any).raw_summary || '').toLowerCase();
+          return summary.includes('תילוע') || summary.includes('deworm') || summary.includes('milbemax') || summary.includes('drontal');
+        });
+        setHasParasitePrevention(hasDeworming);
         
         // Show boost animation if vaccines exist
         if (recentVaccines.length > 0) {
@@ -89,7 +103,7 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
           }, 1200);
         }
         
-        const activeRecovery = (vaccineResult.data || []).find((v: any) =>
+        const activeRecovery = visits.find((v: any) =>
           v.is_recovery_mode && v.recovery_until && new Date(v.recovery_until) > new Date()
         );
         setInRecovery(!!activeRecovery);
@@ -99,8 +113,10 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
         setLoading(false);
       }
     };
-    fetchPetData();
-  }, [pet.id]);
+
+  useEffect(() => {
+    fetchHealthData();
+  }, [pet.id, refreshKey]);
 
   // Calculate profile completion percentage
   const profileCompletion = useMemo(() => {
@@ -120,51 +136,39 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
   }, [pet, petData]);
 
-  // Calculate real health score based on actual pet data + profile completion
+  // V21 Health Score: Vaccines (35) + Weight (20) + Parasites (15) + Profile (15) + Vet (15)
   const healthScore = useMemo(() => {
     if (!petData) return 50;
     
-    // Profile completion contributes up to 30 points
-    let score = Math.round(profileCompletion * 0.3);
-    
-    // Age factor (up to 13 points)
-    if (pet.birth_date) {
-      const birth = new Date(pet.birth_date);
-      const ageYears = (Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365);
-      if (ageYears < 3) score += 13;
-      else if (ageYears <= 7) score += 10;
-      else if (ageYears <= 10) score += 6;
-      else score += 2;
-    }
+    let score = 0;
 
-    // Medical conditions (up to 15 points)
-    const conditions = petData.medical_conditions || [];
-    if (conditions.length === 0) {
-      score += 15;
-    } else {
-      score += Math.max(0, 15 - conditions.length * 4);
-      score += 2; // Tracking bonus
-    }
+    // 1. Completed Vaccines — up to 35 points
+    // Each recent vaccine = 8pts, max 35
+    score += Math.min(vaccineCount * 8, 35);
 
-    // Vet visits (up to 15 points)
+    // 2. Weight Logs — up to 20 points
+    if (hasRecentWeight) score += 20;
+
+    // 3. Parasite Prevention — up to 15 points
+    if (hasParasitePrevention) score += 15;
+
+    // 4. Profile Completion — up to 15 points
+    score += Math.round(profileCompletion * 0.15);
+
+    // 5. Recent Vet Visit — up to 15 points
     if (petData.last_vet_visit) {
       const monthsSince = (Date.now() - new Date(petData.last_vet_visit).getTime()) / (1000 * 60 * 60 * 24 * 30);
-      if (monthsSince <= 6) score += 15;
-      else if (monthsSince <= 12) score += 8;
+      if (monthsSince <= 3) score += 15;
+      else if (monthsSince <= 6) score += 12;
+      else if (monthsSince <= 12) score += 6;
       else score += 2;
     }
-
-    // Insurance (up to 7 points)
-    if (petData.has_insurance) score += 7;
-
-    // Vaccine boost (up to 12 points)
-    score += Math.min(vaccineCount * 4, 12);
 
     // Recovery mode penalty
     if (inRecovery) score -= 8;
 
     return Math.min(100, Math.max(0, score));
-  }, [pet.birth_date, pet.avatar_url, pet.size, petData, vaccineCount, inRecovery, profileCompletion]);
+  }, [petData, vaccineCount, hasRecentWeight, hasParasitePrevention, profileCompletion, inRecovery]);
 
   const isHighRisk = useMemo(() => {
     if (!petData) return false;

@@ -82,6 +82,8 @@ const Profile = () => {
   const [groomingSheetOpen, setGroomingSheetOpen] = useState(false);
   const [feedingSheetOpen, setFeedingSheetOpen] = useState(false);
   const [smartRecCategory, setSmartRecCategory] = useState<'coat' | 'energy' | 'health' | 'feeding' | 'mobility' | 'digestion' | null>(null);
+  const [healthRefreshKey, setHealthRefreshKey] = useState(0);
+  const triggerHealthRefresh = () => setHealthRefreshKey(k => k + 1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -594,7 +596,7 @@ const Profile = () => {
                     <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
                     
                     {/* Health Score */}
-                    <PetHealthScore pet={selectedPet} onViewDetails={() => setSmartRecCategory('health')} />
+                    <PetHealthScore pet={selectedPet} onViewDetails={() => setSmartRecCategory('health')} refreshKey={healthRefreshKey} />
                     
                     {/* Recovery Banner */}
                     <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
@@ -619,10 +621,10 @@ const Profile = () => {
                     />
                     
                     {/* Vet Document Scanner (OCR) */}
-                    <VetDocumentScanner petId={selectedPet.id} petName={selectedPet.name} />
+                    <VetDocumentScanner petId={selectedPet.id} petName={selectedPet.name} onScanComplete={triggerHealthRefresh} />
                     
                     {/* Vet Visit Input */}
-                    <VetVisitInput petId={selectedPet.id} petName={selectedPet.name} />
+                    <VetVisitInput petId={selectedPet.id} petName={selectedPet.name} onVisitLogged={triggerHealthRefresh} />
                     
                     {/* Preventive Care Engine (Weight, Dental, Deworming, Emergency, Next Steps) */}
                     <PreventiveCareEngine
