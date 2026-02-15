@@ -29,7 +29,7 @@ import {
   Headphones, MessageSquare, Clock, CheckCircle, AlertCircle, User,
   Search, Plus, Send, Ticket, PawPrint, Heart, FileText, ShoppingCart,
   Shield, Stethoscope, StickyNote, ChevronRight, Sparkles, AlertTriangle,
-  Copy, Truck, Package, Brain,
+  Copy, Truck, Package, Brain, Siren, RefreshCw, Save, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -109,7 +109,26 @@ interface PetInfo {
   weight: number | null;
   medical_conditions: string[] | null;
   avatar_url: string | null;
+  is_lost: boolean;
+  is_neutered: boolean | null;
+  last_vet_visit: string | null;
 }
+
+// Health score calculation
+const calcHealthScore = (pet: PetInfo): number => {
+  let score = 100;
+  if (pet.is_lost) score -= 30;
+  if (pet.medical_conditions?.length) score -= pet.medical_conditions.length * 5;
+  if (!pet.is_neutered) score -= 5;
+  if (pet.last_vet_visit) {
+    const daysSince = (Date.now() - new Date(pet.last_vet_visit).getTime()) / (24 * 60 * 60 * 1000);
+    if (daysSince > 365) score -= 15;
+    else if (daysSince > 180) score -= 5;
+  } else {
+    score -= 10;
+  }
+  return Math.max(0, Math.min(100, score));
+};
 
 // =====================================================
 // PRIORITY / STATUS CONFIG
@@ -142,6 +161,8 @@ const AdminHelpDesk = () => {
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
   const [isCannedOpen, setIsCannedOpen] = useState(false);
   const [newTicket, setNewTicket] = useState({ subject: "", description: "", priority: "medium" });
+  const [selectedPetIdx, setSelectedPetIdx] = useState(0);
+  const [editingPet, setEditingPet] = useState<Partial<PetInfo> | null>(null);
 
   // Fetch tickets
   const { data: tickets = [], isLoading } = useQuery({
@@ -156,6 +177,23 @@ const AdminHelpDesk = () => {
     },
   });
 
+  // V57: Fetch pet lost status for tickets with pet_id to enable SOS sorting
+  const { data: ticketPetStatuses = {} } = useQuery({
+    queryKey: ["ticket-pet-statuses", tickets.map(t => t.pet_id).join()],
+    queryFn: async () => {
+      const petIds = tickets.filter(t => t.pet_id).map(t => t.pet_id!);
+      if (!petIds.length) return {};
+      const { data } = await supabase
+        .from("pets")
+        .select("id, is_lost")
+        .in("id", petIds);
+      const map: Record<string, boolean> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p.is_lost; });
+      return map;
+    },
+    enabled: tickets.some(t => t.pet_id),
+  });
+
   // Sorted and filtered
   const filteredTickets = useMemo(() => {
     let result = [...tickets];
@@ -168,15 +206,18 @@ const AdminHelpDesk = () => {
         t.description?.toLowerCase().includes(q)
       );
     }
-    // Sort by priority then date
+    // V57: SOS/Lost pets float to top, then priority, then date
     result.sort((a, b) => {
+      const aLost = a.pet_id && ticketPetStatuses[a.pet_id] ? 1 : 0;
+      const bLost = b.pet_id && ticketPetStatuses[b.pet_id] ? 1 : 0;
+      if (aLost !== bLost) return bLost - aLost; // Lost first
       const pa = PRIORITY_CONFIG[a.priority || "medium"]?.sort ?? 3;
       const pb = PRIORITY_CONFIG[b.priority || "medium"]?.sort ?? 3;
       if (pa !== pb) return pa - pb;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return result;
-  }, [tickets, statusFilter, searchTerm]);
+  }, [tickets, statusFilter, searchTerm, ticketPetStatuses]);
 
   const selectedTicket = useMemo(() => tickets.find(t => t.id === selectedTicketId) || null, [tickets, selectedTicketId]);
 
@@ -203,7 +244,7 @@ const AdminHelpDesk = () => {
       if (!selectedTicket?.pet_id) return null;
       const { data } = await supabase
         .from("pets")
-        .select("id, name, type, breed, birth_date, weight, medical_conditions, avatar_url")
+        .select("id, name, type, breed, birth_date, weight, medical_conditions, avatar_url, is_lost, is_neutered, last_vet_visit")
         .eq("id", selectedTicket.pet_id)
         .maybeSingle();
       return data as PetInfo | null;
@@ -218,9 +259,9 @@ const AdminHelpDesk = () => {
       if (!selectedTicket?.user_id || selectedTicket?.pet_id) return [];
       const { data } = await supabase
         .from("pets")
-        .select("id, name, type, breed, birth_date, weight, medical_conditions, avatar_url")
+        .select("id, name, type, breed, birth_date, weight, medical_conditions, avatar_url, is_lost, is_neutered, last_vet_visit")
         .eq("user_id", selectedTicket.user_id)
-        .limit(5);
+        .limit(10);
       return (data || []) as PetInfo[];
     },
     enabled: !!selectedTicket?.user_id && !selectedTicket?.pet_id,
@@ -337,26 +378,50 @@ const AdminHelpDesk = () => {
     updateTicket.mutate({ vet_flag: !selectedTicket.vet_flag } as any);
   }, [selectedTicket, updateTicket]);
 
+  // V57: Update pet profile (feedback loop)
+  const updatePetProfile = useMutation({
+    mutationFn: async (updates: Partial<PetInfo>) => {
+      if (!activePet) return;
+      const { error } = await supabase
+        .from("pets")
+        .update(updates as any)
+        .eq("id", activePet.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pet-360"] });
+      queryClient.invalidateQueries({ queryKey: ["user-pets"] });
+      setEditingPet(null);
+      toast.success("פרופיל חיית המחמד עודכן");
+    },
+  });
+
   // Stats
   const stats = useMemo(() => ({
     open: tickets.filter(t => t.status === "open").length,
     inProgress: tickets.filter(t => t.status === "in_progress").length,
     vetFlags: tickets.filter(t => t.vet_flag).length,
+    sosMode: tickets.filter(t => t.pet_id && ticketPetStatuses[t.pet_id!]).length,
     total: tickets.length,
-  }), [tickets]);
+  }), [tickets, ticketPetStatuses]);
 
   // Pet age calculator
-  const petAge = useMemo(() => {
-    if (!petInfo?.birth_date) return null;
-    const birth = new Date(petInfo.birth_date);
+  const calcPetAge = (birthDate: string | null) => {
+    if (!birthDate) return null;
+    const birth = new Date(birthDate);
     const now = new Date();
     const years = Math.floor((now.getTime() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
     const months = Math.floor(((now.getTime() - birth.getTime()) % (365.25 * 24 * 60 * 60 * 1000)) / (30.44 * 24 * 60 * 60 * 1000));
     if (years > 0) return `${years} שנים${months > 0 ? ` ו-${months} חודשים` : ""}`;
     return `${months} חודשים`;
-  }, [petInfo]);
+  };
 
-  const activePet = petInfo || userPets[0] || null;
+  const petAge = useMemo(() => calcPetAge(petInfo?.birth_date || null), [petInfo]);
+
+  // V57: Multi-pet support — select active pet
+  const allPets = petInfo ? [petInfo] : userPets;
+  const activePet = allPets[selectedPetIdx] || allPets[0] || null;
+  const healthScore = activePet ? calcHealthScore(activePet) : null;
 
   return (
     <AdminLayout title="מרכז תמיכה" icon={Headphones}>
@@ -373,11 +438,12 @@ const AdminHelpDesk = () => {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {[
             { label: "פתוחות", value: stats.open, icon: AlertCircle, color: "text-rose-500 bg-rose-500/10" },
             { label: "בטיפול", value: stats.inProgress, icon: Clock, color: "text-blue-500 bg-blue-500/10" },
             { label: "ממתין לוטרינר", value: stats.vetFlags, icon: Stethoscope, color: "text-violet-500 bg-violet-500/10" },
+            { label: "SOS / אבוד", value: stats.sosMode, icon: Siren, color: "text-rose-600 bg-rose-600/10" },
             { label: "סה״כ", value: stats.total, icon: Headphones, color: "text-primary bg-primary/10" },
           ].map((s, i) => (
             <Card key={i} className="border-border/30">
@@ -429,6 +495,7 @@ const AdminHelpDesk = () => {
                 ) : filteredTickets.map(ticket => {
                   const pCfg = PRIORITY_CONFIG[ticket.priority || "medium"] || PRIORITY_CONFIG.medium;
                   const sCfg = STATUS_CONFIG[ticket.status || "open"] || STATUS_CONFIG.open;
+                  const isLost = ticket.pet_id && ticketPetStatuses[ticket.pet_id];
                   return (
                     <div
                       key={ticket.id}
@@ -438,12 +505,20 @@ const AdminHelpDesk = () => {
                           ? "bg-primary/5 border-primary/30"
                           : "border-border/20 hover:bg-muted/50",
                         ticket.vet_flag && "border-l-2 border-l-violet-500",
+                        isLost && "border-l-2 border-l-rose-500 bg-rose-500/5",
                       )}
                       onClick={() => setSelectedTicketId(ticket.id)}
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <p className="text-xs font-medium text-foreground line-clamp-1 flex-1">{ticket.subject}</p>
-                        <div className={cn("w-2 h-2 rounded-full flex-shrink-0 mt-1", pCfg.dot)} />
+                        <div className="flex items-center gap-1">
+                          {isLost && (
+                            <Badge variant="destructive" className="text-[8px] px-1 py-0 h-4 gap-0.5">
+                              <Siren className="w-2 h-2" /> SOS
+                            </Badge>
+                          )}
+                          <div className={cn("w-2 h-2 rounded-full flex-shrink-0", pCfg.dot)} />
+                        </div>
                       </div>
                       {ticket.ai_triage_summary && (
                         <div className="flex items-center gap-1 mb-1">
@@ -594,16 +669,44 @@ const AdminHelpDesk = () => {
             {selectedTicket ? (
               <>
                 {/* Pet Health Snapshot */}
-                <Card className="border-border/30">
+                <Card className={cn("border-border/30", activePet?.is_lost && "border-rose-500/50 bg-rose-500/5")}>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-xs flex items-center gap-1.5">
-                      <PawPrint className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
-                      Pet 360°
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xs flex items-center gap-1.5">
+                        <PawPrint className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+                        Pet 360°
+                      </CardTitle>
+                      {/* V57: Multi-pet selector */}
+                      {allPets.length > 1 && (
+                        <Select value={String(selectedPetIdx)} onValueChange={v => setSelectedPetIdx(Number(v))}>
+                          <SelectTrigger className="h-6 w-28 text-[9px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allPets.map((p, i) => (
+                              <SelectItem key={p.id} value={String(i)} className="text-xs">
+                                {p.name} ({p.type === "dog" ? "🐕" : p.type === "cat" ? "🐈" : "🐾"})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {activePet ? (
                       <>
+                        {/* V57: SOS Alert Banner */}
+                        {activePet.is_lost && (
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/30">
+                            <Siren className="w-4 h-4 text-rose-500 animate-pulse" strokeWidth={2} />
+                            <div>
+                              <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400">🚨 מצב SOS — חיה אבודה!</p>
+                              <p className="text-[9px] text-muted-foreground">דחיפות מקסימלית. תעדוף שיחה זו.</p>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-3">
                           {activePet.avatar_url ? (
                             <img src={activePet.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -612,25 +715,75 @@ const AdminHelpDesk = () => {
                               <PawPrint className="w-5 h-5 text-primary" />
                             </div>
                           )}
-                          <div>
+                          <div className="flex-1">
                             <p className="text-sm font-bold">{activePet.name}</p>
                             <p className="text-[10px] text-muted-foreground">
                               {activePet.breed || activePet.type} {petAge ? `• ${petAge}` : ""}
                             </p>
                           </div>
+                          {/* V57: Edit pet button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => setEditingPet({ weight: activePet.weight, medical_conditions: activePet.medical_conditions })}
+                          >
+                            <RefreshCw className="w-3 h-3 text-muted-foreground" />
+                          </Button>
                         </div>
 
-                        {/* Health Score */}
-                        <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                          <Heart className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
-                          <div>
-                            <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">ציון בריאות 95%</p>
-                            <p className="text-[9px] text-muted-foreground">
-                              {activePet.weight ? `${activePet.weight} ק"ג` : ""} 
-                              {activePet.medical_conditions?.length ? ` • ${activePet.medical_conditions.length} מצבים` : " • בריא"}
-                            </p>
+                        {/* V57: Dynamic Health Score */}
+                        {healthScore !== null && (
+                          <div className={cn(
+                            "flex items-center gap-2 p-2 rounded-lg border",
+                            healthScore >= 80 ? "bg-emerald-500/5 border-emerald-500/10" :
+                            healthScore >= 50 ? "bg-amber-500/5 border-amber-500/10" :
+                            "bg-rose-500/5 border-rose-500/10"
+                          )}>
+                            <Heart className={cn("w-4 h-4", 
+                              healthScore >= 80 ? "text-emerald-500" : healthScore >= 50 ? "text-amber-500" : "text-rose-500"
+                            )} strokeWidth={1.5} />
+                            <div>
+                              <p className={cn("text-[10px] font-semibold",
+                                healthScore >= 80 ? "text-emerald-600 dark:text-emerald-400" :
+                                healthScore >= 50 ? "text-amber-600 dark:text-amber-400" :
+                                "text-rose-600 dark:text-rose-400"
+                              )}>ציון בריאות {healthScore}%</p>
+                              <p className="text-[9px] text-muted-foreground">
+                                {activePet.weight ? `${activePet.weight} ק"ג` : ""} 
+                                {activePet.medical_conditions?.length ? ` • ${activePet.medical_conditions.length} מצבים` : " • בריא"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* V57: Pet profile edit form */}
+                        {editingPet && (
+                          <div className="p-2 rounded-lg border border-primary/20 bg-primary/5 space-y-2">
+                            <p className="text-[10px] font-semibold text-primary">📝 עדכון פרופיל (Feedback Loop)</p>
+                            <div>
+                              <Label className="text-[9px]">משקל (ק״ג)</Label>
+                              <Input
+                                type="number"
+                                value={editingPet.weight || ""}
+                                onChange={e => setEditingPet({ ...editingPet, weight: Number(e.target.value) || null })}
+                                className="h-6 text-[10px] mt-0.5"
+                              />
+                            </div>
+                            <div className="flex gap-1.5">
+                              <Button
+                                size="sm"
+                                className="h-6 text-[9px] flex-1 gap-1"
+                                onClick={() => updatePetProfile.mutate(editingPet as any)}
+                              >
+                                <Save className="w-2.5 h-2.5" /> שמור
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-6 text-[9px]" onClick={() => setEditingPet(null)}>
+                                ביטול
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         {activePet.medical_conditions && activePet.medical_conditions.length > 0 && (
                           <div>
