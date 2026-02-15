@@ -19,11 +19,28 @@ import { useActivePet, type ActivePet } from "@/hooks/useActivePet";
 
 // ── Helpers ──
 
-function estimateDailyGrams(weight: number | null): number {
+function estimateDailyGrams(weight: number | null, petType: string): number {
   if (!weight) return 0;
-  if (weight <= 5) return Math.round(weight * 30); // 3% for small
-  if (weight <= 15) return Math.round(weight * 25); // 2.5% for medium
-  return Math.round(weight * 20); // 2% for large
+  if (petType === "cat") {
+    // Cats: ~3-4% for kittens, ~2-3% for adults
+    if (weight <= 3) return Math.round(weight * 35);
+    if (weight <= 6) return Math.round(weight * 28);
+    return Math.round(weight * 22);
+  }
+  // Dogs
+  if (weight <= 5) return Math.round(weight * 30);
+  if (weight <= 15) return Math.round(weight * 25);
+  return Math.round(weight * 20);
+}
+
+function formatRunOutDate(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function getSpeciesNameHe(petType: string): string {
+  return petType === "cat" ? "חתול" : "כלב";
 }
 
 function parseBagKg(name: string): number {
@@ -100,9 +117,10 @@ const HealthImpactGauge = ({ pet, productName, productCategory, productDescripti
 
     if (boost === 0) return null;
 
-    const currentScore = 60; // Base estimate when area is weak
+    const currentScore = 60;
     const projectedScore = Math.min(95, currentScore + boost);
-    return { area, currentScore, projectedScore, boost };
+    const targetGap = 95 - projectedScore;
+    return { area, currentScore, projectedScore, boost, targetGap };
   }, [productName, productDescription, productCategory]);
 
   if (!impact) return null;
@@ -146,13 +164,13 @@ const HealthImpactGauge = ({ pet, productName, productCategory, productDescripti
         {/* Text */}
         <div className="flex-1">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="font-bold text-foreground">{impact.area}</span> של {pet.name} צפוי לעלות מ-
+            <span className="font-bold text-foreground">{impact.area}</span> של {pet.name} ({getSpeciesNameHe(pet.pet_type)}{pet.breed ? ` ${pet.breed}` : ""}) צפוי לעלות מ-
             <span className="font-bold text-muted-foreground">{impact.currentScore}%</span> ל-
             <span className="font-bold text-primary">{impact.projectedScore}%</span> תוך 4 שבועות
           </p>
           <div className="flex items-center gap-1 mt-1.5">
             <TrendingUp className="w-3 h-3 text-primary" strokeWidth={2} />
-            <span className="text-[10px] font-semibold text-primary">+{impact.boost}% שיפור צפוי</span>
+            <span className="text-[10px] font-semibold text-primary">+{impact.boost}% לציון הבריאות (יעד: 95%)</span>
           </div>
         </div>
       </div>
@@ -227,20 +245,20 @@ const SmartFeedingGuide = ({ pet, productName, productPrice }: {
     if (!pet.weight) return null;
     const bagKg = parseBagKg(productName);
     if (bagKg <= 0) return null;
-    const dailyG = estimateDailyGrams(pet.weight);
+    const dailyG = estimateDailyGrams(pet.weight, pet.pet_type);
     if (dailyG <= 0) return null;
     const days = Math.round((bagKg * 1000) / dailyG);
     const costPerDay = (productPrice / days).toFixed(1);
-    return { dailyG, days, costPerDay, bagKg };
+    const runOutDate = formatRunOutDate(days);
+    return { dailyG, days, costPerDay, bagKg, runOutDate };
   }, [pet, productName, productPrice]);
-
   if (!calc) return null;
 
   return (
     <Card className="p-4 border-primary/20 bg-gradient-to-br from-primary/5 to-background">
       <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
         <Calculator className="w-4 h-4 text-primary" strokeWidth={1.5} />
-        מדריך חכם ל{pet.name}
+        מדריך חכם ל{pet.name} ({getSpeciesNameHe(pet.pet_type)}{pet.breed ? `, ${pet.breed}` : ""}, {pet.weight} ק״ג)
       </h3>
       <div className="grid grid-cols-3 gap-3">
         <div className="text-center p-2.5 rounded-xl bg-card border border-border/30">
@@ -256,9 +274,11 @@ const SmartFeedingGuide = ({ pet, productName, productPrice }: {
           <p className="text-[10px] text-muted-foreground">ליום</p>
         </div>
       </div>
-      <p className="text-[11px] text-muted-foreground mt-2 text-center">
-        שק {calc.bagKg} ק״ג יספיק ל{pet.name} ל-{calc.days} ימים
-      </p>
+      <div className="mt-2.5 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10 text-center">
+        <p className="text-[11px] text-muted-foreground">
+          📦 שק {calc.bagKg} ק״ג יספיק ל{pet.name} עד <span className="font-bold text-foreground">{calc.runOutDate}</span>
+        </p>
+      </div>
     </Card>
   );
 };
@@ -404,11 +424,12 @@ const SubscribeHook = ({ pet, productName, productPrice }: {
     if (!pet.weight) return null;
     const bagKg = parseBagKg(productName);
     if (bagKg <= 0) return null;
-    const dailyG = estimateDailyGrams(pet.weight);
+    const dailyG = estimateDailyGrams(pet.weight, pet.pet_type);
     if (dailyG <= 0) return null;
     const days = Math.round((bagKg * 1000) / dailyG);
     const discounted = (productPrice * 0.9).toFixed(0);
-    return { days, discounted };
+    const nextDelivery = formatRunOutDate(days);
+    return { days, discounted, nextDelivery };
   }, [pet, productName, productPrice]);
 
   if (!calc) return null;
@@ -419,7 +440,7 @@ const SubscribeHook = ({ pet, productName, productPrice }: {
         <RefreshCw className="w-4 h-4 text-primary" strokeWidth={1.5} />
         הירשם וחסוך 10%
       </h3>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <p className="text-xs text-muted-foreground">
             משלוח אוטומטי כל <span className="font-bold text-foreground">{calc.days} ימים</span>
@@ -432,6 +453,11 @@ const SubscribeHook = ({ pet, productName, productPrice }: {
           <p className="text-xs text-muted-foreground line-through">₪{productPrice}</p>
           <p className="text-lg font-black text-primary">₪{calc.discounted}</p>
         </div>
+      </div>
+      <div className="mb-3 px-3 py-1.5 rounded-lg bg-accent/50 text-center">
+        <p className="text-[10px] text-muted-foreground">
+          📅 משלוח ראשון: <span className="font-bold text-foreground">{calc.nextDelivery}</span>
+        </p>
       </div>
       <motion.button
         onClick={() => setSubscribed(true)}
