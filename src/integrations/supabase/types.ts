@@ -5937,52 +5937,73 @@ export type Database = {
       }
       pet_vet_visits: {
         Row: {
+          ai_extracted: boolean | null
           clinic_name: string | null
           cost: number | null
           created_at: string
+          diagnoses: string[] | null
           diagnosis: string | null
           document_url: string | null
           id: string
+          is_recovery_mode: boolean | null
+          medications: string[] | null
           next_visit_date: string | null
           notes: string | null
           pet_id: string
+          raw_summary: string | null
+          recovery_until: string | null
           treatment: string | null
           updated_at: string
           user_id: string
+          vaccines: string[] | null
           vet_name: string | null
           visit_date: string
           visit_type: string | null
         }
         Insert: {
+          ai_extracted?: boolean | null
           clinic_name?: string | null
           cost?: number | null
           created_at?: string
+          diagnoses?: string[] | null
           diagnosis?: string | null
           document_url?: string | null
           id?: string
+          is_recovery_mode?: boolean | null
+          medications?: string[] | null
           next_visit_date?: string | null
           notes?: string | null
           pet_id: string
+          raw_summary?: string | null
+          recovery_until?: string | null
           treatment?: string | null
           updated_at?: string
           user_id: string
+          vaccines?: string[] | null
           vet_name?: string | null
           visit_date: string
           visit_type?: string | null
         }
         Update: {
+          ai_extracted?: boolean | null
           clinic_name?: string | null
           cost?: number | null
           created_at?: string
+          diagnoses?: string[] | null
           diagnosis?: string | null
           document_url?: string | null
           id?: string
+          is_recovery_mode?: boolean | null
+          medications?: string[] | null
           next_visit_date?: string | null
           notes?: string | null
           pet_id?: string
+          raw_summary?: string | null
+          recovery_until?: string | null
           treatment?: string | null
           updated_at?: string
           user_id?: string
+          vaccines?: string[] | null
           vet_name?: string | null
           visit_date?: string
           visit_type?: string | null
