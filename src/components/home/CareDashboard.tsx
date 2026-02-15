@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { PawPrint, Heart, Bell, ShoppingBag, Sparkles, Package } from "lucide-react";
+import { PawPrint, Heart, Bell, ShoppingBag, Sparkles, Package, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -17,7 +17,9 @@ import {
   HOME, 
   REMINDERS, 
   ACTIONS,
-  calculateDaysUntilReorder 
+  calculateDaysUntilReorder,
+  calculateSmartReorderDays,
+  getLifeStageTransition,
 } from "@/lib/brandVoice";
 
 interface Pet {
@@ -27,6 +29,7 @@ interface Pet {
   breed?: string | null;
   avatar_url?: string | null;
   birth_date?: string | null;
+  weight?: number | null;
 }
 
 interface CareDashboardProps {
@@ -38,7 +41,8 @@ export const CareDashboard = ({ className = "" }: CareDashboardProps) => {
   const { user } = useAuth();
   const [pets, setPets] = useState<Pet[]>([]);
   const [primaryPet, setPrimaryPet] = useState<Pet | null>(null);
-  const [daysUntilReorder, setDaysUntilReorder] = useState(6);
+  const [daysUntilReorder, setDaysUntilReorder] = useState(0);
+  const [lifeStageWarning, setLifeStageWarning] = useState<{ message: string; weeksUntil: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,19 +62,34 @@ export const CareDashboard = ({ className = "" }: CareDashboardProps) => {
         if (data.length > 0) {
           setPrimaryPet(data[0]);
           
-          // Fetch last order to calculate days until reorder
-          const { data: lastOrder } = await supabase
+          // Check life stage transition
+          const transition = getLifeStageTransition(data[0].type, data[0].birth_date || null);
+          if (transition?.needsTransition) {
+            setLifeStageWarning({ message: transition.message, weeksUntil: transition.weeksUntil });
+          }
+          
+          // Fetch last order with items to calculate smart reorder
+          const { data: lastOrder } = await (supabase as any)
             .from("orders")
-            .select("created_at")
+            .select("created_at, items")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
           
           if (lastOrder) {
-            setDaysUntilReorder(calculateDaysUntilReorder(new Date(lastOrder.created_at)));
+            const orderItems = Array.isArray(lastOrder.items) 
+              ? lastOrder.items.map((i: any) => ({ name: i.product_name || i.name || "", quantity: i.quantity || 1 }))
+              : [];
+            const days = calculateSmartReorderDays(
+              new Date(lastOrder.created_at),
+              orderItems,
+              data[0].weight || null,
+              data[0].type
+            );
+            setDaysUntilReorder(days);
           } else {
-            setDaysUntilReorder(0); // No previous orders
+            setDaysUntilReorder(0);
           }
         }
       }
@@ -152,6 +171,17 @@ export const CareDashboard = ({ className = "" }: CareDashboardProps) => {
               className="h-2"
             />
           </div>
+
+          {/* Life Stage Transition Warning */}
+          {lifeStageWarning && (
+            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-3">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+              <div>
+                <p className="text-xs font-bold text-foreground">{lifeStageWarning.message}</p>
+                <p className="text-[10px] text-muted-foreground">בעוד {lifeStageWarning.weeksUntil} שבועות — מומלץ להתייעץ עם הווטרינר</p>
+              </div>
+            </div>
+          )}
 
           {/* Quick Reorder */}
           <Button 
