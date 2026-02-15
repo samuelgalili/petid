@@ -14,7 +14,8 @@ import {
   Maximize2, FoldVertical, Trash2, PawPrint, ThumbsUp, Box,
   Volume2, Gift, Gamepad2, BedDouble, Music, Siren,
   Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed,
-  Layers, Magnet, MapPin, Footprints, SprayCan, Users, TreePine, EyeOff
+  Layers, Magnet, MapPin, Footprints, SprayCan, Users, TreePine, EyeOff,
+  Fish, Salad, HeartPulse, Thermometer
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -111,6 +112,79 @@ const isTreatProduct = (product: any): boolean => {
   return cat === 'treats' || cat === 'snacks' || 
     text.includes('חטיף') || text.includes('treat') || text.includes('snack') || 
     text.includes('מקל לעיסה') || text.includes('עצם לעיסה') || text.includes('חטיפון');
+};
+
+/** Check if product is a superfood/functional treat */
+const isSuperfoodTreat = (product: any): boolean => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const allText = text + ' ' + JSON.stringify(attrs).toLowerCase();
+  return allText.includes('taurine') || allText.includes('טאורין') ||
+    allText.includes('cod skin') || allText.includes('עור דג') ||
+    allText.includes('dehydrated') || allText.includes('ייבוש') || allText.includes('מיובש') ||
+    allText.includes('superfood') || allText.includes('סופרפוד') ||
+    (allText.includes('omega') && (allText.includes('fiber') || allText.includes('סיבים'))) ||
+    allText.includes('soulmate');
+};
+
+/** Extract superfood treat features */
+const extractSuperfoodFeatures = (product: any): {
+  vitalityBenefits: { icon: React.ReactNode; title: string; description: string; color: string }[];
+  feedingGuide: { size: string; weight: string; amount: string }[];
+  dehydrationNote: string | null;
+  isNatural100: boolean;
+  soulmateMessage: string | null;
+  proteinPct: number | null;
+  crossSellSuggestions: string[];
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const allText = text + ' ' + JSON.stringify(attrs).toLowerCase();
+
+  // Vitality benefits
+  const vitalityBenefits: { icon: React.ReactNode; title: string; description: string; color: string }[] = [];
+  if (allText.includes('taurine') || allText.includes('טאורין'))
+    vitalityBenefits.push({ icon: <HeartPulse className="w-5 h-5" />, title: 'לב, ראייה וחיסון', description: 'טאורין לחיזוק הלב, הראייה ומערכת החיסון', color: 'hsl(0,65%,50%)' });
+  if (allText.includes('omega') || allText.includes('אומגה') || allText.includes('cod skin') || allText.includes('עור דג'))
+    vitalityBenefits.push({ icon: <Sparkles className="w-5 h-5" />, title: 'פרווה מבריקה ועור בריא', description: 'אומגה 3 מעור דג לפרווה מבריקה ועור בריא', color: 'hsl(200,65%,50%)' });
+  if (allText.includes('fiber') || allText.includes('סיבים') || allText.includes('digestion') || allText.includes('עיכול'))
+    vitalityBenefits.push({ icon: <Salad className="w-5 h-5" />, title: 'עיכול קל ושליטה במשקל', description: 'סיבים תזונתיים לעיכול קל ומניעת השמנה', color: 'hsl(140,55%,40%)' });
+
+  // Feeding guide
+  const feedingGuide = [
+    { size: 'קטן', weight: '2-11 ק"ג (4-25 lbs)', amount: '1-2 יחידות ליום' },
+    { size: 'בינוני', weight: '11-23 ק"ג (25-50 lbs)', amount: '2-3 יחידות ליום' },
+    { size: 'גדול', weight: '23+ ק"ג (50+ lbs)', amount: '4-5 יחידות ליום' },
+  ];
+
+  // Dehydration
+  let dehydrationNote: string | null = null;
+  if (allText.includes('dehydrat') || allText.includes('ייבוש') || allText.includes('מיובש'))
+    dehydrationNote = 'ייבוש בטמפרטורה נמוכה שומר על ערכים תזונתיים גבוהים וריכוז חלבון של מעל 30%';
+
+  // Protein %
+  let proteinPct: number | null = null;
+  const protMatch = allText.match(/(\d{2,3})\s*%?\s*(?:protein|חלבון)/i);
+  if (protMatch) proteinPct = parseInt(protMatch[1]);
+  if (!proteinPct && (allText.includes('30%') || allText.includes('over 30'))) proteinPct = 30;
+
+  // Natural
+  const isNatural100 = allText.includes('100% natural') || allText.includes('100% טבעי') ||
+    allText.includes('no preserv') || allText.includes('ללא חומרים משמרים') ||
+    (allText.includes('natural') && allText.includes('no artificial'));
+
+  // Soulmate
+  let soulmateMessage: string | null = null;
+  if (allText.includes('soulmate')) soulmateMessage = 'Achieving a Better Soulmate 🐾';
+
+  // Cross-sell
+  const crossSellSuggestions: string[] = [];
+  if (allText.includes('banana') || allText.includes('בננה') || allText.includes('fiber') || allText.includes('סיבים')) {
+    crossSellSuggestions.push('בטן רגישה');
+    crossSellSuggestions.push('ניהול משקל');
+  }
+
+  return { vitalityBenefits, feedingGuide, dehydrationNote, isNatural100, soulmateMessage, proteinPct, crossSellSuggestions };
 };
 
 /** Derive health boost icons for treats based on benefits/ingredients */
@@ -1560,6 +1634,8 @@ const ProductDetail = () => {
   const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
   const puppyFeatures = useMemo(() => product && isPuppy ? extractPuppyFeatures(product) : { hasDHA: false, hasAntioxidants: false, topIngredient: null, grainStatus: { hasBarleyOatmeal: false, noCornWheatSoy: false }, hasSatisfactionGuarantee: false, developmentBenefits: [], puppyFeedingMatrix: [] }, [product, isPuppy]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
+  const isSuperfood = useMemo(() => product && isTreat ? isSuperfoodTreat(product) : false, [product, isTreat]);
+  const superfoodFeatures = useMemo(() => product && isSuperfood ? extractSuperfoodFeatures(product) : { vitalityBenefits: [], feedingGuide: [], dehydrationNote: null, isNatural100: false, soulmateMessage: null, proteinPct: null, crossSellSuggestions: [] }, [product, isSuperfood]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
   const treatFeatures = useMemo(() => product && isTreat ? extractTreatFeatures(product) : { chewDuration: 0, proteinPct: null, hasDental: false, texture: null, isChewPriority: false }, [product, isTreat]);
@@ -4039,6 +4115,135 @@ const ProductDetail = () => {
                 </div>
               </div>
             </Card>
+          </motion.div>
+        )}
+
+
+        {/* ── Superfood Treat: Vitality Benefits ── */}
+        {isSuperfood && superfoodFeatures.vitalityBenefits.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-[hsl(45,90%,50%)]" />
+                💪 יתרונות בריאותיים
+              </h3>
+              <div className="space-y-2">
+                {superfoodFeatures.vitalityBenefits.map((b, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.34 + i * 0.06 }}
+                    className="flex items-start gap-3 rounded-lg p-3"
+                    style={{ backgroundColor: `${b.color}10` }}
+                  >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${b.color}20`, color: b.color }}>
+                      {b.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{b.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{b.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Superfood Treat: Feeding Guide ── */}
+        {isSuperfood && superfoodFeatures.feedingGuide.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                📋 מדריך הגשה יומי
+              </h3>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <div className="grid grid-cols-3 bg-primary/10 dark:bg-primary/15 text-[11px] font-bold text-foreground p-2 text-center">
+                  <span>גודל הכלב</span>
+                  <span>משקל</span>
+                  <span>כמות מומלצת</span>
+                </div>
+                {superfoodFeatures.feedingGuide.map((row, i) => (
+                  <div key={i} className={`grid grid-cols-3 text-[11px] text-center p-2.5 ${i % 2 === 0 ? 'bg-muted/30' : 'bg-background'}`}>
+                    <span className="font-semibold text-foreground">{row.size}</span>
+                    <span className="text-muted-foreground">{row.weight}</span>
+                    <span className="font-medium text-primary">{row.amount}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Superfood Treat: Dehydration Tech Note ── */}
+        {isSuperfood && superfoodFeatures.dehydrationNote && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(30,50%,93%)] to-background border-[hsl(30,40%,60%)]/20 dark:from-[hsl(30,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[hsl(30,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Thermometer className="w-5 h-5 text-[hsl(30,60%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🔬 טכנולוגיית ייבוש</p>
+                  <p className="text-[11px] text-muted-foreground">{superfoodFeatures.dehydrationNote}</p>
+                  {superfoodFeatures.proteinPct && (
+                    <span className="inline-block mt-1 text-[10px] font-bold bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                      חלבון: {superfoodFeatures.proteinPct}%+
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Superfood Treat: 100% Natural Badge ── */}
+        {isSuperfood && superfoodFeatures.isNatural100 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+            <Card className="p-4 bg-gradient-to-br from-success/10 to-background border-success/30">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+                  <Leaf className="w-6 h-6 text-success" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-black text-foreground">🌿 100% רכיבים טבעיים</p>
+                  <p className="text-[11px] text-muted-foreground">ללא חומרים משמרים, צבעי מאכל מלאכותיים או תוספים כימיים</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Superfood Treat: Cross-Sell for Sensitive/Weight ── */}
+        {isSuperfood && superfoodFeatures.crossSellSuggestions.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(210,45%,93%)] to-background border-[hsl(210,35%,60%)]/20 dark:from-[hsl(210,25%,14%)]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-[hsl(210,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Target className="w-4 h-4 text-[hsl(210,50%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🎯 מתאים במיוחד עבור:</p>
+                  <div className="flex gap-1.5 mt-1 flex-wrap">
+                    {superfoodFeatures.crossSellSuggestions.map((s, i) => (
+                      <span key={i} className="text-[10px] bg-primary/10 text-primary font-semibold rounded-full px-2.5 py-0.5">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Superfood Treat: Soulmate Message ── */}
+        {isSuperfood && superfoodFeatures.soulmateMessage && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <div className="text-center py-3">
+              <p className="text-[13px] font-bold text-muted-foreground italic">"🐾 {superfoodFeatures.soulmateMessage}"</p>
+            </div>
           </motion.div>
         )}
 
