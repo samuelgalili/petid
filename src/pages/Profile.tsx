@@ -32,6 +32,9 @@ import { RecoveryBanner } from "@/components/profile/RecoveryBanner";
 import { VaccineCountdown } from "@/components/profile/VaccineCountdown";
 import { VetHistoryPDF } from "@/components/profile/VetHistoryPDF";
 import { BreedHealthTips } from "@/components/profile/BreedHealthTips";
+import { VetDocumentScanner } from "@/components/profile/VetDocumentScanner";
+import { PuppyVaccineScheduler } from "@/components/profile/PuppyVaccineScheduler";
+import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine";
 interface Pet {
   id: string;
   name: string;
@@ -607,8 +610,28 @@ const Profile = () => {
                     {/* Vaccine Countdown */}
                     <VaccineCountdown petId={selectedPet.id} petName={selectedPet.name} />
                     
+                    {/* Puppy Vaccine Scheduler */}
+                    <PuppyVaccineScheduler
+                      petName={selectedPet.name}
+                      birthDate={(selectedPet as any).birth_date}
+                      breed={selectedPet.breed}
+                      petType={selectedPet.type}
+                    />
+                    
+                    {/* Vet Document Scanner (OCR) */}
+                    <VetDocumentScanner petId={selectedPet.id} petName={selectedPet.name} />
+                    
                     {/* Vet Visit Input */}
                     <VetVisitInput petId={selectedPet.id} petName={selectedPet.name} />
+                    
+                    {/* Preventive Care Engine (Weight, Dental, Deworming, Emergency, Next Steps) */}
+                    <PreventiveCareEngine
+                      petId={selectedPet.id}
+                      petName={selectedPet.name}
+                      breed={selectedPet.breed}
+                      birthDate={(selectedPet as any).birth_date}
+                      petType={selectedPet.type}
+                    />
                     
                     {/* Medical Timeline */}
                     <MedicalTimeline petId={selectedPet.id} petName={selectedPet.name} />
