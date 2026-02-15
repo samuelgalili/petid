@@ -95,6 +95,7 @@ const navGroups: NavGroup[] = [
       { icon: Flag, label: "דיווחים", href: "/admin/reports" },
       { icon: Bot, label: "סקראפר", href: "/admin/scraper" },
       { icon: Upload, label: "ייבוא נתונים", href: "/admin/data-import" },
+      { icon: FileText, label: "אימות OCR", href: "/admin/ocr-verification" },
     ]
   },
   {
