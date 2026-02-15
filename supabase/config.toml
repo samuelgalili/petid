@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.smart-scrape-product]
 verify_jwt = false
+
+[functions.generate-ai-post]
+verify_jwt = false
