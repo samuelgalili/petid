@@ -13,6 +13,7 @@ interface RelevanceBadgeProps {
   petBreed: string | null;
   petType: string | null;
   petAgeWeeks: number | null;
+  medicalConditions?: string[] | null;
 }
 
 // Keywords that boost relevance per pet type/breed
@@ -29,7 +30,17 @@ const AGE_KEYWORDS: Record<string, string[]> = {
   senior: ["מבוגר", "senior", "זקן", "מפרקים", "joint", "בריאות"],
 };
 
-function calculateScore(caption: string, breed: string | null, petType: string | null, ageWeeks: number | null): number {
+// Health-related keywords that boost relevance when pet has matching conditions
+const HEALTH_KEYWORDS: Record<string, string[]> = {
+  "סוכרת": ["סוכרת", "diabetic", "diabetes", "אינסולין", "insulin", "סוכר בדם"],
+  "כליות": ["כליות", "renal", "kidney", "חלבון מופחת", "low protein"],
+  "אלרגיה": ["אלרגיה", "allergy", "היפואלרגני", "hypoallergenic", "רגישות"],
+  "עיכול": ["עיכול", "digestive", "gastro", "פרוביוטיקה", "probiotic"],
+  "עור": ["עור", "skin", "derma", "אומגה", "omega", "פרווה"],
+  "משקל": ["משקל", "weight", "דיאטה", "diet", "קלוריות", "obesity"],
+};
+
+function calculateScore(caption: string, breed: string | null, petType: string | null, ageWeeks: number | null, medicalConditions?: string[] | null): number {
   if (!caption) return 0;
   const lowerCaption = caption.toLowerCase();
   let score = 50; // Base score
@@ -67,13 +78,29 @@ function calculateScore(caption: string, breed: string | null, petType: string |
   if (petType === "cat" && (lowerCaption.includes("כלב גדול") || lowerCaption.includes("giant breed"))) score -= 30;
   if (petType === "dog" && lowerCaption.includes("חתול בלבד")) score -= 25;
 
+  // Health condition match bonus
+  if (medicalConditions && medicalConditions.length > 0) {
+    for (const condition of medicalConditions) {
+      const condLower = condition.toLowerCase();
+      const keywords = Object.entries(HEALTH_KEYWORDS).find(([key]) => condLower.includes(key));
+      if (keywords) {
+        for (const kw of keywords[1]) {
+          if (lowerCaption.includes(kw.toLowerCase())) {
+            score += 18; // Strong boost for health-relevant content
+            break;
+          }
+        }
+      }
+    }
+  }
+
   return Math.min(Math.max(score, 15), 99);
 }
 
-export const RelevanceBadge = ({ caption, petName, petBreed, petType, petAgeWeeks }: RelevanceBadgeProps) => {
+export const RelevanceBadge = ({ caption, petName, petBreed, petType, petAgeWeeks, medicalConditions }: RelevanceBadgeProps) => {
   const score = useMemo(
-    () => calculateScore(caption || "", petBreed, petType, petAgeWeeks),
-    [caption, petBreed, petType, petAgeWeeks]
+    () => calculateScore(caption || "", petBreed, petType, petAgeWeeks, medicalConditions),
+    [caption, petBreed, petType, petAgeWeeks, medicalConditions]
   );
 
   // Don't show for very low scores

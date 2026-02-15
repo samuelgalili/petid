@@ -25,6 +25,8 @@ import { ConsultAIButton } from "@/components/feed/ConsultAIButton";
 import { RelevanceBadge } from "@/components/feed/RelevanceBadge";
 import { SmartCheckoutSheet } from "@/components/feed/SmartCheckoutSheet";
 import { PetCoinReward } from "@/components/feed/PetCoinReward";
+import { QuickTipOverlay } from "@/components/feed/QuickTipOverlay";
+import { ProductSafetyBadge, useProductSafety } from "@/components/feed/ProductSafetyBadge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { SocialProofLabel } from "@/components/feed";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
@@ -113,6 +115,13 @@ export const SoundtrackPostCard = ({
   const isChallengePost = post.post_type === "challenge";
   const isCtaPost = post.post_type === "cta";
   const hasPromotion = isProductPost || isChallengePost || isCtaPost;
+
+  // Product safety check — must be after isProductPost is defined
+  const productSafety = useProductSafety(
+    isProductPost ? post.product_name || null : null,
+    post.caption,
+    activePet || null,
+  );
 
   const handleDoubleTap = () => {
     const now = Date.now();
@@ -237,6 +246,7 @@ export const SoundtrackPostCard = ({
             petBreed={activePet.breed}
             petType={activePet.pet_type}
             petAgeWeeks={activePet.ageWeeks}
+            medicalConditions={activePet.medical_conditions}
           />
         </div>
       )}
@@ -246,6 +256,13 @@ export const SoundtrackPostCard = ({
         isActive={isActive}
         postIndex={index}
         isEducational={!isProductPost && !isChallengePost && !isCtaPost}
+      />
+
+      {/* Quick Tip Overlay — contextual pet-specific tips */}
+      <QuickTipOverlay
+        caption={post.caption}
+        activePet={activePet || null}
+        isActive={isActive}
       />
 
       {/* Double-tap heart burst */}
@@ -401,13 +418,15 @@ export const SoundtrackPostCard = ({
       {/* Product info — top-right, vertical */}
       {(isProductPost || isCtaPost || isChallengePost) && (
         <div className="absolute top-16 left-0 z-50 flex flex-col items-start gap-2" dir="ltr">
-          {/* Price — prominent top badge */}
-          {isProductPost && post.product_price && (
+          {/* Price — prominent top badge (hidden if unsafe) */}
+          {isProductPost && post.product_price && productSafety.level !== "unsafe" && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowSmartCheckout(true); }}
               className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-bold flex items-center gap-1.5 shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
               style={{ 
-                background: "linear-gradient(135deg, rgba(255,59,92,0.85), rgba(255,59,92,0.65))",
+                background: productSafety.level === "caution"
+                  ? "linear-gradient(135deg, rgba(245,158,11,0.85), rgba(217,119,6,0.65))"
+                  : "linear-gradient(135deg, rgba(255,59,92,0.85), rgba(255,59,92,0.65))",
                 backdropFilter: "blur(16px)",
                 fontSize: "15px"
               }}
@@ -415,6 +434,14 @@ export const SoundtrackPostCard = ({
               <ShoppingCart className="w-3.5 h-3.5" />
               ₪{post.product_price}
             </button>
+          )}
+          {/* Product Safety Warning */}
+          {isProductPost && (
+            <ProductSafetyBadge
+              productName={post.product_name || null}
+              productCaption={post.caption}
+              activePet={activePet || null}
+            />
           )}
           {isChallengePost && (
             <div
