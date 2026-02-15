@@ -172,7 +172,7 @@ export default function Messages() {
 
                 
               </button>
-              <button className="p-1">
+              <button className="p-1" onClick={() => navigate("/messages/new")}>
                 <Edit className="h-6 w-6 text-foreground" />
               </button>
             </div>
