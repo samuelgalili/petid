@@ -8,3 +8,4 @@ export { ProductAIPanel } from './ProductAIPanel';
 export { ProductBulkActions } from './ProductBulkActions';
 export { ProductImageDragDrop } from './ProductImageDragDrop';
 export { ProductKeyboardShortcutsHelp } from './ProductKeyboardShortcutsHelp';
+export { InlineEditCell } from './InlineEditCell';

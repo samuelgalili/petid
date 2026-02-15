@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Package, Plus, Edit, Trash2, MoreHorizontal, 
-  Upload, Download, AlertCircle, Flag, CheckCircle, Globe
+  Upload, Download, AlertCircle, Flag, CheckCircle, Globe,
+  TrendingUp, ShoppingCart, Eye, Star
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProductImportWizard } from "@/components/admin/ProductImportWizard";
@@ -12,6 +13,7 @@ import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductBulkActions, ProductKeyboardShortcutsHelp } from "@/components/admin/products";
+import { ProductBulkActions, ProductKeyboardShortcutsHelp, InlineEditCell } from "@/components/admin/products";
 import { useProductKeyboardShortcuts } from "@/hooks/useProductKeyboardShortcuts";
 
 interface ProductData {
@@ -381,15 +383,37 @@ const AdminProducts = () => {
     }
   };
 
+  // Inline edit mutation
+  const inlineEditMutation = useMutation({
+    mutationFn: async ({ productId, field, value, source }: { productId: string; field: string; value: any; source?: string }) => {
+      const tableName = source === 'scraped' ? 'scraped_products' : 'business_products';
+      const { error } = await supabase
+        .from(tableName)
+        .update({ [field]: value })
+        .eq("id", productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
+    },
+    onError: (error) => {
+      console.error("Inline edit error:", error);
+      toast({ title: "שגיאה בעדכון", variant: "destructive" });
+    },
+  });
+
+  const handleInlineEdit = async (productId: string, field: string, value: any, source?: string) => {
+    await inlineEditMutation.mutateAsync({ productId, field, value, source });
+  };
+
   const columns: Column<ProductData>[] = [
     {
       key: "product",
       header: "מוצר",
       render: (product) => (
         <div className="flex items-center gap-3">
-          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted">
+          <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-muted border border-border shadow-sm shrink-0">
             <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-            {/* Source indicator */}
             {product.source === 'scraped' && (
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center" title="מיובא">
                 <Download className="w-2.5 h-2.5 text-white" />
@@ -397,11 +421,94 @@ const AdminProducts = () => {
             )}
           </div>
           <div className="min-w-0">
-            <p className="font-medium truncate">{product.name}</p>
-            <div className="flex items-center gap-1">
-              <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
-            </div>
+            <p className="font-semibold truncate text-sm">{product.name}</p>
+            {product.sku && (
+              <p className="text-[10px] text-muted-foreground font-mono">SKU: {product.sku}</p>
+            )}
+            <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>
           </div>
+        </div>
+      ),
+    },
+    {
+      key: "category",
+      header: "קטגוריה",
+      render: (product) => (
+        <InlineEditCell
+          value={product.category}
+          type="select"
+          options={categories}
+          displayValue={
+            <Badge variant="outline" className="text-xs cursor-pointer">
+              {categories.find((c) => c.value === product.category)?.label || product.category || "ללא"}
+            </Badge>
+          }
+          onSave={(v) => handleInlineEdit(product.id, "category", v, product.source)}
+        />
+      ),
+    },
+    {
+      key: "price",
+      header: "מחיר",
+      sortable: true,
+      render: (product) => (
+        <InlineEditCell
+          value={product.price}
+          type="number"
+          displayValue={
+            <div>
+              <span className="font-bold text-sm">₪{product.price}</span>
+              {product.original_price && product.original_price > product.price && (
+                <span className="text-[10px] text-muted-foreground line-through mr-1.5">
+                  ₪{product.original_price}
+                </span>
+              )}
+            </div>
+          }
+          onSave={(v) => handleInlineEdit(product.id, "price", v, product.source)}
+        />
+      ),
+    },
+    {
+      key: "status",
+      header: "סטטוס",
+      render: (product) => (
+        <div className="flex gap-1 flex-wrap">
+          <InlineEditCell
+            value={product.in_stock}
+            type="toggle"
+            displayValue={
+              product.in_stock ? (
+                <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                  במלאי
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="text-[10px]">
+                  אזל
+                </Badge>
+              )
+            }
+            onSave={(v) => handleInlineEdit(product.id, "in_stock", v, product.source)}
+          />
+          {product.is_flagged && (
+            <Badge variant="destructive" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/20">
+              <Flag className="w-2.5 h-2.5 ml-0.5" />
+              מדווח
+            </Badge>
+          )}
+          <InlineEditCell
+            value={product.is_featured}
+            type="toggle"
+            displayValue={
+              product.is_featured ? (
+                <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20">
+                  <Star className="w-2.5 h-2.5 ml-0.5" />
+                  מקודם
+                </Badge>
+              ) : null
+            }
+            onSave={(v) => handleInlineEdit(product.id, "is_featured", v, product.source)}
+          />
         </div>
       ),
     },
@@ -411,72 +518,14 @@ const AdminProducts = () => {
       render: (product) => (
         <Badge 
           variant="outline" 
-          className={`text-xs ${
+          className={`text-[10px] ${
             product.source === 'scraped' 
-              ? 'bg-blue-50 text-blue-700 border-blue-200' 
-              : 'bg-purple-50 text-purple-700 border-purple-200'
+              ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' 
+              : 'bg-purple-500/10 text-purple-600 border-purple-500/20'
           }`}
         >
           {product.source === 'scraped' ? 'מיובא' : 'ידני'}
         </Badge>
-      ),
-    },
-    {
-      key: "category",
-      header: "קטגוריה",
-      render: (product) => (
-        <Badge variant="outline" className="text-xs">
-          {categories.find((c) => c.value === product.category)?.label || product.category || "-"}
-        </Badge>
-      ),
-    },
-    {
-      key: "price",
-      header: "מחיר",
-      sortable: true,
-      render: (product) => (
-        <div>
-          <span className="font-medium">₪{product.price}</span>
-          {product.original_price && product.original_price > product.price && (
-            <span className="text-xs text-muted-foreground line-through mr-2">
-              ₪{product.original_price}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "status",
-      header: "סטטוס",
-      render: (product) => (
-        <div className="flex gap-1 flex-wrap">
-          {product.is_flagged && (
-            <Badge variant="destructive" className="text-xs bg-red-100 text-red-700 border-red-200">
-              <Flag className="w-3 h-3 ml-1" />
-              מדווח
-            </Badge>
-          )}
-          {product.in_stock ? (
-            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-              במלאי
-            </Badge>
-          ) : (
-            <Badge variant="destructive" className="text-xs">
-              אזל
-            </Badge>
-          )}
-          {product.is_featured && (
-            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-              מקודם
-            </Badge>
-          )}
-          {(product.needs_image_review || product.needs_price_review) && (
-            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-              <AlertCircle className="w-3 h-3 ml-1" />
-              דורש בדיקה
-            </Badge>
-          )}
-        </div>
       ),
     },
     {
@@ -486,7 +535,7 @@ const AdminProducts = () => {
       render: (product) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -494,7 +543,7 @@ const AdminProducts = () => {
             {product.is_flagged && (
               <DropdownMenuItem 
                 onClick={() => unflagMutation.mutate(product.id)}
-                className="text-green-600"
+                className="text-emerald-600"
               >
                 <CheckCircle className="w-4 h-4 ml-2" />
                 הסר דגל - טופל
@@ -505,7 +554,13 @@ const AdminProducts = () => {
               setIsDialogOpen(true);
             }}>
               <Edit className="w-4 h-4 ml-2" />
-              עריכה
+              עריכה מלאה
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => window.open(`/product/${product.id}`, '_blank')}
+            >
+              <Eye className="w-4 h-4 ml-2" />
+              צפייה בחנות
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setDeleteDialog({ open: true, productId: product.id })}
@@ -557,9 +612,62 @@ const AdminProducts = () => {
 
   const scrapedCount = products.filter(p => p.source === 'scraped').length;
   const manualCount = products.filter(p => p.source === 'manual').length;
+  const outOfStockCount = products.filter(p => !p.in_stock).length;
+  const featuredCount = products.filter(p => p.is_featured).length;
+  const flaggedCount = products.filter(p => p.is_flagged).length;
+  const needsReviewCount = products.filter(p => p.needs_image_review || p.needs_price_review).length;
 
   return (
     <AdminLayout title="ניהול מוצרים" icon={Package} breadcrumbs={[{ label: "מוצרים" }]}>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" dir="rtl">
+        <Card className="border-border/50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Package className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{products.length}</p>
+              <p className="text-xs text-muted-foreground">סה״כ מוצרים</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10">
+              <ShoppingCart className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{products.length - outOfStockCount}</p>
+              <p className="text-xs text-muted-foreground">במלאי</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-blue-500/10">
+              <Download className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{scrapedCount}</p>
+              <p className="text-xs text-muted-foreground">מיובאים</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{flaggedCount + needsReviewCount}</p>
+              <p className="text-xs text-muted-foreground">דורשים טיפול</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Action Bar */}
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div className="flex gap-2 flex-wrap">
           <Button onClick={() => setWizardOpen(true)}>
@@ -570,7 +678,6 @@ const AdminProducts = () => {
             <Upload className="w-4 h-4 ml-2" />
             ייבוא CSV
           </Button>
-          <ProductKeyboardShortcutsHelp shortcuts={shortcuts} />
           <Button 
             variant="outline"
             onClick={() => {
@@ -597,39 +704,14 @@ const AdminProducts = () => {
             <Download className="w-4 h-4 ml-2" />
             ייצוא
           </Button>
+          <ProductKeyboardShortcutsHelp shortcuts={shortcuts} />
         </div>
-        {/* Filter toggles */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Stats badges */}
-          <Badge variant="secondary" className="bg-muted">
-            סה״כ: {products.length}
-          </Badge>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            <Download className="w-3 h-3 ml-1" />
-            מיובאים: {scrapedCount}
-          </Badge>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-            ידניים: {manualCount}
-          </Badge>
-          
-          {showFlagged && (
-            <Badge variant="secondary" className="bg-red-100 text-red-800">
-              <Flag className="w-3 h-3 ml-1" />
-              מוצרים מדווחים ({products.filter(p => p.is_flagged).length})
-            </Badge>
-          )}
-          {showNeedsReview && (
-            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-              <AlertCircle className="w-3 h-3 ml-1" />
-              מציג מוצרים לבדיקה ({products.filter(p => p.needs_image_review || p.needs_price_review).length})
-            </Badge>
-          )}
-          
-          {/* Source filter buttons */}
+        
+        {/* Quick Filters */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           <Button 
             variant={showScrapedOnly ? "default" : "outline"} 
             size="sm"
-            className={showScrapedOnly ? "bg-blue-500 hover:bg-blue-600" : ""}
             onClick={() => {
               setShowScrapedOnly(!showScrapedOnly);
               setShowManualOnly(false);
@@ -637,13 +719,12 @@ const AdminProducts = () => {
               setShowNeedsReview(false);
             }}
           >
-            <Download className="w-4 h-4 ml-2" />
-            מיובאים
+            <Download className="w-3.5 h-3.5 ml-1.5" />
+            מיובאים ({scrapedCount})
           </Button>
           <Button 
             variant={showManualOnly ? "default" : "outline"} 
             size="sm"
-            className={showManualOnly ? "bg-purple-500 hover:bg-purple-600" : ""}
             onClick={() => {
               setShowManualOnly(!showManualOnly);
               setShowScrapedOnly(false);
@@ -651,38 +732,43 @@ const AdminProducts = () => {
               setShowNeedsReview(false);
             }}
           >
-            ידניים
+            ידניים ({manualCount})
           </Button>
-          <Button 
-            variant={showFlagged ? "default" : "outline"} 
-            size="sm"
-            className={showFlagged ? "bg-red-500 hover:bg-red-600" : ""}
-            onClick={() => {
-              setShowFlagged(!showFlagged);
-              setShowNeedsReview(false);
-              setShowScrapedOnly(false);
-              setShowManualOnly(false);
-            }}
-          >
-            <Flag className="w-4 h-4 ml-2" />
-            מדווחים
-          </Button>
-          <Button 
-            variant={showNeedsReview ? "default" : "outline"} 
-            size="sm"
-            onClick={() => {
-              setShowNeedsReview(!showNeedsReview);
-              setShowFlagged(false);
-              setShowScrapedOnly(false);
-              setShowManualOnly(false);
-              if (showNeedsReview) {
-                navigate('/admin/products', { replace: true });
-              }
-            }}
-          >
-            <AlertCircle className="w-4 h-4 ml-2" />
-            לבדיקה
-          </Button>
+          {flaggedCount > 0 && (
+            <Button 
+              variant={showFlagged ? "default" : "outline"} 
+              size="sm"
+              className={showFlagged ? "" : "text-red-600 border-red-200 hover:bg-red-50"}
+              onClick={() => {
+                setShowFlagged(!showFlagged);
+                setShowNeedsReview(false);
+                setShowScrapedOnly(false);
+                setShowManualOnly(false);
+              }}
+            >
+              <Flag className="w-3.5 h-3.5 ml-1.5" />
+              מדווחים ({flaggedCount})
+            </Button>
+          )}
+          {needsReviewCount > 0 && (
+            <Button 
+              variant={showNeedsReview ? "default" : "outline"} 
+              size="sm"
+              className={showNeedsReview ? "" : "text-amber-600 border-amber-200 hover:bg-amber-50"}
+              onClick={() => {
+                setShowNeedsReview(!showNeedsReview);
+                setShowFlagged(false);
+                setShowScrapedOnly(false);
+                setShowManualOnly(false);
+                if (showNeedsReview) {
+                  navigate('/admin/products', { replace: true });
+                }
+              }}
+            >
+              <AlertCircle className="w-3.5 h-3.5 ml-1.5" />
+              לבדיקה ({needsReviewCount})
+            </Button>
+          )}
         </div>
       </div>
 
@@ -691,10 +777,14 @@ const AdminProducts = () => {
         columns={columns}
         loading={isLoading}
         filters={filters}
-        searchPlaceholder="חיפוש לפי שם מוצר..."
-        searchKey={(item, query) => 
-          item.name.toLowerCase().includes(query.toLowerCase())
-        }
+        searchPlaceholder="חיפוש לפי שם, SKU, קטגוריה..."
+        searchKey={(item, query) => {
+          const q = query.toLowerCase();
+          return item.name.toLowerCase().includes(q) ||
+            (item.sku?.toLowerCase().includes(q) ?? false) ||
+            (item.category?.toLowerCase().includes(q) ?? false) ||
+            (item.description?.toLowerCase().includes(q) ?? false);
+        }}
         selectable
         selectedItems={selectedProducts}
         onSelectionChange={setSelectedProducts}
