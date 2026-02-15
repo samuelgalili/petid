@@ -21,6 +21,30 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 
+// Format raw product description into clean, readable paragraphs
+const formatProductDescription = (text: string) => {
+  if (!text) return null;
+  
+  // Split by newlines, periods followed by space, or double spaces
+  const lines = text
+    .replace(/\.\s+/g, '.\n')
+    .replace(/\s{2,}/g, '\n')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  // If it's a single short block, just return as-is
+  if (lines.length <= 1 && text.length < 200) {
+    return <p>{text.trim()}</p>;
+  }
+
+  return lines.map((line, i) => (
+    <p key={i} className={line.startsWith('•') || line.startsWith('-') || line.startsWith('*') ? 'pr-2' : ''}>
+      {line}
+    </p>
+  ));
+};
+
 const ProductDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -526,37 +550,33 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Product Description */}
-          {product.subtitle && (
+          {/* Product Description - Clean formatted */}
+          {(product.subtitle || product.description) && (
             <div className="p-5 border-b border-border">
-              <h3 className="text-base font-bold mb-3 text-foreground font-jakarta">אודות המוצר</h3>
-              <p className="text-sm text-muted-foreground font-jakarta leading-relaxed whitespace-pre-line">
-                {product.subtitle}
-              </p>
+              <h3 className="text-sm font-bold mb-3 text-foreground font-jakarta flex items-center gap-2">
+                <PackageCheck className="w-4 h-4 text-[#4ECDC4]" />
+                אודות המוצר
+              </h3>
+              <div className="text-[13px] text-muted-foreground font-jakarta leading-[1.8] space-y-2">
+                {formatProductDescription(product.description || product.subtitle)}
+              </div>
             </div>
           )}
 
-          {/* Product Details Accordion - only real data */}
+          {/* Shipping Info Accordion */}
           <div className="p-5">
             <Accordion type="single" collapsible className="w-full space-y-2">
-              {product.description && (
-                <AccordionItem value="description" className="border-0 bg-muted rounded-xl px-4">
-                  <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
-                    תיאור מלא
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground font-jakarta leading-relaxed pb-4 whitespace-pre-line">
-                    {product.description}
-                  </AccordionContent>
-                </AccordionItem>
-              )}
-              
-              <AccordionItem value="shipping" className="border-0 bg-secondary rounded-xl px-4">
+              <AccordionItem value="shipping" className="border-0 bg-muted/50 rounded-xl px-4">
                 <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
-                  משלוח והחזרות
+                  <span className="flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-[#7DB9E8]" />
+                    משלוח והחזרות
+                  </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground font-jakarta space-y-2 pb-4">
-                  <p><strong className="text-foreground">משלוח:</strong> משלוח חינם בהזמנות מעל ₪199. משלוח רגיל 2-4 ימי עסקים.</p>
-                  <p><strong className="text-foreground">החזרות:</strong> אחריות החזר כספי של 30 יום.</p>
+                <AccordionContent className="text-[13px] text-muted-foreground font-jakarta space-y-2 pb-4 leading-[1.7]">
+                  <p>• משלוח חינם בהזמנות מעל ₪199</p>
+                  <p>• זמן אספקה: 2-4 ימי עסקים</p>
+                  <p>• אחריות החזר כספי של 30 יום</p>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
