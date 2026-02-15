@@ -3,11 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Syringe, ShoppingBag, Shield, Heart, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from "date-fns";
-import { he } from "date-fns/locale";
+import { isToday, isYesterday, isThisWeek } from "date-fns";
 import { timeAgo } from "@/utils/timeAgo";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,14 +21,29 @@ interface NotificationItem {
   message: string;
   is_read: boolean;
   created_at: string;
+  category?: string;
   data?: {
     user_id?: string;
     user_name?: string;
     user_avatar?: string;
     post_id?: string;
     post_image?: string;
+    pet_id?: string;
+    pet_name?: string;
+    trigger?: string;
+    [key: string]: any;
   };
 }
+
+const getCategoryIcon = (category?: string, type?: string) => {
+  switch (category || type) {
+    case 'medical': return { icon: Syringe, color: 'text-red-500', bg: 'bg-red-500/10' };
+    case 'insurance': return { icon: Shield, color: 'text-blue-500', bg: 'bg-blue-500/10' };
+    case 'shop': return { icon: ShoppingBag, color: 'text-amber-500', bg: 'bg-amber-500/10' };
+    case 'care': return { icon: Heart, color: 'text-pink-500', bg: 'bg-pink-500/10' };
+    default: return { icon: Bell, color: 'text-primary', bg: 'bg-primary/10' };
+  }
+};
 
 const Notifications = () => {
   const { toast } = useToast();
@@ -74,7 +88,7 @@ const Notifications = () => {
       setLoading(false);
       return;
     } else {
-      setNotifications(data || []);
+      setNotifications((data || []) as unknown as NotificationItem[]);
       // Mark all as read when viewing
       if (data && data.length > 0) {
         markAllNotificationsAsRead();
@@ -126,27 +140,38 @@ const Notifications = () => {
   const NotificationRow = ({ notification }: { notification: NotificationItem }) => {
     const isFollowType = notification.type === "follow" || notification.type === "new_follower";
     const hasPostImage = notification.data?.post_image;
+    const hasUserAvatar = notification.data?.user_avatar;
+    const catInfo = getCategoryIcon(notification.category, notification.type);
+    const CatIcon = catInfo.icon;
     
     return (
       <motion.div
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        className="flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors cursor-pointer"
+        className={`flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors cursor-pointer ${!notification.is_read ? 'bg-primary/5' : ''}`}
         onClick={() => {
           if (notification.data?.post_id) {
             navigate(`/post/${notification.data.post_id}`);
           } else if (notification.data?.user_id) {
             navigate(`/user/${notification.data.user_id}`);
+          } else if (notification.data?.pet_id) {
+            navigate(`/pet/${notification.data.pet_id}`);
           }
         }}
       >
-        {/* User Avatar */}
-        <Avatar className="w-11 h-11 shrink-0">
-          <AvatarImage src={notification.data?.user_avatar} />
-          <AvatarFallback className="bg-muted text-sm font-medium">
-            {notification.data?.user_name?.[0]?.toUpperCase() || "U"}
-          </AvatarFallback>
-        </Avatar>
+        {/* Avatar or Category Icon */}
+        {hasUserAvatar ? (
+          <Avatar className="w-11 h-11 shrink-0">
+            <AvatarImage src={notification.data?.user_avatar} />
+            <AvatarFallback className="bg-muted text-sm font-medium">
+              {notification.data?.user_name?.[0]?.toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+        ) : (
+          <div className={`w-11 h-11 shrink-0 rounded-full ${catInfo.bg} flex items-center justify-center`}>
+            <CatIcon className={`w-5 h-5 ${catInfo.color}`} strokeWidth={1.5} />
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0">
