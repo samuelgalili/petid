@@ -95,6 +95,7 @@ CATEGORY DETECTION - CRITICAL:
 - For TREATS/SNACKS: populate product_attributes with texture (e.g. "קשה", "רך"), purpose (e.g. "פרס אילוף", "העסקה ולעיסה"), safety_tip (e.g. "מומלץ לעיסה בפיקוח"), and highlight special ingredients like "זרעי דלעת", "כבד עוף"
 - For BEDS/BEDDING products: populate product_attributes with material/texture (e.g. "בד פלאפי", "קטיפה"), diameter (e.g. "80 cm"), max_weight (e.g. "15 kg"), best_for (e.g. "כלבים קטנים עד בינוניים"), care_instructions (e.g. "כביסה עדינה במכונה"). Extract boolean features: is_washable, is_luxury_design. Note anxiety_relief if raised walls/bolsters mentioned. Note joint_support if orthopedic/senior mentioned.
 - For BOWLS/UTILITY products: populate product_attributes with capacity (e.g. "1 ליטר"), brand (e.g. "Els Pet"), material (e.g. "PP Food Grade"), mechanism (e.g. "מנגנון מצוף"), maintenance (e.g. "פירוק וניקוי קל"). Extract boolean features: non_slip, travel_safe. Note messy_drinker_friendly: true if anti-spill/splash. Extract usage_scenarios as array (e.g. ["נסיעות ברכב", "כלבים מבולגנים", "אנטי החלקה"]).
+- For GROOMING/SPA products: populate product_attributes with active_ingredients (array of ingredient names like "חלבוני משי", "ויטמין E"), coat_type (e.g. "פרוות בינונית עד ארוכה"), usage_steps (array of step strings), and boolean features: anti_static, non_greasy, odor_repellent, uv_protection, leave_in (no rinse). Extract visible_results as array (e.g. ["ברק של משי", "מגע רך", "הפחתת קשרים"]).
 - For food: populate product_attributes with nutritional values (protein_pct, fat_pct, fiber_pct, moisture_pct, ash_pct)
 
 RULES:
@@ -127,6 +128,7 @@ RULES:
   - In product_attributes, include: material, size, color, features (as comma-separated text), closure type, dimensions, and care_instructions (e.g. "ניקוי במטלית לחה")
   - For MUZZLE products specifically: in product_attributes also include circumference (map from "היקף"), length (map from "אורך"), size_number, and breed_recommendations as an array of Hebrew breed names the muzzle fits (e.g. ["ברניז", "באסט האונד", "רוטוויילר"])
   - benefits: Product features/advantages as [{ "title": "name", "description": "short description" }]
+- PRIORITY RULE: If product name includes "Oil"/"שמן"/"Silk"/"משי"/"Shampoo"/"שמפו"/"Coat Care"/"Spray"/"ספריי"/"Conditioner"/"מרכך", always set category to "grooming" and prioritize visible results, active ingredients, and coat type extraction
 - category: one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories, collars, leashes, beds, clothing, muzzles, enrichment, bowls. Use null if unclear.
 - PRIORITY RULE: If product weight is ~400g and keywords like "Pate"/"פטה"/"Can"/"פחית"/"שימורים" appear, always set category to "wet-food" and extract hydration/moisture benefits first
 - PRIORITY RULE: If product name includes "Bed"/"מיטה"/"Mat"/"מזרן"/"Fluffy"/"פלאפי", always set category to "beds" and prioritize texture, sizing, and sleep/comfort features

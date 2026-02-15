@@ -9,7 +9,7 @@ import {
   Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
   Eye, Bone, Timer, Smile, Zap, CloudLightning, Stethoscope, Scissors,
   Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home,
-  Car, Grip, Cog, Droplet
+  Car, Grip, Cog, Droplet, Sun, Wind, Pipette
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -415,6 +415,97 @@ const extractUtilityFeatures = (product: any): {
   return { cleanHomeBadge, cleanHomeDesc, mechanism, usageScenarios, techSpecs, isNoMessPriority };
 };
 
+/** Check if product is a grooming/spa product */
+const isGroomingProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'grooming' || cat === 'spa' || cat === 'טיפוח' ||
+    text.includes('shampoo') || text.includes('שמפו') || text.includes('oil') || text.includes('שמן') ||
+    text.includes('silk') || text.includes('משי') || text.includes('coat') || text.includes('פרווה') ||
+    text.includes('conditioner') || text.includes('מרכך') || text.includes('grooming') || text.includes('טיפוח') ||
+    text.includes('spray') || text.includes('ספריי') || text.includes('detangl') || text.includes('קשרים');
+};
+
+/** Extract grooming/spa features */
+const extractGroomingFeatures = (product: any): {
+  visibleResults: string[];
+  activeIngredients: { icon: React.ReactNode; label: string; benefit: string }[];
+  usageSteps: string[];
+  featureBadges: string[];
+  targetCoatType: string | null;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Visible results
+  const visibleResults: string[] = [];
+  if (allText.includes('ברק') || allText.includes('shine') || allText.includes('silk') || allText.includes('משי')) visibleResults.push('ברק של משי');
+  if (allText.includes('רך') || allText.includes('soft') || allText.includes('רכות') || allText.includes('smooth')) visibleResults.push('מגע רך וחלק');
+  if (allText.includes('קשר') || allText.includes('tangle') || allText.includes('detangl') || allText.includes('knot')) visibleResults.push('הפחתת קשרים');
+  if (allText.includes('ריח') || allText.includes('odor') || allText.includes('scent') || allText.includes('fragrance')) visibleResults.push('ריח נעים ורענן');
+  if (visibleResults.length === 0) visibleResults.push('ברק של משי', 'מגע רך וחלק');
+
+  // Active ingredients
+  const activeIngredients: { icon: React.ReactNode; label: string; benefit: string }[] = [];
+  if (allText.includes('חלבוני משי') || allText.includes('silk protein') || allText.includes('silk'))
+    activeIngredients.push({ icon: <Sparkles className="w-5 h-5" />, label: 'חלבוני משי', benefit: 'שיקום ותיקון שערות פגומות' });
+  if (allText.includes('ויטמין e') || allText.includes('vitamin e') || allText.includes('vit e'))
+    activeIngredients.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'ויטמין E', benefit: 'בריאות העור והגנה מפני יובש' });
+  if (allText.includes('uv') || allText.includes('שמש') || allText.includes('sun') || allText.includes('הגנה'))
+    activeIngredients.push({ icon: <Sun className="w-5 h-5" />, label: 'הגנה מ-UV', benefit: 'מניעת יובש וקהות מהשמש' });
+  if (allText.includes('אלוורה') || allText.includes('aloe'))
+    activeIngredients.push({ icon: <Leaf className="w-5 h-5" />, label: 'אלוורה', benefit: 'הרגעת העור ולחות' });
+  if (allText.includes('קרטין') || allText.includes('keratin'))
+    activeIngredients.push({ icon: <Shield className="w-5 h-5" />, label: 'קרטין', benefit: 'חיזוק מבנה השערה' });
+  if (allText.includes('אומגה') || allText.includes('omega'))
+    activeIngredients.push({ icon: <Droplets className="w-5 h-5" />, label: 'אומגה 3 ו-6', benefit: 'תזונת העור מבפנים' });
+  if (activeIngredients.length === 0) {
+    activeIngredients.push({ icon: <Sparkles className="w-5 h-5" />, label: 'רכיבים פעילים', benefit: 'תמיכה בבריאות העור והפרווה' });
+  }
+
+  // Usage steps
+  const usageSteps: string[] = [];
+  if (allText.includes('טפטפ') || allText.includes('drip') || allText.includes('כף יד') || allText.includes('hand')) usageSteps.push('טפטפו על כף היד');
+  else usageSteps.push('מדדו כמות מתאימה');
+  if (allText.includes('עיסוי') || allText.includes('massage') || allText.includes('שפשפ')) usageSteps.push('עסו לעומק הפרווה');
+  else usageSteps.push('מרחו על הפרווה');
+  if (allText.includes('סרק') || allText.includes('comb') || allText.includes('brush') || allText.includes('מברשת')) usageSteps.push('סרקו בעדינות');
+  else usageSteps.push('פזרו בעזרת המברשת');
+  if (allText.includes('אין צורך לשטוף') || allText.includes('no rinse') || allText.includes('leave-in') || allText.includes('ללא שטיפה'))
+    usageSteps.push('אין צורך לשטוף!');
+  else if (allText.includes('שטפ') || allText.includes('rinse'))
+    usageSteps.push('שטפו היטב');
+  else usageSteps.push('יבשו באוויר');
+
+  // Feature badges
+  const featureBadges: string[] = [];
+  if (allText.includes('אנטי-סטטי') || allText.includes('anti-static') || allText.includes('anti static') || allText.includes('סטטי'))
+    featureBadges.push('אנטי-סטטי ⚡');
+  if (allText.includes('שומני') || allText.includes('greasy') || allText.includes('non-greasy') || allText.includes('ללא שומן'))
+    featureBadges.push('ללא תחושה שומנית 🧴');
+  if (allText.includes('דוחה ריחות') || allText.includes('odor repel') || allText.includes('ריח'))
+    featureBadges.push('דוחה ריחות 🌸');
+  if (allText.includes('היפואלרגני') || allText.includes('hypoallergenic'))
+    featureBadges.push('היפואלרגני 🛡️');
+  if (allText.includes('טבעי') || allText.includes('natural'))
+    featureBadges.push('מרכיבים טבעיים 🌿');
+  if (allText.includes('ph') || allText.includes('מאוזן'))
+    featureBadges.push('pH מאוזן ⚖️');
+
+  // Target coat type
+  let targetCoatType: string | null = null;
+  if (allText.includes('ארוך') || allText.includes('long')) targetCoatType = 'פרוות בינונית עד ארוכה';
+  else if (allText.includes('קצר') || allText.includes('short')) targetCoatType = 'פרוות קצרה';
+  else if (allText.includes('בינונ') || allText.includes('medium')) targetCoatType = 'פרוות בינונית עד ארוכה';
+  else if (allText.includes('כל סוג') || allText.includes('all coat') || allText.includes('all type')) targetCoatType = 'כל סוגי הפרווה';
+  else if (allText.includes('silk') || allText.includes('משי') || allText.includes('oil') || allText.includes('שמן')) targetCoatType = 'פרוות בינונית עד ארוכה';
+
+  return { visibleResults, activeIngredients, usageSteps, featureBadges, targetCoatType };
+};
+
 /** Extract enrichment product features */
 const extractEnrichmentFeatures = (product: any): {
   anxietyUses: { icon: React.ReactNode; label: string }[];
@@ -773,6 +864,8 @@ const ProductDetail = () => {
   const beddingFeatures = useMemo(() => product && isBedding ? extractBeddingFeatures(product) : { texture: null, sleepBenefits: [], isWashable: false, washTip: null, sizing: { diameter: null, maxWeight: null, bestFor: null }, isLuxuryDesign: false, snuggleFactor: false }, [product, isBedding]);
   const isUtility = useMemo(() => product ? isUtilityProduct(product) : false, [product]);
   const utilityFeatures = useMemo(() => product && isUtility ? extractUtilityFeatures(product) : { cleanHomeBadge: false, cleanHomeDesc: [], mechanism: null, usageScenarios: [], techSpecs: [], isNoMessPriority: false }, [product, isUtility]);
+  const isGrooming = useMemo(() => product ? isGroomingProduct(product) : false, [product]);
+  const groomingFeatures = useMemo(() => product && isGrooming ? extractGroomingFeatures(product) : { visibleResults: [], activeIngredients: [], usageSteps: [], featureBadges: [], targetCoatType: null }, [product, isGrooming]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -1691,6 +1784,129 @@ const ProductDetail = () => {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Grooming: Visible Results Card ── */}
+        {isGrooming && groomingFeatures.visibleResults.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(320,60%,95%)] to-background border-[hsl(320,40%,70%)]/20 dark:from-[hsl(320,30%,15%)] dark:border-[hsl(320,40%,40%)]/20">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full bg-[hsl(320,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-6 h-6 text-[hsl(320,50%,50%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">✨ תוצאות נראות לעין</h3>
+                  <div className="flex flex-wrap gap-x-3 mt-1.5">
+                    {groomingFeatures.visibleResults.map((result, i) => (
+                      <p key={i} className="text-[12px] text-muted-foreground flex items-center gap-1">
+                        <Check className="w-3 h-3 text-[hsl(320,50%,50%)]" /> {result}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Grooming: Active Ingredients ── */}
+        {isGrooming && groomingFeatures.activeIngredients.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <FlaskConical className="w-4 h-4 text-primary" />
+                רכיבים פעילים
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5">
+                {groomingFeatures.activeIngredients.map((ingredient, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.24 + i * 0.06 }}
+                    className="bg-gradient-to-l from-[hsl(320,50%,95%)]/60 to-transparent dark:from-[hsl(320,30%,15%)] rounded-xl p-3.5 border border-[hsl(320,40%,70%)]/15 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[hsl(320,50%,80%)]/15 flex items-center justify-center flex-shrink-0 text-[hsl(320,50%,50%)]">
+                      {ingredient.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-foreground">{ingredient.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{ingredient.benefit}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Grooming: Step-by-Step Usage Guide ── */}
+        {isGrooming && groomingFeatures.usageSteps.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-background border-primary/20">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+                <Pipette className="w-4 h-4 text-primary" />
+                מדריך שימוש
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {groomingFeatures.usageSteps.map((step, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.26 + i * 0.08 }}
+                    className="bg-background rounded-xl p-3 border border-border/40 text-center"
+                  >
+                    <div className="w-8 h-8 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <span className="text-sm font-black text-primary">{i + 1}</span>
+                    </div>
+                    <p className="text-[12px] font-bold text-foreground leading-snug">{step}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Grooming: Feature Badges ── */}
+        {isGrooming && groomingFeatures.featureBadges.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-primary" />
+                תכונות מיוחדות
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {groomingFeatures.featureBadges.map((badge, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.28 + i * 0.05 }}
+                  >
+                    <Badge variant="secondary" className="text-xs px-3 py-1.5 font-medium">{badge}</Badge>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Grooming: Target Coat Type ── */}
+        {isGrooming && groomingFeatures.targetCoatType && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(40,60%,93%)] to-background border-[hsl(40,50%,70%)]/20 dark:from-[hsl(40,30%,15%)] dark:border-[hsl(40,40%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(40,60%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Wind className="w-5 h-5 text-[hsl(40,60%,40%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🐾 מתאים במיוחד ל</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">{groomingFeatures.targetCoatType}</p>
                 </div>
               </div>
             </Card>
