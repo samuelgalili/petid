@@ -9,12 +9,49 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
  * Sets vaccine reminders (next year)
  */
 
-const KNOWN_VACCINES = [
+// === CANINE VACCINES ===
+const DOG_VACCINES = [
   'rabies', 'כלבת', 'dhpp', 'dhlpp', 'parvo', 'פרבו',
   'distemper', 'bordetella', 'leptospirosis', 'לפטוספירוזיס',
-  'fvrcp', 'felv', 'fiv', 'meshusheshet', 'משושה', 'מרובע', 'מחומש',
+  'meshusheshet', 'משושה', 'מחומש',
   'leishmania', 'לישמניה', 'leishmaniasis', 'לישמניוזיס',
   'kennel cough', 'שעלת מלונות', 'canine influenza', 'שפעת',
+];
+
+// === FELINE VACCINES ===
+const CAT_VACCINES = [
+  'rabies', 'כלבת', // shared
+  'fvrcp', 'מרובעת', 'panleukopenia', 'פנלאוקופניה',
+  'calicivirus', 'קליצי', 'rhinotracheitis', 'רינוטרכאיטיס',
+  'felv', 'feline leukemia', 'לוקמיה של חתולים', 'לוקמיה',
+  'fiv', 'feline immunodeficiency', 'איידס של חתולים',
+  'chlamydia', 'כלמידיה',
+];
+
+// Combined for backwards compatibility
+const KNOWN_VACCINES = [...new Set([...DOG_VACCINES, ...CAT_VACCINES])];
+
+// === CAT-SPECIFIC CONDITIONS ===
+const CAT_CONDITIONS = [
+  'flutd', 'feline lower urinary', 'דרכי שתן', 'struvite', 'סטרוביט',
+  'ckd', 'chronic kidney', 'כליות כרונית', 'renal', 'כשל כלייתי',
+  'hairball', 'כדורי שיער', 'trichobezoar',
+  'hyperthyroid', 'היפרתירואיד', 'תירואיד',
+  'diabetes', 'סוכרת',
+  'forl', 'feline resorptive', 'ספיגת שיניים',
+];
+
+// === DOG-TOXIC MEDICATIONS — MUST NEVER be recommended for cats ===
+const DOG_ONLY_MEDICATIONS = [
+  'permethrin', 'פרמתרין',
+  'advantix', 'אדוונטיקס',
+  'certifect', 'סרטיפקט',
+  'ibuprofen', 'איבופרופן',
+  'acetaminophen', 'tylenol', 'אקמול', 'paracetamol', 'פרצטמול',
+  'naproxen', 'נפרוקסן',
+  'phenylpropanolamine',
+  '5-fluorouracil',
+  'enrofloxacin', 'baytril', 'ביטריל', // high dose toxic to cats
 ];
 
 const SURGERY_KEYWORDS = [
@@ -78,6 +115,37 @@ const BREED_CONDITION_GUIDES: Record<string, Record<string, string>> = {
   'german shepherd': {
     'joint': '🦴 רועים גרמניים — מעקב אחר דיספלזיה מגיל צעיר, תוסף מפרקים ופעילות מבוקרת.',
   },
+  // === CAT BREEDS ===
+  'persian': {
+    'kidney': '🫘 מדריך כליות לפרסי:\n• PKD שכיח בפרסיים — אולטרסאונד שנתי חובה\n• תזונה דלת-זרחן ועשירה בלחות\n• מזון רטוב בלבד מועדף\n• מעקב קריאטינין כל 6 חודשים\n• מים זמינים תמיד + מזרקת מים',
+    'eye': '👁️ מדריך עיניים לפרסי:\n• עיניים בולטות — ניקוי דמעות יומי\n• בדקו חסימת צינור הדמעות\n• מגבונים עדינים סביב העיניים\n• פנו לוטרינר בכל שינוי',
+    'respiratory': '🫁 פרסיים — מבנה פנים שטוח מגביל נשימה. הימנעו מלחץ ומחום.',
+  },
+  'פרסי': {
+    'kidney': '🫘 PKD שכיח — אולטרסאונד שנתי, תזונה דלת-זרחן, מזון רטוב.',
+    'eye': '👁️ ניקוי דמעות יומי — עיניים בולטות דורשות תשומת לב מיוחדת.',
+  },
+  'siamese': {
+    'dental': '🦷 מדריך שיניים לסיאמי:\n• FORL (ספיגת שיניים) שכיחה מאוד\n• בדיקת שיניים אצל וטרינר כל 6 חודשים\n• סימנים: ריור מוגבר, קושי באכילה\n• צילומי שיניים תקופתיים מומלצים',
+    'respiratory': '🫁 סיאמיים נוטים לאסתמה — הימנעו מעשן, אבק ובשמים.',
+  },
+  'סיאמי': {
+    'dental': '🦷 FORL שכיח — בדיקת שיניים כל 6 חודשים, צילומי שיניים תקופתיים.',
+  },
+  'british shorthair': {
+    'heart': '❤️ מדריך לב לבריטי:\n• HCM (קרדיומיופתיה היפרטרופית) שכיחה\n• אקו-לב שנתי מחובה\n• סימנים: קוצר נשימה, חולשה פתאומית\n• תזונה דלת-נתרן\n• טאורין בתזונה חיוני',
+    'weight': '⚖️ בריטיים נוטים להשמנה — מנות מדודות, הגבלת חטיפים, משחק פעיל.',
+  },
+  'בריטי קצר שיער': {
+    'heart': '❤️ HCM שכיחה — אקו-לב שנתי, תזונה דלת-נתרן, טאורין.',
+  },
+  'maine coon': {
+    'heart': '❤️ מיין קון — HCM בדיקה גנטית מומלצת. אקו-לב שנתי.',
+    'joint': '🦴 גודל גדול = עומס על מפרקים. תוסף גלוקוזאמין ומשטחים רכים.',
+  },
+  'מיין קון': {
+    'heart': '❤️ HCM + דיספלזיה — בדיקות תקופתיות ותמיכת מפרקים.',
+  },
 };
 
 // Map diagnoses to dashboard circles
@@ -92,7 +160,12 @@ function getAffectedCircles(diagnoses: string[], summary: string): string[] {
     [['energy', 'אנרגיה', 'lethargy', 'עייפות', 'fatigue', 'חולשה'], 'energy'],
     [['food', 'מזון', 'diet', 'דיאט', 'weight', 'משקל', 'obesity', 'השמנ'], 'feeding'],
     [['respiratory', 'נשימ', 'boas', 'breathing', 'lung', 'ריאות'], 'health'],
-    [['eye', 'עיניים', 'ear', 'אוזניים', 'dental', 'שיניים'], 'health'],
+    [['eye', 'עיניים', 'ear', 'אוזניים', 'dental', 'שיניים', 'forl'], 'health'],
+    // Cat-specific circles
+    [['urinary', 'שתן', 'flutd', 'struvite', 'crystals', 'גבישים', 'blockage', 'חסימה'], 'urinary'],
+    [['kidney', 'כליות', 'renal', 'ckd', 'creatinine', 'קריאטינין', 'phosphorus', 'זרחן'], 'renal'],
+    [['hairball', 'כדורי שיער', 'trichobezoar', 'vomit fur', 'הקאת שיער'], 'hairball'],
+    [['thyroid', 'תירואיד', 'hyperthyroid', 'היפרתירואיד', 't4'], 'thyroid'],
   ];
   
   for (const [keywords, circle] of mappings) {
@@ -102,6 +175,32 @@ function getAffectedCircles(diagnoses: string[], summary: string): string[] {
   }
   
   return circles;
+}
+
+// === SAFETY: Check for dog-toxic medications in cat records ===
+interface SafetyWarning {
+  type: 'critical' | 'warning';
+  message: string;
+  medication: string;
+}
+
+function checkCrossSpeciesSafety(medications: string[], petType: string): SafetyWarning[] {
+  if (petType !== 'cat') return [];
+  
+  const warnings: SafetyWarning[] = [];
+  const medsLower = medications.map(m => m.toLowerCase()).join(' ');
+  
+  for (const toxic of DOG_ONLY_MEDICATIONS) {
+    if (medsLower.includes(toxic.toLowerCase())) {
+      warnings.push({
+        type: 'critical',
+        message: `⚠️ אזהרה קריטית: ${toxic} רעיל לחתולים! יש לפנות לווטרינר מיד.`,
+        medication: toxic,
+      });
+    }
+  }
+  
+  return warnings;
 }
 
 function extractFromText(summary: string): ExtractedData {
@@ -139,13 +238,18 @@ function extractFromText(summary: string): ExtractedData {
     }
   }
 
-  // Extract diagnoses - lines containing medical keywords
+  // Extract diagnoses - lines containing medical keywords (dogs + cats)
   const diagnosisKeywords = [
     'ear infection', 'דלקת אוזניים', 'urinary', 'שתן', 'crystals', 'גבישים',
     'allergy', 'אלרגיה', 'skin', 'עור', 'dental', 'שיניים', 'eye', 'עיניים',
     'tumor', 'גידול', 'fracture', 'שבר', 'heart', 'לב', 'kidney', 'כליות',
     'liver', 'כבד', 'diabetes', 'סוכרת', 'arthritis', 'דלקת מפרקים',
     'hip dysplasia', 'דיספלזיה', 'luxating patella', 'פטלה',
+    // Cat-specific conditions
+    'flutd', 'struvite', 'סטרוביט', 'ckd', 'renal failure', 'כשל כלייתי',
+    'hyperthyroid', 'היפרתירואיד', 'forl', 'feline resorptive',
+    'hairball', 'כדורי שיער', 'feline asthma', 'אסתמה',
+    'fip', 'peritonitis', 'פריטוניטיס',
   ];
   for (const line of lines) {
     const lineLower = line.toLowerCase();
@@ -195,7 +299,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { petId, userId, summary, visitDate, clinicName, vetName } = await req.json();
+    const { petId, userId, summary, visitDate, clinicName, vetName, petType } = await req.json();
 
     if (!petId || !userId || !summary) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -301,10 +405,27 @@ serve(async (req) => {
 
     await supabase.from("pets").update(petUpdate).eq("id", petId);
 
+    // === SAFETY CHECK: Cross-species medication warnings ===
+    const resolvedPetType = petType || (petInfo as any)?.type || 'dog';
+    // If petType not passed, try fetching it
+    let actualPetType = resolvedPetType;
+    if (!petType) {
+      const { data: petTypeData } = await supabase
+        .from("pets")
+        .select("type")
+        .eq("id", petId)
+        .maybeSingle();
+      if (petTypeData?.type) actualPetType = petTypeData.type;
+    }
+    
+    const safetyWarnings = checkCrossSpeciesSafety(extracted.medications, actualPetType);
+
     return new Response(JSON.stringify({
       visit,
       extracted,
       recoveryUntil,
+      safetyWarnings,
+      petType: actualPetType,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

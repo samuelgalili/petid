@@ -10,7 +10,7 @@ import {
   X, Syringe, Utensils, ShieldCheck, UserCheck, 
   CheckCircle2, Circle, ChevronLeft, Sparkles, 
   Eye, ShoppingBag, ArrowUpRight, Activity,
-  Smile, Droplets, Wind
+  Smile, Droplets, Wind, AlertTriangle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -227,9 +227,11 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
 
     const vaccScore = Math.min(vaccineCount * 30, 90);
     const vaccDesc = vaccScore >= 90
-      ? `${pet.name} מחוסנת במלואה. כל הכבוד!`
+      ? `${pet.name} מחוסנ${isCat ? '' : 'ת'} במלואה. כל הכבוד!`
       : vaccScore > 0
-      ? `${pet.name} מחוסנת ב-${vaccScore}%. חסר חיסון משושה להשלמה.`
+      ? isCat
+        ? `${pet.name} מחוסנ${isCat ? '' : 'ת'} ב-${vaccScore}%. חסר חיסון ${vaccScore < 60 ? 'FVRCP (מרובעת)' : 'FeLV (לוקמיה)'} להשלמה.`
+        : `${pet.name} מחוסנת ב-${vaccScore}%. חסר חיסון משושה להשלמה.`
       : `אין רשומות חיסונים. העלה צילום כדי לעדכן.`;
 
     const hasFood = !!petData.current_food;
@@ -386,7 +388,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
     if (vaccineCount < 3) {
       items.push({
         id: 'vaccine-upload',
-        text: 'העלה צילום של חיסון המשושה',
+        text: isCat ? 'העלה צילום של חיסון FVRCP (מרובעת)' : 'העלה צילום של חיסון המשושה',
         pointsGain: Math.round(pillarWeights.vaccines * 0.1),
         done: false,
         action: () => { onClose(); navigate(`/pet/${pet.id}/vet-log`); },
@@ -717,6 +719,32 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                       <span className="text-xs font-bold text-foreground">טיפ מונע מ{pet.name}:</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">{breedTip}</p>
+                  </motion.div>
+                )}
+
+                {/* Cat Safety Warning — Dog-toxic medications */}
+                {isCat && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.65 }}
+                    className="mb-6 p-4 bg-destructive/5 rounded-xl border border-destructive/20"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-4 h-4 text-destructive" strokeWidth={1.5} />
+                      <span className="text-xs font-bold text-destructive">אזהרת בטיחות לחתולים</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        <span className="font-bold text-foreground">תרופות רעילות לחתולים:</span> פרמתרין (Advantix), אקמול/פרצטמול, איבופרופן, נפרוקסן.
+                      </p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        <span className="font-bold text-foreground">מינרלים קריטיים:</span> מגנזיום נמוך (מניעת אבני סטרוביט), זרחן מבוקר (תמיכת כליות), סידן מאוזן (בריאות עצמות).
+                      </p>
+                      <p className="text-[10px] text-destructive/80 font-medium">
+                        ⚠️ לעולם אל תשתמשו בתרופות או טיפולי פרעושים המיועדים לכלבים על חתולים.
+                      </p>
+                    </div>
                   </motion.div>
                 )}
 
