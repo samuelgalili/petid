@@ -99,7 +99,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
     { icon: User, label: 'בעלים', value: claimData.ownerName },
     { icon: FileText, label: 'ת"ז', value: claimData.ownerIdNumber ? `****${claimData.ownerIdNumber.slice(-4)}` : null },
     { icon: Shield, label: 'חיה', value: claimData.petName },
-    { icon: Cpu, label: 'שבב', value: claimData.microchipNumber },
+    { icon: Cpu, label: 'שבב', value: claimData.microchipNumber ? `****${claimData.microchipNumber.slice(-6)}` : null },
     { icon: Building2, label: 'מרפאה', value: claimData.clinicName },
     { icon: Calendar, label: 'תאריך', value: claimData.visitDate ? new Date(claimData.visitDate).toLocaleDateString("he-IL") : null },
     { icon: AlertTriangle, label: 'אבחנה', value: claimData.diagnosis },
