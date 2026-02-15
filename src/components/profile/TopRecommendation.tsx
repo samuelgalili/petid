@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish, Brain, Stethoscope, Droplets, AlertTriangle, Activity, Cpu, Eye, Download, BadgeCheck, Syringe } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish, Brain, Stethoscope, Droplets, AlertTriangle, Activity, Cpu, Eye, Download, BadgeCheck, Syringe, Smile } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -548,8 +548,30 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     const breedLower = (pet.breed || '').toLowerCase();
     const healthIssues = breedInfo?.health_issues_he || breedInfo?.health_issues || [];
     
-    // Breed-specific critical traits
-    const breedTraits: Record<string, { label: string; icon: typeof Eye }> = {};
+    // Cat-specific breed traits
+    if (pet.type === 'cat') {
+      const persianBreeds = ['persian', 'פרסי', 'himalayan', 'הימלאי', 'exotic shorthair'];
+      const siameseBreeds = ['siamese', 'סיאמי', 'oriental', 'אוריינטלי'];
+      const britishBreeds = ['british', 'בריטי', 'scottish', 'סקוטיש'];
+      const maineCoon = ['maine coon', 'מיין קון'];
+
+      if (persianBreeds.some(b => breedLower.includes(b))) {
+        return { label: 'מעקב כליות', icon: Droplets };
+      }
+      if (siameseBreeds.some(b => breedLower.includes(b))) {
+        return { label: 'בריאות שיניים', icon: Smile };
+      }
+      if (britishBreeds.some(b => breedLower.includes(b))) {
+        return { label: 'מעקב לב', icon: Heart };
+      }
+      if (maineCoon.some(b => breedLower.includes(b))) {
+        return { label: 'תמיכת מפרקים', icon: Activity };
+      }
+      // Default cat trait
+      return { label: 'בריאות שתן', icon: Droplets };
+    }
+
+    // Dog-specific breed traits
     const brachyBreeds = ['שי טסו', 'shih tzu', 'בולדוג', 'פאג', 'pug', 'french bulldog', 'frenchie'];
     const eyeBreeds = ['שי טסו', 'shih tzu', 'פאג', 'pug', 'קוקר', 'cocker'];
     const hipBreeds = ['גולדן', 'golden', 'לברדור', 'labrador', 'רועה גרמני', 'german shepherd'];
@@ -572,7 +594,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       return { label: healthIssues[0], icon: AlertTriangle };
     }
     return null;
-  }, [pet.breed, breedInfo]);
+  }, [pet.breed, pet.type, breedInfo]);
 
   // Computed: Weight vs ideal comparison
   const weightComparison = useMemo(() => {
@@ -671,41 +693,69 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     const breedLower = (pet.breed || '').toLowerCase();
     const conditionsLower = medicalConditions.map(c => c.toLowerCase());
 
-    // Breed-based insights
-    const brachyBreeds = ['בולדוג', 'פאג', 'שי טסו', 'french bulldog', 'pug', 'shih tzu', 'frenchie', 'צרפתי'];
-    if (brachyBreeds.some(b => breedLower.includes(b))) {
-      insights.push({ label: 'מעקב נשימה פעיל', icon: Stethoscope, color: 'bg-blue-500/15 text-blue-600' });
-    }
+    if (pet.type === 'cat') {
+      // Cat-specific insights
+      const isNeutered = medicalConditions.some(c => c.toLowerCase().includes('neutered') || c.toLowerCase().includes('spayed'));
+      insights.push({ label: 'בקרת pH שתן', icon: Droplets, color: 'bg-cyan-500/15 text-cyan-600' });
+      
+      const persianBreeds = ['persian', 'פרסי', 'himalayan', 'הימלאי'];
+      if (persianBreeds.some(b => breedLower.includes(b))) {
+        insights.push({ label: 'מעקב כליות (PKD)', icon: Activity, color: 'bg-red-500/15 text-red-600' });
+      }
+      const siameseBreeds = ['siamese', 'סיאמי'];
+      if (siameseBreeds.some(b => breedLower.includes(b))) {
+        insights.push({ label: 'מעקב שיניים (FORL)', icon: Smile, color: 'bg-pink-500/15 text-pink-600' });
+      }
+      
+      if (conditionsLower.some(c => ['diabetes', 'סוכרת'].some(k => c.includes(k)))) {
+        insights.push({ label: 'דל-פחמימות + חלבון גבוה', icon: TrendingUp, color: 'bg-purple-500/15 text-purple-600' });
+      }
+      if (conditionsLower.some(c => ['urinary', 'struvite', 'flutd', 'שתן'].some(k => c.includes(k)))) {
+        insights.push({ label: 'מזון רטוב בלבד', icon: Droplets, color: 'bg-blue-500/15 text-blue-600' });
+      }
+      if (conditionsLower.some(c => ['thyroid', 'תירואיד', 'hyperthyroid'].some(k => c.includes(k)))) {
+        insights.push({ label: 'דיאטת יוד מבוקרת', icon: AlertTriangle, color: 'bg-amber-500/15 text-amber-600' });
+      }
+      if (conditionsLower.some(c => ['kidney', 'כליות', 'renal', 'ckd'].some(k => c.includes(k)))) {
+        insights.push({ label: 'דל-זרחן + חלבון איכותי', icon: Droplets, color: 'bg-teal-500/15 text-teal-600' });
+      }
+    } else {
+      // Dog-specific insights (existing)
+      const brachyBreeds = ['בולדוג', 'פאג', 'שי טסו', 'french bulldog', 'pug', 'shih tzu', 'frenchie', 'צרפתי'];
+      if (brachyBreeds.some(b => breedLower.includes(b))) {
+        insights.push({ label: 'מעקב נשימה פעיל', icon: Stethoscope, color: 'bg-blue-500/15 text-blue-600' });
+      }
 
-    const deepChested = ['דני גדול', 'דוברמן', 'ויימרנר', 'great dane', 'doberman', 'weimaraner'];
-    if (deepChested.some(b => breedLower.includes(b))) {
-      insights.push({ label: 'מצב מניעת נפיחות', icon: AlertTriangle, color: 'bg-amber-500/15 text-amber-600' });
-    }
+      const deepChested = ['דני גדול', 'דוברמן', 'ויימרנר', 'great dane', 'doberman', 'weimaraner'];
+      if (deepChested.some(b => breedLower.includes(b))) {
+        insights.push({ label: 'מצב מניעת נפיחות', icon: AlertTriangle, color: 'bg-amber-500/15 text-amber-600' });
+      }
 
-    const powerChewers = ['סטפי', 'פיטבול', 'אמסטף', 'staffordshire', 'pitbull', 'amstaff'];
-    if (powerChewers.some(b => breedLower.includes(b))) {
-      insights.push({ label: 'צעצועים עמידים בלבד', icon: Shield, color: 'bg-red-500/15 text-red-600' });
-    }
+      const powerChewers = ['סטפי', 'פיטבול', 'אמסטף', 'staffordshire', 'pitbull', 'amstaff'];
+      if (powerChewers.some(b => breedLower.includes(b))) {
+        insights.push({ label: 'צעצועים עמידים בלבד', icon: Shield, color: 'bg-red-500/15 text-red-600' });
+      }
 
-    // Medical condition-based insights
-    if (conditionsLower.includes('diabetes') || conditionsLower.includes('סוכרת')) {
-      insights.push({ label: 'מצב דל-סוכר', icon: Activity, color: 'bg-purple-500/15 text-purple-600' });
-    }
-    if (conditionsLower.includes('kidney') || conditionsLower.includes('כליות')) {
-      insights.push({ label: 'מצב דל-זרחן', icon: Droplets, color: 'bg-teal-500/15 text-teal-600' });
-    }
-    if (conditionsLower.includes('heart') || conditionsLower.includes('לב')) {
-      insights.push({ label: 'מצב דל-נתרן', icon: Heart, color: 'bg-rose-500/15 text-rose-600' });
-    }
-    if (conditionsLower.includes('skin_issues') || conditionsLower.includes('allergies') || conditionsLower.includes('עור') || conditionsLower.includes('אלרגי')) {
-      insights.push({ label: 'מצב היפואלרגני', icon: CloudSun, color: 'bg-sky-500/15 text-sky-600' });
-    }
-    if (conditionsLower.includes('joint_issues') || conditionsLower.includes('מפרקים')) {
-      insights.push({ label: 'תמיכת מפרקים', icon: TrendingUp, color: 'bg-orange-500/15 text-orange-600' });
+      // Shared medical insights
+      if (conditionsLower.includes('diabetes') || conditionsLower.includes('סוכרת')) {
+        insights.push({ label: 'מצב דל-סוכר', icon: Activity, color: 'bg-purple-500/15 text-purple-600' });
+      }
+      if (conditionsLower.includes('kidney') || conditionsLower.includes('כליות')) {
+        insights.push({ label: 'מצב דל-זרחן', icon: Droplets, color: 'bg-teal-500/15 text-teal-600' });
+      }
+      if (conditionsLower.includes('heart') || conditionsLower.includes('לב')) {
+        insights.push({ label: 'מצב דל-נתרן', icon: Heart, color: 'bg-rose-500/15 text-rose-600' });
+      }
+      if (conditionsLower.some(c => ['skin_issues', 'allergies', 'עור', 'אלרגי'].some(k => c.includes(k)))) {
+        insights.push({ label: 'מצב היפואלרגני', icon: CloudSun, color: 'bg-sky-500/15 text-sky-600' });
+      }
+      if (conditionsLower.includes('joint_issues') || conditionsLower.includes('מפרקים')) {
+        insights.push({ label: 'תמיכת מפרקים', icon: TrendingUp, color: 'bg-orange-500/15 text-orange-600' });
+      }
     }
 
     return insights;
-  }, [pet.breed, medicalConditions]);
+  }, [pet.breed, pet.type, medicalConditions]);
 
   // Food-ingredient-based bars + product-purchase impact (V17)
   const foodBars = useMemo(() => {
@@ -734,7 +784,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     else if (breedInfo?.shedding_level) coat = Math.max(30, 80 - breedInfo.shedding_level * 10);
     if (hasIngredient(['zinc', 'אבץ', 'vitamin e', 'ויטמין e'])) coat = Math.min(100, coat + 10);
 
-    // Mobility bar (V17) - glucosamine, chondroitin, joint products
+    // Mobility bar
     let mobility = 60;
     if (hasIngredient(['glucosamine', 'גלוקוזאמין', 'joint', 'מפרק', 'chondroitin', 'כונדרואיטין', 'mobility'])) mobility = 82;
     if (hasIngredient(['msm', 'hyaluronic', 'היאלורונ'])) mobility = Math.min(100, mobility + 10);
@@ -745,14 +795,31 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     const breedLower2 = (pet.breed || '').toLowerCase();
     if (['לברדור', 'גולדן', 'רועה גרמני', 'labrador', 'golden'].some(b => breedLower2.includes(b)) && mobility === 60) mobility = 50;
 
-    // Digestion bar (V17)
+    // Digestion bar
     let digestion = 65;
     if (hasIngredient(['probiotic', 'פרוביוטיקה', 'gastrointestinal', 'gi', 'digestive', 'עיכול'])) digestion = 85;
     if (hasIngredient(['prebiotic', 'פרהביוטיקה', 'fos'])) digestion = Math.min(100, digestion + 8);
 
+    // === CAT-SPECIFIC BARS ===
+    // Hydration (cats barely drink)
+    let hydration = 35;
+    if (hasIngredient(['wet', 'רטוב', 'pate', 'פטה', 'gravy', 'רוטב', 'mousse'])) hydration = 80;
+    if (hasIngredient(['fountain', 'מזרקה'])) hydration = Math.min(100, hydration + 15);
+
+    // Hairball control
+    let hairball = 50;
+    if (hasIngredient(['hairball', 'כדורי שיער', 'malt', 'מאלט'])) hairball = 82;
+    if (hasIngredient(['fiber', 'סיבים'])) hairball = Math.min(100, hairball + 10);
+    
+    // Litter box / urinary health
+    let litterBox = 55;
+    if (hasIngredient(['urinary', 'struvite', 'ph'])) litterBox = 85;
+    if (hasIngredient(['wet', 'רטוב'])) litterBox = Math.min(100, litterBox + 15);
+
     return { 
       energy: Math.min(100, energy), satiety: Math.min(100, satiety), coat: Math.min(100, coat),
       mobility: Math.min(100, mobility), digestion: Math.min(100, digestion),
+      hydration: Math.min(100, hydration), hairball: Math.min(100, hairball), litterBox: Math.min(100, litterBox),
     };
   }, [currentFood, breedInfo, recentPurchases, pet.birth_date, pet.breed]);
 
@@ -1088,13 +1155,13 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
         {/* Breed Traits + Mood + QR - Spacious layout */}
         <div className="grid grid-cols-4 gap-2.5 mb-1">
-          {/* Energy Button */}
+          {/* Energy (dogs) / Litter Box Health (cats) */}
           <motion.button
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onEnergyOpen}
             className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
-            aria-label={`אנרגיה: ${activityMinutes || 0} דקות`}
+            aria-label={pet.type === 'cat' ? 'בריאות שתן' : `אנרגיה: ${activityMinutes || 0} דקות`}
           >
             <div className="flex gap-0.5 mb-2">
               {[1, 2, 3, 4, 5].map((dot) => (
@@ -1103,19 +1170,25 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: dot * 0.05 }}
-                  className={`w-1.5 h-1.5 rounded-full ${dot <= getEnergyLevel() ? 'bg-primary' : 'bg-muted-foreground/20'}`}
+                  className={`w-1.5 h-1.5 rounded-full ${dot <= (pet.type === 'cat' ? Math.ceil(foodBars.litterBox / 20) : getEnergyLevel()) ? 'bg-primary' : 'bg-muted-foreground/20'}`}
                 />
               ))}
             </div>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 transition-colors ${
               medicalAffectedCircles.has('energy') ? 'bg-amber-500/15 group-hover:bg-amber-500/25' : 'bg-primary/10 group-hover:bg-primary/20'
             }`}>
-              <Zap className={`w-5 h-5 ${medicalAffectedCircles.has('energy') ? 'text-amber-500' : 'text-primary'}`} />
+              {pet.type === 'cat' ? (
+                <Droplets className={`w-5 h-5 ${medicalAffectedCircles.has('energy') ? 'text-amber-500' : 'text-primary'}`} />
+              ) : (
+                <Zap className={`w-5 h-5 ${medicalAffectedCircles.has('energy') ? 'text-amber-500' : 'text-primary'}`} />
+              )}
             </div>
-            <span className="text-xs font-semibold text-foreground">אנרגיה</span>
-            {activityMinutes && (
+            <span className="text-xs font-semibold text-foreground">{pet.type === 'cat' ? 'שתן' : 'אנרגיה'}</span>
+            {pet.type === 'cat' ? (
+              <span className="text-[10px] text-primary font-bold mt-0.5">{foodBars.litterBox}%</span>
+            ) : activityMinutes ? (
               <span className="text-[10px] text-primary font-bold mt-0.5">{activityMinutes} דק׳</span>
-            )}
+            ) : null}
           </motion.button>
 
           {/* Grooming Button */}
@@ -1310,14 +1383,19 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             )}
           </div>
 
-          {/* Compact Nutrition bars */}
+          {/* Compact Nutrition bars — species-specific */}
           <div className="space-y-1.5">
-            {[
+            {(pet.type === 'cat' ? [
+              { label: 'לחות', value: foodBars.hydration, icon: Droplets, onClick: onFeedingOpen },
+              { label: 'שתן', value: foodBars.litterBox, icon: Droplets, onClick: onFeedingOpen },
+              { label: 'כד״ש', value: foodBars.hairball, icon: Wind, onClick: onGroomingOpen },
+              { label: 'עיכול', value: foodBars.digestion, icon: Activity, onClick: onDigestionOpen },
+            ] : [
               { label: 'שובע', value: foodBars.satiety, icon: Utensils, onClick: onFeedingOpen },
               { label: 'פרווה', value: foodBars.coat, icon: Sparkles, onClick: onGroomingOpen },
               { label: 'ניידות', value: foodBars.mobility, icon: TrendingUp, onClick: onMobilityOpen },
               { label: 'עיכול', value: foodBars.digestion, icon: Activity, onClick: onDigestionOpen },
-            ].map((bar) => (
+            ]).map((bar) => (
               <button key={bar.label} onClick={bar.onClick} className="flex items-center gap-2 w-full hover:bg-muted/30 rounded-md py-0.5 transition-colors cursor-pointer">
                 <bar.icon className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
                 <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">{bar.label}</span>
