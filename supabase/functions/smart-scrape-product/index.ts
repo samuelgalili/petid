@@ -81,10 +81,12 @@ Analyze the following scraped product page content and extract ALL data into the
 
 CATEGORY DETECTION - CRITICAL:
 - If the page contains keywords like "מחסום", "muzzle", "זמם" → set category to "muzzles"
+- If the page contains keywords like "חטיף", "treat", "snack", "חטיפון", "מקל לעיסה", "עצם לעיסה", "לעיסה", "chew", "פרס", "reward", "זרעי דלעת" → set category to "treats"
 - If the page contains keywords like "collar", "קולר", "צווארון", "רצועה", "leash", "harness", "הרנס", "מיטה", "bed", "toy", "צעצוע", "nylon", "ניילון", "D-ring", "buckle", "אבזם", "quick-release", "שחרור מהיר" → set category to "accessories"
-- If the page contains keywords like "מזון", "food", "kibble", "חטיף", "treat", "שימורים" → set appropriate food category
+- If the page contains keywords like "מזון", "food", "kibble", "שימורים" → set appropriate food category (dry-food, wet-food, food)
 - For accessories/muzzles: populate product_attributes with technical specs (material, size, color, features, closure, dimensions, care_instructions)
 - For muzzles specifically: map "היקף" to "circumference", "אורך" to "length", extract size_number, and add breed_recommendations as an array of breed names
+- For TREATS/SNACKS: populate product_attributes with texture (e.g. "קשה", "רך"), purpose (e.g. "פרס אילוף", "העסקה ולעיסה"), safety_tip (e.g. "מומלץ לעיסה בפיקוח"), and highlight special ingredients like "זרעי דלעת", "כבד עוף"
 - For food: populate product_attributes with nutritional values (protein_pct, fat_pct, fiber_pct, moisture_pct, ash_pct)
 
 RULES:
@@ -94,6 +96,16 @@ RULES:
   - feeding_guide: Extract EVERY row from feeding tables. Format: { "range": "weight range text", "amount": "daily amount text" }
   - ingredients: Extract the FULL ingredients list as a single string
   - benefits: Health benefits as [{ "title": "name", "description": "short description" }]
+- For TREAT/SNACK products:
+  - Extract ingredients as a single string
+  - feeding_guide: Use for serving suggestions if available, otherwise empty array []
+  - benefits: Extract health benefits focusing on ingredient-derived advantages. Map specific ingredients to health claims:
+    - Chicken liver / כבד עוף → "תמיכה בשרירים" (Muscle Support)
+    - Pumpkin seeds / זרעי דלעת → "סיוע בעיכול" (Digestion Aid)
+    - Fatty acids / חומצות שומן / אומגה → "פרווה בריאה" (Shiny Coat)
+    - Long chew / לעיסה ממושכת → "הפגת מתח" (Stress Relief)
+  - special_diet: Include texture and natural claims like ["טבעי", "ללא חומרים משמרים", "ללא צבעים"]
+  - In product_attributes, include: texture, purpose, safety_tip
 - For ACCESSORY products:
   - Set feeding_guide to empty array []
   - Set ingredients to null

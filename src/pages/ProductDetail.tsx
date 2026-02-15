@@ -6,7 +6,8 @@ import {
   ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, 
   Clock, Loader2, Flag, AlertTriangle, Leaf, FlaskConical, Utensils,
   WheatOff, Beef, Sparkles, Dog, Baby, Scale, Droplets, ShieldCheck,
-  Calculator, Wrench, Lightbulb, Ruler, Paintbrush
+  Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
+  Eye, Bone
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -94,6 +95,69 @@ const extractBreedRecommendations = (product: any): string[] => {
   if (Array.isArray(breeds)) return breeds;
   if (typeof breeds === 'string') return breeds.split(/[,،、]\s*/);
   return [];
+};
+
+/** Check if product is a treat/snack */
+const isTreatProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'treats' || cat === 'snacks' || 
+    text.includes('חטיף') || text.includes('treat') || text.includes('snack') || 
+    text.includes('מקל לעיסה') || text.includes('עצם לעיסה') || text.includes('חטיפון');
+};
+
+/** Derive health boost icons for treats based on benefits/ingredients */
+const deriveTreatHealthBoosts = (product: any): { icon: React.ReactNode; label: string; source: string }[] => {
+  const boosts: { icon: React.ReactNode; label: string; source: string }[] = [];
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+
+  // Check benefits array first
+  for (const b of benefits) {
+    const bt = `${b.title || ''} ${b.description || ''}`.toLowerCase();
+    if ((bt.includes('שריר') || bt.includes('muscle') || bt.includes('חלבון') || bt.includes('כבד')) && !boosts.find(x => x.label.includes('שרירים')))
+      boosts.push({ icon: <Beef className="w-5 h-5" />, label: 'תמיכה בשרירים', source: b.description || 'חלבון מכבד עוף' });
+    if ((bt.includes('עיכול') || bt.includes('digest') || bt.includes('דלעת') || bt.includes('pumpkin')) && !boosts.find(x => x.label.includes('עיכול')))
+      boosts.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'סיוע בעיכול', source: b.description || 'זרעי דלעת' });
+    if ((bt.includes('פרווה') || bt.includes('coat') || bt.includes('עור') || bt.includes('skin') || bt.includes('שומן') || bt.includes('fatty')) && !boosts.find(x => x.label.includes('פרווה')))
+      boosts.push({ icon: <Sparkles className="w-5 h-5" />, label: 'פרווה בריאה', source: b.description || 'חומצות שומן' });
+    if ((bt.includes('הרגעה') || bt.includes('stress') || bt.includes('לעיסה') || bt.includes('chew') || bt.includes('occupation')) && !boosts.find(x => x.label.includes('הרגעה')))
+      boosts.push({ icon: <Heart className="w-5 h-5" />, label: 'הפגת מתח', source: b.description || 'לעיסה ממושכת' });
+  }
+
+  // Fallback: detect from text if benefits didn't cover
+  if (!boosts.find(x => x.label.includes('שרירים')) && (text.includes('כבד') || text.includes('liver') || text.includes('חלבון גבוה')))
+    boosts.push({ icon: <Beef className="w-5 h-5" />, label: 'תמיכה בשרירים', source: 'חלבון מכבד עוף' });
+  if (!boosts.find(x => x.label.includes('עיכול')) && (text.includes('דלעת') || text.includes('pumpkin') || text.includes('סיבים')))
+    boosts.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'סיוע בעיכול', source: 'זרעי דלעת' });
+  if (!boosts.find(x => x.label.includes('פרווה')) && (text.includes('אומגה') || text.includes('omega') || text.includes('שומן')))
+    boosts.push({ icon: <Sparkles className="w-5 h-5" />, label: 'פרווה בריאה', source: 'חומצות שומן' });
+  if (!boosts.find(x => x.label.includes('הרגעה')) && (text.includes('לעיסה') || text.includes('chew') || text.includes('עצם')))
+    boosts.push({ icon: <Heart className="w-5 h-5" />, label: 'הפגת מתח', source: 'לעיסה ממושכת' });
+
+  return boosts.slice(0, 6);
+};
+
+/** Extract treat usage/serving suggestions */
+const extractTreatUsage = (product: any): { purpose: string | null; safetyTip: string | null; isNatural: boolean } => {
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  
+  let purpose = attrs.purpose || attrs['שימוש'] || null;
+  if (!purpose) {
+    if (text.includes('אילוף') || text.includes('training')) purpose = 'פרס אילוף';
+    else if (text.includes('לעיסה') || text.includes('chew') || text.includes('occupation')) purpose = 'העסקה ולעיסה ממושכת';
+    else if (text.includes('חטיף') || text.includes('treat')) purpose = 'חטיף פרס';
+  }
+
+  let safetyTip = attrs.safety_tip || attrs['טיפ בטיחות'] || null;
+  if (!safetyTip && (text.includes('לעיסה') || text.includes('chew') || text.includes('עצם'))) {
+    safetyTip = 'מומלץ לעיסה בפיקוח בלבד';
+  }
+
+  const isNatural = text.includes('טבעי') || text.includes('natural') || text.includes('ללא חומרים משמרים') || text.includes('no preserv') || text.includes('ללא צבעים');
+
+  return { purpose, safetyTip, isNatural };
 };
 
 /** Extract technical specs from product_attributes for accessories */
@@ -326,6 +390,9 @@ const ProductDetail = () => {
   const sizeMatrix = useMemo(() => product ? extractSizeMatrix(product) : [], [product]);
   const breedRecommendations = useMemo(() => product ? extractBreedRecommendations(product) : [], [product]);
   const quickFeatures = useMemo(() => product ? deriveQuickFeatures(product) : [], [product]);
+  const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
+  const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
+  const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -901,8 +968,99 @@ const ProductDetail = () => {
           </motion.div>
         )}
 
-        {/* ── Health Benefits ── */}
-        {hasBenefits && (
+        {/* ── Treat Health Boosts (treats only) ── */}
+        {isTreat && treatHealthBoosts.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-primary" />
+                בוסטים בריאותיים
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {treatHealthBoosts.map((boost, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.25 + i * 0.06 }}
+                    className="bg-gradient-to-br from-primary/8 to-transparent rounded-xl p-3.5 border border-primary/15 text-center"
+                  >
+                    <div className="w-10 h-10 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                      {boost.icon}
+                    </div>
+                    <p className="text-[13px] font-bold text-foreground mb-0.5">{boost.label}</p>
+                    <p className="text-[11px] text-muted-foreground leading-snug">{boost.source}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Treat Usage Guide (treats only) ── */}
+        {isTreat && (treatUsage.purpose || treatUsage.safetyTip) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Cookie className="w-4 h-4 text-primary" />
+                מדריך שימוש
+              </h3>
+              <div className="space-y-2.5">
+                {treatUsage.purpose && (
+                  <div className="flex items-center gap-3 bg-muted/40 rounded-xl p-3 border border-border/30">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Bone className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-medium">ייעוד</p>
+                      <p className="text-[13px] font-bold text-foreground">{treatUsage.purpose}</p>
+                    </div>
+                  </div>
+                )}
+                {treatUsage.safetyTip && (
+                  <div className="flex items-center gap-3 bg-warning/8 rounded-xl p-3 border border-warning/20">
+                    <div className="w-8 h-8 rounded-full bg-warning/15 flex items-center justify-center flex-shrink-0">
+                      <Eye className="w-4 h-4 text-warning" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-medium">טיפ בטיחות</p>
+                      <p className="text-[13px] font-bold text-foreground">{treatUsage.safetyTip}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 bg-[hsl(200,80%,95%)]/60 dark:bg-[hsl(200,40%,15%)] rounded-xl p-3 border border-[hsl(200,60%,70%)]/20">
+                  <div className="w-8 h-8 rounded-full bg-[hsl(200,70%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                    <GlassWater className="w-4 h-4 text-[hsl(200,60%,45%)]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium">תזכורת</p>
+                    <p className="text-[13px] font-bold text-foreground">הקפידו על מים טריים לאחר החטיף 💧</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Natural Ingredients Claim (treats only) ── */}
+        {isTreat && treatUsage.isNatural && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 bg-gradient-to-br from-success/10 to-background border-success/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+                  <Leaf className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🌿 מרכיבים טבעיים</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">ללא חומרים משמרים, צבעי מאכל מלאכותיים או תוספים כימיים</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Health Benefits (non-treat) ── */}
+        {hasBenefits && !isTreat && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card className="p-4">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
