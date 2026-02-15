@@ -132,7 +132,7 @@ const BottomNav = () => {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 40, opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", damping: 22, stiffness: 350 }}
-              className="fixed bottom-[76px] left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-6 px-6 py-4 bg-background/90 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] flex items-center gap-6 px-6 py-4 bg-background/90 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl"
               dir="rtl"
             >
               {[
