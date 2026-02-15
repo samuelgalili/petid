@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AILoader from "@/components/ui/ai-loader";
+import { LibraClaimForm } from "./LibraClaimForm";
 
 interface MedicalDocumentFABProps {
   petId: string;
@@ -57,7 +58,7 @@ interface ScanResult {
   isDangerousBreed: boolean;
 }
 
-type ModalStep = 'closed' | 'choose' | 'scanning' | 'review' | 'petReview' | 'profileReview' | 'manual';
+type ModalStep = 'closed' | 'choose' | 'scanning' | 'review' | 'petReview' | 'profileReview' | 'manual' | 'claim';
 
 // Shih Tzu weight standards by age (months → expected kg range)
 const SHIH_TZU_WEIGHT: Record<number, [number, number]> = {
@@ -74,6 +75,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
   const [confirming, setConfirming] = useState(false);
   const [lastBase64, setLastBase64] = useState<string | null>(null);
   const [lastFileName, setLastFileName] = useState('');
+  const [showClaimForm, setShowClaimForm] = useState(false);
 
   // Manual entry state
   const [manualSummary, setManualSummary] = useState('');
@@ -641,7 +643,19 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                     >
                       סרוק שוב
                     </Button>
-                  </div>
+                   </div>
+
+                  {/* Libra Claim CTA - shows when diagnosis or cost detected */}
+                  {(scanResult.diagnoses?.length > 0 || scanResult.cost) && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 rounded-2xl text-xs font-semibold border-primary/30 text-primary"
+                      onClick={() => setShowClaimForm(true)}
+                    >
+                      <Shield className="w-4 h-4 ml-2" strokeWidth={1.5} />
+                      הגש בקשה להחזר מ-Libra
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -898,6 +912,28 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Libra Claim Form */}
+      {scanResult && (
+        <LibraClaimForm
+          petId={petId}
+          claimData={{
+            ownerName: scanResult.ownerName,
+            ownerIdNumber: scanResult.ownerIdNumber,
+            petName: scanResult.petName || petName,
+            microchipNumber: scanResult.microchipNumber,
+            clinicName: scanResult.clinicName,
+            visitDate: scanResult.visitDate,
+            diagnosis: scanResult.diagnoses?.join('; ') || null,
+            treatment: scanResult.medications?.join('; ') || null,
+            totalAmount: scanResult.cost,
+          }}
+          open={showClaimForm}
+          onClose={() => setShowClaimForm(false)}
+          onSubmitted={() => {
+            onComplete?.();
+          }}
+        />
+      )}
     </>
   );
 };
