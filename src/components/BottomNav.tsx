@@ -191,20 +191,13 @@ const BottomNav = () => {
             onClick={() => setShowUploadMenu(prev => !prev)}
             showPill={false}
             icon={
-              <div className={cn(
-                "w-7 h-7 rounded-xl flex items-center justify-center transition-all",
-                showUploadMenu
-                  ? "bg-primary rotate-45"
-                  : "bg-muted"
-              )}>
-                <Camera
-                  className={cn(
-                    "w-4 h-4 transition-colors",
-                    showUploadMenu ? "text-primary-foreground" : "text-muted-foreground"
-                  )}
-                  strokeWidth={2}
-                />
-              </div>
+              <Plus
+                className={cn(
+                  "w-7 h-7 transition-all",
+                  showUploadMenu ? "text-primary rotate-45" : "text-muted-foreground"
+                )}
+                strokeWidth={2}
+              />
             }
             isActive={showUploadMenu}
             label="העלאה"
