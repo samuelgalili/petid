@@ -1146,6 +1146,33 @@ export type Database = {
           },
         ]
       }
+      breed_disease_diet_rules: {
+        Row: {
+          avoid: string[]
+          created_at: string
+          diet: string
+          disease: string
+          id: string
+          required_nutrients: string[]
+        }
+        Insert: {
+          avoid?: string[]
+          created_at?: string
+          diet: string
+          disease: string
+          id?: string
+          required_nutrients?: string[]
+        }
+        Update: {
+          avoid?: string[]
+          created_at?: string
+          diet?: string
+          disease?: string
+          id?: string
+          required_nutrients?: string[]
+        }
+        Relationships: []
+      }
       breed_information: {
         Row: {
           affection_family: number | null
