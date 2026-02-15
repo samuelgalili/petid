@@ -2421,7 +2421,7 @@ const ProductDetail = () => {
 
     const productText = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${product.category || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
 
-    // Genetic propensity mapping
+    // ── Breed-Specific Routing Groups ──
     const breedGroupMap: Record<string, { group: string; tips: { icon: string; label: string; description: string }[] }> = {
       large: {
         group: 'גזעים גדולים',
@@ -2443,12 +2443,25 @@ const ProductDetail = () => {
       },
     };
 
-    // Brachycephalic detection
-    const brachyBreeds = ['bulldog', 'בולדוג', 'pug', 'פאג', 'french', 'צרפתי', 'shih tzu', 'שי טסו', 'boston', 'pekingese'];
-    // Deep-chested detection
-    const deepChestBreeds = ['great dane', 'דני גדול', 'doberman', 'דוברמן', 'german shepherd', 'רועה גרמני', 'boxer', 'בוקסר', 'weimaraner', 'ויימרנר'];
+    // ── Breed Category Detections ──
+    const brachyBreeds = ['bulldog', 'בולדוג', 'pug', 'פאג', 'french', 'צרפתי', 'shih tzu', 'שי טסו', 'boston', 'pekingese', 'פקינז'];
+    const deepChestBreeds = ['great dane', 'דני גדול', 'doberman', 'דוברמן', 'german shepherd', 'רועה גרמני', 'boxer', 'בוקסר', 'weimaraner', 'ויימרנר', 'standard poodle', 'פודל סטנדרטי', 'irish setter', 'סטר אירי'];
+    const whiteCoatBreeds = ['maltese', 'מלטז', 'bichon', 'ביצ\'ון', 'west highland', 'ווסטי', 'westie', 'samoyed', 'סמויד', 'poodle', 'פודל', 'havanese', 'האוונזי', 'coton', 'קוטון'];
+    const longCoatBreeds = ['golden retriever', 'גולדן', 'shih tzu', 'שי טסו', 'afghan', 'אפגני', 'collie', 'קולי', 'cavalier', 'קבליר', 'maltese', 'מלטז', 'yorkshire', 'יורקשיר', 'lhasa', 'לאסה', 'bernese', 'ברנזי', 'cocker', 'קוקר'];
+    const activeWorkingBreeds = ['border collie', 'בורדר קולי', 'belgian', 'בלגי', 'malinois', 'מלינואה', 'australian shepherd', 'רועה אוסטרלי', 'husky', 'האסקי', 'vizsla', 'ויזלה', 'weimaraner', 'ויימרנר', 'german shepherd', 'רועה גרמני', 'labrador', 'לברדור', 'jack russell', 'ג\'ק ראסל'];
 
-    let bestPetMatch: { petName: string; petBreed: string; breedHe: string | null; sizeCategory: string | null; healthIssues: string[]; healthIssuesHe: string[]; isBrachy: boolean; isDeepChest: boolean; matchReasons: string[]; dietMatches: string[] } | null = null;
+    // ── Smart Product Tagging Breeds ──
+    const glucosamineTargetBreeds = ['golden retriever', 'גולדן', 'labrador', 'לברדור', 'german shepherd', 'רועה גרמני', 'rottweiler', 'רוטווילר'];
+    const slowFeederTargetBreeds = ['great dane', 'דני גדול', 'weimaraner', 'ויימרנר', 'doberman', 'דוברמן', 'standard poodle', 'פודל סטנדרטי'];
+    const hypoTargetBreeds = ['french bulldog', 'בולדוג צרפתי', 'צרפתי', 'west highland', 'ווסטי', 'westie', 'shar pei', 'שר פיי'];
+
+    let bestPetMatch: {
+      petName: string; petBreed: string; breedHe: string | null; sizeCategory: string | null;
+      healthIssues: string[]; healthIssuesHe: string[];
+      isBrachy: boolean; isDeepChest: boolean; isWhiteCoat: boolean; isLongCoat: boolean; isActiveWorking: boolean;
+      matchReasons: string[]; dietMatches: string[];
+      whyForBreed: string | null; smartTag: string | null;
+    } | null = null;
     let highestScore = 0;
 
     for (const pet of userPets) {
@@ -2464,8 +2477,10 @@ const ProductDetail = () => {
       const healthIssuesHe: string[] = (breedInfo as any)?.health_issues_he || [];
       const isBrachy = brachyBreeds.some(b => petBreedLower.includes(b));
       const isDeepChest = deepChestBreeds.some(b => petBreedLower.includes(b));
+      const isWhiteCoat = whiteCoatBreeds.some(b => petBreedLower.includes(b));
+      const isLongCoat = longCoatBreeds.some(b => petBreedLower.includes(b));
+      const isActiveWorking = activeWorkingBreeds.some(b => petBreedLower.includes(b));
 
-      // Score how well this product matches this pet's needs
       let score = 0;
       const matchReasons: string[] = [];
       const dietMatches: string[] = [];
@@ -2497,41 +2512,114 @@ const ProductDetail = () => {
         }
       }
 
-      // Size-based matching
-      if (sizeCategory === 'large' && (productText.includes('large breed') || productText.includes('גזע גדול') || productText.includes('joint') || productText.includes('מפרק'))) { score += 1; matchReasons.push('joint_support'); }
+      // ── Size-based matching ──
+      if (sizeCategory === 'large' && (productText.includes('large breed') || productText.includes('גזע גדול') || productText.includes('joint') || productText.includes('מפרק') || productText.includes('orthopedic') || productText.includes('אורתופדי'))) { score += 1; matchReasons.push('joint_support'); }
       if (sizeCategory === 'small' && (productText.includes('small breed') || productText.includes('גזע קטן') || productText.includes('dental') || productText.includes('שיני'))) { score += 1; matchReasons.push('dental_care'); }
-      if (isBrachy && (productText.includes('easy chew') || productText.includes('small kibble') || productText.includes('קיבל קטן'))) { score += 1; matchReasons.push('brachy_friendly'); }
-      if (isDeepChest && (productText.includes('slow feed') || productText.includes('האכלה איטית') || productText.includes('anti-gulp'))) { score += 2; matchReasons.push('bloat_prevention'); }
+
+      // ── Brachy matching ──
+      if (isBrachy) {
+        if (productText.includes('easy chew') || productText.includes('small kibble') || productText.includes('קיבל קטן') || productText.includes('flat face') || productText.includes('brachy')) { score += 2; matchReasons.push('brachy_friendly'); }
+        if (productText.includes('hypoallergenic') || productText.includes('היפואלרגני') || productText.includes('skin') || productText.includes('עור')) { score += 1; matchReasons.push('brachy_skin'); }
+      }
+
+      // ── Deep-chest matching ──
+      if (isDeepChest && (productText.includes('slow feed') || productText.includes('האכלה איטית') || productText.includes('anti-gulp') || productText.includes('אנטי גלופ'))) { score += 2; matchReasons.push('bloat_prevention'); }
+
+      // ── White/Long Coat matching ──
+      if (isWhiteCoat && (productText.includes('tear stain') || productText.includes('כתמי דמעות') || productText.includes('whitening') || productText.includes('הלבנה') || productText.includes('skin') || productText.includes('עור'))) { score += 2; matchReasons.push('white_coat_care'); }
+      if (isLongCoat && (productText.includes('detangle') || productText.includes('mat') || productText.includes('brush') || productText.includes('מברשת') || productText.includes('grooming') || productText.includes('טיפוח') || productText.includes('conditioner') || productText.includes('מרכך'))) { score += 1; matchReasons.push('coat_care'); }
+
+      // ── Active/Working matching ──
+      if (isActiveWorking && (productText.includes('high protein') || productText.includes('חלבון גבוה') || productText.includes('performance') || productText.includes('active') || productText.includes('energy') || productText.includes('אנרגיה') || productText.includes('sport'))) { score += 2; matchReasons.push('active_recovery'); }
+      if (isActiveWorking && (productText.includes('joint') || productText.includes('מפרק') || productText.includes('glucosamine') || productText.includes('גלוקוזאמין'))) { score += 1; matchReasons.push('active_joint'); }
+
+      // ── Smart Product Tagging ──
+      let smartTag: string | null = null;
+      if (productText.includes('glucosamine') || productText.includes('גלוקוזאמין')) {
+        if (glucosamineTargetBreeds.some(b => petBreedLower.includes(b))) { score += 2; smartTag = 'מומלץ במיוחד לגולדנים ולברדורים – נטייה גנטית לדיספלזיה'; }
+      }
+      if (productText.includes('slow feed') || productText.includes('האכלה איטית') || productText.includes('anti-gulp') || productText.includes('אנטי גלופ')) {
+        if (slowFeederTargetBreeds.some(b => petBreedLower.includes(b))) { score += 2; smartTag = 'מומלץ לגזעי חזה עמוק – מפחית סיכון להיפוך קיבה (GDV)'; }
+      }
+      if (productText.includes('hypoallergenic') || productText.includes('היפואלרגני')) {
+        if (hypoTargetBreeds.some(b => petBreedLower.includes(b))) { score += 2; smartTag = 'מותאם לגזעים עם נטייה לאלרגיות עור כרוניות'; }
+      }
+
+      // ── Build "Why for your Breed" explanation ──
+      let whyForBreed: string | null = null;
+      const breedDisplayName = breedInfo?.breed_name_he || pet.breed || '';
+      if (matchReasons.length > 0) {
+        const whyMap: Record<string, string> = {
+          joint_support: `ל${breedDisplayName} נטייה גנטית לדיספלזיה של מפרקי הירך והמרפק. גלוקוזאמין ו-EPA/DHA תומכים בסחוס ומפחיתים דלקות מפרקים.`,
+          dental_care: `ל${breedDisplayName} פה קטן עם צפיפות שיניים, מה שמוביל להצטברות אבנית מוגברת. מוצרי דנטל מסייעים בשמירה על היגיינת הפה.`,
+          brachy_friendly: `ל${breedDisplayName} לסת קצרה ומבנה גולגולת שטוח, מה שמקשה על לקיחת מזון רגיל. קיבל קטן ושטוח מותאם לאכילה נוחה.`,
+          brachy_skin: `ל${breedDisplayName} עור רגיש וקפלי עור שנוטים לזיהומים. מוצרים היפואלרגניים מפחיתים גירוי ומחזקים את מחסום העור.`,
+          bloat_prevention: `ל${breedDisplayName} חזה עמוק ובטן צרה – מבנה אנטומי שמגביר את הסיכון להיפוך קיבה (GDV). האכלה איטית מפחיתה סיכון זה משמעותית.`,
+          white_coat_care: `ל${breedDisplayName} פרווה בהירה שנוטה לכתמי דמעות ושינוי צבע. מוצרי הלבנה וטיפוח מותאמים שומרים על פרווה לבנה ונקייה.`,
+          coat_care: `ל${breedDisplayName} פרווה ארוכה וצפופה שנוטה להסתבך ולהיקשר. סירוק קבוע ומוצרי טיפוח מותאמים מונעים מחצלות ונשירה יתרה.`,
+          active_recovery: `ל${breedDisplayName} צרכי אנרגיה גבוהים כגזע עבודה/ספורט. חלבון גבוה תומך בשיקום שרירים לאחר פעילות אינטנסיבית.`,
+          active_joint: `ל${breedDisplayName} עומס גבוה על המפרקים בשל פעילות אינטנסיבית. גלוקוזאמין ואומגה-3 חיוניים לשמירה על גמישות ומניעת שחיקה.`,
+          cardiac: `ל${breedDisplayName} נטייה גנטית לבעיות לב. נתרן מופחת, טאורין ואומגה-3 תומכים בתפקוד שריר הלב.`,
+          weight_control: `ניהול משקל קריטי ל${breedDisplayName} – עודף משקל מחמיר בעיות מפרקים ולב.`,
+          diabetic: `תזונה בעלת אינדקס גליקמי נמוך מסייעת בשמירה על רמת סוכר יציבה ב${breedDisplayName}.`,
+          renal: `תזונה דלת זרחן וחלבון מבוקר מפחיתה עומס על הכליות של ${breedDisplayName}.`,
+          hypoallergenic: `ל${breedDisplayName} רגישות עורית גנטית. חלבון הידרוליזד ואומגה-3 מפחיתים תגובות אלרגיות.`,
+          gastrointestinal: `ל${breedDisplayName} מערכת עיכול רגישה. רכיבים קלים לעיכול ופרה-ביוטיקה תומכים בתפקוד תקין.`,
+          low_fat_gi: `מערכת העיכול של ${breedDisplayName} דורשת מזון דל שומן עם רכיבים קלים לספיגה.`,
+        };
+        whyForBreed = whyMap[matchReasons[0]] || null;
+      }
 
       if (score > highestScore) {
         highestScore = score;
-        bestPetMatch = { petName: pet.name, petBreed: pet.breed || '', breedHe: breedInfo?.breed_name_he || null, sizeCategory, healthIssues, healthIssuesHe, isBrachy, isDeepChest, matchReasons: [...new Set(matchReasons)], dietMatches: [...new Set(dietMatches)] };
+        bestPetMatch = {
+          petName: pet.name, petBreed: pet.breed || '', breedHe: breedInfo?.breed_name_he || null,
+          sizeCategory, healthIssues, healthIssuesHe,
+          isBrachy, isDeepChest, isWhiteCoat, isLongCoat, isActiveWorking,
+          matchReasons: [...new Set(matchReasons)], dietMatches: [...new Set(dietMatches)],
+          whyForBreed, smartTag,
+        };
       }
     }
 
     if (!bestPetMatch) return null;
 
-    // Build breed-specific tips
+    // ── Build breed-specific tips ──
     const tips: { icon: string; label: string; description: string }[] = [];
     const sizeGroup = breedGroupMap[bestPetMatch.sizeCategory || ''];
     if (sizeGroup) tips.push(...sizeGroup.tips);
+
     if (bestPetMatch.isBrachy) {
-      tips.push({ icon: '👃', label: 'ידידותי לברכיצפליים', description: 'קיבל קטן וקל ללעיסה – מותאם לכלבים עם לסת קצרה' });
-      tips.push({ icon: '🌬️', label: 'תמיכה בנשימה', description: 'מומלץ להקפיד על משקל תקין למניעת החמרת קשיי נשימה' });
+      tips.push({ icon: '👃', label: 'בטיחות נשימתית', description: 'קיבל קטן ושטוח – מותאם ללסת קצרה ונשימה חופשית' });
+      tips.push({ icon: '🌬️', label: 'ניהול משקל קריטי', description: 'שמירה על משקל תקין מונעת החמרת קשיי נשימה אצל ברכיצפליים' });
     }
     if (bestPetMatch.isDeepChest) {
       tips.push({ icon: '⚠️', label: 'התראת היפוך קיבה (GDV)', description: 'מומלץ להשתמש בקערת האכלה איטית ולחלק את הארוחות ל-2-3 מנות קטנות' });
     }
+    if (bestPetMatch.isWhiteCoat) {
+      tips.push({ icon: '🤍', label: 'טיפוח פרווה לבנה', description: 'נטייה לכתמי דמעות ושינוי צבע – מוצרי הלבנה וטיפוח ייעודי' });
+      tips.push({ icon: '🧴', label: 'מניעת קרעי עור', description: 'עור רגיש שדורש מוצרים עדינים ותזונה עשירה באומגה-3' });
+    }
+    if (bestPetMatch.isLongCoat) {
+      tips.push({ icon: '✨', label: 'טיפוח פרווה ארוכה', description: 'סירוק קבוע ומוצרי התרה למניעת קשרים ומחצלות בפרווה' });
+    }
+    if (bestPetMatch.isActiveWorking) {
+      tips.push({ icon: '⚡', label: 'שיקום High-Protein', description: 'חלבון גבוה חיוני לשיקום שרירים לאחר אימונים ופעילות' });
+      tips.push({ icon: '🦴', label: 'הגנת מפרקים בפעילות', description: 'גלוקוזאמין ואומגה-3 למניעת שחיקת סחוס בגזעי עבודה' });
+    }
 
-    // Personalized greeting
+    // ── Personalized greeting ──
     const breedName = bestPetMatch.breedHe || bestPetMatch.petBreed;
     let greeting = '';
     if (bestPetMatch.matchReasons.length > 0) {
       const reasonMap: Record<string, string> = {
         cardiac: 'בריאות הלב', joint_support: 'בריאות המפרקים', weight_control: 'ניהול המשקל',
         diabetic: 'ניהול הסוכרת', renal: 'בריאות הכליות', hypoallergenic: 'העור הרגיש',
-        gastrointestinal: 'מערכת העיכול', dental_care: 'בריאות השיניים', brachy_friendly: 'הלסת הייחודית',
+        gastrointestinal: 'מערכת העיכול', dental_care: 'בריאות השיניים',
+        brachy_friendly: 'הלסת הייחודית', brachy_skin: 'העור הרגיש',
         bloat_prevention: 'בטיחות האכילה', low_fat_gi: 'מערכת העיכול',
+        white_coat_care: 'הפרווה הלבנה', coat_care: 'הפרווה הארוכה',
+        active_recovery: 'השיקום והאנרגיה', active_joint: 'הגנת המפרקים',
       };
       const mainReason = bestPetMatch.matchReasons[0];
       const reasonHe = reasonMap[mainReason] || mainReason;
@@ -6136,19 +6224,25 @@ const ProductDetail = () => {
           </motion.div>
         )}
 
-        {/* ── Breed-Specific Intelligence ── */}
+        {/* ── Breed-Specific Intelligence V15 ── */}
         {breedIntelligence && breedIntelligence.score > 0 && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
             <Card className="p-4 bg-gradient-to-br from-[hsl(45,45%,93%)] to-background border-[hsl(45,40%,60%)]/20 dark:from-[hsl(45,20%,14%)]">
-              {/* Breed Essential Badge */}
-              {breedIntelligence.isBreedEssential && (
-                <div className="flex justify-end mb-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(45,70%,50%)]/15 text-[hsl(45,70%,35%)] text-[11px] font-bold border border-[hsl(45,60%,50%)]/20">
+              {/* Breed Essential Badge + Smart Tag */}
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                {breedIntelligence.smartTag && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(200,55%,92%)]/60 text-[hsl(200,55%,35%)] text-[10px] font-medium border border-[hsl(200,50%,60%)]/20 dark:bg-[hsl(200,30%,18%)]/50 dark:text-[hsl(200,50%,70%)]">
+                    <Target className="w-3 h-3" />
+                    {breedIntelligence.smartTag}
+                  </span>
+                )}
+                {breedIntelligence.isBreedEssential && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(45,70%,50%)]/15 text-[hsl(45,70%,35%)] text-[11px] font-bold border border-[hsl(45,60%,50%)]/20 mr-auto">
                     <Sparkles className="w-3.5 h-3.5" />
                     חיוני לגזע שלך
                   </span>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Personalized Greeting */}
               {breedIntelligence.greeting && (
@@ -6160,6 +6254,17 @@ const ProductDetail = () => {
                     <p className="text-[12px] font-bold text-foreground">🐾 המלצה מותאמת ל{breedIntelligence.petName}</p>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">{breedIntelligence.greeting}</p>
                   </div>
+                </div>
+              )}
+
+              {/* ── "Why for your Breed" Box ── */}
+              {breedIntelligence.whyForBreed && (
+                <div className="mt-2 mb-3 p-3 rounded-xl bg-[hsl(45,30%,96%)]/60 border border-[hsl(45,35%,70%)]/15 dark:bg-[hsl(45,15%,12%)]/60">
+                  <p className="text-[11px] font-bold text-[hsl(45,50%,35%)] dark:text-[hsl(45,40%,65%)] mb-1 flex items-center gap-1.5">
+                    <Stethoscope className="w-3.5 h-3.5" />
+                    למה מתאים לגזע שלך?
+                  </p>
+                  <p className="text-[11px] text-foreground leading-relaxed">{breedIntelligence.whyForBreed}</p>
                 </div>
               )}
 
@@ -6197,6 +6302,36 @@ const ProductDetail = () => {
                   <span className="text-lg">⚠️</span>
                   <p className="text-[11px] text-foreground font-medium">
                     התראת היפוך קיבה (GDV) – חלקו את המנה ל-2-3 ארוחות והשתמשו בקערת האכלה איטית
+                  </p>
+                </div>
+              )}
+
+              {/* Brachy Respiratory Alert */}
+              {breedIntelligence.isBrachy && (
+                <div className="flex items-center gap-2 mt-3 p-2.5 rounded-lg bg-[hsl(200,50%,92%)]/50 border border-[hsl(200,40%,60%)]/20 dark:bg-[hsl(200,25%,15%)]/50">
+                  <span className="text-lg">👃</span>
+                  <p className="text-[11px] text-foreground font-medium">
+                    גזע ברכיצפלי – הקפידו על משקל תקין, קיבל קטן ומנוחה בחום. הימנעו ממאמץ מוגזם.
+                  </p>
+                </div>
+              )}
+
+              {/* White/Long Coat Alert */}
+              {breedIntelligence.isWhiteCoat && (
+                <div className="flex items-center gap-2 mt-3 p-2.5 rounded-lg bg-[hsl(280,30%,93%)]/50 border border-[hsl(280,30%,70%)]/20 dark:bg-[hsl(280,20%,15%)]/50">
+                  <span className="text-lg">🤍</span>
+                  <p className="text-[11px] text-foreground font-medium">
+                    פרווה בהירה – השתמשו במוצרי הלבנה ייעודיים ובדקו כתמי דמעות באופן שוטף
+                  </p>
+                </div>
+              )}
+
+              {/* Active/Working Recovery Alert */}
+              {breedIntelligence.isActiveWorking && (
+                <div className="flex items-center gap-2 mt-3 p-2.5 rounded-lg bg-[hsl(140,40%,92%)]/50 border border-[hsl(140,35%,55%)]/20 dark:bg-[hsl(140,20%,15%)]/50">
+                  <span className="text-lg">⚡</span>
+                  <p className="text-[11px] text-foreground font-medium">
+                    גזע עבודה/ספורט – חלבון גבוה ואומגה-3 חיוניים לשיקום שרירים ומפרקים לאחר פעילות
                   </p>
                 </div>
               )}
