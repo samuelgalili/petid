@@ -28,6 +28,7 @@ import { MedicalPharmacy } from "@/components/shop/MedicalPharmacy";
 import { SubscribeAndSave } from "@/components/shop/SubscribeAndSave";
 import { checkProductSafety, SafetyBadge } from "@/components/shop/ShopSafetyFilter";
 import { useActivePet } from "@/hooks/useActivePet";
+import { FleetSafetyAlert } from "@/components/fleet/FleetSafetyAlert";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -537,6 +538,9 @@ const Shop = () => {
           </div>
         </div>
       </div>
+
+      {/* Fleet Safety Alert — Cross-Pet Medical Banner */}
+      <FleetSafetyAlert />
 
       {/* Instagram-style Category Carousels */}
       <div className="max-w-lg mx-auto pb-24">
