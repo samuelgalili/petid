@@ -3,7 +3,7 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Settings, Edit3, ChevronDown, ChevronLeft, Shield, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell } from "lucide-react";
+import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Shield, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -373,16 +373,14 @@ const Profile = () => {
           </div>
           
           <div className="flex items-center gap-1">
+            {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
+                <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              </button>}
             <button onClick={() => navigate('/messages')} className="p-2 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
-            {isAdmin ? <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
-                <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
-              </button> : <button onClick={() => navigate('/edit-profile')} className="p-2" aria-label="עריכת פרופיל">
-                <Edit3 className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-              </button>}
-            <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2" aria-label="הגדרות">
-              <Settings className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2" aria-label="תפריט">
+              <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
           </div>
         </motion.div>
