@@ -15,7 +15,8 @@ import {
   Volume2, Gift, Gamepad2, BedDouble, Music, Siren,
   Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed,
   Layers, Magnet, MapPin, Footprints, SprayCan, Users, TreePine, EyeOff,
-  Fish, Salad, HeartPulse, Thermometer, Activity, Pill, Syringe, ShieldPlus
+  Fish, Salad, HeartPulse, Thermometer, Activity, Pill, Syringe, ShieldPlus,
+  Luggage, Fan, Link2, Backpack, FoldVertical as FoldIcon, WashingMachine as WashIcon, Plane
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -152,6 +153,64 @@ const extractOmegaFeatures = (product: any): {
   crossSellHints.push('תמיכה טבעית נוגדת דלקת – משלים מצוין לתוספי מפרקים');
 
   return { benefits, servingSuggestion, purityBadge, isMultiPet, lifeStageTags, crossSellHints };
+};
+
+/** Check if product is a travel carrier */
+const isTravelCarrierProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'carriers' || cat === 'travel' || cat === 'carrier' || cat === 'backpack' ||
+    text.includes('carrier') || text.includes('נשיאה') || text.includes('travel bag') || text.includes('תיק נסיעות') ||
+    text.includes('backpack') || text.includes('גב') || text.includes('תיק לחיות') ||
+    (text.includes('expandable') && (text.includes('pet') || text.includes('dog') || text.includes('cat')));
+};
+
+/** Extract travel carrier features */
+const extractCarrierFeatures = (product: any): {
+  readinessChecklist: { icon: React.ReactNode; title: string; description: string; color: string }[];
+  maxWeightKg: number | null;
+  dimensions: string | null;
+  targetPets: string;
+  isExpandable: boolean;
+  isWashable: boolean;
+  hasHardBottom: boolean;
+  proTip: string;
+  crossSellHints: string[];
+} => {
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const allText = text + ' ' + JSON.stringify(attrs).toLowerCase();
+
+  const readinessChecklist: { icon: React.ReactNode; title: string; description: string; color: string }[] = [];
+  readinessChecklist.push({ icon: <Fan className="w-5 h-5" />, title: 'אוורור 360°', description: 'אוורור מיטבי מכל הצדדים לנשימה חופשית', color: 'hsl(200,60%,45%)' });
+  readinessChecklist.push({ icon: <Link2 className="w-5 h-5" />, title: 'רצועת בטיחות פנימית', description: 'למניעת בריחה בזמן נסיעה', color: 'hsl(0,55%,50%)' });
+  readinessChecklist.push({ icon: <Backpack className="w-5 h-5" />, title: 'רצועת כתף מתכווננת', description: 'נוחות מרבית לבעלים בנשיאה ממושכת', color: 'hsl(270,50%,55%)' });
+  readinessChecklist.push({ icon: <FoldIcon className="w-5 h-5" />, title: 'מתקפל שטוח', description: 'אחסון קל כשלא בשימוש', color: 'hsl(140,50%,40%)' });
+
+  // Extract weight limit
+  let maxWeightKg: number | null = null;
+  const kgMatch = allText.match(/(?:up to|עד|max|מקסימום)\s*(\d+(?:\.\d+)?)\s*(?:kg|ק"ג|קג|ק״ג)/i);
+  const lbsMatch = allText.match(/(?:up to|עד|max)\s*(\d+(?:\.\d+)?)\s*(?:lbs?|pounds?)/i);
+  if (kgMatch) maxWeightKg = parseFloat(kgMatch[1]);
+  else if (lbsMatch) maxWeightKg = Math.round(parseFloat(lbsMatch[1]) * 0.453592 * 10) / 10;
+  else if (attrs.max_weight_kg) maxWeightKg = parseFloat(attrs.max_weight_kg);
+  if (!maxWeightKg) maxWeightKg = 7;
+
+  // Dimensions
+  let dimensions: string | null = null;
+  const dimMatch = allText.match(/(\d+)\s*[x×]\s*(\d+)\s*[x×]\s*(\d+)\s*(?:cm|ס"מ|סמ)/i);
+  if (dimMatch) dimensions = `${dimMatch[1]}×${dimMatch[2]}×${dimMatch[3]} ס"מ`;
+  else if (attrs.dimensions) dimensions = String(attrs.dimensions);
+
+  const targetPets = allText.includes('cat') || allText.includes('חתול') ? 'כלבים קטנים וחתולים' : 'כלבים קטנים';
+  const isExpandable = allText.includes('expand') || allText.includes('מתרחב') || allText.includes('הרחבה');
+  const isWashable = allText.includes('washable') || allText.includes('רחיץ') || allText.includes('ניקוי');
+  const hasHardBottom = allText.includes('hard bottom') || allText.includes('תחתית קשיחה') || allText.includes('sturdy base') || allText.includes('rigid');
+
+  const proTip = 'בנסיעה בתחבורה ציבורית, שמרו על הצדדים המתרחבים סגורים ליציבות. פתחו אותם רק במצב מנוחה.';
+  const crossSellHints = ['הוסיפו בקבוק מים לנסיעות לשתייה נוחה בדרך', 'חטיף מרגיע קטן יהפוך את הנסיעה לחוויה רגועה יותר'];
+
+  return { readinessChecklist, maxWeightKg, dimensions, targetPets, isExpandable, isWashable, hasHardBottom, proTip, crossSellHints };
 };
 
 /** Check if product is a joint supplement */
@@ -1777,6 +1836,8 @@ const ProductDetail = () => {
   const jointFeatures = useMemo(() => product && isJointSupplement ? extractJointSupplementFeatures(product) : { ingredients: [], dosagePhases: [], mobilityBenefits: [], humanComparison: null, insuranceTip: null }, [product, isJointSupplement]);
   const isOmegaLiquid = useMemo(() => product ? isOmegaLiquidProduct(product) : false, [product]);
   const omegaFeatures = useMemo(() => product && isOmegaLiquid ? extractOmegaFeatures(product) : { benefits: [], servingSuggestion: '', purityBadge: null, isMultiPet: false, lifeStageTags: [], crossSellHints: [] }, [product, isOmegaLiquid]);
+  const isTravelCarrier = useMemo(() => product ? isTravelCarrierProduct(product) : false, [product]);
+  const carrierFeatures = useMemo(() => product && isTravelCarrier ? extractCarrierFeatures(product) : { readinessChecklist: [], maxWeightKg: null, dimensions: null, targetPets: '', isExpandable: false, isWashable: false, hasHardBottom: false, proTip: '', crossSellHints: [] }, [product, isTravelCarrier]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -4614,6 +4675,140 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {omegaFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Travel Carrier: Expandable Badge ── */}
+        {isTravelCarrier && carrierFeatures.isExpandable && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(260,45%,92%)] to-background border-[hsl(260,35%,60%)]/20 dark:from-[hsl(260,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(260,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Maximize2 className="w-5 h-5 text-[hsl(260,50%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🧳 עיצוב מתרחב חכם</p>
+                  <p className="text-[11px] text-muted-foreground">התיק מתרחב בקלות כדי לספק יותר מרחב מנוחה לחיית המחמד שלכם</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Travel Carrier: Readiness Checklist ── */}
+        {isTravelCarrier && carrierFeatures.readinessChecklist.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Plane className="w-4 h-4 text-[hsl(200,60%,50%)]" />
+                ✈️ צ'קליסט מוכנות לנסיעה
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                {carrierFeatures.readinessChecklist.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.24 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg p-3"
+                    style={{ backgroundColor: `${item.color}10` }}
+                  >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${item.color}20`, color: item.color }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{item.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Travel Carrier: Capacity & Dimensions ── */}
+        {isTravelCarrier && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Ruler className="w-4 h-4 text-[hsl(35,60%,45%)]" />
+                📐 מידות וקיבולת
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {carrierFeatures.maxWeightKg && (
+                  <div className="rounded-lg bg-muted/30 p-3 text-center">
+                    <p className="text-[10px] text-muted-foreground mb-1">משקל מקסימלי</p>
+                    <p className="text-lg font-black text-primary">{carrierFeatures.maxWeightKg} ק"ג</p>
+                  </div>
+                )}
+                {carrierFeatures.dimensions && (
+                  <div className="rounded-lg bg-muted/30 p-3 text-center">
+                    <p className="text-[10px] text-muted-foreground mb-1">מידות (סגור)</p>
+                    <p className="text-[13px] font-bold text-foreground">{carrierFeatures.dimensions}</p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-[11px] border-[hsl(200,40%,55%)]/30 text-[hsl(200,40%,45%)]">
+                  🐾 {carrierFeatures.targetPets}
+                </Badge>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Travel Carrier: Maintenance Card ── */}
+        {isTravelCarrier && (carrierFeatures.isWashable || carrierFeatures.hasHardBottom) && (
+          <motion.div className="mx-4 mt-3 flex flex-wrap gap-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}>
+            {carrierFeatures.isWashable && (
+              <Badge variant="outline" className="text-[11px] border-[hsl(200,40%,55%)]/30 text-[hsl(200,40%,45%)] bg-[hsl(200,40%,92%)]/30 dark:bg-[hsl(200,25%,15%)]/40">
+                🧼 חומר רחיץ וקל לניקוי
+              </Badge>
+            )}
+            {carrierFeatures.hasHardBottom && (
+              <Badge variant="outline" className="text-[11px] border-[hsl(35,40%,55%)]/30 text-[hsl(35,40%,45%)] bg-[hsl(35,40%,92%)]/30 dark:bg-[hsl(35,25%,15%)]/40">
+                🪨 תחתית קשיחה ליציבות
+              </Badge>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── Travel Carrier: Pro Tip ── */}
+        {isTravelCarrier && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(45,55%,92%)] to-background border-[hsl(45,45%,60%)]/20 dark:from-[hsl(45,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(45,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-5 h-5 text-[hsl(45,70%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">💡 Pro Tip</p>
+                  <p className="text-[11px] text-muted-foreground">{carrierFeatures.proTip}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Travel Carrier: Cross-Sell ── */}
+        {isTravelCarrier && carrierFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.56 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                🎒 השלימו את ערכת הנסיעה
+              </h3>
+              <div className="space-y-1.5">
+                {carrierFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
