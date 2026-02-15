@@ -57,6 +57,7 @@ import {
   Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { PetOMeter } from "@/components/admin/PetOMeter";
 import { format, subDays, startOfDay, endOfDay, parseISO, differenceInDays } from "date-fns";
 import { he } from "date-fns/locale";
 
@@ -514,6 +515,9 @@ const AdminGrowo = () => {
                 </>
               )}
             </div>
+
+            {/* Pet-O-Meter */}
+            <PetOMeter />
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
