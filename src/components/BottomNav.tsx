@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { CreateStoryDialog } from "@/components/CreateStoryDialog";
+import { EmergencySOSButton } from "@/components/emergency/EmergencySOSButton";
+import { EmergencyHub } from "@/components/emergency/EmergencyHub";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -78,6 +80,7 @@ const BottomNav = () => {
   const [showUploadMenu, setShowUploadMenu] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showCreateStory, setShowCreateStory] = useState(false);
+  const [showEmergencyHub, setShowEmergencyHub] = useState(false);
   const { unreadCount } = useRealtimeNotifications();
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
@@ -133,6 +136,10 @@ const BottomNav = () => {
 
   return (
     <>
+      {/* Emergency SOS Button */}
+      <EmergencySOSButton onClick={() => setShowEmergencyHub(true)} />
+      <EmergencyHub open={showEmergencyHub} onOpenChange={setShowEmergencyHub} />
+
       {/* Upload Menu Overlay */}
       <AnimatePresence>
         {showUploadMenu && (
