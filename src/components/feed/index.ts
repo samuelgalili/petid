@@ -16,3 +16,6 @@ export { DailyStreak } from './DailyStreak';
 export { FeedOnboarding } from './FeedOnboarding';
 export { SocialProofLabel } from './SocialProofLabel';
 export { SoundtrackPostCard } from './SoundtrackPostCard';
+export { DailyInsightCard } from './DailyInsightCard';
+export { ConsultAIButton } from './ConsultAIButton';
+export { LocalEventsCard } from './LocalEventsCard';
