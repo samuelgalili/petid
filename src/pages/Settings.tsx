@@ -97,7 +97,7 @@ const Settings = () => {
           icon: User,
           label: t("settings.profile"),
           description: t("settings.profileDesc"),
-          action: () => navigate("/profile"),
+          action: () => navigate("/"),
           type: "link",
         },
         {
@@ -331,7 +331,7 @@ const Settings = () => {
                 variant="outline"
                 size="sm"
                 className="rounded-xl border-border text-foreground hover:bg-muted font-medium px-4"
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate("/")}
               >
                 {t("settings.edit")}
               </Button>

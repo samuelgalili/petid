@@ -159,7 +159,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               
               {user ? (
                 <button 
-                  onClick={() => handleNavigation("/profile")}
+                  onClick={() => handleNavigation("/")}
                   className="flex items-center gap-4 w-full"
                 >
                   <Avatar className="w-16 h-16 ring-2 ring-border">
