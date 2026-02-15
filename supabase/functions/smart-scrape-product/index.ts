@@ -1,0 +1,210 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { url } = await req.json();
+    if (!url) {
+      return new Response(JSON.stringify({ success: false, error: "URL is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+    if (!FIRECRAWL_API_KEY) {
+      return new Response(JSON.stringify({ success: false, error: "Firecrawl not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ success: false, error: "AI key not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Step 1: Scrape with Firecrawl ──
+    console.log("Scraping URL:", url);
+    const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        formats: ["markdown", "html", "links"],
+        onlyMainContent: false,
+        waitFor: 3000,
+      }),
+    });
+
+    const scrapeData = await scrapeRes.json();
+    if (!scrapeRes.ok || !scrapeData.success) {
+      console.error("Firecrawl error:", scrapeData);
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to scrape page: " + (scrapeData.error || scrapeRes.status) }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+    const html = scrapeData.data?.html || scrapeData.html || "";
+    const metadata = scrapeData.data?.metadata || scrapeData.metadata || {};
+
+    // Extract main image from HTML
+    const ogImage = metadata?.ogImage || metadata?.["og:image"] || "";
+    const imageMatch = html.match(/<img[^>]+class="[^"]*(?:wp-post-image|woocommerce-product-gallery__image|product-image)[^"]*"[^>]+src="([^"]+)"/i)
+      || html.match(/<div[^>]+class="[^"]*woocommerce-product-gallery[^"]*"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/i)
+      || html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
+    const mainImage = ogImage || (imageMatch ? imageMatch[1] : "");
+
+    console.log("Scraped successfully, markdown length:", markdown.length, "image:", mainImage ? "found" : "none");
+
+    // ── Step 2: Send to LLM for structured extraction ──
+    const extractionPrompt = `You are a product data extraction specialist for a pet food e-commerce platform.
+
+Analyze the following scraped product page content and extract ALL data into the exact JSON structure below.
+
+RULES:
+- Extract EXACTLY what is on the page. Do NOT invent or hallucinate data.
+- For Hebrew text, keep it in Hebrew.
+- For the feeding_guide, extract EVERY row from any feeding table/chart found. Format each as { "range": "weight range text", "amount": "daily amount text" }.
+- For ingredients, extract the FULL ingredients list as a single string.
+- For benefits, extract health benefits as an array of objects: [{ "title": "benefit name", "description": "short description" }].
+- For product_attributes, extract any nutritional analysis values (protein %, fat %, fiber %, moisture %, ash %, etc.) as key-value pairs.
+- For category, detect one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories. Use null if unclear.
+- For pet_type, detect: dog, cat, or all.
+- For life_stage: puppy, kitten, adult, senior, all. Use null if unclear.
+- For dog_size: small, medium, large, all. Use null if unclear.
+- brand: Extract the brand/manufacturer name.
+- special_diet: Array of dietary features like ["grain-free", "hypoallergenic", "high-protein"].
+
+Return ONLY valid JSON, no markdown fences, no explanation.
+
+JSON STRUCTURE:
+{
+  "name": "string",
+  "brand": "string or null",
+  "price": number or 0,
+  "sale_price": number or null,
+  "original_price": number or null,
+  "description": "string",
+  "ingredients": "string or null",
+  "benefits": [{"title":"string","description":"string"}],
+  "feeding_guide": [{"range":"string","amount":"string"}],
+  "product_attributes": {"protein_pct": number, "fat_pct": number, ...},
+  "category": "string or null",
+  "pet_type": "string",
+  "life_stage": "string or null",
+  "dog_size": "string or null",
+  "special_diet": ["string"],
+  "sku": "string or null",
+  "weight_text": "string or null"
+}
+
+PAGE CONTENT:
+${markdown.slice(0, 12000)}`;
+
+    console.log("Sending to AI for extraction...");
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "user", content: extractionPrompt },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!aiRes.ok) {
+      const errText = await aiRes.text();
+      console.error("AI error:", aiRes.status, errText);
+      if (aiRes.status === 429) {
+        return new Response(JSON.stringify({ success: false, error: "Rate limit exceeded, try again shortly" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (aiRes.status === 402) {
+        return new Response(JSON.stringify({ success: false, error: "AI credits exhausted" }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ success: false, error: "AI extraction failed" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const aiData = await aiRes.json();
+    const rawContent = aiData.choices?.[0]?.message?.content || "";
+
+    // Parse the JSON from LLM response (strip markdown fences if any)
+    let extracted: any;
+    try {
+      const jsonStr = rawContent.replace(/```json?\s*/g, "").replace(/```/g, "").trim();
+      extracted = JSON.parse(jsonStr);
+    } catch (parseErr) {
+      console.error("Failed to parse AI response:", rawContent.slice(0, 500));
+      return new Response(
+        JSON.stringify({ success: false, error: "AI returned invalid JSON", raw: rawContent.slice(0, 1000) }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── Step 3: Assemble final result ──
+    const result = {
+      name: extracted.name || metadata?.title || "",
+      brand: extracted.brand || null,
+      price: extracted.price || 0,
+      sale_price: extracted.sale_price || null,
+      original_price: extracted.original_price || null,
+      description: extracted.description || "",
+      image_url: mainImage || "/placeholder.svg",
+      images: mainImage ? [mainImage] : [],
+      sku: extracted.sku || null,
+      source_url: url,
+      category: extracted.category || null,
+      pet_type: extracted.pet_type || "all",
+      ingredients: extracted.ingredients || null,
+      benefits: Array.isArray(extracted.benefits) ? extracted.benefits : [],
+      feeding_guide: Array.isArray(extracted.feeding_guide) ? extracted.feeding_guide : [],
+      product_attributes: extracted.product_attributes || {},
+      life_stage: extracted.life_stage || null,
+      dog_size: extracted.dog_size || null,
+      special_diet: Array.isArray(extracted.special_diet) ? extracted.special_diet : [],
+      weight_text: extracted.weight_text || null,
+      needs_review: !extracted.ingredients,
+      review_reasons: !extracted.ingredients ? ["missing_ingredients"] : [],
+    };
+
+    console.log("Extraction complete:", result.name, "| benefits:", result.benefits.length, "| feeding rows:", result.feeding_guide.length);
+
+    return new Response(JSON.stringify({ success: true, data: result }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("smart-scrape-product error:", err);
+    return new Response(
+      JSON.stringify({ success: false, error: err instanceof Error ? err.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
