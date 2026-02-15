@@ -13,7 +13,8 @@ import {
   Target, CircleDot, ArrowDownToLine, Armchair, Weight, Lock, DoorOpen,
   Maximize2, FoldVertical, Trash2, PawPrint, ThumbsUp, Box,
   Volume2, Gift, Gamepad2, BedDouble, Music, Siren,
-  Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed
+  Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed,
+  Layers, Magnet, MapPin, Footprints
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -1046,6 +1047,81 @@ const extractPuzzleEnrichmentFeatures = (product: any): {
   return { isStuffable, mentalStimulation, recipe, materialSpec, hasErraticBounce, chewResistance, expertApproval, crossSellKeywords };
 };
 
+/** Check if product is a potty training / hygiene pad product */
+const isPottyTrainingProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''}`.toLowerCase();
+  return cat === 'potty-training' || cat === 'training-pads' || cat === 'hygiene-pads' ||
+    text.includes('training pad') || text.includes('puppy pad') || text.includes('pee pad') ||
+    text.includes('פד אילוף') || text.includes('פדים') || text.includes('רפידות') || text.includes('רפידה') ||
+    text.includes('potty') || text.includes('wee-wee') || text.includes('absorbent pad') ||
+    (text.includes('pad') && (text.includes('absorb') || text.includes('leak') || text.includes('ספיגה')));
+};
+
+/** Extract potty training features */
+const extractPottyTrainingFeatures = (product: any): {
+  absorbencyBadge: string | null;
+  layerCount: number | null;
+  hasAttractant: boolean;
+  hasOdorNeutralizer: boolean;
+  trainingSteps: { step: number; title: string; description: string }[];
+  dimensions: string | null;
+  quantity: string | null;
+  expertTip: string;
+  crossSellKeyword: string | null;
+} => {
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText + ' ' + JSON.stringify(attrs).toLowerCase();
+
+  // Absorbency
+  let absorbencyBadge: string | null = null;
+  const cupMatch = allText.match(/(\d+)\s*cups?/i);
+  if (cupMatch) absorbencyBadge = `ספיגה מוגברת של עד ${cupMatch[1]} כוסות נוזל`;
+  else if (allText.includes('super absorb') || allText.includes('ספיגה')) absorbencyBadge = 'ספיגה מוגברת';
+
+  // Layer count
+  let layerCount: number | null = null;
+  const layerMatch = allText.match(/(\d+)[\s-]*layer/i);
+  if (layerMatch) layerCount = parseInt(layerMatch[1]);
+  else if (allText.includes('5 layer') || allText.includes('5-layer')) layerCount = 5;
+
+  const hasAttractant = allText.includes('attractant') || allText.includes('חומר משיכה') || allText.includes('attract');
+  const hasOdorNeutralizer = allText.includes('odor') || allText.includes('ריח') || allText.includes('neutraliz') || allText.includes('מנטרל');
+
+  // Training steps
+  const trainingSteps = [
+    { step: 1, title: 'פרוס והנח', description: 'פתח את הרפידה והנח על הרצפה – הצד הכחול כלפי מטה' },
+    { step: 2, title: 'בחר מיקום', description: 'הרחק ממקום השינה והאוכל – פינה שקטה ונגישה' },
+    { step: 3, title: 'חיזוק חיובי', description: 'הבא את הגור להריח את הרפידה – עודד אותו להשתמש בה' },
+    { step: 4, title: 'פרס על הצלחה', description: 'שבח והענק חטיף מיד לאחר שימוש נכון!' },
+  ];
+
+  // Dimensions
+  let dimensions: string | null = null;
+  const dimMatch = allText.match(/(\d+)["״]\s*x\s*(\d+)["״]/i);
+  if (dimMatch) {
+    const w = parseInt(dimMatch[1]);
+    const h = parseInt(dimMatch[2]);
+    dimensions = `${w}" x ${h}" (כ-${Math.round(w * 2.54)}x${Math.round(h * 2.54)} ס"מ)`;
+  }
+
+  // Quantity
+  let quantity: string | null = null;
+  const qtyMatch = allText.match(/(\d+)\s*(?:pads?|count|pack|רפידות|יחידות)/i);
+  if (qtyMatch) quantity = `${qtyMatch[1]} רפידות באריזה`;
+
+  const expertTip = 'עקביות היא המפתח! הזיזו את הרפידה לאט לאט לכיוון הדלת – כך הגור ילמד בהדרגה לצאת החוצה לצרכים.';
+
+  // Cross-sell
+  const brand = (product.brand || '').toLowerCase();
+  const crossSellKeyword = brand ? `${product.brand} Treats` : 'חטיפי אילוף';
+
+  return { absorbencyBadge, layerCount, hasAttractant, hasOdorNeutralizer, trainingSteps, dimensions, quantity, expertTip, crossSellKeyword };
+};
+
 /** Check if product is an interactive plush / teething toy */
 const isPlushToyProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -1426,6 +1502,8 @@ const ProductDetail = () => {
   const medicalFeatures = useMemo(() => product && isMedicalProtection ? extractMedicalProtectionFeatures(product) : { protectionDuration: null, safetyAlerts: [], activeIngredients: [], featureIcons: [], applicationSteps: [], brandAuthority: null }, [product, isMedicalProtection]);
   const isPuzzleEnrichment = useMemo(() => product ? isPuzzleEnrichmentProduct(product) : false, [product]);
   const puzzleFeatures = useMemo(() => product && isPuzzleEnrichment ? extractPuzzleEnrichmentFeatures(product) : { isStuffable: false, mentalStimulation: '', recipe: null, materialSpec: null, hasErraticBounce: false, chewResistance: null, expertApproval: false, crossSellKeywords: [] }, [product, isPuzzleEnrichment]);
+  const isPottyTraining = useMemo(() => product ? isPottyTrainingProduct(product) : false, [product]);
+  const pottyFeatures = useMemo(() => product && isPottyTraining ? extractPottyTrainingFeatures(product) : { absorbencyBadge: null, layerCount: null, hasAttractant: false, hasOdorNeutralizer: false, trainingSteps: [], dimensions: null, quantity: null, expertTip: '', crossSellKeyword: null }, [product, isPottyTraining]);
   const isPlushToy = useMemo(() => product ? isPlushToyProduct(product) : false, [product]);
   const plushFeatures = useMemo(() => product && isPlushToy ? extractPlushToyFeatures(product) : { sensoryFeatures: [], durabilityHighlights: [], usageScenarios: [], safetyEducation: [], isGiftWorthy: false }, [product, isPlushToy]);
   const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
@@ -3282,6 +3360,151 @@ const ProductDetail = () => {
                 <div>
                   <p className="text-[13px] font-bold text-foreground">✅ מומלץ ע"י וטרינרים ומאלפים</p>
                   <p className="text-[10px] text-muted-foreground">מוצר מאושר ע"י מומחים ברחבי העולם</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Training: Absorbency Badge ── */}
+        {isPottyTraining && pottyFeatures.absorbencyBadge && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(200,70%,92%)] to-background border-[hsl(200,55%,60%)]/20 dark:from-[hsl(200,35%,14%)] dark:border-[hsl(200,35%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[hsl(200,60%,80%)]/25 flex items-center justify-center flex-shrink-0">
+                  <Droplets className="w-6 h-6 text-[hsl(200,65%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-foreground">💧 {pottyFeatures.absorbencyBadge}</p>
+                  {pottyFeatures.layerCount && (
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Layers className="w-3 h-3" />
+                      טכנולוגיית {pottyFeatures.layerCount} שכבות אנטי-דליפה
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Training: Attractant & Odor Tech ── */}
+        {isPottyTraining && (pottyFeatures.hasAttractant || pottyFeatures.hasOdorNeutralizer) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <FlaskConical className="w-4 h-4 text-primary" />
+                טכנולוגיית ריח ומשיכה
+              </h3>
+              <div className="space-y-2">
+                {pottyFeatures.hasAttractant && (
+                  <div className="flex items-start gap-3 bg-[hsl(140,40%,92%)]/40 dark:bg-[hsl(140,25%,15%)]/50 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-[hsl(140,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                      <Magnet className="w-4 h-4 text-[hsl(140,45%,40%)]" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">חומר משיכה מובנה</p>
+                      <p className="text-[11px] text-muted-foreground">מקל על האילוף – מושך את הגור לעשות צרכים על הרפידה</p>
+                    </div>
+                  </div>
+                )}
+                {pottyFeatures.hasOdorNeutralizer && (
+                  <div className="flex items-start gap-3 bg-[hsl(260,40%,93%)]/40 dark:bg-[hsl(260,25%,15%)]/50 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-[hsl(260,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                      <Wind className="w-4 h-4 text-[hsl(260,45%,50%)]" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">מנטרל ריחות</p>
+                      <p className="text-[11px] text-muted-foreground">מרכיב פעיל שמנטרל ריחות רעים – שומר על ניקיון הבית</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Training: Dimensions & Quantity ── */}
+        {isPottyTraining && (pottyFeatures.dimensions || pottyFeatures.quantity) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <div className="grid grid-cols-2 gap-2 mx-0">
+              {pottyFeatures.dimensions && (
+                <Card className="p-3 text-center">
+                  <Ruler className="w-5 h-5 mx-auto text-primary mb-1" />
+                  <p className="text-[11px] font-bold text-foreground">גודל</p>
+                  <p className="text-[10px] text-muted-foreground">{pottyFeatures.dimensions}</p>
+                </Card>
+              )}
+              {pottyFeatures.quantity && (
+                <Card className="p-3 text-center">
+                  <Box className="w-5 h-5 mx-auto text-primary mb-1" />
+                  <p className="text-[11px] font-bold text-foreground">כמות</p>
+                  <p className="text-[10px] text-muted-foreground">{pottyFeatures.quantity}</p>
+                </Card>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Potty Training: Step-by-Step Guide ── */}
+        {isPottyTraining && pottyFeatures.trainingSteps.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Footprints className="w-4 h-4 text-primary" />
+                🐾 מדריך אילוף מהיר
+              </h3>
+              <div className="space-y-2">
+                {pottyFeatures.trainingSteps.map((step) => (
+                  <motion.div
+                    key={step.step}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.32 + step.step * 0.06 }}
+                    className="flex items-start gap-3 bg-primary/5 dark:bg-primary/10 rounded-lg p-3"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                      {step.step}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{step.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{step.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Training: Expert Tip ── */}
+        {isPottyTraining && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-4 border-[hsl(45,60%,60%)]/25 bg-[hsl(45,60%,95%)]/30 dark:bg-[hsl(45,30%,12%)]/40">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(45,60%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-5 h-5 text-[hsl(45,70%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">💡 טיפ מקצועי: עקביות היא המפתח!</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{pottyFeatures.expertTip}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Training: Cross-Sell ── */}
+        {isPottyTraining && pottyFeatures.crossSellKeyword && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(140,40%,93%)] to-background border-[hsl(140,35%,60%)]/20 dark:from-[hsl(140,25%,14%)]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-[hsl(140,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Cookie className="w-5 h-5 text-[hsl(140,45%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">🎁 השלימו את האילוף!</p>
+                  <p className="text-[10px] text-muted-foreground">חפשו "{pottyFeatures.crossSellKeyword}" כפרס מושלם לאחר הצלחה</p>
                 </div>
               </div>
             </Card>
