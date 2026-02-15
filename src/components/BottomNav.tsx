@@ -209,18 +209,18 @@ const BottomNav = () => {
             showPill={false}
             icon={
               <div className={cn(
-                "rounded-full p-[2.5px] transition-all",
+                "rounded-full p-[3px] transition-all -mt-5",
                 isActive("/")
-                  ? "bg-gradient-to-tr from-primary via-accent to-primary ring-1 ring-primary/30"
-                  : ""
+                  ? "bg-gradient-to-tr from-primary via-accent to-primary ring-2 ring-primary/30 shadow-lg shadow-primary/20"
+                  : "ring-2 ring-border"
               )}>
                 <Avatar className={cn(
-                  "rounded-full border-2 border-background transition-all",
-                  isActive("/") ? "w-8 h-8" : "w-7 h-7"
+                  "rounded-full border-[3px] border-background transition-all",
+                  isActive("/") ? "w-11 h-11" : "w-10 h-10"
                 )}>
                   <AvatarImage src={userAvatar} className="object-cover rounded-full" />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-[10px] rounded-full">
-                    <User className="w-3.5 h-3.5" />
+                  <AvatarFallback className="bg-muted text-muted-foreground text-xs rounded-full">
+                    <User className="w-4 h-4" />
                   </AvatarFallback>
                 </Avatar>
               </div>
