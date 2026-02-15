@@ -2375,6 +2375,173 @@ const ProductDetail = () => {
   const isCardiac = useMemo(() => product ? isCardiacProduct(product) : false, [product]);
   const cardiacFeatures = useMemo(() => product && isCardiac ? extractCardiacFeatures(product) : { heartPillars: [], fitAroma: null, gutHeart: '', conditions: [], vetWarning: '', feedingTip: '', crossSellHints: [] }, [product, isCardiac]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
+
+  // ── Breed-Specific Intelligence ──
+  const { data: userPets = [] } = useQuery({
+    queryKey: ["user-pets-for-breed-intel", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data } = await supabase
+        .from("pets")
+        .select("id, name, breed, type, size, weight, medical_conditions")
+        .eq("user_id", user.id)
+        .eq("archived", false);
+      return data || [];
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: breedDietRules = [] } = useQuery({
+    queryKey: ["breed-diet-rules"],
+    queryFn: async () => {
+      const { data } = await supabase.from("breed_disease_diet_rules").select("*");
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const { data: breedInfoForPets = [] } = useQuery({
+    queryKey: ["breed-info-for-pets", userPets.map(p => p.breed).join(",")],
+    queryFn: async () => {
+      const breeds = userPets.map(p => p.breed).filter(Boolean);
+      if (breeds.length === 0) return [];
+      const { data } = await supabase
+        .from("breed_information")
+        .select("breed_name, breed_name_he, size_category, health_issues, health_issues_he, energy_level")
+        .or(breeds.map(b => `breed_name.ilike.%${b}%,breed_name_he.ilike.%${b}%`).join(","));
+      return data || [];
+    },
+    enabled: userPets.some(p => !!p.breed),
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const breedIntelligence = useMemo(() => {
+    if (!product || userPets.length === 0) return null;
+
+    const productText = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${product.category || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+
+    // Genetic propensity mapping
+    const breedGroupMap: Record<string, { group: string; tips: { icon: string; label: string; description: string }[] }> = {
+      large: {
+        group: 'גזעים גדולים',
+        tips: [
+          { icon: '🦴', label: 'תמיכת מפרקים', description: 'גלוקוזאמין וכונדרויטין להגנה על מפרקי הירך והמרפק' },
+          { icon: '🛡️', label: 'הגנת ירך/מרפק', description: 'מומלץ מזון עם EPA/DHA לתמיכה בבריאות מפרקים' },
+        ],
+      },
+      small: {
+        group: 'גזעים קטנים',
+        tips: [
+          { icon: '🦷', label: 'טיפולי שיניים', description: 'נטייה להצטברות אבנית – מומלץ חטיפי דנטל וקיבל קטן' },
+          { icon: '❤️', label: 'תמיכת לב', description: 'גזעים קטנים נוטים לבעיות מסתמים – Omega-3 וטאורין חשובים' },
+        ],
+      },
+      medium: {
+        group: 'גזעים בינוניים',
+        tips: [],
+      },
+    };
+
+    // Brachycephalic detection
+    const brachyBreeds = ['bulldog', 'בולדוג', 'pug', 'פאג', 'french', 'צרפתי', 'shih tzu', 'שי טסו', 'boston', 'pekingese'];
+    // Deep-chested detection
+    const deepChestBreeds = ['great dane', 'דני גדול', 'doberman', 'דוברמן', 'german shepherd', 'רועה גרמני', 'boxer', 'בוקסר', 'weimaraner', 'ויימרנר'];
+
+    let bestPetMatch: { petName: string; petBreed: string; breedHe: string | null; sizeCategory: string | null; healthIssues: string[]; healthIssuesHe: string[]; isBrachy: boolean; isDeepChest: boolean; matchReasons: string[]; dietMatches: string[] } | null = null;
+    let highestScore = 0;
+
+    for (const pet of userPets) {
+      if (pet.type !== 'dog' && pet.type !== 'כלב') continue;
+      const petBreedLower = (pet.breed || '').toLowerCase();
+      const breedInfo = breedInfoForPets.find(b =>
+        b.breed_name?.toLowerCase().includes(petBreedLower) ||
+        b.breed_name_he?.includes(pet.breed || '')
+      );
+
+      const sizeCategory = breedInfo?.size_category || pet.size || null;
+      const healthIssues: string[] = breedInfo?.health_issues || [];
+      const healthIssuesHe: string[] = (breedInfo as any)?.health_issues_he || [];
+      const isBrachy = brachyBreeds.some(b => petBreedLower.includes(b));
+      const isDeepChest = deepChestBreeds.some(b => petBreedLower.includes(b));
+
+      // Score how well this product matches this pet's needs
+      let score = 0;
+      const matchReasons: string[] = [];
+      const dietMatches: string[] = [];
+
+      // Check breed disease -> diet rules
+      for (const issue of healthIssues) {
+        const rule = breedDietRules.find(r => r.disease === issue);
+        if (rule) {
+          const requiredNutrients = rule.required_nutrients || [];
+          for (const nutrient of requiredNutrients) {
+            if (productText.includes(nutrient.replace(/_/g, ' ')) || productText.includes(nutrient.replace(/_/g, ''))) {
+              score += 2;
+              dietMatches.push(nutrient);
+            }
+          }
+          if (productText.includes(rule.diet.replace(/_/g, ' ')) || productText.includes(rule.diet)) {
+            score += 3;
+            matchReasons.push(rule.diet);
+          }
+        }
+      }
+
+      // Check pet medical conditions
+      const petConditions = pet.medical_conditions || [];
+      for (const condition of petConditions) {
+        if (productText.includes(condition.toLowerCase().replace(/_/g, ' '))) {
+          score += 2;
+          matchReasons.push(condition);
+        }
+      }
+
+      // Size-based matching
+      if (sizeCategory === 'large' && (productText.includes('large breed') || productText.includes('גזע גדול') || productText.includes('joint') || productText.includes('מפרק'))) { score += 1; matchReasons.push('joint_support'); }
+      if (sizeCategory === 'small' && (productText.includes('small breed') || productText.includes('גזע קטן') || productText.includes('dental') || productText.includes('שיני'))) { score += 1; matchReasons.push('dental_care'); }
+      if (isBrachy && (productText.includes('easy chew') || productText.includes('small kibble') || productText.includes('קיבל קטן'))) { score += 1; matchReasons.push('brachy_friendly'); }
+      if (isDeepChest && (productText.includes('slow feed') || productText.includes('האכלה איטית') || productText.includes('anti-gulp'))) { score += 2; matchReasons.push('bloat_prevention'); }
+
+      if (score > highestScore) {
+        highestScore = score;
+        bestPetMatch = { petName: pet.name, petBreed: pet.breed || '', breedHe: breedInfo?.breed_name_he || null, sizeCategory, healthIssues, healthIssuesHe, isBrachy, isDeepChest, matchReasons: [...new Set(matchReasons)], dietMatches: [...new Set(dietMatches)] };
+      }
+    }
+
+    if (!bestPetMatch) return null;
+
+    // Build breed-specific tips
+    const tips: { icon: string; label: string; description: string }[] = [];
+    const sizeGroup = breedGroupMap[bestPetMatch.sizeCategory || ''];
+    if (sizeGroup) tips.push(...sizeGroup.tips);
+    if (bestPetMatch.isBrachy) {
+      tips.push({ icon: '👃', label: 'ידידותי לברכיצפליים', description: 'קיבל קטן וקל ללעיסה – מותאם לכלבים עם לסת קצרה' });
+      tips.push({ icon: '🌬️', label: 'תמיכה בנשימה', description: 'מומלץ להקפיד על משקל תקין למניעת החמרת קשיי נשימה' });
+    }
+    if (bestPetMatch.isDeepChest) {
+      tips.push({ icon: '⚠️', label: 'התראת היפוך קיבה (GDV)', description: 'מומלץ להשתמש בקערת האכלה איטית ולחלק את הארוחות ל-2-3 מנות קטנות' });
+    }
+
+    // Personalized greeting
+    const breedName = bestPetMatch.breedHe || bestPetMatch.petBreed;
+    let greeting = '';
+    if (bestPetMatch.matchReasons.length > 0) {
+      const reasonMap: Record<string, string> = {
+        cardiac: 'בריאות הלב', joint_support: 'בריאות המפרקים', weight_control: 'ניהול המשקל',
+        diabetic: 'ניהול הסוכרת', renal: 'בריאות הכליות', hypoallergenic: 'העור הרגיש',
+        gastrointestinal: 'מערכת העיכול', dental_care: 'בריאות השיניים', brachy_friendly: 'הלסת הייחודית',
+        bloat_prevention: 'בטיחות האכילה', low_fat_gi: 'מערכת העיכול',
+      };
+      const mainReason = bestPetMatch.matchReasons[0];
+      const reasonHe = reasonMap[mainReason] || mainReason;
+      greeting = `למה זה מתאים ל${bestPetMatch.petName}? תמיכה ב${reasonHe} של ה${breedName} שלך`;
+    }
+
+    const isBreedEssential = highestScore >= 3;
+
+    return { ...bestPetMatch, tips, greeting, isBreedEssential, score: highestScore };
+  }, [product, userPets, breedInfoForPets, breedDietRules]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
     if (!product?.feeding_guide || !dogWeight) return null;
@@ -5965,6 +6132,74 @@ const ProductDetail = () => {
                   </div>
                 ))}
               </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Breed-Specific Intelligence ── */}
+        {breedIntelligence && breedIntelligence.score > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(45,45%,93%)] to-background border-[hsl(45,40%,60%)]/20 dark:from-[hsl(45,20%,14%)]">
+              {/* Breed Essential Badge */}
+              {breedIntelligence.isBreedEssential && (
+                <div className="flex justify-end mb-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[hsl(45,70%,50%)]/15 text-[hsl(45,70%,35%)] text-[11px] font-bold border border-[hsl(45,60%,50%)]/20">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    חיוני לגזע שלך
+                  </span>
+                </div>
+              )}
+
+              {/* Personalized Greeting */}
+              {breedIntelligence.greeting && (
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-[hsl(45,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                    <PawPrint className="w-5 h-5 text-[hsl(45,60%,40%)]" />
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-bold text-foreground">🐾 המלצה מותאמת ל{breedIntelligence.petName}</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{breedIntelligence.greeting}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Breed-Specific Tips */}
+              {breedIntelligence.tips.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  <p className="text-[11px] font-bold text-muted-foreground">מידע גנטי ל{breedIntelligence.breedHe || breedIntelligence.petBreed}:</p>
+                  {breedIntelligence.tips.map((tip, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 + i * 0.05 }}
+                      className="flex items-center gap-3 rounded-lg p-2.5 bg-muted/30">
+                      <span className="text-lg flex-shrink-0">{tip.icon}</span>
+                      <div>
+                        <p className="text-[12px] font-bold text-foreground">{tip.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{tip.description}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* Health Issues from Breed */}
+              {breedIntelligence.healthIssuesHe.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {breedIntelligence.healthIssuesHe.map((issue, i) => (
+                    <span key={i} className="px-2 py-1 rounded-full bg-[hsl(0,40%,90%)]/50 text-[hsl(0,45%,40%)] text-[10px] font-medium dark:bg-[hsl(0,30%,20%)]/50 dark:text-[hsl(0,40%,70%)]">
+                      ⚕️ {issue}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Deep-Chested Bloat Warning */}
+              {breedIntelligence.isDeepChest && (
+                <div className="flex items-center gap-2 mt-3 p-2.5 rounded-lg bg-[hsl(30,60%,90%)]/50 border border-[hsl(30,50%,60%)]/20 dark:bg-[hsl(30,30%,15%)]/50">
+                  <span className="text-lg">⚠️</span>
+                  <p className="text-[11px] text-foreground font-medium">
+                    התראת היפוך קיבה (GDV) – חלקו את המנה ל-2-3 ארוחות והשתמשו בקערת האכלה איטית
+                  </p>
+                </div>
+              )}
             </Card>
           </motion.div>
         )}
