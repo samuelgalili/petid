@@ -325,6 +325,7 @@ const AIControlRoom = lazy(() => import("@/pages/admin/AIControlRoom"));
 const AdminDataHub = lazy(() => import("@/pages/admin/AdminDataHub"));
 const AdminQuickImport = lazy(() => import("@/pages/admin/AdminQuickImport"));
 const AdminOCRVerification = lazy(() => import("@/pages/admin/AdminOCRVerification"));
+const AdminSmartProductEditor = lazy(() => import("@/pages/admin/AdminSmartProductEditor"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -384,6 +385,7 @@ export const adminRoutes: RouteObject[] = [
    { path: "/admin/data-hub", element: <AdminPage component={AdminDataHub} pageName="Data Hub" /> },
   { path: "/admin/quick-import", element: <AdminPage component={AdminQuickImport} pageName="ייבוא מהיר" /> },
   { path: "/admin/ocr-verification", element: <AdminPage component={AdminOCRVerification} pageName="אימות OCR" /> },
+  { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" /> },
 ];
 
 // ==========================================
