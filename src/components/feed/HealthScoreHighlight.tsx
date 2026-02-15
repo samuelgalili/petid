@@ -133,7 +133,7 @@ export const HealthScoreHighlight = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          onClick={() => navigate("/pet-profile")}
+          onClick={() => navigate("/")}
           className="mt-4 w-full py-3 rounded-xl bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/15 transition-colors"
         >
           השלם את הפרופיל שלך ← הצטרף לרשימה

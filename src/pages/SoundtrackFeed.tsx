@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBoundary";
 import { motion, AnimatePresence } from "framer-motion";
 import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
@@ -188,33 +189,55 @@ const SoundtrackFeed = () => {
         ) : (
           <>
             {/* Daily Insight — First card */}
-            {activeTab === "discover" && <DailyInsightCard />}
+            {activeTab === "discover" && (
+              <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת תובנות יומיות">
+                <DailyInsightCard />
+              </ComponentErrorBoundary>
+            )}
 
             {posts.map((post, index) => (
               <React.Fragment key={post.id}>
-                <SoundtrackPostCard
-                  post={post}
-                  index={index}
-                  currentIndex={currentIndex}
-                  muted={muted}
-                  setMuted={setMuted}
-                  onLike={handleLike}
-                  onSave={handleSave}
-                  onFollow={handleFollow}
-                  userId={userId}
-                  activePet={activePet}
-                />
+                <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת פוסט">
+                  <SoundtrackPostCard
+                    post={post}
+                    index={index}
+                    currentIndex={currentIndex}
+                    muted={muted}
+                    setMuted={setMuted}
+                    onLike={handleLike}
+                    onSave={handleSave}
+                    onFollow={handleFollow}
+                    userId={userId}
+                    activePet={activePet}
+                  />
+                </ComponentErrorBoundary>
                 {/* Inject product cards after 3rd post */}
-                {index === 2 && activeTab === "discover" && <FeedProductCards />}
+                {index === 2 && activeTab === "discover" && (
+                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת מוצרים">
+                    <FeedProductCards />
+                  </ComponentErrorBoundary>
+                )}
                 {/* Inject poll every 5th post */}
-                {index === 4 && activeTab === "discover" && <FeedPollCard />}
+                {index === 4 && activeTab === "discover" && (
+                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת סקר">
+                    <FeedPollCard />
+                  </ComponentErrorBoundary>
+                )}
                 {/* Inject health score highlight after 7th post */}
-                {index === 6 && activeTab === "discover" && <HealthScoreHighlight />}
+                {index === 6 && activeTab === "discover" && (
+                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת ציון בריאות">
+                    <HealthScoreHighlight />
+                  </ComponentErrorBoundary>
+                )}
               </React.Fragment>
             ))}
 
             {/* Local Events — After posts */}
-            {activeTab === "discover" && <LocalEventsCard />}
+            {activeTab === "discover" && (
+              <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת אירועים">
+                <LocalEventsCard />
+              </ComponentErrorBoundary>
+            )}
           </>
         )}
       </div>
