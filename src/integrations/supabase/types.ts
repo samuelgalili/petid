@@ -5887,6 +5887,36 @@ export type Database = {
           },
         ]
       }
+      pet_poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          pet_id: string
+          poll_key: string
+          selected_option: number
+          selected_text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pet_id: string
+          poll_key: string
+          selected_option: number
+          selected_text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pet_id?: string
+          poll_key?: string
+          selected_option?: number
+          selected_text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pet_service_documents: {
         Row: {
           category: string
