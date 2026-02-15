@@ -19,6 +19,8 @@ import {
   FeedOnboarding,
 } from "@/components/feed";
 import { SoundtrackPostCard } from "@/components/feed/SoundtrackPostCard";
+import { DailyInsightCard } from "@/components/feed/DailyInsightCard";
+import { LocalEventsCard } from "@/components/feed/LocalEventsCard";
 import { useSoundtrackFeed } from "@/hooks/useSoundtrackFeed";
 
 const SoundtrackFeed = () => {
@@ -178,20 +180,28 @@ const SoundtrackFeed = () => {
             </p>
           </div>
         ) : (
-          posts.map((post, index) => (
-            <SoundtrackPostCard
-              key={post.id}
-              post={post}
-              index={index}
-              currentIndex={currentIndex}
-              muted={muted}
-              setMuted={setMuted}
-              onLike={handleLike}
-              onSave={handleSave}
-              onFollow={handleFollow}
-              userId={userId}
-            />
-          ))
+          <>
+            {/* Daily Insight — First card */}
+            {activeTab === "discover" && <DailyInsightCard />}
+
+            {posts.map((post, index) => (
+              <SoundtrackPostCard
+                key={post.id}
+                post={post}
+                index={index}
+                currentIndex={currentIndex}
+                muted={muted}
+                setMuted={setMuted}
+                onLike={handleLike}
+                onSave={handleSave}
+                onFollow={handleFollow}
+                userId={userId}
+              />
+            ))}
+
+            {/* Local Events — After posts */}
+            {activeTab === "discover" && <LocalEventsCard />}
+          </>
         )}
       </div>
 

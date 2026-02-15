@@ -21,6 +21,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { ShareSheet } from "@/components/feed/ShareSheet";
+import { ConsultAIButton } from "@/components/feed/ConsultAIButton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { SocialProofLabel } from "@/components/feed";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
@@ -344,6 +345,14 @@ export const SoundtrackPostCard = ({
             {formatCount(Math.max(Math.floor(post.likes_count * 0.3), 0))}
           </span>
         </motion.button>
+
+        {/* Consult AI */}
+        <ConsultAIButton
+          postCaption={post.caption}
+          petName={undefined}
+          petBreed={undefined}
+          petType="dog"
+        />
 
         {/* Spinning disc */}
         <motion.div
