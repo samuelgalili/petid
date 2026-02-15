@@ -215,6 +215,7 @@ const MessageThread = lazy(() => import("@/pages/MessageThread"));
 const NewMessage = lazy(() => import("@/pages/NewMessage"));
 const PrivacySettings = lazy(() => import("@/pages/PrivacySettings"));
 const Chat = lazy(() => import("@/pages/Chat"));
+const OwnerProfile = lazy(() => import("@/pages/OwnerProfile"));
 
 export const userRoutes: RouteObject[] = [
   // Profile is now at root
@@ -227,6 +228,7 @@ export const userRoutes: RouteObject[] = [
   { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
   { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
   { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
+  { path: "/owner-profile", element: <Protected><LazyPage component={OwnerProfile} pageName="הפרופיל שלי" /></Protected> },
 ];
 
 // ==========================================
