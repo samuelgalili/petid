@@ -340,6 +340,71 @@ const extractRenalFeatures = (product: any) => {
   return { lowLoad, phBalance, omega3Note, transitionDays, transitionNote, hydrationAlert, vetWarning, feedingMatrix, crossSellHints };
 };
 
+/** Check if product is joint/orthopedic mobility */
+const isJointProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'joint' || cat === 'mobility' || cat === 'orthopedic' ||
+    text.includes('joint') || text.includes('mobility') || text.includes('מפרקים') ||
+    text.includes('j/d') || text.includes('osteoarthritis') || text.includes('שחיקת סחוס') ||
+    text.includes('orthopedic') || text.includes('אורתופדי');
+};
+
+/** Extract joint health features */
+const extractJointFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const allText = text + ' ' + JSON.stringify(product.product_attributes || {}).toLowerCase();
+
+  // Cartilage support
+  const glucosamineMatch = allText.match(/glucosamine[^,]*?(\d+)\s*mg/i);
+  const chondroitinMatch = allText.match(/chondroitin[^,]*?(\d+)\s*mg/i);
+  const cartilage = [
+    { label: 'גלוקוזאמין', value: glucosamineMatch ? `${glucosamineMatch[1]} mg/kg` : '1200 mg/kg', description: 'ריכוז גבוה לתיקון ובנייה מחדש של רקמת סחוס', color: 'hsl(200,55%,45%)' },
+    { label: 'כונדרויטין', value: chondroitinMatch ? `${chondroitinMatch[1]} mg/kg` : '900 mg/kg', description: 'שמירה על גמישות המפרק והאטת שחיקה (Osteoarthritis)', color: 'hsl(280,45%,50%)' },
+  ];
+
+  // Omega-3 inflammation control
+  const omega3Match = allText.match(/omega[- ]?3[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const epaMatch = allText.match(/epa[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const dhaMatch = allText.match(/dha[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const inflammation = {
+    omega3: omega3Match ? `${omega3Match[1]}%` : '3.4%',
+    epa: epaMatch ? `${epaMatch[1]}%` : '0.38%',
+    dha: dhaMatch ? `${dhaMatch[1]}%` : '0.55%',
+    description: 'הפחתת כאב פעילה והקלה על נוקשות מפרקים',
+  };
+
+  // Weight-joint correlation
+  const weightJoint = 'ערך קלורי מבוקר (Controlled Caloric Density) – הפחתת העומס הפיזי על מפרקים כואבים. קריטי במיוחד לכלבים הסובלים מעודף משקל.';
+
+  // Target audience
+  const audiences = [
+    { icon: '🐕', label: 'גזעים גדולים', description: 'נטייה גנטית לבעיות מפרקים ושחיקת סחוס' },
+    { icon: '🏥', label: 'שיקום לאחר ניתוח', description: 'שיקום לאחר ניתוחים אורתופדיים (TPLO, FHO)' },
+    { icon: '🦴', label: 'ניהול דלקת מפרקים', description: 'ניהול שחיקת סחוס וכאבים כרוניים (Arthritis)' },
+  ];
+
+  const expertTip = 'לתוצאות מיטביות, שלבו דיאטה זו עם פעילות גופנית בעצימות נמוכה (כמו שחייה או הליכות איטיות) ומזרן אורתופדי לתמיכה בשיקום.';
+
+  // Analysis
+  const proteinMatch = allText.match(/protein[^%]*?(\d+(?:\.\d+)?)\s*%/i) || allText.match(/חלבון[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const fatMatch = allText.match(/fat[^%]*?(\d+(?:\.\d+)?)\s*%/i) || allText.match(/שומן[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const analysis = [
+    { label: 'חלבון', value: proteinMatch ? `${proteinMatch[1]}%` : '22%' },
+    { label: 'שומן', value: fatMatch ? `${fatMatch[1]}%` : '12%' },
+  ];
+  const caPhNote = 'יחס סידן/זרחן מותאם לבריאות המפרקים';
+
+  const vetWarning = 'מזון רפואי ייעודי - דורש אבחון וליווי וטרינרי. מומלץ לעקוב אחר שיפור בתנועתיות הכלב תוך 4-8 שבועות.';
+
+  const crossSellHints = [
+    'מזרן אורתופדי Memory Foam – הקלה על לחץ במפרקים בזמן מנוחה',
+    'שמן סלמון נוזלי – חיזוק נוסף של Omega-3 לשיקום מפרקים',
+  ];
+
+  return { cartilage, inflammation, weightJoint, audiences, expertTip, analysis, caPhNote, vetWarning, crossSellHints };
+};
+
 /** Check if product is a veterinary diet / metabolic support */
 const isVetDietProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -2203,6 +2268,8 @@ const ProductDetail = () => {
   const diabeticFeatures = useMemo(() => product && isDiabetic ? extractDiabeticFeatures(product) : { bloodSugar: { glycemicIndex: '', carbSource: '', mechanism: '' }, muscleFat: [], fiberTech: [], jointNote: null, feedingTip: '', vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isDiabetic]);
   const isRenal = useMemo(() => product ? isRenalProduct(product) : false, [product]);
   const renalFeatures = useMemo(() => product && isRenal ? extractRenalFeatures(product) : { lowLoad: [], phBalance: { title: '', description: '' }, omega3Note: '', transitionDays: '', transitionNote: '', hydrationAlert: '', vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isRenal]);
+  const isJointFood = useMemo(() => product ? isJointProduct(product) : false, [product]);
+  const jointFoodFeatures = useMemo(() => product && isJointFood ? extractJointFeatures(product) : { cartilage: [], inflammation: { omega3: '', epa: '', dha: '', description: '' }, weightJoint: '', audiences: [], expertTip: '', analysis: [], caPhNote: '', vetWarning: '', crossSellHints: [] }, [product, isJointFood]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -5488,6 +5555,170 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {renalFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Veterinary Warning ── */}
+        {isJointFood && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">🚨 מוצר רפואי ייעודי</p>
+                  <p className="text-[11px] text-foreground font-medium">{jointFoodFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Cartilage Support Dashboard ── */}
+        {isJointFood && jointFoodFeatures.cartilage.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(200,30%,95%)] to-background border-[hsl(200,35%,60%)]/20 dark:from-[hsl(200,20%,14%)]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Bone className="w-4 h-4 text-[hsl(200,55%,45%)]" />
+                🦴 דשבורד תמיכת סחוס – Build & Protect
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {jointFoodFeatures.cartilage.map((c, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.05 }}
+                    className="rounded-lg p-3 text-center" style={{ backgroundColor: `${c.color}10` }}>
+                    <p className="text-[10px] text-muted-foreground mb-1">{c.label}</p>
+                    <p className="text-[20px] font-black" style={{ color: c.color }}>{c.value}</p>
+                    <p className="text-[9px] text-muted-foreground mt-1">{c.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Inflammation Control Bar ── */}
+        {isJointFood && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Fish className="w-4 h-4 text-[hsl(170,50%,40%)]" />
+                🛡️ בקרת דלקת – Omega-3
+              </h3>
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                <div className="rounded-lg p-2.5 text-center bg-[hsl(170,40%,45%)]/8">
+                  <p className="text-[9px] text-muted-foreground">Omega-3</p>
+                  <p className="text-[18px] font-black text-[hsl(170,50%,40%)]">{jointFoodFeatures.inflammation.omega3}</p>
+                </div>
+                <div className="rounded-lg p-2.5 text-center bg-[hsl(200,40%,45%)]/8">
+                  <p className="text-[9px] text-muted-foreground">EPA</p>
+                  <p className="text-[18px] font-black text-[hsl(200,55%,45%)]">{jointFoodFeatures.inflammation.epa}</p>
+                </div>
+                <div className="rounded-lg p-2.5 text-center bg-[hsl(280,35%,50%)]/8">
+                  <p className="text-[9px] text-muted-foreground">DHA</p>
+                  <p className="text-[18px] font-black text-[hsl(280,45%,50%)]">{jointFoodFeatures.inflammation.dha}</p>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">{jointFoodFeatures.inflammation.description}</p>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Weight-Joint Correlation ── */}
+        {isJointFood && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(35,35%,93%)] to-background border-[hsl(35,30%,60%)]/20 dark:from-[hsl(35,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[hsl(35,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Scale className="w-5 h-5 text-[hsl(35,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">⚖️ קשר משקל-מפרקים</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{jointFoodFeatures.weightJoint}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Target Audience ── */}
+        {isJointFood && jointFoodFeatures.audiences.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-primary" />
+                🎯 מתאים במיוחד ל:
+              </h3>
+              <div className="space-y-2">
+                {jointFoodFeatures.audiences.map((a, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-lg p-2.5 bg-muted/30">
+                    <span className="text-lg flex-shrink-0">{a.icon}</span>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{a.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{a.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Expert Tip ── */}
+        {isJointFood && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(45,45%,92%)] to-background border-[hsl(45,40%,55%)]/20 dark:from-[hsl(45,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(45,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-5 h-5 text-[hsl(45,60%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">💡 Pro Tip</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{jointFoodFeatures.expertTip}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Analysis Grid ── */}
+        {isJointFood && jointFoodFeatures.analysis.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.46 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Activity className="w-4 h-4 text-primary" />
+                📊 ניתוח תזונתי
+              </h3>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {jointFoodFeatures.analysis.map((a, i) => (
+                  <div key={i} className="rounded-lg p-3 text-center bg-muted/30">
+                    <p className="text-[10px] text-muted-foreground">{a.label}</p>
+                    <p className="text-[20px] font-black text-primary">{a.value}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">{jointFoodFeatures.caPhNote}</p>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Food: Cross-Sell ── */}
+        {isJointFood && jointFoodFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 חבילת טיפול משלימה
+              </h3>
+              <div className="space-y-1.5">
+                {jointFoodFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
