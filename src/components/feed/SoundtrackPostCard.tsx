@@ -9,7 +9,7 @@ import {
   ShoppingCart,
   Plus,
   Music,
-  Send,
+  Share2,
   Trophy,
   PawPrint,
 } from "lucide-react";
@@ -345,7 +345,7 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <Send className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
+          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
           <span className="text-white font-semibold drop-shadow-lg" style={{ fontSize: "12px" }}>
             {formatCount(Math.max(Math.floor(post.likes_count * 0.3), 0))}
           </span>
